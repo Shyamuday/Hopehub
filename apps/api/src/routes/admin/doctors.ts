@@ -1,5 +1,9 @@
 import { Router } from 'express';
-import { normalizeProviderRoles } from '@hopehub/contracts';
+import {
+  normalizeProviderRoles,
+  providerClassificationFromAssignments,
+  providerClassificationFromLegacy
+} from '@hopehub/contracts';
 import { z } from 'zod';
 import {
   CareTeamMemberType,
@@ -7,6 +11,7 @@ import {
   HomeopathicDoctorType,
   PatientGender,
   Prisma,
+  ProviderDomain,
   Role
 } from '@prisma/client';
 import bcrypt from 'bcryptjs';
@@ -67,6 +72,8 @@ const careTeamServiceSchema = z.object({
 });
 const mentalHealthProfileSchema = z
   .object({
+    primaryRoleCode: z.string().trim().min(3).max(64).optional(),
+    roleCodes: z.array(z.string().trim().min(3).max(64)).min(1).max(20).optional(),
     careTeamType: z.nativeEnum(CareTeamMemberType).optional(),
     careTeamTypes: z.array(z.nativeEnum(CareTeamMemberType)).max(12).optional(),
     qualifications: textArraySchema,
@@ -94,6 +101,18 @@ function compactTextArray(items?: string[]) {
   return (items ?? []).map((item) => item.trim()).filter(Boolean);
 }
 
+function requestedProviderRoles(
+  body: z.infer<typeof mentalHealthProfileSchema>,
+  fallbackPrimary: CareTeamMemberType,
+  fallbackRoles: CareTeamMemberType[]
+) {
+  const primaryRoleCode = body?.primaryRoleCode || fallbackPrimary;
+  const roleCodes = Array.from(
+    new Set([primaryRoleCode, ...(body?.roleCodes?.length ? body.roleCodes : fallbackRoles)])
+  );
+  return { primaryRoleCode, roleCodes };
+}
+
 function toMentalHealthProfilePayload(body: z.infer<typeof mentalHealthProfileSchema>) {
   const careTeamType = body?.careTeamType ?? CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL;
   const careTeamTypes = normalizeProviderRoles(
@@ -101,12 +120,16 @@ function toMentalHealthProfilePayload(body: z.infer<typeof mentalHealthProfileSc
     body?.careTeamTypes,
     'MENTAL_WELLNESS_PROFESSIONAL'
   ) as CareTeamMemberType[];
+  const requestedRoles = requestedProviderRoles(body, careTeamType, careTeamTypes);
   const services = (body?.services ?? []).map((service, index) => ({
     providerRole:
       service.providerRole && careTeamTypes.includes(service.providerRole)
         ? service.providerRole
         : careTeamType,
-    providerRoleCode: service.providerRoleCode || service.providerRole || careTeamType,
+    providerRoleCode:
+      service.providerRoleCode && requestedRoles.roleCodes.includes(service.providerRoleCode)
+        ? service.providerRoleCode
+        : requestedRoles.primaryRoleCode,
     title: service.title,
     description: service.description || null,
     pricingMode: service.pricingMode ?? CareTeamServicePricingMode.FIXED,
@@ -181,11 +204,17 @@ function mentalHealthProfileUpdatePayload(
 
 function doctorWorkspaceWhere(workspace: string): Prisma.UserWhereInput {
   if (workspace === 'hope-hub') {
-    return { doctorProfile: { is: { doctorType: HomeopathicDoctorType.PSYCHOLOGIST } } };
+    return {
+      doctorProfile: {
+        is: { providerDomain: ProviderDomain.HOPE_HUB }
+      }
+    };
   }
   if (workspace === 'homeopathy') {
     return {
-      doctorProfile: { is: { doctorType: { not: HomeopathicDoctorType.PSYCHOLOGIST } } }
+      doctorProfile: {
+        is: { providerDomain: ProviderDomain.HOMEOPATHY }
+      }
     };
   }
   return {};
@@ -252,16 +281,26 @@ async function latestListenerScreeningForEmail(email?: string | null) {
 async function withListenerScreeningForAdmin<
   T extends { email?: string | null; doctorProfile?: any }
 >(provider: T) {
-  if (!provider.doctorProfile?.mentalHealthProfile) return provider;
-  const listenerScreening = await latestListenerScreeningForEmail(provider.email);
+  if (!provider.doctorProfile) return provider;
+  const providerClassification =
+    providerClassificationFromAssignments(provider.doctorProfile) ??
+    providerClassificationFromLegacy(provider.doctorProfile);
+  const listenerScreening = provider.doctorProfile.mentalHealthProfile
+    ? await latestListenerScreeningForEmail(provider.email)
+    : null;
   return {
     ...provider,
     doctorProfile: {
       ...provider.doctorProfile,
-      mentalHealthProfile: {
-        ...provider.doctorProfile.mentalHealthProfile,
-        listenerScreening
-      }
+      providerClassification,
+      ...(provider.doctorProfile.mentalHealthProfile
+        ? {
+            mentalHealthProfile: {
+              ...provider.doctorProfile.mentalHealthProfile,
+              listenerScreening
+            }
+          }
+        : {})
     }
   };
 }
@@ -297,14 +336,26 @@ export function registerAdminDoctorRoutes(router: Router) {
         andFilters.push({
           doctorProfile: {
             is: {
-              mentalHealthProfile: {
-                is: {
-                  OR: [
-                    { careTeamType: { in: supportPathTypes } },
-                    { careTeamTypes: { hasSome: supportPathTypes } }
-                  ]
+              OR: [
+                {
+                  roleAssignments: {
+                    some: {
+                      status: 'ACTIVE',
+                      role: { category: supportPath, isActive: true }
+                    }
+                  }
+                },
+                {
+                  mentalHealthProfile: {
+                    is: {
+                      OR: [
+                        { careTeamType: { in: supportPathTypes } },
+                        { careTeamTypes: { hasSome: supportPathTypes } }
+                      ]
+                    }
+                  }
                 }
-              }
+              ]
             }
           }
         });
@@ -381,14 +432,26 @@ export function registerAdminDoctorRoutes(router: Router) {
                 {
                   doctorProfile: {
                     is: {
-                      mentalHealthProfile: {
-                        is: {
-                          OR: [
-                            { careTeamType: { in: supportPathTypes } },
-                            { careTeamTypes: { hasSome: supportPathTypes } }
-                          ]
+                      OR: [
+                        {
+                          roleAssignments: {
+                            some: {
+                              status: 'ACTIVE',
+                              role: { category: supportPath, isActive: true }
+                            }
+                          }
+                        },
+                        {
+                          mentalHealthProfile: {
+                            is: {
+                              OR: [
+                                { careTeamType: { in: supportPathTypes } },
+                                { careTeamTypes: { hasSome: supportPathTypes } }
+                              ]
+                            }
+                          }
                         }
-                      }
+                      ]
                     }
                   }
                 }
@@ -637,6 +700,10 @@ export function registerAdminDoctorRoutes(router: Router) {
           doctorProfile: {
             create: {
               ...profilePayload,
+              providerDomain:
+                profilePayload.doctorType === HomeopathicDoctorType.PSYCHOLOGIST
+                  ? ProviderDomain.HOPE_HUB
+                  : ProviderDomain.HOMEOPATHY,
               designation: hrFields.designation,
               department: hrFields.department,
               ...compensationFields,
@@ -660,10 +727,14 @@ export function registerAdminDoctorRoutes(router: Router) {
         doctor.doctorProfile &&
         profilePayload.doctorType === HomeopathicDoctorType.PSYCHOLOGIST
       ) {
+        const requestedRoles = requestedProviderRoles(
+          body.mentalHealthProfile,
+          mentalProfilePayload.careTeamType,
+          mentalProfilePayload.careTeamTypes
+        );
         await syncProviderRoleAssignments({
           doctorId: doctor.doctorProfile.id,
-          primaryRoleCode: mentalProfilePayload.careTeamType,
-          roleCodes: mentalProfilePayload.careTeamTypes,
+          ...requestedRoles,
           actorId: req.user!.id
         });
       }
@@ -784,6 +855,10 @@ export function registerAdminDoctorRoutes(router: Router) {
             upsert: {
               create: {
                 ...profilePayload,
+                providerDomain:
+                  profilePayload.doctorType === HomeopathicDoctorType.PSYCHOLOGIST
+                    ? ProviderDomain.HOPE_HUB
+                    : ProviderDomain.HOMEOPATHY,
                 designation: hrFields.designation,
                 department: hrFields.department,
                 isAvailable: profilePayload.isAvailable,
@@ -793,6 +868,10 @@ export function registerAdminDoctorRoutes(router: Router) {
               },
               update: {
                 ...profilePayload,
+                providerDomain:
+                  profilePayload.doctorType === HomeopathicDoctorType.PSYCHOLOGIST
+                    ? ProviderDomain.HOPE_HUB
+                    : ProviderDomain.HOMEOPATHY,
                 designation: hrFields.designation,
                 department: hrFields.department,
                 isAvailable: profilePayload.isAvailable,
@@ -814,10 +893,14 @@ export function registerAdminDoctorRoutes(router: Router) {
         doctor.doctorProfile &&
         profilePayload.doctorType === HomeopathicDoctorType.PSYCHOLOGIST
       ) {
+        const requestedRoles = requestedProviderRoles(
+          body.mentalHealthProfile,
+          mentalProfilePayload.careTeamType,
+          mentalProfilePayload.careTeamTypes
+        );
         await syncProviderRoleAssignments({
           doctorId: doctor.doctorProfile.id,
-          primaryRoleCode: mentalProfilePayload.careTeamType,
-          roleCodes: mentalProfilePayload.careTeamTypes,
+          ...requestedRoles,
           actorId: req.user!.id
         });
       }

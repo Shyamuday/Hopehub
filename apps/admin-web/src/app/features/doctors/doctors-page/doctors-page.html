@@ -2,15 +2,19 @@
   <div>
     <p>{{ workspaceLabel() }} workspace</p>
     <h2>
-      {{
-        providerPluralTitleLabel()
-      }}
+      {{ providerPluralTitleLabel() }}
     </h2>
     <span>
       {{
         workspaceKey() === 'hope-hub'
-          ? 'Showing ' + providerPluralLabel() + ' only. Provider roles decide whether someone appears as a psychologist, coach, guide, or listener.'
-          : 'Showing ' + providerPluralLabel() + ' only. ' + hopeHubProviderPluralLabel + ' stay in the Hope Hub workspace.'
+          ? 'Showing ' +
+            providerPluralLabel() +
+            ' only. Provider roles decide whether someone appears as a psychologist, coach, guide, or listener.'
+          : 'Showing ' +
+            providerPluralLabel() +
+            ' only. ' +
+            hopeHubProviderPluralLabel +
+            ' stay in the Hope Hub workspace.'
       }}
     </span>
   </div>
@@ -20,18 +24,21 @@
   <div class="panel-header">
     <div>
       <h2>Website — {{ providerPluralTitleLabel() }} Directory Settings</h2>
-      <p class="panel-hint">
-        Public directory limit and display order.
-      </p>
+      <p class="panel-hint">Public directory limit and display order.</p>
     </div>
-    <button type="button" class="btn-secondary" (click)="showDirectorySettings.set(!showDirectorySettings())">
+    <button
+      type="button"
+      class="btn-secondary"
+      (click)="showDirectorySettings.set(!showDirectorySettings())"
+    >
       {{ showDirectorySettings() ? 'Hide settings' : 'Show settings' }}
     </button>
   </div>
   @if (showDirectorySettings()) {
     <p class="panel-hint">
       Control how many {{ providerPluralLabel() }} appear on the public
-      <em>{{ publicDirectoryLabel() }}</em>. Use the <em>Display order</em> field below to set the listing sequence.
+      <em>{{ publicDirectoryLabel() }}</em
+      >. Use the <em>Display order</em> field below to set the listing sequence.
     </p>
     <div class="config-row">
       <label for="doctorListLimit">Max {{ providerPluralLabel() }} shown on website (1–50)</label>
@@ -60,249 +67,445 @@
       <h2>Create {{ providerTitleLabel() }}</h2>
       <p class="panel-hint">Keep closed during daily review so the page stays short.</p>
     </div>
-    <button type="button" class="btn-primary" (click)="showCreateProviderForm.set(!showCreateProviderForm())">
+    <button
+      type="button"
+      class="btn-primary"
+      (click)="showCreateProviderForm.set(!showCreateProviderForm())"
+    >
       {{ showCreateProviderForm() ? 'Close form' : 'Add ' + providerSingularLabel() }}
     </button>
   </div>
   @if (showCreateProviderForm()) {
-  <fieldset class="create-doctor-form form-grid" [disabled]="mutating()">
-    <div class="field">
-      <label class="field-label" for="doc-create-name">Name</label>
-      <input id="doc-create-name" [formField]="createForm.name" [placeholder]="providerNamePlaceholder()" />
-    </div>
-    <div class="field">
-      <label class="field-label" for="doc-create-email">Email</label>
-      <input id="doc-create-email" [formField]="createForm.email" [placeholder]="providerEmailPlaceholder()" />
-    </div>
-    <div class="field">
-      <label class="field-label" for="doc-create-mobile">Mobile</label>
-      <input id="doc-create-mobile" [formField]="createForm.mobile" placeholder="10-digit mobile" />
-    </div>
-    <div class="field">
-      <label class="field-label" for="doc-create-gender">Gender</label>
-      <select id="doc-create-gender" [formField]="createForm.gender">
-        @for (option of genderOptions; track option.value) {
-          <option [value]="option.value">{{ option.label }}</option>
-        }
-      </select>
-    </div>
-    <div class="field">
-      <label class="field-label" for="doc-create-password">Password</label>
-      <span class="password-input-wrap">
-        <input
-          #doctorPassword
-          id="doc-create-password"
-          type="password"
-          [formField]="createForm.password"
-          placeholder="Initial password"
-        />
-        <button type="button" class="password-toggle" (click)="doctorPassword.type = doctorPassword.type === 'password' ? 'text' : 'password'">
-          {{ doctorPassword.type === 'password' ? 'Show' : 'Hide' }}
-        </button>
-      </span>
-    </div>
-    <div class="field">
-      <label class="field-label" for="doc-create-type">Provider type</label>
-      <select id="doc-create-type" [formField]="createForm.doctorType" (change)="onCreateDoctorTypeChange()">
-        @for (option of workspaceDoctorTypeOptions(); track option.value) {
-          <option [value]="option.value">{{ option.label }}</option>
-        }
-      </select>
-    </div>
-    @if (isSpecialistType(createModel().doctorType)) {
+    <fieldset class="create-doctor-form form-grid" [disabled]="mutating()">
       <div class="field">
-        <label class="field-label" for="doc-create-focus">Specialty focus</label>
-        <select id="doc-create-focus" [formField]="createForm.specialtyFocus">
-          <option value="">Select specialty focus</option>
-          @for (option of specialtyFocusOptions; track option.value) {
+        <label class="field-label" for="doc-create-name">Name</label>
+        <input
+          id="doc-create-name"
+          [formField]="createForm.name"
+          [placeholder]="providerNamePlaceholder()"
+        />
+      </div>
+      <div class="field">
+        <label class="field-label" for="doc-create-email">Email</label>
+        <input
+          id="doc-create-email"
+          [formField]="createForm.email"
+          [placeholder]="providerEmailPlaceholder()"
+        />
+      </div>
+      <div class="field">
+        <label class="field-label" for="doc-create-mobile">Mobile</label>
+        <input
+          id="doc-create-mobile"
+          [formField]="createForm.mobile"
+          placeholder="10-digit mobile"
+        />
+      </div>
+      <div class="field">
+        <label class="field-label" for="doc-create-gender">Gender</label>
+        <select id="doc-create-gender" [formField]="createForm.gender">
+          @for (option of genderOptions; track option.value) {
             <option [value]="option.value">{{ option.label }}</option>
           }
         </select>
       </div>
-    }
-    <div class="field">
-      <label class="field-label" for="doc-create-specialty">{{ specialtyLabel(createModel().doctorType) }}</label>
-      <input
-        id="doc-create-specialty"
-        [formField]="createForm.specialty"
-        [placeholder]="specialtyPlaceholder(createModel().doctorType)"
-      />
-    </div>
-    @if (!isPsychologistType(createModel().doctorType) || hasClinicalHopeHubType(createModel().careTeamTypes)) {
       <div class="field">
-        <label class="field-label" for="doc-create-reg">
-          {{ isPsychologistType(createModel().doctorType) ? 'License / registration no.' : 'Registration No' }}
-        </label>
-        <input
-          id="doc-create-reg"
-          [formField]="createForm.registrationNo"
-          [placeholder]="isPsychologistType(createModel().doctorType) ? 'Clinical license / registration number' : 'Medical council registration'"
-        />
-      </div>
-    }
-    <div class="field">
-      <label class="field-label" for="doc-create-designation">Designation</label>
-      <input
-        id="doc-create-designation"
-        [formField]="createForm.designation"
-        [placeholder]="designationPlaceholder(createModel().doctorType)"
-      />
-    </div>
-    <div class="field">
-      <label class="field-label" for="doc-create-department">Department</label>
-      <input
-        id="doc-create-department"
-        [formField]="createForm.department"
-        [placeholder]="departmentPlaceholder(createModel().doctorType)"
-      />
-    </div>
-    @if (isPsychologistType(createModel().doctorType)) {
-      <div class="field">
-        <hopehub-multi-select
-          label="Provider roles"
-          hint="Select all that apply"
-          placeholder="Choose one or more roles"
-          tone="hope"
-          [options]="careTeamTypeOptions"
-          [selected]="createModel().careTeamTypes"
-          (selectedChange)="setCreateCareTeamTypes($event)"
-        />
-        @if (selectedCreateProviderRoleOptions().length > 1) {
-          <label class="field-label" for="doc-create-primary-role">Primary public role</label>
-          <select
-            id="doc-create-primary-role"
-            [value]="createModel().careTeamType"
-            (change)="setCreatePrimaryProviderRole($any($event.target).value)"
+        <label class="field-label" for="doc-create-password">Password</label>
+        <span class="password-input-wrap">
+          <input
+            #doctorPassword
+            id="doc-create-password"
+            type="password"
+            [formField]="createForm.password"
+            placeholder="Initial password"
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="doctorPassword.type = doctorPassword.type === 'password' ? 'text' : 'password'"
           >
-            @for (option of selectedCreateProviderRoleOptions(); track option.value) {
+            {{ doctorPassword.type === 'password' ? 'Show' : 'Hide' }}
+          </button>
+        </span>
+      </div>
+      @if (workspaceKey() === 'homeopathy') {
+        <div class="field">
+          <label class="field-label" for="doc-create-type">Provider type</label>
+          <select
+            id="doc-create-type"
+            [formField]="createForm.doctorType"
+            (change)="onCreateDoctorTypeChange()"
+          >
+            @for (option of workspaceDoctorTypeOptions(); track option.value) {
               <option [value]="option.value">{{ option.label }}</option>
             }
           </select>
-        }
-      </div>
-      <label class="website-toggle">
-        <input type="checkbox" [formField]="createForm.autoMatchEnabled" />
-        Available for user auto-match
-      </label>
-      <label class="website-toggle">
-        <input type="checkbox" [formField]="createForm.acceptingNewUsers" />
-        Accepting new bookings
-      </label>
+        </div>
+      }
+      @if (isSpecialistType(createModel().doctorType)) {
+        <div class="field">
+          <label class="field-label" for="doc-create-focus">Specialty focus</label>
+          <select id="doc-create-focus" [formField]="createForm.specialtyFocus">
+            <option value="">Select specialty focus</option>
+            @for (option of specialtyFocusOptions; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </div>
+      }
       <div class="field">
-        <label class="field-label" for="doc-create-max-day">Max bookings per day</label>
-        <input id="doc-create-max-day" type="number" [formField]="createForm.maxSessionsPerDay" placeholder="No daily limit" />
-      </div>
-      <div class="field">
-        <label class="field-label" for="doc-create-max-week">Max bookings per week</label>
-        <input id="doc-create-max-week" type="number" [formField]="createForm.maxSessionsPerWeek" placeholder="No weekly limit" />
-      </div>
-      <div class="field">
-        <label class="field-label" for="doc-create-qualifications">Qualifications</label>
-        <textarea
-          id="doc-create-qualifications"
-          rows="3"
-          [formField]="createForm.qualificationsText"
-          placeholder="One per line"
-        ></textarea>
-      </div>
-      <div class="field">
-        <label class="field-label" for="doc-create-qualified-from">Qualified from</label>
+        <label class="field-label" for="doc-create-specialty">{{
+          specialtyLabel(createModel().doctorType)
+        }}</label>
         <input
-          id="doc-create-qualified-from"
-          [formField]="createForm.qualifiedFrom"
-          placeholder="e.g. Delhi University / NLP Academy"
+          id="doc-create-specialty"
+          [formField]="createForm.specialty"
+          [placeholder]="specialtyPlaceholder(createModel().doctorType)"
+        />
+      </div>
+      @if (
+        !isPsychologistType(createModel().doctorType) ||
+        hasClinicalHopeHubType(createModel().careTeamTypes)
+      ) {
+        <div class="field">
+          <label class="field-label" for="doc-create-reg">
+            {{
+              isPsychologistType(createModel().doctorType)
+                ? 'License / registration no.'
+                : 'Registration No'
+            }}
+          </label>
+          <input
+            id="doc-create-reg"
+            [formField]="createForm.registrationNo"
+            [placeholder]="
+              isPsychologistType(createModel().doctorType)
+                ? 'Clinical license / registration number'
+                : 'Medical council registration'
+            "
+          />
+        </div>
+      }
+      <div class="field">
+        <label class="field-label" for="doc-create-designation">Designation</label>
+        <input
+          id="doc-create-designation"
+          [formField]="createForm.designation"
+          [placeholder]="designationPlaceholder(createModel().doctorType)"
         />
       </div>
       <div class="field">
-        <label class="field-label" for="doc-create-languages">Languages</label>
-        <textarea
-          id="doc-create-languages"
-          rows="3"
-          [formField]="createForm.languagesText"
-          placeholder="English&#10;Hindi"
-        ></textarea>
+        <label class="field-label" for="doc-create-department">Department</label>
+        <input
+          id="doc-create-department"
+          [formField]="createForm.department"
+          [placeholder]="departmentPlaceholder(createModel().doctorType)"
+        />
       </div>
-      <div class="field">
-        <label class="field-label" for="doc-create-modalities">{{ modalitiesLabel(createModel().careTeamType) }}</label>
-        <textarea
-          id="doc-create-modalities"
-          rows="3"
-          [formField]="createForm.modalitiesText"
-          [placeholder]="hasCoachHopeHubType(createModel().careTeamTypes) ? 'Goal setting&#10;Habit coaching' : hasListenerHopeHubType(createModel().careTeamTypes) ? 'Non-judgemental listening&#10;Grounding support' : 'CBT&#10;Supportive counselling'"
-        ></textarea>
-      </div>
-      <div class="field">
-        <label class="field-label" for="doc-create-concerns">Concerns handled</label>
-        <textarea
-          id="doc-create-concerns"
-          rows="3"
-          [formField]="createForm.concernsHandledText"
-          placeholder="Anxiety&#10;Stress&#10;Relationship concerns"
-        ></textarea>
-      </div>
-      <div class="field">
-        <label class="field-label" for="doc-create-services">Services & pricing</label>
-        <div class="service-editor">
-          @for (service of createCareServices(); track $index) {
-            <article class="service-editor-card">
-              <input [value]="service.title" placeholder="Service title" (input)="updateCareService('create', $index, 'title', $any($event.target).value)" />
-              <div class="template-row">
-                <select #createTemplate>
-                  <option value="">Choose ready plan</option>
-                  @for (template of carePricingTemplates(); track template.id) {
-                    <option [value]="template.id">{{ template.title }}</option>
+      @if (isPsychologistType(createModel().doctorType)) {
+        <div class="field">
+          <hopehub-multi-select
+            label="Provider roles"
+            hint="Select all that apply"
+            placeholder="Choose one or more roles"
+            tone="hope"
+            [options]="careTeamTypeOptions"
+            [selected]="createModel().careTeamTypes"
+            (selectedChange)="setCreateCareTeamTypes($event)"
+          />
+          @if (selectedCreateProviderRoleOptions().length > 1) {
+            <label class="field-label" for="doc-create-primary-role">Primary public role</label>
+            <select
+              id="doc-create-primary-role"
+              [value]="createModel().careTeamType"
+              (change)="setCreatePrimaryProviderRole($any($event.target).value)"
+            >
+              @for (option of selectedCreateProviderRoleOptions(); track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          }
+        </div>
+        <label class="website-toggle">
+          <input type="checkbox" [formField]="createForm.autoMatchEnabled" />
+          Available for user auto-match
+        </label>
+        <label class="website-toggle">
+          <input type="checkbox" [formField]="createForm.acceptingNewUsers" />
+          Accepting new bookings
+        </label>
+        <div class="field">
+          <label class="field-label" for="doc-create-max-day">Max bookings per day</label>
+          <input
+            id="doc-create-max-day"
+            type="number"
+            [formField]="createForm.maxSessionsPerDay"
+            placeholder="No daily limit"
+          />
+        </div>
+        <div class="field">
+          <label class="field-label" for="doc-create-max-week">Max bookings per week</label>
+          <input
+            id="doc-create-max-week"
+            type="number"
+            [formField]="createForm.maxSessionsPerWeek"
+            placeholder="No weekly limit"
+          />
+        </div>
+        <div class="field">
+          <label class="field-label" for="doc-create-qualifications">Qualifications</label>
+          <textarea
+            id="doc-create-qualifications"
+            rows="3"
+            [formField]="createForm.qualificationsText"
+            placeholder="One per line"
+          ></textarea>
+        </div>
+        <div class="field">
+          <label class="field-label" for="doc-create-qualified-from">Qualified from</label>
+          <input
+            id="doc-create-qualified-from"
+            [formField]="createForm.qualifiedFrom"
+            placeholder="e.g. Delhi University / NLP Academy"
+          />
+        </div>
+        <div class="field">
+          <label class="field-label" for="doc-create-languages">Languages</label>
+          <textarea
+            id="doc-create-languages"
+            rows="3"
+            [formField]="createForm.languagesText"
+            placeholder="English&#10;Hindi"
+          ></textarea>
+        </div>
+        <div class="field">
+          <label class="field-label" for="doc-create-modalities">{{
+            modalitiesLabel(createModel().careTeamType)
+          }}</label>
+          <textarea
+            id="doc-create-modalities"
+            rows="3"
+            [formField]="createForm.modalitiesText"
+            [placeholder]="
+              hasCoachHopeHubType(createModel().careTeamTypes)
+                ? 'Goal setting&#10;Habit coaching'
+                : hasListenerHopeHubType(createModel().careTeamTypes)
+                  ? 'Non-judgemental listening&#10;Grounding support'
+                  : 'CBT&#10;Supportive counselling'
+            "
+          ></textarea>
+        </div>
+        <div class="field">
+          <label class="field-label" for="doc-create-concerns">Concerns handled</label>
+          <textarea
+            id="doc-create-concerns"
+            rows="3"
+            [formField]="createForm.concernsHandledText"
+            placeholder="Anxiety&#10;Stress&#10;Relationship concerns"
+          ></textarea>
+        </div>
+        <div class="field">
+          <label class="field-label" for="doc-create-services">Services & pricing</label>
+          <div class="service-editor">
+            @for (service of createCareServices(); track $index) {
+              <article class="service-editor-card">
+                <input
+                  [value]="service.title"
+                  placeholder="Service title"
+                  (input)="updateCareService('create', $index, 'title', $any($event.target).value)"
+                />
+                <div class="template-row">
+                  <select #createTemplate>
+                    <option value="">Choose ready plan</option>
+                    @for (template of carePricingTemplates(); track template.id) {
+                      <option [value]="template.id">{{ template.title }}</option>
+                    }
+                  </select>
+                  <button
+                    type="button"
+                    class="btn-secondary"
+                    (click)="applyPricingTemplate('create', $index, createTemplate.value)"
+                  >
+                    Use plan
+                  </button>
+                </div>
+                <select
+                  [value]="service.pricingMode || 'FIXED'"
+                  (change)="
+                    updateCareService('create', $index, 'pricingMode', $any($event.target).value)
+                  "
+                >
+                  @for (mode of careServicePricingModeOptions; track mode.value) {
+                    <option [value]="mode.value">{{ mode.label }}</option>
                   }
                 </select>
-                <button type="button" class="btn-secondary" (click)="applyPricingTemplate('create', $index, createTemplate.value)">Use plan</button>
-              </div>
-              <select [value]="service.pricingMode || 'FIXED'" (change)="updateCareService('create', $index, 'pricingMode', $any($event.target).value)">
-                @for (mode of careServicePricingModeOptions; track mode.value) {
-                  <option [value]="mode.value">{{ mode.label }}</option>
+                @if (
+                  service.pricingMode !== 'FREE_VOLUNTEER' && service.pricingMode !== 'PER_MINUTE'
+                ) {
+                  <input
+                    type="number"
+                    [value]="rupees(service.priceInPaise)"
+                    placeholder="Base ₹"
+                    (input)="
+                      updateCareService('create', $index, 'priceInPaise', $any($event.target).value)
+                    "
+                  />
                 }
-              </select>
-              @if (service.pricingMode !== 'FREE_VOLUNTEER' && service.pricingMode !== 'PER_MINUTE') {
-                <input type="number" [value]="rupees(service.priceInPaise)" placeholder="Base ₹" (input)="updateCareService('create', $index, 'priceInPaise', $any($event.target).value)" />
-              }
-              @if (showFirstPrice(service)) {
-                <input type="number" [value]="rupees(service.firstSessionPriceInPaise)" placeholder="First ₹" (input)="updateCareService('create', $index, 'firstSessionPriceInPaise', $any($event.target).value)" />
-              }
-              @if (showFollowUpPrice(service)) {
-                <input type="number" [value]="rupees(service.followUpPriceInPaise)" placeholder="Follow-up ₹" (input)="updateCareService('create', $index, 'followUpPriceInPaise', $any($event.target).value)" />
-                <input type="number" [value]="service.introSessionLimit || 1" placeholder="Intro limit" (input)="updateCareService('create', $index, 'introSessionLimit', $any($event.target).value)" />
-              }
-              @if (showPackageFields(service)) {
-                <input type="number" [value]="service.packageSessionCount || ''" placeholder="Package sessions" (input)="updateCareService('create', $index, 'packageSessionCount', $any($event.target).value)" />
-                <input type="number" [value]="rupees(service.packagePriceInPaise)" placeholder="Package ₹" (input)="updateCareService('create', $index, 'packagePriceInPaise', $any($event.target).value)" />
-              }
-              @if (showPerMinuteFields(service)) {
-                <input type="number" [value]="service.freeMinutes || 0" placeholder="Free minutes" (input)="updateCareService('create', $index, 'freeMinutes', $any($event.target).value)" />
-                <input type="number" [value]="rupees(service.pricePerMinuteInPaise)" placeholder="₹ per minute" (input)="updateCareService('create', $index, 'pricePerMinuteInPaise', $any($event.target).value)" />
-              }
-              <input type="number" [value]="service.durationMinutes || 30" placeholder="Minutes" (input)="updateCareService('create', $index, 'durationMinutes', $any($event.target).value)" />
-              <input [value]="service.description || ''" placeholder="Description" (input)="updateCareService('create', $index, 'description', $any($event.target).value)" />
-              <label><input type="checkbox" [checked]="service.isActive !== false" (change)="updateCareService('create', $index, 'isActive', $any($event.target).checked)" /> Active</label>
-              <button type="button" class="btn-secondary" (click)="removeCareService('create', $index)">Remove</button>
-            </article>
-          }
-          <button type="button" class="btn-secondary" (click)="addCareService('create')">Add service</button>
+                @if (showFirstPrice(service)) {
+                  <input
+                    type="number"
+                    [value]="rupees(service.firstSessionPriceInPaise)"
+                    placeholder="First ₹"
+                    (input)="
+                      updateCareService(
+                        'create',
+                        $index,
+                        'firstSessionPriceInPaise',
+                        $any($event.target).value
+                      )
+                    "
+                  />
+                }
+                @if (showFollowUpPrice(service)) {
+                  <input
+                    type="number"
+                    [value]="rupees(service.followUpPriceInPaise)"
+                    placeholder="Follow-up ₹"
+                    (input)="
+                      updateCareService(
+                        'create',
+                        $index,
+                        'followUpPriceInPaise',
+                        $any($event.target).value
+                      )
+                    "
+                  />
+                  <input
+                    type="number"
+                    [value]="service.introSessionLimit || 1"
+                    placeholder="Intro limit"
+                    (input)="
+                      updateCareService(
+                        'create',
+                        $index,
+                        'introSessionLimit',
+                        $any($event.target).value
+                      )
+                    "
+                  />
+                }
+                @if (showPackageFields(service)) {
+                  <input
+                    type="number"
+                    [value]="service.packageSessionCount || ''"
+                    placeholder="Package sessions"
+                    (input)="
+                      updateCareService(
+                        'create',
+                        $index,
+                        'packageSessionCount',
+                        $any($event.target).value
+                      )
+                    "
+                  />
+                  <input
+                    type="number"
+                    [value]="rupees(service.packagePriceInPaise)"
+                    placeholder="Package ₹"
+                    (input)="
+                      updateCareService(
+                        'create',
+                        $index,
+                        'packagePriceInPaise',
+                        $any($event.target).value
+                      )
+                    "
+                  />
+                }
+                @if (showPerMinuteFields(service)) {
+                  <input
+                    type="number"
+                    [value]="service.freeMinutes || 0"
+                    placeholder="Free minutes"
+                    (input)="
+                      updateCareService('create', $index, 'freeMinutes', $any($event.target).value)
+                    "
+                  />
+                  <input
+                    type="number"
+                    [value]="rupees(service.pricePerMinuteInPaise)"
+                    placeholder="₹ per minute"
+                    (input)="
+                      updateCareService(
+                        'create',
+                        $index,
+                        'pricePerMinuteInPaise',
+                        $any($event.target).value
+                      )
+                    "
+                  />
+                }
+                <input
+                  type="number"
+                  [value]="service.durationMinutes || 30"
+                  placeholder="Minutes"
+                  (input)="
+                    updateCareService(
+                      'create',
+                      $index,
+                      'durationMinutes',
+                      $any($event.target).value
+                    )
+                  "
+                />
+                <input
+                  [value]="service.description || ''"
+                  placeholder="Description"
+                  (input)="
+                    updateCareService('create', $index, 'description', $any($event.target).value)
+                  "
+                />
+                <label
+                  ><input
+                    type="checkbox"
+                    [checked]="service.isActive !== false"
+                    (change)="
+                      updateCareService('create', $index, 'isActive', $any($event.target).checked)
+                    "
+                  />
+                  Active</label
+                >
+                <button
+                  type="button"
+                  class="btn-secondary"
+                  (click)="removeCareService('create', $index)"
+                >
+                  Remove
+                </button>
+              </article>
+            }
+            <button type="button" class="btn-secondary" (click)="addCareService('create')">
+              Add service
+            </button>
+          </div>
+          <p class="field-hint">
+            Use pricing mode for fixed, first free, discounted first, package, per-minute, or free
+            emotional support listener support.
+          </p>
         </div>
-        <p class="field-hint">
-          Use pricing mode for fixed, first free, discounted first, package, per-minute, or free emotional support listener support.
-        </p>
-      </div>
-    }
-    <button type="button" (click)="createDoctor()" [disabled]="mutating() || loading()">
-      {{ mutating() ? 'Creating...' : 'Create ' + providerSingularLabel() }}
-    </button>
-  </fieldset>
+      }
+      <button type="button" (click)="createDoctor()" [disabled]="mutating() || loading()">
+        {{ mutating() ? 'Creating...' : 'Create ' + providerSingularLabel() }}
+      </button>
+    </fieldset>
   }
 </section>
 
 <section class="panel">
   <h2>{{ providerSingularTitle() }} Setup / Visibility Review</h2>
   <p class="panel-hint">
-    Provider accounts can log in immediately. Use this area only to review setup readiness,
-    website visibility, and accounts that need attention.
+    Provider accounts can log in immediately. Use this area only to review setup readiness, website
+    visibility, and accounts that need attention.
   </p>
 
   @if (loading()) {
@@ -351,53 +554,57 @@
     <div class="provider-list-scroll">
       @for (doctor of visiblePendingDoctors(); track doctor.id) {
         <article class="card" [class.card--selected]="selectedDoctorId === doctor.id">
-        <label class="select-doctor">
-          <input
-            type="checkbox"
-            [checked]="isPendingDoctorSelected(doctor.id)"
-            (change)="togglePendingDoctorSelection(doctor.id, $any($event.target).checked)"
-            [disabled]="mutating()"
-          />
-          Select
-        </label>
-        <strong>{{ doctor.name }}</strong>
-        <p>{{ doctor.email }} | {{ doctor.mobile || 'No mobile' }}</p>
-        <small
-          >{{ doctorTypeLabel(doctor.doctorProfile?.doctorType) }} |
-          {{ doctor.doctorProfile?.specialty || 'Specialty not set' }} |
-          {{ doctor.doctorProfile?.registrationNo || 'No registration no.' }}</small
-        >
-        @if (workspaceKey() === 'hope-hub') {
-          <div class="support-path-row">
-            <span class="support-path-chip">{{ supportPathForDoctor(doctor).label }}</span>
-            @if (supportPathTypeSummary(doctor)) {
-              <small>{{ supportPathTypeSummary(doctor) }}</small>
+          <label class="select-doctor">
+            <input
+              type="checkbox"
+              [checked]="isPendingDoctorSelected(doctor.id)"
+              (change)="togglePendingDoctorSelection(doctor.id, $any($event.target).checked)"
+              [disabled]="mutating()"
+            />
+            Select
+          </label>
+          <strong>{{ doctor.name }}</strong>
+          <p>{{ doctor.email }} | {{ doctor.mobile || 'No mobile' }}</p>
+          <small
+            >{{
+              workspaceKey() === 'hope-hub'
+                ? providerPrimaryRoleLabel(doctor)
+                : doctorTypeLabel(doctor.doctorProfile?.doctorType)
+            }}
+            | {{ doctor.doctorProfile?.specialty || 'Specialty not set' }} |
+            {{ doctor.doctorProfile?.registrationNo || 'No registration no.' }}</small
+          >
+          @if (workspaceKey() === 'hope-hub') {
+            <div class="support-path-row">
+              <span class="support-path-chip">{{ supportPathForDoctor(doctor).label }}</span>
+              @if (supportPathTypeSummary(doctor)) {
+                <small>{{ supportPathTypeSummary(doctor) }}</small>
+              }
+            </div>
+          }
+          <div class="readiness-badges" [title]="providerReadinessSummary(doctor)">
+            @for (badge of providerReadinessBadges(doctor); track badge.label) {
+              <span class="readiness-badge" [class]="'readiness-badge--' + badge.tone">
+                {{ badge.label }}
+              </span>
             }
           </div>
-        }
-        <div class="readiness-badges" [title]="providerReadinessSummary(doctor)">
-          @for (badge of providerReadinessBadges(doctor); track badge.label) {
-            <span class="readiness-badge" [class]="'readiness-badge--' + badge.tone">
-              {{ badge.label }}
-            </span>
-          }
-        </div>
-        <div class="actions">
-          <button
-            type="button"
-            class="link-action"
-            (click)="setSelectedDoctor(doctor.id)"
-            [disabled]="mutating()"
-          >
-            View details
-          </button>
-          <button type="button" (click)="approveDoctor(doctor.id)" [disabled]="mutating()">
-            {{ mutating() ? '...' : 'Activate account' }}
-          </button>
-          <button type="button" (click)="rejectDoctor(doctor.id)" [disabled]="mutating()">
-            Deactivate account
-          </button>
-        </div>
+          <div class="actions">
+            <button
+              type="button"
+              class="link-action"
+              (click)="setSelectedDoctor(doctor.id)"
+              [disabled]="mutating()"
+            >
+              View details
+            </button>
+            <button type="button" (click)="approveDoctor(doctor.id)" [disabled]="mutating()">
+              {{ mutating() ? '...' : 'Activate account' }}
+            </button>
+            <button type="button" (click)="rejectDoctor(doctor.id)" [disabled]="mutating()">
+              Deactivate account
+            </button>
+          </div>
         </article>
       } @empty {
         <p class="empty-state">No {{ providerSingularLabel() }} accounts need setup review.</p>
@@ -422,560 +629,780 @@
 <section class="provider-master-detail">
   <aside class="panel provider-list-panel">
     <h2>All {{ providerPluralLabel() }}</h2>
-  <div class="toolbar">
-    <input
-      [placeholder]="'Search ' + providerPluralLabel() + '...'"
-      [formField]="listFilterForm.searchTerm"
-      (change)="onListFilterChange()"
-    />
-    <select [formField]="listFilterForm.statusFilter" (change)="onListFilterChange()">
-      <option value="ALL">All status</option>
-      <option value="ACTIVE">Active only</option>
-      <option value="INACTIVE">Inactive only</option>
-      <option value="SUSPENDED">Suspended only</option>
-    </select>
-    @if (workspaceKey() === 'hope-hub') {
-      <select [formField]="listFilterForm.supportPath" (change)="onListFilterChange()">
-        @for (option of supportPathOptions; track option.value) {
-          <option [value]="option.value">{{ option.label }}</option>
-        }
+    <div class="toolbar">
+      <input
+        [placeholder]="'Search ' + providerPluralLabel() + '...'"
+        [formField]="listFilterForm.searchTerm"
+        (change)="onListFilterChange()"
+      />
+      <select [formField]="listFilterForm.statusFilter" (change)="onListFilterChange()">
+        <option value="ALL">All status</option>
+        <option value="ACTIVE">Active only</option>
+        <option value="INACTIVE">Inactive only</option>
+        <option value="SUSPENDED">Suspended only</option>
       </select>
-    }
-    <select [formField]="listFilterForm.sortBy" (change)="onListFilterChange()">
-      <option value="name">Sort by name</option>
-      <option value="createdAt">Sort by created time</option>
-      <option value="status">Sort by status</option>
-    </select>
-    <select [formField]="listFilterForm.sortDirection" (change)="onListFilterChange()">
-      <option value="asc">Asc</option>
-      <option value="desc">Desc</option>
-    </select>
-  </div>
-
-  @if (!loading()) {
-    <div class="provider-list-scroll">
-      @for (doctor of visibleDoctors(); track doctor.id) {
-        <article
-          class="card provider-list-card"
-          [class.card--selected]="selectedDoctorId === doctor.id"
-          tabindex="0"
-          role="button"
-          (click)="setSelectedDoctor(doctor.id)"
-          (keydown.enter)="setSelectedDoctor(doctor.id)"
-          (keydown.space)="setSelectedDoctor(doctor.id)"
-        >
-        <div class="doctor-card-header">
-          <strong>{{ doctor.name }}</strong>
-          <button
-            type="button"
-            class="link-action"
-            (click)="$event.stopPropagation(); setSelectedDoctor(doctor.id)"
-            [disabled]="mutating()"
-          >
-            View details
-          </button>
-        </div>
-        <p>{{ doctor.email }} | {{ doctor.mobile || 'No mobile' }}</p>
-        <small
-          >{{ doctorTypeLabel(doctor.doctorProfile?.doctorType) }} |
-          {{ doctor.doctorProfile?.specialty || 'Specialty not set' }} |
-          {{ doctor.isActive ? 'Active' : 'Inactive' }}</small
-        >
-        @if (workspaceKey() === 'hope-hub') {
-          <div class="support-path-row">
-            <span class="support-path-chip">{{ supportPathForDoctor(doctor).label }}</span>
-            @if (supportPathTypeSummary(doctor)) {
-              <small>{{ supportPathTypeSummary(doctor) }}</small>
-            }
-          </div>
-        }
-        <div class="readiness-badges" [title]="providerReadinessSummary(doctor)">
-          @for (badge of providerReadinessBadges(doctor); track badge.label) {
-            <span class="readiness-badge" [class]="'readiness-badge--' + badge.tone">
-              {{ badge.label }}
-            </span>
+      @if (workspaceKey() === 'hope-hub') {
+        <select [formField]="listFilterForm.supportPath" (change)="onListFilterChange()">
+          @for (option of supportPathOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
           }
-        </div>
-        </article>
-      } @empty {
-        <p class="empty-state">No {{ providerPluralLabel() }} found.</p>
+        </select>
+      }
+      <select [formField]="listFilterForm.sortBy" (change)="onListFilterChange()">
+        <option value="name">Sort by name</option>
+        <option value="createdAt">Sort by created time</option>
+        <option value="status">Sort by status</option>
+      </select>
+      <select [formField]="listFilterForm.sortDirection" (change)="onListFilterChange()">
+        <option value="asc">Asc</option>
+        <option value="desc">Desc</option>
+      </select>
+    </div>
+
+    @if (!loading()) {
+      <div class="provider-list-scroll">
+        @for (doctor of visibleDoctors(); track doctor.id) {
+          <article
+            class="card provider-list-card"
+            [class.card--selected]="selectedDoctorId === doctor.id"
+            tabindex="0"
+            role="button"
+            (click)="setSelectedDoctor(doctor.id)"
+            (keydown.enter)="setSelectedDoctor(doctor.id)"
+            (keydown.space)="setSelectedDoctor(doctor.id)"
+          >
+            <div class="doctor-card-header">
+              <strong>{{ doctor.name }}</strong>
+              <button
+                type="button"
+                class="link-action"
+                (click)="$event.stopPropagation(); setSelectedDoctor(doctor.id)"
+                [disabled]="mutating()"
+              >
+                View details
+              </button>
+            </div>
+            <p>{{ doctor.email }} | {{ doctor.mobile || 'No mobile' }}</p>
+            <small
+              >{{
+                workspaceKey() === 'hope-hub'
+                  ? providerPrimaryRoleLabel(doctor)
+                  : doctorTypeLabel(doctor.doctorProfile?.doctorType)
+              }}
+              | {{ doctor.doctorProfile?.specialty || 'Specialty not set' }} |
+              {{ doctor.isActive ? 'Active' : 'Inactive' }}</small
+            >
+            @if (workspaceKey() === 'hope-hub') {
+              <div class="support-path-row">
+                <span class="support-path-chip">{{ supportPathForDoctor(doctor).label }}</span>
+                @if (supportPathTypeSummary(doctor)) {
+                  <small>{{ supportPathTypeSummary(doctor) }}</small>
+                }
+              </div>
+            }
+            <div class="readiness-badges" [title]="providerReadinessSummary(doctor)">
+              @for (badge of providerReadinessBadges(doctor); track badge.label) {
+                <span class="readiness-badge" [class]="'readiness-badge--' + badge.tone">
+                  {{ badge.label }}
+                </span>
+              }
+            </div>
+          </article>
+        } @empty {
+          <p class="empty-state">No {{ providerPluralLabel() }} found.</p>
+        }
+      </div>
+    }
+    <div class="pagination">
+      @for (page of doctorsPages(); track page) {
+        <button
+          type="button"
+          [class.active]="doctorsPage === page"
+          [class.pagination-gap]="isPaginationGap(page)"
+          [disabled]="isPaginationGap(page)"
+          (click)="setDoctorsPageFromToken(page)"
+        >
+          {{ isPaginationGap(page) ? '…' : page }}
+        </button>
       }
     </div>
-  }
-  <div class="pagination">
-    @for (page of doctorsPages(); track page) {
-      <button
-        type="button"
-        [class.active]="doctorsPage === page"
-        [class.pagination-gap]="isPaginationGap(page)"
-        [disabled]="isPaginationGap(page)"
-        (click)="setDoctorsPageFromToken(page)"
-      >
-        {{ isPaginationGap(page) ? '…' : page }}
-      </button>
-    }
-  </div>
-</aside>
+  </aside>
 
-<section id="doctor-profile-details" class="panel details-panel provider-detail-panel">
-  <h2>{{ providerSingularTitle() }} Profile Details</h2>
-  @if (selectedDoctorDetails(); as selectedDoctor) {
-    <article class="card">
-      <div class="detail-header-row">
-        <div>
-          <strong>{{ selectedDoctor.name }}</strong>
-          <div class="readiness-badges" [title]="providerReadinessSummary(selectedDoctor)">
-            @for (badge of providerReadinessBadges(selectedDoctor); track badge.label) {
-              <span class="readiness-badge" [class]="'readiness-badge--' + badge.tone">
-                {{ badge.label }}
-              </span>
+  <section id="doctor-profile-details" class="panel details-panel provider-detail-panel">
+    <h2>{{ providerSingularTitle() }} Profile Details</h2>
+    @if (selectedDoctorDetails(); as selectedDoctor) {
+      <article class="card">
+        <div class="detail-header-row">
+          <div>
+            <strong>{{ selectedDoctor.name }}</strong>
+            <div class="readiness-badges" [title]="providerReadinessSummary(selectedDoctor)">
+              @for (badge of providerReadinessBadges(selectedDoctor); track badge.label) {
+                <span class="readiness-badge" [class]="'readiness-badge--' + badge.tone">
+                  {{ badge.label }}
+                </span>
+              }
+            </div>
+            @if (providerReadinessIssues(selectedDoctor).length) {
+              <p class="readiness-summary">
+                Needs: {{ providerReadinessIssues(selectedDoctor).join(', ') }}
+              </p>
             }
           </div>
-          @if (providerReadinessIssues(selectedDoctor).length) {
-            <p class="readiness-summary">
-              Needs: {{ providerReadinessIssues(selectedDoctor).join(', ') }}
-            </p>
+          <a
+            class="clinical-records-link"
+            [routerLink]="clinicalRecordsRoute"
+            [queryParams]="clinicalRecordsQuery('prescriptions')"
+          >
+            View clinical records →
+          </a>
+        </div>
+        <hopehub-detail-rows [rows]="selectedDoctorDetailRows()" />
+        <div
+          class="admin-readiness-box"
+          [class.admin-readiness-box--ready]="selectedReadiness()?.ready"
+        >
+          <div class="admin-readiness-head">
+            <div>
+              <strong>
+                {{ selectedReadiness()?.ready ? 'Public/live ready' : 'Public/live blockers' }}
+              </strong>
+              <p>
+                @if (readinessLoading()) {
+                  Checking provider readiness...
+                } @else {
+                  {{ selectedReadiness()?.message || 'Could not load backend readiness.' }}
+                }
+              </p>
+            </div>
+            <button
+              type="button"
+              class="secondary"
+              (click)="loadSelectedDoctorReadiness()"
+              [disabled]="readinessLoading()"
+            >
+              {{ readinessLoading() ? '...' : 'Refresh' }}
+            </button>
+          </div>
+          @if (selectedReadiness()?.blockers?.length) {
+            <div class="admin-readiness-list">
+              @for (blocker of selectedReadiness()?.blockers || []; track blocker.code) {
+                <article>
+                  <strong>{{ blocker.label }}</strong>
+                  @if (blocker.action) {
+                    <span>{{ blocker.action }}</span>
+                  }
+                </article>
+              }
+            </div>
           }
         </div>
-        <a
-          class="clinical-records-link"
-          [routerLink]="clinicalRecordsRoute"
-          [queryParams]="clinicalRecordsQuery('prescriptions')"
+        <div
+          class="suspension-box"
+          [class.suspension-box--active]="selectedDoctor.doctorProfile?.suspendedAt"
         >
-          View clinical records →
-        </a>
-      </div>
-      <hopehub-detail-rows [rows]="selectedDoctorDetailRows()" />
-      <div class="admin-readiness-box" [class.admin-readiness-box--ready]="selectedReadiness()?.ready">
-        <div class="admin-readiness-head">
-          <div>
-            <strong>
-              {{ selectedReadiness()?.ready ? 'Public/live ready' : 'Public/live blockers' }}
-            </strong>
-            <p>
-              @if (readinessLoading()) {
-                Checking provider readiness...
-              } @else {
-                {{ selectedReadiness()?.message || 'Could not load backend readiness.' }}
-              }
-            </p>
-          </div>
-          <button type="button" class="secondary" (click)="loadSelectedDoctorReadiness()" [disabled]="readinessLoading()">
-            {{ readinessLoading() ? '...' : 'Refresh' }}
-          </button>
+          @if (selectedDoctor.doctorProfile?.suspendedAt) {
+            <div>
+              <strong>Provider suspended</strong>
+              <p>
+                {{ selectedDoctor.doctorProfile?.suspendedReason || 'No reason recorded.' }}
+              </p>
+            </div>
+            <button
+              type="button"
+              class="secondary"
+              (click)="setDoctorSuspension(selectedDoctor.id, false)"
+              [disabled]="mutating()"
+            >
+              {{ mutating() ? '...' : 'Remove suspension' }}
+            </button>
+          } @else {
+            <div class="field suspension-field">
+              <label class="field-label" for="provider-suspension-reason">Suspend provider</label>
+              <textarea
+                id="provider-suspension-reason"
+                rows="2"
+                [value]="suspensionReason()"
+                (input)="suspensionReason.set($any($event.target).value)"
+                placeholder="Reason shown internally and to provider at login"
+              ></textarea>
+            </div>
+            <button
+              type="button"
+              class="danger"
+              (click)="setDoctorSuspension(selectedDoctor.id, true)"
+              [disabled]="mutating()"
+            >
+              {{ mutating() ? '...' : 'Suspend' }}
+            </button>
+          }
         </div>
-        @if (selectedReadiness()?.blockers?.length) {
-          <div class="admin-readiness-list">
-            @for (blocker of selectedReadiness()?.blockers || []; track blocker.code) {
-              <article>
-                <strong>{{ blocker.label }}</strong>
-                @if (blocker.action) {
-                  <span>{{ blocker.action }}</span>
-                }
-              </article>
-            }
-          </div>
-        }
-      </div>
-      <div class="suspension-box" [class.suspension-box--active]="selectedDoctor.doctorProfile?.suspendedAt">
-        @if (selectedDoctor.doctorProfile?.suspendedAt) {
-          <div>
-            <strong>Provider suspended</strong>
-            <p>
-              {{ selectedDoctor.doctorProfile?.suspendedReason || 'No reason recorded.' }}
-            </p>
-          </div>
-          <button
-            type="button"
-            class="secondary"
-            (click)="setDoctorSuspension(selectedDoctor.id, false)"
-            [disabled]="mutating()"
-          >
-            {{ mutating() ? '...' : 'Remove suspension' }}
-          </button>
-        } @else {
-          <div class="field suspension-field">
-            <label class="field-label" for="provider-suspension-reason">Suspend provider</label>
-            <textarea
-              id="provider-suspension-reason"
-              rows="2"
-              [value]="suspensionReason()"
-              (input)="suspensionReason.set($any($event.target).value)"
-              placeholder="Reason shown internally and to provider at login"
-            ></textarea>
-          </div>
-          <button
-            type="button"
-            class="danger"
-            (click)="setDoctorSuspension(selectedDoctor.id, true)"
-            [disabled]="mutating()"
-          >
-            {{ mutating() ? '...' : 'Suspend' }}
-          </button>
-        }
-      </div>
-      <div class="actions">
-        @if (selectedDoctor.isActive) {
-          <button
-            type="button"
-            (click)="toggleDoctorStatus(selectedDoctor.id, false)"
-            [disabled]="mutating()"
-          >
-            {{ mutating() ? '...' : 'Deactivate' }}
-          </button>
-        } @else {
-          <button
-            type="button"
-            (click)="approveSelectedDoctorWithProfile()"
-            [disabled]="mutating()"
-          >
-            {{ mutating() ? '...' : 'Save profile & activate' }}
-          </button>
-          <button
-            type="button"
-            (click)="toggleDoctorStatus(selectedDoctor.id, true)"
-            [disabled]="mutating()"
-          >
-            {{ mutating() ? '...' : 'Activate' }}
-          </button>
-        }
-      </div>
-    </article>
-    <article class="card">
-      <h3>Edit {{ providerSingularTitle() }}</h3>
-      <fieldset class="edit-doctor-form form-grid" [disabled]="mutating()">
-        <div class="field">
-          <label class="field-label" for="doc-edit-name">Name</label>
-          <input id="doc-edit-name" [formField]="editForm.name" [placeholder]="providerNamePlaceholder()" />
+        <div class="actions">
+          @if (selectedDoctor.isActive) {
+            <button
+              type="button"
+              (click)="toggleDoctorStatus(selectedDoctor.id, false)"
+              [disabled]="mutating()"
+            >
+              {{ mutating() ? '...' : 'Deactivate' }}
+            </button>
+          } @else {
+            <button
+              type="button"
+              (click)="approveSelectedDoctorWithProfile()"
+              [disabled]="mutating()"
+            >
+              {{ mutating() ? '...' : 'Save profile & activate' }}
+            </button>
+            <button
+              type="button"
+              (click)="toggleDoctorStatus(selectedDoctor.id, true)"
+              [disabled]="mutating()"
+            >
+              {{ mutating() ? '...' : 'Activate' }}
+            </button>
+          }
         </div>
-        <div class="field">
-          <label class="field-label" for="doc-edit-email">Email</label>
-          <input id="doc-edit-email" [formField]="editForm.email" [placeholder]="providerEmailPlaceholder()" />
-        </div>
-        <div class="field">
-          <label class="field-label" for="doc-edit-mobile">Mobile</label>
-          <input id="doc-edit-mobile" [formField]="editForm.mobile" placeholder="10-digit mobile" />
-        </div>
-        <div class="field">
-          <label class="field-label" for="doc-edit-gender">Gender</label>
-          <select id="doc-edit-gender" [formField]="editForm.gender">
-            @for (option of genderOptions; track option.value) {
-              <option [value]="option.value">{{ option.label }}</option>
-            }
-          </select>
-        </div>
-        <div class="field">
-          <label class="field-label" for="doc-edit-type">Provider type</label>
-          <select id="doc-edit-type" [formField]="editForm.doctorType" (change)="onEditDoctorTypeChange()">
-            @for (option of workspaceDoctorTypeOptions(); track option.value) {
-              <option [value]="option.value">{{ option.label }}</option>
-            }
-          </select>
-        </div>
-        @if (isSpecialistType(editModel().doctorType)) {
+      </article>
+      <article class="card">
+        <h3>Edit {{ providerSingularTitle() }}</h3>
+        <fieldset class="edit-doctor-form form-grid" [disabled]="mutating()">
           <div class="field">
-            <label class="field-label" for="doc-edit-focus">Specialty focus</label>
-            <select id="doc-edit-focus" [formField]="editForm.specialtyFocus">
-              <option value="">Select specialty focus</option>
-              @for (option of specialtyFocusOptions; track option.value) {
+            <label class="field-label" for="doc-edit-name">Name</label>
+            <input
+              id="doc-edit-name"
+              [formField]="editForm.name"
+              [placeholder]="providerNamePlaceholder()"
+            />
+          </div>
+          <div class="field">
+            <label class="field-label" for="doc-edit-email">Email</label>
+            <input
+              id="doc-edit-email"
+              [formField]="editForm.email"
+              [placeholder]="providerEmailPlaceholder()"
+            />
+          </div>
+          <div class="field">
+            <label class="field-label" for="doc-edit-mobile">Mobile</label>
+            <input
+              id="doc-edit-mobile"
+              [formField]="editForm.mobile"
+              placeholder="10-digit mobile"
+            />
+          </div>
+          <div class="field">
+            <label class="field-label" for="doc-edit-gender">Gender</label>
+            <select id="doc-edit-gender" [formField]="editForm.gender">
+              @for (option of genderOptions; track option.value) {
                 <option [value]="option.value">{{ option.label }}</option>
               }
             </select>
           </div>
-        }
-        <div class="field">
-          <label class="field-label" for="doc-edit-specialty">{{ specialtyLabel(editModel().doctorType) }}</label>
-          <input
-            id="doc-edit-specialty"
-            [formField]="editForm.specialty"
-            [placeholder]="specialtyPlaceholder(editModel().doctorType)"
-          />
-        </div>
-        @if (!isPsychologistType(editModel().doctorType) || hasClinicalHopeHubType(editModel().careTeamTypes)) {
-          <div class="field">
-            <label class="field-label" for="doc-edit-reg">
-              {{ isPsychologistType(editModel().doctorType) ? 'License / registration no.' : 'Registration No' }}
-            </label>
-            <input
-              id="doc-edit-reg"
-              [formField]="editForm.registrationNo"
-              [placeholder]="isPsychologistType(editModel().doctorType) ? 'Clinical license / registration number' : 'Medical council registration'"
-            />
-          </div>
-        }
-        <div class="field">
-          <label class="field-label" for="doc-edit-designation">Designation</label>
-          <input
-            id="doc-edit-designation"
-            [formField]="editForm.designation"
-            [placeholder]="designationPlaceholder(editModel().doctorType)"
-          />
-        </div>
-        <div class="field">
-          <label class="field-label" for="doc-edit-department">Department</label>
-          <input
-            id="doc-edit-department"
-            [formField]="editForm.department"
-            [placeholder]="departmentPlaceholder(editModel().doctorType)"
-          />
-        </div>
-        <label class="website-toggle">
-          <input type="checkbox" [formField]="editForm.isAvailable" />
-          Available for consultations
-        </label>
-
-        <p class="form-section-label">Public website profile</p>
-        <label class="website-toggle">
-          <input type="checkbox" [formField]="editForm.showOnWebsite" />
-          Show on website ({{ publicDirectoryLabel() }})
-        </label>
-        <div class="field">
-          <label class="field-label" for="doc-edit-order">Display order</label>
-          <input
-            id="doc-edit-order"
-            type="number"
-            [formField]="editForm.websiteOrder"
-            placeholder="1 = first, blank = auto"
-          />
-        </div>
-        <div class="field">
-          <label class="field-label" for="doc-edit-exp">Years of experience</label>
-          <input
-            id="doc-edit-exp"
-            type="number"
-            [formField]="editForm.yearsOfExperience"
-            placeholder="e.g. 12"
-          />
-        </div>
-        <div class="field">
-          <label class="field-label" for="doc-edit-bio">Short bio</label>
-          <textarea
-            id="doc-edit-bio"
-            rows="4"
-            [placeholder]="'Shown on the public ' + publicDirectoryLabel() + ' (max 1200 chars)'"
-            [formField]="editForm.bio"
-          ></textarea>
-        </div>
-        <div class="field">
-          <label class="field-label" for="doc-edit-focus-areas">Focus areas</label>
-          <textarea
-            id="doc-edit-focus-areas"
-            rows="3"
-            [placeholder]="focusAreasPlaceholder(editModel().doctorType, editModel().careTeamType)"
-            [formField]="editForm.focusAreasText"
-          ></textarea>
-        </div>
-        @if (isPsychologistType(editModel().doctorType)) {
-          <p class="form-section-label">Care team public profile</p>
-          <div class="field">
-            <hopehub-multi-select
-              label="Provider roles"
-              hint="Select all that apply"
-              placeholder="Choose one or more roles"
-              tone="hope"
-              [options]="careTeamTypeOptions"
-              [selected]="editModel().careTeamTypes"
-              (selectedChange)="setEditCareTeamTypes($event)"
-            />
-            @if (selectedEditProviderRoleOptions().length > 1) {
-              <label class="field-label" for="doc-edit-primary-role">Primary public role</label>
+          @if (workspaceKey() === 'homeopathy') {
+            <div class="field">
+              <label class="field-label" for="doc-edit-type">Provider type</label>
               <select
-                id="doc-edit-primary-role"
-                [value]="editModel().careTeamType"
-                (change)="setEditPrimaryProviderRole($any($event.target).value)"
+                id="doc-edit-type"
+                [formField]="editForm.doctorType"
+                (change)="onEditDoctorTypeChange()"
               >
-                @for (option of selectedEditProviderRoleOptions(); track option.value) {
+                @for (option of workspaceDoctorTypeOptions(); track option.value) {
                   <option [value]="option.value">{{ option.label }}</option>
                 }
               </select>
-            }
-          </div>
+            </div>
+          }
+          @if (isSpecialistType(editModel().doctorType)) {
+            <div class="field">
+              <label class="field-label" for="doc-edit-focus">Specialty focus</label>
+              <select id="doc-edit-focus" [formField]="editForm.specialtyFocus">
+                <option value="">Select specialty focus</option>
+                @for (option of specialtyFocusOptions; track option.value) {
+                  <option [value]="option.value">{{ option.label }}</option>
+                }
+              </select>
+            </div>
+          }
           <div class="field">
-            <label class="field-label" for="doc-edit-qualifications">Qualifications</label>
-            <textarea
-              id="doc-edit-qualifications"
-              rows="3"
-              placeholder="One per line"
-              [formField]="editForm.qualificationsText"
-            ></textarea>
-          </div>
-          <div class="field">
-            <label class="field-label" for="doc-edit-qualified-from">Qualified from</label>
+            <label class="field-label" for="doc-edit-specialty">{{
+              specialtyLabel(editModel().doctorType)
+            }}</label>
             <input
-              id="doc-edit-qualified-from"
-              [formField]="editForm.qualifiedFrom"
-              placeholder="e.g. Delhi University / NLP Academy"
+              id="doc-edit-specialty"
+              [formField]="editForm.specialty"
+              [placeholder]="specialtyPlaceholder(editModel().doctorType)"
             />
           </div>
-          @if (hasClinicalHopeHubType(editModel().careTeamTypes)) {
+          @if (
+            !isPsychologistType(editModel().doctorType) ||
+            hasClinicalHopeHubType(editModel().careTeamTypes)
+          ) {
             <div class="field">
-              <label class="field-label" for="doc-edit-license-number">License number</label>
+              <label class="field-label" for="doc-edit-reg">
+                {{
+                  isPsychologistType(editModel().doctorType)
+                    ? 'License / registration no.'
+                    : 'Registration No'
+                }}
+              </label>
               <input
-                id="doc-edit-license-number"
-                [formField]="editForm.licenseNumber"
-                placeholder="Registration or license number"
-              />
-            </div>
-            <div class="field">
-              <label class="field-label" for="doc-edit-license-council">License council</label>
-              <input
-                id="doc-edit-license-council"
-                [formField]="editForm.licenseCouncil"
-                placeholder="Council / authority"
+                id="doc-edit-reg"
+                [formField]="editForm.registrationNo"
+                [placeholder]="
+                  isPsychologistType(editModel().doctorType)
+                    ? 'Clinical license / registration number'
+                    : 'Medical council registration'
+                "
               />
             </div>
           }
           <div class="field">
-            <label class="field-label" for="doc-edit-languages">Languages</label>
-            <textarea
-              id="doc-edit-languages"
-              rows="3"
-              placeholder="One per line"
-              [formField]="editForm.languagesText"
-            ></textarea>
-          </div>
-          <div class="field">
-            <label class="field-label" for="doc-edit-modalities">{{ modalitiesLabel(editModel().careTeamType) }}</label>
-            <textarea
-              id="doc-edit-modalities"
-              rows="3"
-              [placeholder]="hasCoachHopeHubType(editModel().careTeamTypes) ? 'Goal setting&#10;Habit coaching' : hasListenerHopeHubType(editModel().careTeamTypes) ? 'Non-judgemental listening&#10;Grounding support' : 'CBT&#10;Supportive counselling'"
-              [formField]="editForm.modalitiesText"
-            ></textarea>
-          </div>
-          <div class="field">
-            <label class="field-label" for="doc-edit-session-types">Session types</label>
-            <textarea
-              id="doc-edit-session-types"
-              rows="3"
-              placeholder="Individual session&#10;Relationship support"
-              [formField]="editForm.sessionTypesText"
-            ></textarea>
-          </div>
-          <div class="field">
-            <label class="field-label" for="doc-edit-age-groups">Age groups</label>
-            <textarea
-              id="doc-edit-age-groups"
-              rows="3"
-              placeholder="Adults&#10;Teens"
-              [formField]="editForm.ageGroupsText"
-            ></textarea>
-          </div>
-          <div class="field">
-            <label class="field-label" for="doc-edit-concerns">Concerns handled</label>
-            <textarea
-              id="doc-edit-concerns"
-              rows="3"
-              placeholder="One per line"
-              [formField]="editForm.concernsHandledText"
-            ></textarea>
-          </div>
-          <div class="field">
-            <label class="field-label" for="doc-edit-intro-title">Intro title</label>
+            <label class="field-label" for="doc-edit-designation">Designation</label>
             <input
-              id="doc-edit-intro-title"
-              [formField]="editForm.introSessionTitle"
-              [placeholder]="approachLabel(editModel().careTeamType)"
+              id="doc-edit-designation"
+              [formField]="editForm.designation"
+              [placeholder]="designationPlaceholder(editModel().doctorType)"
             />
           </div>
           <div class="field">
-            <label class="field-label" for="doc-edit-approach">{{ approachLabel(editModel().careTeamType) }}</label>
+            <label class="field-label" for="doc-edit-department">Department</label>
+            <input
+              id="doc-edit-department"
+              [formField]="editForm.department"
+              [placeholder]="departmentPlaceholder(editModel().doctorType)"
+            />
+          </div>
+          <label class="website-toggle">
+            <input type="checkbox" [formField]="editForm.isAvailable" />
+            Available for consultations
+          </label>
+
+          <p class="form-section-label">Public website profile</p>
+          <label class="website-toggle">
+            <input type="checkbox" [formField]="editForm.showOnWebsite" />
+            Show on website ({{ publicDirectoryLabel() }})
+          </label>
+          <div class="field">
+            <label class="field-label" for="doc-edit-order">Display order</label>
+            <input
+              id="doc-edit-order"
+              type="number"
+              [formField]="editForm.websiteOrder"
+              placeholder="1 = first, blank = auto"
+            />
+          </div>
+          <div class="field">
+            <label class="field-label" for="doc-edit-exp">Years of experience</label>
+            <input
+              id="doc-edit-exp"
+              type="number"
+              [formField]="editForm.yearsOfExperience"
+              placeholder="e.g. 12"
+            />
+          </div>
+          <div class="field">
+            <label class="field-label" for="doc-edit-bio">Short bio</label>
             <textarea
-              id="doc-edit-approach"
+              id="doc-edit-bio"
               rows="4"
-              [formField]="editForm.counsellingApproach"
+              [placeholder]="'Shown on the public ' + publicDirectoryLabel() + ' (max 1200 chars)'"
+              [formField]="editForm.bio"
             ></textarea>
           </div>
           <div class="field">
-            <label class="field-label" for="doc-edit-safety">Safety note</label>
+            <label class="field-label" for="doc-edit-focus-areas">Focus areas</label>
             <textarea
-              id="doc-edit-safety"
+              id="doc-edit-focus-areas"
               rows="3"
-              [formField]="editForm.safetyEscalationNote"
+              [placeholder]="
+                focusAreasPlaceholder(editModel().doctorType, editModel().careTeamType)
+              "
+              [formField]="editForm.focusAreasText"
             ></textarea>
           </div>
-          @if (hasClinicalHopeHubType(editModel().careTeamTypes)) {
+          @if (isPsychologistType(editModel().doctorType)) {
+            <p class="form-section-label">Care team public profile</p>
+            <div class="field">
+              <hopehub-multi-select
+                label="Provider roles"
+                hint="Select all that apply"
+                placeholder="Choose one or more roles"
+                tone="hope"
+                [options]="careTeamTypeOptions"
+                [selected]="editModel().careTeamTypes"
+                (selectedChange)="setEditCareTeamTypes($event)"
+              />
+              @if (selectedEditProviderRoleOptions().length > 1) {
+                <label class="field-label" for="doc-edit-primary-role">Primary public role</label>
+                <select
+                  id="doc-edit-primary-role"
+                  [value]="editModel().careTeamType"
+                  (change)="setEditPrimaryProviderRole($any($event.target).value)"
+                >
+                  @for (option of selectedEditProviderRoleOptions(); track option.value) {
+                    <option [value]="option.value">{{ option.label }}</option>
+                  }
+                </select>
+              }
+            </div>
+            <div class="field">
+              <label class="field-label" for="doc-edit-qualifications">Qualifications</label>
+              <textarea
+                id="doc-edit-qualifications"
+                rows="3"
+                placeholder="One per line"
+                [formField]="editForm.qualificationsText"
+              ></textarea>
+            </div>
+            <div class="field">
+              <label class="field-label" for="doc-edit-qualified-from">Qualified from</label>
+              <input
+                id="doc-edit-qualified-from"
+                [formField]="editForm.qualifiedFrom"
+                placeholder="e.g. Delhi University / NLP Academy"
+              />
+            </div>
+            @if (hasClinicalHopeHubType(editModel().careTeamTypes)) {
+              <div class="field">
+                <label class="field-label" for="doc-edit-license-number">License number</label>
+                <input
+                  id="doc-edit-license-number"
+                  [formField]="editForm.licenseNumber"
+                  placeholder="Registration or license number"
+                />
+              </div>
+              <div class="field">
+                <label class="field-label" for="doc-edit-license-council">License council</label>
+                <input
+                  id="doc-edit-license-council"
+                  [formField]="editForm.licenseCouncil"
+                  placeholder="Council / authority"
+                />
+              </div>
+            }
+            <div class="field">
+              <label class="field-label" for="doc-edit-languages">Languages</label>
+              <textarea
+                id="doc-edit-languages"
+                rows="3"
+                placeholder="One per line"
+                [formField]="editForm.languagesText"
+              ></textarea>
+            </div>
+            <div class="field">
+              <label class="field-label" for="doc-edit-modalities">{{
+                modalitiesLabel(editModel().careTeamType)
+              }}</label>
+              <textarea
+                id="doc-edit-modalities"
+                rows="3"
+                [placeholder]="
+                  hasCoachHopeHubType(editModel().careTeamTypes)
+                    ? 'Goal setting&#10;Habit coaching'
+                    : hasListenerHopeHubType(editModel().careTeamTypes)
+                      ? 'Non-judgemental listening&#10;Grounding support'
+                      : 'CBT&#10;Supportive counselling'
+                "
+                [formField]="editForm.modalitiesText"
+              ></textarea>
+            </div>
+            <div class="field">
+              <label class="field-label" for="doc-edit-session-types">Session types</label>
+              <textarea
+                id="doc-edit-session-types"
+                rows="3"
+                placeholder="Individual session&#10;Relationship support"
+                [formField]="editForm.sessionTypesText"
+              ></textarea>
+            </div>
+            <div class="field">
+              <label class="field-label" for="doc-edit-age-groups">Age groups</label>
+              <textarea
+                id="doc-edit-age-groups"
+                rows="3"
+                placeholder="Adults&#10;Teens"
+                [formField]="editForm.ageGroupsText"
+              ></textarea>
+            </div>
+            <div class="field">
+              <label class="field-label" for="doc-edit-concerns">Concerns handled</label>
+              <textarea
+                id="doc-edit-concerns"
+                rows="3"
+                placeholder="One per line"
+                [formField]="editForm.concernsHandledText"
+              ></textarea>
+            </div>
+            <div class="field">
+              <label class="field-label" for="doc-edit-intro-title">Intro title</label>
+              <input
+                id="doc-edit-intro-title"
+                [formField]="editForm.introSessionTitle"
+                [placeholder]="approachLabel(editModel().careTeamType)"
+              />
+            </div>
+            <div class="field">
+              <label class="field-label" for="doc-edit-approach">{{
+                approachLabel(editModel().careTeamType)
+              }}</label>
+              <textarea
+                id="doc-edit-approach"
+                rows="4"
+                [formField]="editForm.counsellingApproach"
+              ></textarea>
+            </div>
+            <div class="field">
+              <label class="field-label" for="doc-edit-safety">Safety note</label>
+              <textarea
+                id="doc-edit-safety"
+                rows="3"
+                [formField]="editForm.safetyEscalationNote"
+              ></textarea>
+            </div>
+            @if (hasClinicalHopeHubType(editModel().careTeamTypes)) {
+              <label class="website-toggle">
+                <input type="checkbox" [formField]="editForm.acceptsHighRiskCases" />
+                Accept high-risk cases after team review
+              </label>
+            }
             <label class="website-toggle">
-              <input type="checkbox" [formField]="editForm.acceptsHighRiskCases" />
-              Accept high-risk cases after team review
+              <input type="checkbox" [formField]="editForm.autoMatchEnabled" />
+              Available for user auto-match
             </label>
-          }
-          <label class="website-toggle">
-            <input type="checkbox" [formField]="editForm.autoMatchEnabled" />
-            Available for user auto-match
-          </label>
-          <label class="website-toggle">
-            <input type="checkbox" [formField]="editForm.acceptingNewUsers" />
-            Accepting new bookings
-          </label>
-          <div class="field">
-            <label class="field-label" for="doc-edit-max-day">Max bookings per day</label>
-            <input id="doc-edit-max-day" type="number" [formField]="editForm.maxSessionsPerDay" placeholder="No daily limit" />
-          </div>
-          <div class="field">
-            <label class="field-label" for="doc-edit-max-week">Max bookings per week</label>
-            <input id="doc-edit-max-week" type="number" [formField]="editForm.maxSessionsPerWeek" placeholder="No weekly limit" />
-          </div>
-          <div class="field">
-            <label class="field-label" for="doc-edit-services">Services & pricing</label>
-            <div class="service-editor">
-              @for (service of editCareServices(); track $index) {
-                <article class="service-editor-card">
-                  <input [value]="service.title" placeholder="Service title" (input)="updateCareService('edit', $index, 'title', $any($event.target).value)" />
-                  <div class="template-row">
-                    <select #editTemplate>
-                      <option value="">Choose ready plan</option>
-                      @for (template of carePricingTemplates(); track template.id) {
-                        <option [value]="template.id">{{ template.title }}</option>
+            <label class="website-toggle">
+              <input type="checkbox" [formField]="editForm.acceptingNewUsers" />
+              Accepting new bookings
+            </label>
+            <div class="field">
+              <label class="field-label" for="doc-edit-max-day">Max bookings per day</label>
+              <input
+                id="doc-edit-max-day"
+                type="number"
+                [formField]="editForm.maxSessionsPerDay"
+                placeholder="No daily limit"
+              />
+            </div>
+            <div class="field">
+              <label class="field-label" for="doc-edit-max-week">Max bookings per week</label>
+              <input
+                id="doc-edit-max-week"
+                type="number"
+                [formField]="editForm.maxSessionsPerWeek"
+                placeholder="No weekly limit"
+              />
+            </div>
+            <div class="field">
+              <label class="field-label" for="doc-edit-services">Services & pricing</label>
+              <div class="service-editor">
+                @for (service of editCareServices(); track $index) {
+                  <article class="service-editor-card">
+                    <input
+                      [value]="service.title"
+                      placeholder="Service title"
+                      (input)="
+                        updateCareService('edit', $index, 'title', $any($event.target).value)
+                      "
+                    />
+                    <div class="template-row">
+                      <select #editTemplate>
+                        <option value="">Choose ready plan</option>
+                        @for (template of carePricingTemplates(); track template.id) {
+                          <option [value]="template.id">{{ template.title }}</option>
+                        }
+                      </select>
+                      <button
+                        type="button"
+                        class="btn-secondary"
+                        (click)="applyPricingTemplate('edit', $index, editTemplate.value)"
+                      >
+                        Use plan
+                      </button>
+                    </div>
+                    <select
+                      [value]="service.pricingMode || 'FIXED'"
+                      (change)="
+                        updateCareService('edit', $index, 'pricingMode', $any($event.target).value)
+                      "
+                    >
+                      @for (mode of careServicePricingModeOptions; track mode.value) {
+                        <option [value]="mode.value">{{ mode.label }}</option>
                       }
                     </select>
-                    <button type="button" class="btn-secondary" (click)="applyPricingTemplate('edit', $index, editTemplate.value)">Use plan</button>
-                  </div>
-                  <select [value]="service.pricingMode || 'FIXED'" (change)="updateCareService('edit', $index, 'pricingMode', $any($event.target).value)">
-                    @for (mode of careServicePricingModeOptions; track mode.value) {
-                      <option [value]="mode.value">{{ mode.label }}</option>
+                    @if (
+                      service.pricingMode !== 'FREE_VOLUNTEER' &&
+                      service.pricingMode !== 'PER_MINUTE'
+                    ) {
+                      <input
+                        type="number"
+                        [value]="rupees(service.priceInPaise)"
+                        placeholder="Base ₹"
+                        (input)="
+                          updateCareService(
+                            'edit',
+                            $index,
+                            'priceInPaise',
+                            $any($event.target).value
+                          )
+                        "
+                      />
                     }
-                  </select>
-                  @if (service.pricingMode !== 'FREE_VOLUNTEER' && service.pricingMode !== 'PER_MINUTE') {
-                    <input type="number" [value]="rupees(service.priceInPaise)" placeholder="Base ₹" (input)="updateCareService('edit', $index, 'priceInPaise', $any($event.target).value)" />
-                  }
-                  @if (showFirstPrice(service)) {
-                    <input type="number" [value]="rupees(service.firstSessionPriceInPaise)" placeholder="First ₹" (input)="updateCareService('edit', $index, 'firstSessionPriceInPaise', $any($event.target).value)" />
-                  }
-                  @if (showFollowUpPrice(service)) {
-                    <input type="number" [value]="rupees(service.followUpPriceInPaise)" placeholder="Follow-up ₹" (input)="updateCareService('edit', $index, 'followUpPriceInPaise', $any($event.target).value)" />
-                    <input type="number" [value]="service.introSessionLimit || 1" placeholder="Intro limit" (input)="updateCareService('edit', $index, 'introSessionLimit', $any($event.target).value)" />
-                  }
-                  @if (showPackageFields(service)) {
-                    <input type="number" [value]="service.packageSessionCount || ''" placeholder="Package sessions" (input)="updateCareService('edit', $index, 'packageSessionCount', $any($event.target).value)" />
-                    <input type="number" [value]="rupees(service.packagePriceInPaise)" placeholder="Package ₹" (input)="updateCareService('edit', $index, 'packagePriceInPaise', $any($event.target).value)" />
-                  }
-                  @if (showPerMinuteFields(service)) {
-                    <input type="number" [value]="service.freeMinutes || 0" placeholder="Free minutes" (input)="updateCareService('edit', $index, 'freeMinutes', $any($event.target).value)" />
-                    <input type="number" [value]="rupees(service.pricePerMinuteInPaise)" placeholder="₹ per minute" (input)="updateCareService('edit', $index, 'pricePerMinuteInPaise', $any($event.target).value)" />
-                  }
-                  <input type="number" [value]="service.durationMinutes || 30" placeholder="Minutes" (input)="updateCareService('edit', $index, 'durationMinutes', $any($event.target).value)" />
-                  <input [value]="service.description || ''" placeholder="Description" (input)="updateCareService('edit', $index, 'description', $any($event.target).value)" />
-                  <label><input type="checkbox" [checked]="service.isActive !== false" (change)="updateCareService('edit', $index, 'isActive', $any($event.target).checked)" /> Active</label>
-                  <button type="button" class="btn-secondary" (click)="removeCareService('edit', $index)">Remove</button>
-                </article>
-              }
-              <button type="button" class="btn-secondary" (click)="addCareService('edit')">Add service</button>
+                    @if (showFirstPrice(service)) {
+                      <input
+                        type="number"
+                        [value]="rupees(service.firstSessionPriceInPaise)"
+                        placeholder="First ₹"
+                        (input)="
+                          updateCareService(
+                            'edit',
+                            $index,
+                            'firstSessionPriceInPaise',
+                            $any($event.target).value
+                          )
+                        "
+                      />
+                    }
+                    @if (showFollowUpPrice(service)) {
+                      <input
+                        type="number"
+                        [value]="rupees(service.followUpPriceInPaise)"
+                        placeholder="Follow-up ₹"
+                        (input)="
+                          updateCareService(
+                            'edit',
+                            $index,
+                            'followUpPriceInPaise',
+                            $any($event.target).value
+                          )
+                        "
+                      />
+                      <input
+                        type="number"
+                        [value]="service.introSessionLimit || 1"
+                        placeholder="Intro limit"
+                        (input)="
+                          updateCareService(
+                            'edit',
+                            $index,
+                            'introSessionLimit',
+                            $any($event.target).value
+                          )
+                        "
+                      />
+                    }
+                    @if (showPackageFields(service)) {
+                      <input
+                        type="number"
+                        [value]="service.packageSessionCount || ''"
+                        placeholder="Package sessions"
+                        (input)="
+                          updateCareService(
+                            'edit',
+                            $index,
+                            'packageSessionCount',
+                            $any($event.target).value
+                          )
+                        "
+                      />
+                      <input
+                        type="number"
+                        [value]="rupees(service.packagePriceInPaise)"
+                        placeholder="Package ₹"
+                        (input)="
+                          updateCareService(
+                            'edit',
+                            $index,
+                            'packagePriceInPaise',
+                            $any($event.target).value
+                          )
+                        "
+                      />
+                    }
+                    @if (showPerMinuteFields(service)) {
+                      <input
+                        type="number"
+                        [value]="service.freeMinutes || 0"
+                        placeholder="Free minutes"
+                        (input)="
+                          updateCareService(
+                            'edit',
+                            $index,
+                            'freeMinutes',
+                            $any($event.target).value
+                          )
+                        "
+                      />
+                      <input
+                        type="number"
+                        [value]="rupees(service.pricePerMinuteInPaise)"
+                        placeholder="₹ per minute"
+                        (input)="
+                          updateCareService(
+                            'edit',
+                            $index,
+                            'pricePerMinuteInPaise',
+                            $any($event.target).value
+                          )
+                        "
+                      />
+                    }
+                    <input
+                      type="number"
+                      [value]="service.durationMinutes || 30"
+                      placeholder="Minutes"
+                      (input)="
+                        updateCareService(
+                          'edit',
+                          $index,
+                          'durationMinutes',
+                          $any($event.target).value
+                        )
+                      "
+                    />
+                    <input
+                      [value]="service.description || ''"
+                      placeholder="Description"
+                      (input)="
+                        updateCareService('edit', $index, 'description', $any($event.target).value)
+                      "
+                    />
+                    <label
+                      ><input
+                        type="checkbox"
+                        [checked]="service.isActive !== false"
+                        (change)="
+                          updateCareService('edit', $index, 'isActive', $any($event.target).checked)
+                        "
+                      />
+                      Active</label
+                    >
+                    <button
+                      type="button"
+                      class="btn-secondary"
+                      (click)="removeCareService('edit', $index)"
+                    >
+                      Remove
+                    </button>
+                  </article>
+                }
+                <button type="button" class="btn-secondary" (click)="addCareService('edit')">
+                  Add service
+                </button>
+              </div>
+              <p class="field-hint">
+                Use pricing mode for fixed, first free, discounted first, package, per-minute, or
+                free emotional support listener support.
+              </p>
             </div>
-            <p class="field-hint">
-              Use pricing mode for fixed, first free, discounted first, package, per-minute, or free emotional support listener support.
-            </p>
-          </div>
-        }
-        <button type="button" (click)="saveDoctorEdits()" [disabled]="mutating()">
-          {{ mutating() ? 'Saving...' : 'Save changes' }}
-        </button>
-      </fieldset>
-    </article>
-  } @else {
-    <p>Select a {{ providerSingularLabel() }} from the list to view profile details.</p>
-  }
-</section>
+          }
+          <button type="button" (click)="saveDoctorEdits()" [disabled]="mutating()">
+            {{ mutating() ? 'Saving...' : 'Save changes' }}
+          </button>
+        </fieldset>
+      </article>
+    } @else {
+      <p>Select a {{ providerSingularLabel() }} from the list to view profile details.</p>
+    }
+  </section>
 </section>
 
 @if (message()) {

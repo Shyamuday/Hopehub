@@ -16,6 +16,19 @@ export type DoctorDetailSource = {
     registrationNo?: string;
     isAvailable?: boolean;
     doctorType?: HomeopathicDoctorType;
+    providerDomain?: 'HOMEOPATHY' | 'HOPE_HUB' | null;
+    providerClassification?: {
+      domain: 'HOMEOPATHY' | 'HOPE_HUB';
+      primaryRole: string | null;
+      roles: string[];
+    };
+    roleAssignments?: Array<{
+      roleCode: string;
+      isPrimary: boolean;
+      status: string;
+      credentialStatus: string;
+      role?: { label?: string; shortLabel?: string };
+    }>;
     specialtyFocus?: HomeopathicSpecialtyFocus | null;
     designation?: string | null;
     department?: string | null;
@@ -52,9 +65,58 @@ export const DOCTOR_DETAIL_FIELDS: DetailFieldDef<DoctorDetailSource>[] = [
   },
   { label: 'Mobile', getValue: (d) => d.mobile, emptyText: 'N/A' },
   {
-    label: 'Provider type',
+    label: 'Provider domain',
+    getValue: (d) => {
+      const domain =
+        d.doctorProfile?.providerClassification?.domain || d.doctorProfile?.providerDomain;
+      if (domain === 'HOPE_HUB') return 'Hope Hub';
+      if (domain === 'HOMEOPATHY') return 'Homeopathy';
+      return d.doctorProfile?.doctorType === 'PSYCHOLOGIST' ? 'Hope Hub' : 'Homeopathy';
+    },
+  },
+  {
+    label: 'Provider roles',
+    getValue: (d) => {
+      const assignments = (d.doctorProfile?.roleAssignments ?? []).filter(
+        (assignment) => assignment.status === 'ACTIVE',
+      );
+      if (assignments.length) {
+        return assignments
+          .map((assignment) => {
+            const label = assignment.role?.label || assignment.roleCode;
+            return assignment.isPrimary ? `${label} (primary)` : label;
+          })
+          .join(', ');
+      }
+      return (d.doctorProfile?.providerClassification?.roles ?? []).join(', ');
+    },
+    omitWhenEmpty: true,
+  },
+  {
+    label: 'Role verification',
     getValue: (d) =>
-      d.doctorProfile?.doctorType ? DOCTOR_TYPE_LABELS[d.doctorProfile.doctorType] : 'Not set',
+      (d.doctorProfile?.roleAssignments ?? [])
+        .filter((assignment) => assignment.status === 'ACTIVE')
+        .map((assignment) => {
+          const label =
+            assignment.role?.shortLabel || assignment.role?.label || assignment.roleCode;
+          const status = assignment.credentialStatus.toLowerCase().replaceAll('_', ' ');
+          return `${label}: ${status}`;
+        })
+        .join(', '),
+    omitWhenEmpty: true,
+  },
+  {
+    label: 'Homeopathy type',
+    getValue: (d) => {
+      const domain =
+        d.doctorProfile?.providerClassification?.domain || d.doctorProfile?.providerDomain;
+      if (domain === 'HOPE_HUB' || (!domain && d.doctorProfile?.doctorType === 'PSYCHOLOGIST')) {
+        return '';
+      }
+      return d.doctorProfile?.doctorType ? DOCTOR_TYPE_LABELS[d.doctorProfile.doctorType] : '';
+    },
+    omitWhenEmpty: true,
   },
   {
     label: 'Specialty focus',

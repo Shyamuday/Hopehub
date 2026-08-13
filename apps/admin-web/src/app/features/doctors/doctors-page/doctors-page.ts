@@ -44,6 +44,19 @@ type Doctor = {
     registrationNo?: string;
     isAvailable?: boolean;
     doctorType?: HomeopathicDoctorType;
+    providerDomain?: 'HOMEOPATHY' | 'HOPE_HUB' | null;
+    providerClassification?: {
+      domain: 'HOMEOPATHY' | 'HOPE_HUB';
+      primaryRole: string | null;
+      roles: string[];
+    };
+    roleAssignments?: Array<{
+      roleCode: string;
+      isPrimary: boolean;
+      status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED';
+      credentialStatus: 'NOT_REQUIRED' | 'PENDING' | 'VERIFIED' | 'EXPIRED' | 'REJECTED';
+      role?: { label?: string; shortLabel?: string; category?: string };
+    }>;
     specialtyFocus?: HomeopathicSpecialtyFocus | null;
     designation?: string | null;
     department?: string | null;
@@ -555,6 +568,8 @@ export class DoctorsPage {
           .filter(Boolean),
         mentalHealthProfile: this.isPsychologistType(edit.doctorType)
           ? {
+              primaryRoleCode: editCareTeamTypes[0],
+              roleCodes: editCareTeamTypes,
               qualifications: this.lines(edit.qualificationsText),
               careTeamType: editLegacyCareTeamTypes[0] || 'MENTAL_WELLNESS_PROFESSIONAL',
               careTeamTypes: editLegacyCareTeamTypes.length
@@ -582,12 +597,6 @@ export class DoctorsPage {
             }
           : undefined,
       });
-      if (this.isPsychologistType(edit.doctorType)) {
-        await this.api.updateProviderRoles(doctorId, {
-          primaryRoleCode: editCareTeamTypes[0],
-          roleCodes: editCareTeamTypes,
-        });
-      }
       this.message.set(`${this.providerSingularTitle()} profile updated.`);
       await this.load();
       this.selectedDoctorId = doctorId;
@@ -642,6 +651,8 @@ export class DoctorsPage {
           create.doctorType === 'SPECIALIST_CONSULTANT' ? create.specialtyFocus || null : null,
         mentalHealthProfile: this.isPsychologistType(create.doctorType)
           ? {
+              primaryRoleCode: createCareTeamTypes[0],
+              roleCodes: createCareTeamTypes,
               qualifications: this.lines(create.qualificationsText),
               careTeamType: createLegacyCareTeamTypes[0] || 'MENTAL_WELLNESS_PROFESSIONAL',
               careTeamTypes: createLegacyCareTeamTypes.length
@@ -663,13 +674,6 @@ export class DoctorsPage {
             }
           : undefined,
       });
-      const createdId = (created as any)?.doctor?.id;
-      if (createdId && this.isPsychologistType(create.doctorType)) {
-        await this.api.updateProviderRoles(createdId, {
-          primaryRoleCode: createCareTeamTypes[0],
-          roleCodes: createCareTeamTypes,
-        });
-      }
       this.message.set(`${this.providerSingularTitle()} created successfully.`);
       this.createModel.set(emptyCreateModel());
       this.createCareServices.set([]);
@@ -792,25 +796,16 @@ export class DoctorsPage {
   }
 
   supportPathForDoctor(doctor: Doctor) {
-    const mental = doctor.doctorProfile?.mentalHealthProfile;
-    const types = mental?.careTeamTypes?.length
-      ? mental.careTeamTypes
-      : mental?.careTeamType
-        ? [mental.careTeamType]
-        : [];
+    const types = this.providerRoleCodes(doctor);
     return (
-      HOPE_HUB_SUPPORT_PATHS.find((path) => types.some((type) => path.types.includes(type))) ||
-      HOPE_HUB_SUPPORT_PATHS[0]
+      HOPE_HUB_SUPPORT_PATHS.find((path) =>
+        types.some((type) => this.roleCategory(type) === path.value),
+      ) || HOPE_HUB_SUPPORT_PATHS[0]
     );
   }
 
   supportPathTypeSummary(doctor: Doctor): string {
-    const mental = doctor.doctorProfile?.mentalHealthProfile;
-    const types = mental?.careTeamTypes?.length
-      ? mental.careTeamTypes
-      : mental?.careTeamType
-        ? [mental.careTeamType]
-        : [];
+    const types = this.providerRoleCodes(doctor);
     return types
       .map(
         (type) => this.careTeamTypeOptions.find((option) => option.value === type)?.label || type,
@@ -818,15 +813,22 @@ export class DoctorsPage {
       .join(', ');
   }
 
+  providerPrimaryRoleLabel(doctor: Doctor): string {
+    const primary = this.providerPrimaryRole(doctor);
+    if (!primary) return 'Role not set';
+    return (
+      doctor.doctorProfile?.roleAssignments?.find((assignment) => assignment.roleCode === primary)
+        ?.role?.label ||
+      this.careTeamTypeOptions.find((option) => option.value === primary)?.label ||
+      primary
+    );
+  }
+
   providerReadinessIssues(doctor: Doctor): string[] {
     const profile = doctor.doctorProfile;
     const mental = profile?.mentalHealthProfile;
-    const types = mental?.careTeamTypes?.length
-      ? mental.careTeamTypes
-      : mental?.careTeamType
-        ? [mental.careTeamType]
-        : [];
-    const isHopeHub = profile?.doctorType === 'PSYCHOLOGIST';
+    const types = this.providerRoleCodes(doctor);
+    const isHopeHub = this.isHopeHubProvider(doctor);
     const isListener = providerHasRoleCategory(types, 'EMOTIONAL_LISTENER');
     const isClinical = !types.length || providerHasRoleCategory(types, 'PROFESSIONAL_CARE');
     const activeServices = mental?.services?.filter((service) => service.isActive !== false) ?? [];
@@ -1037,11 +1039,10 @@ export class DoctorsPage {
       websiteOrder: selected.doctorProfile?.websiteOrder ?? '',
       yearsOfExperience: selected.doctorProfile?.yearsOfExperience ?? '',
       focusAreasText: (selected.doctorProfile?.focusAreas ?? []).join('\n'),
-      careTeamType:
-        selected.doctorProfile?.mentalHealthProfile?.careTeamType ?? 'MENTAL_WELLNESS_PROFESSIONAL',
+      careTeamType: this.providerPrimaryRole(selected) ?? 'MENTAL_WELLNESS_PROFESSIONAL',
       careTeamTypes: this.normalizedCareTeamTypes(
-        selected.doctorProfile?.mentalHealthProfile?.careTeamType,
-        selected.doctorProfile?.mentalHealthProfile?.careTeamTypes,
+        this.providerPrimaryRole(selected),
+        this.providerRoleCodes(selected),
       ),
       qualificationsText: (selected.doctorProfile?.mentalHealthProfile?.qualifications ?? []).join(
         '\n',
@@ -1342,6 +1343,39 @@ export class DoctorsPage {
 
   isPsychologistType(type: HomeopathicDoctorType) {
     return type === 'PSYCHOLOGIST';
+  }
+
+  isHopeHubProvider(doctor: Doctor) {
+    const profile = doctor.doctorProfile;
+    return (
+      profile?.providerClassification?.domain === 'HOPE_HUB' ||
+      profile?.providerDomain === 'HOPE_HUB' ||
+      (!profile?.providerDomain && profile?.doctorType === 'PSYCHOLOGIST')
+    );
+  }
+
+  providerRoleCodes(doctor: Doctor): string[] {
+    const profile = doctor.doctorProfile;
+    const classified = profile?.providerClassification?.roles;
+    if (classified?.length) return classified;
+    const assigned = (profile?.roleAssignments ?? [])
+      .filter((assignment) => assignment.status === 'ACTIVE')
+      .map((assignment) => assignment.roleCode);
+    if (assigned.length) return Array.from(new Set(assigned));
+    const mental = profile?.mentalHealthProfile;
+    return this.normalizedCareTeamTypes(mental?.careTeamType, mental?.careTeamTypes);
+  }
+
+  providerPrimaryRole(doctor: Doctor): string | null {
+    const profile = doctor.doctorProfile;
+    return (
+      profile?.providerClassification?.primaryRole ??
+      profile?.roleAssignments?.find(
+        (assignment) => assignment.status === 'ACTIVE' && assignment.isPrimary,
+      )?.roleCode ??
+      profile?.mentalHealthProfile?.careTeamType ??
+      null
+    );
   }
 
   isClinicalHopeHubType(type?: CareTeamMemberType | null) {
