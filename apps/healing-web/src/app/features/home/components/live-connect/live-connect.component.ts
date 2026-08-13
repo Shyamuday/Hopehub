@@ -5,9 +5,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import {
-  AuthModalService,
   AuthService,
   BookingService,
+  LiveConnectActionService,
   NotificationService,
   PaymentService,
 } from '../../../../core/services';
@@ -50,13 +50,6 @@ import {
 
 type LiveConnectMode = ConsumerLiveConnectMode;
 type LiveConnectRoleGroup = '' | ConsumerSupportPath;
-type LiveConnectAlternativeMode = {
-  mode: LiveConnectMode;
-  label: string;
-  icon: string;
-  count: number;
-};
-
 @Component({
   selector: 'app-live-connect',
   standalone: true,
@@ -79,7 +72,7 @@ export class LiveConnectComponent implements OnInit {
   readonly ROUTES = CONSUMER_ROUTES;
   private readonly bookingService = inject(BookingService);
   private readonly authService = inject(AuthService);
-  private readonly authModalService = inject(AuthModalService);
+  private readonly liveConnectAction = inject(LiveConnectActionService);
   private readonly notificationService = inject(NotificationService);
   private readonly paymentService = inject(PaymentService);
   private readonly destroyRef = inject(DestroyRef);
@@ -101,8 +94,6 @@ export class LiveConnectComponent implements OnInit {
   readonly view = signal<'providers' | 'groups'>('providers');
   readonly mode = signal<LiveConnectMode>('chat');
   readonly roleGroup = signal<LiveConnectRoleGroup>('EMOTIONAL_LISTENER');
-  readonly alternativeModes = signal<LiveConnectAlternativeMode[]>([]);
-  readonly alternativeModesLoading = signal(false);
   readonly paymentFlowState = signal<PaymentFlowState>('IDLE');
   readonly paymentFlowError = signal('');
   readonly paymentFlowConsultation = signal<any | null>(null);
@@ -242,20 +233,6 @@ export class LiveConnectComponent implements OnInit {
     return 'You can reserve a private time that works for you, or explore the wider Hope Hub support team.';
   }
 
-  alternativeModesMessage(): string {
-    const alternatives = this.alternativeModes();
-    if (!alternatives.length) return '';
-    if (alternatives.length === 1) {
-      const item = alternatives[0];
-      return `${item.count} ${item.label.toLowerCase()} ${item.count === 1 ? 'expert is' : 'experts are'} live now.`;
-    }
-    return 'Other live options are available now.';
-  }
-
-  tryAlternativeMode(mode: LiveConnectMode): void {
-    this.setMode(mode);
-  }
-
   bookConsultation(): void {
     const supportPath = this.roleGroup();
     void this.router.navigate(['/contact'], {
@@ -371,8 +348,14 @@ export class LiveConnectComponent implements OnInit {
     this.pendingProvider.set(null);
     if (this.startingProviderId()) return;
     if (!this.currentUser()) {
-      this.notificationService.info(CONSUMER_UX_COPY.messages.authRequiredLive);
-      this.authModalService.openRegister();
+      await this.liveConnectAction.connect(provider, selectedMode, {
+        careTeamServiceId: this.providerServiceForMode(provider)?.id || '',
+        fallbackQueryParams: {
+          source: 'live-connect',
+          supportPath: this.roleGroup() || undefined,
+          preferredExpertType: supportPathMeta(supportPathForProvider(provider)).title,
+        },
+      });
       return;
     }
 
@@ -491,8 +474,6 @@ export class LiveConnectComponent implements OnInit {
   private loadProviders(): void {
     this.loading.set(true);
     this.message.set('');
-    this.alternativeModes.set([]);
-    this.alternativeModesLoading.set(false);
     this.bookingService
       .quickTalkProviders({
         roleGroup: this.roleGroup(),
@@ -508,8 +489,6 @@ export class LiveConnectComponent implements OnInit {
         },
         error: () => {
           this.providers.set([]);
-          this.alternativeModes.set([]);
-          this.alternativeModesLoading.set(false);
           this.loading.set(false);
           this.message.set(CONSUMER_UX_COPY.messages.liveConnectSlow);
         },
@@ -520,48 +499,6 @@ export class LiveConnectComponent implements OnInit {
     provider: HopeHubProvider,
   ): NonNullable<HopeHubProvider['services']>[number] | null {
     return providerServiceForLiveConnectMode(provider, this.mode());
-  }
-
-  private async loadAlternativeModes(
-    requestedMode: LiveConnectMode,
-    requestedRoleGroup: string,
-  ): Promise<void> {
-    const modes = this.modes.filter((item) => item.value !== requestedMode);
-    this.alternativeModesLoading.set(true);
-    try {
-      const alternatives = await Promise.all(
-        modes.map(async (item) => {
-          try {
-            const res = await firstValueFrom(
-              this.bookingService.quickTalkProviders({
-                roleGroup: requestedRoleGroup,
-                mode: item.value,
-              }),
-            );
-            const count = Math.max(Number(res.total || 0), res.providers?.length || 0);
-            return count > 0
-              ? {
-                  mode: item.value,
-                  label: item.label,
-                  icon: item.icon,
-                  count,
-                }
-              : null;
-          } catch {
-            return null;
-          }
-        }),
-      );
-
-      if (this.mode() !== requestedMode || this.roleGroup() !== requestedRoleGroup) return;
-      this.alternativeModes.set(
-        alternatives.filter((item): item is LiveConnectAlternativeMode => Boolean(item)),
-      );
-    } finally {
-      if (this.mode() === requestedMode && this.roleGroup() === requestedRoleGroup) {
-        this.alternativeModesLoading.set(false);
-      }
-    }
   }
 
   private loadGroups(): void {

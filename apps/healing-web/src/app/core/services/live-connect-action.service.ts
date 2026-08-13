@@ -1,4 +1,5 @@
-import { Injectable, inject } from '@angular/core';
+import { DestroyRef, Injectable, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import {
@@ -40,6 +41,7 @@ type QuickTalkResponse = {
 @Injectable({ providedIn: 'root' })
 export class LiveConnectActionService {
   private readonly authService = inject(AuthService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly authModalService = inject(AuthModalService);
   private readonly bookingService = inject(BookingService);
   private readonly notificationService = inject(NotificationService);
@@ -50,7 +52,7 @@ export class LiveConnectActionService {
   private replayingPending = false;
 
   constructor() {
-    this.authService.user$.subscribe((user) => {
+    this.authService.user$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((user) => {
       if (!user || this.replayingPending) return;
       void this.resumePendingAction();
     });

@@ -46,7 +46,7 @@ describe('LiveConnectActionService', () => {
   beforeEach(() => {
     user$.next(null);
     sessionStorage.clear();
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     router.navigate.mockResolvedValue(true);
     TestBed.configureTestingModule({
       providers: [
@@ -71,6 +71,30 @@ describe('LiveConnectActionService', () => {
     expect(authModalService.openRegister).toHaveBeenCalledOnce();
     expect(bookingService.createQuickTalk).not.toHaveBeenCalled();
     expect(sessionStorage.length).toBe(1);
+  });
+
+  it('resumes the stored provider and mode after login', async () => {
+    authService.getToken.mockReturnValue(null);
+    const service = TestBed.inject(LiveConnectActionService);
+    await service.connect(provider(), 'video');
+
+    bookingService.provider.mockReturnValue(of({ provider: provider() }));
+    bookingService.createQuickTalk.mockReturnValue(
+      of({
+        consultation: { id: 'consultation-after-login', payment: { amountInPaise: 0 } },
+        provider: { id: 'provider-1', userId: 'user-1', name: 'Asha' },
+      }),
+    );
+    authService.getToken.mockReturnValue('token');
+    user$.next({ id: 'patient-1' });
+
+    await vi.waitFor(() => {
+      expect(bookingService.createQuickTalk).toHaveBeenCalledWith(
+        expect.objectContaining({ providerId: 'provider-1', sessionMode: 'online_video' }),
+      );
+      expect(router.navigate).toHaveBeenCalledWith(['/live-session', 'consultation-after-login']);
+    });
+    expect(sessionStorage.length).toBe(0);
   });
 
   it('opens booking when the provider does not support the selected mode', async () => {
