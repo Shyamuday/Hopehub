@@ -16,15 +16,20 @@ import { BookingService, HopeHubProvider } from './booking.service';
 import { NotificationService } from './notification.service';
 import { PaymentService } from './payment.service';
 import { ConsumerFlowPreferencesService } from './consumer-flow-preferences.service';
-import { providerSessionModeFromValue } from '@hopehub/contracts';
+import { providerSessionModeFromValue, type ProviderConsumerSessionMode } from '@hopehub/contracts';
 
-export type LiveConnectActionMode = 'chat' | 'voice' | 'video' | 'book';
+export type LiveConnectActionMode = ProviderConsumerSessionMode | 'book';
 
 type PendingLiveConnectAction = {
   providerId: string;
   mode: LiveConnectActionMode;
   careTeamServiceId?: string;
   fallbackQueryParams?: Record<string, unknown>;
+};
+
+type QuickTalkResponse = {
+  consultation: any;
+  provider: { id: string; userId: string; name: string };
 };
 
 @Injectable({ providedIn: 'root' })
@@ -88,8 +93,9 @@ export class LiveConnectActionService {
       return;
     }
 
+    let response: QuickTalkResponse;
     try {
-      const response = await firstValueFrom(
+      response = await firstValueFrom(
         this.bookingService.createQuickTalk({
           providerId: provider.id,
           careTeamServiceId:
@@ -102,19 +108,39 @@ export class LiveConnectActionService {
           entryPage: typeof window === 'undefined' ? undefined : window.location.href,
         }),
       );
-
-      const payableInPaise = Number(response.consultation?.payment?.amountInPaise ?? 0);
-      if (payableInPaise > 0) {
-        await this.paymentService.payConsultation(response.consultation);
-      }
-
-      this.notificationService.success(`${consumerModeLabel(mode)} session confirmed.`);
-      await this.router.navigate(['/live-session', response.consultation?.id]);
     } catch (error) {
       const message = this.readErrorMessage(error);
       this.notificationService.error(message);
       await this.openBooking(provider, mode, options);
+      return;
     }
+
+    const consultation = response.consultation;
+    const consultationId = String(consultation?.id || '');
+    if (!consultationId) {
+      this.notificationService.error(CONSUMER_UX_COPY.messages.couldNotStartLive);
+      await this.router.navigate(CONSUMER_ROUTES.links.dashboard);
+      return;
+    }
+
+    const payableInPaise = Number(consultation?.payment?.amountInPaise ?? 0);
+    if (payableInPaise > 0) {
+      try {
+        await this.paymentService.payConsultation(consultation);
+      } catch (error) {
+        this.notificationService.error(this.readErrorMessage(error));
+        this.notificationService.info(
+          'Your session request is saved. You can retry payment from your dashboard.',
+        );
+        await this.router.navigate(CONSUMER_ROUTES.links.dashboard, {
+          queryParams: { consultationId, payment: 'pending' },
+        });
+        return;
+      }
+    }
+
+    this.notificationService.success(`${consumerModeLabel(mode)} session confirmed.`);
+    await this.router.navigate(['/live-session', consultationId]);
   }
 
   async openBooking(
@@ -148,7 +174,8 @@ export class LiveConnectActionService {
 
     try {
       this.replayingPending = true;
-      const pending = JSON.parse(raw) as PendingLiveConnectAction;
+      const pending = this.parsePendingAction(raw);
+      if (!pending) throw new Error('Invalid pending live-connect action.');
       const { provider } = await firstValueFrom(this.bookingService.provider(pending.providerId));
       await this.connect(provider, pending.mode, {
         careTeamServiceId: pending.careTeamServiceId,
@@ -165,7 +192,31 @@ export class LiveConnectActionService {
 
   private savePendingAction(action: PendingLiveConnectAction): void {
     if (typeof sessionStorage === 'undefined') return;
-    sessionStorage.setItem(this.pendingStorageKey, JSON.stringify(action));
+    try {
+      sessionStorage.setItem(this.pendingStorageKey, JSON.stringify(action));
+    } catch {
+      // Authentication can still continue when browser storage is unavailable.
+    }
+  }
+
+  private parsePendingAction(raw: string): PendingLiveConnectAction | null {
+    try {
+      const value = JSON.parse(raw) as Partial<PendingLiveConnectAction>;
+      if (!value || typeof value.providerId !== 'string' || !value.providerId.trim()) return null;
+      if (!['chat', 'voice', 'video'].includes(String(value.mode))) return null;
+      return {
+        providerId: value.providerId,
+        mode: value.mode as ProviderConsumerSessionMode,
+        careTeamServiceId:
+          typeof value.careTeamServiceId === 'string' ? value.careTeamServiceId : undefined,
+        fallbackQueryParams:
+          value.fallbackQueryParams && typeof value.fallbackQueryParams === 'object'
+            ? value.fallbackQueryParams
+            : undefined,
+      };
+    } catch {
+      return null;
+    }
   }
 
   private savePreference(

@@ -1,8 +1,9 @@
 import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
+import type { ProviderConsumerSessionMode } from '@hopehub/contracts';
 import { CONSUMER_CONNECT_MODE_META } from '../../../core/constants/consumer-form-options.constants';
 import { ConnectComfortDialogComponent } from '../connect-comfort-dialog/connect-comfort-dialog.component';
 
-export type ConnectOptionMode = 'chat' | 'voice' | 'video' | 'book';
+export type ConnectOptionMode = ProviderConsumerSessionMode | 'book';
 type DirectConnectOptionMode = Exclude<ConnectOptionMode, 'book'>;
 
 @Component({

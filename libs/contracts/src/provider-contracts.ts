@@ -1,12 +1,13 @@
 export const PROVIDER_SESSION_MODES = ['CHAT', 'VOICE', 'VIDEO'] as const;
 export type ProviderSessionMode = (typeof PROVIDER_SESSION_MODES)[number];
+export type ProviderConsumerSessionMode = 'chat' | 'voice' | 'video';
 
 export type ProviderSessionModeDefinition = {
   code: ProviderSessionMode;
   label: string;
   icon: string;
   description: string;
-  consumerValue: 'chat' | 'voice' | 'video';
+  consumerValue: ProviderConsumerSessionMode;
   sessionTypeValue: 'live_chat' | 'online_audio' | 'online_video';
   aliases: readonly string[];
 };
@@ -49,9 +50,7 @@ export const PROVIDER_SESSION_MODE_OPTIONS = PROVIDER_SESSION_MODES.map((value) 
   label: PROVIDER_SESSION_MODE_DEFINITIONS[value].label
 }));
 
-export function providerSessionModeFromValue(
-  value?: string | null
-): ProviderSessionMode | null {
+export function providerSessionModeFromValue(value?: string | null): ProviderSessionMode | null {
   const normalized = value?.trim().toLowerCase();
   if (!normalized) return null;
   return (
@@ -67,10 +66,7 @@ export function providerSessionModeFromValue(
   );
 }
 
-export function providerSessionModeMatchesText(
-  mode: ProviderSessionMode,
-  text: string
-): boolean {
+export function providerSessionModeMatchesText(mode: ProviderSessionMode, text: string): boolean {
   const normalized = text.toLowerCase();
   if (mode === 'VOICE' && normalized.includes('video')) return false;
   return PROVIDER_SESSION_MODE_DEFINITIONS[mode].aliases.some((alias) =>
