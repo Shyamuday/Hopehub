@@ -8,6 +8,7 @@ import {
   normalizeProviderRoles,
   providerClassificationFromAssignments,
   providerClassificationFromLegacy,
+  providerConsumerSessionModeListLabel,
   providerHasRoleCategory,
   providerSessionModeFromValue,
   providerSessionModeMatchesText
@@ -18,6 +19,7 @@ test('session modes have one canonical API and UI definition', () => {
   assert.equal(providerSessionModeFromValue('online_audio'), 'VOICE');
   assert.equal(providerSessionModeFromValue('chat'), 'CHAT');
   assert.equal(providerSessionModeFromValue('VIDEO'), 'VIDEO');
+  assert.equal(providerConsumerSessionModeListLabel(['chat', 'voice']), 'Chat and Voice');
   assert.equal(providerSessionModeMatchesText('VOICE', 'Video call'), false);
   for (const mode of PROVIDER_SESSION_MODES) {
     assert.equal(PROVIDER_SESSION_MODE_DEFINITIONS[mode].code, mode);

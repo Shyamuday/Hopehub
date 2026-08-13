@@ -29,7 +29,13 @@
         <div class="panel-head">
           <div>
             <h2>Conversation</h2>
-            <p class="muted">Chat, voice, and video for this assigned session.</p>
+            <p class="muted">
+              @if (canSwitchModes()) {
+                The user can switch between {{ switchableModesLabel() }} at any time.
+              } @else {
+                Chat, voice, and video controls for this assigned session.
+              }
+            </p>
           </div>
           <div class="inbox-actions">
             @if (capabilities().caseAnalysis) {

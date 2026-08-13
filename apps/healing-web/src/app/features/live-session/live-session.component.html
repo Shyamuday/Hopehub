@@ -217,7 +217,11 @@
           <div class="side-card">
             <p class="side-eyebrow">Call</p>
             <p class="mb-3 mt-1 text-sm leading-6 text-slate-600">
-              Use this when both you and the expert are ready. Browser may ask for mic/camera permission.
+              @if (canSwitchModes()) {
+                You can switch between {{ switchableModesLabel() }} at any time.
+              } @else {
+                Use this when both you and the expert are ready. Browser may ask for mic/camera permission.
+              }
             </p>
             <hopehub-consultation-call-panel
               [consultationId]="session.id"

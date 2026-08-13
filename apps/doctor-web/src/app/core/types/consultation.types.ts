@@ -80,7 +80,7 @@ export type DoctorConsultation = {
     sessionOutcome?: ConsultationSessionOutcome | null;
     [key: string]: unknown;
   } | null;
-  intakeAnswers?: Record<string, string> | null;
+  intakeAnswers?: Record<string, unknown> | null;
   patient?: { id: string; name: string; patientCode?: string | null };
   disease?: { id: string; name: string; intakeQuestions?: string[] };
   messages?: ConsultationMessage[];

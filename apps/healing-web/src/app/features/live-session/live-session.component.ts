@@ -9,6 +9,7 @@ import { HopeHubRealtimeService } from '../../core/services/realtime.service';
 import { User } from '../../core/models/auth.model';
 import type { CallSignalingSocket, IceServerConfig } from '@hopehub/platform-ui';
 import { ConsultationCallPanelComponent } from '@hopehub/platform-ui';
+import { providerConsumerSessionModeListLabel } from '@hopehub/contracts';
 import { AppButtonComponent } from '../../shared/components';
 import { SessionFeedbackComponent } from '../../shared/components/session-feedback/session-feedback.component';
 
@@ -36,6 +37,8 @@ type LiveSessionConsultation = {
     requestedProviderName?: string;
     careTeamPricingLabel?: string;
     preferredExpertType?: string;
+    allowedSessionModes?: string[];
+    allowModeSwitching?: boolean;
   } | null;
   pricingSnapshot?: {
     serviceName?: string | null;
@@ -194,6 +197,23 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
     return 'Live session';
   }
 
+  allowedSessionModes(): Array<'chat' | 'voice' | 'video'> {
+    const configured = this.consultation()?.intakeAnswers?.allowedSessionModes || [];
+    const valid = configured.filter(
+      (mode): mode is 'chat' | 'voice' | 'video' =>
+        mode === 'chat' || mode === 'voice' || mode === 'video',
+    );
+    return valid.length ? valid : [this.normalizedMode()].filter((mode) => mode !== 'session');
+  }
+
+  canSwitchModes(): boolean {
+    return this.allowedSessionModes().length > 1;
+  }
+
+  switchableModesLabel(): string {
+    return providerConsumerSessionModeListLabel(this.allowedSessionModes());
+  }
+
   normalizedMode(): 'chat' | 'voice' | 'video' | 'session' {
     const consultation = this.consultation();
     const raw = (
@@ -326,18 +346,16 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
   }
 
   showCallPanel(): boolean {
-    const mode = this.normalizedMode();
-    return this.canInteract() && mode !== 'chat';
+    return this.canInteract() && (this.allowAudioCall() || this.allowVideoCall());
   }
 
   allowAudioCall(): boolean {
-    const mode = this.normalizedMode();
-    return mode === 'voice' || mode === 'video' || mode === 'session';
+    const allowed = this.allowedSessionModes();
+    return allowed.includes('voice') || this.normalizedMode() === 'session';
   }
 
   allowVideoCall(): boolean {
-    const mode = this.normalizedMode();
-    return mode === 'video' || mode === 'session';
+    return this.allowedSessionModes().includes('video') || this.normalizedMode() === 'session';
   }
 
   isOwnMessage(message: LiveSessionMessage): boolean {

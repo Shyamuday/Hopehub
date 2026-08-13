@@ -23,6 +23,7 @@ import type {
   ConsultationSessionNote,
   DoctorConsultation,
 } from '../../core/types/consultation.types';
+import { providerConsumerSessionModeListLabel } from '@hopehub/contracts';
 
 type LiveSessionOutcome = 'COMPLETED' | 'USER_MISSED' | 'PROVIDER_NO_SHOW' | 'RESCHEDULE_NEEDED';
 
@@ -162,18 +163,34 @@ export class DoctorLiveSessionPage implements OnInit, OnDestroy {
     return 'live';
   }
 
+  allowedSessionModes(): Array<'chat' | 'voice' | 'video'> {
+    const configured = this.consultation()?.intakeAnswers?.['allowedSessionModes'];
+    const values = Array.isArray(configured) ? configured : [];
+    const valid = values.filter(
+      (mode): mode is 'chat' | 'voice' | 'video' =>
+        mode === 'chat' || mode === 'voice' || mode === 'video',
+    );
+    return valid.length ? valid : [this.sessionMode()].filter((mode) => mode !== 'live');
+  }
+
+  canSwitchModes(): boolean {
+    return this.allowedSessionModes().length > 1;
+  }
+
+  switchableModesLabel(): string {
+    return providerConsumerSessionModeListLabel(this.allowedSessionModes());
+  }
+
   showCallControls(): boolean {
-    return this.sessionMode() !== 'chat';
+    return this.allowAudioCall() || this.allowVideoCall();
   }
 
   allowAudioCall(): boolean {
-    const mode = this.sessionMode();
-    return mode === 'voice' || mode === 'video' || mode === 'live';
+    return this.allowedSessionModes().includes('voice') || this.sessionMode() === 'live';
   }
 
   allowVideoCall(): boolean {
-    const mode = this.sessionMode();
-    return mode === 'video' || mode === 'live';
+    return this.allowedSessionModes().includes('video') || this.sessionMode() === 'live';
   }
 
   concernLabel(): string {

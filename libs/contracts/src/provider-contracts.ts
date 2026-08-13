@@ -2,6 +2,16 @@ export const PROVIDER_SESSION_MODES = ['CHAT', 'VOICE', 'VIDEO'] as const;
 export type ProviderSessionMode = (typeof PROVIDER_SESSION_MODES)[number];
 export type ProviderConsumerSessionMode = 'chat' | 'voice' | 'video';
 
+export function providerConsumerSessionModeListLabel(
+  modes: readonly ProviderConsumerSessionMode[]
+): string {
+  const labels = modes.map(
+    (mode) => PROVIDER_SESSION_MODE_DEFINITIONS[mode.toUpperCase() as ProviderSessionMode].label
+  );
+  if (labels.length < 2) return labels[0] || 'your available mode';
+  return `${labels.slice(0, -1).join(', ')} and ${labels.at(-1)}`;
+}
+
 export type ProviderSessionModeDefinition = {
   code: ProviderSessionMode;
   label: string;

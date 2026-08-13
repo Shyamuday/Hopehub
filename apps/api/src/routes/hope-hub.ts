@@ -41,6 +41,14 @@ import { settleConsultationPaymentRewards } from '../services/reward-settlement.
 import { notifyConsultationBooked } from '../services/consultation-reminders.js';
 import { markDoctorBusy } from '../services/online-doctor-presence.js';
 import { emitHopeHubLiveGroupMessage } from '../services/hope-hub-live-groups-realtime.js';
+import {
+  normalizeQuickTalkMode,
+  quickTalkAvailabilityWhere,
+  quickTalkModeWhere,
+  quickTalkSessionModeLabel,
+  requestedQuickTalkMode,
+  type HopeHubQuickTalkMode
+} from '../services/quick-talk-modes.js';
 import { providerPublicReadiness } from '../doctor-capabilities.js';
 import {
   listProviderRoles,
@@ -1765,27 +1773,6 @@ async function activeHopeHubProviders(params: {
   };
 }
 
-type HopeHubQuickTalkMode = 'chat' | 'voice' | 'video';
-
-function normalizeQuickTalkMode(value: unknown): HopeHubQuickTalkMode {
-  const raw = String(value || '').toLowerCase();
-  if (raw.includes('video')) return 'video';
-  if (raw.includes('chat') || raw.includes('message')) return 'chat';
-  return 'voice';
-}
-
-function quickTalkSessionModeLabel(mode: HopeHubQuickTalkMode) {
-  if (mode === 'chat') return 'live_chat';
-  if (mode === 'video') return 'online_video';
-  return 'online_audio';
-}
-
-function quickTalkModeWhere(mode: HopeHubQuickTalkMode) {
-  if (mode === 'chat') return { acceptsChat: true };
-  if (mode === 'video') return { acceptsVideoCall: true };
-  return { acceptsVoiceCall: true };
-}
-
 function careTeamServiceMatchesQuickTalkMode(
   service: { title?: string | null; description?: string | null },
   mode: HopeHubQuickTalkMode
@@ -1829,7 +1816,7 @@ async function activeLiveHopeHubProviders(params: {
   gender?: string;
   mode?: string;
 }) {
-  const mode = normalizeQuickTalkMode(params.mode);
+  const mode = requestedQuickTalkMode(params.mode);
   const providerResponse = await activeHopeHubProviders({
     ...params,
     page: 1,
@@ -1844,7 +1831,7 @@ async function activeLiveHopeHubProviders(params: {
       userId: { in: providerUserIds },
       enabled: true,
       liveStatus: LivePresenceStatus.ONLINE,
-      ...quickTalkModeWhere(mode),
+      ...quickTalkAvailabilityWhere(params.mode),
       lastHeartbeatAt: { gte: new Date(Date.now() - 90_000) }
     },
     select: {
@@ -1869,7 +1856,7 @@ async function activeLiveHopeHubProviders(params: {
         acceptsChat: session.acceptsChat,
         acceptsVoiceCall: session.acceptsVoiceCall,
         acceptsVideoCall: session.acceptsVideoCall,
-        liveConnectMode: mode,
+        liveConnectMode: mode || 'available',
         wentLiveAt: session.wentLiveAt?.toISOString() ?? null
       };
     });
@@ -1900,6 +1887,13 @@ async function findLiveHopeHubProviderForQuickTalk(params: {
       id: true,
       userId: true,
       user: { select: { name: true } },
+      onlineSession: {
+        select: {
+          acceptsChat: true,
+          acceptsVoiceCall: true,
+          acceptsVideoCall: true
+        }
+      },
       mentalHealthProfile: {
         select: {
           careTeamType: true,
@@ -3169,6 +3163,11 @@ hopeHubRouter.post(
       selectedServiceDurationMinutes,
       amountInPaise
     );
+    const allowedSessionModes = [
+      provider.onlineSession?.acceptsChat ? 'chat' : '',
+      provider.onlineSession?.acceptsVoiceCall ? 'voice' : '',
+      provider.onlineSession?.acceptsVideoCall ? 'video' : ''
+    ].filter(Boolean);
 
     const disease = await prisma.disease.upsert({
       where: { name: effectiveServiceName },
@@ -3244,6 +3243,8 @@ hopeHubRouter.post(
           providerRoles: sessionProviderRoles,
           sessionMode: normalizedSessionMode,
           quickTalkMode,
+          allowedSessionModes,
+          allowModeSwitching: allowedSessionModes.length > 1,
           preferredLanguage: body.preferredLanguage || '',
           preferredProviderGender: body.preferredProviderGender || '',
           safetyRisk: body.safetyRisk || '',
@@ -3262,6 +3263,8 @@ hopeHubRouter.post(
           requestedProviderName: provider.user.name,
           sessionMode: normalizedSessionMode,
           quickTalkMode,
+          allowedSessionModes,
+          allowModeSwitching: allowedSessionModes.length > 1,
           careTeamServiceId: careTeamService?.id || null,
           careTeamServiceTitle: careTeamService?.title || null,
           careTeamPricingMode: careTeamService?.pricingMode || null,

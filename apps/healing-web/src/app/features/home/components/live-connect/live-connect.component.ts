@@ -77,6 +77,7 @@ export class LiveConnectComponent implements OnInit {
   private readonly paymentService = inject(PaymentService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
+  private providerRequestVersion = 0;
 
   readonly currentUser = signal<User | null>(null);
   readonly providers = signal<HopeHubProvider[]>([]);
@@ -472,15 +473,17 @@ export class LiveConnectComponent implements OnInit {
   }
 
   private loadProviders(): void {
+    const requestVersion = ++this.providerRequestVersion;
     this.loading.set(true);
     this.message.set('');
     this.bookingService
       .quickTalkProviders({
         roleGroup: this.roleGroup(),
-        mode: this.mode(),
       })
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
+          if (requestVersion !== this.providerRequestVersion) return;
           this.providers.set(res.providers.slice(0, 8));
           this.loading.set(false);
           if (!res.providers.length) {
@@ -488,6 +491,7 @@ export class LiveConnectComponent implements OnInit {
           }
         },
         error: () => {
+          if (requestVersion !== this.providerRequestVersion) return;
           this.providers.set([]);
           this.loading.set(false);
           this.message.set(CONSUMER_UX_COPY.messages.liveConnectSlow);

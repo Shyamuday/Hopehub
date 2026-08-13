@@ -1,4 +1,5 @@
 import type { Server as SocketIoServer, Socket } from 'socket.io';
+import { consultationAllowsCallMode } from '../services/quick-talk-modes.js';
 import { ConsultationStatus, LivePresenceStatus, Role } from '@prisma/client';
 import { SOCKET_EVENTS, SOCKET_ROOM_PREFIXES } from '../constants/socket.constants.js';
 import { prisma } from '../db.js';
@@ -31,35 +32,6 @@ function safeCallReason(reason: unknown, fallback: string): string {
     .replace(/[^a-z0-9:_-]/g, '_')
     .slice(0, 80);
   return trimmed || fallback;
-}
-
-function asRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === 'object' && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : {};
-}
-
-function normalizedCallMode(value: unknown): 'audio' | 'video' | '' {
-  const text = String(value || '').toLowerCase();
-  if (text.includes('video')) return 'video';
-  if (text.includes('voice') || text.includes('audio') || text.includes('call')) return 'audio';
-  return '';
-}
-
-function consultationAllowsCallMode(intakeAnswers: unknown, requestedMode?: string): boolean {
-  const mode = normalizedCallMode(requestedMode);
-  if (!mode) return true;
-
-  const intake = asRecord(intakeAnswers);
-  const sessionMode = normalizedCallMode(
-    intake['quickTalkMode'] || intake['sessionMode'] || intake['mode']
-  );
-  const rawSessionMode = String(
-    intake['quickTalkMode'] || intake['sessionMode'] || intake['mode'] || ''
-  ).toLowerCase();
-  if (rawSessionMode.includes('chat')) return false;
-  if (sessionMode === 'audio' && mode === 'video') return false;
-  return true;
 }
 
 async function validateCallSignalAccess(fromUserId: string, payload: CallSignalPayload) {
