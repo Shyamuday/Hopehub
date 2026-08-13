@@ -46,6 +46,7 @@ export class ListenerScreeningPage {
   private readonly apiBase = environment.apiUrl;
 
   readonly dashboardPath = `/${ROUTE_PATHS.DASHBOARD}`;
+  readonly availabilityPath = `/${ROUTE_PATHS.SLOTS}`;
   readonly loading = signal(true);
   readonly submitting = signal(false);
   readonly questionSet = signal<ScreeningQuestionSet | null>(null);
@@ -152,8 +153,8 @@ export class ListenerScreeningPage {
       this.result.set(response.result);
       await this.session.load(true);
       if (response.result.passed) {
-        await this.router.navigate(['/', ROUTE_PATHS.DASHBOARD], {
-          queryParams: { setup: 'complete' },
+        await this.router.navigate(['/', ROUTE_PATHS.SLOTS], {
+          queryParams: { setup: 'availability' },
         });
       }
     } catch (error: any) {

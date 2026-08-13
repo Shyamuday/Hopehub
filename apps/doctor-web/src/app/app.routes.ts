@@ -133,7 +133,7 @@ export const routes: Routes = [
       {
         path: ROUTE_PATHS.SLOTS,
         component: SlotsPage,
-        canActivate: [providerOnboardingGuard, providerCapabilityGuard],
+        canActivate: [providerCapabilityGuard],
         data: { capability: 'slots' },
       },
       {

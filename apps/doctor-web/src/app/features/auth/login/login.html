@@ -1,9 +1,9 @@
 <section class="login-card">
   <div class="switcher">
-    <button type="button" [class.active]="mode() === 'signup'" (click)="mode.set('signup')">
+    <button type="button" [class.active]="mode() === 'signup'" (click)="setMode('signup')">
       Sign up
     </button>
-    <button type="button" [class.active]="mode() === 'signin'" (click)="mode.set('signin')">
+    <button type="button" [class.active]="mode() === 'signin'" (click)="setMode('signin')">
       Sign in
     </button>
   </div>
@@ -122,69 +122,87 @@
       </button>
     </form>
   } @else {
-    <h2>Create account</h2>
-    <p>
-      Create your account first. We will ask a few simple questions and guide the rest one step at a
-      time.
-    </p>
-
-    <form (submit)="$event.preventDefault(); enroll()">
-      <label for="name">Full name</label>
-      <input id="name" [formField]="enrollForm.name" />
-
-      <label for="enrollEmail">Email</label>
-      <input id="enrollEmail" [formField]="signInForm.email" type="email" />
-
-      <label for="mobile">Mobile number</label>
-      <input
-        id="mobile"
-        [formField]="enrollForm.mobile"
-        type="tel"
-        inputmode="tel"
-        autocomplete="tel"
-        placeholder="Your mobile number"
-      />
-
-      <label for="enrollPassword">Password</label>
-      <div class="password-input-wrap">
-        <input
-          id="enrollPassword"
-          [formField]="signInForm.password"
-          [type]="showEnrollPassword() ? 'text' : 'password'"
-          autocomplete="new-password"
-        />
-        <button
-          type="button"
-          class="password-toggle"
-          (click)="showEnrollPassword.set(!showEnrollPassword())"
-        >
-          {{ showEnrollPassword() ? 'Hide' : 'Show' }}
-        </button>
+    <div class="signup-heading">
+      <div>
+        <span class="eyebrow">Step {{ signupStep() }} of 2</span>
+        <h2>{{ signupStep() === 1 ? 'Start with the basics' : 'Secure your account' }}</h2>
       </div>
+      <span class="signup-step-count">{{ signupStep() }}/2</span>
+    </div>
+    <div class="signup-progress" aria-label="Account creation progress">
+      <i [style.width.%]="signupStep() * 50"></i>
+    </div>
 
-      <label for="confirmPassword">Confirm password</label>
-      <div class="password-input-wrap">
+    <form
+      (submit)="$event.preventDefault(); signupStep() === 1 ? continueSignup() : enroll()"
+      class="signup-form"
+    >
+      @if (signupStep() === 1) {
+        <label for="name">Full name</label>
+        <input id="name" [formField]="enrollForm.name" autocomplete="name" placeholder="Your name" />
+
+        <label for="enrollEmail">Email</label>
+        <input id="enrollEmail" [formField]="signInForm.email" type="email" autocomplete="email" placeholder="you@example.com" />
+
+        <label for="mobile">Mobile number</label>
         <input
-          id="confirmPassword"
-          [formField]="enrollForm.confirmPassword"
-          [type]="showConfirmPassword() ? 'text' : 'password'"
-          autocomplete="new-password"
+          id="mobile"
+          [formField]="enrollForm.mobile"
+          type="tel"
+          inputmode="tel"
+          autocomplete="tel"
+          placeholder="Your mobile number"
         />
-        <button
-          type="button"
-          class="password-toggle"
-          (click)="showConfirmPassword.set(!showConfirmPassword())"
-        >
-          {{ showConfirmPassword() ? 'Hide' : 'Show' }}
-        </button>
-      </div>
+      } @else {
+        <div class="signup-summary">
+          <span>{{ enrollModel().name }}</span>
+          <small>{{ signInModel().email }} · {{ enrollModel().mobile }}</small>
+          <button type="button" (click)="backToSignupDetails()">Edit</button>
+        </div>
 
-      @if (
-        signInModel().password &&
-        enrollModel().confirmPassword &&
-        signInModel().password !== enrollModel().confirmPassword
-      ) {
-        <p class="error">Passwords do not match</p>
+        <label for="enrollPassword">Create password</label>
+        <div class="password-input-wrap">
+          <input
+            id="enrollPassword"
+            [formField]="signInForm.password"
+            [type]="showEnrollPassword() ? 'text' : 'password'"
+            autocomplete="new-password"
+            placeholder="At least 8 characters"
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="showEnrollPassword.set(!showEnrollPassword())"
+          >
+            {{ showEnrollPassword() ? 'Hide' : 'Show' }}
+          </button>
+        </div>
+
+        <label for="confirmPassword">Confirm password</label>
+        <div class="password-input-wrap">
+          <input
+            id="confirmPassword"
+            [formField]="enrollForm.confirmPassword"
+            [type]="showConfirmPassword() ? 'text' : 'password'"
+            autocomplete="new-password"
+            placeholder="Type it once more"
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="showConfirmPassword.set(!showConfirmPassword())"
+          >
+            {{ showConfirmPassword() ? 'Hide' : 'Show' }}
+          </button>
+        </div>
+
+        @if (
+          signInModel().password &&
+          enrollModel().confirmPassword &&
+          signInModel().password !== enrollModel().confirmPassword
+        ) {
+          <p class="error">Passwords do not match</p>
+        }
       }
 
       @if (error()) {
@@ -196,12 +214,21 @@
 
       <app-button
         type="submit"
-        [disabled]="submitting() || !canSignup()"
+        [disabled]="submitting() || (signupStep() === 2 && !canSignup())"
         [loading]="submitting()"
         block
       >
-        {{ submitting() ? 'Creating account...' : 'Create account' }}
+        {{
+          submitting()
+            ? 'Creating account...'
+            : signupStep() === 1
+              ? 'Continue'
+              : 'Create account'
+        }}
       </app-button>
+      @if (signupStep() === 2) {
+        <button type="button" class="signup-back" (click)="backToSignupDetails()">Back</button>
+      }
     </form>
   }
 </section>

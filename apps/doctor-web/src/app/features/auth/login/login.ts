@@ -18,6 +18,7 @@ export class Login {
   private readonly route = inject(ActivatedRoute);
 
   mode = signal<'signin' | 'signup'>('signup');
+  signupStep = signal<1 | 2>(1);
   loginMode = signal<'otp' | 'password'>('otp');
   otp = signal('');
   otpSent = signal(false);
@@ -49,6 +50,13 @@ export class Login {
   submitting = signal(false);
   readonly phLanguage = PH_PROVIDER_LANGUAGE;
 
+  setMode(mode: 'signin' | 'signup'): void {
+    this.mode.set(mode);
+    this.error.set('');
+    this.message.set('');
+    if (mode === 'signup') this.signupStep.set(1);
+  }
+
   setLoginMode(mode: 'otp' | 'password'): void {
     this.loginMode.set(mode);
     this.error.set('');
@@ -70,6 +78,30 @@ export class Login {
       password.length >= 8 &&
       password === enroll.confirmPassword
     );
+  }
+
+  canContinueSignup(): boolean {
+    const email = this.signInModel().email.trim();
+    const { name, mobile } = this.enrollModel();
+    return (
+      name.trim().length >= 2 &&
+      /^\S+@\S+\.\S+$/.test(email) &&
+      mobile.replace(/\D/g, '').length >= 8
+    );
+  }
+
+  continueSignup(): void {
+    if (!this.canContinueSignup()) {
+      this.error.set('Add your name, a valid email, and mobile number to continue.');
+      return;
+    }
+    this.error.set('');
+    this.signupStep.set(2);
+  }
+
+  backToSignupDetails(): void {
+    this.error.set('');
+    this.signupStep.set(1);
   }
 
   private navigateAfterLogin(): void {
@@ -200,7 +232,7 @@ export class Login {
         await this.router.navigate(['/welcome']);
         return;
       }
-      this.mode.set('signin');
+      this.setMode('signin');
       this.message.set('Account created. Sign in to choose your support path.');
     } finally {
       this.submitting.set(false);

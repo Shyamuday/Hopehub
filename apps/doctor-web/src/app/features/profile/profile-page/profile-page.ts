@@ -484,7 +484,7 @@ export class ProfilePage implements OnDestroy {
         id: 'identity' as const,
         label: 'Identity',
         title: 'Basic identity',
-        description: 'Name, mobile, gender, photo, availability, and role basics.',
+        description: 'Add the essentials people need to recognise and trust you.',
         complete:
           Boolean(this.profileImageUrl) &&
           form.name.trim().length >= 2 &&
@@ -497,7 +497,7 @@ export class ProfilePage implements OnDestroy {
         id: 'public' as const,
         label: 'Public profile',
         title: 'Public profile',
-        description: 'Bio, experience, and focus areas shown to users.',
+        description: 'Help people understand who you are and how you can support them.',
         complete:
           form.bio.trim().length >= 80 &&
           (this.isPsychologist || this.lines(form.focusAreasText).length > 0),
@@ -507,7 +507,7 @@ export class ProfilePage implements OnDestroy {
         id: 'care' as const,
         label: 'Support details',
         title: 'How you support people',
-        description: 'Your support type, background, languages, session styles, and focus areas.',
+        description: 'Choose the support, languages, and session styles you genuinely offer.',
         complete:
           !this.isPsychologist ||
           (this.structuredProfileCareTeamTypes(form.careTeamTypes).length > 0 &&
@@ -524,7 +524,7 @@ export class ProfilePage implements OnDestroy {
         id: 'safety' as const,
         label: 'Safety',
         title: 'Safety & scope',
-        description: 'Approach, escalation note, and listener acknowledgement.',
+        description: 'Set clear boundaries so every conversation remains safe.',
         complete:
           !this.isPsychologist ||
           (form.safetyEscalationNote.trim().length >= 20 &&
@@ -534,8 +534,8 @@ export class ProfilePage implements OnDestroy {
       {
         id: 'services' as const,
         label: 'Services',
-        title: 'Services & pricing',
-        description: 'Booking settings, active plans, limits, and public availability.',
+        title: 'Your first service',
+        description: 'Start with one simple plan. You can add advanced pricing later.',
         complete: !this.isPsychologist || activeServices.length > 0,
         missing: servicesMissing,
       },
@@ -623,7 +623,9 @@ export class ProfilePage implements OnDestroy {
         await this.router.navigate(['/', ROUTE_PATHS.LISTENER_SCREENING]);
         return;
       }
-      await this.router.navigate(['/dashboard'], { queryParams: { setup: 'complete' } });
+      await this.router.navigate(['/', ROUTE_PATHS.SLOTS], {
+        queryParams: { setup: 'availability' },
+      });
       return;
     }
     const steps = this.setupStepItems();
@@ -632,6 +634,25 @@ export class ProfilePage implements OnDestroy {
     if (next) {
       this.activeSetupStep.set(next.id);
     }
+  }
+
+  previousSetupStep() {
+    const steps = this.setupStepItems();
+    const index = steps.findIndex((step) => step.id === this.activeSetupStep());
+    if (index > 0) this.activeSetupStep.set(steps[index - 1].id);
+  }
+
+  canGoToPreviousSetupStep() {
+    const steps = this.setupStepItems();
+    return steps.findIndex((step) => step.id === this.activeSetupStep()) > 0;
+  }
+
+  setupContinueLabel() {
+    const steps = this.setupStepItems();
+    const lastStep = steps[steps.length - 1]?.id === this.activeSetupStep();
+    if (!lastStep) return 'Continue';
+    if (this.isListenerProfile() && !this.listenerScreeningPassed) return 'Continue to screening';
+    return 'Continue to availability';
   }
 
   async loadCarePricingTemplates() {

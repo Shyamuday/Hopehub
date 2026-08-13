@@ -48,6 +48,18 @@
   max-width: 100%;
 }
 
+.shell-body.setup-mode {
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--color-brand) 8%, transparent), transparent 32rem),
+    var(--color-bg);
+
+  .content {
+    margin: 0 auto;
+    max-width: 58rem;
+    padding-top: clamp(0.75rem, 3vw, 2rem);
+  }
+}
+
 .setup-mode-card {
   border: 1px solid #fed7aa;
   border-radius: var(--radius-md);

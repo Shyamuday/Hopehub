@@ -77,8 +77,8 @@ export class DoctorShell implements OnInit, OnDestroy {
   acceptingIncomingAssignment = signal(false);
   incomingSecondsRemaining = signal(60);
   incomingAssignmentError = signal('');
-  onboardingComplete = signal(true);
-  onboardingPercent = signal(100);
+  onboardingComplete = signal(false);
+  onboardingPercent = signal(0);
   expandedGroupIds = signal<Set<string>>(new Set());
   lastWorkspace = signal<LastConsultationWorkspace | null>(null);
   currentUrl = signal('');

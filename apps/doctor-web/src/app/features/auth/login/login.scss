@@ -53,6 +53,95 @@ form {
   gap: 0.65rem;
 }
 
+.signup-heading {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.eyebrow {
+  color: var(--color-brand);
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.3rem;
+  text-transform: uppercase;
+}
+
+.signup-step-count {
+  align-items: center;
+  background: var(--color-brand-soft);
+  border-radius: var(--radius-pill);
+  color: var(--color-brand-dark);
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: var(--text-sm);
+  font-weight: 800;
+  justify-content: center;
+  min-height: 2rem;
+  min-width: 2.75rem;
+}
+
+.signup-progress {
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-pill);
+  height: 0.3rem;
+  margin: 0.8rem 0 1rem;
+  overflow: hidden;
+}
+
+.signup-progress i {
+  background: linear-gradient(90deg, var(--color-brand), var(--color-success));
+  display: block;
+  height: 100%;
+  transition: width 180ms ease;
+}
+
+.signup-summary {
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  display: grid;
+  gap: 0.15rem;
+  grid-template-columns: 1fr auto;
+  padding: 0.7rem 0.8rem;
+}
+
+.signup-summary span {
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.signup-summary small {
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  grid-column: 1;
+  overflow-wrap: anywhere;
+}
+
+.signup-summary button,
+.signup-back {
+  border: 0;
+  background: transparent;
+  color: var(--color-brand);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.signup-summary button {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+
+.signup-back {
+  justify-self: center;
+  padding: 0.35rem 0.75rem;
+}
+
 select {
   min-height: var(--touch-min);
   border: 1px solid var(--color-border);
@@ -191,4 +280,19 @@ button[type='submit'] {
     padding: 2rem 1rem;
   }
 
+}
+
+@media (max-width: 480px) {
+  :host {
+    padding: 0;
+  }
+
+  .login-card {
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
+    box-shadow: none;
+    min-height: calc(100dvh - 8rem);
+    padding: 1rem;
+  }
 }

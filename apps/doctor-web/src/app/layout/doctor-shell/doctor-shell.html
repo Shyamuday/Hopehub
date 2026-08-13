@@ -1,7 +1,9 @@
 <main class="doctor-shell" [class.focus-mode]="focusMode()">
   <header class="topbar">
     <div class="topbar-start">
-      <button type="button" class="menu-btn" aria-label="Open menu" (click)="openMenu()">☰</button>
+      @if (onboardingComplete()) {
+        <button type="button" class="menu-btn" aria-label="Open menu" (click)="openMenu()">☰</button>
+      }
       <div class="identity">
         <p class="app-title">{{ providerWorkspaceTitle }}</p>
         @if (!loadingSession) {
@@ -16,7 +18,9 @@
       </div>
     </div>
     <div class="topbar-end">
-      <app-notification-bell-host [config]="bellConfig" />
+      @if (onboardingComplete()) {
+        <app-notification-bell-host [config]="bellConfig" />
+      }
       @if (!loadingSession) {
         <hopehub-profile-avatar
           [apiBase]="apiBase"
@@ -30,7 +34,8 @@
     </div>
   </header>
 
-  <div class="shell-body">
+  <div class="shell-body" [class.setup-mode]="!onboardingComplete()">
+    @if (onboardingComplete()) {
     <aside class="sidebar" aria-label="Main navigation">
       <div class="sidebar-brand">
         <p class="app-title">{{ providerWorkspaceTitle }}</p>
@@ -151,6 +156,7 @@
         <button type="button" class="sidebar-logout" (click)="logout()">Sign out</button>
       </div>
     </aside>
+    }
 
     <div class="shell-main">
       @if (assignmentNotice()) {
@@ -158,13 +164,15 @@
       }
 
       <section class="content">
-        <app-role-task-guide appKey="doctor-web" [variantKey]="doctorTypeKey" />
+        @if (onboardingComplete()) {
+          <app-role-task-guide appKey="doctor-web" [variantKey]="doctorTypeKey" />
+        }
         <router-outlet />
       </section>
     </div>
   </div>
 
-  @if (menuOpen()) {
+  @if (menuOpen() && onboardingComplete()) {
     <button type="button" class="overlay" aria-label="Close menu" (click)="closeMenu()"></button>
     <aside class="drawer mobile-nav-sheet" aria-label="Navigation menu">
       <div class="drawer-header">

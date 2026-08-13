@@ -1,46 +1,16 @@
 <section class="profile-card">
   <div class="profile-top">
-    <hopehub-profile-avatar-upload
-      [apiBase]="apiBase"
-      [tokenKey]="authTokenKey"
-      [displayName]="profileModel().name || 'Provider'"
-      [profileImageUrl]="profileImageUrl"
-      [uploadPath]="profileImageUploadPath"
-      (profileImageChange)="onProfileImageChange($event)"
-    />
     <div>
-      <h2>{{ isPsychologist ? 'Hope Hub Provider Setup' : 'Provider Profile Setup' }}</h2>
-      <p class="section-hint">
-        Complete each step once. After this, your full professional dashboard becomes clear and
-        usable.
-      </p>
+      <span class="setup-eyebrow">Provider setup</span>
+      <h2>Let people know you</h2>
+      <p class="section-hint">One small step at a time. Your changes save automatically.</p>
       @if (isLoading) {
         <p class="loading-text">Loading profile...</p>
       }
     </div>
-  </div>
-
-  @if (doctorTypeLabel) {
-    <div class="role-banner">
+    @if (doctorTypeLabel) {
       <span class="role-label">{{ doctorTypeLabel }}</span>
-      @if (specialtyFocusLabel) {
-        <span class="focus-label">{{ specialtyFocusLabel }}</span>
-      }
-      <p class="role-note">
-        Your support path controls what users see and which tools unlock. You can refine it later
-        from your profile.
-      </p>
-    </div>
-  }
-
-  <div class="setup-progress-card">
-    <div>
-      <strong>{{ setupCompletionPercent() }}%</strong>
-      <span>profile setup complete</span>
-    </div>
-    <div class="setup-progress-bar">
-      <i [style.width.%]="setupCompletionPercent()"></i>
-    </div>
+    }
   </div>
 
   @if (setupIsComplete()) {
@@ -58,10 +28,10 @@
       }
     </nav>
   } @else {
-    <p class="section-hint setup-step-count">
-      Step {{ currentSetupStepPosition() }} of {{ setupStepItems().length }} · one small section at
-      a time
-    </p>
+    <div class="compact-progress" aria-label="Profile setup progress">
+      <span>Step {{ currentSetupStepPosition() }} of {{ setupStepItems().length }}</span>
+      <div><i [style.width.%]="setupCompletionPercent()"></i></div>
+    </div>
   }
 
   <section class="setup-panel" [class.dimmed]="isLoading">
@@ -69,16 +39,24 @@
       <div>
         <h3>{{ setupStepTitle() }}</h3>
         <p>{{ setupStepDescription() }}</p>
-        @if (activeSetupStepMissingItems().length) {
-          <div class="step-missing-box">
-            <strong>Still needed:</strong>
-            <span>{{ activeSetupStepMissingItems().join(', ') }}</span>
-          </div>
-        }
       </div>
     </header>
 
     @if (activeSetupStep() === 'identity') {
+      <div class="identity-photo-step">
+        <hopehub-profile-avatar-upload
+          [apiBase]="apiBase"
+          [tokenKey]="authTokenKey"
+          [displayName]="profileModel().name || 'Provider'"
+          [profileImageUrl]="profileImageUrl"
+          [uploadPath]="profileImageUploadPath"
+          (profileImageChange)="onProfileImageChange($event)"
+        />
+        <div>
+          <strong>Add a clear, friendly photo</strong>
+          <span>This helps people feel confident before starting a conversation.</span>
+        </div>
+      </div>
       <div class="grid two-column">
         <label for="name">Name</label>
         <input id="name" [formField]="profileForm.name" />
@@ -108,11 +86,6 @@
           <input id="registrationNo" [formField]="profileForm.registrationNo" />
         }
       </div>
-
-      <label class="checkbox">
-        <input type="checkbox" [formField]="profileForm.isAvailable" />
-        Available for consultations / sessions
-      </label>
 
       @if (canPrescribe) {
         <label for="defaultApproach">Default prescribing approach</label>
@@ -194,8 +167,9 @@
           <p class="field-hint">This is the first role people will see. Your other roles remain active.</p>
         }
 
-        <div class="subtype-service-guide">
-          <div>
+        <details class="subtype-service-guide">
+          <summary>See suggested services for your roles</summary>
+          <div class="suggested-service-intro">
             <strong>Suggested support services</strong>
             <p>
               Based on your selection. Add any that you genuinely offer, or use them to keep your
@@ -214,7 +188,7 @@
               </article>
             }
           </div>
-        </div>
+        </details>
 
         @if (isProfileCareTeamTypeSelected('OTHER')) {
           <label for="otherCareTeamType">Other support type</label>
@@ -367,38 +341,7 @@
 
     @if (isPsychologist && activeSetupStep() === 'services') {
       <section class="mental-profile-section">
-        <label class="checkbox">
-          <input type="checkbox" [formField]="profileForm.autoMatchEnabled" />
-          Available for user auto-match
-        </label>
-
-        <label class="checkbox">
-          <input type="checkbox" [formField]="profileForm.acceptingNewUsers" />
-          Accepting new bookings
-        </label>
-
-        <div class="grid two">
-          <div>
-            <label for="maxSessionsPerDay">Max bookings per day</label>
-            <input
-              id="maxSessionsPerDay"
-              type="number"
-              [formField]="profileForm.maxSessionsPerDay"
-              placeholder="No daily limit"
-            />
-          </div>
-          <div>
-            <label for="maxSessionsPerWeek">Max bookings per week</label>
-            <input
-              id="maxSessionsPerWeek"
-              type="number"
-              [formField]="profileForm.maxSessionsPerWeek"
-              placeholder="No weekly limit"
-            />
-          </div>
-        </div>
-
-        <label for="serviceOffers">Services & pricing</label>
+        <p class="section-hint">Choose a ready plan or add one simple service now.</p>
         <div class="service-editor">
           @for (service of careServices(); track $index) {
             <article class="service-editor-card">
@@ -447,96 +390,50 @@
                   (input)="updateCareService($index, 'priceInPaise', $any($event.target).value)"
                 />
               }
-              @if (showFirstPrice(service)) {
-                <input
-                  type="number"
-                  [value]="rupees(service.firstSessionPriceInPaise)"
-                  placeholder="First ₹"
-                  (input)="
-                    updateCareService($index, 'firstSessionPriceInPaise', $any($event.target).value)
-                  "
-                />
-              }
-              @if (showFollowUpPrice(service)) {
-                <input
-                  type="number"
-                  [value]="rupees(service.followUpPriceInPaise)"
-                  placeholder="Follow-up ₹"
-                  (input)="
-                    updateCareService($index, 'followUpPriceInPaise', $any($event.target).value)
-                  "
-                />
-                <input
-                  type="number"
-                  [value]="service.introSessionLimit || 1"
-                  placeholder="Intro limit"
-                  (input)="
-                    updateCareService($index, 'introSessionLimit', $any($event.target).value)
-                  "
-                />
-              }
-              @if (showPackageFields(service)) {
-                <input
-                  type="number"
-                  [value]="service.packageSessionCount || ''"
-                  placeholder="Package sessions"
-                  (input)="
-                    updateCareService($index, 'packageSessionCount', $any($event.target).value)
-                  "
-                />
-                <input
-                  type="number"
-                  [value]="rupees(service.packagePriceInPaise)"
-                  placeholder="Package ₹"
-                  (input)="
-                    updateCareService($index, 'packagePriceInPaise', $any($event.target).value)
-                  "
-                />
-              }
-              @if (showPerMinuteFields(service)) {
-                <input
-                  type="number"
-                  [value]="service.freeMinutes || 0"
-                  placeholder="Free minutes"
-                  (input)="updateCareService($index, 'freeMinutes', $any($event.target).value)"
-                />
-                <input
-                  type="number"
-                  [value]="rupees(service.pricePerMinuteInPaise)"
-                  placeholder="₹ per minute"
-                  (input)="
-                    updateCareService($index, 'pricePerMinuteInPaise', $any($event.target).value)
-                  "
-                />
-              }
               <input
                 type="number"
                 [value]="service.durationMinutes || 30"
                 placeholder="Minutes"
                 (input)="updateCareService($index, 'durationMinutes', $any($event.target).value)"
               />
-              <input
-                [value]="service.description || ''"
-                placeholder="Description"
-                (input)="updateCareService($index, 'description', $any($event.target).value)"
-              />
-              <label
-                ><input
-                  type="checkbox"
-                  [checked]="service.isActive !== false"
-                  (change)="updateCareService($index, 'isActive', $any($event.target).checked)"
-                />
-                Active</label
-              >
-              <button type="button" (click)="removeCareService($index)">Remove</button>
+              <details class="advanced-service-settings">
+                <summary>More pricing options</summary>
+                <div>
+                  @if (showFirstPrice(service)) {
+                    <input type="number" [value]="rupees(service.firstSessionPriceInPaise)" placeholder="First ₹" (input)="updateCareService($index, 'firstSessionPriceInPaise', $any($event.target).value)" />
+                  }
+                  @if (showFollowUpPrice(service)) {
+                    <input type="number" [value]="rupees(service.followUpPriceInPaise)" placeholder="Follow-up ₹" (input)="updateCareService($index, 'followUpPriceInPaise', $any($event.target).value)" />
+                    <input type="number" [value]="service.introSessionLimit || 1" placeholder="Intro limit" (input)="updateCareService($index, 'introSessionLimit', $any($event.target).value)" />
+                  }
+                  @if (showPackageFields(service)) {
+                    <input type="number" [value]="service.packageSessionCount || ''" placeholder="Package sessions" (input)="updateCareService($index, 'packageSessionCount', $any($event.target).value)" />
+                    <input type="number" [value]="rupees(service.packagePriceInPaise)" placeholder="Package ₹" (input)="updateCareService($index, 'packagePriceInPaise', $any($event.target).value)" />
+                  }
+                  @if (showPerMinuteFields(service)) {
+                    <input type="number" [value]="service.freeMinutes || 0" placeholder="Free minutes" (input)="updateCareService($index, 'freeMinutes', $any($event.target).value)" />
+                    <input type="number" [value]="rupees(service.pricePerMinuteInPaise)" placeholder="₹ per minute" (input)="updateCareService($index, 'pricePerMinuteInPaise', $any($event.target).value)" />
+                  }
+                  <input [value]="service.description || ''" placeholder="Description" (input)="updateCareService($index, 'description', $any($event.target).value)" />
+                  <label><input type="checkbox" [checked]="service.isActive !== false" (change)="updateCareService($index, 'isActive', $any($event.target).checked)" /> Active</label>
+                  <button type="button" class="remove-service" (click)="removeCareService($index)">Remove service</button>
+                </div>
+              </details>
             </article>
           }
-          <button type="button" (click)="addCareService()">Add service</button>
+          <button type="button" class="add-service" (click)="addCareService()">+ Add another service</button>
         </div>
-        <p class="section-hint">
-          Use pricing mode for fixed, first free, discounted first, package, per-minute, or free
-          emotional support listener support.
-        </p>
+        <details class="availability-settings">
+          <summary>Booking limits and matching</summary>
+          <div>
+            <label class="checkbox"><input type="checkbox" [formField]="profileForm.autoMatchEnabled" /> Available for user auto-match</label>
+            <label class="checkbox"><input type="checkbox" [formField]="profileForm.acceptingNewUsers" /> Accepting new bookings</label>
+            <div class="grid two">
+              <div><label for="maxSessionsPerDay">Max bookings per day</label><input id="maxSessionsPerDay" type="number" [formField]="profileForm.maxSessionsPerDay" placeholder="No daily limit" /></div>
+              <div><label for="maxSessionsPerWeek">Max bookings per week</label><input id="maxSessionsPerWeek" type="number" [formField]="profileForm.maxSessionsPerWeek" placeholder="No weekly limit" /></div>
+            </div>
+          </div>
+        </details>
       </section>
     }
   </section>
@@ -547,24 +444,11 @@
         {{ autosaveLabel() }}
       </span>
     }
-    <app-button
-      type="button"
-      variant="outline"
-      (click)="loadProfile()"
-      [disabled]="isLoading || saving"
-    >
-      {{ isLoading ? 'Loading...' : 'Reload' }}
-    </app-button>
-    <app-button
-      type="button"
-      variant="secondary"
-      (click)="saveProfile()"
-      [disabled]="isLoading || saving"
-    >
-      {{ saving ? 'Saving...' : 'Save' }}
-    </app-button>
-    <app-button type="button" (click)="saveAndContinue()" [disabled]="isLoading || saving">
-      {{ saving ? 'Saving...' : 'Save & continue' }}
+    @if (canGoToPreviousSetupStep()) {
+      <app-button type="button" variant="ghost" (click)="previousSetupStep()" [disabled]="isLoading || saving">Back</app-button>
+    }
+    <app-button type="button" (click)="saveAndContinue()" [disabled]="isLoading || saving" [loading]="saving">
+      {{ setupContinueLabel() }}
     </app-button>
   </app-action-bar>
 

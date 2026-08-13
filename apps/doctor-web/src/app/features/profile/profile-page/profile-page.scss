@@ -1,5 +1,6 @@
 .profile-card {
-  max-width: 40rem;
+  max-width: 42rem;
+  margin: 0 auto;
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -10,12 +11,23 @@
 .profile-top {
   display: flex;
   gap: 1rem;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 1rem;
 
   h2 {
     margin: 0 0 0.5rem;
   }
+}
+
+.setup-eyebrow {
+  color: var(--color-brand);
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
 }
 
 .role-banner {
@@ -27,12 +39,66 @@
 }
 
 .role-label {
-  display: inline-block;
-  margin-right: 0.45rem;
+  background: var(--color-brand-soft);
+  border-radius: var(--radius-pill);
+  display: inline-flex;
+  padding: 0.35rem 0.65rem;
   font-weight: 700;
   color: #1e3a8a;
   font-size: var(--text-sm);
   line-height: var(--leading-relaxed);
+}
+
+.compact-progress {
+  display: grid;
+  gap: 0.45rem;
+  margin-bottom: 1rem;
+
+  > span {
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    font-weight: 700;
+  }
+
+  > div {
+    background: var(--color-surface-muted);
+    border-radius: var(--radius-pill);
+    height: 0.35rem;
+    overflow: hidden;
+  }
+
+  i {
+    background: linear-gradient(90deg, var(--color-brand), var(--color-success));
+    display: block;
+    height: 100%;
+    transition: width 180ms ease;
+  }
+}
+
+.identity-photo-step {
+  align-items: center;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  padding: 0.8rem;
+
+  div {
+    display: grid;
+    gap: 0.2rem;
+  }
+
+  strong {
+    font-size: var(--text-sm);
+  }
+
+  span {
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    line-height: var(--leading-relaxed);
+  }
 }
 
 .focus-label {
@@ -277,6 +343,13 @@
   margin: 0.35rem 0 0.9rem;
   padding: 0.9rem;
 
+  summary {
+    color: #075985;
+    cursor: pointer;
+    font-size: var(--text-sm);
+    font-weight: 800;
+  }
+
   > div:first-child {
     display: grid;
     gap: 0.2rem;
@@ -293,6 +366,50 @@
     line-height: var(--leading-relaxed);
     margin: 0;
   }
+}
+
+.suggested-service-intro {
+  display: grid;
+  gap: 0.2rem;
+  margin-top: 0.75rem;
+}
+
+.advanced-service-settings,
+.availability-settings {
+  border-top: 1px solid var(--color-border);
+  margin-top: 0.35rem;
+  padding-top: 0.55rem;
+
+  summary {
+    color: var(--color-brand);
+    cursor: pointer;
+    font-size: var(--text-sm);
+    font-weight: 700;
+  }
+
+  > div {
+    display: grid;
+    gap: 0.55rem;
+    margin-top: 0.65rem;
+  }
+}
+
+.availability-settings {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+}
+
+.remove-service {
+  color: var(--color-error);
+  justify-self: start;
+}
+
+.add-service {
+  background: transparent;
+  border-style: dashed;
+  color: var(--color-brand);
 }
 
 .suggested-service-grid {
@@ -467,6 +584,10 @@
   display: block;
 }
 
+.actions app-button:last-child {
+  min-width: 10rem;
+}
+
 .success {
   color: var(--color-success);
   font-size: var(--text-sm);
@@ -499,11 +620,24 @@
 
 @media (max-width: 768px) {
   .profile-top {
-    flex-direction: column;
-    align-items: stretch;
+    align-items: flex-start;
   }
 
   .profile-card {
     max-width: none;
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
+    padding: 0.9rem;
+  }
+
+
+  .setup-panel {
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
+    margin-left: -0.9rem;
+    margin-right: -0.9rem;
+    padding: 0.9rem;
   }
 }
