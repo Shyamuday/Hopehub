@@ -38,7 +38,7 @@ export function registerAdminProviderRoleRoutes(router: Router) {
   router.get(
     '/admin/provider-roles',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const includeInactive = req.query.includeInactive === 'true';
       res.json({ roles: await listProviderRoles(includeInactive) });
@@ -48,7 +48,7 @@ export function registerAdminProviderRoleRoutes(router: Router) {
   router.post(
     '/admin/provider-roles',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const body = roleBodySchema.extend({ code: roleCodeSchema }).parse(req.body);
       const role = await prisma.providerRoleDefinition.create({ data: body });
@@ -69,7 +69,7 @@ export function registerAdminProviderRoleRoutes(router: Router) {
   router.patch(
     '/admin/provider-roles/:code',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const code = roleCodeSchema.parse(routeParam(req, 'code'));
       const body = roleBodySchema.partial().omit({ code: true }).parse(req.body);
@@ -115,7 +115,7 @@ export function registerAdminProviderRoleRoutes(router: Router) {
   router.delete(
     '/admin/provider-roles/:code',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (_req, res) => {
       res.status(409).json({
         message:
@@ -127,7 +127,7 @@ export function registerAdminProviderRoleRoutes(router: Router) {
   router.patch(
     '/admin/doctors/:doctorId/provider-roles',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const requestedId = routeParam(req, 'doctorId');
       const body = z
@@ -168,7 +168,7 @@ export function registerAdminProviderRoleRoutes(router: Router) {
   router.patch(
     '/admin/doctors/:doctorId/provider-roles/:roleCode',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const requestedId = routeParam(req, 'doctorId');
       const roleCode = roleCodeSchema.parse(routeParam(req, 'roleCode'));

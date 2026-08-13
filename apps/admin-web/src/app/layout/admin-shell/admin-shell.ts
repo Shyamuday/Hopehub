@@ -19,7 +19,11 @@ import {
   type AdminNavItem,
 } from '../../core/constants/app-routes.constants';
 import { navItemsForUser, navItemsForWorkspace } from '../../core/admin-navigation';
-import { type AdminFocusedWorkspace } from '../../core/admin-permissions';
+import {
+  ADMIN_PERMISSIONS,
+  staffHasAllPermissions,
+  type AdminFocusedWorkspace,
+} from '../../core/admin-permissions';
 import { AdminWorkspaceService } from '../../core/services/admin-workspace.service';
 
 const MOBILE_BOTTOM_NAV_LIMIT = 4;
@@ -75,12 +79,14 @@ export class AdminShell {
   readonly accountPath = adminNavPath(ROUTE_PATHS.ACCOUNT);
   readonly apiBase = environment.apiUrl;
   readonly authTokenKey = AUTH_TOKEN_KEY;
-  readonly bellConfig = {
+  readonly bellConfig = computed(() => ({
     apiBase: environment.apiUrl,
     tokenKey: AUTH_TOKEN_KEY,
     apiPath: '/notifications',
-    inboxPath: adminNavPath(ROUTE_PATHS.NOTIFICATIONS_INBOX),
-  };
+    inboxPath: staffHasAllPermissions(this.auth.user(), ADMIN_PERMISSIONS.CONTACT_MAIL_WRITE)
+      ? adminNavPath(ROUTE_PATHS.NOTIFICATIONS_INBOX)
+      : undefined,
+  }));
 
   private readonly currentPath = toSignal(
     this.router.events.pipe(

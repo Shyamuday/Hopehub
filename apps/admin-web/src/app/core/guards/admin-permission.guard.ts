@@ -4,7 +4,7 @@ import { canUserAccessAdminRoute, pickFirstAllowedRoute } from '../admin-navigat
 import { ROUTE_PATHS } from '../constants/app-routes.constants';
 import { AdminAuth } from '../services/admin-auth';
 
-const OPEN_SEGMENTS = new Set<string>([ROUTE_PATHS.ACCOUNT, ROUTE_PATHS.NOTIFICATIONS_INBOX]);
+const OPEN_SEGMENTS = new Set<string>([ROUTE_PATHS.ACCOUNT]);
 
 export const adminPermissionGuard: CanActivateFn = async (route) => {
   const auth = inject(AdminAuth);

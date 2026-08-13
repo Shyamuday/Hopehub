@@ -8,7 +8,7 @@ export function registerAdminInventoryRoutes(router: Router) {
   router.get(
     '/admin/inventory/overview',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (_req, res) => {
       const stores = await prisma.store.findMany({
         where: { isActive: true },
@@ -58,7 +58,7 @@ export function registerAdminInventoryRoutes(router: Router) {
   router.get(
     '/admin/inventory/stores/:storeId/stock',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const storeId = routeParam(req, 'storeId');
       const page = queryPositiveInt(req, 'page', 1);

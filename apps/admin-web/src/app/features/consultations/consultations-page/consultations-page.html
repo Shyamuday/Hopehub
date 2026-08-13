@@ -137,8 +137,10 @@
                     @if (packageUsage(c); as usage) {
                       <div class="usage-chip">
                         <span>{{ usage.usedSessions || 0 }}/{{ usage.totalSessions || 0 }} used</span>
-                        <button type="button" (click)="adjustPackageUsage(c, -1)" [disabled]="saving()">−</button>
-                        <button type="button" (click)="adjustPackageUsage(c, 1)" [disabled]="saving()">+</button>
+                        @if (canManageConsultations()) {
+                          <button type="button" (click)="adjustPackageUsage(c, -1)" [disabled]="saving()">−</button>
+                          <button type="button" (click)="adjustPackageUsage(c, 1)" [disabled]="saving()">+</button>
+                        }
                       </div>
                     }
                     @if (pricingInsight(c); as pricing) {
@@ -191,12 +193,14 @@
                     }
                   </td>
                   <td>
-                    @if (!c.assignedDoctor || c.status === 'PAYMENT_PENDING' || c.status === 'PAID') {
-                      <button class="btn-assign" (click)="openAssign(c)">Assign</button>
-                    } @else {
-                      <button class="btn-reassign" (click)="openAssign(c)">Reassign</button>
+                    @if (canManageConsultations()) {
+                      @if (!c.assignedDoctor || c.status === 'PAYMENT_PENDING' || c.status === 'PAID') {
+                        <button class="btn-assign" (click)="openAssign(c)">Assign</button>
+                      } @else {
+                        <button class="btn-reassign" (click)="openAssign(c)">Reassign</button>
+                      }
+                      <button class="btn-reassign" (click)="openStatus(c)">Status</button>
                     }
-                    <button class="btn-reassign" (click)="openStatus(c)">Status</button>
                     @if (c.patient?.id) {
                       <div class="cross-links">
                         <a class="cross-link" [routerLink]="clinicalRecordsRoute" [queryParams]="clinicalQuery(c)">Clinical records</a>
@@ -246,8 +250,10 @@
               @if (packageUsage(c); as usage) {
                 <div class="usage-chip mobile">
                   <span>{{ usage.usedSessions || 0 }}/{{ usage.totalSessions || 0 }} sessions used</span>
-                  <button type="button" (click)="adjustPackageUsage(c, -1)" [disabled]="saving()">−</button>
-                  <button type="button" (click)="adjustPackageUsage(c, 1)" [disabled]="saving()">+</button>
+                  @if (canManageConsultations()) {
+                    <button type="button" (click)="adjustPackageUsage(c, -1)" [disabled]="saving()">−</button>
+                    <button type="button" (click)="adjustPackageUsage(c, 1)" [disabled]="saving()">+</button>
+                  }
                 </div>
               }
               @if (pricingInsight(c); as pricing) {
@@ -297,14 +303,16 @@
                   <span class="unassigned-txt">Not assigned</span>
                 }
               </div>
-              <div class="card-actions-primary">
-                @if (!c.assignedDoctor || c.status === 'PAYMENT_PENDING' || c.status === 'PAID') {
-                  <button class="btn-assign" (click)="openAssign(c)">Assign</button>
-                } @else {
-                  <button class="btn-reassign" (click)="openAssign(c)">Reassign</button>
-                }
-                <button class="btn-reassign" (click)="openStatus(c)">Status</button>
-              </div>
+              @if (canManageConsultations()) {
+                <div class="card-actions-primary">
+                  @if (!c.assignedDoctor || c.status === 'PAYMENT_PENDING' || c.status === 'PAID') {
+                    <button class="btn-assign" (click)="openAssign(c)">Assign</button>
+                  } @else {
+                    <button class="btn-reassign" (click)="openAssign(c)">Reassign</button>
+                  }
+                  <button class="btn-reassign" (click)="openStatus(c)">Status</button>
+                </div>
+              }
               <button type="button" class="btn-reassign card-more-toggle" (click)="toggleCardMenu(c.id)">
                 {{ isCardMenuOpen(c.id) ? 'Less' : 'More links' }}
               </button>

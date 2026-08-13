@@ -23,7 +23,7 @@
       </select>
     </label>
     <div class="topbar-actions">
-      <app-notification-bell-host [config]="bellConfig" />
+      <app-notification-bell-host [config]="bellConfig()" />
       <a class="account-link" [routerLink]="accountPath">
         <hopehub-profile-avatar
           [apiBase]="apiBase"

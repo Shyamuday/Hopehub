@@ -3,126 +3,184 @@ import { Role } from '@prisma/client';
 import {
   PERMISSIONS,
   PERMISSION_MANAGEMENT_ROLES,
-  staffHasAllPermissions
+  staffHasAllPermissions,
+  staffHasAnyPermission
 } from './staff-permissions.js';
 
-type RouteRule = { method?: string; permissions: string[] };
+export type AdminPermissionMatch = 'all' | 'any';
+export type AdminRouteRequirement = {
+  permissions: string[];
+  match: AdminPermissionMatch;
+};
+type RouteRule = AdminRouteRequirement & { method?: string };
+
+const all = (permissions: string[], method?: string): RouteRule => ({
+  method,
+  permissions,
+  match: 'all'
+});
+const any = (permissions: string[], method?: string): RouteRule => ({
+  method,
+  permissions,
+  match: 'any'
+});
 
 /** Admin API paths → required permission codes (ADMIN / HR with profile). */
 const ADMIN_ROUTE_RULES: Array<{ pattern: RegExp; rules: RouteRule[] }> = [
   {
     pattern: /^\/admin\/telegram-bots\/group-help/,
-    rules: [{ permissions: [PERMISSIONS.NOTIFICATIONS_WRITE] }]
+    rules: [all([PERMISSIONS.NOTIFICATIONS_WRITE])]
   },
   {
     pattern: /^\/admin\/staff/,
-    rules: [{ permissions: [PERMISSIONS.STAFF_READ] }]
+    rules: [all([PERMISSIONS.STAFF_READ])]
   },
   {
     pattern: /^\/admin\/users/,
-    rules: [
-      { method: 'GET', permissions: [PERMISSIONS.STAFF_READ] },
-      { permissions: [PERMISSIONS.STAFF_WRITE] }
-    ]
+    rules: [all([PERMISSIONS.STAFF_READ], 'GET'), all([PERMISSIONS.STAFF_WRITE])]
   },
   {
     pattern: /^\/admin\/telegram-bots/,
     rules: [
-      { method: 'GET', permissions: [PERMISSIONS.STAFF_READ] },
-      { permissions: [PERMISSIONS.NOTIFICATIONS_WRITE] }
+      any([PERMISSIONS.STAFF_READ, PERMISSIONS.NOTIFICATIONS_WRITE], 'GET'),
+      all([PERMISSIONS.NOTIFICATIONS_WRITE])
     ]
   },
   {
     pattern: /^\/admin\/doctors/,
-    rules: [
-      { method: 'GET', permissions: [PERMISSIONS.DOCTORS_READ] },
-      { permissions: [PERMISSIONS.DOCTORS_WRITE] }
-    ]
+    rules: [all([PERMISSIONS.DOCTORS_READ], 'GET'), all([PERMISSIONS.DOCTORS_WRITE])]
   },
   {
     pattern: /^\/admin\/diseases/,
     rules: [
-      { method: 'GET', permissions: [PERMISSIONS.DISEASES_READ, PERMISSIONS.CATALOG_READ] },
-      { permissions: [PERMISSIONS.DISEASES_WRITE, PERMISSIONS.CATALOG_WRITE] }
+      any([PERMISSIONS.DISEASES_READ, PERMISSIONS.CATALOG_READ], 'GET'),
+      any([PERMISSIONS.DISEASES_WRITE, PERMISSIONS.CATALOG_WRITE])
     ]
   },
   {
     pattern: /^\/admin\/consumers|^\/admin\/patients/,
-    rules: [{ permissions: [PERMISSIONS.CONSUMERS_READ] }]
+    rules: [all([PERMISSIONS.CONSUMERS_READ])]
   },
   {
     pattern: /^\/admin\/(prescriptions|case-analyses|clinical-records)/,
-    rules: [{ permissions: [PERMISSIONS.CONSUMERS_READ] }]
+    rules: [all([PERMISSIONS.CONSUMERS_READ])]
   },
   {
     pattern: /^\/admin\/(consultations|safety-flags)/,
     rules: [
-      { method: 'GET', permissions: [PERMISSIONS.CONSULTATIONS_READ] },
-      { permissions: [PERMISSIONS.ASSIGNMENTS_WRITE, PERMISSIONS.CONSULTATIONS_READ] }
+      all([PERMISSIONS.CONSULTATIONS_READ], 'GET'),
+      all([PERMISSIONS.ASSIGNMENTS_WRITE, PERMISSIONS.CONSULTATIONS_READ])
     ]
   },
   {
     pattern: /^\/admin\/(payments|finance|salary)/,
-    rules: [
-      { method: 'GET', permissions: [PERMISSIONS.PAYMENTS_READ, PERMISSIONS.REPORTS_VIEW] },
-      { permissions: [PERMISSIONS.PAYMENTS_READ] }
-    ]
+    rules: [all([PERMISSIONS.PAYMENTS_READ], 'GET'), all([PERMISSIONS.PAYMENTS_READ])]
   },
   {
     pattern: /^\/admin\/audit/,
-    rules: [{ permissions: [PERMISSIONS.AUDIT_READ] }]
+    rules: [all([PERMISSIONS.AUDIT_READ])]
   },
   {
     pattern: /^\/admin\/inventory|^\/admin\/purchase-orders/,
-    rules: [{ permissions: [PERMISSIONS.INVENTORY_READ] }]
+    rules: [all([PERMISSIONS.INVENTORY_READ])]
   },
   {
     pattern: /^\/admin\/(suppliers|medicines|catalog)/,
-    rules: [
-      { method: 'GET', permissions: [PERMISSIONS.CATALOG_READ] },
-      { permissions: [PERMISSIONS.CATALOG_WRITE] }
-    ]
+    rules: [all([PERMISSIONS.CATALOG_READ], 'GET'), all([PERMISSIONS.CATALOG_WRITE])]
   },
   {
     pattern: /^\/admin\/hope-hub/,
-    rules: [
-      { method: 'GET', permissions: [PERMISSIONS.CATALOG_READ] },
-      { permissions: [PERMISSIONS.CATALOG_WRITE] }
-    ]
+    rules: [all([PERMISSIONS.CATALOG_READ], 'GET'), all([PERMISSIONS.CATALOG_WRITE])]
   },
   {
     pattern: /^\/admin\/notifications/,
-    rules: [{ permissions: [PERMISSIONS.NOTIFICATIONS_WRITE] }]
+    rules: [all([PERMISSIONS.NOTIFICATIONS_WRITE])]
   },
   {
     pattern: /^\/admin\/contact-mail/,
-    rules: [{ permissions: [PERMISSIONS.NOTIFICATIONS_WRITE] }]
+    rules: [all([PERMISSIONS.CONTACT_MAIL_WRITE])]
   },
   {
     pattern: /^\/admin\/ecosystem-users/,
-    rules: [{ permissions: [PERMISSIONS.ECOSYSTEM_USERS_WRITE] }]
+    rules: [all([PERMISSIONS.ECOSYSTEM_USERS_WRITE])]
   },
   {
     pattern: /^\/admin\/portal-users/,
-    rules: [{ permissions: [PERMISSIONS.PORTAL_USERS_WRITE] }]
+    rules: [all([PERMISSIONS.PORTAL_USERS_WRITE])]
   },
   {
     pattern: /^\/admin\/(reports|analytics|adherence)/,
-    rules: [{ permissions: [PERMISSIONS.REPORTS_VIEW] }]
+    rules: [all([PERMISSIONS.REPORTS_VIEW])]
   },
   {
     pattern: /^\/admin\/admins/,
-    rules: [{ permissions: [PERMISSIONS.STAFF_WRITE] }]
+    rules: [all([PERMISSIONS.STAFF_WRITE])]
+  },
+  {
+    pattern:
+      /^\/admin\/(assessment-definitions|listener-screening|practices|practice-rules|lifestyle-tips|lifestyle-tip-rules)/,
+    rules: [all([PERMISSIONS.CATALOG_READ], 'GET'), all([PERMISSIONS.CATALOG_WRITE])]
+  },
+  {
+    pattern: /^\/admin\/(blog|faq|testimonials|site-config)/,
+    rules: [
+      any([PERMISSIONS.CATALOG_READ, PERMISSIONS.HR_WRITE], 'GET'),
+      any([PERMISSIONS.CATALOG_WRITE, PERMISSIONS.HR_WRITE])
+    ]
+  },
+  {
+    pattern: /^\/admin\/(auth-process-logs|auth-sessions)/,
+    rules: [all([PERMISSIONS.AUDIT_READ])]
+  },
+  {
+    pattern: /^\/admin\/(chat-sessions|visitor-leads|follow-ups|call-health)/,
+    rules: [
+      any([PERMISSIONS.CONSULTATIONS_READ, PERMISSIONS.HR_WRITE], 'GET'),
+      any([PERMISSIONS.ASSIGNMENTS_WRITE, PERMISSIONS.HR_WRITE])
+    ]
+  },
+  {
+    pattern: /^\/admin\/(counsellor-applications|care-contributors|online-doctors|provider-roles)/,
+    rules: [all([PERMISSIONS.DOCTORS_READ], 'GET'), all([PERMISSIONS.DOCTORS_WRITE])]
+  },
+  {
+    pattern: /^\/admin\/(lab-referrals)/,
+    rules: [all([PERMISSIONS.CONSUMERS_READ], 'GET'), all([PERMISSIONS.ASSIGNMENTS_WRITE])]
+  },
+  {
+    pattern: /^\/admin\/(pricing|billing)/,
+    rules: [
+      any([PERMISSIONS.DISEASES_READ, PERMISSIONS.PAYMENTS_READ], 'GET'),
+      any([PERMISSIONS.DISEASES_WRITE, PERMISSIONS.PAYMENTS_READ])
+    ]
+  },
+  {
+    pattern: /^\/admin\/(rewards)/,
+    rules: [
+      any([PERMISSIONS.PAYMENTS_READ, PERMISSIONS.CATALOG_READ], 'GET'),
+      any([PERMISSIONS.PAYMENTS_READ, PERMISSIONS.CATALOG_WRITE])
+    ]
+  },
+  {
+    pattern: /^\/admin\/(vacancies)/,
+    rules: [all([PERMISSIONS.HR_WRITE])]
+  },
+  {
+    pattern: /^\/admin\/(donations)/,
+    rules: [all([PERMISSIONS.PAYMENTS_READ])]
   }
 ];
 
-function resolveRequiredPermissions(method: string, path: string): string[] | null {
+export function resolveAdminRouteRequirement(
+  method: string,
+  path: string
+): AdminRouteRequirement | null {
   for (const entry of ADMIN_ROUTE_RULES) {
     if (!entry.pattern.test(path)) continue;
     const match =
       entry.rules.find((r) => !r.method || r.method === method) ??
       entry.rules[entry.rules.length - 1];
-    return match.permissions;
+    return { permissions: match.permissions, match: match.match };
   }
   return null;
 }
@@ -143,15 +201,20 @@ export function adminPermissionMiddleware(req: Request, res: Response, next: Nex
     return next();
   }
 
-  const required = resolveRequiredPermissions(req.method, path);
-  if (!required?.length) {
+  const requirement = resolveAdminRouteRequirement(req.method, path);
+  if (!requirement?.permissions.length) {
     return next();
   }
 
-  if (!staffHasAllPermissions(user, ...required)) {
+  const permitted =
+    requirement.match === 'any'
+      ? staffHasAnyPermission(user, ...requirement.permissions)
+      : staffHasAllPermissions(user, ...requirement.permissions);
+  if (!permitted) {
     return res.status(403).json({
       message: 'Insufficient permissions for this action.',
-      required
+      required: requirement.permissions,
+      match: requirement.match
     });
   }
 

@@ -72,7 +72,7 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
   router.get(
     '/admin/call-health',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const days = Math.max(1, Math.min(90, queryPositiveInt(req, 'days', 30)));
       const workspace = getAuthorizedAdminWorkspace(req, res);
@@ -253,7 +253,7 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
   router.get(
     '/admin/safety-flags',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const page = queryPositiveInt(req, 'page', 1);
       const pageSize = Math.max(1, Math.min(50, queryPositiveInt(req, 'pageSize', 20)));
@@ -303,7 +303,7 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
   router.post(
     '/admin/safety-flags/:consultationId/notes',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const body = z.object({ note: z.string().trim().min(3).max(5000) }).parse(req.body);
       const consultation = await prisma.consultation.findUniqueOrThrow({
@@ -338,7 +338,7 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
   router.get(
     '/admin/consultations',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const page = queryPositiveInt(req, 'page', 1);
       const pageSize = queryPositiveInt(req, 'pageSize', 20);
@@ -431,7 +431,7 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
   router.get(
     '/admin/consultations/quality-summary',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const days = Math.max(1, Math.min(365, queryPositiveInt(req, 'days', 30)));
       const workspace = getAuthorizedAdminWorkspace(req, res);
@@ -510,7 +510,7 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
   router.put(
     '/admin/consultations/:id/assign',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const body = z.object({ doctorId: z.string().min(1) }).parse(req.body);
       const workspace = getAuthorizedAdminWorkspace(req, res);
@@ -633,7 +633,7 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
   router.patch(
     '/admin/consultations/:id/status',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const body = z
         .object({
@@ -750,7 +750,7 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
   router.patch(
     '/admin/consultations/:id/hope-hub-usage',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const body = z.object({ usedSessions: z.number().int().min(0) }).parse(req.body);
       const existing = await prisma.consultation.findUnique({

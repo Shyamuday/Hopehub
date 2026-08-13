@@ -14,7 +14,7 @@ export function registerAdminLabReferralRoutes(router: Router) {
   router.get(
     '/admin/lab-referrals',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const status = queryText(req, 'status') as LabReferralStatus | undefined;
       const referrals = await listLabReferrals({
@@ -30,7 +30,7 @@ export function registerAdminLabReferralRoutes(router: Router) {
   router.get(
     '/admin/lab-referrals/:id',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const referral = await getLabReferral(routeParam(req, 'id'));
       if (!referral) return res.status(404).json({ message: 'Referral not found.' });
@@ -41,7 +41,7 @@ export function registerAdminLabReferralRoutes(router: Router) {
   router.post(
     '/admin/lab-referrals',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const body = z
         .object({

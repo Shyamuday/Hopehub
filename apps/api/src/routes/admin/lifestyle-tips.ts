@@ -178,7 +178,7 @@ export function registerAdminLifestyleTipRoutes(router: Router) {
   router.delete(
     '/admin/lifestyle-tips/:id',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const id = routeParam(req, 'id');
       await prisma.lifestyleTip.update({

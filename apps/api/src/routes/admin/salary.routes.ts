@@ -259,7 +259,7 @@ export function registerAdminSalaryRoutes(router: Router) {
   router.put(
     '/admin/salary/:empType/:id',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       if (!requireAdminOnly(req, res)) return;
 

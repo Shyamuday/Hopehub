@@ -101,7 +101,7 @@ export function registerAdminVisitorLeadRoutes(router: Router) {
   router.get(
     '/admin/visitor-leads/export',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const filters = parseVisitorLeadListFilters(req);
       const where = buildVisitorLeadWhere(filters);
@@ -278,11 +278,9 @@ export function registerAdminVisitorLeadRoutes(router: Router) {
             return res.status(404).json({ message: 'Assignable provider not found.' });
           }
           if (error.message === 'SAFETY_LEAD_REQUIRES_PSYCHOLOGIST') {
-            return res
-              .status(400)
-              .json({
-                message: 'Safety leads can only be assigned to psychologist/admin escalation.'
-              });
+            return res.status(400).json({
+              message: 'Safety leads can only be assigned to psychologist/admin escalation.'
+            });
           }
         }
         throw error;
@@ -328,7 +326,7 @@ export function registerAdminVisitorLeadRoutes(router: Router) {
   router.get(
     '/admin/analytics/lead-funnel',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const days = queryPositiveInt(req, 'days', 30, 7, 90);
       const report = await buildLeadFunnelReport(days);

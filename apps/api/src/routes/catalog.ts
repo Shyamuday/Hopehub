@@ -158,7 +158,7 @@ router.get(
 router.get(
   '/admin/diseases/categories',
   authRequired,
-  allowRoles(Role.ADMIN),
+  allowRoles(Role.ADMIN, Role.HR),
   asyncRoute(async (_req, res) => {
     res.json({ categories: DISEASE_PUBLIC_CATEGORIES });
   })
@@ -167,7 +167,7 @@ router.get(
 router.get(
   '/admin/diseases/list',
   authRequired,
-  allowRoles(Role.ADMIN),
+  allowRoles(Role.ADMIN, Role.HR),
   asyncRoute(async (req, res) => {
     const q = queryText(req, 'q').trim() || undefined;
     const category = queryText(req, 'category').trim() || undefined;
@@ -210,7 +210,7 @@ router.get(
 router.post(
   '/admin/diseases/sync-catalog',
   authRequired,
-  allowRoles(Role.ADMIN),
+  allowRoles(Role.ADMIN, Role.HR),
   asyncRoute(async (req, res) => {
     const body = z
       .object({
@@ -226,7 +226,7 @@ router.post(
 router.get(
   '/admin/diseases/:id/public-page',
   authRequired,
-  allowRoles(Role.ADMIN),
+  allowRoles(Role.ADMIN, Role.HR),
   asyncRoute(async (req, res) => {
     const payload = await getDiseasePublicPageEditPayload(routeParam(req, 'id'));
     if (!payload) {
@@ -240,7 +240,7 @@ router.get(
 router.put(
   '/admin/diseases/:id/public-page',
   authRequired,
-  allowRoles(Role.ADMIN),
+  allowRoles(Role.ADMIN, Role.HR),
   asyncRoute(async (req, res) => {
     const body = diseasePublicPageUpdateSchema.parse(req.body);
     const result = await updateDiseasePublicPage(routeParam(req, 'id'), body);
@@ -255,7 +255,7 @@ router.put(
 router.post(
   '/admin/diseases/reconcile-options',
   authRequired,
-  allowRoles(Role.ADMIN),
+  allowRoles(Role.ADMIN, Role.HR),
   asyncRoute(async (_req, res) => {
     const result = await reconcileDiagnosedDiseaseOptions();
     res.json(result);
@@ -265,7 +265,7 @@ router.post(
 router.post(
   '/admin/diseases',
   authRequired,
-  allowRoles(Role.ADMIN),
+  allowRoles(Role.ADMIN, Role.HR),
   asyncRoute(async (req, res) => {
     const body = z
       .object({
@@ -301,7 +301,7 @@ router.post(
 router.put(
   '/admin/diseases/:id',
   authRequired,
-  allowRoles(Role.ADMIN),
+  allowRoles(Role.ADMIN, Role.HR),
   asyncRoute(async (req, res) => {
     const body = z
       .object({

@@ -287,7 +287,7 @@ export function registerAdminAssessmentDefinitionRoutes(router: Router) {
   router.post(
     '/admin/assessment-definitions',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const body = assessmentDefinitionSchema.parse(req.body);
       const errors = body.isActive
@@ -349,7 +349,7 @@ export function registerAdminAssessmentDefinitionRoutes(router: Router) {
   router.patch(
     '/admin/assessment-definitions/:id',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const id = routeParam(req, 'id');
       const current = await getAssessmentDefinition(id, true);
@@ -410,7 +410,7 @@ export function registerAdminAssessmentDefinitionRoutes(router: Router) {
   router.post(
     '/admin/assessment-definitions/:id/publish',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const id = routeParam(req, 'id');
       const definition = await getAssessmentDefinition(id, true);
@@ -439,7 +439,7 @@ export function registerAdminAssessmentDefinitionRoutes(router: Router) {
   router.post(
     '/admin/assessment-definitions/:id/unpublish',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const id = routeParam(req, 'id');
       await prisma.$executeRaw`UPDATE "AssessmentDefinition" SET "isActive" = false, "updatedAt" = CURRENT_TIMESTAMP WHERE "id" = ${id}`;

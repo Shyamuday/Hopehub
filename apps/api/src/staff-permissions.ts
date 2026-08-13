@@ -28,6 +28,7 @@ export const PERMISSIONS = {
   CATALOG_WRITE: 'admin.catalog.write',
   NOTIFICATIONS_WRITE: 'admin.notifications.write',
   CONTACT_MAIL_WRITE: 'admin.contact_mail.write',
+  HR_WRITE: 'admin.hr.write',
   ECOSYSTEM_USERS_WRITE: 'admin.ecosystem_users.write',
   PORTAL_USERS_WRITE: 'admin.portal_users.write',
   /** Ops portal sections (assign beyond default role) */
@@ -71,6 +72,7 @@ export const PERMISSION_LABELS: Record<PermissionCode, string> = {
   [PERMISSIONS.CATALOG_WRITE]: 'Manage medicines & suppliers',
   [PERMISSIONS.NOTIFICATIONS_WRITE]: 'Send notifications',
   [PERMISSIONS.CONTACT_MAIL_WRITE]: 'Read and reply to contact email',
+  [PERMISSIONS.HR_WRITE]: 'Manage HR and public content',
   [PERMISSIONS.ECOSYSTEM_USERS_WRITE]: 'Manage ecosystem users',
   [PERMISSIONS.PORTAL_USERS_WRITE]: 'Manage portal users',
   [PERMISSIONS.OPS_HR]: 'HR ops portal',
@@ -180,6 +182,13 @@ export function staffHasAllPermissions(user: AuthUser | undefined, ...required: 
     return true;
   }
   return required.every((p) => sp.permissionCodes.includes(p));
+}
+
+export function staffHasAnyPermission(
+  user: AuthUser | undefined,
+  ...candidates: string[]
+): boolean {
+  return candidates.some((permission) => staffHasAllPermissions(user, permission));
 }
 
 export function canManageStaffPermissions(user: AuthUser | undefined): boolean {

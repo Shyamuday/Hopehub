@@ -24,7 +24,7 @@ export function registerAdminTestimonialRoutes(router: Router) {
   router.get(
     '/admin/testimonials',
     authRequired,
-    allowRoles(Role.ADMIN, Role.MARKETING),
+    allowRoles(Role.ADMIN, Role.HR, Role.MARKETING),
     asyncRoute(async (_req, res) => {
       const testimonials = await prisma.testimonial.findMany({
         orderBy: [{ sortOrder: { sort: 'asc', nulls: 'last' } }, { createdAt: 'desc' }]
@@ -36,7 +36,7 @@ export function registerAdminTestimonialRoutes(router: Router) {
   router.post(
     '/admin/testimonials',
     authRequired,
-    allowRoles(Role.ADMIN, Role.MARKETING),
+    allowRoles(Role.ADMIN, Role.HR, Role.MARKETING),
     asyncRoute(async (req, res) => {
       const body = schema.parse(req.body);
       const testimonial = await prisma.testimonial.create({
@@ -61,7 +61,7 @@ export function registerAdminTestimonialRoutes(router: Router) {
   router.patch(
     '/admin/testimonials/:id',
     authRequired,
-    allowRoles(Role.ADMIN, Role.MARKETING),
+    allowRoles(Role.ADMIN, Role.HR, Role.MARKETING),
     asyncRoute(async (req, res) => {
       const id = routeParam(req, 'id');
       const body = schema.partial().parse(req.body);
@@ -87,7 +87,7 @@ export function registerAdminTestimonialRoutes(router: Router) {
   router.delete(
     '/admin/testimonials/:id',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const id = routeParam(req, 'id');
       await prisma.testimonial.delete({ where: { id } });

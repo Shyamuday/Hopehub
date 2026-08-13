@@ -20,7 +20,7 @@ export function registerAdminSupportRoutes(router: Router) {
   router.get(
     '/admin/consumers/:id/support',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const patientId = routeParam(req, 'id');
       const [notes, context] = await Promise.all([
@@ -50,7 +50,7 @@ export function registerAdminSupportRoutes(router: Router) {
   router.post(
     '/admin/consumers/:id/support-notes',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const patientId = routeParam(req, 'id');
       const body = supportNoteSchema.parse(req.body);

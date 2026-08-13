@@ -14,7 +14,7 @@ export function registerAdminAuditRoutes(router: Router) {
   router.get(
     '/admin/audit-retention/stats',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (_req, res) => {
       const now = Date.now();
       const day = 24 * 60 * 60 * 1000;
@@ -39,7 +39,7 @@ export function registerAdminAuditRoutes(router: Router) {
   router.post(
     '/admin/audit-retention/purge',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const olderThanDays = Math.max(
         30,
@@ -74,7 +74,7 @@ export function registerAdminAuditRoutes(router: Router) {
   router.get(
     '/admin/audit-logs',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const page = queryPositiveInt(req, 'page', 1);
       const pageSize = queryPositiveInt(req, 'pageSize', 20, 1, 100);
@@ -186,7 +186,7 @@ export function registerAdminAuditRoutes(router: Router) {
   router.get(
     '/admin/auth-process-logs',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const page = queryPositiveInt(req, 'page', 1);
       const pageSize = queryPositiveInt(req, 'pageSize', 20, 1, 100);
@@ -232,7 +232,7 @@ export function registerAdminAuditRoutes(router: Router) {
   router.get(
     '/admin/auth-sessions',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const page = queryPositiveInt(req, 'page', 1);
       const pageSize = queryPositiveInt(req, 'pageSize', 20, 1, 100);
@@ -300,7 +300,7 @@ export function registerAdminAuditRoutes(router: Router) {
   router.patch(
     '/admin/auth-sessions/:id/revoke',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const sessionId = routeParam(req, 'id');
       const session = await prisma.authSession.update({
@@ -326,7 +326,7 @@ export function registerAdminAuditRoutes(router: Router) {
   router.patch(
     '/admin/users/:id/auth-sessions/revoke',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const userId = routeParam(req, 'id');
       const result = await prisma.authSession.updateMany({

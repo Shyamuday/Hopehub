@@ -311,7 +311,7 @@ export function registerAdminDoctorRoutes(router: Router) {
   router.get(
     '/admin/doctors',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const page = queryPositiveInt(req, 'page', 1);
       const pageSize = queryPositiveInt(req, 'pageSize', 10);
@@ -412,7 +412,7 @@ export function registerAdminDoctorRoutes(router: Router) {
   router.get(
     '/admin/doctors/pending',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const page = queryPositiveInt(req, 'page', 1);
       const pageSize = queryPositiveInt(req, 'pageSize', 10);
@@ -499,7 +499,7 @@ export function registerAdminDoctorRoutes(router: Router) {
   router.post(
     '/admin/doctors/:id/approve',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const doctorId = routeParam(req, 'id');
       const doctor = await prisma.user.update({
@@ -522,7 +522,7 @@ export function registerAdminDoctorRoutes(router: Router) {
   router.post(
     '/admin/doctors/:id/reject',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const doctorId = routeParam(req, 'id');
       const doctor = await prisma.user.update({
@@ -545,7 +545,7 @@ export function registerAdminDoctorRoutes(router: Router) {
   router.put(
     '/admin/doctors/:id/status',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const doctorId = routeParam(req, 'id');
       const body = z.object({ isActive: z.boolean() }).parse(req.body);
@@ -575,7 +575,7 @@ export function registerAdminDoctorRoutes(router: Router) {
   router.put(
     '/admin/doctors/:id/suspension',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const doctorId = routeParam(req, 'id');
       const body = z
@@ -639,7 +639,7 @@ export function registerAdminDoctorRoutes(router: Router) {
   router.get(
     '/admin/doctors/:id/readiness',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const doctorId = routeParam(req, 'id');
       const doctor = await prisma.user.findFirst({
@@ -657,7 +657,7 @@ export function registerAdminDoctorRoutes(router: Router) {
   router.post(
     '/admin/doctors',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const body = z
         .object({
@@ -754,7 +754,7 @@ export function registerAdminDoctorRoutes(router: Router) {
   router.put(
     '/admin/doctors/:id',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const doctorId = routeParam(req, 'id');
       const existing = await prisma.user.findFirst({
@@ -949,7 +949,7 @@ export function registerAdminDoctorRoutes(router: Router) {
   router.patch(
     '/admin/doctors/:id/website-order',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const doctorId = routeParam(req, 'id');
       const { websiteOrder } = z

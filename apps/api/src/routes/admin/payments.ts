@@ -40,7 +40,7 @@ export function registerAdminPaymentRoutes(router: Router) {
   router.get(
     '/admin/payments',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const page = queryPositiveInt(req, 'page', 1, 1, 1000);
       const pageSize = queryPositiveInt(req, 'pageSize', 20, 1, 100);
@@ -76,7 +76,7 @@ export function registerAdminPaymentRoutes(router: Router) {
   router.get(
     '/admin/payments/:paymentId/events',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const paymentId = routeParam(req, 'paymentId');
       const [events, refunds] = await Promise.all([
@@ -99,7 +99,7 @@ export function registerAdminPaymentRoutes(router: Router) {
   router.get(
     '/admin/donations',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const page = queryPositiveInt(req, 'page', 1, 1, 1000);
       const pageSize = queryPositiveInt(req, 'pageSize', 20, 1, 100);
@@ -161,7 +161,7 @@ export function registerAdminPaymentRoutes(router: Router) {
   router.get(
     '/admin/follow-ups',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const page = queryPositiveInt(req, 'page', 1, 1, 1000);
       const pageSize = queryPositiveInt(req, 'pageSize', 20, 1, 100);
@@ -240,7 +240,7 @@ export function registerAdminPaymentRoutes(router: Router) {
   router.patch(
     '/admin/follow-ups/:id',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const id = routeParam(req, 'id');
       const body = followUpStatusSchema.parse(req.body);
@@ -287,7 +287,7 @@ export function registerAdminPaymentRoutes(router: Router) {
   router.post(
     '/admin/payments/:paymentId/refund',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const paymentId = routeParam(req, 'paymentId');
       const body = refundSchema.parse(req.body);

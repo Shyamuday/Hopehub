@@ -1,4 +1,4 @@
-import { Component, effect, inject, signal, OnInit } from '@angular/core';
+import { Component, computed, effect, inject, signal, OnInit } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -10,6 +10,8 @@ import {
 import { AdminApi } from '../../../core/services/admin-api';
 import { adminRouteLink, ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
 import { AdminWorkspaceService } from '../../../core/services/admin-workspace.service';
+import { AdminAuth } from '../../../core/services/admin-auth';
+import { ADMIN_PERMISSIONS, staffHasAllPermissions } from '../../../core/admin-permissions';
 import { environment } from '../../../../environments/environment';
 import {
   CONSULTATION_PAYMENT_STYLES,
@@ -39,6 +41,15 @@ type ConsultationQualitySummary = {
 export class ConsultationsPage implements OnInit {
   private api = inject(AdminApi);
   private workspace = inject(AdminWorkspaceService);
+  private auth = inject(AdminAuth);
+
+  readonly canManageConsultations = computed(() =>
+    staffHasAllPermissions(
+      this.auth.user(),
+      ADMIN_PERMISSIONS.CONSULTATIONS_READ,
+      ADMIN_PERMISSIONS.ASSIGNMENTS_WRITE,
+    ),
+  );
 
   readonly clinicalRecordsRoute = adminRouteLink(ROUTE_PATHS.CLINICAL_RECORDS);
   readonly doctorOrigins = { doctor: environment.doctorAppUrl };

@@ -61,7 +61,7 @@ export function registerAdminUserRoutes(router: Router) {
   router.get(
     '/admin/users',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const page = queryPositiveInt(req, 'page', 1);
       const pageSize = queryPositiveInt(req, 'pageSize', 20, 1, 100);
@@ -142,7 +142,7 @@ export function registerAdminUserRoutes(router: Router) {
   router.patch(
     '/admin/users/:id/role',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const userId = routeParam(req, 'id');
       const parsed = userRoleSchema.safeParse(req.body);
@@ -192,7 +192,7 @@ export function registerAdminUserRoutes(router: Router) {
   router.patch(
     '/admin/users/:id/status',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const userId = routeParam(req, 'id');
       const parsed = userStatusSchema.safeParse(req.body);
@@ -242,7 +242,7 @@ export function registerAdminUserRoutes(router: Router) {
   router.get(
     '/admin/admins',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (_req, res) => {
       const admins = await prisma.user.findMany({
         where: { role: Role.ADMIN },
@@ -264,7 +264,7 @@ export function registerAdminUserRoutes(router: Router) {
   router.post(
     '/admin/admins',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const { name, email, password, mobile } = req.body as {
         name: string;
@@ -327,7 +327,7 @@ export function registerAdminUserRoutes(router: Router) {
   router.patch(
     '/admin/admins/:id/status',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const adminId = routeParam(req, 'id');
       const { isActive } = req.body as { isActive: boolean };

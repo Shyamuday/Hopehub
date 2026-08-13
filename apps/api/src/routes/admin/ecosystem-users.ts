@@ -93,7 +93,7 @@ export function registerAdminEcosystemUserRoutes(router: Router) {
   router.get(
     '/admin/ecosystem-users/meta',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (_req, res) => {
       const [stores, corporates] = await Promise.all([
         prisma.store.findMany({
@@ -118,7 +118,7 @@ export function registerAdminEcosystemUserRoutes(router: Router) {
   router.get(
     '/admin/ecosystem-users/corporates',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (_req, res) => {
       const accounts = await prisma.corporateAccount.findMany({
         include: { _count: { select: { enrollments: true, profiles: true } } },
@@ -141,7 +141,7 @@ export function registerAdminEcosystemUserRoutes(router: Router) {
   router.post(
     '/admin/ecosystem-users/corporates',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const body = z
         .object({
@@ -183,7 +183,7 @@ export function registerAdminEcosystemUserRoutes(router: Router) {
   router.get(
     '/admin/ecosystem-users',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const roleParam = queryText(req, 'role');
       const roles =
@@ -215,7 +215,7 @@ export function registerAdminEcosystemUserRoutes(router: Router) {
   router.post(
     '/admin/ecosystem-users',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const body = createUserSchema.parse(req.body);
 
@@ -368,7 +368,7 @@ export function registerAdminEcosystemUserRoutes(router: Router) {
   router.patch(
     '/admin/ecosystem-users/:id/status',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const id = routeParam(req, 'id');
       const { isActive } = z.object({ isActive: z.boolean() }).parse(req.body);
@@ -412,7 +412,7 @@ export function registerAdminEcosystemUserRoutes(router: Router) {
   router.patch(
     '/admin/ecosystem-users/:id',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const id = routeParam(req, 'id');
       const body = updateProfileSchema.parse(req.body);
@@ -518,7 +518,7 @@ export function registerAdminEcosystemUserRoutes(router: Router) {
   router.get(
     '/admin/ecosystem-users/corporates/:id/enrollments',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const corporateId = routeParam(req, 'id');
       await prisma.corporateAccount.findUniqueOrThrow({ where: { id: corporateId } });
@@ -538,7 +538,7 @@ export function registerAdminEcosystemUserRoutes(router: Router) {
   router.post(
     '/admin/ecosystem-users/corporates/:id/enrollments',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const corporateId = routeParam(req, 'id');
       const { patientId } = z.object({ patientId: z.string().min(1) }).parse(req.body);
@@ -574,7 +574,7 @@ export function registerAdminEcosystemUserRoutes(router: Router) {
   router.delete(
     '/admin/ecosystem-users/corporates/:corporateId/enrollments/:patientId',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const corporateId = routeParam(req, 'corporateId');
       const patientId = routeParam(req, 'patientId');
@@ -586,7 +586,7 @@ export function registerAdminEcosystemUserRoutes(router: Router) {
   router.get(
     '/admin/ecosystem-users/insurance/claims',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (_req, res) => {
       const claims = await prisma.insuranceClaim.findMany({
         include: {

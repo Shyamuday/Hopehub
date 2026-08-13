@@ -8,7 +8,7 @@ export function registerAdminAdherenceRoutes(router: Router) {
   router.get(
     '/admin/adherence/risk-cohorts',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const days = queryPositiveInt(req, 'days', 7, 7, 30);
       const minDoses = queryPositiveInt(req, 'minDoses', 5, 3, 30);

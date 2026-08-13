@@ -94,7 +94,7 @@ export function registerAdminPortalUserRoutes(router: Router) {
   router.get(
     '/admin/portal-users/meta',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (_req, res) => {
       const [stores, warehouses, suppliers, diagnosticCenters] = await Promise.all([
         prisma.store.findMany({
@@ -133,7 +133,7 @@ export function registerAdminPortalUserRoutes(router: Router) {
   router.get(
     '/admin/portal-users',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const roleParam = queryText(req, 'role');
       const roles =
@@ -153,7 +153,7 @@ export function registerAdminPortalUserRoutes(router: Router) {
   router.post(
     '/admin/portal-users',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const body = createSchema.parse(req.body);
       const email = body.email.trim().toLowerCase();
@@ -306,7 +306,7 @@ export function registerAdminPortalUserRoutes(router: Router) {
   router.patch(
     '/admin/portal-users/:id/status',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const id = routeParam(req, 'id');
       const { isActive } = z.object({ isActive: z.boolean() }).parse(req.body);
@@ -334,7 +334,7 @@ export function registerAdminPortalUserRoutes(router: Router) {
   router.patch(
     '/admin/portal-users/:id',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const id = routeParam(req, 'id');
       const body = updateSchema.parse(req.body);

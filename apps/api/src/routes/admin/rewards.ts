@@ -38,9 +38,15 @@ const ruleSchema = z.object({
   conditions: z.record(z.string(), z.unknown()).optional().nullable()
 });
 
-function buildRuleUpdateData(parsed: Partial<z.infer<typeof ruleSchema>>): Prisma.RewardProgramRuleUpdateInput {
+function buildRuleUpdateData(
+  parsed: Partial<z.infer<typeof ruleSchema>>
+): Prisma.RewardProgramRuleUpdateInput {
   const data: Prisma.RewardProgramRuleUpdateInput = {};
-  if (parsed.code !== undefined) data.code = parsed.code.trim().toUpperCase().replace(/[^A-Z0-9_]/g, '_');
+  if (parsed.code !== undefined)
+    data.code = parsed.code
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9_]/g, '_');
   if (parsed.name !== undefined) data.name = parsed.name;
   if (parsed.description !== undefined) data.description = parsed.description;
   if (parsed.kind !== undefined) data.kind = parsed.kind;
@@ -49,24 +55,31 @@ function buildRuleUpdateData(parsed: Partial<z.infer<typeof ruleSchema>>): Prism
   if (parsed.valueType !== undefined) data.valueType = parsed.valueType;
   if (parsed.valueAmount !== undefined) data.valueAmount = parsed.valueAmount;
   if (parsed.appliesTo !== undefined) data.appliesTo = parsed.appliesTo;
-  if (parsed.promoCode !== undefined) data.promoCode = parsed.promoCode?.trim().toUpperCase() || null;
+  if (parsed.promoCode !== undefined)
+    data.promoCode = parsed.promoCode?.trim().toUpperCase() || null;
   if (parsed.maxUsesPerPatient !== undefined) data.maxUsesPerPatient = parsed.maxUsesPerPatient;
   if (parsed.maxUsesGlobal !== undefined) data.maxUsesGlobal = parsed.maxUsesGlobal;
   if (parsed.maxDiscountInPaise !== undefined) data.maxDiscountInPaise = parsed.maxDiscountInPaise;
   if (parsed.minOrderInPaise !== undefined) data.minOrderInPaise = parsed.minOrderInPaise;
   if (parsed.minPayableInPaise !== undefined) data.minPayableInPaise = parsed.minPayableInPaise;
-  if (parsed.validFrom !== undefined) data.validFrom = parsed.validFrom ? new Date(parsed.validFrom) : null;
-  if (parsed.validUntil !== undefined) data.validUntil = parsed.validUntil ? new Date(parsed.validUntil) : null;
+  if (parsed.validFrom !== undefined)
+    data.validFrom = parsed.validFrom ? new Date(parsed.validFrom) : null;
+  if (parsed.validUntil !== undefined)
+    data.validUntil = parsed.validUntil ? new Date(parsed.validUntil) : null;
   if (parsed.isActive !== undefined) data.isActive = parsed.isActive;
   if (parsed.priority !== undefined) data.priority = parsed.priority;
-  if (parsed.conditions !== undefined) data.conditions = (parsed.conditions ?? null) as Prisma.InputJsonValue;
+  if (parsed.conditions !== undefined)
+    data.conditions = (parsed.conditions ?? null) as Prisma.InputJsonValue;
   return data;
 }
 
 function normalizeRuleBody(body: z.infer<typeof ruleSchema>) {
   return {
     ...body,
-    code: body.code.trim().toUpperCase().replace(/[^A-Z0-9_]/g, '_'),
+    code: body.code
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9_]/g, '_'),
     promoCode: body.promoCode?.trim().toUpperCase() || null,
     description: body.description ?? null,
     validFrom: body.validFrom ? new Date(body.validFrom) : null,
@@ -95,7 +108,9 @@ export function registerAdminRewardsRoutes(router: Router) {
     allowRoles(Role.ADMIN, Role.MARKETING),
     asyncRoute(async (req, res) => {
       const body = normalizeRuleBody(ruleSchema.parse(req.body));
-      const rule = await prisma.rewardProgramRule.create({ data: body as Prisma.RewardProgramRuleCreateInput });
+      const rule = await prisma.rewardProgramRule.create({
+        data: body as Prisma.RewardProgramRuleCreateInput
+      });
       await writeAuditLog({
         actorId: req.user!.id,
         actorRole: req.user!.role,
@@ -134,7 +149,7 @@ export function registerAdminRewardsRoutes(router: Router) {
   router.delete(
     '/admin/rewards/rules/:id',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const id = routeParam(req, 'id');
       await prisma.rewardProgramRule.delete({ where: { id } });
@@ -172,7 +187,7 @@ export function registerAdminRewardsRoutes(router: Router) {
   router.post(
     '/admin/rewards/wallet/:patientId/adjust',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const patientId = routeParam(req, 'patientId');
       const body = z

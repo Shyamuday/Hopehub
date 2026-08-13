@@ -15,7 +15,7 @@ export function registerAdminSiteConfigRoutes(router: Router) {
   router.get(
     '/admin/site-config',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (_req, res) => {
       const rows = await prisma.siteConfig.findMany({ where: { key: { in: SITE_CONFIG_KEYS } } });
       const map = Object.fromEntries(rows.map((r) => [r.key, r.value]));
@@ -35,7 +35,7 @@ export function registerAdminSiteConfigRoutes(router: Router) {
   router.patch(
     '/admin/site-config/:key',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const key = routeParam(req, 'key');
       if (!SITE_CONFIG_KEYS.includes(key)) {

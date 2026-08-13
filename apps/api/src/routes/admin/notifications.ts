@@ -42,7 +42,7 @@ export function registerAdminNotificationRoutes(router: Router) {
   router.get(
     '/admin/notifications/email-status',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (_req, res) => {
       const status = getEmailConfigStatus();
       let transportVerified = false;
@@ -64,7 +64,7 @@ export function registerAdminNotificationRoutes(router: Router) {
   router.post(
     '/admin/notifications/email-test',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const body = emailTestSchema.parse(req.body);
       const subject = body.subject?.trim() || 'Hope Hub email test';
@@ -92,7 +92,7 @@ export function registerAdminNotificationRoutes(router: Router) {
   router.get(
     '/admin/notifications/templates',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (_req, res) => {
       const templates = await prisma.notificationTemplate.findMany({
         orderBy: { name: 'asc' }
@@ -104,7 +104,7 @@ export function registerAdminNotificationRoutes(router: Router) {
   router.post(
     '/admin/notifications/templates',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const body = templateSchema.parse(req.body);
       const existing = await prisma.notificationTemplate.findUnique({
@@ -141,7 +141,7 @@ export function registerAdminNotificationRoutes(router: Router) {
   router.patch(
     '/admin/notifications/templates/:id',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const id = routeParam(req, 'id');
       const body = templateSchema.partial().omit({ code: true }).parse(req.body);
@@ -164,7 +164,7 @@ export function registerAdminNotificationRoutes(router: Router) {
   router.get(
     '/admin/notifications/broadcasts',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (_req, res) => {
       const broadcasts = await prisma.notificationBroadcast.findMany({
         include: {
@@ -181,7 +181,7 @@ export function registerAdminNotificationRoutes(router: Router) {
   router.post(
     '/admin/notifications/broadcast',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const body = broadcastSchema.parse(req.body);
       const where = audienceWhere(body.audience, body.audienceRole);

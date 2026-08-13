@@ -3,13 +3,17 @@ import { z } from 'zod';
 import { Role } from '@prisma/client';
 import { authRequired, allowRoles } from '../../auth.js';
 import { asyncRoute, queryText, routeParam } from '../../utils/helpers.js';
-import { createPurchaseOrder, getPurchaseOrder, listPurchaseOrders } from '../../services/purchase-orders.js';
+import {
+  createPurchaseOrder,
+  getPurchaseOrder,
+  listPurchaseOrders
+} from '../../services/purchase-orders.js';
 
 export function registerAdminPurchaseOrderRoutes(router: Router) {
   router.get(
     '/admin/purchase-orders',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const status = queryText(req, 'status') as any;
       const orders = await listPurchaseOrders({
@@ -24,7 +28,7 @@ export function registerAdminPurchaseOrderRoutes(router: Router) {
   router.post(
     '/admin/purchase-orders',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const body = z
         .object({
@@ -55,7 +59,7 @@ export function registerAdminPurchaseOrderRoutes(router: Router) {
   router.get(
     '/admin/purchase-orders/:id',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const order = await getPurchaseOrder(routeParam(req, 'id'));
       if (!order) return res.status(404).json({ message: 'Purchase order not found.' });

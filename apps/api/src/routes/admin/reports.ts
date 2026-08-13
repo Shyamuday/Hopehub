@@ -33,7 +33,7 @@ export function registerAdminReportRoutes(router: Router) {
   router.get(
     '/admin/reports',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const workspace = getAuthorizedAdminWorkspace(req, res);
       if (workspace === null) return;

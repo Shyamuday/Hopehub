@@ -32,7 +32,7 @@ export function registerAdminCatalogOpsRoutes(router: Router) {
   router.get(
     '/admin/suppliers',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const includeInactive = queryText(req, 'includeInactive') === 'true';
       const suppliers = await prisma.supplier.findMany({
@@ -46,7 +46,7 @@ export function registerAdminCatalogOpsRoutes(router: Router) {
   router.post(
     '/admin/suppliers',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const body = supplierBodySchema.parse(req.body);
       const code = body.code.toUpperCase();
@@ -72,9 +72,12 @@ export function registerAdminCatalogOpsRoutes(router: Router) {
   router.patch(
     '/admin/suppliers/:id',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
-      const body = supplierBodySchema.partial().extend({ isActive: z.boolean().optional() }).parse(req.body);
+      const body = supplierBodySchema
+        .partial()
+        .extend({ isActive: z.boolean().optional() })
+        .parse(req.body);
       const supplier = await prisma.supplier.update({
         where: { id: routeParam(req, 'id') },
         data: {
@@ -93,7 +96,7 @@ export function registerAdminCatalogOpsRoutes(router: Router) {
   router.get(
     '/admin/medicines',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const q = queryText(req, 'q').trim();
       const includeInactive = queryText(req, 'includeInactive') === 'true';
@@ -131,7 +134,7 @@ export function registerAdminCatalogOpsRoutes(router: Router) {
   router.post(
     '/admin/medicines',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const body = medicineBodySchema.parse(req.body);
       const qrCode = `VTLS-MED-${crypto.randomBytes(6).toString('hex').toUpperCase()}`;
@@ -145,7 +148,7 @@ export function registerAdminCatalogOpsRoutes(router: Router) {
   router.put(
     '/admin/medicines/:id',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const body = medicineBodySchema.parse(req.body);
       const medicine = await prisma.storeMedicine.update({

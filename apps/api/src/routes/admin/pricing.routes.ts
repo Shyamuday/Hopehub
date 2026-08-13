@@ -15,9 +15,10 @@ export function registerAdminPricingRoutes(router: Router) {
   router.get(
     '/admin/pricing/location-fees',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
-      const diseaseId = typeof req.query['diseaseId'] === 'string' ? req.query['diseaseId'] : undefined;
+      const diseaseId =
+        typeof req.query['diseaseId'] === 'string' ? req.query['diseaseId'] : undefined;
       const fees = await listDiseaseLocationFees(diseaseId);
       res.json({ fees, onlineKey: ONLINE_LOCATION_KEY });
     })
@@ -26,7 +27,7 @@ export function registerAdminPricingRoutes(router: Router) {
   router.put(
     '/admin/pricing/location-fees',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const body = z
         .object({
@@ -49,7 +50,7 @@ export function registerAdminPricingRoutes(router: Router) {
   router.delete(
     '/admin/pricing/location-fees/:diseaseId/:locationKey',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const diseaseId = routeParam(req, 'diseaseId');
       const locationKey = routeParam(req, 'locationKey');
@@ -61,7 +62,7 @@ export function registerAdminPricingRoutes(router: Router) {
   router.get(
     '/admin/billing/plans',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (_req, res) => {
       const plans = await prisma.billingPlan.findMany({
         orderBy: [{ sortOrder: 'asc' }, { priceInPaise: 'asc' }]
@@ -73,7 +74,7 @@ export function registerAdminPricingRoutes(router: Router) {
   router.put(
     '/admin/billing/plans/:id',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const body = z
         .object({

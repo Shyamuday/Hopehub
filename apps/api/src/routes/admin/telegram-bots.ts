@@ -280,7 +280,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
   router.patch(
     '/admin/telegram-bots/group-help',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const parsed = groupHelpSaveSchema.safeParse(req.body ?? {});
       if (!parsed.success) {
@@ -340,7 +340,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
   router.post(
     '/admin/telegram-bots/group-help/apply',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const parsed = groupHelpApplySchema.safeParse(req.body ?? {});
       if (!parsed.success) return res.status(400).json({ message: 'Invalid Group Help action.' });
@@ -438,7 +438,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
   router.post(
     '/admin/telegram-bots/group-help/send',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const parsed = groupHelpSendSchema.safeParse(req.body ?? {});
       if (!parsed.success) {
@@ -529,7 +529,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
   router.post(
     '/admin/telegram-bots/group-help/clear-menu',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       if (!groupHelpBotToken()) {
         return res.status(400).json({ message: 'TELEGRAM_HOPEHUBBOT_TOKEN is not configured.' });
@@ -556,7 +556,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
   router.post(
     '/admin/telegram-bots/:bot/setup',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const slug = routeParam(req, 'bot');
       const kind = telegramBotKindFromSlug(slug);
@@ -593,7 +593,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
   router.post(
     '/admin/telegram-bots/setup-all',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const parsed = setupSchema.safeParse(req.body ?? {});
       if (!parsed.success) {
@@ -631,7 +631,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
   router.post(
     '/admin/telegram-bots/sessions/:id/unlink',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const sessionId = routeParam(req, 'id');
       const existing = await prisma.telegramBotSession.findUnique({

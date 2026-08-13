@@ -55,7 +55,7 @@ export function registerAdminListenerScreeningRoutes(router: Router) {
   router.get(
     '/admin/hope-hub/listener-screening',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (_req, res) => {
       const [questionSets, auditLogs] = await Promise.all([
         prisma.listenerScreeningQuestionSet.findMany({
@@ -169,7 +169,7 @@ export function registerAdminListenerScreeningRoutes(router: Router) {
   router.post(
     '/admin/hope-hub/listener-screening',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const body = listenerScreeningQuestionSetWriteSchema.parse(req.body);
       const questions = validatePassScore(body.questions, body.passScore);
@@ -216,7 +216,7 @@ export function registerAdminListenerScreeningRoutes(router: Router) {
   router.patch(
     '/admin/hope-hub/listener-screening/:id',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const id = routeParam(req, 'id');
       const body = listenerScreeningQuestionSetUpdateSchema.parse(req.body);
@@ -270,7 +270,7 @@ export function registerAdminListenerScreeningRoutes(router: Router) {
   router.post(
     '/admin/hope-hub/listener-screening/:id/publish',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const id = routeParam(req, 'id');
       const existing = await prisma.listenerScreeningQuestionSet.findUnique({ where: { id } });

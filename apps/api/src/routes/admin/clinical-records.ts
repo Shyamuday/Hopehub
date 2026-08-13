@@ -34,7 +34,7 @@ export function registerAdminClinicalRecordsRoutes(router: Router) {
   router.get(
     '/admin/clinical-records/method-options',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (_req, res) => {
       const options = await prisma.prescriptionOption.findMany({
         where: { type: PrescriptionOptionType.METHOD },
@@ -48,7 +48,7 @@ export function registerAdminClinicalRecordsRoutes(router: Router) {
   router.get(
     '/admin/prescriptions',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const page = queryPositiveInt(req, 'page', 1);
       const pageSize = Math.min(queryPositiveInt(req, 'pageSize', 20), 50);
@@ -135,7 +135,7 @@ export function registerAdminClinicalRecordsRoutes(router: Router) {
   router.get(
     '/admin/prescriptions/:id',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const id = routeParam(req, 'id');
       const prescription = await prisma.prescription.findFirst({
@@ -167,7 +167,7 @@ export function registerAdminClinicalRecordsRoutes(router: Router) {
   router.get(
     '/admin/case-analyses',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const page = queryPositiveInt(req, 'page', 1);
       const pageSize = Math.min(queryPositiveInt(req, 'pageSize', 20), 50);
@@ -262,7 +262,7 @@ export function registerAdminClinicalRecordsRoutes(router: Router) {
   router.get(
     '/admin/case-analyses/:id',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const id = routeParam(req, 'id');
       const analysis = await prisma.caseAnalysis.findFirst({
@@ -308,7 +308,7 @@ export function registerAdminClinicalRecordsRoutes(router: Router) {
   router.get(
     '/admin/patients/:patientId/clinical-media',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const patientId = routeParam(req, 'patientId');
       const patient = await prisma.user.findFirst({

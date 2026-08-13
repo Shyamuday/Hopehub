@@ -7,7 +7,11 @@ import { prisma } from '../../db.js';
 import { asyncRoute, routeParam, writeAuditLog } from '../../utils/helpers.js';
 
 const schema = z.object({
-  slug: z.string().min(3).max(120).regex(/^[a-z0-9-]+$/, 'Slug must be lowercase letters, numbers, and hyphens only'),
+  slug: z
+    .string()
+    .min(3)
+    .max(120)
+    .regex(/^[a-z0-9-]+$/, 'Slug must be lowercase letters, numbers, and hyphens only'),
   title: z.string().min(5).max(200),
   excerpt: z.string().min(10).max(500),
   content: z.string().max(50000).optional().nullable(),
@@ -21,7 +25,10 @@ const schema = z.object({
   authorRole: z.string().max(80).optional().nullable()
 });
 
-function publishedAtForUpdate(existing: { isPublished: boolean; publishedAt: Date | null }, isPublished?: boolean) {
+function publishedAtForUpdate(
+  existing: { isPublished: boolean; publishedAt: Date | null },
+  isPublished?: boolean
+) {
   if (isPublished === true && !existing.publishedAt) return new Date();
   if (isPublished === false) return null;
   return undefined;
@@ -31,7 +38,7 @@ export function registerAdminBlogRoutes(router: Router) {
   router.get(
     '/admin/blog/stats',
     authRequired,
-    allowRoles(Role.ADMIN, Role.MARKETING),
+    allowRoles(Role.ADMIN, Role.HR, Role.MARKETING),
     asyncRoute(async (_req, res) => {
       const [total, published, hidden, featured, pendingComments, totalViews] = await Promise.all([
         prisma.blogPost.count(),
@@ -58,11 +65,15 @@ export function registerAdminBlogRoutes(router: Router) {
   router.get(
     '/admin/blog',
     authRequired,
-    allowRoles(Role.ADMIN, Role.MARKETING),
+    allowRoles(Role.ADMIN, Role.HR, Role.MARKETING),
     asyncRoute(async (_req, res) => {
       const posts = await prisma.blogPost.findMany({
         include: { _count: { select: { comments: true } } },
-        orderBy: [{ sortOrder: 'asc' }, { publishedAt: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }]
+        orderBy: [
+          { sortOrder: 'asc' },
+          { publishedAt: { sort: 'desc', nulls: 'last' } },
+          { createdAt: 'desc' }
+        ]
       });
       res.json({ posts, categories: BLOG_CATEGORIES });
     })
@@ -71,7 +82,7 @@ export function registerAdminBlogRoutes(router: Router) {
   router.post(
     '/admin/blog',
     authRequired,
-    allowRoles(Role.ADMIN, Role.MARKETING),
+    allowRoles(Role.ADMIN, Role.HR, Role.MARKETING),
     asyncRoute(async (req, res) => {
       const body = schema.parse(req.body);
       const post = await prisma.blogPost.create({
@@ -98,7 +109,7 @@ export function registerAdminBlogRoutes(router: Router) {
   router.patch(
     '/admin/blog/:id',
     authRequired,
-    allowRoles(Role.ADMIN, Role.MARKETING),
+    allowRoles(Role.ADMIN, Role.HR, Role.MARKETING),
     asyncRoute(async (req, res) => {
       const id = routeParam(req, 'id');
       const body = schema.partial().parse(req.body);
@@ -128,7 +139,7 @@ export function registerAdminBlogRoutes(router: Router) {
   router.delete(
     '/admin/blog/:id',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const id = routeParam(req, 'id');
       const post = await prisma.blogPost.delete({ where: { id } });
@@ -147,12 +158,21 @@ export function registerAdminBlogRoutes(router: Router) {
   router.get(
     '/admin/blog/comments',
     authRequired,
-    allowRoles(Role.ADMIN, Role.MARKETING),
+    allowRoles(Role.ADMIN, Role.HR, Role.MARKETING),
     asyncRoute(async (req, res) => {
-      const status = req.query['status'] === 'approved' ? 'approved' : req.query['status'] === 'pending' ? 'pending' : 'all';
+      const status =
+        req.query['status'] === 'approved'
+          ? 'approved'
+          : req.query['status'] === 'pending'
+            ? 'pending'
+            : 'all';
       const comments = await prisma.blogComment.findMany({
         where:
-          status === 'approved' ? { isApproved: true } : status === 'pending' ? { isApproved: false } : undefined,
+          status === 'approved'
+            ? { isApproved: true }
+            : status === 'pending'
+              ? { isApproved: false }
+              : undefined,
         include: {
           post: { select: { id: true, slug: true, title: true } }
         },
@@ -166,7 +186,7 @@ export function registerAdminBlogRoutes(router: Router) {
   router.patch(
     '/admin/blog/comments/:id',
     authRequired,
-    allowRoles(Role.ADMIN, Role.MARKETING),
+    allowRoles(Role.ADMIN, Role.HR, Role.MARKETING),
     asyncRoute(async (req, res) => {
       const id = routeParam(req, 'id');
       const body = z.object({ isApproved: z.boolean() }).parse(req.body);
@@ -189,7 +209,7 @@ export function registerAdminBlogRoutes(router: Router) {
   router.delete(
     '/admin/blog/comments/:id',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const id = routeParam(req, 'id');
       await prisma.blogComment.delete({ where: { id } });

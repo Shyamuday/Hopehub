@@ -171,7 +171,7 @@ export function registerAdminPracticeRoutes(router: Router) {
   router.delete(
     '/admin/practices/:id',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const id = routeParam(req, 'id');
       await prisma.practice.update({ where: { id }, data: { status: PracticeStatus.ARCHIVED } });

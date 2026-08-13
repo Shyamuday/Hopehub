@@ -18,7 +18,7 @@ export function registerAdminConsumerRoutes(router: Router) {
   router.get(
     '/admin/consumers',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const page = queryPositiveInt(req, 'page', 1);
       const pageSize = queryPositiveInt(req, 'pageSize', 10);
@@ -75,7 +75,7 @@ export function registerAdminConsumerRoutes(router: Router) {
   router.get(
     '/admin/consumers/:id',
     authRequired,
-    allowRoles(Role.ADMIN),
+    allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const patientId = routeParam(req, 'id');
       const patient = await prisma.user.findFirst({
