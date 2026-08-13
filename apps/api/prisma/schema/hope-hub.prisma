@@ -49,6 +49,67 @@ enum CareTeamMemberType {
   CAREER_STUDY_MENTOR
 }
 
+enum ProviderDomain {
+  HOMEOPATHY
+  HOPE_HUB
+}
+
+enum ProviderRoleAssignmentStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+model ProviderRoleDefinition {
+  code                      String   @id
+  domain                    ProviderDomain @default(HOPE_HUB)
+  label                     String
+  shortLabel                String
+  category                  String
+  tone                      String
+  description               String   @db.Text
+  scope                     String   @db.Text
+  bestFor                   String[] @default([])
+  notFor                    String[] @default([])
+  ctaLabel                  String
+  requiresCredentials       Boolean  @default(false)
+  requiresListenerScreening Boolean  @default(false)
+  isClinicalCare            Boolean  @default(false)
+  supportedModes            String[] @default(["CHAT", "VOICE", "VIDEO"])
+  isActive                  Boolean  @default(true)
+  sortOrder                 Int      @default(0)
+  version                   Int      @default(1)
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  assignments ProviderRoleAssignment[]
+  services    CareTeamService[]
+
+  @@index([domain, isActive, sortOrder])
+  @@index([category, isActive])
+}
+
+model ProviderRoleAssignment {
+  id               String   @id @default(cuid())
+  doctorId         String
+  roleCode         String
+  status           ProviderRoleAssignmentStatus @default(ACTIVE)
+  isPrimary        Boolean  @default(false)
+  credentialStatus CredentialVerificationStatus @default(NOT_REQUIRED)
+  verifiedAt       DateTime?
+  verifiedById     String?
+  assignedById     String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  doctor Doctor                 @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  role   ProviderRoleDefinition @relation(fields: [roleCode], references: [code], onDelete: Restrict)
+
+  @@unique([doctorId, roleCode])
+  @@index([doctorId, status, isPrimary])
+  @@index([roleCode, status])
+}
+
 enum CareTeamServicePricingMode {
   FIXED
   FREE_INTRO
@@ -101,6 +162,7 @@ model CareTeamService {
   title                  String
   description            String?  @db.Text
   providerRole           CareTeamMemberType?
+  providerRoleCode       String
   pricingMode            CareTeamServicePricingMode @default(FIXED)
   priceInPaise           Int      @default(0)
   firstSessionPriceInPaise Int?
@@ -119,11 +181,13 @@ model CareTeamService {
   updatedAt              DateTime @updatedAt
 
   mentalHealthProfile    MentalHealthProviderProfile @relation(fields: [mentalHealthProfileId], references: [id], onDelete: Cascade)
+  roleDefinition         ProviderRoleDefinition @relation(fields: [providerRoleCode], references: [code], onDelete: Restrict)
   availabilityRules      ProviderAvailabilityRule[]
   slots                  DoctorSlot[]
 
   @@index([mentalHealthProfileId, isActive, sortOrder])
   @@index([providerRole, isActive])
+  @@index([providerRoleCode, isActive])
 }
 
 model CareTeamPricingTemplate {

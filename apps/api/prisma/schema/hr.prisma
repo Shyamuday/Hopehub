@@ -63,6 +63,7 @@ model Doctor {
   id               String         @id @default(cuid())
   userId           String         @unique
   doctorType       HomeopathicDoctorType @default(JUNIOR_DOCTOR)
+  providerDomain   ProviderDomain @default(HOMEOPATHY)
   specialtyFocus     HomeopathicSpecialtyFocus?
   specialty        String
   registrationNo   String?
@@ -113,6 +114,7 @@ model Doctor {
   availabilityRules ProviderAvailabilityRule[]
   onlineSession    DoctorOnlineSession?
   mentalHealthProfile MentalHealthProviderProfile?
+  roleAssignments ProviderRoleAssignment[]
   salaryStructure  EmployeeSalary?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt

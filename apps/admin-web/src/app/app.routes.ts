@@ -54,6 +54,7 @@ import { LifestyleTipsAdminPage } from './features/lifestyle-tips-admin/lifestyl
 import { TelegramBotsPage } from './features/telegram-bots/telegram-bots-page/telegram-bots-page';
 import { GroupHelpPage } from './features/group-help/group-help-page';
 import { CallHealthPage } from './features/call-health/call-health-page';
+import { ProviderRolesPage } from './features/provider-roles/provider-roles-page';
 
 const guard = [adminPermissionGuard];
 
@@ -85,6 +86,7 @@ export const routes: Routes = [
         component: ListenerScreeningPage,
         canActivate: guard,
       },
+      { path: ROUTE_PATHS.PROVIDER_ROLES, component: ProviderRolesPage, canActivate: guard },
       {
         path: ROUTE_PATHS.ASSESSMENT_DEFINITIONS,
         component: AssessmentDefinitionsPage,

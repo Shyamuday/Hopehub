@@ -43,10 +43,13 @@ import { markDoctorBusy } from '../services/online-doctor-presence.js';
 import { emitHopeHubLiveGroupMessage } from '../services/hope-hub-live-groups-realtime.js';
 import { providerPublicReadiness } from '../doctor-capabilities.js';
 import {
-  PROVIDER_ROLE_CODES,
-  PROVIDER_ROLE_DEFINITIONS,
-  PROVIDER_ROLE_GROUPS,
+  listProviderRoles,
+  providerRoleSnapshot,
+  providerTaxonomyPayload
+} from '../services/provider-taxonomy.service.js';
+import {
   normalizeProviderRoles,
+  providerClassificationFromAssignments,
   providerClassificationFromLegacy,
   providerRoleDefinition,
   supportPathForProviderRole
@@ -782,6 +785,7 @@ function careTeamServiceSelect() {
   return {
     id: true,
     providerRole: true,
+    providerRoleCode: true,
     title: true,
     description: true,
     pricingMode: true,
@@ -899,6 +903,12 @@ function providerRoleForSession(types: readonly string[], preferredExpertType?: 
   );
 }
 
+async function isListenerProviderRole(roleCode?: string | null) {
+  if (!roleCode) return false;
+  const role = (await listProviderRoles()).find((definition) => definition.code === roleCode);
+  return role?.category === 'EMOTIONAL_LISTENER' || isListenerCareTeamType(roleCode as any);
+}
+
 function providerPublicPayload(
   provider: {
     id: string;
@@ -908,6 +918,24 @@ function providerPublicPayload(
     bio: string | null;
     yearsOfExperience: number | null;
     focusAreas: string[];
+    providerDomain?: string | null;
+    roleAssignments?: Array<{
+      roleCode: string;
+      isPrimary: boolean;
+      status: string;
+      role: {
+        label: string;
+        shortLabel: string;
+        category: string;
+        tone: string;
+        description: string;
+        scope: string;
+        bestFor: string[];
+        notFor: string[];
+        ctaLabel: string;
+        isClinicalCare: boolean;
+      };
+    }>;
     mentalHealthProfile?: {
       careTeamType: string;
       careTeamTypes?: string[];
@@ -973,11 +1001,31 @@ function providerPublicPayload(
     .filter(Boolean)
     .join(' ')
     .toLowerCase();
-  const careTeamTypes = normalizedCareTeamTypes(mental);
+  const assignmentClassification = providerClassificationFromAssignments(provider);
+  const careTeamTypes = assignmentClassification?.roles.length
+    ? assignmentClassification.roles
+    : normalizedCareTeamTypes(mental);
   const careTeamType = careTeamTypes[0] ?? mental?.careTeamType ?? 'MENTAL_WELLNESS_PROFESSIONAL';
   const supportRole = careTeamType;
-  const roleDisplay = careTeamRoleDisplay(careTeamType, defaults.careRoleLabel);
-  const isScreenedListener = careTeamTypes.some((type) => isListenerCareTeamType(type));
+  const assignedDefinition = provider.roleAssignments?.find(
+    (item) => item.roleCode === careTeamType
+  )?.role;
+  const roleDisplay = assignedDefinition
+    ? {
+        label: assignedDefinition.label,
+        tierLabel: assignedDefinition.shortLabel,
+        tone: assignedDefinition.tone,
+        description: assignedDefinition.description,
+        scope: assignedDefinition.scope,
+        bestFor: assignedDefinition.bestFor,
+        notFor: assignedDefinition.notFor,
+        ctaLabel: assignedDefinition.ctaLabel,
+        isClinicalCare: assignedDefinition.isClinicalCare
+      }
+    : careTeamRoleDisplay(careTeamType, defaults.careRoleLabel);
+  const isScreenedListener =
+    assignedDefinition?.category === 'EMOTIONAL_LISTENER' ||
+    careTeamTypes.some((type) => isListenerCareTeamType(type));
   const activeServices = (mental?.services ?? [])
     .filter((service) => service.isActive)
     .map((service) => {
@@ -1018,10 +1066,12 @@ function providerPublicPayload(
       : null,
     careTeamType,
     careTeamTypes,
-    providerClassification: providerClassificationFromLegacy({
-      doctorType: 'PSYCHOLOGIST',
-      mentalHealthProfile: mental
-    }),
+    providerClassification:
+      assignmentClassification ??
+      providerClassificationFromLegacy({
+        doctorType: 'PSYCHOLOGIST',
+        mentalHealthProfile: mental
+      }),
     bio: provider.bio,
     yearsOfExperience: provider.yearsOfExperience,
     focusAreas,
@@ -1485,6 +1535,11 @@ function hopeHubProviderWhere(params: {
     MENTORS: ['CAREER_STUDY_MENTOR']
   };
   const roleTypes = roleGroup ? roleGroupTypes[roleGroup] || [] : [];
+  const roleCategory = ['PROFESSIONAL_CARE', 'COACH_MENTOR', 'EMOTIONAL_LISTENER'].includes(
+    roleGroup || ''
+  )
+    ? roleGroup
+    : null;
   return {
     showOnWebsite: true,
     suspendedAt: null,
@@ -1493,6 +1548,13 @@ function hopeHubProviderWhere(params: {
       ...(gender && gender !== 'PREFER_NOT_TO_SAY' ? { gender: gender as any } : {})
     },
     ...(autoMatchOnly ? { isAvailable: true } : {}),
+    ...(roleCategory
+      ? {
+          roleAssignments: {
+            some: { status: 'ACTIVE' as const, role: { category: roleCategory, isActive: true } }
+          }
+        }
+      : {}),
     ...(roleTypes.length ||
     concern ||
     language ||
@@ -1503,7 +1565,7 @@ function hopeHubProviderWhere(params: {
       ? {
           mentalHealthProfile: {
             is: {
-              ...(roleTypes.length
+              ...(roleTypes.length && !roleCategory
                 ? {
                     OR: [
                       { careTeamType: { in: roleTypes as any[] } },
@@ -1522,6 +1584,7 @@ function hopeHubProviderWhere(params: {
         }
       : {}),
     OR: [
+      { providerDomain: 'HOPE_HUB' as const },
       { doctorType: HomeopathicDoctorType.PSYCHOLOGIST },
       { specialty: { contains: 'psycholog', mode: 'insensitive' as const } },
       { specialty: { contains: 'volunteer', mode: 'insensitive' as const } },
@@ -1594,6 +1657,30 @@ async function activeHopeHubProviders(params: {
         yearsOfExperience: true,
         focusAreas: true,
         websiteOrder: true,
+        providerDomain: true,
+        roleAssignments: {
+          where: { status: 'ACTIVE', role: { isActive: true } },
+          orderBy: { isPrimary: 'desc' },
+          select: {
+            roleCode: true,
+            isPrimary: true,
+            status: true,
+            role: {
+              select: {
+                label: true,
+                shortLabel: true,
+                category: true,
+                tone: true,
+                description: true,
+                scope: true,
+                bestFor: true,
+                notFor: true,
+                ctaLabel: true,
+                isClinicalCare: true
+              }
+            }
+          }
+        },
         mentalHealthProfile: {
           select: {
             careTeamType: true,
@@ -1620,6 +1707,8 @@ async function activeHopeHubProviders(params: {
               orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
               select: {
                 id: true,
+                providerRole: true,
+                providerRoleCode: true,
                 title: true,
                 description: true,
                 pricingMode: true,
@@ -1954,18 +2043,12 @@ function moderationSummary(moderation: Awaited<ReturnType<typeof liveGroupModera
   };
 }
 
-hopeHubRouter.get('/provider-taxonomy', (_req, res) => {
-  res.json({
-    domains: ['HOMEOPATHY', 'HOPE_HUB'],
-    roles: PROVIDER_ROLE_CODES.map((code) => PROVIDER_ROLE_DEFINITIONS[code]),
-    roleGroups: PROVIDER_ROLE_GROUPS,
-    legacy: {
-      hopeHubDoctorType: 'PSYCHOLOGIST',
-      primaryRoleField: 'careTeamType',
-      rolesField: 'careTeamTypes'
-    }
-  });
-});
+hopeHubRouter.get(
+  '/provider-taxonomy',
+  asyncRoute(async (_req, res) => {
+    res.json(await providerTaxonomyPayload());
+  })
+);
 
 hopeHubRouter.get(
   '/hope-hub/live-groups',
@@ -2798,6 +2881,30 @@ hopeHubRouter.get(
         bio: true,
         yearsOfExperience: true,
         focusAreas: true,
+        providerDomain: true,
+        roleAssignments: {
+          where: { status: 'ACTIVE', role: { isActive: true } },
+          orderBy: { isPrimary: 'desc' },
+          select: {
+            roleCode: true,
+            isPrimary: true,
+            status: true,
+            role: {
+              select: {
+                label: true,
+                shortLabel: true,
+                category: true,
+                tone: true,
+                description: true,
+                scope: true,
+                bestFor: true,
+                notFor: true,
+                ctaLabel: true,
+                isClinicalCare: true
+              }
+            }
+          }
+        },
         mentalHealthProfile: {
           select: {
             careTeamType: true,
@@ -2824,6 +2931,8 @@ hopeHubRouter.get(
               orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
               select: {
                 id: true,
+                providerRole: true,
+                providerRoleCode: true,
                 title: true,
                 description: true,
                 pricingMode: true,
@@ -2995,18 +3104,22 @@ hopeHubRouter.post(
     const careTeamService =
       selectedCareTeamService ||
       pickQuickTalkCareTeamService(provider.mentalHealthProfile?.services, quickTalkMode);
-    const sessionProviderRoles = normalizeProviderRoles(
-      careTeamService?.providerRole ?? provider.mentalHealthProfile?.careTeamType,
-      [
-        ...normalizedCareTeamTypes(provider.mentalHealthProfile),
-        ...normalizedCareTeamTypes(careTeamService?.mentalHealthProfile)
-      ]
+    const sessionProviderRoles = Array.from(
+      new Set(
+        [
+          careTeamService?.providerRoleCode || careTeamService?.providerRole || '',
+          ...normalizeProviderRoles(provider.mentalHealthProfile?.careTeamType, [
+            ...normalizedCareTeamTypes(provider.mentalHealthProfile),
+            ...normalizedCareTeamTypes(careTeamService?.mentalHealthProfile)
+          ])
+        ].filter(Boolean)
+      )
     );
     const sessionProviderRole = providerRoleForSession(
       sessionProviderRoles,
       body.preferredExpertType
     );
-    const quickTalkUsesListener = isListenerCareTeamType(sessionProviderRole);
+    const quickTalkUsesListener = await isListenerProviderRole(sessionProviderRole);
     if (quickTalkUsesListener && !body.listenerSupportConsent) {
       return res.status(400).json({
         message:
@@ -3082,6 +3195,8 @@ hopeHubRouter.post(
           ? ConsultationStatus.ASSIGNED
           : ConsultationStatus.PAYMENT_PENDING,
         billingPlanCode: 'ONE_TIME',
+        providerRoleCode: sessionProviderRole,
+        providerRoleSnapshot: await providerRoleSnapshot(sessionProviderRole),
         intakeAnswers: {
           source: 'hope-hub-quick-talk',
           quickTalk: true,
@@ -3514,15 +3629,20 @@ hopeHubRouter.post(
           )?.mentalHealthProfile
         )
       : normalizedCareTeamTypes(selectedCareTeamService?.mentalHealthProfile);
-    const sessionProviderRoles = normalizeProviderRoles(selectedCareTeamService?.providerRole, [
-      ...normalizedCareTeamTypes(selectedCareTeamService?.mentalHealthProfile),
-      ...requestedProviderCareTeamTypes
-    ]);
+    const sessionProviderRoles = Array.from(
+      new Set(
+        [
+          selectedCareTeamService?.providerRoleCode || selectedCareTeamService?.providerRole || '',
+          ...normalizedCareTeamTypes(selectedCareTeamService?.mentalHealthProfile),
+          ...requestedProviderCareTeamTypes
+        ].filter(Boolean)
+      )
+    );
     const sessionProviderRole = providerRoleForSession(
       sessionProviderRoles,
       body.preferredExpertType
     );
-    const bookingUsesListener = isListenerCareTeamType(sessionProviderRole);
+    const bookingUsesListener = await isListenerProviderRole(sessionProviderRole);
     if (bookingUsesListener && !body.listenerSupportConsent) {
       return res.status(400).json({
         message:
@@ -3669,6 +3789,8 @@ hopeHubRouter.post(
         status:
           finalPayableInPaise <= 0 ? ConsultationStatus.PAID : ConsultationStatus.PAYMENT_PENDING,
         consultationMode: 'INSTANT_ONLINE',
+        providerRoleCode: sessionProviderRole,
+        providerRoleSnapshot: await providerRoleSnapshot(sessionProviderRole),
         intakeAnswers: {
           source: 'hope-hub',
           serviceName: effectiveServiceName,

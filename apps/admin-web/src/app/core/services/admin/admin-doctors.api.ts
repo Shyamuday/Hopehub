@@ -12,6 +12,20 @@ import { AdminApiBase } from './admin-api-base';
 
 @Service()
 export class AdminDoctorsApi extends AdminApiBase {
+  listProviderRoles() {
+    return firstValueFrom(
+      this.http.get<{ roles: Array<any> }>(`${this.apiBase}/admin/provider-roles`, {
+        params: { includeInactive: 'false' },
+      }),
+    );
+  }
+
+  updateProviderRoles(doctorId: string, payload: { roleCodes: string[]; primaryRoleCode: string }) {
+    return firstValueFrom(
+      this.http.patch(`${this.apiBase}/admin/doctors/${doctorId}/provider-roles`, payload),
+    );
+  }
+
   getDoctors() {
     return this.getDoctorsPaged({});
   }

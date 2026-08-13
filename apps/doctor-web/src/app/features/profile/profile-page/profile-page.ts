@@ -4,7 +4,7 @@ import { form, FormField } from '@angular/forms/signals';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { MultiSelectComponent, ProfileAvatarUploadComponent } from '@hopehub/platform-ui';
-import { PROVIDER_ROLE_CODES, type ProviderRoleCode } from '@hopehub/contracts';
+import { PROVIDER_ROLE_CODES } from '@hopehub/contracts';
 import { environment } from '../../../../environments/environment';
 import { API_PATHS } from '../../../core/constants/api-paths.constants';
 import { ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
@@ -25,19 +25,21 @@ import { AppActionBarComponent } from '../../../shared/ui/app-action-bar.compone
 
 const LISTENER_SAFETY_ACKNOWLEDGEMENT_VERSION = 'listener-safety-v1-2026-08-07';
 const CARE_TEAM_TYPE_OPTIONS = PROVIDER_ROLE_CODES;
-type ProfileCareTeamType = ProviderRoleCode;
+type ProfileCareTeamType = string;
 type SelectableProfileCareTeamType = ProfileCareTeamType | 'OTHER';
 type ProfileSetupStepId = 'identity' | 'public' | 'care' | 'safety' | 'services';
 
-const SUGGESTED_SERVICES_BY_CARE_TEAM_TYPE: Record<
-  ProfileCareTeamType,
-  Array<{
-    title: string;
-    description: string;
-    pricingMode: string;
-    priceInPaise: number;
-    durationMinutes: number;
-  }>
+const SUGGESTED_SERVICES_BY_CARE_TEAM_TYPE: Partial<
+  Record<
+    ProfileCareTeamType,
+    Array<{
+      title: string;
+      description: string;
+      pricingMode: string;
+      priceInPaise: number;
+      durationMinutes: number;
+    }>
+  >
 > = {
   MENTAL_WELLNESS_PROFESSIONAL: [
     {
@@ -210,10 +212,11 @@ export class ProfilePage implements OnDestroy {
     { value: 'FREE_VOLUNTEER', label: 'Free emotional support listener support' },
     { value: 'PER_MINUTE', label: 'Per-minute pricing' },
   ];
-  readonly careTeamTypeOptions: Array<{ value: SelectableProfileCareTeamType; label: string }> = [
+  careTeamTypeOptions: Array<{ value: SelectableProfileCareTeamType; label: string }> = [
     ...CARE_TEAM_TYPE_OPTIONS.map((value) => ({ value, label: CARE_TEAM_TYPE_LABELS[value] })),
     { value: 'OTHER', label: 'Other' },
   ];
+  private roleDefinitions = new Map<string, any>();
   readonly careServices = signal<Array<any>>([]);
   readonly carePricingTemplates = signal<Array<any>>([]);
 
@@ -239,6 +242,7 @@ export class ProfilePage implements OnDestroy {
       this.setSetupStepFromParam(params.get('step'));
     });
     void this.loadProfile();
+    void this.loadProviderTaxonomy();
     void this.loadCarePricingTemplates();
     effect(() => {
       const model = this.profileModel();
@@ -254,14 +258,18 @@ export class ProfilePage implements OnDestroy {
   }
 
   isListenerProfile(): boolean {
-    return this.selectedStructuredCareTeamTypes().some((type) => isListenerCareTeamType(type));
+    return this.selectedStructuredCareTeamTypes().some(
+      (type) => this.roleCategory(type) === 'EMOTIONAL_LISTENER' || isListenerCareTeamType(type),
+    );
   }
 
   isClinicalMentalHealthProfile(): boolean {
     return (
       this.isPsychologist &&
-      this.selectedStructuredCareTeamTypes().some((type) =>
-        isClinicalMentalHealthCareTeamType(type),
+      this.selectedStructuredCareTeamTypes().some(
+        (type) =>
+          this.roleCategory(type) === 'PROFESSIONAL_CARE' ||
+          isClinicalMentalHealthCareTeamType(type),
       )
     );
   }
@@ -269,7 +277,9 @@ export class ProfilePage implements OnDestroy {
   isCoachGuideProfile(): boolean {
     return (
       this.isPsychologist &&
-      this.selectedStructuredCareTeamTypes().some((type) => isCoachGuideCareTeamType(type))
+      this.selectedStructuredCareTeamTypes().some(
+        (type) => this.roleCategory(type) === 'COACH_MENTOR' || isCoachGuideCareTeamType(type),
+      )
     );
   }
 
@@ -299,7 +309,7 @@ export class ProfilePage implements OnDestroy {
         (SUGGESTED_SERVICES_BY_CARE_TEAM_TYPE[type] || []).map((service) => ({
           ...service,
           providerRole: type,
-          subtype: CARE_TEAM_TYPE_LABELS[type],
+          subtype: this.roleLabel(type),
         })),
       )
       .filter((service) => {
@@ -704,6 +714,21 @@ export class ProfilePage implements OnDestroy {
     }
   }
 
+  async loadProviderTaxonomy() {
+    try {
+      const taxonomy = await firstValueFrom(
+        this.http.get<{ roles: any[] }>(`${this.apiBase}/provider-taxonomy`),
+      );
+      this.roleDefinitions = new Map((taxonomy.roles || []).map((role) => [role.code, role]));
+      this.careTeamTypeOptions = [
+        ...(taxonomy.roles || []).map((role) => ({ value: role.code, label: role.label })),
+        { value: 'OTHER', label: 'Other' },
+      ];
+    } catch {
+      // Static shared roles remain available while the API is temporarily unavailable.
+    }
+  }
+
   async loadProfile() {
     this.profileLoaded = false;
     this.isLoading = true;
@@ -736,11 +761,16 @@ export class ProfilePage implements OnDestroy {
           ).options
         : [];
       const profileSpecialty = profile.doctorProfile?.specialty || '';
+      const assignedRoles = profile.doctorProfile?.providerClassification?.roles || [];
       const primaryCareTeamType =
-        (mental?.careTeamType as ProfileCareTeamType | undefined) || 'MENTAL_WELLNESS_PROFESSIONAL';
-      const careTeamTypes = mental?.careTeamTypes?.length
-        ? (mental.careTeamTypes as SelectableProfileCareTeamType[])
-        : this.inferProfileCareTeamTypes(primaryCareTeamType, profileSpecialty);
+        profile.doctorProfile?.providerClassification?.primaryRole ||
+        (mental?.careTeamType as ProfileCareTeamType | undefined) ||
+        'MENTAL_WELLNESS_PROFESSIONAL';
+      const careTeamTypes = assignedRoles.length
+        ? (assignedRoles as SelectableProfileCareTeamType[])
+        : mental?.careTeamTypes?.length
+          ? (mental.careTeamTypes as SelectableProfileCareTeamType[])
+          : this.inferProfileCareTeamTypes(primaryCareTeamType, profileSpecialty);
 
       this.profileModel.set({
         name: profile.name || '',
@@ -956,8 +986,8 @@ export class ProfilePage implements OnDestroy {
         registrationNo: this.showRegistrationNumber() ? form.registrationNo : '',
         mentalHealthProfile: {
           qualifications: this.lines(form.qualificationsText),
-          careTeamType: this.primaryProfileCareTeamType(form.careTeamTypes),
-          careTeamTypes: this.structuredProfileCareTeamTypes(form.careTeamTypes),
+          primaryRoleCode: this.primaryProfileCareTeamType(form.careTeamTypes),
+          roleCodes: this.structuredProfileCareTeamTypes(form.careTeamTypes),
           qualifiedFrom: form.qualifiedFrom || null,
           licenseNumber: form.licenseNumber || null,
           licenseCouncil: form.licenseCouncil || null,
@@ -1042,7 +1072,7 @@ export class ProfilePage implements OnDestroy {
   ): SelectableProfileCareTeamType[] {
     const specialtyText = specialty.toLowerCase();
     const selected: SelectableProfileCareTeamType[] = CARE_TEAM_TYPE_OPTIONS.filter((value) => {
-      const label = CARE_TEAM_TYPE_LABELS[value].toLowerCase();
+      const label = this.roleLabel(value).toLowerCase();
       return value === primaryCareTeamType || specialtyText.includes(label);
     });
     if (/other:/i.test(specialty)) selected.push('OTHER');
@@ -1051,6 +1081,14 @@ export class ProfilePage implements OnDestroy {
 
   private inferOtherCareTeamType(specialty: string): string {
     return specialty.match(/other:\s*([^,]+)/i)?.[1]?.trim() || '';
+  }
+
+  private roleLabel(code: string): string {
+    return this.roleDefinitions.get(code)?.label || CARE_TEAM_TYPE_LABELS[code] || code;
+  }
+
+  private roleCategory(code: string): string {
+    return this.roleDefinitions.get(code)?.category || '';
   }
 
   private specialtyForProfileSave(form: ReturnType<typeof emptyProfileModel>): string {
@@ -1208,7 +1246,15 @@ export class ProfilePage implements OnDestroy {
     return services.map((service, index) => ({
       ...service,
       providerRole:
-        service.providerRole || this.profileModel().careTeamType || 'MENTAL_WELLNESS_PROFESSIONAL',
+        service.providerRoleCode ||
+        service.providerRole ||
+        this.profileModel().careTeamType ||
+        'MENTAL_WELLNESS_PROFESSIONAL',
+      providerRoleCode:
+        service.providerRoleCode ||
+        service.providerRole ||
+        this.profileModel().careTeamType ||
+        'MENTAL_WELLNESS_PROFESSIONAL',
       pricingMode: service.pricingMode || 'FIXED',
       priceInPaise: service.priceInPaise ?? 0,
       introSessionLimit: service.introSessionLimit || 1,

@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
-import { HomeopathicDoctorType, Role } from '@prisma/client';
+import { CareTeamMemberType, HomeopathicDoctorType, Role } from '@prisma/client';
 import { AUTH_MESSAGES } from './constants/auth.constants.js';
 import {
   capabilitiesForDoctorProfile,
@@ -77,6 +77,7 @@ export async function providerPublicReadiness(userId: string) {
     select: {
       id: true,
       doctorType: true,
+      providerDomain: true,
       isAvailable: true,
       showOnWebsite: true,
       suspendedAt: true,
@@ -91,6 +92,23 @@ export async function providerPublicReadiness(userId: string) {
           profileImageKey: true,
           profileImageUrl: true,
           isActive: true
+        }
+      },
+      roleAssignments: {
+        where: { status: 'ACTIVE' },
+        select: {
+          roleCode: true,
+          isPrimary: true,
+          credentialStatus: true,
+          role: {
+            select: {
+              label: true,
+              category: true,
+              isActive: true,
+              requiresCredentials: true,
+              requiresListenerScreening: true
+            }
+          }
         }
       },
       mentalHealthProfile: {
@@ -108,7 +126,7 @@ export async function providerPublicReadiness(userId: string) {
           acceptingNewUsers: true,
           services: {
             where: { isActive: true },
-            select: { id: true, title: true, durationMinutes: true }
+            select: { id: true, title: true, durationMinutes: true, providerRoleCode: true }
           }
         }
       }
@@ -147,7 +165,9 @@ export async function providerPublicReadiness(userId: string) {
     });
   }
 
-  const isHopeHub = profile.doctorType === HomeopathicDoctorType.PSYCHOLOGIST;
+  const isHopeHub =
+    profile.providerDomain === 'HOPE_HUB' ||
+    profile.doctorType === HomeopathicDoctorType.PSYCHOLOGIST;
   if (!isHopeHub) {
     if (!hasText(profile.bio, 40)) {
       blockers.push({
@@ -160,15 +180,28 @@ export async function providerPublicReadiness(userId: string) {
   }
 
   const mental = profile.mentalHealthProfile;
-  const careTeamTypes = mental?.careTeamTypes?.length
-    ? mental.careTeamTypes
-    : mental?.careTeamType
-      ? [mental.careTeamType]
-      : [];
-  const isListener = careTeamTypes.some((type) => isListenerCareTeamType(type));
-  const isClinical =
-    careTeamTypes.length === 0 ||
-    careTeamTypes.some((type) => isClinicalMentalHealthCareTeamType(type));
+  const assignedRoles = profile.roleAssignments.filter((assignment) => assignment.role.isActive);
+  const careTeamTypes = assignedRoles.length
+    ? assignedRoles.map((assignment) => assignment.roleCode)
+    : mental?.careTeamTypes?.length
+      ? mental.careTeamTypes
+      : mental?.careTeamType
+        ? [mental.careTeamType]
+        : [];
+  const isListener = assignedRoles.length
+    ? assignedRoles.some((assignment) => assignment.role.category === 'EMOTIONAL_LISTENER')
+    : careTeamTypes.some((type) => isListenerCareTeamType(type as CareTeamMemberType));
+  const isClinical = assignedRoles.length
+    ? assignedRoles.some((assignment) => assignment.role.category === 'PROFESSIONAL_CARE')
+    : careTeamTypes.length === 0 ||
+      careTeamTypes.some((type) => isClinicalMentalHealthCareTeamType(type as CareTeamMemberType));
+  if (!assignedRoles.length) {
+    blockers.push({
+      code: 'ACTIVE_PROVIDER_ROLE_REQUIRED',
+      label: 'Choose at least one active provider role.',
+      action: 'Open Support details and choose the support you provide.'
+    });
+  }
   const hasProfileImage = Boolean(profile.user.profileImageKey || profile.user.profileImageUrl);
   if (!hasText(profile.user.name)) {
     blockers.push({
@@ -238,6 +271,14 @@ export async function providerPublicReadiness(userId: string) {
       code: 'ACTIVE_SERVICE_REQUIRED',
       label: 'No active service/price is configured.',
       action: 'Add at least one active service in Profile.'
+    });
+  }
+  const activeRoleCodes = new Set(assignedRoles.map((assignment) => assignment.roleCode));
+  if (mental?.services?.some((service) => !activeRoleCodes.has(service.providerRoleCode))) {
+    blockers.push({
+      code: 'SERVICE_ROLE_MISMATCH',
+      label: 'A service is linked to a role that is not active on this profile.',
+      action: 'Edit Services and choose an active provider role for every service.'
     });
   }
   if (isClinical && !hasText(mental?.qualifiedFrom)) {

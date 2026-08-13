@@ -82,6 +82,12 @@ export class AdminApi {
   getDoctors(...args: Parameters<AdminDoctorsApi['getDoctors']>) {
     return this.doctors.getDoctors(...(args as Parameters<AdminDoctorsApi['getDoctors']>));
   }
+  listProviderRoles(...args: Parameters<AdminDoctorsApi['listProviderRoles']>) {
+    return this.doctors.listProviderRoles(...args);
+  }
+  updateProviderRoles(...args: Parameters<AdminDoctorsApi['updateProviderRoles']>) {
+    return this.doctors.updateProviderRoles(...args);
+  }
   getPendingDoctors(...args: Parameters<AdminDoctorsApi['getPendingDoctors']>) {
     return this.doctors.getPendingDoctors(
       ...(args as Parameters<AdminDoctorsApi['getPendingDoctors']>),

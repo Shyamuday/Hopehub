@@ -191,9 +191,33 @@ export const PROVIDER_ROLE_GROUPS: Record<ProviderRoleCategory, readonly Provide
 
 export type ProviderClassification = {
   domain: ProviderDomain;
-  primaryRole: ProviderRoleCode | null;
-  roles: ProviderRoleCode[];
+  primaryRole: string | null;
+  roles: string[];
 };
+
+export function providerClassificationFromAssignments(
+  input?: {
+    providerDomain?: string | null;
+    roleAssignments?:
+      | readonly {
+          roleCode: string;
+          isPrimary?: boolean | null;
+          status?: string | null;
+        }[]
+      | null;
+  } | null
+): ProviderClassification | null {
+  const active = (input?.roleAssignments ?? []).filter(
+    (assignment) => !assignment.status || assignment.status === 'ACTIVE'
+  );
+  if (!active.length) return null;
+  const primary = active.find((assignment) => assignment.isPrimary) ?? active[0];
+  return {
+    domain: input?.providerDomain === 'HOMEOPATHY' ? 'HOMEOPATHY' : 'HOPE_HUB',
+    primaryRole: primary?.roleCode ?? null,
+    roles: Array.from(new Set(active.map((assignment) => assignment.roleCode)))
+  };
+}
 
 export function isProviderRoleCode(value?: string | null): value is ProviderRoleCode {
   return Boolean(value && PROVIDER_ROLE_CODES.includes(value as ProviderRoleCode));

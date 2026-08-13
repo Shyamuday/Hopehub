@@ -31,12 +31,20 @@ import { enrichWithProfileImageUrl, userProfileImagePath } from '../../utils/pro
 import { createEmailVerificationToken } from '../../services/email-verification.js';
 import { recordAuthProcess } from '../../services/auth-process-log.js';
 import { providerPublicReadiness } from '../../doctor-capabilities.js';
-import { normalizeProviderRoles, providerClassificationFromLegacy } from '@hopehub/contracts';
+import {
+  normalizeProviderRoles,
+  providerClassificationFromAssignments,
+  providerClassificationFromLegacy
+} from '@hopehub/contracts';
 import {
   publicListenerScreeningQuestionSet,
   sanitizeListenerScreeningQuestions,
   scoreListenerScreening
 } from '../../services/listener-screening-question-sets.js';
+import {
+  assertServiceRolesAssigned,
+  syncProviderRoleAssignments
+} from '../../services/provider-taxonomy.service.js';
 
 const LISTENER_SAFETY_ACKNOWLEDGEMENT_VERSION = 'listener-safety-v1-2026-08-07';
 
@@ -49,6 +57,8 @@ function inferDoctorTypeFromSpecialty(specialty: string) {
 const mentalHealthProviderProfileFieldsSchema = z.object({
   careTeamType: z.nativeEnum(CareTeamMemberType).optional(),
   careTeamTypes: z.array(z.nativeEnum(CareTeamMemberType)).max(12).optional(),
+  primaryRoleCode: z.string().trim().min(3).max(64).optional(),
+  roleCodes: z.array(z.string().trim().min(3).max(64)).max(20).optional(),
   qualifications: z.array(z.string().trim().min(1).max(160)).max(20).optional(),
   qualifiedFrom: z.string().trim().max(240).optional().nullable().or(z.literal('')),
   licenseNumber: z.string().trim().max(120).optional().nullable().or(z.literal('')),
@@ -78,6 +88,7 @@ const mentalHealthProviderProfileFieldsSchema = z.object({
     .array(
       z.object({
         providerRole: z.nativeEnum(CareTeamMemberType).optional().nullable(),
+        providerRoleCode: z.string().trim().min(3).max(64).optional().nullable(),
         title: z.string().trim().min(2).max(120),
         description: z.string().trim().max(1000).optional().nullable().or(z.literal('')),
         pricingMode: z
@@ -394,7 +405,9 @@ export function registerAuthDoctorRoutes(router: Router) {
           ...updated,
           doctorTypeLabel: doctorTypeLabel(updated.doctorType),
           specialtyFocusLabel: specialtyFocusLabel(updated.specialtyFocus),
-          providerClassification: providerClassificationFromLegacy(updated)
+          providerClassification:
+            providerClassificationFromAssignments(updated) ??
+            providerClassificationFromLegacy(updated)
         }
       });
     })
@@ -413,7 +426,7 @@ export function registerAuthDoctorRoutes(router: Router) {
           profileImageKey: true,
           profileImageUrl: true,
           isActive: true,
-          doctorProfile: { select: doctorProfileSelect }
+          doctorProfile: { select: { ...doctorProfileSelect, id: true } }
         }
       });
 
@@ -425,7 +438,9 @@ export function registerAuthDoctorRoutes(router: Router) {
             ...profile.doctorProfile,
             doctorTypeLabel: doctorTypeLabel(profile.doctorProfile.doctorType),
             specialtyFocusLabel: specialtyFocusLabel(profile.doctorProfile.specialtyFocus),
-            providerClassification: providerClassificationFromLegacy(profile.doctorProfile)
+            providerClassification:
+              providerClassificationFromAssignments(profile.doctorProfile) ??
+              providerClassificationFromLegacy(profile.doctorProfile)
           }
         : null;
 
@@ -606,6 +621,7 @@ export function registerAuthDoctorRoutes(router: Router) {
       const existing = await prisma.doctor.findUniqueOrThrow({
         where: { userId: req.user!.id },
         select: {
+          id: true,
           doctorType: true,
           mentalHealthProfile: {
             select: { careTeamType: true, careTeamTypes: true }
@@ -641,21 +657,35 @@ export function registerAuthDoctorRoutes(router: Router) {
       }
 
       const mental = body.mentalHealthProfile;
+      let requestedRoleSync: { primaryRoleCode: string; roleCodes: string[] } | null = null;
       if (body.step === 'care' && mental) {
-        const primary =
+        const primaryRoleCode =
+          mental.primaryRoleCode ??
           mental.careTeamType ??
           existing.mentalHealthProfile?.careTeamType ??
           CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL;
-        const providerRoles = normalizeCareTeamTypes(
-          primary,
-          mental.careTeamTypes ?? existing.mentalHealthProfile?.careTeamTypes
+        const providerRoleCodes = Array.from(
+          new Set([
+            primaryRoleCode,
+            ...(mental.roleCodes ??
+              mental.careTeamTypes ??
+              existing.mentalHealthProfile?.careTeamTypes ??
+              [])
+          ])
         );
+        const legacyRoles = providerRoleCodes.filter((role): role is CareTeamMemberType =>
+          Object.values(CareTeamMemberType).includes(role as CareTeamMemberType)
+        );
+        const primary = legacyRoles.includes(primaryRoleCode as CareTeamMemberType)
+          ? (primaryRoleCode as CareTeamMemberType)
+          : (legacyRoles[0] ?? CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL);
         if (body.specialty !== undefined) doctorData.specialty = body.specialty;
         if (body.registrationNo !== undefined) {
           doctorData.registrationNo = body.registrationNo || null;
         }
         mentalData.careTeamType = primary;
-        mentalData.careTeamTypes = providerRoles;
+        mentalData.careTeamTypes = legacyRoles.length ? legacyRoles : [primary];
+        requestedRoleSync = { primaryRoleCode, roleCodes: providerRoleCodes };
         if (mental.qualifications !== undefined) {
           mentalData.qualifications = cleanList(mental.qualifications);
         }
@@ -724,11 +754,16 @@ export function registerAuthDoctorRoutes(router: Router) {
           mentalData.maxSessionsPerWeek = mental.maxSessionsPerWeek;
         }
         if (mental.services !== undefined) {
+          const serviceRoleCodes = mental.services.map(
+            (service) => service.providerRoleCode || service.providerRole || servicePrimary
+          );
+          await assertServiceRolesAssigned(existing.id, serviceRoleCodes);
           const services = mental.services.map((service, index) => ({
             providerRole:
               service.providerRole && serviceProviderRoles.includes(service.providerRole)
                 ? service.providerRole
                 : servicePrimary,
+            providerRoleCode: service.providerRoleCode || service.providerRole || servicePrimary,
             title: service.title,
             description: service.description || null,
             pricingMode: service.pricingMode ?? CareTeamServicePricingMode.FIXED,
@@ -804,6 +839,14 @@ export function registerAuthDoctorRoutes(router: Router) {
         }
       });
 
+      if (requestedRoleSync) {
+        await syncProviderRoleAssignments({
+          doctorId: existing.id,
+          ...requestedRoleSync,
+          actorId: req.user!.id
+        });
+      }
+
       const readiness = await providerPublicReadiness(req.user!.id);
       await prisma.doctor.update({
         where: { userId: req.user!.id },
@@ -869,17 +912,41 @@ export function registerAuthDoctorRoutes(router: Router) {
         yearsOfExperience: body.yearsOfExperience ?? null,
         focusAreas: (body.focusAreas ?? []).map((f) => f.trim()).filter(Boolean)
       };
+      const requestedPrimaryRoleCode =
+        body.mentalHealthProfile?.primaryRoleCode ??
+        body.mentalHealthProfile?.careTeamType ??
+        CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL;
+      const requestedRoleCodes = Array.from(
+        new Set([
+          requestedPrimaryRoleCode,
+          ...(body.mentalHealthProfile?.roleCodes ?? body.mentalHealthProfile?.careTeamTypes ?? [])
+        ])
+      );
+      const requestedLegacyRoles = requestedRoleCodes.filter((role): role is CareTeamMemberType =>
+        Object.values(CareTeamMemberType).includes(role as CareTeamMemberType)
+      );
+      const invalidServiceRole = body.mentalHealthProfile?.services?.find((service) => {
+        const roleCode =
+          service.providerRoleCode || service.providerRole || requestedPrimaryRoleCode;
+        return !requestedRoleCodes.includes(roleCode);
+      });
+      if (invalidServiceRole) {
+        return res.status(400).json({
+          message: 'Each service must belong to one of your active provider roles.'
+        });
+      }
       const mentalHealthProfile =
         profilePayload.doctorType === HomeopathicDoctorType.PSYCHOLOGIST && body.mentalHealthProfile
           ? {
               qualifications: cleanList(body.mentalHealthProfile.qualifications),
-              careTeamType:
-                body.mentalHealthProfile.careTeamType ??
-                CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL,
-              careTeamTypes: normalizeCareTeamTypes(
-                body.mentalHealthProfile.careTeamType,
-                body.mentalHealthProfile.careTeamTypes
-              ),
+              careTeamType: requestedLegacyRoles.includes(
+                requestedPrimaryRoleCode as CareTeamMemberType
+              )
+                ? (requestedPrimaryRoleCode as CareTeamMemberType)
+                : (requestedLegacyRoles[0] ?? CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL),
+              careTeamTypes: requestedLegacyRoles.length
+                ? requestedLegacyRoles
+                : [CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL],
               qualifiedFrom: cleanNullableText(body.mentalHealthProfile.qualifiedFrom),
               licenseNumber: cleanNullableText(body.mentalHealthProfile.licenseNumber),
               licenseCouncil: cleanNullableText(body.mentalHealthProfile.licenseCouncil),
@@ -916,6 +983,10 @@ export function registerAuthDoctorRoutes(router: Router) {
                   ? service.providerRole
                   : (mentalHealthProfile?.careTeamType ??
                     CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL),
+              providerRoleCode:
+                service.providerRole ||
+                mentalHealthProfile?.careTeamType ||
+                CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL,
               title: service.title,
               description: service.description || null,
               pricingMode: service.pricingMode ?? CareTeamServicePricingMode.FIXED,
@@ -1008,9 +1079,18 @@ export function registerAuthDoctorRoutes(router: Router) {
           profileImageKey: true,
           profileImageUrl: true,
           isActive: true,
-          doctorProfile: { select: doctorProfileSelect }
+          doctorProfile: { select: { ...doctorProfileSelect, id: true } }
         }
       });
+
+      if (updated.doctorProfile && mentalHealthProfile) {
+        await syncProviderRoleAssignments({
+          doctorId: updated.doctorProfile.id,
+          primaryRoleCode: requestedPrimaryRoleCode,
+          roleCodes: requestedRoleCodes,
+          actorId: req.user!.id
+        });
+      }
 
       const readiness = await providerPublicReadiness(req.user!.id);
       if (updated.doctorProfile?.showOnWebsite !== readiness.ready) {
@@ -1027,7 +1107,9 @@ export function registerAuthDoctorRoutes(router: Router) {
             ...updated.doctorProfile,
             doctorTypeLabel: doctorTypeLabel(updated.doctorProfile.doctorType),
             specialtyFocusLabel: specialtyFocusLabel(updated.doctorProfile.specialtyFocus),
-            providerClassification: providerClassificationFromLegacy(updated.doctorProfile)
+            providerClassification:
+              providerClassificationFromAssignments(updated.doctorProfile) ??
+              providerClassificationFromLegacy(updated.doctorProfile)
           }
         : null;
 

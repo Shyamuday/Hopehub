@@ -256,6 +256,7 @@ export const doctorProfileSelect = {
   registrationNo: true,
   isAvailable: true,
   doctorType: true,
+  providerDomain: true,
   specialtyFocus: true,
   designation: true,
   department: true,
@@ -267,6 +268,29 @@ export const doctorProfileSelect = {
   suspendedAt: true,
   suspendedReason: true,
   suspendedById: true,
+  roleAssignments: {
+    where: { status: 'ACTIVE' as const },
+    orderBy: { isPrimary: 'desc' as const },
+    select: {
+      roleCode: true,
+      isPrimary: true,
+      status: true,
+      credentialStatus: true,
+      role: {
+        select: {
+          code: true,
+          label: true,
+          shortLabel: true,
+          category: true,
+          requiresCredentials: true,
+          requiresListenerScreening: true,
+          isClinicalCare: true,
+          supportedModes: true,
+          version: true
+        }
+      }
+    }
+  },
   mentalHealthProfile: {
     select: {
       qualifications: true,
@@ -296,6 +320,7 @@ export const doctorProfileSelect = {
         select: {
           id: true,
           providerRole: true,
+          providerRoleCode: true,
           title: true,
           description: true,
           pricingMode: true,

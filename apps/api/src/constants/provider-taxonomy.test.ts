@@ -4,6 +4,7 @@ import {
   PROVIDER_ROLE_CODES,
   PROVIDER_ROLE_DEFINITIONS,
   normalizeProviderRoles,
+  providerClassificationFromAssignments,
   providerClassificationFromLegacy,
   providerHasRoleCategory
 } from '@hopehub/contracts';
@@ -17,6 +18,24 @@ test('every provider role has one complete canonical definition', () => {
     assert.ok(definition.description.length > 10);
     assert.ok(definition.scope.length > 10);
   }
+});
+
+test('database assignments support future role codes without changing frontend enums', () => {
+  assert.deepEqual(
+    providerClassificationFromAssignments({
+      providerDomain: 'HOPE_HUB',
+      roleAssignments: [
+        { roleCode: 'FUTURE_SUPPORT_ROLE', isPrimary: true, status: 'ACTIVE' },
+        { roleCode: 'LIFE_COACH', status: 'ACTIVE' },
+        { roleCode: 'RETIRED_ROLE', status: 'INACTIVE' }
+      ]
+    }),
+    {
+      domain: 'HOPE_HUB',
+      primaryRole: 'FUTURE_SUPPORT_ROLE',
+      roles: ['FUTURE_SUPPORT_ROLE', 'LIFE_COACH']
+    }
+  );
 });
 
 test('legacy primary role stays first and selected roles are deduplicated', () => {

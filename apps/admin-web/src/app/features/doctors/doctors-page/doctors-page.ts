@@ -6,7 +6,6 @@ import { buildDetailRows, DetailRowsComponent, MultiSelectComponent } from '@hop
 import {
   PROVIDER_ROLE_GROUPS,
   PROVIDER_ROLE_OPTIONS,
-  normalizeProviderRoles,
   providerHasRoleCategory,
   type ProviderRoleCategory,
   type ProviderRoleCode,
@@ -97,9 +96,10 @@ type ProviderReadiness = {
   blockers: Array<{ code: string; label: string; action?: string }>;
 };
 type ProviderGender = 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY';
-type CareTeamMemberType = ProviderRoleCode;
+type CareTeamMemberType = string;
 type CareTeamService = {
   providerRole?: CareTeamMemberType | null;
+  providerRoleCode?: string | null;
   title: string;
   description?: string | null;
   pricingMode?:
@@ -273,7 +273,8 @@ export class DoctorsPage {
     { value: 'FREE_VOLUNTEER', label: 'Free emotional support listener support' },
     { value: 'PER_MINUTE', label: 'Per-minute pricing' },
   ];
-  readonly careTeamTypeOptions = PROVIDER_ROLE_OPTIONS;
+  careTeamTypeOptions: Array<{ value: string; label: string }> = PROVIDER_ROLE_OPTIONS;
+  private roleCategoryByCode = new Map<string, string>();
   readonly supportPathOptions: Array<{ value: HopeHubSupportPathFilter; label: string }> = [
     { value: '', label: 'All Hope Hub categories' },
     ...HOPE_HUB_SUPPORT_PATHS.map((path) => ({
@@ -351,6 +352,22 @@ export class DoctorsPage {
     });
     void this.loadSiteConfig();
     void this.loadCarePricingTemplates();
+    void this.loadProviderRoles();
+  }
+
+  async loadProviderRoles() {
+    try {
+      const response = await this.api.listProviderRoles();
+      this.careTeamTypeOptions = (response.roles || []).map((role: any) => ({
+        value: role.code,
+        label: role.label,
+      }));
+      this.roleCategoryByCode = new Map(
+        (response.roles || []).map((role: any) => [role.code, role.category]),
+      );
+    } catch {
+      this.careTeamTypeOptions = PROVIDER_ROLE_OPTIONS;
+    }
   }
 
   async load() {
@@ -505,6 +522,9 @@ export class DoctorsPage {
       ? psychologistProfileValue(edit.department)
       : edit.department.trim();
     const editCareTeamTypes = this.normalizedCareTeamTypes(edit.careTeamType, edit.careTeamTypes);
+    const editLegacyCareTeamTypes = editCareTeamTypes.filter((role) =>
+      PROVIDER_ROLE_OPTIONS.some((option) => option.value === role),
+    ) as ProviderRoleCode[];
     const editIsClinicalHopeHub =
       this.isPsychologistType(edit.doctorType) && this.hasClinicalHopeHubType(editCareTeamTypes);
     this.mutating.set(true);
@@ -536,8 +556,10 @@ export class DoctorsPage {
         mentalHealthProfile: this.isPsychologistType(edit.doctorType)
           ? {
               qualifications: this.lines(edit.qualificationsText),
-              careTeamType: editCareTeamTypes[0],
-              careTeamTypes: editCareTeamTypes,
+              careTeamType: editLegacyCareTeamTypes[0] || 'MENTAL_WELLNESS_PROFESSIONAL',
+              careTeamTypes: editLegacyCareTeamTypes.length
+                ? editLegacyCareTeamTypes
+                : ['MENTAL_WELLNESS_PROFESSIONAL'],
               qualifiedFrom: edit.qualifiedFrom.trim() || null,
               licenseNumber: editIsClinicalHopeHub ? edit.licenseNumber.trim() || null : null,
               licenseCouncil: editIsClinicalHopeHub ? edit.licenseCouncil.trim() || null : null,
@@ -560,6 +582,12 @@ export class DoctorsPage {
             }
           : undefined,
       });
+      if (this.isPsychologistType(edit.doctorType)) {
+        await this.api.updateProviderRoles(doctorId, {
+          primaryRoleCode: editCareTeamTypes[0],
+          roleCodes: editCareTeamTypes,
+        });
+      }
       this.message.set(`${this.providerSingularTitle()} profile updated.`);
       await this.load();
       this.selectedDoctorId = doctorId;
@@ -588,12 +616,15 @@ export class DoctorsPage {
       create.careTeamType,
       create.careTeamTypes,
     );
+    const createLegacyCareTeamTypes = createCareTeamTypes.filter((role) =>
+      PROVIDER_ROLE_OPTIONS.some((option) => option.value === role),
+    ) as ProviderRoleCode[];
     const createIsClinicalHopeHub =
       this.isPsychologistType(create.doctorType) &&
       this.hasClinicalHopeHubType(createCareTeamTypes);
     this.mutating.set(true);
     try {
-      await this.api.createDoctor({
+      const created = await this.api.createDoctor({
         name: create.name.trim(),
         email: create.email.trim(),
         gender: create.gender || null,
@@ -612,8 +643,10 @@ export class DoctorsPage {
         mentalHealthProfile: this.isPsychologistType(create.doctorType)
           ? {
               qualifications: this.lines(create.qualificationsText),
-              careTeamType: createCareTeamTypes[0],
-              careTeamTypes: createCareTeamTypes,
+              careTeamType: createLegacyCareTeamTypes[0] || 'MENTAL_WELLNESS_PROFESSIONAL',
+              careTeamTypes: createLegacyCareTeamTypes.length
+                ? createLegacyCareTeamTypes
+                : ['MENTAL_WELLNESS_PROFESSIONAL'],
               qualifiedFrom: create.qualifiedFrom.trim() || null,
               languages: this.lines(create.languagesText),
               modalities: this.lines(create.modalitiesText),
@@ -630,6 +663,13 @@ export class DoctorsPage {
             }
           : undefined,
       });
+      const createdId = (created as any)?.doctor?.id;
+      if (createdId && this.isPsychologistType(create.doctorType)) {
+        await this.api.updateProviderRoles(createdId, {
+          primaryRoleCode: createCareTeamTypes[0],
+          roleCodes: createCareTeamTypes,
+        });
+      }
       this.message.set(`${this.providerSingularTitle()} created successfully.`);
       this.createModel.set(emptyCreateModel());
       this.createCareServices.set([]);
@@ -1180,9 +1220,17 @@ export class DoctorsPage {
 
   private servicesForSave(services: CareTeamService[], legacyText: string) {
     const structured = services.filter((service) => service.title.trim());
-    return structured.length
+    const normalized = structured.length
       ? this.normalizeServiceList(structured)
       : this.parseServiceOffers(legacyText);
+    return normalized.map((service) => {
+      const roleCode =
+        service.providerRoleCode || service.providerRole || 'MENTAL_WELLNESS_PROFESSIONAL';
+      const legacyRole = PROVIDER_ROLE_OPTIONS.some((option) => option.value === roleCode)
+        ? roleCode
+        : null;
+      return { ...service, providerRole: legacyRole, providerRoleCode: roleCode };
+    });
   }
 
   private parseServiceOffers(text: string): CareTeamService[] {
@@ -1297,34 +1345,55 @@ export class DoctorsPage {
   }
 
   isClinicalHopeHubType(type?: CareTeamMemberType | null) {
-    return !type || providerHasRoleCategory([type], 'PROFESSIONAL_CARE');
+    return !type || this.roleCategory(type) === 'PROFESSIONAL_CARE';
   }
 
   hasClinicalHopeHubType(types?: CareTeamMemberType[] | null) {
-    return !types?.length || providerHasRoleCategory(types, 'PROFESSIONAL_CARE');
+    return !types?.length || types.some((type) => this.roleCategory(type) === 'PROFESSIONAL_CARE');
   }
 
   isListenerHopeHubType(type?: CareTeamMemberType | null) {
-    return providerHasRoleCategory(type ? [type] : [], 'EMOTIONAL_LISTENER');
+    return Boolean(type && this.roleCategory(type) === 'EMOTIONAL_LISTENER');
   }
 
   hasListenerHopeHubType(types?: CareTeamMemberType[] | null) {
-    return providerHasRoleCategory(types, 'EMOTIONAL_LISTENER');
+    return (types ?? []).some((type) => this.roleCategory(type) === 'EMOTIONAL_LISTENER');
   }
 
   isCoachHopeHubType(type?: CareTeamMemberType | null) {
-    return providerHasRoleCategory(type ? [type] : [], 'COACH_MENTOR');
+    return Boolean(type && this.roleCategory(type) === 'COACH_MENTOR');
   }
 
   hasCoachHopeHubType(types?: CareTeamMemberType[] | null) {
-    return providerHasRoleCategory(types, 'COACH_MENTOR');
+    return (types ?? []).some((type) => this.roleCategory(type) === 'COACH_MENTOR');
   }
 
   normalizedCareTeamTypes(
     primary?: CareTeamMemberType | null,
     selected?: CareTeamMemberType[] | null,
   ): CareTeamMemberType[] {
-    return normalizeProviderRoles(primary, selected, 'MENTAL_WELLNESS_PROFESSIONAL');
+    return Array.from(
+      new Set([primary, ...(selected ?? [])].filter((value): value is string => Boolean(value))),
+    ).length
+      ? Array.from(
+          new Set(
+            [primary, ...(selected ?? [])].filter((value): value is string => Boolean(value)),
+          ),
+        )
+      : ['MENTAL_WELLNESS_PROFESSIONAL'];
+  }
+
+  private roleCategory(type: string): string {
+    return (
+      this.roleCategoryByCode.get(type) ||
+      (providerHasRoleCategory([type], 'PROFESSIONAL_CARE')
+        ? 'PROFESSIONAL_CARE'
+        : providerHasRoleCategory([type], 'EMOTIONAL_LISTENER')
+          ? 'EMOTIONAL_LISTENER'
+          : providerHasRoleCategory([type], 'COACH_MENTOR')
+            ? 'COACH_MENTOR'
+            : '')
+    );
   }
 
   isCreateCareTeamTypeSelected(type: CareTeamMemberType) {

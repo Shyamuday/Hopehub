@@ -72,6 +72,8 @@ model Consultation {
   status                ConsultationStatus @default(PAYMENT_PENDING)
   billingPlanCode String?
   pricingSnapshot Json?
+  providerRoleCode String?
+  providerRoleSnapshot Json?
   intakeAnswers   Json
   patient         User               @relation("PatientConsultations", fields: [patientId], references: [id])
   disease         Disease            @relation(fields: [diseaseId], references: [id])

@@ -39,6 +39,7 @@ export const SPECIALTY_FOCUS_LABELS: Record<HomeopathicSpecialtyFocus, string> =
 };
 
 export type DoctorProfileSummary = {
+  providerDomain?: 'HOMEOPATHY' | 'HOPE_HUB';
   specialty?: string;
   registrationNo?: string | null;
   isAvailable?: boolean;
@@ -101,6 +102,13 @@ export type DoctorProfileSummary = {
     }>;
   } | null;
   providerClassification?: ProviderClassification;
+  roleAssignments?: Array<{
+    roleCode: string;
+    isPrimary: boolean;
+    status: string;
+    credentialStatus: string;
+    role: { category: string; label: string; isClinicalCare: boolean };
+  }>;
   showOnWebsite?: boolean;
   suspendedAt?: string | null;
   suspendedReason?: string | null;
@@ -119,8 +127,10 @@ export const CARE_TEAM_TYPE_LABELS: Record<string, string> = Object.fromEntries(
 
 export type ProviderCapabilityInput = {
   doctorType?: HomeopathicDoctorType | null;
+  providerDomain?: 'HOMEOPATHY' | 'HOPE_HUB' | null;
   mentalHealthProfile?: { careTeamType?: string | null; careTeamTypes?: string[] | null } | null;
   providerClassification?: ProviderClassification;
+  roleAssignments?: DoctorProfileSummary['roleAssignments'];
 };
 
 export type DoctorCapabilities = {
@@ -277,7 +287,9 @@ export function capabilitiesForDoctorType(type?: HomeopathicDoctorType | null): 
 
 export function isHopeHubProvider(input?: ProviderCapabilityInput | null): boolean {
   return (
-    input?.providerClassification?.domain === 'HOPE_HUB' || input?.doctorType === 'PSYCHOLOGIST'
+    input?.providerDomain === 'HOPE_HUB' ||
+    input?.providerClassification?.domain === 'HOPE_HUB' ||
+    input?.doctorType === 'PSYCHOLOGIST'
   );
 }
 
@@ -302,7 +314,7 @@ export function capabilitiesForProvider(
 ): DoctorCapabilities {
   const type = input?.doctorType || null;
   const base = capabilitiesForDoctorType(type);
-  if (type !== 'PSYCHOLOGIST') return base;
+  if (!isHopeHubProvider(input)) return base;
 
   const classification = input?.providerClassification ?? providerClassificationFromLegacy(input);
   const careTeamTypes = normalizeProviderRoles(
@@ -310,11 +322,19 @@ export function capabilitiesForProvider(
     classification.roles,
     'MENTAL_WELLNESS_PROFESSIONAL',
   );
-  const clinical =
-    careTeamTypes.length === 0 ||
-    careTeamTypes.some((type) => isClinicalMentalHealthCareTeamType(type));
-  const listener = careTeamTypes.some((type) => isListenerCareTeamType(type));
-  const coachGuide = careTeamTypes.some((type) => isCoachGuideCareTeamType(type));
+  const categories = new Set(
+    (input?.roleAssignments ?? []).map((assignment) => assignment.role.category),
+  );
+  const clinical = categories.size
+    ? categories.has('PROFESSIONAL_CARE')
+    : careTeamTypes.length === 0 ||
+      careTeamTypes.some((type) => isClinicalMentalHealthCareTeamType(type));
+  const listener = categories.size
+    ? categories.has('EMOTIONAL_LISTENER')
+    : careTeamTypes.some((type) => isListenerCareTeamType(type));
+  const coachGuide = categories.size
+    ? categories.has('COACH_MENTOR')
+    : careTeamTypes.some((type) => isCoachGuideCareTeamType(type));
 
   return {
     ...base,

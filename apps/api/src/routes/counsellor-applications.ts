@@ -376,6 +376,8 @@ async function autoApproveListenerApplication(
       select: { id: true }
     });
     const payload = {
+      providerRole: application.careTeamType,
+      providerRoleCode: application.careTeamType,
       title: service.title,
       description: service.description,
       pricingMode: CareTeamServicePricingMode.FIXED,

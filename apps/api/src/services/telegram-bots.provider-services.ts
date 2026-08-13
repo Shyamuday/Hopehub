@@ -193,6 +193,8 @@ export async function createProviderServiceFromTemplate(
   await prisma.careTeamService.create({
     data: {
       mentalHealthProfileId: profile.id,
+      providerRole: profile.careTeamType,
+      providerRoleCode: profile.careTeamType,
       title: template.title,
       description: template.description,
       pricingMode: template.pricingMode,

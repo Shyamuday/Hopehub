@@ -39,10 +39,12 @@ import {
   suggestedProbationEndDate
 } from '../../constants/doctor-hr-defaults.js';
 import { PSYCHOLOGIST_CONSULTATION_SHARE_PERCENT } from '../../services/doctor-compensation.js';
+import { syncProviderRoleAssignments } from '../../services/provider-taxonomy.service.js';
 
 const textArraySchema = z.array(z.string().trim().min(1).max(160)).max(40).optional();
 const careTeamServiceSchema = z.object({
   providerRole: z.nativeEnum(CareTeamMemberType).optional().nullable(),
+  providerRoleCode: z.string().trim().min(3).max(64).optional().nullable(),
   title: z.string().trim().min(2).max(120),
   description: z.string().trim().max(1000).optional().nullable().or(z.literal('')),
   pricingMode: z
@@ -104,6 +106,7 @@ function toMentalHealthProfilePayload(body: z.infer<typeof mentalHealthProfileSc
       service.providerRole && careTeamTypes.includes(service.providerRole)
         ? service.providerRole
         : careTeamType,
+    providerRoleCode: service.providerRoleCode || service.providerRole || careTeamType,
     title: service.title,
     description: service.description || null,
     pricingMode: service.pricingMode ?? CareTeamServicePricingMode.FIXED,
@@ -546,10 +549,9 @@ export function registerAdminDoctorRoutes(router: Router) {
           gender: true,
           isActive: true,
           createdAt: true,
-          doctorProfile: { select: doctorProfileSelect }
+          doctorProfile: { select: { ...doctorProfileSelect, id: true } }
         }
       });
-
       await writeAuditLog({
         actorId: req.user!.id,
         actorRole: req.user!.role,
@@ -651,9 +653,20 @@ export function registerAdminDoctorRoutes(router: Router) {
         select: {
           ...publicUserSelect,
           gender: true,
-          doctorProfile: { select: doctorProfileSelect }
+          doctorProfile: { select: { ...doctorProfileSelect, id: true } }
         }
       });
+      if (
+        doctor.doctorProfile &&
+        profilePayload.doctorType === HomeopathicDoctorType.PSYCHOLOGIST
+      ) {
+        await syncProviderRoleAssignments({
+          doctorId: doctor.doctorProfile.id,
+          primaryRoleCode: mentalProfilePayload.careTeamType,
+          roleCodes: mentalProfilePayload.careTeamTypes,
+          actorId: req.user!.id
+        });
+      }
       await writeAuditLog({
         actorId: req.user!.id,
         actorRole: req.user!.role,
@@ -794,9 +807,20 @@ export function registerAdminDoctorRoutes(router: Router) {
           ...publicUserSelect,
           gender: true,
           isActive: true,
-          doctorProfile: { select: doctorProfileSelect }
+          doctorProfile: { select: { ...doctorProfileSelect, id: true } }
         }
       });
+      if (
+        doctor.doctorProfile &&
+        profilePayload.doctorType === HomeopathicDoctorType.PSYCHOLOGIST
+      ) {
+        await syncProviderRoleAssignments({
+          doctorId: doctor.doctorProfile.id,
+          primaryRoleCode: mentalProfilePayload.careTeamType,
+          roleCodes: mentalProfilePayload.careTeamTypes,
+          actorId: req.user!.id
+        });
+      }
       await writeAuditLog({
         actorId: req.user!.id,
         actorRole: req.user!.role,

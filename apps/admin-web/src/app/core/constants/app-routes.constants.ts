@@ -19,6 +19,7 @@ export const ROUTE_PATHS = {
   HOPE_HUB_OFFERS: 'hope-hub-offers',
   CONSUMER_FLOWS: 'consumer-flows',
   LISTENER_SCREENING: 'listener-screening',
+  PROVIDER_ROLES: 'provider-roles',
   ASSESSMENT_DEFINITIONS: 'assessment-definitions',
   PRACTICES: 'practices',
   LIFESTYLE_TIPS: 'lifestyle-tips',
@@ -136,6 +137,11 @@ export const NAV_ITEMS = [
   {
     path: adminNavPath(ROUTE_PATHS.LISTENER_SCREENING),
     label: '🧪 Listener Screening',
+    workspaces: ['hope-hub'],
+  },
+  {
+    path: adminNavPath(ROUTE_PATHS.PROVIDER_ROLES),
+    label: '🧩 Provider Roles',
     workspaces: ['hope-hub'],
   },
   {

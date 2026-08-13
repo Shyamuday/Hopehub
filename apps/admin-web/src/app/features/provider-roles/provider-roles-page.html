@@ -1,0 +1,32 @@
+<header class="page-head">
+  <div><p>Hope Hub configuration</p><h1>Provider roles</h1><span>Edit wording, safeguards, modes, and visibility without a frontend release.</span></div>
+  <button type="button" (click)="newRole()">New role</button>
+</header>
+
+@if (error()) { <p class="notice notice--error">{{ error() }}</p> }
+@if (message()) { <p class="notice">{{ message() }}</p> }
+
+<main class="workspace">
+  <aside>
+    @if (loading()) { <p>Loading roles…</p> }
+    @for (role of roles(); track role.code) {
+      <button type="button" class="role-row" [class.role-row--active]="form().code === role.code" (click)="edit(role)">
+        <strong>{{ role.shortLabel }}</strong><span>{{ role.category }} · v{{ role.version }}</span>
+        <i [class.off]="!role.isActive">{{ role.isActive ? 'Active' : 'Off' }}</i>
+      </button>
+    }
+  </aside>
+
+  <form (ngSubmit)="save()">
+    <div class="field"><label>Permanent role code</label><input [ngModel]="form().code" (ngModelChange)="setField('code', $event.toUpperCase())" name="code" [disabled]="roles().some(r => r.code === form().code)" placeholder="NEW_PROVIDER_ROLE"></div>
+    <div class="two"><div class="field"><label>Public label</label><input [ngModel]="form().label" (ngModelChange)="setField('label', $event)" name="label"></div><div class="field"><label>Short label</label><input [ngModel]="form().shortLabel" (ngModelChange)="setField('shortLabel', $event)" name="shortLabel"></div></div>
+    <div class="two"><div class="field"><label>Category</label><select [ngModel]="form().category" (ngModelChange)="setField('category', $event)" name="category"><option>PROFESSIONAL_CARE</option><option>EMOTIONAL_LISTENER</option><option>COACH_MENTOR</option></select></div><div class="field"><label>Tone</label><input [ngModel]="form().tone" (ngModelChange)="setField('tone', $event)" name="tone"></div></div>
+    <div class="field"><label>Card description</label><textarea rows="2" [ngModel]="form().description" (ngModelChange)="setField('description', $event)" name="description"></textarea></div>
+    <div class="field"><label>Allowed scope</label><textarea rows="2" [ngModel]="form().scope" (ngModelChange)="setField('scope', $event)" name="scope"></textarea></div>
+    <div class="two"><div class="field"><label>Best for (one per line)</label><textarea rows="4" [ngModel]="form().bestForText" (ngModelChange)="setField('bestForText', $event)" name="bestFor"></textarea></div><div class="field"><label>Not for (one per line)</label><textarea rows="4" [ngModel]="form().notForText" (ngModelChange)="setField('notForText', $event)" name="notFor"></textarea></div></div>
+    <div class="field"><label>Primary button text</label><input [ngModel]="form().ctaLabel" (ngModelChange)="setField('ctaLabel', $event)" name="ctaLabel"></div>
+    <fieldset><legend>Available session modes</legend>@for (mode of ['CHAT','VOICE','VIDEO']; track mode) { <label><input type="checkbox" [checked]="form().supportedModes.includes(mode)" (change)="toggleMode(mode)"> {{ mode }}</label> }</fieldset>
+    <div class="checks"><label><input type="checkbox" [ngModel]="form().requiresCredentials" (ngModelChange)="setField('requiresCredentials', $event)" name="credentials"> Credentials required</label><label><input type="checkbox" [ngModel]="form().requiresListenerScreening" (ngModelChange)="setField('requiresListenerScreening', $event)" name="screening"> Listener test required</label><label><input type="checkbox" [ngModel]="form().isClinicalCare" (ngModelChange)="setField('isClinicalCare', $event)" name="clinical"> Clinical care</label><label><input type="checkbox" [ngModel]="form().isActive" (ngModelChange)="setField('isActive', $event)" name="active"> Active</label></div>
+    <div class="save"><span>Role codes cannot be deleted; turn Active off to retire one safely.</span><button type="submit" [disabled]="saving()">{{ saving() ? 'Saving…' : 'Save role' }}</button></div>
+  </form>
+</main>
