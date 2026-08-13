@@ -330,18 +330,14 @@
           [formField]="profileForm.counsellingApproach"
         ></textarea>
 
-        <label for="safetyEscalationNote">Safety escalation note</label>
-        <textarea
-          id="safetyEscalationNote"
-          rows="4"
-          placeholder="Write what you will do if a user seems unsafe, in crisis, or outside your scope."
-          [formField]="profileForm.safetyEscalationNote"
-        ></textarea>
-
         @if (isListenerProfile()) {
           <div class="listener-safety-ack">
             <label class="checkbox">
-              <input type="checkbox" [formField]="profileForm.listenerSafetyAcknowledged" />
+              <input
+                type="checkbox"
+                [checked]="profileModel().listenerSafetyAcknowledged"
+                (change)="setListenerSafetyAcknowledgement($any($event.target).checked)"
+              />
               <span>
                 I understand listener sessions are emotional support only, not therapy, diagnosis,
                 prescriptions, emergency care, or crisis handling.
@@ -352,6 +348,32 @@
               risk, I will pause normal listening and follow Hope Hub escalation guidance.
             </p>
           </div>
+          <details class="safety-note-settings">
+            <summary>Customize my escalation note</summary>
+            <div>
+              <textarea
+                rows="4"
+                aria-label="Custom safety escalation note"
+                [formField]="profileForm.safetyEscalationNote"
+              ></textarea>
+              <button type="button" (click)="useStandardSafetyNote()">
+                Restore Hope Hub standard
+              </button>
+            </div>
+          </details>
+        } @else {
+          <label for="safetyEscalationNote">Safety escalation note</label>
+          <textarea
+            id="safetyEscalationNote"
+            rows="4"
+            placeholder="Write what you will do if a user seems unsafe, in crisis, or outside your scope."
+            [formField]="profileForm.safetyEscalationNote"
+          ></textarea>
+          @if (profileModel().safetyEscalationNote.trim().length < 20) {
+            <button type="button" class="standard-safety-button" (click)="useStandardSafetyNote()">
+              Use Hope Hub safety standard
+            </button>
+          }
         }
 
         @if (isClinicalMentalHealthProfile()) {
@@ -365,10 +387,27 @@
 
     @if (isPsychologist && activeSetupStep() === 'services') {
       <section class="mental-profile-section">
-        <p class="section-hint">Choose a ready plan or add one simple service now.</p>
+        <p class="section-hint">Start with one service. You can change or add more later.</p>
+        @if (!careServices().length && recommendedService(); as recommended) {
+          <article class="recommended-service">
+            <div>
+              <small>Recommended for {{ recommended.subtype }}</small>
+              <strong>{{ recommended.title }}</strong>
+              <span>
+                {{ recommended.durationMinutes }} min ·
+                {{ recommended.isFree ? 'Free' : '₹' + rupees(recommended.priceInPaise) }}
+              </span>
+            </div>
+            <button type="button" (click)="addRecommendedService()">Use this service</button>
+          </article>
+        }
         <div class="service-editor">
           @for (service of careServices(); track $index) {
             <article class="service-editor-card">
+              <div class="service-editor-heading">
+                <strong>Service {{ $index + 1 }}</strong>
+                <span>{{ servicePricingSummary(service) }}</span>
+              </div>
               @if (selectedProviderRoleOptions().length > 1) {
                 <select
                   aria-label="Role for this service"
@@ -396,33 +435,37 @@
                   Use plan
                 </button>
               </div>
-              <select
-                [value]="service.pricingMode || 'FIXED'"
-                (change)="updateCareService($index, 'pricingMode', $any($event.target).value)"
-              >
-                @for (mode of servicePricingModeOptions; track mode.value) {
-                  <option [value]="mode.value">{{ mode.label }}</option>
-                }
-              </select>
-              @if (
-                service.pricingMode !== 'FREE_VOLUNTEER' && service.pricingMode !== 'PER_MINUTE'
-              ) {
-                <input
-                  type="number"
-                  [value]="rupees(service.priceInPaise)"
-                  placeholder="Base ₹"
-                  (input)="updateCareService($index, 'priceInPaise', $any($event.target).value)"
-                />
-              }
-              <input
-                type="number"
-                [value]="service.durationMinutes || 30"
-                placeholder="Minutes"
-                (input)="updateCareService($index, 'durationMinutes', $any($event.target).value)"
-              />
               <details class="advanced-service-settings">
-                <summary>More pricing options</summary>
+                <summary>Price, duration and details</summary>
                 <div>
+                  <label>Pricing</label>
+                  <select
+                    [value]="service.pricingMode || 'FIXED'"
+                    (change)="updateCareService($index, 'pricingMode', $any($event.target).value)"
+                  >
+                    @for (mode of servicePricingModeOptions; track mode.value) {
+                      <option [value]="mode.value">{{ mode.label }}</option>
+                    }
+                  </select>
+                  @if (
+                    service.pricingMode !== 'FREE_VOLUNTEER' &&
+                    service.pricingMode !== 'PER_MINUTE'
+                  ) {
+                    <label>Session price</label>
+                    <input
+                      type="number"
+                      [value]="rupees(service.priceInPaise)"
+                      placeholder="₹ amount"
+                      (input)="updateCareService($index, 'priceInPaise', $any($event.target).value)"
+                    />
+                  }
+                  <label>Duration in minutes</label>
+                  <input
+                    type="number"
+                    [value]="service.durationMinutes || 30"
+                    placeholder="Minutes"
+                    (input)="updateCareService($index, 'durationMinutes', $any($event.target).value)"
+                  />
                   @if (showFirstPrice(service)) {
                     <input type="number" [value]="rupees(service.firstSessionPriceInPaise)" placeholder="First ₹" (input)="updateCareService($index, 'firstSessionPriceInPaise', $any($event.target).value)" />
                   }

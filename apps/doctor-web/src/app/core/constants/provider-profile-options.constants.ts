@@ -40,3 +40,6 @@ export const PROVIDER_LISTENER_METHOD_SUGGESTIONS = [
   'Grounding support',
   'Non-judgmental listening',
 ] as const;
+
+export const PROVIDER_STANDARD_SAFETY_NOTE =
+  'I will pause normal support, stay calm, avoid making clinical or emergency claims, and follow Hope Hub escalation guidance whenever a user may be unsafe, in crisis, or outside my scope.';

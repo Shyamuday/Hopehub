@@ -35,6 +35,7 @@ import {
   PROVIDER_COACHING_METHOD_SUGGESTIONS,
   PROVIDER_LANGUAGE_SUGGESTIONS,
   PROVIDER_LISTENER_METHOD_SUGGESTIONS,
+  PROVIDER_STANDARD_SAFETY_NOTE,
 } from '../../../core/constants/provider-profile-options.constants';
 import { AppButtonComponent } from '../../../shared/ui/app-button.component';
 import { AppActionBarComponent } from '../../../shared/ui/app-action-bar.component';
@@ -264,6 +265,15 @@ export class ProfilePage implements OnDestroy {
       });
   }
 
+  recommendedService() {
+    return this.suggestedServicesForSelectedSubtypes()[0];
+  }
+
+  addRecommendedService(): void {
+    const service = this.recommendedService();
+    if (service) this.addSuggestedService(service);
+  }
+
   private selectedStructuredCareTeamTypes(): ProfileCareTeamType[] {
     return this.profileModel().careTeamTypes.filter(
       (value): value is ProfileCareTeamType => value !== 'OTHER',
@@ -378,6 +388,24 @@ export class ProfilePage implements OnDestroy {
     if (this.isCoachGuideProfile()) return PROVIDER_COACHING_METHOD_SUGGESTIONS;
     if (this.isClinicalMentalHealthProfile()) return PROVIDER_CLINICAL_METHOD_SUGGESTIONS;
     return [];
+  }
+
+  useStandardSafetyNote(): void {
+    this.profileModel.update((profile) => ({
+      ...profile,
+      safetyEscalationNote: PROVIDER_STANDARD_SAFETY_NOTE,
+    }));
+  }
+
+  setListenerSafetyAcknowledgement(acknowledged: boolean): void {
+    this.profileModel.update((profile) => ({
+      ...profile,
+      listenerSafetyAcknowledged: acknowledged,
+      safetyEscalationNote:
+        acknowledged && profile.safetyEscalationNote.trim().length < 20
+          ? PROVIDER_STANDARD_SAFETY_NOTE
+          : profile.safetyEscalationNote,
+    }));
   }
 
   approachLabel(): string {
@@ -734,6 +762,18 @@ export class ProfilePage implements OnDestroy {
     return `₹${this.rupees(service.priceInPaise) || '0'}`;
   }
 
+  servicePricingSummary(service: any): string {
+    const duration = `${Number(service.durationMinutes) || 30} min`;
+    if (service.pricingMode === 'FREE_VOLUNTEER' || service.isFree) return `Free · ${duration}`;
+    if (service.pricingMode === 'PER_MINUTE') {
+      return `₹${this.rupees(service.pricePerMinuteInPaise) || '0'}/min · ${duration}`;
+    }
+    if (service.pricingMode === 'PACKAGE' && service.packagePriceInPaise) {
+      return `₹${this.rupees(service.packagePriceInPaise)} package · ${duration}`;
+    }
+    return `₹${this.rupees(service.priceInPaise) || '0'} · ${duration}`;
+  }
+
   async loadCarePricingTemplates() {
     try {
       const res = await firstValueFrom(
@@ -811,6 +851,9 @@ export class ProfilePage implements OnDestroy {
         : mental?.careTeamTypes?.length
           ? (mental.careTeamTypes as SelectableProfileCareTeamType[])
           : this.inferProfileCareTeamTypes(primaryCareTeamType, profileSpecialty);
+      const listenerSafetyAcknowledged = Boolean(
+        mental?.listenerSafetyAcknowledgedAt || mental?.listenerSafetyAcknowledgedVersion,
+      );
 
       this.profileModel.set({
         name: profile.name || '',
@@ -837,10 +880,10 @@ export class ProfilePage implements OnDestroy {
         concernsHandledText: (mental?.concernsHandled ?? []).join('\n'),
         introSessionTitle: mental?.introSessionTitle || '',
         counsellingApproach: mental?.counsellingApproach || '',
-        safetyEscalationNote: mental?.safetyEscalationNote || '',
-        listenerSafetyAcknowledged: Boolean(
-          mental?.listenerSafetyAcknowledgedAt || mental?.listenerSafetyAcknowledgedVersion,
-        ),
+        safetyEscalationNote:
+          mental?.safetyEscalationNote ||
+          (listenerSafetyAcknowledged ? PROVIDER_STANDARD_SAFETY_NOTE : ''),
+        listenerSafetyAcknowledged,
         listenerSafetyAcknowledgedVersion:
           mental?.listenerSafetyAcknowledgedVersion || LISTENER_SAFETY_ACKNOWLEDGEMENT_VERSION,
         acceptsHighRiskCases: mental?.acceptsHighRiskCases ?? false,
