@@ -40,6 +40,8 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
   readonly error = signal('');
   readonly diseases = signal<Array<{ id: string; name: string }>>([]);
   readonly profile = this.online.profile;
+  readonly heartbeatHealthy = this.online.heartbeatHealthy;
+  readonly realtimeConnected = this.online.realtimeConnected;
   readonly readiness = signal<ProviderReadiness | null>(null);
   readonly instantConsults = signal<InstantConsult[]>([]);
   readonly inboxLoading = signal(false);
@@ -73,6 +75,7 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
         acceptsVideoCall: this.modeAllowed('VIDEO') && res.profile.acceptsVideoCall,
       });
       if (this.isLive()) {
+        this.online.connectRealtime();
         void this.loadInbox();
         this.startInboxRefresh();
       }
@@ -133,6 +136,12 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
       this.settingsModel().acceptsVideoCall ? 'video' : '',
     ].filter((mode): mode is 'chat' | 'voice' | 'video' => Boolean(mode));
     return modes.length ? providerConsumerSessionModeListLabel(modes) : 'No live mode selected';
+  }
+
+  connectionLabel() {
+    if (!this.heartbeatHealthy()) return 'Restoring your live visibility…';
+    if (!this.realtimeConnected()) return 'Live visibility active · reconnecting updates…';
+    return 'Live connection active';
   }
 
   isPsychologist() {

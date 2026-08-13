@@ -24,6 +24,7 @@ import { applyConsultationCancellationEffects } from '../services/consultation-c
 import { notifyConsultationBooked } from '../services/consultation-reminders.js';
 import { applySessionOutcome } from '../services/consultation-outcomes.js';
 import { SOCKET_EVENTS, SOCKET_ROOM_PREFIXES } from '../constants/socket.constants.js';
+import { restoreDoctorOnlineAfterInstantConsultation } from '../services/online-doctor-presence.js';
 
 function serializeHopeHubAssessmentAttempt(attempt: {
   id: string;
@@ -672,13 +673,7 @@ export function createConsultationsRouter(io: SocketIoServer) {
       const updated = result?.consultation;
 
       if (consultation.consultationMode === 'INSTANT_ONLINE' && consultation.assignedDoctorId) {
-        const { setDoctorLiveStatus } = await import('../services/online-doctor-presence.js');
-        const { LivePresenceStatus } = await import('@prisma/client');
-        await setDoctorLiveStatus(
-          consultation.assignedDoctorId,
-          { liveStatus: LivePresenceStatus.ONLINE },
-          io
-        );
+        await restoreDoctorOnlineAfterInstantConsultation(consultation.assignedDoctorId, io);
       }
 
       if (updated) {
@@ -740,13 +735,7 @@ export function createConsultationsRouter(io: SocketIoServer) {
       });
 
       if (consultation.consultationMode === 'INSTANT_ONLINE' && consultation.assignedDoctorId) {
-        const { setDoctorLiveStatus } = await import('../services/online-doctor-presence.js');
-        const { LivePresenceStatus } = await import('@prisma/client');
-        await setDoctorLiveStatus(
-          consultation.assignedDoctorId,
-          { liveStatus: LivePresenceStatus.ONLINE },
-          io
-        );
+        await restoreDoctorOnlineAfterInstantConsultation(consultation.assignedDoctorId, io);
       }
 
       if (result?.consultation) {

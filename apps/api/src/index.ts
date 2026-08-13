@@ -100,6 +100,7 @@ import {
 import { enabledNotificationChannels } from './services/notification-service.js';
 import { setNotificationSocket } from './services/in-app-notifications.js';
 import { setHopeHubLiveGroupSocket } from './services/hope-hub-live-groups-realtime.js';
+import { setOnlineDoctorPresenceSocket } from './services/online-doctor-presence.js';
 
 // ── App & HTTP server ──────────────────────────────────────────────────────────
 
@@ -125,6 +126,7 @@ const io = new SocketIoServer(httpServer, {
 
 setNotificationSocket(io);
 setHopeHubLiveGroupSocket(io);
+setOnlineDoctorPresenceSocket(io);
 scheduleAuthProcessLogRetention();
 
 io.use((socket, next) => {

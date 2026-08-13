@@ -32,6 +32,15 @@
       <h2>Live status</h2>
       <p class="status">{{ statusLabel() }}</p>
       <p class="muted">Current modes: {{ acceptedModesLabel() }}</p>
+      @if (isLive()) {
+        <p
+          class="connection-health"
+          [class.connection-health--active]="heartbeatHealthy()"
+          role="status"
+        >
+          <span aria-hidden="true"></span>{{ connectionLabel() }}
+        </p>
+      }
     </div>
     <div class="actions">
       @if (!isLive()) {

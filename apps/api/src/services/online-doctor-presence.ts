@@ -18,6 +18,12 @@ import {
 } from '../constants/homeopathic-doctor-types.js';
 import { enrichWithProfileImageUrl, userProfileImagePath } from '../utils/profile-image-url.js';
 
+let onlineDoctorPresenceSocket: SocketIoServer | null = null;
+
+export function setOnlineDoctorPresenceSocket(io: SocketIoServer) {
+  onlineDoctorPresenceSocket = io;
+}
+
 export function isHeartbeatFresh(lastHeartbeatAt: Date | null | undefined) {
   if (!lastHeartbeatAt) return false;
   return Date.now() - lastHeartbeatAt.getTime() <= ONLINE_HEARTBEAT_TTL_MS;
@@ -150,7 +156,7 @@ export async function listLiveOnlineDoctors(filters?: {
   const sessions = await prisma.doctorOnlineSession.findMany({
     where: {
       enabled: true,
-      liveStatus: { in: [LivePresenceStatus.ONLINE, LivePresenceStatus.ON_CALL] },
+      liveStatus: LivePresenceStatus.ONLINE,
       lastHeartbeatAt: { gte: cutoff },
       user: { isActive: true, role: Role.DOCTOR },
       doctor: {
@@ -211,9 +217,8 @@ export async function setDoctorLiveStatus(
     include: liveDoctorInclude
   });
 
-  if (io) {
-    broadcastPresence(io, updated);
-  }
+  const realtime = io ?? onlineDoctorPresenceSocket;
+  if (realtime) broadcastPresence(realtime, updated);
   return mapLiveDoctor(updated);
 }
 
@@ -226,7 +231,8 @@ export async function heartbeatDoctor(userId: string, io?: SocketIoServer) {
     data: { lastHeartbeatAt: new Date() },
     include: liveDoctorInclude
   });
-  if (io) broadcastPresence(io, updated);
+  const realtime = io ?? onlineDoctorPresenceSocket;
+  if (realtime) broadcastPresence(realtime, updated);
   return mapLiveDoctor(updated);
 }
 
@@ -246,13 +252,78 @@ export function broadcastPresence(
   }
 }
 
-export async function markDoctorBusy(userId: string, status: 'BUSY' | 'ON_CALL') {
+export async function markDoctorBusy(
+  userId: string,
+  status: 'BUSY' | 'ON_CALL',
+  io?: SocketIoServer
+) {
   const session = await prisma.doctorOnlineSession.findUnique({ where: { userId } });
   if (!session) return;
-  await prisma.doctorOnlineSession.update({
+  const updated = await prisma.doctorOnlineSession.update({
     where: { id: session.id },
-    data: { liveStatus: status, lastHeartbeatAt: new Date() }
+    data: { liveStatus: status, lastHeartbeatAt: new Date() },
+    include: liveDoctorInclude
   });
+  const realtime = io ?? onlineDoctorPresenceSocket;
+  if (realtime) broadcastPresence(realtime, updated);
+}
+
+export async function claimDoctorForInstantConsultation(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  mode?: LiveConnectMode
+) {
+  const claimed = await tx.doctorOnlineSession.updateMany({
+    where: {
+      userId,
+      enabled: true,
+      liveStatus: LivePresenceStatus.ONLINE,
+      lastHeartbeatAt: { gte: new Date(Date.now() - ONLINE_HEARTBEAT_TTL_MS) },
+      ...(mode ? liveConnectModeWhere(mode) : {})
+    },
+    data: { liveStatus: LivePresenceStatus.BUSY, lastHeartbeatAt: new Date() }
+  });
+  return claimed.count === 1;
+}
+
+export async function restoreDoctorOnlineAfterInstantConsultation(
+  userId: string,
+  io?: SocketIoServer
+) {
+  const activeConsultations = await prisma.consultation.count({
+    where: {
+      assignedDoctorId: userId,
+      consultationMode: ConsultationMode.INSTANT_ONLINE,
+      status: {
+        in: [
+          ConsultationStatus.ASSIGNED,
+          ConsultationStatus.IN_PROGRESS,
+          ConsultationStatus.PRESCRIPTION_UPLOADED
+        ]
+      }
+    }
+  });
+  if (activeConsultations > 0) return false;
+
+  const restored = await prisma.doctorOnlineSession.updateMany({
+    where: {
+      userId,
+      liveStatus: { in: [LivePresenceStatus.BUSY, LivePresenceStatus.ON_CALL] },
+      lastHeartbeatAt: { gte: new Date(Date.now() - ONLINE_HEARTBEAT_TTL_MS) }
+    },
+    data: { liveStatus: LivePresenceStatus.ONLINE }
+  });
+  if (!restored.count) return false;
+
+  const realtime = io ?? onlineDoctorPresenceSocket;
+  if (realtime) {
+    const session = await prisma.doctorOnlineSession.findUnique({
+      where: { userId },
+      include: liveDoctorInclude
+    });
+    if (session) broadcastPresence(realtime, session);
+  }
+  return true;
 }
 
 export async function isDoctorLiveForInstant(userId: string, diseaseId: string) {
@@ -299,6 +370,12 @@ function isHopeHubQuickTalkConsultation(consultation: {
 }
 
 type LiveConnectMode = 'chat' | 'voice' | 'video';
+
+class InstantProviderUnavailableError extends Error {}
+
+type AssignedInstantConsultation = Prisma.ConsultationGetPayload<{
+  include: { disease: { select: { name: true } } };
+}>;
 
 function normalizeLiveConnectMode(value: unknown): LiveConnectMode {
   const raw = String(value || '').toLowerCase();
@@ -432,17 +509,40 @@ export async function tryAssignInstantConsultation(io: SocketIoServer, consultat
     where: { id: doctorUserId, role: Role.DOCTOR, isActive: true }
   });
 
-  const updated = await prisma.consultation.update({
-    where: { id: consultationId },
-    data: {
-      assignedDoctorId: doctor.id,
-      status: ConsultationStatus.ASSIGNED,
-      clinicStoreId: null
-    },
-    include: { disease: { select: { name: true } } }
-  });
+  const mode = isHopeHubQuickTalk
+    ? normalizeLiveConnectMode(asRecord(consultation.intakeAnswers)['sessionMode'])
+    : undefined;
+  let updated: AssignedInstantConsultation | null = null;
+  try {
+    updated = await prisma.$transaction(async (tx) => {
+      const assigned = await tx.consultation.updateMany({
+        where: {
+          id: consultationId,
+          status: ConsultationStatus.PAID,
+          assignedDoctorId: null
+        },
+        data: {
+          assignedDoctorId: doctor.id,
+          status: ConsultationStatus.ASSIGNED,
+          clinicStoreId: null
+        }
+      });
+      if (!assigned.count) return null;
 
-  await markDoctorBusy(doctor.id, LivePresenceStatus.BUSY);
+      const claimed = await claimDoctorForInstantConsultation(tx, doctor.id, mode);
+      if (!claimed) throw new InstantProviderUnavailableError();
+      return tx.consultation.findUnique({
+        where: { id: consultationId },
+        include: { disease: { select: { name: true } } }
+      });
+    });
+  } catch (error) {
+    if (error instanceof InstantProviderUnavailableError) return null;
+    throw error;
+  }
+  if (!updated) return null;
+
+  await markDoctorBusy(doctor.id, LivePresenceStatus.BUSY, io);
 
   const { emitConsultationAssigned } = await import('./consultation-realtime.js');
   emitConsultationAssigned(io, doctor.id, {

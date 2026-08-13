@@ -2,6 +2,7 @@ import { ConsultationStatus, Prisma } from '@prisma/client';
 import { prisma } from '../db.js';
 import { upsertProviderEarningForPayment } from './provider-earnings.js';
 import { cancelConsultationReminders } from './consultation-reminders.js';
+import { restoreDoctorOnlineAfterInstantConsultation } from './online-doctor-presence.js';
 
 function asRecord(value: unknown): Record<string, any> {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -131,6 +132,10 @@ export async function applyConsultationCancellationEffects(input: {
   }
 
   await cancelConsultationReminders(consultation.id, input.reason || null);
+
+  if (consultation.consultationMode === 'INSTANT_ONLINE' && consultation.assignedDoctorId) {
+    await restoreDoctorOnlineAfterInstantConsultation(consultation.assignedDoctorId);
+  }
 
   return {
     consultationId: consultation.id,
