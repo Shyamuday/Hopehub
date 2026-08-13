@@ -92,11 +92,11 @@ export function buildProviderOnboardingStatus(
   const identityMissing = [
     !profileImageUrl ? 'profile photo' : '',
     !hasText(profile?.specialty) && !hopeHub ? 'specialty/focus' : '',
-    clinicalHopeHub && !hasText(mental?.qualifiedFrom) ? 'qualified/trained from' : '',
-    hopeHub && !hasList(mental?.languages) ? 'languages' : '',
   ].filter(Boolean);
   const bioMissing = [
     !hasText(profile?.bio, 80) ? 'bio of at least 80 characters' : '',
+    clinicalHopeHub && !hasText(mental?.qualifiedFrom) ? 'qualified/trained from' : '',
+    hopeHub && !hasList(mental?.languages) ? 'languages' : '',
     hopeHub && !hasList(mental?.concernsHandled) ? 'concerns handled' : '',
     hopeHub && !hasList(mental?.sessionTypes) ? 'session types' : '',
     !hopeHub && !hasList(profile?.focusAreas) ? 'focus areas' : '',
@@ -131,11 +131,7 @@ export function buildProviderOnboardingStatus(
       actionLabel: 'Open profile',
       route: `/${ROUTE_PATHS.PROFILE}`,
       queryParams: { step: 'identity' },
-      complete:
-        Boolean(profileImageUrl) &&
-        hasText(profile?.specialty) &&
-        (!clinicalHopeHub || hasText(mental?.qualifiedFrom)) &&
-        (!hopeHub || hasList(mental?.languages)),
+      complete: Boolean(profileImageUrl) && (hopeHub || hasText(profile?.specialty)),
       required: true,
       missing: identityMissing,
     },

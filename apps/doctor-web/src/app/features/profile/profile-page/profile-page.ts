@@ -705,65 +705,114 @@ export class ProfilePage {
     this.profileImageUrl = profileImageUrl;
   }
 
-  async saveProfile() {
+  async saveProfile(step: ProfileSetupStepId = this.activeSetupStep()) {
     const form = this.profileModel();
     this.message = '';
     this.error = '';
     this.saving = true;
     try {
       await firstValueFrom(
-        this.http.put(`${this.apiBase}${API_PATHS.DOCTOR.PROFILE}`, {
-          name: form.name,
-          gender: form.gender || null,
-          mobile: form.mobile,
-          specialty: this.specialtyForProfileSave(form),
-          registrationNo: this.showRegistrationNumber() ? form.registrationNo : '',
-          isAvailable: form.isAvailable,
-          bio: form.bio.trim() || null,
-          yearsOfExperience: form.yearsOfExperience !== '' ? Number(form.yearsOfExperience) : null,
-          focusAreas: form.focusAreasText
-            .split('\n')
-            .map((s) => s.trim())
-            .filter(Boolean),
-          mentalHealthProfile: this.isPsychologist
-            ? {
-                qualifications: this.lines(form.qualificationsText),
-                careTeamType: this.primaryProfileCareTeamType(form.careTeamTypes) as any,
-                careTeamTypes: this.structuredProfileCareTeamTypes(form.careTeamTypes) as any,
-                qualifiedFrom: form.qualifiedFrom || null,
-                licenseNumber: form.licenseNumber || null,
-                licenseCouncil: form.licenseCouncil || null,
-                languages: this.lines(form.languagesText),
-                modalities: this.lines(form.modalitiesText),
-                sessionTypes: this.lines(form.sessionTypesText),
-                ageGroups: this.lines(form.ageGroupsText),
-                concernsHandled: this.lines(form.concernsHandledText),
-                introSessionTitle: form.introSessionTitle || null,
-                counsellingApproach: form.counsellingApproach || null,
-                safetyEscalationNote: form.safetyEscalationNote || null,
-                listenerSafetyAcknowledged: form.listenerSafetyAcknowledged,
-                listenerSafetyAcknowledgedVersion: LISTENER_SAFETY_ACKNOWLEDGEMENT_VERSION,
-                acceptsHighRiskCases: form.acceptsHighRiskCases,
-                autoMatchEnabled: form.autoMatchEnabled,
-                acceptingNewUsers: form.acceptingNewUsers,
-                maxSessionsPerDay:
-                  form.maxSessionsPerDay !== '' ? Number(form.maxSessionsPerDay) : null,
-                maxSessionsPerWeek:
-                  form.maxSessionsPerWeek !== '' ? Number(form.maxSessionsPerWeek) : null,
-                services: this.servicesForSave(form.serviceOffersText),
-              }
-            : undefined,
-          defaultMethodOptionId: this.canPrescribe ? form.defaultMethodOptionId || null : undefined,
-        }),
+        this.http.patch(
+          `${this.apiBase}${API_PATHS.DOCTOR.PROFILE}`,
+          this.profileStepPayload(step, form),
+        ),
       );
       await this.session.load(true);
       await this.loadProfile();
       this.message = 'Profile updated successfully.';
-    } catch {
-      this.error = 'Could not save profile.';
+    } catch (error: any) {
+      this.error = this.profileSaveErrorMessage(error);
     } finally {
       this.saving = false;
     }
+  }
+
+  private profileStepPayload(
+    step: ProfileSetupStepId,
+    form: ReturnType<typeof emptyProfileModel>,
+  ): Record<string, unknown> {
+    if (step === 'identity') {
+      return {
+        step,
+        name: form.name,
+        gender: form.gender || null,
+        mobile: form.mobile,
+        isAvailable: form.isAvailable,
+        ...(this.canPrescribe ? { defaultMethodOptionId: form.defaultMethodOptionId || null } : {}),
+      };
+    }
+
+    if (step === 'public') {
+      return {
+        step,
+        bio: form.bio.trim() || null,
+        yearsOfExperience: form.yearsOfExperience !== '' ? Number(form.yearsOfExperience) : null,
+        focusAreas: this.lines(form.focusAreasText),
+      };
+    }
+
+    if (step === 'care') {
+      return {
+        step,
+        specialty: this.specialtyForProfileSave(form),
+        registrationNo: this.showRegistrationNumber() ? form.registrationNo : '',
+        mentalHealthProfile: {
+          qualifications: this.lines(form.qualificationsText),
+          careTeamType: this.primaryProfileCareTeamType(form.careTeamTypes),
+          careTeamTypes: this.structuredProfileCareTeamTypes(form.careTeamTypes),
+          qualifiedFrom: form.qualifiedFrom || null,
+          licenseNumber: form.licenseNumber || null,
+          licenseCouncil: form.licenseCouncil || null,
+          languages: this.lines(form.languagesText),
+          modalities: this.lines(form.modalitiesText),
+          sessionTypes: this.lines(form.sessionTypesText),
+          ageGroups: this.lines(form.ageGroupsText),
+          concernsHandled: this.lines(form.concernsHandledText),
+        },
+      };
+    }
+
+    if (step === 'safety') {
+      return {
+        step,
+        mentalHealthProfile: {
+          introSessionTitle: form.introSessionTitle || null,
+          counsellingApproach: form.counsellingApproach || null,
+          safetyEscalationNote: form.safetyEscalationNote || null,
+          listenerSafetyAcknowledged: form.listenerSafetyAcknowledged,
+          listenerSafetyAcknowledgedVersion: LISTENER_SAFETY_ACKNOWLEDGEMENT_VERSION,
+          acceptsHighRiskCases: form.acceptsHighRiskCases,
+        },
+      };
+    }
+
+    return {
+      step,
+      mentalHealthProfile: {
+        autoMatchEnabled: form.autoMatchEnabled,
+        acceptingNewUsers: form.acceptingNewUsers,
+        maxSessionsPerDay: form.maxSessionsPerDay !== '' ? Number(form.maxSessionsPerDay) : null,
+        maxSessionsPerWeek: form.maxSessionsPerWeek !== '' ? Number(form.maxSessionsPerWeek) : null,
+        services: this.servicesForSave(form.serviceOffersText),
+      },
+    };
+  }
+
+  private profileSaveErrorMessage(error: any) {
+    const issues = error?.error?.issues;
+    if (Array.isArray(issues) && issues.length) {
+      const readableIssues = issues
+        .map((issue: any) => {
+          const field = Array.isArray(issue.path) ? issue.path.join('.') : issue.path;
+          return field ? `${field}: ${issue.message}` : issue.message;
+        })
+        .filter(Boolean)
+        .slice(0, 3);
+      if (readableIssues.length) {
+        return `Please check: ${readableIssues.join('; ')}`;
+      }
+    }
+    return error?.error?.message || 'Could not save profile.';
   }
 
   private lines(value: string) {

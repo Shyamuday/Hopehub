@@ -34,63 +34,81 @@ function inferDoctorTypeFromSpecialty(specialty: string) {
     : HomeopathicDoctorType.JUNIOR_DOCTOR;
 }
 
-const mentalHealthProviderProfileSchema = z
-  .object({
-    careTeamType: z.nativeEnum(CareTeamMemberType).optional(),
-    careTeamTypes: z.array(z.nativeEnum(CareTeamMemberType)).max(12).optional(),
-    qualifications: z.array(z.string().trim().min(1).max(160)).max(20).optional(),
-    qualifiedFrom: z.string().trim().max(240).optional().nullable().or(z.literal('')),
-    licenseNumber: z.string().trim().max(120).optional().nullable().or(z.literal('')),
-    licenseCouncil: z.string().trim().max(160).optional().nullable().or(z.literal('')),
-    languages: z.array(z.string().trim().min(1).max(80)).max(20).optional(),
-    modalities: z.array(z.string().trim().min(1).max(120)).max(30).optional(),
-    sessionTypes: z.array(z.string().trim().min(1).max(120)).max(30).optional(),
-    ageGroups: z.array(z.string().trim().min(1).max(80)).max(20).optional(),
-    concernsHandled: z.array(z.string().trim().min(1).max(120)).max(40).optional(),
-    introSessionTitle: z.string().trim().max(180).optional().nullable().or(z.literal('')),
-    counsellingApproach: z.string().trim().max(3000).optional().nullable().or(z.literal('')),
-    safetyEscalationNote: z.string().trim().max(2000).optional().nullable().or(z.literal('')),
-    listenerSafetyAcknowledged: z.boolean().optional().default(false),
-    listenerSafetyAcknowledgedVersion: z
-      .string()
-      .trim()
-      .max(120)
-      .optional()
-      .nullable()
-      .or(z.literal('')),
-    acceptsHighRiskCases: z.boolean().optional(),
-    autoMatchEnabled: z.boolean().optional(),
-    acceptingNewUsers: z.boolean().optional(),
-    maxSessionsPerDay: z.number().int().min(1).max(50).optional().nullable(),
-    maxSessionsPerWeek: z.number().int().min(1).max(300).optional().nullable(),
-    services: z
-      .array(
-        z.object({
-          title: z.string().trim().min(2).max(120),
-          description: z.string().trim().max(1000).optional().nullable().or(z.literal('')),
-          pricingMode: z
-            .nativeEnum(CareTeamServicePricingMode)
-            .optional()
-            .default(CareTeamServicePricingMode.FIXED),
-          priceInPaise: z.number().int().min(0).max(500000).optional().default(0),
-          firstSessionPriceInPaise: z.number().int().min(0).max(500000).optional().nullable(),
-          followUpPriceInPaise: z.number().int().min(0).max(500000).optional().nullable(),
-          introSessionLimit: z.number().int().min(1).max(20).optional().default(1),
-          packageSessionCount: z.number().int().min(1).max(100).optional().nullable(),
-          packagePriceInPaise: z.number().int().min(0).max(5000000).optional().nullable(),
-          freeMinutes: z.number().int().min(0).max(240).optional().default(0),
-          pricePerMinuteInPaise: z.number().int().min(0).max(50000).optional().nullable(),
-          currency: z.string().trim().max(8).optional().default('INR'),
-          durationMinutes: z.number().int().min(5).max(240).optional().default(30),
-          isFree: z.boolean().optional().default(false),
-          isActive: z.boolean().optional().default(true),
-          sortOrder: z.number().int().min(0).max(999).optional().default(0)
-        })
-      )
-      .max(20)
-      .optional()
-  })
-  .optional();
+const mentalHealthProviderProfileFieldsSchema = z.object({
+  careTeamType: z.nativeEnum(CareTeamMemberType).optional(),
+  careTeamTypes: z.array(z.nativeEnum(CareTeamMemberType)).max(12).optional(),
+  qualifications: z.array(z.string().trim().min(1).max(160)).max(20).optional(),
+  qualifiedFrom: z.string().trim().max(240).optional().nullable().or(z.literal('')),
+  licenseNumber: z.string().trim().max(120).optional().nullable().or(z.literal('')),
+  licenseCouncil: z.string().trim().max(160).optional().nullable().or(z.literal('')),
+  languages: z.array(z.string().trim().min(1).max(80)).max(20).optional(),
+  modalities: z.array(z.string().trim().min(1).max(120)).max(30).optional(),
+  sessionTypes: z.array(z.string().trim().min(1).max(120)).max(30).optional(),
+  ageGroups: z.array(z.string().trim().min(1).max(80)).max(20).optional(),
+  concernsHandled: z.array(z.string().trim().min(1).max(120)).max(40).optional(),
+  introSessionTitle: z.string().trim().max(180).optional().nullable().or(z.literal('')),
+  counsellingApproach: z.string().trim().max(3000).optional().nullable().or(z.literal('')),
+  safetyEscalationNote: z.string().trim().max(2000).optional().nullable().or(z.literal('')),
+  listenerSafetyAcknowledged: z.boolean().optional().default(false),
+  listenerSafetyAcknowledgedVersion: z
+    .string()
+    .trim()
+    .max(120)
+    .optional()
+    .nullable()
+    .or(z.literal('')),
+  acceptsHighRiskCases: z.boolean().optional(),
+  autoMatchEnabled: z.boolean().optional(),
+  acceptingNewUsers: z.boolean().optional(),
+  maxSessionsPerDay: z.number().int().min(1).max(50).optional().nullable(),
+  maxSessionsPerWeek: z.number().int().min(1).max(300).optional().nullable(),
+  services: z
+    .array(
+      z.object({
+        title: z.string().trim().min(2).max(120),
+        description: z.string().trim().max(1000).optional().nullable().or(z.literal('')),
+        pricingMode: z
+          .nativeEnum(CareTeamServicePricingMode)
+          .optional()
+          .default(CareTeamServicePricingMode.FIXED),
+        priceInPaise: z.number().int().min(0).max(500000).optional().default(0),
+        firstSessionPriceInPaise: z.number().int().min(0).max(500000).optional().nullable(),
+        followUpPriceInPaise: z.number().int().min(0).max(500000).optional().nullable(),
+        introSessionLimit: z.number().int().min(1).max(20).optional().default(1),
+        packageSessionCount: z.number().int().min(1).max(100).optional().nullable(),
+        packagePriceInPaise: z.number().int().min(0).max(5000000).optional().nullable(),
+        freeMinutes: z.number().int().min(0).max(240).optional().default(0),
+        pricePerMinuteInPaise: z.number().int().min(0).max(50000).optional().nullable(),
+        currency: z.string().trim().max(8).optional().default('INR'),
+        durationMinutes: z.number().int().min(5).max(240).optional().default(30),
+        isFree: z.boolean().optional().default(false),
+        isActive: z.boolean().optional().default(true),
+        sortOrder: z.number().int().min(0).max(999).optional().default(0)
+      })
+    )
+    .max(20)
+    .optional()
+});
+
+const mentalHealthProviderProfileSchema = mentalHealthProviderProfileFieldsSchema.optional();
+const mentalHealthProviderProfilePatchSchema = mentalHealthProviderProfileFieldsSchema.extend({
+  listenerSafetyAcknowledged: z.boolean().optional()
+});
+
+const doctorProfileStepPatchSchema = z.object({
+  step: z.enum(['identity', 'public', 'care', 'safety', 'services']),
+  name: z.string().trim().min(2).optional(),
+  gender: z.nativeEnum(PatientGender).optional().nullable(),
+  mobile: z.string().trim().min(8).optional().or(z.literal('')),
+  specialty: z.string().trim().min(2).optional(),
+  registrationNo: z.string().trim().optional().or(z.literal('')),
+  isAvailable: z.boolean().optional(),
+  bio: z.string().trim().max(1200).optional().nullable(),
+  yearsOfExperience: z.number().int().min(0).max(60).optional().nullable(),
+  focusAreas: z.array(z.string().trim().min(1)).max(40).optional(),
+  mentalHealthProfile: mentalHealthProviderProfilePatchSchema.optional(),
+  defaultMethodOptionId: z.string().min(1).nullable().optional()
+});
 
 function cleanList(items: string[] | undefined) {
   return (items ?? []).map((item) => item.trim()).filter(Boolean);
@@ -442,6 +460,210 @@ export function registerAuthDoctorRoutes(router: Router) {
     asyncRoute(async (req, res) => {
       const readiness = await providerPublicReadiness(req.user!.id);
       res.json({ readiness });
+    })
+  );
+
+  router.patch(
+    '/doctor/profile',
+    authRequired,
+    allowRoles(Role.DOCTOR, Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const body = doctorProfileStepPatchSchema.parse(req.body);
+      const existing = await prisma.doctor.findUniqueOrThrow({
+        where: { userId: req.user!.id },
+        select: {
+          doctorType: true,
+          mentalHealthProfile: {
+            select: { careTeamType: true, careTeamTypes: true }
+          }
+        }
+      });
+
+      if (body.defaultMethodOptionId) {
+        const method = await assertMethodOptionId(body.defaultMethodOptionId);
+        if (!method) return res.status(400).json({ message: 'Invalid prescribing approach.' });
+      }
+
+      const userData: Record<string, unknown> = {};
+      const doctorData: Record<string, unknown> = {};
+      const mentalData: Record<string, unknown> = {};
+
+      if (body.step === 'identity') {
+        if (body.name !== undefined) userData.name = body.name;
+        if (body.gender !== undefined) userData.gender = body.gender;
+        if (body.mobile !== undefined) userData.mobile = body.mobile || null;
+        if (body.isAvailable !== undefined) doctorData.isAvailable = body.isAvailable;
+        if (body.defaultMethodOptionId !== undefined) {
+          doctorData.defaultMethodOptionId = body.defaultMethodOptionId;
+        }
+      }
+
+      if (body.step === 'public') {
+        if (body.bio !== undefined) doctorData.bio = body.bio || null;
+        if (body.yearsOfExperience !== undefined) {
+          doctorData.yearsOfExperience = body.yearsOfExperience;
+        }
+        if (body.focusAreas !== undefined) doctorData.focusAreas = cleanList(body.focusAreas);
+      }
+
+      const mental = body.mentalHealthProfile;
+      if (body.step === 'care' && mental) {
+        const primary =
+          mental.careTeamType ??
+          existing.mentalHealthProfile?.careTeamType ??
+          CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL;
+        if (body.specialty !== undefined) doctorData.specialty = body.specialty;
+        if (body.registrationNo !== undefined) {
+          doctorData.registrationNo = body.registrationNo || null;
+        }
+        mentalData.careTeamType = primary;
+        mentalData.careTeamTypes = normalizeCareTeamTypes(
+          primary,
+          mental.careTeamTypes ?? existing.mentalHealthProfile?.careTeamTypes
+        );
+        if (mental.qualifications !== undefined) {
+          mentalData.qualifications = cleanList(mental.qualifications);
+        }
+        if (mental.qualifiedFrom !== undefined) {
+          mentalData.qualifiedFrom = cleanNullableText(mental.qualifiedFrom);
+        }
+        if (mental.licenseNumber !== undefined) {
+          mentalData.licenseNumber = cleanNullableText(mental.licenseNumber);
+        }
+        if (mental.licenseCouncil !== undefined) {
+          mentalData.licenseCouncil = cleanNullableText(mental.licenseCouncil);
+        }
+        if (mental.languages !== undefined) mentalData.languages = cleanList(mental.languages);
+        if (mental.modalities !== undefined) mentalData.modalities = cleanList(mental.modalities);
+        if (mental.sessionTypes !== undefined) {
+          mentalData.sessionTypes = cleanList(mental.sessionTypes);
+        }
+        if (mental.ageGroups !== undefined) mentalData.ageGroups = cleanList(mental.ageGroups);
+        if (mental.concernsHandled !== undefined) {
+          mentalData.concernsHandled = cleanList(mental.concernsHandled);
+        }
+      }
+
+      if (body.step === 'safety' && mental) {
+        if (mental.introSessionTitle !== undefined) {
+          mentalData.introSessionTitle = cleanNullableText(mental.introSessionTitle);
+        }
+        if (mental.counsellingApproach !== undefined) {
+          mentalData.counsellingApproach = cleanNullableText(mental.counsellingApproach);
+        }
+        if (mental.safetyEscalationNote !== undefined) {
+          mentalData.safetyEscalationNote = cleanNullableText(mental.safetyEscalationNote);
+        }
+        if (mental.listenerSafetyAcknowledged !== undefined) {
+          mentalData.listenerSafetyAcknowledgedAt = mental.listenerSafetyAcknowledged
+            ? new Date()
+            : null;
+          mentalData.listenerSafetyAcknowledgedVersion = mental.listenerSafetyAcknowledged
+            ? (cleanNullableText(mental.listenerSafetyAcknowledgedVersion) ??
+              LISTENER_SAFETY_ACKNOWLEDGEMENT_VERSION)
+            : null;
+        }
+        if (mental.acceptsHighRiskCases !== undefined) {
+          mentalData.acceptsHighRiskCases = mental.acceptsHighRiskCases;
+        }
+      }
+
+      if (body.step === 'services' && mental) {
+        if (mental.autoMatchEnabled !== undefined) {
+          mentalData.autoMatchEnabled = mental.autoMatchEnabled;
+        }
+        if (mental.acceptingNewUsers !== undefined) {
+          mentalData.acceptingNewUsers = mental.acceptingNewUsers;
+        }
+        if (mental.maxSessionsPerDay !== undefined) {
+          mentalData.maxSessionsPerDay = mental.maxSessionsPerDay;
+        }
+        if (mental.maxSessionsPerWeek !== undefined) {
+          mentalData.maxSessionsPerWeek = mental.maxSessionsPerWeek;
+        }
+        if (mental.services !== undefined) {
+          const services = mental.services.map((service, index) => ({
+            title: service.title,
+            description: service.description || null,
+            pricingMode: service.pricingMode ?? CareTeamServicePricingMode.FIXED,
+            priceInPaise:
+              service.isFree && service.pricingMode !== CareTeamServicePricingMode.PER_MINUTE
+                ? 0
+                : (service.priceInPaise ?? 0),
+            firstSessionPriceInPaise: service.firstSessionPriceInPaise ?? null,
+            followUpPriceInPaise: service.followUpPriceInPaise ?? null,
+            introSessionLimit: service.introSessionLimit ?? 1,
+            packageSessionCount: service.packageSessionCount ?? null,
+            packagePriceInPaise: service.packagePriceInPaise ?? null,
+            freeMinutes: service.freeMinutes ?? 0,
+            pricePerMinuteInPaise: service.pricePerMinuteInPaise ?? null,
+            currency: service.currency || 'INR',
+            durationMinutes: service.durationMinutes ?? 30,
+            isFree:
+              service.pricingMode === CareTeamServicePricingMode.FREE_VOLUNTEER
+                ? true
+                : service.pricingMode === CareTeamServicePricingMode.PER_MINUTE
+                  ? false
+                  : (service.isFree ?? (service.priceInPaise ?? 0) === 0),
+            isActive: service.isActive ?? true,
+            sortOrder: service.sortOrder ?? index
+          }));
+          mentalData.services = {
+            deleteMany: {},
+            ...(services.length ? { create: services } : {})
+          };
+        }
+      }
+
+      const hasMentalData = Object.keys(mentalData).length > 0;
+      if (hasMentalData && existing.doctorType !== HomeopathicDoctorType.PSYCHOLOGIST) {
+        return res
+          .status(400)
+          .json({ message: 'Support profile fields are not available for this provider role.' });
+      }
+
+      await prisma.user.update({
+        where: { id: req.user!.id },
+        data: {
+          ...userData,
+          ...(Object.keys(doctorData).length || hasMentalData
+            ? {
+                doctorProfile: {
+                  update: {
+                    ...doctorData,
+                    ...(hasMentalData
+                      ? {
+                          mentalHealthProfile: {
+                            upsert: {
+                              create: {
+                                careTeamType: CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL,
+                                careTeamTypes: [CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL],
+                                qualifications: [],
+                                languages: [],
+                                modalities: [],
+                                sessionTypes: [],
+                                ageGroups: [],
+                                concernsHandled: [],
+                                ...mentalData
+                              },
+                              update: mentalData
+                            }
+                          }
+                        }
+                      : {})
+                  }
+                }
+              }
+            : {})
+        }
+      });
+
+      const readiness = await providerPublicReadiness(req.user!.id);
+      await prisma.doctor.update({
+        where: { userId: req.user!.id },
+        data: { showOnWebsite: readiness.ready }
+      });
+      res.json({ message: 'Profile step saved.', readiness });
     })
   );
 
