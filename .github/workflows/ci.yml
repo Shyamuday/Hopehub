@@ -91,6 +91,7 @@ jobs:
           - apps/doctor-web
           - apps/admin-web
           - apps/operations-web
+          - apps/healing-web
 
     steps:
       - name: Checkout

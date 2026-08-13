@@ -1,7 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { HomeComponent } from './home.component';
-import { APP_CONSTANTS } from '../../core';
 
 describe('HomeComponent', () => {
   let component: HomeComponent;
@@ -21,11 +20,13 @@ describe('HomeComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should expose app constants for the announcement banner', () => {
-    expect(component.APP_CONSTANTS.TELEGRAM.GROUP_URL).toBe(APP_CONSTANTS.TELEGRAM.GROUP_URL);
+  it('should expose the shared consumer copy and routes', () => {
+    expect(component.UX).toBeTruthy();
+    expect(component.ROUTES).toBeTruthy();
   });
 
-  it('should have daily Telegram announcement message', () => {
-    expect(component.announcementMessage).toContain('daily 9 PM Telegram voice circle');
+  it('should provide the primary concern shortcuts', () => {
+    expect(component.concernShortcuts()).toHaveLength(6);
+    expect(component.concernShortcuts().map((concern) => concern.key)).toContain('anxiety');
   });
 });

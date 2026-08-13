@@ -1,5 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
+import { RouterTestingModule } from '@angular/router/testing';
+import { of } from 'rxjs';
+import { LeadService } from '../../core/services';
 import { ContactComponent } from './contact.component';
 
 describe('ContactComponent', () => {
@@ -8,7 +11,7 @@ describe('ContactComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ContactComponent, ReactiveFormsModule],
+      imports: [ContactComponent, ReactiveFormsModule, RouterTestingModule],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ContactComponent);
@@ -28,7 +31,7 @@ describe('ContactComponent', () => {
     expect(component.contactForm.get('urgencyLevel')?.value).toBe('normal');
     expect(component.contactForm.get('preferredTime')?.value).toBe('');
     expect(component.contactForm.get('message')?.value).toBe('');
-    expect(component.contactForm.get('preferredContact')?.value).toBe('whatsapp');
+    expect(component.contactForm.get('preferredContact')?.value).toBe('telegram');
   });
 
   it('should validate required fields', () => {
@@ -36,7 +39,7 @@ describe('ContactComponent', () => {
 
     expect(form.get('name')?.hasError('required')).toBeTruthy();
     expect(form.get('email')?.hasError('required')).toBeTruthy();
-    expect(form.get('message')?.hasError('required')).toBeTruthy();
+    expect(form.get('message')?.hasError('required')).toBeFalsy();
     expect(form.get('urgencyLevel')?.hasError('required')).toBeFalsy();
     expect(form.get('preferredContact')?.hasError('required')).toBeFalsy();
   });
@@ -51,14 +54,11 @@ describe('ContactComponent', () => {
     expect(emailControl?.hasError('email')).toBeFalsy();
   });
 
-  it('should validate message minimum length', () => {
+  it('should keep the optional message field valid', () => {
     const messageControl = component.contactForm.get('message');
 
     messageControl?.setValue('short');
-    expect(messageControl?.hasError('minlength')).toBeTruthy();
-
-    messageControl?.setValue('This is a longer message that meets the minimum requirement');
-    expect(messageControl?.hasError('minlength')).toBeFalsy();
+    expect(messageControl?.valid).toBeTruthy();
   });
 
   it('should mark all fields as touched when submitting invalid form', () => {
@@ -70,8 +70,10 @@ describe('ContactComponent', () => {
     expect(component.contactForm.get('preferredContact')?.touched).toBeTruthy();
   });
 
-  it('should submit form when valid', () => {
+  it('should submit a valid enquiry', async () => {
     const form = component.contactForm;
+    const leadService = TestBed.inject(LeadService);
+    const sendContactForm = vi.spyOn(leadService, 'sendContactForm').mockReturnValue(of(true));
 
     form.patchValue({
       name: 'John Doe',
@@ -82,7 +84,10 @@ describe('ContactComponent', () => {
 
     expect(form.valid).toBeTruthy();
 
-    component.onSubmit();
-    expect(component.isSubmitting).toBeTruthy();
+    await component.onSubmit();
+
+    expect(sendContactForm).toHaveBeenCalledOnce();
+    expect(component.showSuccessMessage()).toBeTruthy();
+    expect(component.isSubmitting()).toBeFalsy();
   });
 });
