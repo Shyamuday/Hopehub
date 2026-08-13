@@ -58,19 +58,6 @@ import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants'
               Find support
             </a>
             <a
-              [routerLink]="ROUTES.links.careTeam"
-              routerLinkActive="text-primary-600 border-b-2 border-primary-600"
-              class="text-gray-700 hover:text-primary-600 px-2 py-2 text-sm font-medium transition-colors duration-200 whitespace-nowrap"
-              [attr.aria-current]="
-                isCurrentRoute(ROUTES.paths.careTeam) || isCurrentRoute('/psychologists')
-                  ? 'page'
-                  : null
-              "
-            >
-              Care team
-            </a>
-
-            <a
               [routerLink]="ROUTES.links.assessments"
               routerLinkActive="text-primary-600 border-b-2 border-primary-600"
               class="text-gray-700 hover:text-primary-600 px-2 py-2 text-sm font-medium transition-colors duration-200 whitespace-nowrap"
@@ -92,7 +79,7 @@ import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants'
                 class="flex items-center px-2 py-2 text-sm font-medium text-gray-700 transition-colors duration-200 hover:text-primary-600 whitespace-nowrap"
                 aria-haspopup="menu"
               >
-                Resources
+                Explore
                 <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     stroke-linecap="round"
@@ -106,6 +93,18 @@ import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants'
                 class="invisible absolute left-0 z-50 mt-2 w-48 rounded-md border border-gray-200 bg-white py-1 opacity-0 shadow-lg transition-all duration-200 group-hover:visible group-hover:opacity-100"
                 role="menu"
               >
+                <a
+                  [routerLink]="ROUTES.links.services"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                  >Services</a
+                >
+                <a
+                  [routerLink]="ROUTES.links.careTeam"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                  >Care team</a
+                >
                 <a
                   [routerLink]="ROUTES.links.exercises"
                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
@@ -301,31 +300,6 @@ import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants'
                 Find support
               </a>
               <a
-                [routerLink]="ROUTES.links.services"
-                (click)="closeMobileMenu()"
-                routerLinkActive="text-primary-600 bg-primary-50"
-                class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
-                [attr.aria-current]="isCurrentRoute(ROUTES.paths.services) ? 'page' : null"
-                role="menuitem"
-              >
-                Services
-              </a>
-              <a
-                [routerLink]="ROUTES.links.careTeam"
-                (click)="closeMobileMenu()"
-                routerLinkActive="text-primary-600 bg-primary-50"
-                class="text-gray-700 hover:text-primary-600 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
-                [attr.aria-current]="
-                  isCurrentRoute(ROUTES.paths.careTeam) || isCurrentRoute('/psychologists')
-                    ? 'page'
-                    : null
-                "
-                role="menuitem"
-              >
-                Care team
-              </a>
-
-              <a
                 [routerLink]="ROUTES.links.assessments"
                 (click)="closeMobileMenu()"
                 routerLinkActive="text-primary-600 bg-primary-50"
@@ -366,8 +340,26 @@ import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants'
               </a>
               <div class="border-t border-gray-200 pt-3 mt-2">
                 <div class="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Resources
+                  Explore
                 </div>
+                <a
+                  [routerLink]="ROUTES.links.services"
+                  (click)="closeMobileMenu()"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                >
+                  Services
+                </a>
+                <a
+                  [routerLink]="ROUTES.links.careTeam"
+                  (click)="closeMobileMenu()"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
+                >
+                  Care team
+                </a>
                 <a
                   [routerLink]="ROUTES.links.exercises"
                   (click)="closeMobileMenu()"

@@ -90,9 +90,7 @@ export class LoginComponent implements OnInit {
 
         // Close modal and navigate
         this.authModalService.close();
-        if (this.router.url === '/' || this.router.url.startsWith('/auth')) {
-          this.router.navigate(['/dashboard']);
-        }
+        await this.continueAfterLogin();
       } catch (error) {
         if (
           typeof error === 'object' &&
@@ -186,9 +184,7 @@ export class LoginComponent implements OnInit {
       await this.authService.loginWithOtp(normalizedEmail, String(otp.value).trim());
       this.notificationService.success('You are signed in.');
       this.authModalService.close();
-      if (this.router.url === '/' || this.router.url.startsWith('/auth')) {
-        this.router.navigate(['/dashboard']);
-      }
+      await this.continueAfterLogin();
     } catch (error) {
       this.errorMessage.set('Invalid or expired code. Send a new code and try again.');
       this.notificationService.error('Invalid or expired code. Send a new code and try again.');
@@ -201,9 +197,7 @@ export class LoginComponent implements OnInit {
       await this.authService.loginWithGoogle();
       this.notificationService.success('You are signed in with Google.');
       this.authModalService.close();
-      if (this.router.url === '/' || this.router.url.startsWith('/auth')) {
-        this.router.navigate(['/dashboard']);
-      }
+      await this.continueAfterLogin();
     } catch (error) {
       // Error is handled by the auth service and displayed via the subscription
       this.notificationService.error(
@@ -228,5 +222,16 @@ export class LoginComponent implements OnInit {
     }
 
     return fallback;
+  }
+
+  private async continueAfterLogin(): Promise<void> {
+    const returnUrl = this.authModalService.consumeReturnUrl();
+    if (returnUrl) {
+      await this.router.navigateByUrl(returnUrl);
+      return;
+    }
+    if (this.router.url === '/' || this.router.url.startsWith('/auth')) {
+      await this.router.navigate(['/dashboard']);
+    }
   }
 }

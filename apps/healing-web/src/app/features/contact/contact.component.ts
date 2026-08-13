@@ -154,6 +154,7 @@ export class ContactComponent implements OnInit {
   checkoutQuoteLoading = signal(false);
   checkoutQuoteError = signal('');
   readonly bookingStep = signal<1 | 2 | 3>(1);
+  readonly bookingStepError = signal('');
 
   careTeamProfileLink(provider: HopeHubProvider): string[] {
     return [...CONSUMER_ROUTES.links.careTeam, provider.slug || provider.id];
@@ -187,7 +188,42 @@ export class ContactComponent implements OnInit {
   }
 
   goToBookingStep(step: 1 | 2 | 3): void {
+    const currentStep = this.bookingStep();
+    this.bookingStepError.set('');
+    if (step > currentStep) {
+      const serviceName = String(
+        this.contactForm?.get('serviceInterest')?.value || this.prefilledData().serviceName || '',
+      ).trim();
+      if (!serviceName) {
+        this.bookingStepError.set('Choose a support service before continuing.');
+        this.notificationService.warning(this.bookingStepError());
+        this.focusBookingStep(currentStep);
+        return;
+      }
+      if (step === 3 && !this.selectedAppointment()) {
+        this.bookingStepError.set('Choose an available time before reviewing your booking.');
+        this.notificationService.warning(this.bookingStepError());
+        this.focusBookingStep(2);
+        return;
+      }
+      if (currentStep === 1) {
+        this.productAnalytics.track(HOPE_HUB_ANALYTICS_EVENTS.SUPPORT_SELECTED, {
+          serviceName,
+          mode: this.requestedLiveMode(),
+          supportPath: this.activeSupportPathPreference(),
+        });
+      }
+    }
     this.bookingStep.set(step);
+    this.productAnalytics.track(HOPE_HUB_ANALYTICS_EVENTS.BOOKING_STEP_VIEWED, { step });
+    this.focusBookingStep(step);
+  }
+
+  private focusBookingStep(step: 1 | 2 | 3): void {
+    if (typeof document === 'undefined') return;
+    window.setTimeout(() => {
+      document.querySelector<HTMLElement>(`[data-booking-step="${step}"]`)?.focus();
+    });
   }
 
   private loadUserData(): void {
@@ -563,6 +599,7 @@ export class ContactComponent implements OnInit {
 
   onAppointmentSelected(appointment: AppointmentSlot): void {
     this.selectedAppointment.set(appointment);
+    this.bookingStepError.set('');
     this.productAnalytics.track(HOPE_HUB_ANALYTICS_EVENTS.SLOT_SELECTED, {
       serviceName:
         this.contactForm?.get('serviceInterest')?.value || this.prefilledData().serviceName || '',

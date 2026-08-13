@@ -36,10 +36,8 @@
 }
 
 .request-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
-  gap: 1.25rem;
-  align-items: start;
+  margin: 0 auto;
+  max-width: 760px;
 }
 
 .request-card,
@@ -138,6 +136,22 @@ form {
   gap: 1rem;
 }
 
+.booking-step-error {
+  border: 1px solid var(--color-error-border, #fecaca);
+  border-radius: var(--hope-radius-sm);
+  background: var(--color-error-bg, #fef2f2);
+  color: var(--color-error, #b91c1c);
+  font-size: var(--hope-font-size-body-sm);
+  font-weight: 700;
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+}
+
+[data-booking-step]:focus-visible {
+  outline: 2px solid var(--brand-primary);
+  outline-offset: 3px;
+}
+
 .form-grid.two {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
@@ -202,6 +216,10 @@ form {
 .contact-methods label:has(input:focus-visible) {
   outline: 2px solid var(--hope-selected-border);
   outline-offset: 2px;
+}
+
+.contact-methods--text label {
+  text-transform: none;
 }
 
 .quick-talk-card {

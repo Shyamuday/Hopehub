@@ -61,6 +61,22 @@ describe('ContactComponent', () => {
     expect(messageControl?.valid).toBeTruthy();
   });
 
+  it('should keep the user on support until a service is selected', () => {
+    component.goToBookingStep(2);
+
+    expect(component.bookingStep()).toBe(1);
+    expect(component.bookingStepError()).toContain('support service');
+  });
+
+  it('should require a slot before confirmation', () => {
+    component.contactForm.patchValue({ serviceInterest: 'Hope Hub Consultation' });
+    component.goToBookingStep(2);
+    component.goToBookingStep(3);
+
+    expect(component.bookingStep()).toBe(2);
+    expect(component.bookingStepError()).toContain('available time');
+  });
+
   it('should mark all fields as touched when submitting invalid form', () => {
     component.onSubmit();
 

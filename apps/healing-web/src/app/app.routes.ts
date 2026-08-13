@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { NavigationGuard } from './core/guards';
+import { AuthGuard, NavigationGuard } from './core/guards';
 import { HomeComponent } from './features/home/home.component';
 
 export const routes: Routes = [
@@ -188,6 +188,7 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/profile/profile.component').then((m) => m.ProfileComponent),
     title: 'My Profile - Hope Hub',
+    canActivate: [AuthGuard],
     data: {
       breadcrumb: 'My Profile',
       description: 'Manage your Hope Hub profile and mental wellness context',
@@ -641,6 +642,7 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/support-plan/support-plan.component').then((m) => m.SupportPlanComponent),
     title: 'My Support Plan - Hope Hub',
+    canActivate: [AuthGuard],
     data: {
       breadcrumb: 'My support plan',
       description: 'Your saved Hope Hub support preferences and next best step',
@@ -652,6 +654,7 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
     title: 'My Consultations - Hope Hub',
+    canActivate: [AuthGuard],
     data: {
       breadcrumb: 'My Consultations',
       description: 'View Hope Hub bookings and join voice or video consultation calls',
@@ -663,6 +666,7 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/live-session/live-session.component').then((m) => m.LiveSessionComponent),
     title: 'Live Session - Hope Hub',
+    canActivate: [AuthGuard],
     data: {
       breadcrumb: 'Live Session',
       description: 'Join your Hope Hub live chat, voice, or video session',

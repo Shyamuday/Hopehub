@@ -33,6 +33,7 @@ export class ProfileComponent implements OnInit {
   readonly needsLogin = signal(false);
   readonly patientCode = signal<string | null>(null);
   readonly profile = signal<PatientProfile | null>(null);
+  readonly profileWorkspace = signal<'personal' | 'support' | 'plan'>('personal');
   readonly editingSection = signal<ProfileSection | null>(null);
   readonly dailyPlans = signal<PatientDailyPlan[]>([]);
   readonly dailyPlansLoading = signal(false);

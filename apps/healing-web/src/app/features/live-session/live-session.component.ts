@@ -12,6 +12,10 @@ import { ConsultationCallPanelComponent } from '@hopehub/platform-ui';
 import { providerConsumerSessionModeListLabel } from '@hopehub/contracts';
 import { AppButtonComponent } from '../../shared/components';
 import { SessionFeedbackComponent } from '../../shared/components/session-feedback/session-feedback.component';
+import {
+  HOPE_HUB_ANALYTICS_EVENTS,
+  ProductAnalyticsService,
+} from '../../core/services/product-analytics.service';
 
 type LiveSessionMessage = {
   id: string;
@@ -73,6 +77,7 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
   private readonly bookingService = inject(BookingService);
   private readonly notificationService = inject(NotificationService);
   private readonly realtimeService = inject(HopeHubRealtimeService);
+  private readonly productAnalytics = inject(ProductAnalyticsService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly user = signal<User | null>(null);
@@ -89,6 +94,7 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
   readonly lastRefreshedAt = signal<Date | null>(null);
 
   private consultationId = '';
+  private trackedSessionId = '';
   private autoRefreshTimer: ReturnType<typeof setInterval> | null = null;
   private readonly handleIncomingMessage = (raw: unknown) => {
     const message = raw as Partial<LiveSessionMessage>;
@@ -450,6 +456,14 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
     this.bookingService.consultation(id).subscribe({
       next: (res) => {
         this.consultation.set(res.consultation);
+        if (!options.silent && this.trackedSessionId !== res.consultation.id) {
+          this.trackedSessionId = res.consultation.id;
+          this.productAnalytics.track(HOPE_HUB_ANALYTICS_EVENTS.LIVE_SESSION_OPENED, {
+            consultationId: res.consultation.id,
+            mode: res.consultation.intakeAnswers?.sessionMode || 'chat',
+            status: res.consultation.status,
+          });
+        }
         this.loadCallSessions();
         this.lastRefreshedAt.set(new Date());
         this.configureAutoRefresh();
