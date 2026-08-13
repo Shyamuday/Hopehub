@@ -30,7 +30,7 @@ cp .env.example .env
 Edit `.env`:
 
 ```env
-BOT_TOKEN=8880551060:AAGMfnjQTurnXQ686v9qEkfFOYm4R2NlPhU
+BOT_TOKEN=YOUR_BOT_TOKEN_HERE
 ADMIN_CHAT_ID=123456789         # Your numeric Telegram user ID (get from @userinfobot)
 CONFESSION_CHANNEL_ID=@HopeHubConfessions   # Channel where approved confessions go
 CONFESSION_START_NUMBER=1000    # Optional: starting confession number

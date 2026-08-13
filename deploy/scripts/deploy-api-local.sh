@@ -134,3 +134,5 @@ if [ -n "${TELEGRAM_USER_BOT_TOKEN_VALUE}${TELEGRAM_DOCTOR_BOT_TOKEN_VALUE}${TEL
   echo "Configuring Telegram bot webhooks..."
   npm run telegram:setup -- --drop-pending
 fi
+
+bash "$APP_DIR/deploy/scripts/deploy-telegram-bots-local.sh"

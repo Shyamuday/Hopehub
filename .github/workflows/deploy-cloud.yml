@@ -289,7 +289,7 @@ jobs:
               fi
               changed="$(git diff --name-only "$base" "$head")"
               echo "$changed"
-              if echo "$changed" | grep -Eq '^(apps/api|libs|shared|deploy/config|deploy/scripts/deploy-api-local\.sh|package\.json|package-lock\.json|\.github/workflows/deploy-cloud\.yml)'; then
+              if echo "$changed" | grep -Eq '^(apps/(api|confession-bot|contact-bot|rules-bot)|libs|shared|deploy/config|deploy/scripts/(deploy-api-local|deploy-telegram-bots-local)\.sh|package\.json|package-lock\.json|\.github/workflows/deploy-cloud\.yml)'; then
                 deploy=true
               fi
             fi
