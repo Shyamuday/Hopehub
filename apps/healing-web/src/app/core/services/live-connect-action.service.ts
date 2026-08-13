@@ -16,6 +16,7 @@ import { BookingService, HopeHubProvider } from './booking.service';
 import { NotificationService } from './notification.service';
 import { PaymentService } from './payment.service';
 import { ConsumerFlowPreferencesService } from './consumer-flow-preferences.service';
+import { providerSessionModeFromValue } from '@hopehub/contracts';
 
 export type LiveConnectActionMode = 'chat' | 'voice' | 'video' | 'book';
 
@@ -188,6 +189,14 @@ export class LiveConnectActionService {
     provider: HopeHubProvider,
     mode: Exclude<LiveConnectActionMode, 'book'>,
   ): boolean {
+    const canonicalMode = providerSessionModeFromValue(mode);
+    if (
+      canonicalMode &&
+      provider.supportedModes?.length &&
+      !provider.supportedModes.includes(canonicalMode)
+    ) {
+      return false;
+    }
     if (mode === 'chat') return provider.acceptsChat !== false;
     if (mode === 'voice') return provider.acceptsVoiceCall !== false;
     return provider.acceptsVideoCall !== false;

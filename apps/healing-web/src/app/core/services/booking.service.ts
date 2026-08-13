@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, map, shareReplay } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import type { IceServerConfig } from '@hopehub/platform-ui';
+import type { ProviderClassification, ProviderSessionMode } from '@hopehub/contracts';
 
 export type HopeHubBookingPayload = {
   serviceName: string;
@@ -209,7 +210,7 @@ export type HopeHubLiveGroup = {
   pinnedMessage?: string | null;
   roomRules?: string | null;
   status: 'LIVE' | 'SCHEDULED' | string;
-  mode: 'CHAT' | 'VOICE' | 'VIDEO' | string;
+  mode: ProviderSessionMode | string;
   slowModeSeconds?: number;
   hostUserId?: string | null;
   isPublic: boolean;
@@ -302,6 +303,7 @@ export type HopeHubProvider = {
     | 'VOLUNTEER';
   supportRoleLabel?: string;
   supportRoleCategory?: string | null;
+  supportedModes?: ProviderSessionMode[];
   supportTierLabel?: string;
   supportTierTone?: string;
   supportRoleDescription?: string;
@@ -543,7 +545,7 @@ export class BookingService {
     description?: string;
     callTitle?: string;
     callAgenda?: string;
-    mode?: 'CHAT' | 'VOICE' | 'VIDEO';
+    mode?: ProviderSessionMode;
     status?: 'LIVE' | 'SCHEDULED';
   }): Observable<{ group: HopeHubLiveGroup }> {
     return this.http.post<{ group: HopeHubLiveGroup }>(
@@ -572,7 +574,7 @@ export class BookingService {
 
   updateLiveGroupMode(
     groupId: string,
-    mode: 'CHAT' | 'VOICE' | 'VIDEO',
+    mode: ProviderSessionMode,
   ): Observable<{ group: HopeHubLiveGroup }> {
     return this.http.patch<{ group: HopeHubLiveGroup }>(
       `${this.apiUrl}/hope-hub/live-groups/${encodeURIComponent(groupId)}/mode`,
@@ -865,4 +867,3 @@ export class BookingService {
     );
   }
 }
-import type { ProviderClassification } from '@hopehub/contracts';

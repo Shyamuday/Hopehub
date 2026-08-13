@@ -1,5 +1,11 @@
 import { CONSUMER_CONCERN_FLOWS } from './consumer-concerns.constants';
 import { CONSUMER_SUPPORT_PATHS } from './support-paths.constants';
+import {
+  PROVIDER_SESSION_MODES,
+  PROVIDER_SESSION_MODE_DEFINITIONS,
+  providerSessionModeFromValue,
+  providerSessionModeMatchesText,
+} from '@hopehub/contracts';
 
 export type ConsumerFormOption = {
   value: string;
@@ -63,39 +69,45 @@ export const CONSUMER_EXPERT_TYPE_OPTIONS: ConsumerFormOption[] = [
 ];
 
 export const CONSUMER_SESSION_MODE_OPTIONS: ConsumerFormOption[] = [
-  { value: 'live_chat', label: 'Live chat' },
-  { value: 'online_audio', label: 'Online audio' },
-  { value: 'online_video', label: 'Online video' },
+  ...PROVIDER_SESSION_MODES.map((mode) => ({
+    value: PROVIDER_SESSION_MODE_DEFINITIONS[mode].sessionTypeValue,
+    label: PROVIDER_SESSION_MODE_DEFINITIONS[mode].label,
+  })),
   { value: 'chat_followup', label: 'Chat follow-up' },
 ];
 
-export const CONSUMER_LIVE_CONNECT_MODE_OPTIONS: ConsumerLiveConnectModeOption[] = [
-  { value: 'chat', label: 'Chat', icon: '💬', copy: 'Private text support' },
-  { value: 'voice', label: 'Voice', icon: '🎧', copy: 'Talk without camera' },
-  { value: 'video', label: 'Video', icon: '🎥', copy: 'Face-to-face support' },
-];
+export const CONSUMER_LIVE_CONNECT_MODE_OPTIONS: ConsumerLiveConnectModeOption[] =
+  PROVIDER_SESSION_MODES.map((mode) => {
+    const definition = PROVIDER_SESSION_MODE_DEFINITIONS[mode];
+    return {
+      value: definition.consumerValue,
+      label: definition.label,
+      icon: definition.icon,
+      copy: definition.description,
+    };
+  });
 
 export const CONSUMER_CONNECT_MODE_META: Record<
   ConsumerConnectMode,
   { label: string; summaryLabel: string; icon: string; description: string }
 > = {
   chat: {
-    label: 'Chat',
+    label: PROVIDER_SESSION_MODE_DEFINITIONS.CHAT.label,
     summaryLabel: 'private chat',
-    icon: '💬',
-    description: 'Private text support',
+    icon: PROVIDER_SESSION_MODE_DEFINITIONS.CHAT.icon,
+    description: PROVIDER_SESSION_MODE_DEFINITIONS.CHAT.description,
   },
   voice: {
-    label: 'Voice',
+    label: PROVIDER_SESSION_MODE_DEFINITIONS.VOICE.label,
     summaryLabel: 'voice call',
-    icon: '🎧',
-    description: 'Speak without camera',
+    icon: PROVIDER_SESSION_MODE_DEFINITIONS.VOICE.icon,
+    description: PROVIDER_SESSION_MODE_DEFINITIONS.VOICE.description,
   },
   video: {
-    label: 'Video',
+    label: PROVIDER_SESSION_MODE_DEFINITIONS.VIDEO.label,
     summaryLabel: 'video call',
-    icon: '🎥',
-    description: 'Face-to-face support',
+    icon: PROVIDER_SESSION_MODE_DEFINITIONS.VIDEO.icon,
+    description: PROVIDER_SESSION_MODE_DEFINITIONS.VIDEO.description,
   },
   book: {
     label: 'Book slot',
@@ -111,9 +123,8 @@ export function consumerLiveMode(mode: ConsumerConnectMode): ConsumerLiveConnect
 
 export function consumerSessionModeFor(mode: ConsumerConnectMode): string {
   const liveMode = consumerLiveMode(mode);
-  if (liveMode === 'video') return 'online_video';
-  if (liveMode === 'chat') return 'live_chat';
-  return 'online_audio';
+  const providerMode = providerSessionModeFromValue(liveMode) ?? 'VOICE';
+  return PROVIDER_SESSION_MODE_DEFINITIONS[providerMode].sessionTypeValue;
 }
 
 export function consumerModeLabel(mode: ConsumerConnectMode): string {
@@ -125,10 +136,8 @@ export function consumerModeSummaryLabel(mode: ConsumerConnectMode): string {
 }
 
 export function consumerModeMatchesText(mode: ConsumerLiveConnectMode, text: string): boolean {
-  const normalized = text.toLowerCase();
-  if (mode === 'chat') return /\b(chat|message|text)\b/.test(normalized);
-  if (mode === 'video') return /\bvideo\b/.test(normalized);
-  return /\b(voice|audio|call)\b/.test(normalized);
+  const providerMode = providerSessionModeFromValue(mode);
+  return providerMode ? providerSessionModeMatchesText(providerMode, text) : false;
 }
 
 export const CONSUMER_LANGUAGE_OPTIONS: ConsumerFormOption[] = [

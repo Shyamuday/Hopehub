@@ -3,11 +3,27 @@ import test from 'node:test';
 import {
   PROVIDER_ROLE_CODES,
   PROVIDER_ROLE_DEFINITIONS,
+  PROVIDER_SESSION_MODE_DEFINITIONS,
+  PROVIDER_SESSION_MODES,
   normalizeProviderRoles,
   providerClassificationFromAssignments,
   providerClassificationFromLegacy,
-  providerHasRoleCategory
+  providerHasRoleCategory,
+  providerSessionModeFromValue,
+  providerSessionModeMatchesText
 } from '@hopehub/contracts';
+
+test('session modes have one canonical API and UI definition', () => {
+  assert.deepEqual(PROVIDER_SESSION_MODES, ['CHAT', 'VOICE', 'VIDEO']);
+  assert.equal(providerSessionModeFromValue('online_audio'), 'VOICE');
+  assert.equal(providerSessionModeFromValue('chat'), 'CHAT');
+  assert.equal(providerSessionModeFromValue('VIDEO'), 'VIDEO');
+  assert.equal(providerSessionModeMatchesText('VOICE', 'Video call'), false);
+  for (const mode of PROVIDER_SESSION_MODES) {
+    assert.equal(PROVIDER_SESSION_MODE_DEFINITIONS[mode].code, mode);
+    assert.ok(PROVIDER_SESSION_MODE_DEFINITIONS[mode].label);
+  }
+});
 
 test('every provider role has one complete canonical definition', () => {
   assert.equal(new Set(PROVIDER_ROLE_CODES).size, PROVIDER_ROLE_CODES.length);

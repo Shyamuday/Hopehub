@@ -6,8 +6,12 @@ import { firstValueFrom } from 'rxjs';
 import { MultiSelectComponent, ProfileAvatarUploadComponent } from '@hopehub/platform-ui';
 import {
   PROVIDER_ROLE_CODES,
+  PROVIDER_SESSION_MODES,
+  PROVIDER_SESSION_MODE_DEFINITIONS,
+  providerSessionModeFromValue,
   type CarePricingTemplateDto,
   type ProviderRoleDefinitionDto,
+  type ProviderSessionMode,
   type ProviderTaxonomyResponse,
 } from '@hopehub/contracts';
 import { environment } from '../../../../environments/environment';
@@ -86,6 +90,7 @@ function emptyProfileModel() {
   styleUrl: './profile-page.scss',
 })
 export class ProfilePage implements OnDestroy {
+  readonly sessionModes = PROVIDER_SESSION_MODES;
   private readonly http = inject(HttpClient);
   private readonly session = inject(DoctorSessionService);
   private readonly router = inject(Router);
@@ -194,6 +199,30 @@ export class ProfilePage implements OnDestroy {
 
   isProfileCareTeamTypeSelected(value: SelectableProfileCareTeamType): boolean {
     return this.profileModel().careTeamTypes.includes(value);
+  }
+
+  sessionModeLabel(mode: ProviderSessionMode): string {
+    return PROVIDER_SESSION_MODE_DEFINITIONS[mode].label;
+  }
+
+  sessionModeDescription(mode: ProviderSessionMode): string {
+    return PROVIDER_SESSION_MODE_DEFINITIONS[mode].description;
+  }
+
+  isSessionModeSelected(mode: ProviderSessionMode): boolean {
+    return this.lines(this.profileModel().sessionTypesText).some(
+      (value) => providerSessionModeFromValue(value) === mode,
+    );
+  }
+
+  toggleSessionMode(mode: ProviderSessionMode, checked: boolean): void {
+    const current = this.lines(this.profileModel().sessionTypesText)
+      .map(providerSessionModeFromValue)
+      .filter((value): value is ProviderSessionMode => Boolean(value));
+    const next = checked
+      ? Array.from(new Set([...current, mode]))
+      : current.filter((value) => value !== mode);
+    this.profileModel.update((profile) => ({ ...profile, sessionTypesText: next.join('\n') }));
   }
 
   suggestedServicesForSelectedSubtypes() {

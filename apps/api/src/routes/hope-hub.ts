@@ -49,6 +49,7 @@ import {
 } from '../services/provider-taxonomy.service.js';
 import {
   normalizeProviderRoles,
+  PROVIDER_SESSION_MODES,
   providerClassificationFromAssignments,
   providerClassificationFromLegacy,
   providerRoleDefinition,
@@ -233,7 +234,7 @@ const hopeHubLiveGroupCreateSchema = z.object({
   description: z.string().trim().max(1200).optional().or(z.literal('')),
   callTitle: z.string().trim().max(140).optional().or(z.literal('')),
   callAgenda: z.string().trim().max(1200).optional().or(z.literal('')),
-  mode: z.enum(['CHAT', 'VOICE', 'VIDEO']).optional(),
+  mode: z.enum(PROVIDER_SESSION_MODES).optional(),
   status: z.enum(['LIVE', 'SCHEDULED']).optional()
 });
 
@@ -242,7 +243,7 @@ const hopeHubLiveGroupMessageSchema = z.object({
 });
 
 const hopeHubLiveGroupModeSchema = z.object({
-  mode: z.enum(['CHAT', 'VOICE', 'VIDEO'])
+  mode: z.enum(PROVIDER_SESSION_MODES)
 });
 
 const hopeHubLiveGroupDetailsSchema = z.object({
@@ -934,6 +935,7 @@ function providerPublicPayload(
         notFor: string[];
         ctaLabel: string;
         isClinicalCare: boolean;
+        supportedModes: string[];
       };
     }>;
     mentalHealthProfile?: {
@@ -1010,6 +1012,9 @@ function providerPublicPayload(
   const assignedDefinition = provider.roleAssignments?.find(
     (item) => item.roleCode === careTeamType
   )?.role;
+  const supportedModes = Array.from(
+    new Set(provider.roleAssignments?.flatMap((assignment) => assignment.role.supportedModes) ?? [])
+  );
   const roleDisplay = assignedDefinition
     ? {
         label: assignedDefinition.label,
@@ -1051,6 +1056,7 @@ function providerPublicPayload(
     department: provider.department,
     supportRole,
     supportRoleCategory: assignedDefinition?.category ?? null,
+    supportedModes,
     supportRoleLabel: roleDisplay.label,
     supportTierLabel: roleDisplay.tierLabel,
     supportTierTone: roleDisplay.tone,
@@ -1677,7 +1683,8 @@ async function activeHopeHubProviders(params: {
                 bestFor: true,
                 notFor: true,
                 ctaLabel: true,
-                isClinicalCare: true
+                isClinicalCare: true,
+                supportedModes: true
               }
             }
           }
@@ -2901,7 +2908,8 @@ hopeHubRouter.get(
                 bestFor: true,
                 notFor: true,
                 ctaLabel: true,
-                isClinicalCare: true
+                isClinicalCare: true,
+                supportedModes: true
               }
             }
           }

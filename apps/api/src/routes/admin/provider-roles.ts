@@ -1,6 +1,7 @@
 import { Role } from '@prisma/client';
 import { Router } from 'express';
 import { z } from 'zod';
+import { PROVIDER_SESSION_MODES } from '@hopehub/contracts';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
 import {
@@ -29,7 +30,7 @@ const roleBodySchema = z.object({
   requiresCredentials: z.boolean().default(false),
   requiresListenerScreening: z.boolean().default(false),
   isClinicalCare: z.boolean().default(false),
-  supportedModes: z.array(z.enum(['CHAT', 'VOICE', 'VIDEO'])).min(1),
+  supportedModes: z.array(z.enum(PROVIDER_SESSION_MODES)).min(1),
   isActive: z.boolean().default(true),
   sortOrder: z.number().int().min(0).max(10_000).default(0)
 });

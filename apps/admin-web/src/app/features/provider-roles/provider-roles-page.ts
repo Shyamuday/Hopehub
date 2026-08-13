@@ -5,7 +5,12 @@ import { CLINIC_API_BASE_URL } from '@hopehub/clinic-api';
 import { AdminCanDirective } from '../../core/directives/admin-can.directive';
 import { ADMIN_PERMISSIONS, staffHasAllPermissions } from '../../core/admin-permissions';
 import { AdminAuth } from '../../core/services/admin-auth';
-import type { ProviderRoleDefinitionDto, ProviderSessionMode } from '@hopehub/contracts';
+import {
+  PROVIDER_SESSION_MODES,
+  PROVIDER_SESSION_MODE_DEFINITIONS,
+  type ProviderRoleDefinitionDto,
+  type ProviderSessionMode,
+} from '@hopehub/contracts';
 
 type ProviderRoleForm = {
   code: string;
@@ -39,6 +44,7 @@ export class ProviderRolesPage implements OnInit {
   private readonly apiBase = inject(CLINIC_API_BASE_URL);
   private readonly auth = inject(AdminAuth);
   readonly managePermission = ADMIN_PERMISSIONS.DOCTORS_WRITE;
+  readonly sessionModes = PROVIDER_SESSION_MODES;
   readonly canManage = computed(() =>
     staffHasAllPermissions(this.auth.user(), this.managePermission),
   );
@@ -78,7 +84,7 @@ export class ProviderRolesPage implements OnInit {
       ...role,
       bestForText: (role.bestFor || []).join('\n'),
       notForText: (role.notFor || []).join('\n'),
-      supportedModes: [...(role.supportedModes || ['CHAT', 'VOICE', 'VIDEO'])],
+      supportedModes: [...(role.supportedModes || PROVIDER_SESSION_MODES)],
     });
     this.error.set('');
     this.message.set('');
@@ -98,6 +104,10 @@ export class ProviderRolesPage implements OnInit {
       'supportedModes',
       current.includes(mode) ? current.filter((item) => item !== mode) : [...current, mode],
     );
+  }
+
+  modeLabel(mode: ProviderSessionMode): string {
+    return PROVIDER_SESSION_MODE_DEFINITIONS[mode].label;
   }
 
   save(): void {
@@ -159,7 +169,7 @@ export class ProviderRolesPage implements OnInit {
       bestForText: '',
       notForText: '',
       ctaLabel: 'Book session',
-      supportedModes: ['CHAT', 'VOICE', 'VIDEO'],
+      supportedModes: [...PROVIDER_SESSION_MODES],
       requiresCredentials: false,
       requiresListenerScreening: false,
       isClinicalCare: false,

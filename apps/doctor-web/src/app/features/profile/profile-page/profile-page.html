@@ -269,12 +269,22 @@
             <textarea id="modalities" rows="3" [formField]="profileForm.modalitiesText"></textarea>
           }
 
-          <label for="sessionTypes">Session types <span class="hint">(one per line)</span></label>
-          <textarea
-            id="sessionTypes"
-            rows="3"
-            [formField]="profileForm.sessionTypesText"
-          ></textarea>
+          <fieldset class="session-mode-options">
+            <legend>Session modes</legend>
+            @for (mode of sessionModes; track mode) {
+              <label>
+                <input
+                  type="checkbox"
+                  [checked]="isSessionModeSelected(mode)"
+                  (change)="toggleSessionMode(mode, $any($event.target).checked)"
+                />
+                <span>
+                  <strong>{{ sessionModeLabel(mode) }}</strong>
+                  <small>{{ sessionModeDescription(mode) }}</small>
+                </span>
+              </label>
+            }
+          </fieldset>
 
           <label for="ageGroups">Age groups served</label>
           <textarea id="ageGroups" rows="3" [formField]="profileForm.ageGroupsText"></textarea>
