@@ -6,7 +6,8 @@ import {
   OnlineDoctorCategory,
   Role,
   ConsultationMode,
-  ConsultationStatus
+  ConsultationStatus,
+  Prisma
 } from '@prisma/client';
 import { authRequired, allowRoles } from '../auth.js';
 import { capabilitiesForDoctorProfile } from '../constants/homeopathic-doctor-types.js';
@@ -20,9 +21,17 @@ import {
   heartbeatDoctor,
   listLiveOnlineDoctors,
   mapLiveDoctor,
+  restoreDoctorOnlineAfterInstantConsultation,
   setDoctorLiveStatus
 } from '../services/online-doctor-presence.js';
-import { asyncRoute } from '../utils/helpers.js';
+import { SOCKET_EVENTS, SOCKET_ROOM_PREFIXES } from '../constants/socket.constants.js';
+import { asyncRoute, routeParam } from '../utils/helpers.js';
+
+function jsonRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
 
 export function createOnlineDoctorsRouter(io: SocketIoServer) {
   const router = Router();
@@ -352,6 +361,87 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
           updatedAt: c.updatedAt
         }))
       });
+    })
+  );
+
+  router.post(
+    '/doctor/instant-consultations/:id/decline',
+    authRequired,
+    allowRoles(Role.DOCTOR),
+    asyncRoute(async (req, res) => {
+      const body = z.object({ reason: z.string().trim().max(200).optional() }).parse(req.body);
+      const consultationId = routeParam(req, 'id');
+      const consultation = await prisma.consultation.findUnique({
+        where: { id: consultationId },
+        select: {
+          id: true,
+          patientId: true,
+          assignedDoctorId: true,
+          consultationMode: true,
+          status: true,
+          intakeAnswers: true
+        }
+      });
+      if (!consultation) return res.status(404).json({ message: 'Live request not found.' });
+      if (
+        consultation.consultationMode !== ConsultationMode.INSTANT_ONLINE ||
+        consultation.assignedDoctorId !== req.user!.id
+      ) {
+        return res.status(403).json({ message: 'This live request is not assigned to you.' });
+      }
+      if (consultation.status !== ConsultationStatus.ASSIGNED) {
+        return res.status(409).json({ message: 'A started or closed session cannot be declined.' });
+      }
+
+      const intake = jsonRecord(consultation.intakeAnswers);
+      const declinedProviderUserIds = Array.from(
+        new Set([
+          ...(Array.isArray(intake['declinedProviderUserIds'])
+            ? intake['declinedProviderUserIds'].map((value) => String(value))
+            : []),
+          req.user!.id
+        ])
+      );
+      const released = await prisma.consultation.updateMany({
+        where: {
+          id: consultation.id,
+          assignedDoctorId: req.user!.id,
+          status: ConsultationStatus.ASSIGNED
+        },
+        data: {
+          assignedDoctorId: null,
+          preferredDoctorUserId: null,
+          status: ConsultationStatus.PAID,
+          intakeAnswers: {
+            ...intake,
+            declinedProviderUserIds,
+            lastProviderDecline: {
+              providerUserId: req.user!.id,
+              reason: body.reason || 'Provider unavailable',
+              declinedAt: new Date().toISOString()
+            }
+          } as Prisma.InputJsonObject
+        }
+      });
+      if (!released.count) {
+        return res.status(409).json({ message: 'This request has already changed.' });
+      }
+
+      await restoreDoctorOnlineAfterInstantConsultation(req.user!.id, io);
+      const updatePayload = {
+        consultationId: consultation.id,
+        status: ConsultationStatus.PAID,
+        assignedDoctorId: null
+      };
+      io.to(`${SOCKET_ROOM_PREFIXES.USER}${consultation.patientId}`).emit(
+        SOCKET_EVENTS.CONSULTATION_UPDATED,
+        updatePayload
+      );
+      io.to(`${SOCKET_ROOM_PREFIXES.CONSULTATION}${consultation.id}`).emit(
+        SOCKET_EVENTS.CONSULTATION_UPDATED,
+        updatePayload
+      );
+      res.json({ ok: true, status: ConsultationStatus.PAID });
     })
   );
 

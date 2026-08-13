@@ -31,6 +31,7 @@ import {
   type ConsultationAssignedPayload,
 } from '../../core/services/doctor-realtime.service';
 import { DoctorSessionService } from '../../core/services/doctor-session';
+import { OnlineDoctorService } from '../../core/services/online-doctor.service';
 
 export type DoctorBottomNavItem = {
   id: string;
@@ -72,6 +73,8 @@ export class DoctorShell implements OnInit, OnDestroy {
   focusMode = signal(false);
   assignmentNotice = signal('');
   incomingAssignment = signal<ConsultationAssignedPayload | null>(null);
+  decliningIncomingAssignment = signal(false);
+  incomingAssignmentError = signal('');
   onboardingComplete = signal(true);
   onboardingPercent = signal(100);
   expandedGroupIds = signal<Set<string>>(new Set());
@@ -81,6 +84,7 @@ export class DoctorShell implements OnInit, OnDestroy {
   private readonly realtime = inject(DoctorRealtimeService);
   private readonly router = inject(Router);
   private readonly consultationNav = inject(ConsultationNavigationService);
+  private readonly onlineDoctor = inject(OnlineDoctorService);
   private navSubscription?: { unsubscribe: () => void };
 
   readonly bellConfig = {
@@ -139,6 +143,7 @@ export class DoctorShell implements OnInit, OnDestroy {
       this.assignmentNotice.set(`New case: ${label}`);
       this.showAssignmentNotification(payload, label);
       if (payload.consultationMode === 'INSTANT_ONLINE') {
+        this.incomingAssignmentError.set('');
         this.incomingAssignment.set(payload);
       } else {
         void this.router.navigate(this.assignmentRoute(payload));
@@ -222,6 +227,29 @@ export class DoctorShell implements OnInit, OnDestroy {
     this.incomingAssignment.set(null);
     this.assignmentNotice.set('');
     void this.router.navigate(this.assignmentRoute(assignment));
+  }
+
+  async declineIncomingAssignment(): Promise<void> {
+    const assignment = this.incomingAssignment();
+    if (!assignment || this.decliningIncomingAssignment()) return;
+    this.decliningIncomingAssignment.set(true);
+    this.incomingAssignmentError.set('');
+    try {
+      await this.onlineDoctor.declineInstantConsultation(
+        assignment.consultationId,
+        'Provider unavailable for this incoming live request',
+      );
+      this.incomingAssignment.set(null);
+      this.assignmentNotice.set('Request returned for matching with another available provider.');
+      window.setTimeout(() => this.assignmentNotice.set(''), 5000);
+    } catch (error: any) {
+      this.incomingAssignmentError.set(
+        error?.error?.message ||
+          'Could not return this request. Open the session and check its status.',
+      );
+    } finally {
+      this.decliningIncomingAssignment.set(false);
+    }
   }
 
   private assignmentRoute(payload: {

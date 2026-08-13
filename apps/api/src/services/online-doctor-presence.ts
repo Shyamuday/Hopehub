@@ -367,6 +367,12 @@ function asRecord(value: unknown): Record<string, unknown> {
     : {};
 }
 
+function asStringList(value: unknown): string[] {
+  return Array.isArray(value)
+    ? Array.from(new Set(value.map((item) => String(item || '').trim()).filter(Boolean)))
+    : [];
+}
+
 function isHopeHubQuickTalkConsultation(consultation: {
   intakeAnswers: Prisma.JsonValue;
   pricingSnapshot: Prisma.JsonValue | null;
@@ -429,8 +435,10 @@ async function findBestHopeHubLiveProvider(consultation: {
 }) {
   const intake = asRecord(consultation.intakeAnswers);
   const mode = normalizeLiveConnectMode(intake['sessionMode']);
+  const declinedProviderUserIds = asStringList(intake['declinedProviderUserIds']);
   if (
     consultation.preferredDoctorUserId &&
+    !declinedProviderUserIds.includes(consultation.preferredDoctorUserId) &&
     (await isHopeHubProviderLiveForInstant(consultation.preferredDoctorUserId, mode))
   ) {
     return consultation.preferredDoctorUserId;
@@ -443,6 +451,7 @@ async function findBestHopeHubLiveProvider(consultation: {
   async function queryBest(opts: { includeConcern: boolean }) {
     const session = await prisma.doctorOnlineSession.findFirst({
       where: {
+        ...(declinedProviderUserIds.length ? { userId: { notIn: declinedProviderUserIds } } : {}),
         enabled: true,
         liveStatus: LivePresenceStatus.ONLINE,
         lastHeartbeatAt: { gte: new Date(Date.now() - ONLINE_HEARTBEAT_TTL_MS) },
@@ -474,16 +483,20 @@ async function findBestHopeHubLiveProvider(consultation: {
   );
 }
 
-export async function findBestLiveDoctor(diseaseId: string) {
+export async function findBestLiveDoctor(diseaseId: string, excludedUserIds: string[] = []) {
   const doctors = await listLiveOnlineDoctors({ diseaseId });
   const specialist = doctors.find(
     (d) =>
-      d.category === OnlineDoctorCategory.SPECIALIST && d.liveStatus === LivePresenceStatus.ONLINE
+      !excludedUserIds.includes(d.userId) &&
+      d.category === OnlineDoctorCategory.SPECIALIST &&
+      d.liveStatus === LivePresenceStatus.ONLINE
   );
   if (specialist) return specialist.userId;
   const generalist = doctors.find(
     (d) =>
-      d.category === OnlineDoctorCategory.GENERALIST && d.liveStatus === LivePresenceStatus.ONLINE
+      !excludedUserIds.includes(d.userId) &&
+      d.category === OnlineDoctorCategory.GENERALIST &&
+      d.liveStatus === LivePresenceStatus.ONLINE
   );
   return generalist?.userId ?? null;
 }
@@ -501,18 +514,22 @@ export async function tryAssignInstantConsultation(io: SocketIoServer, consultat
   if (consultation.status !== ConsultationStatus.PAID || consultation.assignedDoctorId) return null;
 
   const isHopeHubQuickTalk = isHopeHubQuickTalkConsultation(consultation);
+  const declinedProviderUserIds = asStringList(
+    asRecord(consultation.intakeAnswers)['declinedProviderUserIds']
+  );
   let doctorUserId = isHopeHubQuickTalk
     ? await findBestHopeHubLiveProvider(consultation)
     : consultation.preferredDoctorUserId;
   if (
     !isHopeHubQuickTalk &&
     doctorUserId &&
-    !(await isDoctorLiveForInstant(doctorUserId, consultation.diseaseId))
+    (declinedProviderUserIds.includes(doctorUserId) ||
+      !(await isDoctorLiveForInstant(doctorUserId, consultation.diseaseId)))
   ) {
     doctorUserId = null;
   }
   if (!doctorUserId && !isHopeHubQuickTalk) {
-    doctorUserId = await findBestLiveDoctor(consultation.diseaseId);
+    doctorUserId = await findBestLiveDoctor(consultation.diseaseId, declinedProviderUserIds);
   }
   if (!doctorUserId) return null;
 

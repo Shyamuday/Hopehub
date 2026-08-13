@@ -26,6 +26,7 @@ export const API_PATHS = {
     ONLINE_STATUS: '/doctor/online-status',
     ONLINE_HEARTBEAT: '/doctor/online-heartbeat',
     INSTANT_CONSULTATIONS: '/doctor/instant-consultations',
+    DECLINE_INSTANT_CONSULTATION: (id: string) => `/doctor/instant-consultations/${id}/decline`,
     PRESCRIPTION_TEMPLATES: '/doctor/prescription-templates',
     PRESCRIPTIONS: '/doctor/prescriptions',
     PRESCRIPTION_PDF: (id: string) => `/patient/prescriptions/${id}/pdf`,

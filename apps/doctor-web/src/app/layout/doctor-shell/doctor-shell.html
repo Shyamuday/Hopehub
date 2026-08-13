@@ -330,6 +330,17 @@
       <button type="button" class="incoming-session-open" (click)="openIncomingAssignment()">
         Open session
       </button>
+      <button
+        type="button"
+        class="incoming-session-decline"
+        [disabled]="decliningIncomingAssignment()"
+        (click)="declineIncomingAssignment()"
+      >
+        {{ decliningIncomingAssignment() ? 'Finding another provider…' : 'I can’t take this now' }}
+      </button>
+      @if (incomingAssignmentError()) {
+        <p class="incoming-session-error" role="alert">{{ incomingAssignmentError() }}</p>
+      }
       <small>Opening the room lets you respond by the modes enabled for this session.</small>
     </section>
   </div>

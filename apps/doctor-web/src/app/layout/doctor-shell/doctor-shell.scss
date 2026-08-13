@@ -563,6 +563,28 @@
   width: 100%;
 }
 
+.incoming-session-decline {
+  background: transparent;
+  border: 0;
+  color: #64748b;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  margin-top: 0.7rem;
+  min-height: 2.5rem;
+  padding: 0.45rem 0.75rem;
+}
+
+.incoming-session-decline:disabled { opacity: 0.6; }
+
+.incoming-session-error {
+  background: #fef2f2;
+  border-radius: 0.65rem;
+  color: #b91c1c;
+  font-size: var(--text-sm);
+  margin: 0.5rem 0 0;
+  padding: 0.6rem;
+}
+
 .incoming-session-card small {
   color: #64748b;
   display: block;
