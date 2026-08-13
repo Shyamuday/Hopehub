@@ -11,6 +11,10 @@ type RouteRule = { method?: string; permissions: string[] };
 /** Admin API paths → required permission codes (ADMIN / HR with profile). */
 const ADMIN_ROUTE_RULES: Array<{ pattern: RegExp; rules: RouteRule[] }> = [
   {
+    pattern: /^\/admin\/telegram-bots\/group-help/,
+    rules: [{ permissions: [PERMISSIONS.NOTIFICATIONS_WRITE] }]
+  },
+  {
     pattern: /^\/admin\/staff/,
     rules: [{ permissions: [PERMISSIONS.STAFF_READ] }]
   },

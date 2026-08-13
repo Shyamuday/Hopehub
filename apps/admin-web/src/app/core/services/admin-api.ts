@@ -790,6 +790,17 @@ export class AdminApi {
       ...(args as Parameters<AdminOpsApi['saveTelegramGroupHelpConfig']>),
     );
   }
+  testTelegramGroupHelpConnection(
+    ...args: Parameters<AdminOpsApi['testTelegramGroupHelpConnection']>
+  ) {
+    return this.ops.testTelegramGroupHelpConnection(...args);
+  }
+  applyTelegramGroupHelpAction(...args: Parameters<AdminOpsApi['applyTelegramGroupHelpAction']>) {
+    return this.ops.applyTelegramGroupHelpAction(...args);
+  }
+  clearTelegramGroupHelpMenu(...args: Parameters<AdminOpsApi['clearTelegramGroupHelpMenu']>) {
+    return this.ops.clearTelegramGroupHelpMenu(...args);
+  }
   uploadTelegramGroupHelpImage(...args: Parameters<AdminOpsApi['uploadTelegramGroupHelpImage']>) {
     return this.ops.uploadTelegramGroupHelpImage(
       ...(args as Parameters<AdminOpsApi['uploadTelegramGroupHelpImage']>),

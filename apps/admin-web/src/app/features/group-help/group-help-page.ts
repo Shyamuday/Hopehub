@@ -22,6 +22,7 @@ type CommandItem = {
   imageUrlKey?: string;
   templateKey: string;
   placeholder: 'message' | 'value' | 'lines';
+  applyMode: 'TELEGRAM_ADMIN_CONFIRMATION' | 'DIRECT_PIN';
 };
 
 const IMAGE_UPLOAD_LIMIT_BYTES = 5 * 1024 * 1024;
@@ -46,12 +47,17 @@ export class GroupHelpPage {
   readonly loading = signal(false);
   readonly saving = signal(false);
   readonly sending = signal(false);
+  readonly testing = signal(false);
+  readonly clearingMenu = signal(false);
+  readonly applying = signal('');
   readonly uploadingImage = signal('');
   readonly copied = signal('');
+  readonly telegramApplyUrl = signal('');
   readonly message = signal('');
   readonly error = signal('');
   readonly selectedDirectMessageKey = signal('telegramGroupHelpPinnedMessage');
   readonly pinDirectMessage = signal(false);
+  readonly capabilityGroups = signal<Array<{ title: string; options: readonly string[] }>>([]);
 
   readonly sectionOrder: Array<GroupHelpConfigEntry['section']> = [
     'connection',
@@ -61,88 +67,8 @@ export class GroupHelpPage {
   ];
   readonly sectionLabels = SECTION_LABELS;
 
-  readonly messageCommands: CommandItem[] = [
-    {
-      id: 'welcome',
-      title: 'Welcome',
-      helper: 'Copy this into the GroupHelp bot/group to update the join welcome.',
-      valueKey: 'telegramGroupHelpWelcomeMessage',
-      imageUrlKey: 'telegramGroupHelpWelcomeImageUrl',
-      templateKey: 'telegramGroupHelpWelcomeCommandTemplate',
-      placeholder: 'message',
-    },
-    {
-      id: 'rules',
-      title: 'Rules',
-      helper: 'Copy this command when you want GroupHelp rules to match HopeHub rules.',
-      valueKey: 'telegramGroupHelpRulesMessage',
-      imageUrlKey: 'telegramGroupHelpRulesImageUrl',
-      templateKey: 'telegramGroupHelpRulesCommandTemplate',
-      placeholder: 'message',
-    },
-    {
-      id: 'support',
-      title: 'Support command',
-      helper: 'Suggested command for a /support or similar custom reply.',
-      valueKey: 'telegramGroupHelpSupportMessage',
-      imageUrlKey: 'telegramGroupHelpSupportImageUrl',
-      templateKey: 'telegramGroupHelpSupportCommandTemplate',
-      placeholder: 'message',
-    },
-    {
-      id: 'pinned',
-      title: 'Pinned intro',
-      helper: 'Use this for a clean pinned group intro.',
-      valueKey: 'telegramGroupHelpPinnedMessage',
-      imageUrlKey: 'telegramGroupHelpPinnedImageUrl',
-      templateKey: 'telegramGroupHelpPinnedCommandTemplate',
-      placeholder: 'message',
-    },
-    {
-      id: 'recurring',
-      title: 'Recurring reminder',
-      helper: 'Use this for daily/weekly group reminders if your GroupHelp clone supports it.',
-      valueKey: 'telegramGroupHelpRecurringMessage',
-      imageUrlKey: 'telegramGroupHelpRecurringImageUrl',
-      templateKey: 'telegramGroupHelpRecurringCommandTemplate',
-      placeholder: 'message',
-    },
-  ];
-
-  readonly moderationCommands: CommandItem[] = [
-    {
-      id: 'captcha',
-      title: 'Captcha',
-      helper: 'Desired captcha state.',
-      valueKey: 'telegramGroupHelpCaptchaMode',
-      templateKey: 'telegramGroupHelpCaptchaCommandTemplate',
-      placeholder: 'value',
-    },
-    {
-      id: 'warn-limit',
-      title: 'Warn limit',
-      helper: 'Number of warnings before action.',
-      valueKey: 'telegramGroupHelpWarnLimit',
-      templateKey: 'telegramGroupHelpWarnLimitCommandTemplate',
-      placeholder: 'value',
-    },
-    {
-      id: 'links',
-      title: 'Link policy',
-      helper: 'Desired link handling policy.',
-      valueKey: 'telegramGroupHelpLinkPolicy',
-      templateKey: 'telegramGroupHelpLinkPolicyCommandTemplate',
-      placeholder: 'value',
-    },
-    {
-      id: 'banned-words',
-      title: 'Banned words',
-      helper: 'One word/phrase per line from the moderation field.',
-      valueKey: 'telegramGroupHelpBannedWords',
-      templateKey: 'telegramGroupHelpBannedWordsCommandTemplate',
-      placeholder: 'lines',
-    },
-  ];
+  messageCommands: CommandItem[] = [];
+  moderationCommands: CommandItem[] = [];
 
   constructor(private readonly api: AdminApi) {
     void this.load();
@@ -155,6 +81,13 @@ export class GroupHelpPage {
       const res = await this.api.getTelegramGroupHelpConfig();
       this.config.set(res.config);
       this.tokenConfigured.set(res.tokenConfigured);
+      const actions = (res.actions || []).map((action) => ({
+        ...action,
+        helper: action.description,
+      }));
+      this.messageCommands = actions.filter((action) => Boolean(action.imageUrlKey));
+      this.moderationCommands = actions.filter((action) => !action.imageUrlKey);
+      this.capabilityGroups.set(res.capabilityGroups || []);
       this.localValues.set(Object.fromEntries(res.config.map((entry) => [entry.key, entry.value])));
     } catch {
       this.error.set('Could not load Group Help config.');
@@ -200,10 +133,77 @@ export class GroupHelpPage {
         ),
       );
       this.message.set('Group Help config saved.');
+      return true;
     } catch {
       this.error.set('Could not save Group Help config.');
+      return false;
     } finally {
       this.saving.set(false);
+    }
+  }
+
+  async testConnection() {
+    this.testing.set(true);
+    this.error.set('');
+    this.message.set('');
+    try {
+      const result = await this.api.testTelegramGroupHelpConnection();
+      if (!result.ok) {
+        this.error.set(result.message || 'Group Help bot connection failed.');
+        return;
+      }
+      this.tokenConfigured.set(result.tokenConfigured);
+      this.message.set(
+        result.chatError
+          ? `Bot connected, but the group could not be reached: ${result.chatError}`
+          : 'Bot token and configured Telegram group are connected.',
+      );
+    } catch (error: any) {
+      this.error.set(error?.error?.message || 'Could not test Group Help connection.');
+    } finally {
+      this.testing.set(false);
+    }
+  }
+
+  async clearWebsiteMenu() {
+    this.clearingMenu.set(true);
+    this.error.set('');
+    this.message.set('');
+    try {
+      await this.api.clearTelegramGroupHelpMenu();
+      this.message.set('Old website menu removed. Telegram now shows the default bot menu.');
+    } catch (error: any) {
+      this.error.set(error?.error?.message || 'Could not clear the Group Help bot menu.');
+    } finally {
+      this.clearingMenu.set(false);
+    }
+  }
+
+  async apply(item: CommandItem) {
+    this.applying.set(item.id);
+    this.error.set('');
+    this.message.set('');
+    this.telegramApplyUrl.set('');
+    try {
+      if (!(await this.saveAll())) return;
+      const result = await this.api.applyTelegramGroupHelpAction(item.id);
+      if (result.mode === 'APPLIED') {
+        this.message.set(`${item.title} applied to the configured Telegram group.`);
+        return;
+      }
+      if (!result.command || !result.botUrl) {
+        throw new Error('Group Help did not return an admin command.');
+      }
+      await navigator.clipboard.writeText(result.command);
+      this.telegramApplyUrl.set(result.botUrl);
+      window.open(result.botUrl, '_blank', 'noopener,noreferrer');
+      this.message.set(
+        `${item.title} command copied. Telegram opened—send it as a group admin to confirm.`,
+      );
+    } catch (error: any) {
+      this.error.set(error?.error?.message || error?.message || `Could not apply ${item.title}.`);
+    } finally {
+      this.applying.set('');
     }
   }
 

@@ -236,6 +236,17 @@ export class AdminOpsApi extends AdminApiBase {
     return firstValueFrom(
       this.http.get<{
         tokenConfigured: boolean;
+        actions: Array<{
+          id: string;
+          title: string;
+          description: string;
+          valueKey: string;
+          imageUrlKey?: string;
+          templateKey: string;
+          placeholder: 'message' | 'value' | 'lines';
+          applyMode: 'TELEGRAM_ADMIN_CONFIRMATION' | 'DIRECT_PIN';
+        }>;
+        capabilityGroups: Array<{ title: string; options: readonly string[] }>;
         config: Array<{
           key: string;
           label: string;
@@ -270,6 +281,27 @@ export class AdminOpsApi extends AdminApiBase {
         chat?: unknown;
         chatError?: string | null;
       }>(`${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_TEST}`, {}),
+    );
+  }
+
+  applyTelegramGroupHelpAction(actionId: string) {
+    return firstValueFrom(
+      this.http.post<{
+        ok: boolean;
+        mode: 'APPLIED' | 'TELEGRAM_ADMIN_CONFIRMATION';
+        command?: string;
+        botUrl?: string;
+        message?: string;
+      }>(`${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_APPLY}`, { actionId }),
+    );
+  }
+
+  clearTelegramGroupHelpMenu() {
+    return firstValueFrom(
+      this.http.post<{ ok: boolean }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_CLEAR_MENU}`,
+        {},
+      ),
     );
   }
 

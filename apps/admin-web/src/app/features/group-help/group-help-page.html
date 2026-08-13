@@ -17,6 +17,12 @@
           : 'Add TELEGRAM_HOPEHUBBOT_TOKEN only if you want direct announcements.'
       }}
     </small>
+    <button type="button" (click)="testConnection()" [disabled]="testing()">
+      {{ testing() ? 'Testing…' : 'Test bot and group' }}
+    </button>
+    <button type="button" (click)="clearWebsiteMenu()" [disabled]="clearingMenu()">
+      {{ clearingMenu() ? 'Clearing…' : 'Clear old website menu' }}
+    </button>
   </div>
 </section>
 
@@ -117,9 +123,25 @@
           </div>
         }
         <pre>{{ commandFor(item) }}</pre>
-        <button type="button" (click)="copy(commandFor(item), item.title)">
-          {{ copied() === item.title ? 'Copied' : 'Copy command' }}
-        </button>
+        <div class="command-actions">
+          <button type="button" (click)="copy(commandFor(item), item.title)">
+            {{ copied() === item.title ? 'Copied' : 'Copy command' }}
+          </button>
+          <button
+            type="button"
+            class="primary"
+            (click)="apply(item)"
+            [disabled]="applying() === item.id || saving()"
+          >
+            {{
+              applying() === item.id
+                ? 'Applying…'
+                : item.applyMode === 'DIRECT_PIN'
+                  ? 'Apply now'
+                  : 'Apply in Telegram'
+            }}
+          </button>
+        </div>
       </article>
     }
 
@@ -128,9 +150,43 @@
         <h3>{{ item.title }}</h3>
         <p>{{ item.helper }}</p>
         <pre>{{ commandFor(item) }}</pre>
-        <button type="button" (click)="copy(commandFor(item), item.title)">
-          {{ copied() === item.title ? 'Copied' : 'Copy command' }}
-        </button>
+        <div class="command-actions">
+          <button type="button" (click)="copy(commandFor(item), item.title)">
+            {{ copied() === item.title ? 'Copied' : 'Copy command' }}
+          </button>
+          <button
+            type="button"
+            class="primary"
+            (click)="apply(item)"
+            [disabled]="applying() === item.id || saving()"
+          >
+            {{ applying() === item.id ? 'Applying…' : 'Apply in Telegram' }}
+          </button>
+        </div>
+      </article>
+    }
+  </div>
+</section>
+
+<section class="panel capability-panel">
+  <div class="panel-head">
+    <div>
+      <h2>Complete Group Help settings map</h2>
+      <p>
+        Use <strong>/settings</strong> from a Telegram group admin account for options managed by
+        GroupHelp itself. The controls above cover the Hope Hub values maintained by this panel.
+      </p>
+    </div>
+  </div>
+  <div class="capability-grid">
+    @for (group of capabilityGroups(); track group.title) {
+      <article class="capability-card">
+        <h3>{{ group.title }}</h3>
+        <ul>
+          @for (option of group.options; track option) {
+            <li>{{ option }}</li>
+          }
+        </ul>
       </article>
     }
   </div>
@@ -179,6 +235,11 @@
 
 @if (message()) {
   <p class="success">{{ message() }}</p>
+  @if (telegramApplyUrl()) {
+    <a class="telegram-confirm-link" [href]="telegramApplyUrl()" target="_blank" rel="noopener noreferrer">
+      Open Group Help to confirm
+    </a>
+  }
 }
 @if (error()) {
   <p class="error">{{ error() }}</p>

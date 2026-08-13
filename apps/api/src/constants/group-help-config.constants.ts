@@ -12,6 +12,145 @@ export type GroupHelpConfigField = {
   defaultValue: string;
 };
 
+export type GroupHelpAction = {
+  id: string;
+  title: string;
+  description: string;
+  valueKey: string;
+  imageUrlKey?: string;
+  templateKey: string;
+  placeholder: 'message' | 'value' | 'lines';
+  applyMode: 'TELEGRAM_ADMIN_CONFIRMATION' | 'DIRECT_PIN';
+};
+
+export const GROUP_HELP_ACTIONS: GroupHelpAction[] = [
+  {
+    id: 'welcome',
+    title: 'Welcome message',
+    description: 'Apply the message shown when a member joins.',
+    valueKey: 'telegramGroupHelpWelcomeMessage',
+    imageUrlKey: 'telegramGroupHelpWelcomeImageUrl',
+    templateKey: 'telegramGroupHelpWelcomeCommandTemplate',
+    placeholder: 'message',
+    applyMode: 'TELEGRAM_ADMIN_CONFIRMATION'
+  },
+  {
+    id: 'rules',
+    title: 'Group rules',
+    description: 'Apply the safety and conduct rules.',
+    valueKey: 'telegramGroupHelpRulesMessage',
+    imageUrlKey: 'telegramGroupHelpRulesImageUrl',
+    templateKey: 'telegramGroupHelpRulesCommandTemplate',
+    placeholder: 'message',
+    applyMode: 'TELEGRAM_ADMIN_CONFIRMATION'
+  },
+  {
+    id: 'support',
+    title: 'Support reply',
+    description: 'Apply the private-support command response.',
+    valueKey: 'telegramGroupHelpSupportMessage',
+    imageUrlKey: 'telegramGroupHelpSupportImageUrl',
+    templateKey: 'telegramGroupHelpSupportCommandTemplate',
+    placeholder: 'message',
+    applyMode: 'TELEGRAM_ADMIN_CONFIRMATION'
+  },
+  {
+    id: 'pinned',
+    title: 'Pinned introduction',
+    description: 'Post and pin the current introduction directly in the configured group.',
+    valueKey: 'telegramGroupHelpPinnedMessage',
+    imageUrlKey: 'telegramGroupHelpPinnedImageUrl',
+    templateKey: 'telegramGroupHelpPinnedCommandTemplate',
+    placeholder: 'message',
+    applyMode: 'DIRECT_PIN'
+  },
+  {
+    id: 'recurring',
+    title: 'Recurring reminder',
+    description: 'Apply the recurring community reminder.',
+    valueKey: 'telegramGroupHelpRecurringMessage',
+    imageUrlKey: 'telegramGroupHelpRecurringImageUrl',
+    templateKey: 'telegramGroupHelpRecurringCommandTemplate',
+    placeholder: 'message',
+    applyMode: 'TELEGRAM_ADMIN_CONFIRMATION'
+  },
+  {
+    id: 'captcha',
+    title: 'Join captcha',
+    description: 'Apply the selected captcha level.',
+    valueKey: 'telegramGroupHelpCaptchaMode',
+    templateKey: 'telegramGroupHelpCaptchaCommandTemplate',
+    placeholder: 'value',
+    applyMode: 'TELEGRAM_ADMIN_CONFIRMATION'
+  },
+  {
+    id: 'warn-limit',
+    title: 'Warning limit',
+    description: 'Apply the number of warnings before moderator action.',
+    valueKey: 'telegramGroupHelpWarnLimit',
+    templateKey: 'telegramGroupHelpWarnLimitCommandTemplate',
+    placeholder: 'value',
+    applyMode: 'TELEGRAM_ADMIN_CONFIRMATION'
+  },
+  {
+    id: 'links',
+    title: 'Link policy',
+    description: 'Apply how links are handled in the group.',
+    valueKey: 'telegramGroupHelpLinkPolicy',
+    templateKey: 'telegramGroupHelpLinkPolicyCommandTemplate',
+    placeholder: 'value',
+    applyMode: 'TELEGRAM_ADMIN_CONFIRMATION'
+  },
+  {
+    id: 'banned-words',
+    title: 'Word filters',
+    description: 'Apply the configured blocked words and phrases.',
+    valueKey: 'telegramGroupHelpBannedWords',
+    templateKey: 'telegramGroupHelpBannedWordsCommandTemplate',
+    placeholder: 'lines',
+    applyMode: 'TELEGRAM_ADMIN_CONFIRMATION'
+  }
+];
+
+export const GROUP_HELP_CAPABILITY_GROUPS = [
+  {
+    title: 'Member onboarding',
+    options: ['Welcome message and media', 'Captcha', 'New-member checks', 'Join/leave controls']
+  },
+  {
+    title: 'Moderation',
+    options: [
+      'Warnings',
+      'Ban, kick and mute',
+      'Link policy',
+      'Word filters',
+      'Flood and spam controls'
+    ]
+  },
+  {
+    title: 'Content controls',
+    options: [
+      'Media permissions',
+      'Forwarded-message rules',
+      'Scheduled deletion',
+      'Pins and recurring messages'
+    ]
+  },
+  {
+    title: 'People and staff',
+    options: [
+      'Admins and moderators',
+      'Staff group',
+      'Custom replies',
+      'Reports and user information'
+    ]
+  },
+  {
+    title: 'Operations',
+    options: ['Log channel', 'Night mode', 'Activity statistics', 'Language', 'Security helpers']
+  }
+] as const;
+
 export const GROUP_HELP_CONFIG_FIELDS: GroupHelpConfigField[] = [
   {
     key: 'telegramGroupHelpBotUsername',

@@ -16,6 +16,8 @@ import {
 import { roleByKind } from '../../services/telegram-bots.config.js';
 import { telegramBotKindFromSlug } from '../../services/telegram-bots.menus.js';
 import {
+  GROUP_HELP_ACTIONS,
+  GROUP_HELP_CAPABILITY_GROUPS,
   GROUP_HELP_CONFIG_DEFAULTS,
   GROUP_HELP_CONFIG_KEYS,
   GROUP_HELP_CONFIG_META
@@ -45,6 +47,10 @@ const groupHelpSendSchema = z.object({
     z.string().trim().url().optional()
   ),
   pin: z.boolean().optional()
+});
+
+const groupHelpApplySchema = z.object({
+  actionId: z.string().trim().min(1).max(80)
 });
 
 const GROUP_HELP_IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
@@ -114,6 +120,58 @@ async function groupHelpConfigMap() {
     ...GROUP_HELP_CONFIG_DEFAULTS,
     ...Object.fromEntries(rows.map((row) => [row.key, row.value]))
   };
+}
+
+function renderGroupHelpCommand(
+  action: (typeof GROUP_HELP_ACTIONS)[number],
+  values: Record<string, string>
+) {
+  const template = values[action.templateKey] || '{message}';
+  const raw = (values[action.valueKey] || '').trim();
+  const imageUrl = action.imageUrlKey ? (values[action.imageUrlKey] || '').trim() : '';
+  const lines = raw
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join('\n');
+  const command = template
+    .replaceAll('{message}', raw)
+    .replaceAll('{imageUrl}', imageUrl)
+    .replaceAll('{value}', raw)
+    .replaceAll('{lines}', lines)
+    .trim();
+  return {
+    command: imageUrl && !template.includes('{imageUrl}') ? `${command}\n${imageUrl}` : command,
+    raw,
+    imageUrl
+  };
+}
+
+async function sendGroupHelpPost(input: { message: string; imageUrl?: string; pin?: boolean }) {
+  const values = await groupHelpConfigMap();
+  const chatId = values.telegramGroupHelpGroupChatId?.trim();
+  if (!groupHelpBotToken()) throw new Error('TELEGRAM_HOPEHUBBOT_TOKEN is not configured.');
+  if (!chatId) throw new Error('Telegram group chat ID is not configured.');
+
+  const sent = input.imageUrl
+    ? await callGroupHelpTelegramApi<{ message_id: number }>('sendPhoto', {
+        chat_id: chatId,
+        photo: input.imageUrl,
+        caption: input.message.length <= 1024 ? input.message : `${input.message.slice(0, 1021)}...`
+      })
+    : await callGroupHelpTelegramApi<{ message_id: number }>('sendMessage', {
+        chat_id: chatId,
+        text: input.message,
+        disable_web_page_preview: true
+      });
+  const pinned = input.pin
+    ? await callGroupHelpTelegramApi('pinChatMessage', {
+        chat_id: chatId,
+        message_id: sent.message_id,
+        disable_notification: true
+      })
+    : null;
+  return { chatId, sent, pinned };
 }
 
 export function registerAdminTelegramBotRoutes(router: Router) {
@@ -209,6 +267,8 @@ export function registerAdminTelegramBotRoutes(router: Router) {
       const values = await groupHelpConfigMap();
       res.json({
         tokenConfigured: Boolean(groupHelpBotToken()),
+        actions: GROUP_HELP_ACTIONS,
+        capabilityGroups: GROUP_HELP_CAPABILITY_GROUPS,
         config: GROUP_HELP_CONFIG_KEYS.map((key) => ({
           ...GROUP_HELP_CONFIG_META[key],
           value: values[key] ?? GROUP_HELP_CONFIG_DEFAULTS[key] ?? ''
@@ -278,6 +338,63 @@ export function registerAdminTelegramBotRoutes(router: Router) {
   );
 
   router.post(
+    '/admin/telegram-bots/group-help/apply',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const parsed = groupHelpApplySchema.safeParse(req.body ?? {});
+      if (!parsed.success) return res.status(400).json({ message: 'Invalid Group Help action.' });
+      const action = GROUP_HELP_ACTIONS.find((item) => item.id === parsed.data.actionId);
+      if (!action) return res.status(404).json({ message: 'Unknown Group Help action.' });
+
+      const values = await groupHelpConfigMap();
+      const rendered = renderGroupHelpCommand(action, values);
+      if (!rendered.raw) return res.status(400).json({ message: `${action.title} is empty.` });
+
+      if (action.applyMode === 'DIRECT_PIN') {
+        const result = await sendGroupHelpPost({
+          message: rendered.raw,
+          imageUrl: rendered.imageUrl || undefined,
+          pin: true
+        });
+        await writeAuditLog({
+          actorId: req.user!.id,
+          actorRole: req.user!.role,
+          action: 'telegram_group_help.action_apply',
+          targetType: 'telegram_group_help',
+          targetId: action.id,
+          summary: `Applied Group Help action: ${action.title}.`,
+          metadata: {
+            mode: action.applyMode,
+            chatId: result.chatId,
+            messageId: result.sent.message_id
+          }
+        });
+        return res.json({ ok: true, mode: 'APPLIED', action, result });
+      }
+
+      const username = (values.telegramGroupHelpBotUsername || 'Hopehubbot').replace(/^@/, '');
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'telegram_group_help.action_prepare',
+        targetType: 'telegram_group_help',
+        targetId: action.id,
+        summary: `Prepared Group Help admin action: ${action.title}.`,
+        metadata: { mode: action.applyMode }
+      });
+      return res.json({
+        ok: true,
+        mode: 'TELEGRAM_ADMIN_CONFIRMATION',
+        action,
+        command: rendered.command,
+        botUrl: `https://t.me/${encodeURIComponent(username)}`,
+        message: 'Command copied. Send it from a Telegram group admin account to apply it.'
+      });
+    })
+  );
+
+  router.post(
     '/admin/telegram-bots/group-help/test',
     authRequired,
     allowRoles(Role.ADMIN, Role.HR),
@@ -328,39 +445,15 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         return res.status(400).json({ message: 'Invalid Group Help send payload.' });
       }
 
-      const values = await groupHelpConfigMap();
-      const chatId = values.telegramGroupHelpGroupChatId?.trim();
       if (!groupHelpBotToken()) {
         return res.status(400).json({ message: 'TELEGRAM_HOPEHUBBOT_TOKEN is not configured.' });
       }
-      if (!chatId) {
-        return res.status(400).json({ message: 'Telegram group chat ID is not configured.' });
-      }
-
       const imageUrl = parsed.data.imageUrl?.trim();
-      const sent = imageUrl
-        ? await callGroupHelpTelegramApi<{ message_id: number }>('sendPhoto', {
-            chat_id: chatId,
-            photo: imageUrl,
-            caption:
-              parsed.data.message.length <= 1024
-                ? parsed.data.message
-                : `${parsed.data.message.slice(0, 1021)}...`
-          })
-        : await callGroupHelpTelegramApi<{ message_id: number }>('sendMessage', {
-            chat_id: chatId,
-            text: parsed.data.message,
-            disable_web_page_preview: true
-          });
-
-      let pinned: unknown = null;
-      if (parsed.data.pin) {
-        pinned = await callGroupHelpTelegramApi('pinChatMessage', {
-          chat_id: chatId,
-          message_id: sent.message_id,
-          disable_notification: true
-        });
-      }
+      const { chatId, sent, pinned } = await sendGroupHelpPost({
+        message: parsed.data.message,
+        imageUrl,
+        pin: parsed.data.pin
+      });
 
       await writeAuditLog({
         actorId: req.user!.id,
