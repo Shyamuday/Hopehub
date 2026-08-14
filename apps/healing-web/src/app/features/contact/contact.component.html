@@ -1,7 +1,7 @@
 <div class="request-page">
   <section class="request-hero">
     @if (isLiveConnectFallback()) {
-      <p class="eyebrow">Live Connect fallback</p>
+      <p class="eyebrow">Book for later</p>
     }
     <h1>{{ liveConnectHeroTitle() }}</h1>
   </section>
@@ -10,24 +10,11 @@
     <section class="request-card" [attr.aria-label]="UX.booking.formAria">
       <form [formGroup]="contactForm" (submit)="$event.preventDefault(); onSubmit()">
         @if (isLiveConnectFallback()) {
-          <section class="live-handoff-card" aria-label="Live Connect booking handoff">
+          <section class="live-handoff-card" aria-label="Book support for later">
             <div>
               <app-status-chip label="No live expert available" tone="success" [strong]="true" />
               <h2>{{ liveConnectHandoffTitle() }}</h2>
               <p>{{ liveConnectHandoffCopy() }}</p>
-            </div>
-            <div class="live-mode-choice-grid" aria-label="Choose consultation mode">
-              @for (item of liveConnectModeOptions; track item.value) {
-                <app-selectable-card
-                  [icon]="item.icon"
-                  [title]="item.label"
-                  [description]="item.copy"
-                  [selected]="requestedLiveMode() === item.value"
-                  tone="success"
-                  [compact]="true"
-                  (selectedChange)="setLiveConnectMode(item.value)"
-                />
-              }
             </div>
           </section>
         }
@@ -58,7 +45,7 @@
 
         @if (bookingStep() === 1) {
         <p data-booking-step="1" tabindex="-1" class="mb-3 mt-6 text-sm font-semibold text-primary-800">Choose the support that feels right</p>
-        <div class="form-grid two">
+        <div class="form-grid">
           <div>
             <label for="serviceInterest" class="form-label">Service</label>
             <app-form-dropdown
@@ -66,15 +53,6 @@
               placeholder="Select a service"
               [options]="serviceOptions"
               [panelMaxHeight]="'18rem'"
-            ></app-form-dropdown>
-          </div>
-
-          <div>
-            <label for="sessionMode" class="form-label">Mode</label>
-            <app-form-dropdown
-              formControlName="sessionMode"
-              placeholder="Select mode"
-              [options]="sessionModeOptions"
             ></app-form-dropdown>
           </div>
         </div>
@@ -151,7 +129,7 @@
           </div>
 
           <app-form-checkbox class="mt-4 block" formControlName="autoMatchProvider">
-            Auto-match a provider using these preferences
+            Let Hope Hub choose someone suitable
           </app-form-checkbox>
 
           <div class="mt-3 flex flex-col gap-2 rounded-lg border border-gray-200 bg-white p-3 text-sm text-gray-700 sm:flex-row sm:items-center sm:justify-between">
@@ -164,7 +142,7 @@
               </div>
               <a class="font-semibold text-primary-700" [routerLink]="careTeamProfileLink(provider)">View profile</a>
             } @else {
-              <p>{{ activeProviderNotice() || 'Add preferences to auto-match a provider.' }}</p>
+              <p>{{ activeProviderNotice() || 'Add preferences if you want help choosing.' }}</p>
             }
           </div>
         </details>

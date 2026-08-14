@@ -125,12 +125,6 @@ form {
   line-height: 1.6;
 }
 
-.live-mode-choice-grid {
-  display: grid;
-  gap: 0.65rem;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
 .form-grid {
   display: grid;
   gap: 1rem;
@@ -423,8 +417,7 @@ form {
     display: grid;
   }
 
-  .live-handoff-card,
-  .live-mode-choice-grid {
+  .live-handoff-card {
     grid-template-columns: 1fr;
   }
 

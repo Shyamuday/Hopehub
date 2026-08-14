@@ -247,7 +247,7 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
     if (status === 'PAID') return 'Matching expert';
     if (status === 'COMPLETED') return 'Session completed';
     if (status === 'CANCELLED') return 'Session closed';
-    return status.replaceAll('_', ' ') || 'Session';
+    return 'Session update';
   }
 
   isSessionClosed(): boolean {
@@ -300,7 +300,17 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
   }
 
   callStatusLabel(status: string): string {
-    return status ? status.replaceAll('_', ' ').toLowerCase() : 'unknown';
+    const labels: Record<string, string> = {
+      RINGING: 'Calling',
+      CONNECTING: 'Connecting',
+      CONNECTED: 'Connected',
+      RECONNECTING: 'Reconnecting',
+      ENDED: 'Ended',
+      FAILED: 'Could not connect',
+      REJECTED: 'Declined',
+      CANCELLED: 'Cancelled',
+    };
+    return status ? (labels[status.toUpperCase()] ?? 'Call update') : 'Waiting';
   }
 
   callReasonLabel(reason?: string | null): string {
@@ -326,7 +336,7 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
       call_mode_not_allowed: 'Call type not allowed',
       call_not_allowed: 'Call not allowed',
     };
-    return labels[reason] || reason.replaceAll('_', ' ');
+    return labels[reason] || 'The call ended';
   }
 
   callNetworkLabel(call: ConsultationCallSession): string {

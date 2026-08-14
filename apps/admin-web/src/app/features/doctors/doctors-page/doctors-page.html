@@ -200,7 +200,7 @@
         </div>
         <label class="website-toggle">
           <input type="checkbox" [formField]="createForm.autoMatchEnabled" />
-          Available for user auto-match
+          Let Hope Hub suggest this profile to users
         </label>
         <label class="website-toggle">
           <input type="checkbox" [formField]="createForm.acceptingNewUsers" />
@@ -794,7 +794,7 @@
                 @if (readinessLoading()) {
                   Checking provider readiness...
                 } @else {
-                  {{ selectedReadiness()?.message || 'Could not load backend readiness.' }}
+                  {{ selectedReadiness()?.message || 'Could not check whether this profile is ready.' }}
                 }
               </p>
             </div>
@@ -1192,7 +1192,7 @@
             }
             <label class="website-toggle">
               <input type="checkbox" [formField]="editForm.autoMatchEnabled" />
-              Available for user auto-match
+              Let Hope Hub suggest this profile to users
             </label>
             <label class="website-toggle">
               <input type="checkbox" [formField]="editForm.acceptingNewUsers" />

@@ -25,10 +25,8 @@ import {
   CONSUMER_CONCERN_CATEGORY_OPTIONS,
   CONSUMER_EXPERT_TYPE_OPTIONS,
   CONSUMER_LANGUAGE_OPTIONS,
-  CONSUMER_LIVE_CONNECT_MODE_OPTIONS,
   CONSUMER_PROVIDER_GENDER_OPTIONS,
   CONSUMER_SAFETY_RISK_OPTIONS,
-  CONSUMER_SESSION_MODE_OPTIONS,
   CONSUMER_URGENCY_OPTIONS,
   consumerModeMatchesText,
   consumerSessionModeFor,
@@ -72,7 +70,6 @@ import {
   FormCheckboxComponent,
   FormFieldComponent,
   AppButtonComponent,
-  SelectableCardComponent,
 } from '../../shared/components';
 import { User } from '../../core/models/auth.model';
 import { providerNeedsListenerSupportConsent } from '../../core/utils/live-connect-provider.utils';
@@ -97,7 +94,6 @@ type SupportPathPreference = ReturnType<typeof supportPathForExpertPreference>;
     FormCheckboxComponent,
     FormFieldComponent,
     AppButtonComponent,
-    SelectableCardComponent,
   ],
   templateUrl: './contact.component.html',
   styleUrl: './contact.component.scss',
@@ -169,8 +165,6 @@ export class ContactComponent implements OnInit {
   urgencyOptions: FormDropdownOption[] = CONSUMER_URGENCY_OPTIONS;
   concernCategoryOptions: FormDropdownOption[] = CONSUMER_CONCERN_CATEGORY_OPTIONS;
   expertTypeOptions: FormDropdownOption[] = CONSUMER_EXPERT_TYPE_OPTIONS;
-  sessionModeOptions: FormDropdownOption[] = CONSUMER_SESSION_MODE_OPTIONS;
-  readonly liveConnectModeOptions = CONSUMER_LIVE_CONNECT_MODE_OPTIONS;
   languageOptions: FormDropdownOption[] = CONSUMER_LANGUAGE_OPTIONS;
   providerGenderOptions: FormDropdownOption[] = CONSUMER_PROVIDER_GENDER_OPTIONS;
   safetyRiskOptions: FormDropdownOption[] = CONSUMER_SAFETY_RISK_OPTIONS;
@@ -402,22 +396,22 @@ export class ContactComponent implements OnInit {
 
   liveConnectHeroTitle(): string {
     if (!this.isLiveConnectFallback()) return CONSUMER_UX_COPY.booking.pageTitle;
-    return `Book ${this.requestedLiveModeLabel()} support`;
+    return 'Book private support';
   }
 
   liveConnectHeroCopy(): string {
     if (!this.isLiveConnectFallback()) {
       return 'Share a few preferences, choose a slot, and continue with private Hope Hub support.';
     }
-    return `No live ${this.requestedLiveModeLabel()} expert was available immediately, so we brought you here to book the next suitable ${CONSUMER_UX_COPY.booking.fallbackOption} without starting over.`;
+    return `No expert was available immediately, so we brought you here to book the next suitable ${CONSUMER_UX_COPY.booking.fallbackOption} without starting over.`;
   }
 
   liveConnectHandoffTitle(): string {
-    return `We kept your ${this.requestedLiveModeLabel()} preference`;
+    return 'Choose the next available time';
   }
 
   liveConnectHandoffCopy(): string {
-    return 'Choose a slot below, or use Quick Talk if someone comes online before you book.';
+    return 'Use chat, voice, or video—whatever feels comfortable when your session starts. You can switch at any time.';
   }
 
   bookingSummaryTitle(): string {
@@ -445,18 +439,11 @@ export class ContactComponent implements OnInit {
 
     return [
       concern ? `Concern: ${concern}` : '',
-      `Mode: ${this.requestedLiveModeLabel()}`,
+      'Chat, voice, or video',
       duration ? `Duration: ${duration}` : '',
       consultant ? `Provider: ${consultant}` : '',
       supportPathLabel ? `Support: ${supportPathLabel}` : '',
     ].filter(Boolean);
-  }
-
-  setLiveConnectMode(mode: LiveConnectMode): void {
-    this.prefilledData.set({ ...this.prefilledData(), mode });
-    this.contactForm.patchValue({ sessionMode: this.sessionModeForLiveConnectMode(mode) });
-    this.selectedAppointment.set(null);
-    void this.loadQuickTalkProviders();
   }
 
   activeSupportPathPreference() {
@@ -564,12 +551,11 @@ export class ContactComponent implements OnInit {
   private generateInitialMessage(): string {
     const data = this.prefilledData();
     if (data.source === 'live-connect') {
-      const mode = this.normalizeLiveConnectMode(data.mode) || 'voice';
       const supportPath = supportPathForExpertPreference(
         data.supportPath || data.preferredExpertType,
       );
       const supportText = supportPath ? ` with ${supportPathMeta(supportPath).title}` : '';
-      return `I tried Live Connect for ${mode} support${supportText}, but no one was available. I want to book the next suitable consultation.`;
+      return `I tried Live Connect${supportText}, but no one was available. I want to book the next suitable consultation and choose chat, voice, or video when it starts.`;
     }
 
     if (data.serviceName && data.consultant) {
@@ -631,12 +617,12 @@ export class ContactComponent implements OnInit {
 
   activeProviderNotice(): string {
     const data = this.prefilledData();
-    if (data.providerId && data.consultant) return `Selected provider: ${data.consultant}`;
+    if (data.providerId && data.consultant) return `You chose: ${data.consultant}`;
     if (!this.contactForm?.get('autoMatchProvider')?.value) {
-      return 'Auto-match is off. Our team will assign a suitable provider after review.';
+      return 'Hope Hub can help choose someone after reviewing your request.';
     }
     const provider = this.matchedProvider();
-    if (provider) return `Auto-matched: ${provider.name}`;
+    if (provider) return `Suggested for you: ${provider.name}`;
     return this.providerMatchMessage();
   }
 
@@ -668,11 +654,11 @@ export class ContactComponent implements OnInit {
   }
 
   quickTalkTitle(): string {
-    return `Quick ${this.requestedLiveModeLabel()} if someone is live`;
+    return 'Talk now if someone is live';
   }
 
   quickTalkCopy(): string {
-    return `We will check for providers currently accepting ${this.requestedLiveModeLabel()} sessions. If no one is live, keep the scheduled booking below.`;
+    return 'We will check for an available provider. Choose chat, voice, or video when you connect.';
   }
 
   private genderLabel(value: string): string {
@@ -919,7 +905,7 @@ export class ContactComponent implements OnInit {
 
       this.paymentFlowState.set('SUCCESS');
       this.quickTalkMessage.set(
-        `Quick Talk is ready with ${response.provider?.name || 'an available expert'}. Open your dashboard to join when assigned.`,
+        `${response.provider?.name || 'A caring expert'} is ready. Open your dashboard to join.`,
       );
       this.notificationService.success(CONSUMER_UX_COPY.messages.quickTalkConfirmed);
       void this.loadQuickTalkProviders();
@@ -1415,7 +1401,7 @@ export class ContactComponent implements OnInit {
     if (!this.contactForm.get('autoMatchProvider')?.value) {
       this.matchedProvider.set(null);
       this.providerMatchLoading.set(false);
-      this.providerMatchMessage.set('Auto-match is off.');
+      this.providerMatchMessage.set('Hope Hub suggestions are off.');
       return;
     }
 
@@ -1428,7 +1414,7 @@ export class ContactComponent implements OnInit {
     if (!roleGroup && !gender && !language && !concern) {
       this.matchedProvider.set(null);
       this.providerMatchLoading.set(false);
-      this.providerMatchMessage.set('Add preferences to auto-match a provider.');
+      this.providerMatchMessage.set('Add preferences if you want help choosing.');
       return;
     }
 
@@ -1462,14 +1448,16 @@ export class ContactComponent implements OnInit {
       const provider = this.pickBestProvider(res.providers, formValue);
       this.matchedProvider.set(provider);
       this.providerMatchMessage.set(
-        provider ? '' : 'No exact provider match found. Our team will assign manually.',
+        provider ? '' : 'We will review your request and help choose someone suitable.',
       );
       if (beforeProviderId !== this.activeProviderId()) {
         this.selectedAppointment.set(null);
       }
     } catch {
       this.matchedProvider.set(null);
-      this.providerMatchMessage.set('Could not auto-match right now. Team review will handle it.');
+      this.providerMatchMessage.set(
+        'We could not suggest someone yet. Our team will review your request.',
+      );
     } finally {
       this.providerMatchLoading.set(false);
     }
@@ -1492,9 +1480,7 @@ export class ContactComponent implements OnInit {
       );
       this.quickTalkProviders.set(res.providers.slice(0, 3));
       this.quickTalkMessage.set(
-        res.providers.length
-          ? ''
-          : `No one is live for ${this.requestedLiveModeLabel()} right now. You can still book a slot.`,
+        res.providers.length ? '' : 'No one is live right now. You can still book a time.',
       );
     } catch {
       this.quickTalkProviders.set([]);

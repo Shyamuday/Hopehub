@@ -424,7 +424,6 @@ import {
                     [message]="UX.messages.noLiveExpertAssessmentFallback"
                     [bookQueryParams]="fallback.queryParams"
                     [careTeamQueryParams]="assessmentCareTeamQueryParams()"
-                    (tryMode)="connectFromResult($event)"
                     (dismissed)="dismissLiveFallback()"
                   />
                 }

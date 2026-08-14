@@ -120,7 +120,7 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
     if (consultation.status === 'ASSIGNED') return 'Waiting for your response';
     if (consultation.status === 'IN_PROGRESS') return 'Session in progress';
     if (consultation.status === 'PRESCRIPTION_UPLOADED') return 'Ready to complete';
-    return consultation.status.toLowerCase().replaceAll('_', ' ');
+    return 'Request updated';
   }
 
   async acceptConsultation(consultation: InstantConsult): Promise<void> {

@@ -33,10 +33,10 @@
                 {{ bot.username || bot.slug + ' bot' }} ·
                 {{
                   bot.externallyManaged
-                    ? 'Group Help managed runtime'
+                    ? 'Managed by Group Help'
                     : bot.expectedRole
                       ? 'links ' + bot.expectedRole + ' accounts'
-                      : 'API webhook workflow'
+                      : 'Receives Telegram updates automatically'
                 }}
               </p>
             </div>
@@ -75,7 +75,7 @@
           }
 
           <div class="webhook">
-            <small>Webhook</small>
+            <small>Telegram connection</small>
             <code>{{ webhookUrl(bot) }}</code>
             @if (webhookIssue(bot)) {
               <p class="issue">{{ webhookIssue(bot) }}</p>
@@ -92,7 +92,7 @@
               [disabled]="!bot.configured || saving() === bot.slug"
               (click)="setup(bot)"
             >
-              {{ saving() === bot.slug ? 'Updating…' : 'Update commands + webhook' }}
+              {{ saving() === bot.slug ? 'Updating…' : 'Sync bot settings' }}
             </button>
           }
         </article>
@@ -189,7 +189,7 @@
       <div class="section-header">
         <div>
           <h3>Recent bot events</h3>
-          <p class="muted">Latest webhook activity saved by the API.</p>
+          <p class="muted">Latest activity received from Telegram.</p>
         </div>
       </div>
 
@@ -222,7 +222,7 @@
   [currentStep]="configurationStep()"
   [busy]="configurationBusy()"
   [nextDisabled]="configurationNextDisabled()"
-  submitLabel="Apply configuration"
+  submitLabel="Save changes"
   (closed)="closeConfiguration()"
   (previous)="previousConfigurationStep()"
   (next)="nextConfigurationStep()"
@@ -231,14 +231,14 @@
   @if (configurationStep() === 0) {
     <section class="drawer-step">
       <div class="drawer-step__intro">
-        <h3>Webhook connection</h3>
+        <h3>Telegram connection</h3>
         <p>
           Defaults are recommended. Only use an override when the public API address has changed.
         </p>
       </div>
       <label class="drawer-field">
-        <strong>Public API URL override</strong>
-        <small>Optional. Leave empty to use the server configuration.</small>
+        <strong>Connection address override</strong>
+        <small>Optional. Leave empty to keep the saved value.</small>
         <input
           type="url"
           [ngModel]="publicApiUrl()"
@@ -256,8 +256,8 @@
           (ngModelChange)="dropPendingUpdates.set($event)"
         />
         <span>
-          <strong>Drop pending Telegram updates</strong>
-          <small>Use this only when old queued messages should not be processed after setup.</small>
+          <strong>Ignore old queued messages</strong>
+          <small>Turn this on only when older waiting messages should be skipped.</small>
         </span>
       </label>
     </section>
@@ -310,7 +310,7 @@
     <section class="drawer-step">
       <div class="drawer-step__intro">
         <h3>Ready to apply</h3>
-        <p>This updates stored controls, Telegram commands, and managed webhook connections.</p>
+        <p>This saves the controls, Telegram commands, and bot connections.</p>
       </div>
       <div class="review-list">
         <article>

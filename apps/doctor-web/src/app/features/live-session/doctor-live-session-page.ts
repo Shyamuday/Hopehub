@@ -213,11 +213,21 @@ export class DoctorLiveSessionPage implements OnInit, OnDestroy {
   }
 
   sessionOutcomeLabel(outcome?: string | null): string {
-    return outcome ? (this.outcomeLabels[outcome] ?? outcome.replace(/_/g, ' ')) : 'Not recorded';
+    return outcome ? (this.outcomeLabels[outcome] ?? 'Completed') : 'Not recorded';
   }
 
   callStatusLabel(status: string): string {
-    return status ? status.replace(/_/g, ' ').toLowerCase() : 'unknown';
+    const labels: Record<string, string> = {
+      RINGING: 'Calling',
+      CONNECTING: 'Connecting',
+      CONNECTED: 'Connected',
+      RECONNECTING: 'Reconnecting',
+      ENDED: 'Ended',
+      FAILED: 'Could not connect',
+      REJECTED: 'Declined',
+      CANCELLED: 'Cancelled',
+    };
+    return status ? (labels[status.toUpperCase()] ?? 'Call update') : 'Waiting';
   }
 
   callReasonLabel(reason?: string | null): string {
@@ -243,7 +253,7 @@ export class DoctorLiveSessionPage implements OnInit, OnDestroy {
       call_mode_not_allowed: 'Call type not allowed',
       call_not_allowed: 'Call not allowed',
     };
-    return labels[reason] || reason.replace(/_/g, ' ');
+    return labels[reason] || 'The call ended';
   }
 
   callNetworkLabel(call: ConsultationCallSession): string {

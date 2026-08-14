@@ -1,7 +1,7 @@
 @if (!consultationId()) {
   <p class="hint">Enter a consultation ID and load history to unlock approach-specific prescribing fields.</p>
 } @else if (loading()) {
-  <p class="hint">Loading approach workflow…</p>
+  <p class="hint">Loading treatment approach…</p>
 } @else if (!methodOptionId()) {
   <p class="hint">Select a homeopathy method above to show approach-specific inputs.</p>
 } @else if (activeApproach(); as approach) {

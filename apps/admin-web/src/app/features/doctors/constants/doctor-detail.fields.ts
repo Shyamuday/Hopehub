@@ -146,7 +146,7 @@ export const DOCTOR_DETAIL_FIELDS: DetailFieldDef<DoctorDetailSource>[] = [
     omitWhenEmpty: true,
   },
   {
-    label: 'Auto-match',
+    label: 'Suggested to users',
     getValue: (d) =>
       d.doctorProfile?.mentalHealthProfile
         ? d.doctorProfile.mentalHealthProfile.autoMatchEnabled === false

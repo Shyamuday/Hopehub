@@ -7,32 +7,25 @@
   }
 
   <div class="connect-options__grid" [class.connect-options__grid--compact]="compact">
-    @for (option of options; track option.mode) {
-      @if (isVisible(option.mode)) {
-        <button
-          type="button"
-          class="connect-options__button"
-          [class.connect-options__button--muted]="!isAvailable(option.mode)"
-          (click)="choose(option.mode)"
-        >
-          <span class="connect-options__icon">{{ option.icon }}</span>
-          <span>
-            <strong>{{ labelFor(option.mode, option.label) }}</strong>
-            @if (!compact) {
-              <small>
-                {{ isAvailable(option.mode) ? option.description : 'Book the nearest slot' }}
-              </small>
-            }
-          </span>
-        </button>
-      }
+    <button type="button" class="connect-options__button connect-options__button--primary" (click)="connectNow()">
+      <span class="connect-options__icon">💛</span>
+      <span>
+        <strong>Connect now</strong>
+        @if (!compact) {
+          <small>Chat, voice, or video—use what feels comfortable.</small>
+        }
+      </span>
+    </button>
+    @if (showBook) {
+      <button type="button" class="connect-options__button" (click)="selected.emit('book')">
+        <span class="connect-options__icon">🗓️</span>
+        <span>
+          <strong>{{ bookLabel }}</strong>
+          @if (!compact) {
+            <small>Choose a convenient time.</small>
+          }
+        </span>
+      </button>
     }
   </div>
 </section>
-
-<app-connect-comfort-dialog
-  [open]="pendingMode() !== null"
-  [mode]="pendingMode() || 'chat'"
-  (confirmed)="confirmChoice()"
-  (cancelled)="cancelChoice()"
-/>

@@ -3,18 +3,18 @@
     <p class="eyebrow">Telegram community</p>
     <h1>Group Help Control</h1>
     <p>
-      Manage the Hope Hub GroupHelp-powered bot config from one place. This panel stores the
-      official messages and generates commands for the external GroupHelp clone.
+      Manage Hope Hub community bot settings in one place. Save official messages and prepare
+      the commands used by Group Help.
     </p>
   </div>
   <div class="status-card" [class.status-card--ready]="tokenConfigured()">
-    <span>{{ tokenConfigured() ? 'Direct send ready' : 'Copy-command mode' }}</span>
+    <span>{{ tokenConfigured() ? 'Announcements ready' : 'Commands ready to copy' }}</span>
     <strong>{{ value('telegramGroupHelpBotUsername') || 'Hopehubaibot' }}</strong>
     <small>
       {{
         tokenConfigured()
-          ? 'TELEGRAM_HOPEHUBBOT_TOKEN is configured for send/pin.'
-          : 'Add TELEGRAM_HOPEHUBBOT_TOKEN only if you want direct announcements.'
+          ? 'The bot can send and pin announcements.'
+          : 'Connect the bot to send announcements directly.'
       }}
     </small>
     <button type="button" (click)="testConnection()" [disabled]="testing()">
@@ -29,8 +29,8 @@
 <section class="notice-panel">
   <strong>Important safety line</strong>
   <p>
-    GroupHelp controls the bot runtime. Do not set a HopeHub webhook for this bot. Use command copy
-    for GroupHelp settings; direct send only posts/pins announcements through Telegram API.
+    Group Help manages this bot connection. Use the copied commands for Group Help settings.
+    Direct announcements can only post or pin messages in Telegram.
   </p>
 </section>
 
@@ -38,7 +38,7 @@
   <section class="connection-summary" aria-label="Group Help connection status">
     <div><small>Bot</small><strong>{{ connectionDetails().bot }}</strong></div>
     <div><small>Group</small><strong>{{ connectionDetails().group || 'Group not reachable' }}</strong></div>
-    <div><small>Runtime</small><strong>{{ connectionDetails().runtime }}</strong></div>
+    <div><small>Managed by</small><strong>{{ connectionDetails().runtime }}</strong></div>
     <div class="permission-summary">
       <small>Detected permissions</small>
       <strong>{{ connectionDetails().permissions?.join(', ') || 'No admin permissions detected' }}</strong>
@@ -47,7 +47,7 @@
 }
 
 @if (loading()) {
-  <p class="loading-text">Loading Group Help config…</p>
+  <p class="loading-text">Loading Group Help settings…</p>
 }
 
 <section class="config-grid">

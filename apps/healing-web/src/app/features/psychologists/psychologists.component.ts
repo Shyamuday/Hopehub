@@ -496,7 +496,7 @@ export class PsychologistsComponent implements OnInit {
       const modes = this.providerModeLabels(provider).join(', ').toLowerCase();
       return `Start now by ${modes}`;
     }
-    if (provider.liveStatus === 'ONLINE') return 'Try quick talk or book a slot';
-    return 'Book the nearest suitable slot';
+    if (provider.liveStatus === 'ONLINE') return 'Connect now or book a time';
+    return 'Book the next suitable time';
   }
 }

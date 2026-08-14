@@ -58,14 +58,12 @@
   line-height: var(--hope-line-copy);
 }
 
-.connect-fallback__modes,
 .connect-fallback__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
 }
 
-.connect-fallback__modes button,
 .connect-fallback__actions a {
   border: 1px solid rgba(74, 111, 165, 0.18);
   border-radius: 999px;

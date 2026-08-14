@@ -67,10 +67,10 @@ export class TelegramBotsPage implements OnInit {
     return 'Review configuration';
   });
   configurationDescription = computed(() => {
-    if (this.configurationStep() === 0) return 'Set webhook behaviour shared by all managed bots.';
+    if (this.configurationStep() === 0) return 'Choose how managed bots connect to Telegram.';
     if (this.activeControlGroup())
       return 'Update only the settings for this part of the bot system.';
-    return 'Confirm the configuration before applying it to the API runtime.';
+    return 'Review the changes before saving them.';
   });
   configurationBusy = computed(() => this.saving() === 'configuration');
   configurationNextDisabled = computed(
@@ -226,12 +226,12 @@ export class TelegramBotsPage implements OnInit {
   }
 
   webhookUrl(bot: any) {
-    return bot.webhook?.ok ? bot.webhook.result?.url || 'No webhook URL set' : 'Unavailable';
+    return bot.webhook?.ok ? bot.webhook.result?.url || 'Connection not set' : 'Unavailable';
   }
 
   webhookIssue(bot: any) {
-    if (!bot.configured) return `Missing ${bot.tokenEnv}`;
-    if (!bot.webhook) return 'Webhook info not loaded';
+    if (!bot.configured) return 'Bot token is not configured';
+    if (!bot.webhook) return 'Connection details are not available';
     if (!bot.webhook.ok) return bot.webhook.error;
     return bot.webhook.result?.last_error_message || '';
   }

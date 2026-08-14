@@ -47,7 +47,6 @@
               [message]="UX.messages.noLiveExpertServiceFallback"
               [bookQueryParams]="fallback.queryParams"
               [careTeamQueryParams]="flowForService(service()!).careTeamQueryParams"
-              (tryMode)="connect($event)"
               (dismissed)="dismissLiveFallback()"
             />
           }
