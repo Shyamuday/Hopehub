@@ -9,7 +9,7 @@ import {
   inject,
   input,
   output,
-  signal
+  signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
@@ -21,7 +21,7 @@ import { NAV_GROUPS, type AdminNavItem } from '../../core/constants/app-routes.c
   standalone: true,
   imports: [RouterLink],
   templateUrl: './admin-nav-tabs.component.html',
-  styleUrl: './admin-nav-tabs.component.scss'
+  styleUrl: './admin-nav-tabs.component.scss',
 })
 export class AdminNavTabsComponent implements OnInit {
   readonly items = input<readonly AdminNavItem[]>([]);
@@ -35,25 +35,40 @@ export class AdminNavTabsComponent implements OnInit {
   readonly openGroupId = signal<string | null>(null);
   readonly activeGroupId = signal('');
   readonly currentPath = signal('');
+  readonly searchQuery = signal('');
 
   private closeTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly visibleGroups = computed(() => {
     const items = this.items();
     if (!items.length) return [];
+    const query = this.searchQuery().trim().toLocaleLowerCase();
 
-    return NAV_GROUPS.map((group) => ({
-      ...group,
-      items: items.filter((item) =>
-        (group.segments as readonly string[]).includes(this.pathSegment(item.path))
-      )
-    })).filter((group) => group.items.length > 0);
+    return NAV_GROUPS.map((group) => {
+      const groupItems = items.filter(
+        (item) =>
+          (group.segments as readonly string[]).includes(this.pathSegment(item.path)) &&
+          (!query || item.label.toLocaleLowerCase().includes(query)),
+      );
+      return {
+        ...group,
+        items: groupItems,
+        sections: (group.sections ?? [])
+          .map((section) => ({
+            ...section,
+            items: groupItems.filter((item) =>
+              section.segments.includes(this.pathSegment(item.path)),
+            ),
+          }))
+          .filter((section) => section.items.length > 0),
+      };
+    }).filter((group) => group.items.length > 0);
   });
 
   readonly currentPageLabel = computed(() => {
     const path = this.currentPath();
     const item = this.items().find(
-      (entry) => path === entry.path || path.startsWith(`${entry.path}/`)
+      (entry) => path === entry.path || path.startsWith(`${entry.path}/`),
     );
     return item?.label ?? '';
   });
@@ -67,7 +82,7 @@ export class AdminNavTabsComponent implements OnInit {
     this.router.events
       .pipe(
         filter((event): event is NavigationEnd => event instanceof NavigationEnd),
-        takeUntilDestroyed(this.destroyRef)
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((event) => {
         this.syncFromUrl(event.urlAfterRedirects);
@@ -117,7 +132,14 @@ export class AdminNavTabsComponent implements OnInit {
 
   onNavItemClick(): void {
     this.closeSubmenu();
+    this.searchQuery.set('');
     this.navSelected.emit();
+  }
+
+  updateSearch(event: Event): void {
+    const value = event.target instanceof HTMLInputElement ? event.target.value : '';
+    this.searchQuery.set(value);
+    if (value.trim()) this.openGroupId.set(null);
   }
 
   isGroupExpanded(groupId: string): boolean {
@@ -156,7 +178,7 @@ export class AdminNavTabsComponent implements OnInit {
 
     const groups = this.visibleGroups();
     const match = groups.find((group) =>
-      group.items.some((item) => path === item.path || path.startsWith(`${item.path}/`))
+      group.items.some((item) => path === item.path || path.startsWith(`${item.path}/`)),
     );
 
     if (match) {
@@ -176,4 +198,3 @@ export class AdminNavTabsComponent implements OnInit {
     return path.split('/').filter(Boolean).pop() ?? '';
   }
 }
-

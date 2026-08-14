@@ -13,60 +13,6 @@
   margin-top: 0.35rem;
 }
 
-.workspace-context-panel {
-  border: 1px solid #bbf7d0;
-  border-radius: 18px;
-  background: linear-gradient(135deg, #f0fdf4, #ffffff);
-  color: #14532d;
-  margin-bottom: 1rem;
-  padding: 1rem;
-}
-
-.workspace-context-panel p,
-.workspace-context-panel h2,
-.workspace-context-panel span {
-  margin: 0;
-}
-
-.workspace-context-panel p {
-  color: #15803d;
-  font-size: 0.72rem;
-  font-weight: 900;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.workspace-context-panel h2 {
-  color: #052e16;
-  font-size: 1.25rem;
-  margin-top: 0.2rem;
-}
-
-.workspace-context-panel span {
-  color: #3f6212;
-  display: block;
-  font-size: 0.9rem;
-  line-height: 1.55;
-  margin-top: 0.35rem;
-}
-
-.workspace-context-panel.hope-hub {
-  border-color: #c4b5fd;
-  background: linear-gradient(135deg, #f5f3ff, #ffffff);
-}
-
-.workspace-context-panel.hope-hub p {
-  color: #7c3aed;
-}
-
-.workspace-context-panel.hope-hub h2 {
-  color: #2e1065;
-}
-
-.workspace-context-panel.hope-hub span {
-  color: #5b21b6;
-}
-
 .mobile-consult-cards {
   display: none;
 }

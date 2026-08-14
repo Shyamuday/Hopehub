@@ -2,11 +2,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map, startWith } from 'rxjs';
-import {
-  RoleTaskGuideComponent,
-  NotificationBellHostComponent,
-  ProfileAvatarDisplayComponent,
-} from '@hopehub/platform-ui';
+import { NotificationBellHostComponent, ProfileAvatarDisplayComponent } from '@hopehub/platform-ui';
 import { environment } from '../../../environments/environment';
 import { AUTH_TOKEN_KEY } from '../../core/constants/auth.constants';
 import { AdminAuth } from '../../core/services/admin-auth';
@@ -26,31 +22,23 @@ import {
 } from '../../core/admin-permissions';
 import { AdminWorkspaceService } from '../../core/services/admin-workspace.service';
 
-const MOBILE_BOTTOM_NAV_LIMIT = 4;
-
-const NAV_SHORT_LABELS: Record<string, string> = {
-  Dashboard: 'Home',
-  'Command Center': 'Home',
-  Doctors: 'Pro',
-  Providers: 'Pro',
-  Consumers: 'Users',
-  'Users / Consumers': 'Users',
-  'Scan patient': 'Scan',
-  'Scan Patient': 'Scan',
-  Consultations: 'Appts',
-  'Sessions / Consultations': 'Sessions',
-  Diseases: 'Disease',
-  'Homeopathy Services': 'Homeo',
-  'Clinical Records': 'Records',
-  'Live Providers': 'Live',
-};
+const MOBILE_NAV_PRIORITIES = [
+  [ROUTE_PATHS.DASHBOARD],
+  [
+    ROUTE_PATHS.CONSULTATIONS,
+    ROUTE_PATHS.CHAT_INBOX,
+    ROUTE_PATHS.COUNSELLOR_APPLICATIONS,
+    ROUTE_PATHS.SAFETY_FLAGS,
+    ROUTE_PATHS.SCAN,
+  ],
+  [ROUTE_PATHS.DOCTORS, ROUTE_PATHS.CONSUMERS, ROUTE_PATHS.HR],
+] as const;
 
 @Component({
   selector: 'app-admin-shell',
   imports: [
     RouterOutlet,
     RouterLink,
-    RoleTaskGuideComponent,
     NotificationBellHostComponent,
     AdminNavTabsComponent,
     ProfileAvatarDisplayComponent,
@@ -105,9 +93,11 @@ export class AdminShell {
     return item?.label ?? '';
   });
 
-  readonly bottomNavItems = computed(() => this.splitMobileNav(this.filteredNavItems()).bottom);
-  readonly hasOverflowNav = computed(
-    () => this.splitMobileNav(this.filteredNavItems()).overflow > 0,
+  readonly bottomNavItems = computed(() => this.buildMobileNav(this.filteredNavItems()));
+  readonly hasOverflowNav = computed(() =>
+    this.filteredNavItems().some(
+      (item) => !this.bottomNavItems().some((bottomItem) => bottomItem.path === item.path),
+    ),
   );
 
   constructor() {
@@ -146,19 +136,34 @@ export class AdminShell {
   }
 
   navIcon(item: AdminNavItem) {
-    const emoji = item.label.match(/^\p{Extended_Pictographic}/u);
-    return emoji ? emoji[0] : '•';
+    const segment = this.pathSegment(item.path);
+    if (segment === ROUTE_PATHS.DASHBOARD) return '⌂';
+    if (MOBILE_NAV_PRIORITIES[1].includes(segment as never)) return '✓';
+    if (MOBILE_NAV_PRIORITIES[2].includes(segment as never)) return '◎';
+    return '•';
   }
 
   navShortLabel(item: AdminNavItem) {
-    const plain = item.label.replace(/^\p{Extended_Pictographic}\s*/u, '').trim();
-    return (
-      NAV_SHORT_LABELS[plain] || NAV_SHORT_LABELS[item.label] || plain.split(/\s+/)[0].slice(0, 6)
-    );
+    const segment = this.pathSegment(item.path);
+    if (segment === ROUTE_PATHS.DASHBOARD) return 'Home';
+    if (MOBILE_NAV_PRIORITIES[1].includes(segment as never)) return 'Work';
+    if (MOBILE_NAV_PRIORITIES[2].includes(segment as never)) return 'People';
+    return item.label
+      .replace(/^\p{Extended_Pictographic}\s*/u, '')
+      .trim()
+      .split(/\s+/)[0];
   }
 
-  private splitMobileNav(items: readonly AdminNavItem[]) {
-    const bottom = items.slice(0, MOBILE_BOTTOM_NAV_LIMIT);
-    return { bottom, overflow: Math.max(0, items.length - bottom.length) };
+  private buildMobileNav(items: readonly AdminNavItem[]): AdminNavItem[] {
+    return MOBILE_NAV_PRIORITIES.flatMap((segments) => {
+      const match = segments
+        .map((segment) => items.find((item) => this.pathSegment(item.path) === segment))
+        .find((item): item is AdminNavItem => Boolean(item));
+      return match ? [match] : [];
+    });
+  }
+
+  private pathSegment(path: string): string {
+    return path.split('/').filter(Boolean).pop() ?? '';
   }
 }

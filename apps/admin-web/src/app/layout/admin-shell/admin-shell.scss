@@ -1,6 +1,6 @@
 .admin-shell {
   --shell-topbar-height: 3.25rem;
-  --shell-sidebar-width: 15.25rem;
+  --shell-sidebar-width: 14.5rem;
   --shell-bottom-nav-height: 64px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-top: env(safe-area-inset-top, 0px);
@@ -118,6 +118,12 @@
   display: block;
   font-size: 0.68rem;
   line-height: 1.35;
+}
+
+@media (min-width: 769px) {
+  .sidebar .workspace-select-card small {
+    display: none;
+  }
 }
 
 .workspace-select:disabled {
@@ -394,7 +400,7 @@
   }
 
   .content {
-    padding: 1.25rem 1.5rem;
+    padding: 1.25rem clamp(1.25rem, 2.2vw, 2rem);
   }
 }
 
@@ -404,8 +410,8 @@
   }
 
   .content {
-    padding: 0.85rem;
-    padding-bottom: calc(var(--shell-bottom-nav-height) + 0.85rem + var(--safe-bottom));
+    padding: 0.75rem;
+    padding-bottom: calc(var(--shell-bottom-nav-height) + 0.75rem + var(--safe-bottom));
   }
 
   .admin-shell.focus-mode .content {
@@ -502,14 +508,18 @@
     right: 0;
     bottom: 0;
     width: 100%;
-    max-height: min(85vh, 32rem);
+    max-height: min(90dvh, 44rem);
     border-radius: 1rem 1rem 0 0;
     animation: sheetUp 0.24s ease;
   }
 
   @keyframes sheetUp {
-    from { transform: translateY(100%); }
-    to { transform: translateY(0); }
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
   }
 }
 

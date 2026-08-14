@@ -73,11 +73,22 @@ export class ConsultationsPage implements OnInit {
   unassignedCount = signal(0);
   qualitySummary = signal<ConsultationQualitySummary | null>(null);
   qualityDays = signal(30);
+  private qualityLoaded = false;
 
   statusFilter = signal('');
   assignedFilter = signal('no');
   outcomeFilter = signal('');
   outcomeFlagFilter = signal('');
+  filtersOpen = signal(false);
+  readonly activeFilterCount = computed(
+    () =>
+      [
+        this.statusFilter(),
+        this.assignedFilter() !== 'no' ? this.assignedFilter() : '',
+        this.outcomeFilter(),
+        this.outcomeFlagFilter(),
+      ].filter(Boolean).length,
+  );
 
   readonly searchModel = signal({ q: '' });
   readonly searchForm = form(this.searchModel);
@@ -157,9 +168,10 @@ export class ConsultationsPage implements OnInit {
     this.page.set(1);
     this.doctors.set([]);
     this.filteredDoctors.set([]);
+    this.qualityLoaded = false;
+    this.qualitySummary.set(null);
     this.load();
     this.loadUnassignedCount();
-    this.loadQualitySummary();
   });
 
   ngOnInit(): void {
@@ -209,6 +221,30 @@ export class ConsultationsPage implements OnInit {
   setQualityDays(days: number): void {
     this.qualityDays.set(days);
     this.loadQualitySummary();
+  }
+
+  onQualityToggle(event: Event): void {
+    const details = event.target;
+    if (!(details instanceof HTMLDetailsElement) || !details.open || this.qualityLoaded) return;
+    this.qualityLoaded = true;
+    this.loadQualitySummary();
+  }
+
+  toggleFilters(): void {
+    this.filtersOpen.update((open) => !open);
+  }
+
+  closeFilters(): void {
+    this.filtersOpen.set(false);
+  }
+
+  resetFilters(): void {
+    this.statusFilter.set('');
+    this.assignedFilter.set('no');
+    this.outcomeFilter.set('');
+    this.outcomeFlagFilter.set('');
+    this.page.set(1);
+    this.load();
   }
 
   qualityCards() {

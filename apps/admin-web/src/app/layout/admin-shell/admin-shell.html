@@ -46,26 +46,6 @@
         }
       </div>
 
-      <section class="workspace-switcher" aria-label="Admin workspace">
-        <label class="workspace-select-card">
-          <span>Workspace</span>
-          <div class="workspace-select-wrap">
-            <span aria-hidden="true">{{ selectedWorkspaceOption().icon }}</span>
-            <select
-              class="workspace-select"
-              [value]="selectedWorkspace()"
-              [disabled]="workspaceOptions().length < 2"
-              (change)="selectWorkspaceFromEvent($event)"
-            >
-              @for (workspace of workspaceOptions(); track workspace.id) {
-                <option [value]="workspace.id">{{ workspace.label }}</option>
-              }
-            </select>
-          </div>
-          <small>{{ selectedWorkspaceOption().description }}</small>
-        </label>
-      </section>
-
       <app-admin-nav-tabs [items]="filteredNavItems()" layout="sidebar" />
 
       <div class="sidebar-footer">
@@ -85,7 +65,6 @@
 
     <div class="shell-main">
       <section class="content">
-        <app-role-task-guide appKey="admin-web" presentation="side" />
         <router-outlet />
       </section>
     </div>
@@ -99,7 +78,9 @@
           <strong>{{ auth.user()?.name || 'Admin' }}</strong>
           <p class="drawer-subtitle">Admin Console · {{ selectedWorkspaceOption().label }}</p>
         </div>
-        <button type="button" class="drawer-close" aria-label="Close menu" (click)="closeMenu()">×</button>
+        <button type="button" class="drawer-close" aria-label="Close menu" (click)="closeMenu()">
+          ×
+        </button>
       </div>
       <section class="workspace-switcher drawer-workspace" aria-label="Admin workspace">
         <label class="workspace-select-card">
@@ -119,7 +100,11 @@
           </div>
         </label>
       </section>
-      <app-admin-nav-tabs [items]="filteredNavItems()" layout="sidebar" (navSelected)="closeMenu()" />
+      <app-admin-nav-tabs
+        [items]="filteredNavItems()"
+        layout="sidebar"
+        (navSelected)="closeMenu()"
+      />
       <div class="drawer-footer">
         <button type="button" class="drawer-logout" (click)="logout()">Sign out</button>
       </div>
@@ -134,7 +119,12 @@
       </a>
     }
     @if (hasOverflowNav()) {
-      <button type="button" class="bottom-nav-item bottom-nav-more" [class.active]="menuOpen()" (click)="openMenu()">
+      <button
+        type="button"
+        class="bottom-nav-item bottom-nav-more"
+        [class.active]="menuOpen()"
+        (click)="openMenu()"
+      >
         <span class="bottom-nav-icon" aria-hidden="true">⋯</span>
         <span class="bottom-nav-label">More</span>
       </button>

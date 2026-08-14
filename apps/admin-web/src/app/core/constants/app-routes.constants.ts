@@ -276,70 +276,41 @@ export type AdminNavItem = { path: string; label: string; workspaces?: readonly 
 export type AdminNavGroup = {
   id: string;
   label: string;
+  icon?: string;
+  segments: readonly string[];
+  sections?: readonly AdminNavSection[];
+};
+
+export type AdminNavSection = {
+  id: string;
+  label: string;
   segments: readonly string[];
 };
 
-/** Logical groupings for the admin tab bar (segments match ROUTE_PATHS values). */
-export const NAV_GROUPS: AdminNavGroup[] = [
+const MORE_NAV_SECTIONS: readonly AdminNavSection[] = [
   {
-    id: 'overview',
-    label: 'Overview',
-    segments: [ROUTE_PATHS.DASHBOARD, ROUTE_PATHS.ANALYTICS],
-  },
-  {
-    id: 'care',
-    label: 'Care & sessions',
-    segments: [
-      ROUTE_PATHS.CONSULTATIONS,
-      ROUTE_PATHS.FOLLOW_UPS,
-      ROUTE_PATHS.ONLINE_DOCTORS,
-      ROUTE_PATHS.CALL_HEALTH,
-      ROUTE_PATHS.DOCTORS,
-      ROUTE_PATHS.CONSUMERS,
-      ROUTE_PATHS.CHAT_INBOX,
-    ],
-  },
-  {
-    id: 'hopehub',
-    label: 'Hope Hub',
+    id: 'hope-hub-setup',
+    label: 'Hope Hub setup',
     segments: [
       ROUTE_PATHS.HOPE_HUB_OFFERS,
       ROUTE_PATHS.CONSUMER_FLOWS,
       ROUTE_PATHS.LISTENER_SCREENING,
-      ROUTE_PATHS.COUNSELLOR_APPLICATIONS,
+      ROUTE_PATHS.PROVIDER_ROLES,
       ROUTE_PATHS.ASSESSMENT_DEFINITIONS,
       ROUTE_PATHS.PRACTICES,
       ROUTE_PATHS.LIFESTYLE_TIPS,
       ROUTE_PATHS.REWARDS,
-      ROUTE_PATHS.SAFETY_FLAGS,
       ROUTE_PATHS.GROUP_HELP,
     ],
   },
   {
-    id: 'homeopathy',
-    label: 'Homeopathy',
-    segments: [
-      ROUTE_PATHS.SCAN,
-      ROUTE_PATHS.CLINICAL_RECORDS,
-      ROUTE_PATHS.DISEASES,
-      ROUTE_PATHS.RATES,
-      ROUTE_PATHS.ADHERENCE,
-    ],
-  },
-  {
-    id: 'people',
-    label: 'People & HR',
-    segments: [
-      ROUTE_PATHS.HR,
-      ROUTE_PATHS.HR_USERS,
-      ROUTE_PATHS.EMPLOYEES,
-      ROUTE_PATHS.LEAVES,
-      ROUTE_PATHS.VACANCIES,
-    ],
+    id: 'homeopathy-setup',
+    label: 'Homeopathy setup',
+    segments: [ROUTE_PATHS.DISEASES, ROUTE_PATHS.RATES],
   },
   {
     id: 'website',
-    label: 'Website content',
+    label: 'Website',
     segments: [
       ROUTE_PATHS.TESTIMONIALS,
       ROUTE_PATHS.FAQ,
@@ -357,8 +328,8 @@ export const NAV_GROUPS: AdminNavGroup[] = [
     ],
   },
   {
-    id: 'stores',
-    label: 'Stores & stock',
+    id: 'stock',
+    label: 'Store and stock',
     segments: [
       ROUTE_PATHS.STORES,
       ROUTE_PATHS.PURCHASE_ORDERS,
@@ -368,25 +339,78 @@ export const NAV_GROUPS: AdminNavGroup[] = [
     ],
   },
   {
-    id: 'finance',
-    label: 'Finance & money',
+    id: 'access',
+    label: 'Access and security',
     segments: [
+      ROUTE_PATHS.ADMIN_USERS,
+      ROUTE_PATHS.STAFF,
+      ROUTE_PATHS.SECURITY,
+      ROUTE_PATHS.ACCOUNT,
+    ],
+  },
+];
+
+/**
+ * Five stable admin destinations. Navigation describes where work lives; individual
+ * pages describe what the admin can do. Keep every route in exactly one group.
+ */
+export const NAV_GROUPS: AdminNavGroup[] = [
+  {
+    id: 'home',
+    label: 'Home',
+    icon: '⌂',
+    segments: [ROUTE_PATHS.DASHBOARD],
+  },
+  {
+    id: 'work',
+    label: 'Work',
+    icon: '✓',
+    segments: [
+      ROUTE_PATHS.CONSULTATIONS,
+      ROUTE_PATHS.FOLLOW_UPS,
+      ROUTE_PATHS.ONLINE_DOCTORS,
+      ROUTE_PATHS.CALL_HEALTH,
+      ROUTE_PATHS.CHAT_INBOX,
+      ROUTE_PATHS.COUNSELLOR_APPLICATIONS,
+      ROUTE_PATHS.SAFETY_FLAGS,
+      ROUTE_PATHS.SCAN,
+      ROUTE_PATHS.CLINICAL_RECORDS,
+    ],
+  },
+  {
+    id: 'people',
+    label: 'People',
+    icon: '◎',
+    segments: [
+      ROUTE_PATHS.DOCTORS,
+      ROUTE_PATHS.CONSUMERS,
+      ROUTE_PATHS.HR,
+      ROUTE_PATHS.HR_USERS,
+      ROUTE_PATHS.EMPLOYEES,
+      ROUTE_PATHS.LEAVES,
+      ROUTE_PATHS.VACANCIES,
+      ROUTE_PATHS.ECOSYSTEM_USERS,
+    ],
+  },
+  {
+    id: 'reports',
+    label: 'Reports',
+    icon: '▥',
+    segments: [
+      ROUTE_PATHS.ANALYTICS,
       ROUTE_PATHS.PAYMENTS,
       ROUTE_PATHS.DONATIONS,
       ROUTE_PATHS.FINANCE,
       ROUTE_PATHS.PAYROLL,
+      ROUTE_PATHS.ADHERENCE,
+      ROUTE_PATHS.AUDIT,
     ],
   },
   {
-    id: 'access',
-    label: 'Access & security',
-    segments: [
-      ROUTE_PATHS.ADMIN_USERS,
-      ROUTE_PATHS.STAFF,
-      ROUTE_PATHS.ECOSYSTEM_USERS,
-      ROUTE_PATHS.AUDIT,
-      ROUTE_PATHS.SECURITY,
-      ROUTE_PATHS.ACCOUNT,
-    ],
+    id: 'more',
+    label: 'More',
+    icon: '•••',
+    segments: MORE_NAV_SECTIONS.flatMap((section) => section.segments),
+    sections: MORE_NAV_SECTIONS,
   },
 ];

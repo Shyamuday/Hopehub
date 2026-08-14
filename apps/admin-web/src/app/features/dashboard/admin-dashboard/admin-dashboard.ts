@@ -6,6 +6,8 @@ import { buildDetailRows, DetailRowsComponent } from '@hopehub/platform-ui';
 import { AdminApi } from '../../../core/services/admin-api';
 import { adminNavPath, ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
 import { AdminWorkspaceService } from '../../../core/services/admin-workspace.service';
+import { AdminAuth } from '../../../core/services/admin-auth';
+import { canUserAccessAdminRoute } from '../../../core/admin-navigation';
 import { formatAuditAction } from '../../audit/constants/audit.constants';
 import { buildAdminDashboardStatFields } from '../constants/dashboard-stat.fields';
 import {
@@ -23,10 +25,15 @@ import {
 })
 export class AdminDashboard {
   private readonly workspace = inject(AdminWorkspaceService);
+  private readonly auth = inject(AdminAuth);
 
   readonly auditPath = adminNavPath(ROUTE_PATHS.AUDIT);
   readonly adherencePath = adminNavPath(ROUTE_PATHS.ADHERENCE);
   readonly visitorLeadsPath = adminNavPath(ROUTE_PATHS.CHAT_INBOX);
+  readonly providerApplicationsPath = adminNavPath(ROUTE_PATHS.COUNSELLOR_APPLICATIONS);
+  readonly consultationsPath = adminNavPath(ROUTE_PATHS.CONSULTATIONS);
+  readonly safetyFlagsPath = adminNavPath(ROUTE_PATHS.SAFETY_FLAGS);
+  readonly providersPath = adminNavPath(ROUTE_PATHS.DOCTORS);
   readonly workspaceKey = this.workspace.selectedWorkspace;
   readonly workspaceLabel = this.workspace.workspaceLabel;
   readonly providerSingularLabel = this.workspace.providerSingularLabel;
@@ -75,6 +82,7 @@ export class AdminDashboard {
     booked: 0,
     notInterested: 0,
   };
+  private reportsLoaded = false;
 
   readonly paymentFilterModel = signal({
     paymentStatus: PAYMENTS_DEFAULTS.STATUS as PaymentStatus,
@@ -86,33 +94,68 @@ export class AdminDashboard {
   constructor(private readonly api: AdminApi) {
     effect(() => {
       this.workspace.selectedWorkspace();
+      const reloadOpenReports = this.reportsLoaded;
+      this.reportsLoaded = false;
+      this.payments = [];
+      this.auditLogs = [];
       void this.load();
+      if (reloadOpenReports) {
+        this.reportsLoaded = true;
+        void this.loadReports();
+      }
     });
   }
 
   async load() {
     this.error = '';
-    try {
-      const report = (await this.api.getReports({
-        workspace: this.workspace.selectedWorkspace(),
-      })) as {
-        revenueInPaise: number;
-        activeDoctors: number;
-        consultations: Array<unknown>;
-      };
-      this.revenueInPaise = report.revenueInPaise || 0;
-      this.activeDoctors = report.activeDoctors || 0;
-      this.consultationsCount = report.consultations?.length || 0;
-      const audit = await this.api.getAuditLogs({ page: 1, pageSize: AUDIT_LOGS_PAGE_SIZE });
-      this.auditLogs = audit.logs || [];
-      await Promise.all([
-        this.loadPayments(),
-        this.loadAdherenceSummary(),
-        this.loadVisitorLeadStats(),
-      ]);
-    } catch {
-      this.error = 'Could not load admin dashboard summary.';
+    const tasks: Array<Promise<unknown>> = [];
+
+    if (this.canAccess(ROUTE_PATHS.DASHBOARD)) {
+      tasks.push(
+        (async () => {
+          try {
+            const report = (await this.api.getReports({
+              workspace: this.workspace.selectedWorkspace(),
+            })) as {
+              revenueInPaise: number;
+              activeDoctors: number;
+              consultations: Array<unknown>;
+            };
+            this.revenueInPaise = report.revenueInPaise || 0;
+            this.activeDoctors = report.activeDoctors || 0;
+            this.consultationsCount = report.consultations?.length || 0;
+          } catch {
+            this.error = 'Some dashboard summary data could not be loaded.';
+          }
+        })(),
+      );
     }
+
+    if (this.canAccess(ROUTE_PATHS.CHAT_INBOX)) {
+      tasks.push(this.loadVisitorLeadStats());
+    }
+
+    await Promise.allSettled(tasks);
+  }
+
+  onReportsToggle(event: Event) {
+    const details = event.target;
+    if (!(details instanceof HTMLDetailsElement) || !details.open || this.reportsLoaded) return;
+    this.reportsLoaded = true;
+    void this.loadReports();
+  }
+
+  private async loadReports() {
+    const tasks: Array<Promise<unknown>> = [];
+    if (this.canAccess(ROUTE_PATHS.AUDIT)) tasks.push(this.loadAuditLogs());
+    if (this.canAccess(ROUTE_PATHS.PAYMENTS)) tasks.push(this.loadPayments());
+    if (
+      this.workspace.selectedWorkspace() === 'homeopathy' &&
+      this.canAccess(ROUTE_PATHS.ADHERENCE)
+    ) {
+      tasks.push(this.loadAdherenceSummary());
+    }
+    await Promise.allSettled(tasks);
   }
 
   async loadPayments(page = this.paymentsPage) {
@@ -225,5 +268,18 @@ export class AdminDashboard {
         sessionPluralTitle: this.sessionPluralTitleLabel(),
       }),
     );
+  }
+
+  private async loadAuditLogs() {
+    try {
+      const audit = await this.api.getAuditLogs({ page: 1, pageSize: AUDIT_LOGS_PAGE_SIZE });
+      this.auditLogs = audit.logs || [];
+    } catch {
+      this.auditLogs = [];
+    }
+  }
+
+  canAccess(segment: string): boolean {
+    return canUserAccessAdminRoute(this.auth.user(), segment);
   }
 }

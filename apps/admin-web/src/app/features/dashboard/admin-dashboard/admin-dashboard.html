@@ -1,229 +1,269 @@
-<section class="workspace-context-panel" [class.hope-hub]="workspaceKey() === 'hope-hub'">
+<header class="dashboard-header">
   <div>
-    <p>{{ workspaceLabel() }} workspace</p>
-    <h2>
-      {{
-        workspaceKey() === 'hope-hub'
-          ? 'Hope Hub command view'
-          : 'Homeopathy command view'
-      }}
-    </h2>
-    <span>
-      {{
-        workspaceKey() === 'hope-hub'
-          ? 'Top stats are filtered for Hope Hub ' + sessionPluralLabel() + ' and ' + providerPluralLabel() + '. Shared blocks remain visible below.'
-          : 'Top stats are filtered for homeopathy ' + sessionPluralLabel() + ' and ' + providerPluralLabel() + '. Shared blocks remain visible below.'
-      }}
-    </span>
+    <p>{{ workspaceLabel() }}</p>
+    <h2>Today</h2>
   </div>
-</section>
+  <span>Important work first</span>
+</header>
 
-<section class="stats">
+<section class="stats" aria-label="Workspace summary">
   <hopehub-detail-rows variant="stat" [rows]="dashboardStatRows()" />
 </section>
 
-<section class="panel visitor-leads-panel">
+<section class="panel attention-panel">
   <div class="panel-header">
-    <h3>Visitor leads</h3>
-    <a [routerLink]="visitorLeadsPath" class="panel-link">View all →</a>
-  </div>
-  <div class="summary-stats">
-    <div class="summary-stat">
-      <span class="summary-label">Total</span>
-      <span class="summary-value">{{ visitorLeadStats.total }}</span>
+    <div>
+      <p class="eyebrow">Work queue</p>
+      <h3>Needs your attention</h3>
     </div>
-    <div class="summary-stat warn">
-      <span class="summary-label">Needs callback</span>
-      <span class="summary-value">{{ visitorLeadStats.needsCallback }}</span>
-    </div>
-    <div class="summary-stat">
-      <span class="summary-label">New</span>
-      <span class="summary-value">{{ visitorLeadStats.newLeads }}</span>
-    </div>
-    <div class="summary-stat">
-      <span class="summary-label">Called</span>
-      <span class="summary-value">{{ visitorLeadStats.called }}</span>
-    </div>
-    <div class="summary-stat ok">
-      <span class="summary-label">Registered</span>
-      <span class="summary-value">{{ visitorLeadStats.registered }}</span>
-    </div>
-    <div class="summary-stat ok">
-      <span class="summary-label">Booked</span>
-      <span class="summary-value">{{ visitorLeadStats.booked }}</span>
-    </div>
-    <div class="summary-stat">
-      <span class="summary-label">Not interested</span>
-      <span class="summary-value">{{ visitorLeadStats.notInterested }}</span>
-    </div>
-  </div>
-</section>
-
-<section class="panel">
-  <div class="panel-header">
-    <h3>Finance Operations</h3>
   </div>
 
-  <div class="filters">
-    <div class="filter-group">
-      <label class="filter-label" for="paymentStatus">Status</label>
-      <select id="paymentStatus" [formField]="paymentFilterForm.paymentStatus">
-        <option value="ALL">All</option>
-        <option value="PAID">Paid</option>
-        <option value="CREATED">Pending</option>
-        <option value="FAILED">Failed</option>
-      </select>
-    </div>
-    <div class="filter-group">
-      <label class="filter-label" for="paymentFrom">From</label>
-      <input id="paymentFrom" type="date" [formField]="paymentFilterForm.paymentFrom" />
-    </div>
-    <div class="filter-group">
-      <label class="filter-label" for="paymentTo">To</label>
-      <input id="paymentTo" type="date" [formField]="paymentFilterForm.paymentTo" />
-    </div>
-    <div class="filter-actions">
-      <button type="button" class="btn-primary" (click)="applyPaymentFilters()" [disabled]="paymentsLoading">
-        {{ paymentsLoading ? 'Loading...' : 'Apply Filters' }}
-      </button>
-      <button type="button" class="btn-ghost" (click)="clearPaymentFilters()" [disabled]="paymentsLoading">
-        Clear
-      </button>
-      <button
-        type="button"
-        class="btn-export"
-        (click)="exportPaymentsCsv()"
-        [disabled]="csvExporting || paymentsLoading"
+  <div class="action-grid">
+    @if (canAccess('chat-inbox')) {
+      <a
+        [routerLink]="visitorLeadsPath"
+        class="action-card"
+        [class.is-urgent]="visitorLeadStats.needsCallback > 0"
       >
-        {{ csvExporting ? 'Exporting...' : 'Export CSV' }}
-      </button>
-    </div>
-  </div>
-
-  @if (csvError) {
-    <p class="inline-error">{{ csvError }}</p>
-  }
-
-  <div class="summary-stats">
-    <div class="summary-stat">
-      <span class="summary-label">Total collected</span>
-      <span class="summary-value">{{ paymentSummary.paid / 100 | currency: 'INR' }}</span>
-    </div>
-    <div class="summary-stat">
-      <span class="summary-label">Gross billed</span>
-      <span class="summary-value">{{ paymentSummary.total / 100 | currency: 'INR' }}</span>
-    </div>
-    <div class="summary-stat">
-      <span class="summary-label">Pending</span>
-      <span class="summary-value">{{ paymentSummary.pendingCount }}</span>
-    </div>
-    <div class="summary-stat">
-      <span class="summary-label">Failed</span>
-      <span class="summary-value warn">{{ paymentSummary.failedCount }}</span>
-    </div>
-  </div>
-
-  @if (paymentsLoading) {
-    <p class="loading-text">Loading payments...</p>
-  } @else if (paymentsError) {
-    <div class="error-row">
-      <p class="error">{{ paymentsError }}</p>
-      <button type="button" class="btn-ghost" (click)="loadPayments()">Retry</button>
-    </div>
-  } @else {
-    @for (payment of payments; track payment.id) {
-      <article class="payment-row">
-        <div class="payment-main">
-          <strong>{{ payment.consultation?.patient?.name || consumerTitleLabel() }}</strong>
-          <span class="disease-label">{{ payment.consultation?.disease?.name || sessionSingularLabel() }}</span>
-        </div>
-        <div class="payment-meta">
-          <span class="amount">{{ payment.amountInPaise / 100 | currency: 'INR' }}</span>
-          <span class="plan-label">{{ payment.billingPlanCode || 'ONE_TIME' }}</span>
-          <span [class]="'status-badge status-' + payment.status.toLowerCase()">{{ payment.status }}</span>
-        </div>
-        <div class="payment-detail">
-          <small>{{ payment.createdAt | date: 'mediumDate' }}</small>
-          <small>{{ providerSingularLabel() | titlecase }}: {{ payment.consultation?.assignedDoctor?.name || 'Unassigned' }}</small>
-        </div>
-      </article>
-    } @empty {
-      <p class="empty-state">No payments found for the selected filters.</p>
+        <span class="action-icon" aria-hidden="true">☎</span>
+        <span>
+          <strong>{{ visitorLeadStats.needsCallback }}</strong>
+          <small>Callbacks waiting</small>
+        </span>
+        <b aria-hidden="true">›</b>
+      </a>
     }
+    @if (canAccess('counsellor-applications')) {
+      <a [routerLink]="providerApplicationsPath" class="action-card">
+        <span class="action-icon" aria-hidden="true">◎</span>
+        <span><strong>Applications</strong><small>Review new providers</small></span>
+        <b aria-hidden="true">›</b>
+      </a>
+    }
+    @if (canAccess('consultations')) {
+      <a [routerLink]="consultationsPath" class="action-card">
+        <span class="action-icon" aria-hidden="true">◷</span>
+        <span
+          ><strong>{{ consultationsCount }}</strong
+          ><small>{{ sessionPluralTitleLabel() }}</small></span
+        >
+        <b aria-hidden="true">›</b>
+      </a>
+    }
+    @if (canAccess('safety-flags')) {
+      <a
+        [routerLink]="safetyFlagsPath"
+        class="action-card"
+        [class.is-urgent]="workspaceKey() === 'hope-hub'"
+      >
+        <span class="action-icon" aria-hidden="true">!</span>
+        <span><strong>Safety</strong><small>Review flagged activity</small></span>
+        <b aria-hidden="true">›</b>
+      </a>
+    }
+    @if (canAccess('doctors')) {
+      <a [routerLink]="providersPath" class="action-card">
+        <span class="action-icon" aria-hidden="true">＋</span>
+        <span
+          ><strong>{{ activeDoctors }}</strong
+          ><small>Active {{ providerPluralLabel() }}</small></span
+        >
+        <b aria-hidden="true">›</b>
+      </a>
+    }
+  </div>
+</section>
 
-    @if (paymentsTotalPages > 1) {
-      <div class="pagination">
-        <button
-          type="button"
-          class="btn-ghost"
-          [disabled]="paymentsPage === 1"
-          (click)="loadPayments(paymentsPage - 1)"
-        >
-          &larr; Prev
-        </button>
-        @for (page of paymentPages(); track page) {
-          <button
-            type="button"
-            class="page-btn"
-            [class.active]="paymentsPage === page"
-            (click)="loadPayments(page)"
-          >
-            {{ page }}
-          </button>
-        }
-        <button
-          type="button"
-          class="btn-ghost"
-          [disabled]="paymentsPage === paymentsTotalPages"
-          (click)="loadPayments(paymentsPage + 1)"
-        >
-          Next &rarr;
-        </button>
+@if (canAccess('chat-inbox')) {
+  <section class="panel visitor-leads-panel">
+    <div class="panel-header">
+      <div>
+        <p class="eyebrow">Incoming</p>
+        <h3>Visitor leads</h3>
       </div>
+      <a [routerLink]="visitorLeadsPath" class="panel-link">Open worklist</a>
+    </div>
+    <div class="summary-stats">
+      <div class="summary-stat warn">
+        <span class="summary-value">{{ visitorLeadStats.needsCallback }}</span>
+        <span class="summary-label">Need callback</span>
+      </div>
+      <div class="summary-stat">
+        <span class="summary-value">{{ visitorLeadStats.newLeads }}</span>
+        <span class="summary-label">New</span>
+      </div>
+      <div class="summary-stat ok">
+        <span class="summary-value">{{ visitorLeadStats.booked }}</span>
+        <span class="summary-label">Booked</span>
+      </div>
+      <div class="summary-stat">
+        <span class="summary-value">{{ visitorLeadStats.total }}</span>
+        <span class="summary-label">Total</span>
+      </div>
+    </div>
+  </section>
+}
+
+<details class="reports-disclosure" (toggle)="onReportsToggle($event)">
+  <summary>
+    <span
+      ><strong>Reports and history</strong><small>Finance, risk, and audit information</small></span
+    >
+    <span class="summary-chevron" aria-hidden="true">⌄</span>
+  </summary>
+
+  <div class="reports-content">
+    @if (canAccess('payments')) {
+      <section class="panel report-panel">
+        <div class="panel-header">
+          <h3>Finance</h3>
+        </div>
+
+        <div class="filters">
+          <div class="filter-group">
+            <label class="filter-label" for="paymentStatus">Status</label>
+            <select id="paymentStatus" [formField]="paymentFilterForm.paymentStatus">
+              <option value="ALL">All</option>
+              <option value="PAID">Paid</option>
+              <option value="CREATED">Pending</option>
+              <option value="FAILED">Failed</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label" for="paymentFrom">From</label>
+            <input id="paymentFrom" type="date" [formField]="paymentFilterForm.paymentFrom" />
+          </div>
+          <div class="filter-group">
+            <label class="filter-label" for="paymentTo">To</label>
+            <input id="paymentTo" type="date" [formField]="paymentFilterForm.paymentTo" />
+          </div>
+          <div class="filter-actions">
+            <button
+              type="button"
+              class="btn-primary"
+              (click)="applyPaymentFilters()"
+              [disabled]="paymentsLoading"
+            >
+              {{ paymentsLoading ? 'Loading…' : 'Apply' }}
+            </button>
+            <button
+              type="button"
+              class="btn-ghost"
+              (click)="clearPaymentFilters()"
+              [disabled]="paymentsLoading"
+            >
+              Clear
+            </button>
+            <button
+              type="button"
+              class="btn-export"
+              (click)="exportPaymentsCsv()"
+              [disabled]="csvExporting || paymentsLoading"
+            >
+              {{ csvExporting ? 'Exporting…' : 'Export CSV' }}
+            </button>
+          </div>
+        </div>
+
+        @if (csvError) {
+          <p class="inline-error">{{ csvError }}</p>
+        }
+
+        <div class="summary-stats report-summary">
+          <div class="summary-stat">
+            <span class="summary-value">{{ paymentSummary.paid / 100 | currency: 'INR' }}</span
+            ><span class="summary-label">Collected</span>
+          </div>
+          <div class="summary-stat">
+            <span class="summary-value">{{ paymentSummary.pendingCount }}</span
+            ><span class="summary-label">Pending</span>
+          </div>
+          <div class="summary-stat">
+            <span class="summary-value warn">{{ paymentSummary.failedCount }}</span
+            ><span class="summary-label">Failed</span>
+          </div>
+        </div>
+
+        @if (paymentsLoading) {
+          <p class="loading-text">Loading payments…</p>
+        } @else if (paymentsError) {
+          <div class="error-row">
+            <p class="error">{{ paymentsError }}</p>
+            <button type="button" class="btn-ghost" (click)="loadPayments()">Retry</button>
+          </div>
+        } @else {
+          @for (payment of payments; track payment.id) {
+            <article class="payment-row">
+              <div class="payment-main">
+                <strong>{{ payment.consultation?.patient?.name || consumerTitleLabel() }}</strong
+                ><span class="disease-label">{{
+                  payment.consultation?.disease?.name || sessionSingularLabel()
+                }}</span>
+              </div>
+              <div class="payment-meta">
+                <span class="amount">{{ payment.amountInPaise / 100 | currency: 'INR' }}</span
+                ><span [class]="'status-badge status-' + payment.status.toLowerCase()">{{
+                  payment.status
+                }}</span>
+              </div>
+              <div class="payment-detail">
+                <small>{{ payment.createdAt | date: 'mediumDate' }}</small
+                ><small
+                  >{{ providerSingularLabel() | titlecase }}:
+                  {{ payment.consultation?.assignedDoctor?.name || 'Unassigned' }}</small
+                >
+              </div>
+            </article>
+          } @empty {
+            <p class="empty-state">No payments found.</p>
+          }
+        }
+      </section>
     }
-  }
-</section>
 
-<section class="panel">
-  <div class="panel-header">
-    <h3>Adherence risk</h3>
-    <a class="link-btn" [routerLink]="adherencePath">View cohorts</a>
-  </div>
-  <div class="adherence-summary">
-    <span>Platform: <strong>{{ adherenceSummary.platformAdherencePercent }}%</strong></span>
-    <span class="warn">High risk: <strong>{{ adherenceSummary.highRiskCount }}</strong></span>
-    <span>Medium: <strong>{{ adherenceSummary.mediumRiskCount }}</strong></span>
-    <span>Alerts: <strong>{{ adherenceSummary.alertCount }}</strong></span>
-  </div>
-  @for (alert of adherenceAlerts; track alert.patientName + alert.message) {
-    <article class="card alert-card">
-      <strong>{{ alert.patientName }}</strong>
-      <p>{{ alert.message }}</p>
-    </article>
-  } @empty {
-    <p class="empty-state">No adherence alerts in the last 7 days.</p>
-  }
-</section>
+    @if (workspaceKey() === 'homeopathy' && canAccess('adherence')) {
+      <section class="panel report-panel">
+        <div class="panel-header">
+          <h3>Adherence risk</h3>
+          <a class="panel-link" [routerLink]="adherencePath">View report</a>
+        </div>
+        <div class="summary-stats report-summary">
+          <div class="summary-stat">
+            <span class="summary-value">{{ adherenceSummary.platformAdherencePercent }}%</span
+            ><span class="summary-label">Adherence</span>
+          </div>
+          <div class="summary-stat warn">
+            <span class="summary-value">{{ adherenceSummary.highRiskCount }}</span
+            ><span class="summary-label">High risk</span>
+          </div>
+          <div class="summary-stat">
+            <span class="summary-value">{{ adherenceSummary.alertCount }}</span
+            ><span class="summary-label">Alerts</span>
+          </div>
+        </div>
+      </section>
+    }
 
-<section class="panel">
-  <div class="panel-header">
-    <h3>Recent admin audit trail</h3>
-    <a class="link-btn" [routerLink]="auditPath">View all</a>
+    @if (canAccess('audit')) {
+      <section class="panel report-panel">
+        <div class="panel-header">
+          <h3>Recent admin activity</h3>
+          <a class="panel-link" [routerLink]="auditPath">View audit trail</a>
+        </div>
+        @for (log of auditLogs; track log.id) {
+          <article class="audit-row">
+            <span
+              ><strong>{{ formatAuditAction(log.action) }}</strong
+              ><small>{{ log.summary || log.targetType }}</small></span
+            ><time>{{ log.createdAt | date: 'short' }}</time>
+          </article>
+        } @empty {
+          <p class="empty-state">No recent activity.</p>
+        }
+      </section>
+    }
   </div>
-  @for (log of auditLogs; track log.id) {
-    <article class="card">
-      <strong>{{ formatAuditAction(log.action) }}</strong>
-      <p>{{ log.summary || 'No summary' }}</p>
-      <small>
-        {{ log.targetType }}: {{ log.targetId }} |
-        {{ log.actor?.name || log.actorRole || 'SYSTEM' }} |
-        {{ log.createdAt | date: 'medium' }}
-      </small>
-    </article>
-  } @empty {
-    <p class="empty-state">No audit activity yet. Approve or edit a {{ providerSingularLabel() }} to create entries.</p>
-  }
-</section>
+</details>
 
 @if (error) {
   <p class="error">{{ error }}</p>

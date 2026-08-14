@@ -1,6 +1,23 @@
-<nav class="admin-nav" [class.layout-sidebar]="layout() === 'sidebar'" aria-label="Admin navigation">
+<nav
+  class="admin-nav"
+  [class.layout-sidebar]="layout() === 'sidebar'"
+  aria-label="Admin navigation"
+>
   @if (layout() === 'horizontal' && currentPageLabel()) {
     <span class="current-page" aria-current="page">{{ currentPageLabel() }}</span>
+  }
+
+  @if (layout() === 'sidebar') {
+    <label class="nav-search">
+      <span aria-hidden="true">⌕</span>
+      <input
+        type="search"
+        placeholder="Find a page"
+        aria-label="Find an admin page"
+        [value]="searchQuery()"
+        (input)="updateSearch($event)"
+      />
+    </label>
   }
 
   <div class="admin-nav-groups">
@@ -19,26 +36,51 @@
           [attr.aria-haspopup]="layout() === 'horizontal'"
           (click)="toggleGroup(group.id, $event)"
         >
-          <span>{{ group.label }}</span>
+          <span class="group-label"
+            ><span aria-hidden="true">{{ group.icon }}</span
+            >{{ group.label }}</span
+          >
           <span class="caret" aria-hidden="true">▾</span>
         </button>
 
         @if (isGroupExpanded(group.id)) {
           <div class="submenu" role="menu" [attr.aria-label]="group.label">
-            @for (item of group.items; track item.path) {
-              <a
-                [routerLink]="item.path"
-                role="menuitem"
-                class="submenu-link"
-                [class.active]="isItemActive(item.path)"
-                (click)="onNavItemClick()"
-              >
-                {{ item.label }}
-              </a>
+            @if (group.sections.length) {
+              @for (section of group.sections; track section.id) {
+                <section class="submenu-section">
+                  <p>{{ section.label }}</p>
+                  @for (item of section.items; track item.path) {
+                    <a
+                      [routerLink]="item.path"
+                      role="menuitem"
+                      class="submenu-link"
+                      [class.active]="isItemActive(item.path)"
+                      (click)="onNavItemClick()"
+                    >
+                      {{ item.label }}
+                    </a>
+                  }
+                </section>
+              }
+            } @else {
+              @for (item of group.items; track item.path) {
+                <a
+                  [routerLink]="item.path"
+                  role="menuitem"
+                  class="submenu-link"
+                  [class.active]="isItemActive(item.path)"
+                  (click)="onNavItemClick()"
+                >
+                  {{ item.label }}
+                </a>
+              }
             }
           </div>
         }
       </div>
+    }
+    @if (searchQuery() && visibleGroups().length === 0) {
+      <p class="nav-empty">No matching page</p>
     }
   </div>
 </nav>

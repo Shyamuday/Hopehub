@@ -1,53 +1,461 @@
+<div class="cp">
+  <div class="cp-hdr">
+    <div>
+      <h2 class="cp-title">
+        {{
+          workspaceKey() === 'hope-hub' ? 'Hope Hub work queue' : sessionPluralLabel() + ' queue'
+        }}
+      </h2>
+      <p class="cp-sub">Unassigned work is shown first.</p>
+    </div>
+    <div class="hdr-stats">
+      <div class="stat-pill unassigned">{{ unassignedCount() }} Unassigned</div>
+    </div>
+  </div>
 
-    <div class="cp">
-      <section class="workspace-context-panel" [class.hope-hub]="workspaceKey() === 'hope-hub'">
-        <div>
-          <p>{{ workspaceLabel() }} workspace</p>
-          <h2>
-            {{
-              workspaceKey() === 'hope-hub'
-                ? 'Hope Hub ' + sessionPluralLabel() + ' queue'
-                : 'Homeopathy ' + sessionPluralLabel() + ' queue'
-            }}
-          </h2>
-          <span>
-            {{
-              workspaceKey() === 'hope-hub'
-                ? 'Showing mental wellness, quick talk, listener, and ' + providerPluralLabel() + ' ' + sessionPluralLabel() + ' only.'
-                : 'Showing homeopathy ' + sessionPluralLabel() + ' only. Hope Hub ' + sessionPluralLabel() + ' stay in the Hope Hub workspace.'
-            }}
-          </span>
-        </div>
-      </section>
+  <div class="queue-tools">
+    <input
+      class="search"
+      [formField]="searchForm.q"
+      (input)="onSearch()"
+      [placeholder]="'🔍 Search by ' + consumerSingularLabel() + ' or service…'"
+    />
+    <button
+      type="button"
+      class="filter-trigger"
+      [class.active]="filtersOpen()"
+      (click)="toggleFilters()"
+    >
+      <span aria-hidden="true">☰</span> Filters
+      @if (activeFilterCount()) {
+        <b>{{ activeFilterCount() }}</b>
+      }
+    </button>
+  </div>
 
-      <div class="cp-hdr">
-        <div>
-          <h2 class="cp-title">
-            {{ workspaceKey() === 'hope-hub' ? '🧠 Hope Hub Queue' : '🩺 ' + sessionSingularLabel() + ' Queue' }}
-          </h2>
-          <p class="cp-sub">
-            {{
-              workspaceKey() === 'hope-hub'
-                ? 'Assign unassigned Hope Hub ' + sessionPluralLabel() + ' to available ' + providerPluralLabel()
-                : 'Assign unassigned ' + sessionPluralLabel() + ' to available ' + providerPluralLabel()
-            }}
-          </p>
-        </div>
-        <div class="hdr-stats">
-          <div class="stat-pill unassigned">{{ unassignedCount() }} Unassigned</div>
-        </div>
+  @if (filtersOpen()) {
+    <button
+      type="button"
+      class="filter-overlay"
+      aria-label="Close filters"
+      (click)="closeFilters()"
+    ></button>
+    <section class="filters" aria-label="Queue filters">
+      <div class="filter-sheet-head">
+        <strong>Filter queue</strong>
+        <button type="button" (click)="closeFilters()" aria-label="Close filters">×</button>
       </div>
+      <div class="ftabs">
+        @for (f of statusFilters; track f.value) {
+          <button
+            class="ftab"
+            [class.active]="statusFilter() === f.value"
+            (click)="setStatus(f.value)"
+          >
+            {{ f.label }}
+          </button>
+        }
+      </div>
+      <div class="ftabs">
+        @for (f of assignedFilters; track f.value) {
+          <button
+            class="ftab sm"
+            [class.active]="assignedFilter() === f.value"
+            (click)="setAssigned(f.value)"
+          >
+            {{ f.label }}
+          </button>
+        }
+      </div>
+      <div class="ftabs outcome-tabs">
+        @for (f of outcomeFilters; track f.value) {
+          <button
+            class="ftab sm"
+            [class.active]="outcomeFilter() === f.value && !outcomeFlagFilter()"
+            (click)="setOutcome(f.value)"
+          >
+            {{ f.label }}
+          </button>
+        }
+      </div>
+      <div class="ftabs outcome-tabs">
+        @for (f of outcomeFlagFilters; track f.value) {
+          <button
+            class="ftab sm"
+            [class.active]="outcomeFlagFilter() === f.value && !outcomeFilter()"
+            (click)="setOutcomeFlag(f.value)"
+          >
+            {{ f.label }}
+          </button>
+        }
+      </div>
+      <div class="filter-sheet-actions">
+        <button type="button" class="btn-reassign" (click)="resetFilters()">Reset</button>
+        <button type="button" class="btn-assign" (click)="closeFilters()">
+          Show {{ total() }} results
+        </button>
+      </div>
+    </section>
+  }
 
-      <section class="quality-panel">
-        <div class="quality-head">
-          <div>
-            <h3>Session quality</h3>
-            <p>Outcome health for the last {{ qualityDays() }} days</p>
+  @if (loading()) {
+    <div class="loading"><div class="spinner"></div></div>
+  } @else {
+    <div class="table-wrap desktop-only">
+      <table class="ct">
+        <thead>
+          <tr>
+            <th>{{ consumerTitleLabel() }}</th>
+            <th>Service</th>
+            <th>Status</th>
+            <th>Payment</th>
+            <th>Created</th>
+            <th>Assigned Provider</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of consultations(); track c.id) {
+            <tr [class.unassigned-row]="!c.assignedDoctor">
+              <td>
+                <div class="pat-name">{{ c.patient?.name ?? '—' }}</div>
+                @if (c.patient?.mobile) {
+                  <div class="pat-mobile">{{ c.patient.mobile }}</div>
+                }
+              </td>
+              <td>
+                <span class="disease-pill">{{ c.disease?.name ?? '—' }}</span>
+              </td>
+              <td>
+                <span
+                  class="status-badge"
+                  [style.background]="ss(c.status).bg"
+                  [style.color]="ss(c.status).color"
+                >
+                  {{ c.status }}
+                </span>
+              </td>
+              <td>
+                @if (c.payment) {
+                  <span
+                    class="pay-badge"
+                    [style.background]="ps(c.payment.status).bg"
+                    [style.color]="ps(c.payment.status).color"
+                  >
+                    {{ c.payment.status }}
+                  </span>
+                  <div class="pay-amt">₹{{ (c.payment.amountInPaise / 100).toFixed(0) }}</div>
+                  @if (balanceDueInPaise(c) > 0) {
+                    <div class="pat-mobile">Due {{ formatPaise(balanceDueInPaise(c)) }}</div>
+                  }
+                }
+                @if (packageUsage(c); as usage) {
+                  <div class="usage-chip">
+                    <span>{{ usage.usedSessions || 0 }}/{{ usage.totalSessions || 0 }} used</span>
+                    @if (canManageConsultations()) {
+                      <button
+                        type="button"
+                        (click)="adjustPackageUsage(c, -1)"
+                        [disabled]="saving()"
+                      >
+                        −
+                      </button>
+                      <button
+                        type="button"
+                        (click)="adjustPackageUsage(c, 1)"
+                        [disabled]="saving()"
+                      >
+                        +
+                      </button>
+                    }
+                  </div>
+                }
+                @if (pricingInsight(c); as pricing) {
+                  <div
+                    class="pricing-insight"
+                    [class.package]="pricing.isPackagePurchase || pricing.isPackageRedemption"
+                  >
+                    <strong>{{ pricing.headline }}</strong>
+                    @if (pricing.subline) {
+                      <span>{{ pricing.subline }}</span>
+                    }
+                    @if (pricing.packageConsultationId && pricing.isPackageRedemption) {
+                      <small>Package ID: {{ pricing.packageConsultationId }}</small>
+                    }
+                  </div>
+                }
+                @if (payoutInsight(c); as payout) {
+                  <div class="session-outcome-mini">
+                    <strong>Payout {{ payout.status }} · {{ formatPaise(payout.provider) }}</strong>
+                    <span>Platform {{ formatPaise(payout.platform) }}</span>
+                    @if (payout.reference) {
+                      <small>{{ payout.reference }}</small>
+                    }
+                  </div>
+                }
+                @if (refundInsight(c); as refund) {
+                  <div class="session-outcome-mini">
+                    <strong>{{ refund.text }}</strong>
+                    <span>Refunded {{ formatPaise(refund.refunded) }}</span>
+                  </div>
+                }
+                @if (sessionOutcome(c); as outcome) {
+                  <div class="session-outcome-mini">
+                    <strong>{{ sessionOutcomeLabel(outcome.outcome) }}</strong>
+                    @if (outcome.closedAt) {
+                      <span>{{ outcome.closedAt | date: 'dd MMM, h:mm a' }}</span>
+                    }
+                    @if (outcome.packageRestored || outcome.payoutAction) {
+                      <small>
+                        @if (outcome.packageRestored) {
+                          Package restored
+                        }
+                        @if (outcome.payoutAction) {
+                          Payout {{ outcome.payoutAction }}
+                        }
+                      </small>
+                    }
+                  </div>
+                }
+              </td>
+              <td>
+                <span class="date-txt">{{ c.createdAt | date: 'dd MMM yy, h:mm a' }}</span>
+              </td>
+              <td>
+                @if (c.assignedDoctor) {
+                  <div class="doc-assigned">✓ {{ c.assignedDoctor.name }}</div>
+                } @else {
+                  <span class="unassigned-txt">Not assigned</span>
+                }
+              </td>
+              <td>
+                @if (canManageConsultations()) {
+                  @if (!c.assignedDoctor || c.status === 'PAYMENT_PENDING' || c.status === 'PAID') {
+                    <button class="btn-assign" (click)="openAssign(c)">Assign</button>
+                  } @else {
+                    <button class="btn-reassign" (click)="openAssign(c)">Reassign</button>
+                  }
+                  <button class="btn-reassign" (click)="openStatus(c)">Status</button>
+                }
+                @if (c.patient?.id) {
+                  <div class="cross-links">
+                    <a
+                      class="cross-link"
+                      [routerLink]="clinicalRecordsRoute"
+                      [queryParams]="clinicalQuery(c)"
+                      >Clinical records</a
+                    >
+                    @if (showHomeopathyClinicalLinks(c.status)) {
+                      <a
+                        class="cross-link external"
+                        [href]="doctorAppointmentLink(c.id)"
+                        target="_blank"
+                        rel="noopener"
+                        >Provider app</a
+                      >
+                      <a
+                        class="cross-link external"
+                        [href]="doctorCaseAnalysisLink(c.id)"
+                        target="_blank"
+                        rel="noopener"
+                        >Case analysis</a
+                      >
+                    }
+                  </div>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mobile-consult-cards">
+      @for (c of consultations(); track c.id) {
+        <article class="consult-card" [class.unassigned-row]="!c.assignedDoctor">
+          <div class="card-head">
+            <div>
+              <div class="pat-name">{{ c.patient?.name ?? '—' }}</div>
+              @if (c.patient?.mobile) {
+                <div class="pat-mobile">{{ c.patient.mobile }}</div>
+              }
+            </div>
+            <span
+              class="status-badge"
+              [style.background]="ss(c.status).bg"
+              [style.color]="ss(c.status).color"
+            >
+              {{ c.status }}
+            </span>
           </div>
+          <div class="card-row">
+            <span class="disease-pill">{{ c.disease?.name ?? '—' }}</span>
+            <span class="date-txt">{{ c.createdAt | date: 'dd MMM yy' }}</span>
+          </div>
+          @if (c.payment) {
+            <div class="card-row">
+              <span
+                class="pay-badge"
+                [style.background]="ps(c.payment.status).bg"
+                [style.color]="ps(c.payment.status).color"
+              >
+                {{ c.payment.status }}
+              </span>
+              <span class="pay-amt">₹{{ (c.payment.amountInPaise / 100).toFixed(0) }}</span>
+            </div>
+            @if (balanceDueInPaise(c) > 0) {
+              <div class="card-row">
+                <span>Balance due</span>
+                <strong>{{ formatPaise(balanceDueInPaise(c)) }}</strong>
+              </div>
+            }
+          }
+          @if (packageUsage(c); as usage) {
+            <div class="usage-chip mobile">
+              <span
+                >{{ usage.usedSessions || 0 }}/{{ usage.totalSessions || 0 }} sessions used</span
+              >
+              @if (canManageConsultations()) {
+                <button type="button" (click)="adjustPackageUsage(c, -1)" [disabled]="saving()">
+                  −
+                </button>
+                <button type="button" (click)="adjustPackageUsage(c, 1)" [disabled]="saving()">
+                  +
+                </button>
+              }
+            </div>
+          }
+          @if (pricingInsight(c); as pricing) {
+            <div
+              class="pricing-insight mobile"
+              [class.package]="pricing.isPackagePurchase || pricing.isPackageRedemption"
+            >
+              <strong>{{ pricing.headline }}</strong>
+              @if (pricing.subline) {
+                <span>{{ pricing.subline }}</span>
+              }
+              @if (pricing.packageConsultationId && pricing.isPackageRedemption) {
+                <small>Package ID: {{ pricing.packageConsultationId }}</small>
+              }
+            </div>
+          }
+          @if (payoutInsight(c); as payout) {
+            <div class="session-outcome-mini mobile">
+              <strong>Payout {{ payout.status }} · {{ formatPaise(payout.provider) }}</strong>
+              <span>Platform {{ formatPaise(payout.platform) }}</span>
+              @if (payout.note) {
+                <small>{{ payout.note }}</small>
+              }
+            </div>
+          }
+          @if (refundInsight(c); as refund) {
+            <div class="session-outcome-mini mobile">
+              <strong>{{ refund.text }}</strong>
+              <span>Refunded {{ formatPaise(refund.refunded) }}</span>
+            </div>
+          }
+          @if (sessionOutcome(c); as outcome) {
+            <div class="session-outcome-mini mobile">
+              <strong>Outcome: {{ sessionOutcomeLabel(outcome.outcome) }}</strong>
+              @if (outcome.closedAt) {
+                <span>{{ outcome.closedAt | date: 'dd MMM yy, h:mm a' }}</span>
+              }
+              @if (outcome.userSummary) {
+                <span>{{ outcome.userSummary }}</span>
+              }
+              @if (outcome.recommendedNextStep) {
+                <small>Next: {{ outcome.recommendedNextStep }}</small>
+              }
+            </div>
+          }
+          <div class="card-row doctor-row">
+            @if (c.assignedDoctor) {
+              <span class="doc-assigned">✓ {{ c.assignedDoctor.name }}</span>
+            } @else {
+              <span class="unassigned-txt">Not assigned</span>
+            }
+          </div>
+          @if (canManageConsultations()) {
+            <div class="card-actions-primary">
+              @if (!c.assignedDoctor || c.status === 'PAYMENT_PENDING' || c.status === 'PAID') {
+                <button class="btn-assign" (click)="openAssign(c)">Assign</button>
+              } @else {
+                <button class="btn-reassign" (click)="openAssign(c)">Reassign</button>
+              }
+              <button class="btn-reassign" (click)="openStatus(c)">Status</button>
+            </div>
+          }
+          <button
+            type="button"
+            class="btn-reassign card-more-toggle"
+            (click)="toggleCardMenu(c.id)"
+          >
+            {{ isCardMenuOpen(c.id) ? 'Less' : 'More links' }}
+          </button>
+          @if (isCardMenuOpen(c.id) && c.patient?.id) {
+            <div class="cross-links">
+              <a
+                class="cross-link"
+                [routerLink]="clinicalRecordsRoute"
+                [queryParams]="clinicalQuery(c)"
+                >Clinical records</a
+              >
+              @if (showHomeopathyClinicalLinks(c.status)) {
+                <a
+                  class="cross-link external"
+                  [href]="doctorAppointmentLink(c.id)"
+                  target="_blank"
+                  rel="noopener"
+                  >Provider app</a
+                >
+                <a
+                  class="cross-link external"
+                  [href]="doctorCaseAnalysisLink(c.id)"
+                  target="_blank"
+                  rel="noopener"
+                  >Case analysis</a
+                >
+              }
+            </div>
+          }
+        </article>
+      }
+    </div>
+    @if (consultations().length === 0) {
+      <div class="empty">
+        <div>🩺</div>
+        <p>No {{ sessionPluralLabel() }} match these filters</p>
+      </div>
+    }
+
+    <details class="quality-disclosure" (toggle)="onQualityToggle($event)">
+      <summary>
+        <span
+          ><strong>Session quality</strong
+          ><small>Outcome health for the last {{ qualityDays() }} days</small></span
+        ><b aria-hidden="true">⌄</b>
+      </summary>
+      <div class="quality-panel">
+        <div class="quality-head">
+          <span></span>
           <div class="quality-range">
-            <button type="button" [class.active]="qualityDays() === 7" (click)="setQualityDays(7)">7d</button>
-            <button type="button" [class.active]="qualityDays() === 30" (click)="setQualityDays(30)">30d</button>
-            <button type="button" [class.active]="qualityDays() === 90" (click)="setQualityDays(90)">90d</button>
+            <button type="button" [class.active]="qualityDays() === 7" (click)="setQualityDays(7)">
+              7d
+            </button>
+            <button
+              type="button"
+              [class.active]="qualityDays() === 30"
+              (click)="setQualityDays(30)"
+            >
+              30d
+            </button>
+            <button
+              type="button"
+              [class.active]="qualityDays() === 90"
+              (click)="setQualityDays(90)"
+            >
+              90d
+            </button>
           </div>
         </div>
         @if (qualityCards().length) {
@@ -59,417 +467,186 @@
                 [class.warn]="card.tone === 'warn'"
                 [class.danger]="card.tone === 'danger'"
               >
-                <span>{{ card.label }}</span>
-                <strong>{{ card.value }}</strong>
-                <small>{{ card.hint }}</small>
+                <span>{{ card.label }}</span
+                ><strong>{{ card.value }}</strong
+                ><small>{{ card.hint }}</small>
               </article>
             }
           </div>
         } @else {
           <div class="quality-empty">No session outcome data yet.</div>
         }
-      </section>
-
-      <!-- Filters -->
-      <div class="filters">
-        <input class="search" [formField]="searchForm.q" (input)="onSearch()" [placeholder]="'🔍 Search by ' + consumerSingularLabel() + ' or service…'" />
-        <div class="ftabs">
-          @for (f of statusFilters; track f.value) {
-            <button class="ftab" [class.active]="statusFilter() === f.value" (click)="setStatus(f.value)">{{ f.label }}</button>
-          }
-        </div>
-        <div class="ftabs">
-          @for (f of assignedFilters; track f.value) {
-            <button class="ftab sm" [class.active]="assignedFilter() === f.value" (click)="setAssigned(f.value)">{{ f.label }}</button>
-          }
-        </div>
-        <div class="ftabs outcome-tabs">
-          @for (f of outcomeFilters; track f.value) {
-            <button class="ftab sm" [class.active]="outcomeFilter() === f.value && !outcomeFlagFilter()" (click)="setOutcome(f.value)">{{ f.label }}</button>
-          }
-        </div>
-        <div class="ftabs outcome-tabs">
-          @for (f of outcomeFlagFilters; track f.value) {
-            <button class="ftab sm" [class.active]="outcomeFlagFilter() === f.value && !outcomeFilter()" (click)="setOutcomeFlag(f.value)">{{ f.label }}</button>
-          }
-        </div>
       </div>
+    </details>
+    @if (total() > pageSize) {
+      <div class="pagination">
+        <button [disabled]="page() <= 1" (click)="prevPage()">‹ Prev</button>
+        <span>Page {{ page() }} of {{ totalPages() }}</span>
+        <button [disabled]="page() >= totalPages()" (click)="nextPage()">Next ›</button>
+      </div>
+    }
+  }
+</div>
 
-      @if (loading()) {
-        <div class="loading"><div class="spinner"></div></div>
-      } @else {
-        <div class="table-wrap desktop-only">
-          <table class="ct">
-            <thead>
-              <tr>
-                <th>{{ consumerTitleLabel() }}</th>
-                <th>Service</th>
-                <th>Status</th>
-                <th>Payment</th>
-                <th>Created</th>
-                <th>Assigned Provider</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (c of consultations(); track c.id) {
-                <tr [class.unassigned-row]="!c.assignedDoctor">
-                  <td>
-                    <div class="pat-name">{{ c.patient?.name ?? '—' }}</div>
-                    @if (c.patient?.mobile) { <div class="pat-mobile">{{ c.patient.mobile }}</div> }
-                  </td>
-                  <td><span class="disease-pill">{{ c.disease?.name ?? '—' }}</span></td>
-                  <td>
-                    <span class="status-badge" [style.background]="ss(c.status).bg" [style.color]="ss(c.status).color">
-                      {{ c.status }}
-                    </span>
-                  </td>
-                  <td>
-                    @if (c.payment) {
-                      <span class="pay-badge" [style.background]="ps(c.payment.status).bg" [style.color]="ps(c.payment.status).color">
-                        {{ c.payment.status }}
-                      </span>
-                      <div class="pay-amt">₹{{ (c.payment.amountInPaise / 100).toFixed(0) }}</div>
-                      @if (balanceDueInPaise(c) > 0) {
-                        <div class="pat-mobile">Due {{ formatPaise(balanceDueInPaise(c)) }}</div>
-                      }
-                    }
-                    @if (packageUsage(c); as usage) {
-                      <div class="usage-chip">
-                        <span>{{ usage.usedSessions || 0 }}/{{ usage.totalSessions || 0 }} used</span>
-                        @if (canManageConsultations()) {
-                          <button type="button" (click)="adjustPackageUsage(c, -1)" [disabled]="saving()">−</button>
-                          <button type="button" (click)="adjustPackageUsage(c, 1)" [disabled]="saving()">+</button>
-                        }
-                      </div>
-                    }
-                    @if (pricingInsight(c); as pricing) {
-                      <div class="pricing-insight" [class.package]="pricing.isPackagePurchase || pricing.isPackageRedemption">
-                        <strong>{{ pricing.headline }}</strong>
-                        @if (pricing.subline) {
-                          <span>{{ pricing.subline }}</span>
-                        }
-                        @if (pricing.packageConsultationId && pricing.isPackageRedemption) {
-                          <small>Package ID: {{ pricing.packageConsultationId }}</small>
-                        }
-                      </div>
-                    }
-                    @if (payoutInsight(c); as payout) {
-                      <div class="session-outcome-mini">
-                        <strong>Payout {{ payout.status }} · {{ formatPaise(payout.provider) }}</strong>
-                        <span>Platform {{ formatPaise(payout.platform) }}</span>
-                        @if (payout.reference) {
-                          <small>{{ payout.reference }}</small>
-                        }
-                      </div>
-                    }
-                    @if (refundInsight(c); as refund) {
-                      <div class="session-outcome-mini">
-                        <strong>{{ refund.text }}</strong>
-                        <span>Refunded {{ formatPaise(refund.refunded) }}</span>
-                      </div>
-                    }
-                    @if (sessionOutcome(c); as outcome) {
-                      <div class="session-outcome-mini">
-                        <strong>{{ sessionOutcomeLabel(outcome.outcome) }}</strong>
-                        @if (outcome.closedAt) {
-                          <span>{{ outcome.closedAt | date:'dd MMM, h:mm a' }}</span>
-                        }
-                        @if (outcome.packageRestored || outcome.payoutAction) {
-                          <small>
-                            @if (outcome.packageRestored) { Package restored }
-                            @if (outcome.payoutAction) { Payout {{ outcome.payoutAction }} }
-                          </small>
-                        }
-                      </div>
-                    }
-                  </td>
-                  <td><span class="date-txt">{{ c.createdAt | date:'dd MMM yy, h:mm a' }}</span></td>
-                  <td>
-                    @if (c.assignedDoctor) {
-                      <div class="doc-assigned">✓ {{ c.assignedDoctor.name }}</div>
-                    } @else {
-                      <span class="unassigned-txt">Not assigned</span>
-                    }
-                  </td>
-                  <td>
-                    @if (canManageConsultations()) {
-                      @if (!c.assignedDoctor || c.status === 'PAYMENT_PENDING' || c.status === 'PAID') {
-                        <button class="btn-assign" (click)="openAssign(c)">Assign</button>
-                      } @else {
-                        <button class="btn-reassign" (click)="openAssign(c)">Reassign</button>
-                      }
-                      <button class="btn-reassign" (click)="openStatus(c)">Status</button>
-                    }
-                    @if (c.patient?.id) {
-                      <div class="cross-links">
-                        <a class="cross-link" [routerLink]="clinicalRecordsRoute" [queryParams]="clinicalQuery(c)">Clinical records</a>
-                        @if (showHomeopathyClinicalLinks(c.status)) {
-                          <a class="cross-link external" [href]="doctorAppointmentLink(c.id)" target="_blank" rel="noopener">Provider app</a>
-                          <a class="cross-link external" [href]="doctorCaseAnalysisLink(c.id)" target="_blank" rel="noopener">Case analysis</a>
-                        }
-                      </div>
-                    }
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
+<!-- Assign Modal -->
+@if (modal() && selectedConsult()) {
+  <div class="overlay" (click)="closeModal()">
+    <div class="modal form-surface-dark" (click)="$event.stopPropagation()">
+      <div class="mhdr">
+        <div>
+          <h3>Assign {{ providerSingularTitle() }}</h3>
+          <p class="mhdr-sub">
+            {{ selectedConsult()!.patient?.name }} — {{ selectedConsult()!.disease?.name }}
+          </p>
         </div>
-
-        <div class="mobile-consult-cards">
-          @for (c of consultations(); track c.id) {
-            <article class="consult-card" [class.unassigned-row]="!c.assignedDoctor">
-              <div class="card-head">
-                <div>
-                  <div class="pat-name">{{ c.patient?.name ?? '—' }}</div>
-                  @if (c.patient?.mobile) { <div class="pat-mobile">{{ c.patient.mobile }}</div> }
-                </div>
-                <span class="status-badge" [style.background]="ss(c.status).bg" [style.color]="ss(c.status).color">
-                  {{ c.status }}
-                </span>
-              </div>
-              <div class="card-row">
-                <span class="disease-pill">{{ c.disease?.name ?? '—' }}</span>
-                <span class="date-txt">{{ c.createdAt | date:'dd MMM yy' }}</span>
-              </div>
-              @if (c.payment) {
-                <div class="card-row">
-                  <span class="pay-badge" [style.background]="ps(c.payment.status).bg" [style.color]="ps(c.payment.status).color">
-                    {{ c.payment.status }}
-                  </span>
-                  <span class="pay-amt">₹{{ (c.payment.amountInPaise / 100).toFixed(0) }}</span>
-                </div>
-                @if (balanceDueInPaise(c) > 0) {
-                  <div class="card-row">
-                    <span>Balance due</span>
-                    <strong>{{ formatPaise(balanceDueInPaise(c)) }}</strong>
-                  </div>
-                }
-              }
-              @if (packageUsage(c); as usage) {
-                <div class="usage-chip mobile">
-                  <span>{{ usage.usedSessions || 0 }}/{{ usage.totalSessions || 0 }} sessions used</span>
-                  @if (canManageConsultations()) {
-                    <button type="button" (click)="adjustPackageUsage(c, -1)" [disabled]="saving()">−</button>
-                    <button type="button" (click)="adjustPackageUsage(c, 1)" [disabled]="saving()">+</button>
+        <button class="close-btn" (click)="closeModal()">✕</button>
+      </div>
+      <div class="mbody">
+        @if (doctorsLoading()) {
+          <div class="loading"><div class="spinner"></div></div>
+        } @else {
+          <input
+            class="search"
+            [formField]="doctorSearchForm.q"
+            (input)="filterDoctors()"
+            [placeholder]="providerSearchPlaceholder()"
+            style="margin-bottom: 10px"
+          />
+          <div class="doc-list">
+            @for (d of filteredDoctors(); track d.id) {
+              <div
+                class="doc-item"
+                [class.selected]="selectedDoctorId() === d.id"
+                (click)="selectedDoctorId.set(d.id)"
+              >
+                <div class="doc-av">{{ d.name.charAt(0).toUpperCase() }}</div>
+                <div class="doc-info">
+                  <div class="doc-name">{{ d.name }}</div>
+                  @if (d.doctorProfile?.specialty) {
+                    <div class="doc-spec">{{ d.doctorProfile.specialty }}</div>
                   }
                 </div>
-              }
-              @if (pricingInsight(c); as pricing) {
-                <div class="pricing-insight mobile" [class.package]="pricing.isPackagePurchase || pricing.isPackageRedemption">
-                  <strong>{{ pricing.headline }}</strong>
-                  @if (pricing.subline) {
-                    <span>{{ pricing.subline }}</span>
-                  }
-                  @if (pricing.packageConsultationId && pricing.isPackageRedemption) {
-                    <small>Package ID: {{ pricing.packageConsultationId }}</small>
-                  }
-                </div>
-              }
-              @if (payoutInsight(c); as payout) {
-                <div class="session-outcome-mini mobile">
-                  <strong>Payout {{ payout.status }} · {{ formatPaise(payout.provider) }}</strong>
-                  <span>Platform {{ formatPaise(payout.platform) }}</span>
-                  @if (payout.note) {
-                    <small>{{ payout.note }}</small>
-                  }
-                </div>
-              }
-              @if (refundInsight(c); as refund) {
-                <div class="session-outcome-mini mobile">
-                  <strong>{{ refund.text }}</strong>
-                  <span>Refunded {{ formatPaise(refund.refunded) }}</span>
-                </div>
-              }
-              @if (sessionOutcome(c); as outcome) {
-                <div class="session-outcome-mini mobile">
-                  <strong>Outcome: {{ sessionOutcomeLabel(outcome.outcome) }}</strong>
-                  @if (outcome.closedAt) {
-                    <span>{{ outcome.closedAt | date:'dd MMM yy, h:mm a' }}</span>
-                  }
-                  @if (outcome.userSummary) {
-                    <span>{{ outcome.userSummary }}</span>
-                  }
-                  @if (outcome.recommendedNextStep) {
-                    <small>Next: {{ outcome.recommendedNextStep }}</small>
-                  }
-                </div>
-              }
-              <div class="card-row doctor-row">
-                @if (c.assignedDoctor) {
-                  <span class="doc-assigned">✓ {{ c.assignedDoctor.name }}</span>
-                } @else {
-                  <span class="unassigned-txt">Not assigned</span>
+                @if (selectedDoctorId() === d.id) {
+                  <span class="check">✓</span>
                 }
               </div>
-              @if (canManageConsultations()) {
-                <div class="card-actions-primary">
-                  @if (!c.assignedDoctor || c.status === 'PAYMENT_PENDING' || c.status === 'PAID') {
-                    <button class="btn-assign" (click)="openAssign(c)">Assign</button>
-                  } @else {
-                    <button class="btn-reassign" (click)="openAssign(c)">Reassign</button>
-                  }
-                  <button class="btn-reassign" (click)="openStatus(c)">Status</button>
-                </div>
-              }
-              <button type="button" class="btn-reassign card-more-toggle" (click)="toggleCardMenu(c.id)">
-                {{ isCardMenuOpen(c.id) ? 'Less' : 'More links' }}
-              </button>
-              @if (isCardMenuOpen(c.id) && c.patient?.id) {
-                <div class="cross-links">
-                  <a class="cross-link" [routerLink]="clinicalRecordsRoute" [queryParams]="clinicalQuery(c)">Clinical records</a>
-                  @if (showHomeopathyClinicalLinks(c.status)) {
-                    <a class="cross-link external" [href]="doctorAppointmentLink(c.id)" target="_blank" rel="noopener">Provider app</a>
-                    <a class="cross-link external" [href]="doctorCaseAnalysisLink(c.id)" target="_blank" rel="noopener">Case analysis</a>
-                  }
-                </div>
-              }
-            </article>
-          }
-        </div>
-        @if (consultations().length === 0) {
-          <div class="empty"><div>🩺</div><p>No {{ sessionPluralLabel() }} match these filters</p></div>
-        }
-        @if (total() > pageSize) {
-          <div class="pagination">
-            <button [disabled]="page() <= 1" (click)="prevPage()">‹ Prev</button>
-            <span>Page {{ page() }} of {{ totalPages() }}</span>
-            <button [disabled]="page() >= totalPages()" (click)="nextPage()">Next ›</button>
+            }
+            @if (filteredDoctors().length === 0) {
+              <div class="empty-sm">No {{ providerPluralLabel() }} found</div>
+            }
           </div>
         }
+      </div>
+      <div class="mfooter">
+        <button class="btn-ghost" (click)="closeModal()">Cancel</button>
+        <button
+          class="btn-primary"
+          [disabled]="!selectedDoctorId() || saving()"
+          (click)="confirmAssign()"
+        >
+          {{ saving() ? 'Assigning…' : 'Confirm Assignment' }}
+        </button>
+      </div>
+      @if (err()) {
+        <div class="ferr">⚠️ {{ err() }}</div>
       }
     </div>
+  </div>
+}
 
-    <!-- Assign Modal -->
-    @if (modal() && selectedConsult()) {
-      <div class="overlay" (click)="closeModal()">
-        <div class="modal form-surface-dark" (click)="$event.stopPropagation()">
-          <div class="mhdr">
-            <div>
-              <h3>Assign {{ providerSingularTitle() }}</h3>
-              <p class="mhdr-sub">{{ selectedConsult()!.patient?.name }} — {{ selectedConsult()!.disease?.name }}</p>
-            </div>
-            <button class="close-btn" (click)="closeModal()">✕</button>
-          </div>
-          <div class="mbody">
-            @if (doctorsLoading()) {
-              <div class="loading"><div class="spinner"></div></div>
-            } @else {
-              <input class="search" [formField]="doctorSearchForm.q" (input)="filterDoctors()" [placeholder]="providerSearchPlaceholder()" style="margin-bottom:10px" />
-              <div class="doc-list">
-                @for (d of filteredDoctors(); track d.id) {
-                  <div class="doc-item" [class.selected]="selectedDoctorId() === d.id" (click)="selectedDoctorId.set(d.id)">
-                    <div class="doc-av">{{ d.name.charAt(0).toUpperCase() }}</div>
-                    <div class="doc-info">
-                      <div class="doc-name">{{ d.name }}</div>
-                      @if (d.doctorProfile?.specialty) {
-                        <div class="doc-spec">{{ d.doctorProfile.specialty }}</div>
-                      }
-                    </div>
-                    @if (selectedDoctorId() === d.id) { <span class="check">✓</span> }
-                  </div>
-                }
-                @if (filteredDoctors().length === 0) {
-                  <div class="empty-sm">No {{ providerPluralLabel() }} found</div>
-                }
-              </div>
-            }
-          </div>
-          <div class="mfooter">
-            <button class="btn-ghost" (click)="closeModal()">Cancel</button>
-            <button class="btn-primary" [disabled]="!selectedDoctorId() || saving()" (click)="confirmAssign()">
-              {{ saving() ? 'Assigning…' : 'Confirm Assignment' }}
-            </button>
-          </div>
-          @if (err()) { <div class="ferr">⚠️ {{ err() }}</div> }
+@if (statusModal() && selectedConsult()) {
+  <div class="overlay" (click)="closeModal()">
+    <div class="modal form-surface-dark" (click)="$event.stopPropagation()">
+      <div class="mhdr">
+        <div>
+          <h3>Update {{ sessionSingularLabel() }} status</h3>
+          <p class="mhdr-sub">
+            {{ selectedConsult()!.patient?.name }} — {{ selectedConsult()!.disease?.name }}
+          </p>
         </div>
+        <button class="close-btn" (click)="closeModal()">✕</button>
       </div>
-    }
-
-    @if (statusModal() && selectedConsult()) {
-      <div class="overlay" (click)="closeModal()">
-        <div class="modal form-surface-dark" (click)="$event.stopPropagation()">
-          <div class="mhdr">
-            <div>
-              <h3>Update {{ sessionSingularLabel() }} status</h3>
-              <p class="mhdr-sub">{{ selectedConsult()!.patient?.name }} — {{ selectedConsult()!.disease?.name }}</p>
-            </div>
-            <button class="close-btn" (click)="closeModal()">✕</button>
-          </div>
-          <div class="mbody">
-            <label>Status
-              <select [formField]="statusForm.value">
-                @for (status of statusOptions; track status) {
-                  <option [value]="status">{{ status }}</option>
-                }
-              </select>
-            </label>
-            @if (statusModel().value === 'CANCELLED') {
-              <label>Cancellation reason
-                <textarea
-                  [value]="cancelReason()"
-                  (input)="onCancelReasonInput($event)"
-                  rows="3"
-                  placeholder="User cancelled, provider unavailable, duplicate booking..."
-                ></textarea>
-              </label>
-              <label class="check-row">
-                <input
-                  type="checkbox"
-                  [checked]="restorePackageSession()"
-                  (change)="onRestorePackageToggle($event)"
-                />
-                Restore package session if this was paid by package
-              </label>
-              <p class="cancel-note">
-                Cancellation will hold provider payout. Refund still needs to be handled from Payments if money was collected.
-              </p>
+      <div class="mbody">
+        <label
+          >Status
+          <select [formField]="statusForm.value">
+            @for (status of statusOptions; track status) {
+              <option [value]="status">{{ status }}</option>
             }
-            @if (statusModel().value === 'COMPLETED') {
-              <label>Outcome note
-                <textarea
-                  [value]="outcomeNote()"
-                  (input)="onOutcomeNoteInput($event)"
-                  rows="3"
-                  placeholder="Session completed, brief admin note..."
-                ></textarea>
-              </label>
-              <label>Recommended next step
-                <input
-                  [value]="outcomeNextStep()"
-                  (input)="onOutcomeNextStepInput($event)"
-                  placeholder="Follow-up, package continuation, no action..."
-                />
-              </label>
-              <label class="check-row">
-                <input
-                  type="checkbox"
-                  [checked]="outcomeRestorePackage()"
-                  (change)="onOutcomeRestorePackageToggle($event)"
-                />
-                Restore package session
-              </label>
-              <label class="check-row">
-                <input
-                  type="checkbox"
-                  [checked]="outcomeHoldPayout()"
-                  (change)="onOutcomeHoldPayoutToggle($event)"
-                />
-                Hold provider payout
-              </label>
-            }
-          </div>
-          <div class="mfooter">
-            <button class="btn-ghost" (click)="closeModal()">Cancel</button>
-            <button class="btn-primary" [disabled]="saving()" (click)="confirmStatus()">
-              {{ saving() ? 'Saving…' : 'Save status' }}
-            </button>
-          </div>
-          @if (err()) { <div class="ferr">⚠️ {{ err() }}</div> }
-        </div>
+          </select>
+        </label>
+        @if (statusModel().value === 'CANCELLED') {
+          <label
+            >Cancellation reason
+            <textarea
+              [value]="cancelReason()"
+              (input)="onCancelReasonInput($event)"
+              rows="3"
+              placeholder="User cancelled, provider unavailable, duplicate booking..."
+            ></textarea>
+          </label>
+          <label class="check-row">
+            <input
+              type="checkbox"
+              [checked]="restorePackageSession()"
+              (change)="onRestorePackageToggle($event)"
+            />
+            Restore package session if this was paid by package
+          </label>
+          <p class="cancel-note">
+            Cancellation will hold provider payout. Refund still needs to be handled from Payments
+            if money was collected.
+          </p>
+        }
+        @if (statusModel().value === 'COMPLETED') {
+          <label
+            >Outcome note
+            <textarea
+              [value]="outcomeNote()"
+              (input)="onOutcomeNoteInput($event)"
+              rows="3"
+              placeholder="Session completed, brief admin note..."
+            ></textarea>
+          </label>
+          <label
+            >Recommended next step
+            <input
+              [value]="outcomeNextStep()"
+              (input)="onOutcomeNextStepInput($event)"
+              placeholder="Follow-up, package continuation, no action..."
+            />
+          </label>
+          <label class="check-row">
+            <input
+              type="checkbox"
+              [checked]="outcomeRestorePackage()"
+              (change)="onOutcomeRestorePackageToggle($event)"
+            />
+            Restore package session
+          </label>
+          <label class="check-row">
+            <input
+              type="checkbox"
+              [checked]="outcomeHoldPayout()"
+              (change)="onOutcomeHoldPayoutToggle($event)"
+            />
+            Hold provider payout
+          </label>
+        }
       </div>
-    }
+      <div class="mfooter">
+        <button class="btn-ghost" (click)="closeModal()">Cancel</button>
+        <button class="btn-primary" [disabled]="saving()" (click)="confirmStatus()">
+          {{ saving() ? 'Saving…' : 'Save status' }}
+        </button>
+      </div>
+      @if (err()) {
+        <div class="ferr">⚠️ {{ err() }}</div>
+      }
+    </div>
+  </div>
+}
 
-    @if (toast()) { <div class="toast">{{ toast() }}</div> }
-  
+@if (toast()) {
+  <div class="toast">{{ toast() }}</div>
+}
