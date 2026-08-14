@@ -27,33 +27,28 @@
       <div class="call-heading">
         <span class="call-eyebrow">Hope Hub · private 1:1</span>
         <strong class="call-status">{{ statusLabel() }}</strong>
-        <span class="call-subtitle">{{ participantName || 'Secure browser call' }}</span>
+        <span class="call-subtitle">{{ participantName || 'Private call' }}</span>
       </div>
 
-      <div class="call-badges">
-        <span class="privacy-badge"><span></span> Private</span>
-        @if (call.state() === 'connected' || call.state() === 'reconnecting') {
-          <span
-            class="network-badge"
-            [class.network-badge--good]="call.networkQuality() === 'good'"
-            [class.network-badge--unstable]="call.networkQuality() === 'unstable'"
-            [class.network-badge--poor]="call.networkQuality() === 'poor'"
-          >
-            <span></span>{{ networkQualityLabel() }}
-          </span>
-        }
+      <div class="call-header-tools">
+        <div class="call-badges">
+          <span class="privacy-badge"><span></span> Private</span>
+          @if (call.state() === 'connected' || call.state() === 'reconnecting') {
+            <span
+              class="network-badge"
+              [class.network-badge--good]="call.networkQuality() === 'good'"
+              [class.network-badge--unstable]="call.networkQuality() === 'unstable'"
+              [class.network-badge--poor]="call.networkQuality() === 'poor'"
+            >
+              <span></span>{{ networkQualityLabel() }}
+            </span>
+          }
+        </div>
+        <button type="button" class="call-settings-button" aria-label="Open call settings" (click)="openSettings()">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.25A3.25 3.25 0 1 0 12 8.75a3.25 3.25 0 0 0 0 6.5Z" /><path d="M19.1 13.8a7.8 7.8 0 0 0 0-3.6l2-1.55-2-3.45-2.45 1a8 8 0 0 0-3.1-1.8L13.2 2h-4.4l-.35 2.4a8 8 0 0 0-3.1 1.8l-2.45-1-2 3.45 2 1.55a7.8 7.8 0 0 0 0 3.6l-2 1.55 2 3.45 2.45-1a8 8 0 0 0 3.1 1.8l.35 2.4h4.4l.35-2.4a8 8 0 0 0 3.1-1.8l2.45 1 2-3.45-2-1.55Z" /></svg>
+        </button>
       </div>
     </header>
-
-    @if (call.state() === 'idle' || call.state() === 'ended') {
-      <p class="call-intro">Choose how you feel comfortable connecting. Your browser will ask before using your mic or camera.</p>
-      @if (allowPrivacyRelay) {
-        <label class="privacy-relay-option">
-          <input type="checkbox" [checked]="call.privacyRelay()" (change)="togglePrivacyRelay($event)" />
-          <span><strong>Privacy relay</strong><small>Route the call through Hope Hub TURN instead of connecting directly.</small></span>
-        </label>
-      }
-    }
 
     <div class="call-actions">
       @if (call.state() === 'idle' || call.state() === 'ended') {
@@ -73,16 +68,6 @@
             <span class="control-label">Video</span>
           </button>
         }
-        <button type="button" class="call-control call-control--quiet" (click)="testMedia(allowVideo ? 'video' : 'audio')" [disabled]="mediaChecking()">
-          <span class="control-icon">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.25a4 4 0 0 0-4 4v4.25a4 4 0 0 0 8 0V7.25a4 4 0 0 0-4-4Z" /><path d="M5.5 10.75v.75a6.5 6.5 0 0 0 13 0v-.75M12 18v3M9 21h6" /></svg>
-          </span>
-          <span class="control-label">{{ mediaChecking() ? 'Checking…' : 'Test device' }}</span>
-        </button>
-        <button type="button" class="call-control call-control--quiet" (click)="testSpeaker()">
-          <span class="control-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9.5v5h4l5 4v-13l-5 4H4Z" /><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11" /></svg></span>
-          <span class="control-label">Test speaker</span>
-        </button>
       }
 
       @if (call.state() === 'ringing' && call.incomingCall()) {
@@ -126,17 +111,6 @@
       }
     </div>
 
-    @if ((call.state() === 'idle' || call.state() === 'ended') && !call.incomingAlertsEnabled()) {
-      <div class="call-alert-opt-in">
-        <span>Get a ringtone when the other person calls.</span>
-        <button type="button" (click)="enableCallAlerts()">Enable call sound</button>
-      </div>
-    }
-
-    @if (callAlertMessage()) {
-      <div class="call-notice" role="status">{{ callAlertMessage() }}</div>
-    }
-
     @if (!call.connectionOnline()) {
       <div class="call-notice call-notice--error" role="status">You are offline. The call will reconnect automatically when your connection returns.</div>
     }
@@ -146,52 +120,6 @@
         <span>Your network may work better with voice.</span>
         <button type="button" class="btn-retry" (click)="switchMode('audio')" [disabled]="busy()">Switch to voice</button>
       </div>
-    }
-
-    @if (showDeviceSettings()) {
-      <details class="device-settings">
-        <summary>
-          <span>Audio & video devices</span>
-          @if (deviceChanging()) {
-            <small>Switching…</small>
-          }
-        </summary>
-        <div class="device-grid">
-          @if (call.audioInputs().length) {
-            <label>
-              <span>Microphone</span>
-              <select [value]="call.selectedAudioInputId()" (change)="changeAudioInput($event)" [disabled]="deviceChanging()">
-                <option value="">System default</option>
-                @for (device of call.audioInputs(); track device.deviceId; let index = $index) {
-                  <option [value]="device.deviceId">{{ deviceLabel(device, index, 'microphone') }}</option>
-                }
-              </select>
-            </label>
-          }
-          @if (allowVideo && call.videoInputs().length) {
-            <label>
-              <span>Camera</span>
-              <select [value]="call.selectedVideoInputId()" (change)="changeVideoInput($event)" [disabled]="deviceChanging()">
-                <option value="">System default</option>
-                @for (device of call.videoInputs(); track device.deviceId; let index = $index) {
-                  <option [value]="device.deviceId">{{ deviceLabel(device, index, 'camera') }}</option>
-                }
-              </select>
-            </label>
-          }
-          @if (canSelectAudioOutput()) {
-            <label>
-              <span>Speaker</span>
-              <select [value]="call.selectedAudioOutputId()" (change)="changeAudioOutput($event)">
-                <option value="">System default</option>
-                @for (device of call.audioOutputs(); track device.deviceId; let index = $index) {
-                  <option [value]="device.deviceId">{{ deviceLabel(device, index, 'speaker') }}</option>
-                }
-              </select>
-            </label>
-          }
-        </div>
-      </details>
     }
 
     @if (call.error()) {
@@ -220,19 +148,11 @@
       </div>
     }
 
-    @if (mediaCheckMessage()) {
-      <div class="call-notice" role="status">{{ mediaCheckMessage() }}</div>
-    }
-
     @if (audioPlaybackBlocked()) {
       <div class="call-notice call-notice--audio" role="alert">
         <span>The call is connected, but your browser paused its sound.</span>
         <button type="button" class="btn-retry" (click)="resumeRemoteAudio()">Tap to hear call</button>
       </div>
-    }
-
-    @if (allowAudio && allowVideo && (call.state() === 'idle' || call.state() === 'ended')) {
-      <p class="switch-note">Switch between voice and video whenever you need.</p>
     }
 
     @if ((call.state() === 'connected' || call.state() === 'connecting' || call.state() === 'reconnecting') && call.callMode() === 'audio') {
@@ -244,6 +164,85 @@
         <video #remoteVideo class="remote-video" autoplay playsinline></video>
         <video #localVideo class="local-video" autoplay playsinline muted></video>
       </div>
+    }
+
+    @if (settingsOpen()) {
+      <button type="button" class="call-settings-backdrop" aria-label="Close call settings" (click)="closeSettings()"></button>
+      <section class="call-settings-sheet" role="dialog" aria-modal="true" aria-labelledby="call-settings-title">
+        <header>
+          <div>
+            <small>Voice & video</small>
+            <h3 id="call-settings-title">Call settings</h3>
+          </div>
+          <button type="button" class="call-settings-close" aria-label="Close call settings" (click)="closeSettings()">×</button>
+        </header>
+
+        <div class="call-settings-tests">
+          <button type="button" (click)="testMedia(allowVideo ? 'video' : 'audio')" [disabled]="mediaChecking()">
+            {{ mediaChecking() ? 'Checking…' : 'Check mic & camera' }}
+          </button>
+          <button type="button" (click)="testSpeaker()">Check speaker</button>
+        </div>
+
+        @if (!call.incomingAlertsEnabled()) {
+          <div class="call-alert-opt-in">
+            <span>Play a sound for incoming calls.</span>
+            <button type="button" (click)="enableCallAlerts()">Turn on sound</button>
+          </div>
+        }
+
+        @if (allowPrivacyRelay && (call.state() === 'idle' || call.state() === 'ended')) {
+          <label class="privacy-relay-option">
+            <input type="checkbox" [checked]="call.privacyRelay()" (change)="togglePrivacyRelay($event)" />
+            <span><strong>Extra privacy</strong><small>Use a protected connection if a direct call does not work.</small></span>
+          </label>
+        }
+
+        @if (showDeviceSettings()) {
+          <div class="device-grid">
+            @if (call.audioInputs().length) {
+              <label>
+                <span>Microphone</span>
+                <select [value]="call.selectedAudioInputId()" (change)="changeAudioInput($event)" [disabled]="deviceChanging()">
+                  <option value="">System default</option>
+                  @for (device of call.audioInputs(); track device.deviceId; let index = $index) {
+                    <option [value]="device.deviceId">{{ deviceLabel(device, index, 'microphone') }}</option>
+                  }
+                </select>
+              </label>
+            }
+            @if (allowVideo && call.videoInputs().length) {
+              <label>
+                <span>Camera</span>
+                <select [value]="call.selectedVideoInputId()" (change)="changeVideoInput($event)" [disabled]="deviceChanging()">
+                  <option value="">System default</option>
+                  @for (device of call.videoInputs(); track device.deviceId; let index = $index) {
+                    <option [value]="device.deviceId">{{ deviceLabel(device, index, 'camera') }}</option>
+                  }
+                </select>
+              </label>
+            }
+            @if (canSelectAudioOutput()) {
+              <label>
+                <span>Speaker</span>
+                <select [value]="call.selectedAudioOutputId()" (change)="changeAudioOutput($event)">
+                  <option value="">System default</option>
+                  @for (device of call.audioOutputs(); track device.deviceId; let index = $index) {
+                    <option [value]="device.deviceId">{{ deviceLabel(device, index, 'speaker') }}</option>
+                  }
+                </select>
+              </label>
+            }
+          </div>
+        }
+
+        @if (callAlertMessage()) {
+          <div class="call-settings-message" role="status">{{ callAlertMessage() }}</div>
+        }
+        @if (mediaCheckMessage()) {
+          <div class="call-settings-message" role="status">{{ mediaCheckMessage() }}</div>
+        }
+      </section>
     }
   </section>
 }

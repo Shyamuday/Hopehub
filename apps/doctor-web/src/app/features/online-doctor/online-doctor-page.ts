@@ -177,14 +177,14 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
     if (status === 'ONLINE') return 'Online and accepting new live requests';
     if (status === 'BUSY') return 'Busy with an assigned live session';
     if (status === 'ON_CALL') return 'On a live call';
-    return 'Offline — hidden from Live Connect';
+    return 'Offline — not accepting new requests';
   }
 
   availabilityTitle(): string {
     const status = this.profile()?.liveStatus ?? 'OFFLINE';
     if (status === 'BUSY') return 'You are busy';
     if (status === 'ON_CALL') return 'You are on a call';
-    return this.isLive() ? 'You are available' : 'You are paused';
+    return this.isLive() ? 'You are online' : 'You are offline';
   }
 
   availabilityDescription(): string {
@@ -195,8 +195,8 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
     if (status === 'ON_CALL') {
       return 'Your availability will return automatically when this session ends.';
     }
-    if (this.isLive()) return `Accepting ${this.acceptedModesLabel()} requests.`;
-    return 'You are hidden from Live Connect and will not receive new requests.';
+    if (this.isLive()) return `Users can reach you by ${this.acceptedModesLabel()}.`;
+    return 'Go online when you are ready to receive a new request.';
   }
 
   availabilityLocked(): boolean {
@@ -208,7 +208,7 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
     const status = this.profile()?.liveStatus ?? 'OFFLINE';
     if (status === 'BUSY') return 'Request assigned';
     if (status === 'ON_CALL') return 'Session active';
-    return status === 'ONLINE' ? 'Pause' : 'Go available';
+    return status === 'ONLINE' ? 'Go offline' : 'Go online';
   }
 
   async toggleLiveStatus(): Promise<void> {
@@ -234,9 +234,9 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
   }
 
   connectionLabel() {
-    if (!this.heartbeatHealthy()) return 'Restoring your live visibility…';
-    if (!this.realtimeConnected()) return 'Live visibility active · reconnecting updates…';
-    return 'Live connection active';
+    if (!this.heartbeatHealthy()) return 'Checking your connection…';
+    if (!this.realtimeConnected()) return 'Online · reconnecting…';
+    return 'Ready for new requests';
   }
 
   isPsychologist() {
@@ -377,7 +377,7 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
       });
       this.online.profile.set(res.profile);
       this.online.connectRealtime();
-      this.message.set('You are now visible to users.');
+      this.message.set('You are online and can receive new requests.');
       void this.loadInbox();
       this.startInboxRefresh();
     } catch (error: any) {
@@ -404,7 +404,7 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
       this.online.disconnectRealtime();
       this.stopInboxRefresh();
       this.instantConsults.set([]);
-      this.message.set('You are offline.');
+      this.message.set('You are offline and will not receive new requests.');
     } catch {
       this.error.set('Could not go offline.');
     } finally {

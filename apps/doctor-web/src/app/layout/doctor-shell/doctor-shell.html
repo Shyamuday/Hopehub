@@ -18,6 +18,20 @@
       </div>
     </div>
     <div class="topbar-end">
+      @if (onboardingComplete() && availabilityLoaded()) {
+        <button
+          type="button"
+          class="header-availability"
+          [class.header-availability--online]="availabilityLabel() === 'Online'"
+          [class.header-availability--locked]="!availabilityCanChange()"
+          [disabled]="availabilitySaving() || !availabilityCanChange()"
+          [attr.aria-label]="availabilityLabel() === 'Online' ? 'Go offline' : 'Go online'"
+          (click)="toggleAvailability()"
+        >
+          <span aria-hidden="true"></span>
+          {{ availabilitySaving() ? 'Updating…' : availabilityLabel() }}
+        </button>
+      }
       @if (onboardingComplete()) {
         <app-notification-bell-host [config]="bellConfig" />
       }
@@ -159,6 +173,11 @@
     }
 
     <div class="shell-main">
+      @if (availabilityMessage()) {
+        <button type="button" class="availability-message" (click)="availabilityMessage.set('')">
+          {{ availabilityMessage() }} <span aria-hidden="true">×</span>
+        </button>
+      }
       @if (assignmentNotice()) {
         <div class="assignment-notice" role="status">{{ assignmentNotice() }}</div>
       }

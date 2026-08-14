@@ -332,12 +332,12 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
   callNetworkLabel(call: ConsultationCallSession): string {
     const metadata = call.metadata;
     if (!metadata) return '';
-    if (metadata.usedTurnRelay === true) return 'TURN relay';
+    if (metadata.usedTurnRelay === true) return 'Protected connection';
     if (
       ['host', 'srflx', 'prflx'].includes(String(metadata.localCandidateType || '')) ||
       ['host', 'srflx', 'prflx'].includes(String(metadata.remoteCandidateType || ''))
     ) {
-      return 'Direct/P2P';
+      return 'Direct connection';
     }
     return '';
   }

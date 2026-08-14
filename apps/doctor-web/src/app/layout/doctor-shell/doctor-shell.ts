@@ -79,6 +79,9 @@ export class DoctorShell implements OnInit, OnDestroy {
   incomingAssignmentError = signal('');
   onboardingComplete = signal(false);
   onboardingPercent = signal(0);
+  availabilityLoaded = signal(false);
+  availabilitySaving = signal(false);
+  availabilityMessage = signal('');
   expandedGroupIds = signal<Set<string>>(new Set());
   lastWorkspace = signal<LastConsultationWorkspace | null>(null);
   currentUrl = signal('');
@@ -357,11 +360,70 @@ export class DoctorShell implements OnInit, OnDestroy {
     try {
       const response = await this.onlineDoctor.loadProfile();
       this.onlineDoctor.profile.set(response.profile);
+      this.availabilityLoaded.set(true);
       if (['ONLINE', 'BUSY', 'ON_CALL'].includes(response.profile.liveStatus)) {
         this.onlineDoctor.connectRealtime();
       }
     } catch {
       // Live presence is optional and must not block the provider workspace.
+    }
+  }
+
+  availabilityLabel(): string {
+    const status = this.onlineDoctor.profile()?.liveStatus ?? 'OFFLINE';
+    if (status === 'BUSY') return 'Busy';
+    if (status === 'ON_CALL') return 'In session';
+    return status === 'ONLINE' ? 'Online' : 'Offline';
+  }
+
+  availabilityCanChange(): boolean {
+    const status = this.onlineDoctor.profile()?.liveStatus ?? 'OFFLINE';
+    return status === 'ONLINE' || status === 'OFFLINE';
+  }
+
+  async toggleAvailability(): Promise<void> {
+    const profile = this.onlineDoctor.profile();
+    if (!profile || this.availabilitySaving() || !this.availabilityCanChange()) return;
+
+    const goingOnline = profile.liveStatus === 'OFFLINE';
+    if (
+      goingOnline &&
+      !profile.acceptsChat &&
+      !profile.acceptsVoiceCall &&
+      !profile.acceptsVideoCall
+    ) {
+      this.availabilityMessage.set('Choose chat, voice, or video before going online.');
+      void this.router.navigate(['/', ROUTE_PATHS.ONLINE_DOCTOR]);
+      return;
+    }
+
+    this.availabilitySaving.set(true);
+    this.availabilityMessage.set('');
+    try {
+      const response = await this.onlineDoctor.setLiveStatus({
+        liveStatus: goingOnline ? 'ONLINE' : 'OFFLINE',
+        ...(goingOnline
+          ? {
+              acceptsChat: profile.acceptsChat,
+              acceptsVoiceCall: profile.acceptsVoiceCall,
+              acceptsVideoCall: profile.acceptsVideoCall,
+            }
+          : {}),
+      });
+      this.onlineDoctor.profile.set(response.profile);
+      if (goingOnline) {
+        this.onlineDoctor.connectRealtime();
+        this.availabilityMessage.set('You are online and can receive new requests.');
+      } else {
+        this.onlineDoctor.disconnectRealtime();
+        this.availabilityMessage.set('You are offline.');
+      }
+    } catch (error: any) {
+      this.availabilityMessage.set(
+        error?.error?.message || 'We could not change your availability. Try again.',
+      );
+    } finally {
+      this.availabilitySaving.set(false);
     }
   }
 

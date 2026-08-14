@@ -1,6 +1,7 @@
 import {
   Component,
   ElementRef,
+  HostListener,
   Input,
   OnChanges,
   OnDestroy,
@@ -71,6 +72,7 @@ export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDest
   readonly deviceChanging = signal(false);
   readonly audioPlaybackBlocked = signal(false);
   readonly callAlertMessage = signal('');
+  readonly settingsOpen = signal(false);
 
   private readonly handleDeviceChange = () => void this.call.refreshMediaDevices();
 
@@ -183,6 +185,19 @@ export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDest
 
   participantInitial() {
     return (this.participantName.trim().charAt(0) || 'H').toUpperCase();
+  }
+
+  openSettings() {
+    this.settingsOpen.set(true);
+  }
+
+  closeSettings() {
+    this.settingsOpen.set(false);
+  }
+
+  @HostListener('document:keydown.escape')
+  closeSettingsWithEscape() {
+    this.closeSettings();
   }
 
   async enableCallAlerts() {

@@ -3,8 +3,8 @@
 } @else {
   <header class="live-page-header">
     <div>
-      <small>Live Connect</small>
-      <h1>{{ isHomeopathyProvider() ? 'Live consultations' : 'Live support' }}</h1>
+      <small>Availability</small>
+      <h1>Online requests</h1>
     </div>
   </header>
 
@@ -54,7 +54,7 @@
   </section>
 
   <details class="connection-preferences">
-    <summary>Connection preferences · {{ acceptedModesLabel() }}</summary>
+    <summary>Chat & call settings · {{ acceptedModesLabel() }}</summary>
     <fieldset class="form-grid" [disabled]="saving()">
       @if (isHomeopathyProvider()) {
         <div class="field">
@@ -137,7 +137,7 @@
       }
     </div>
     @if (!isLive()) {
-      <p class="muted">Go available when you are ready to receive a request.</p>
+      <p class="muted">Go online when you are ready to receive a request.</p>
     } @else if (inboxLoading() && !instantConsults().length) {
       <p class="muted">Checking for requests…</p>
     } @else if (inboxError() && !instantConsults().length) {

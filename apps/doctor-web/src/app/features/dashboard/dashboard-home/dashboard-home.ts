@@ -246,8 +246,8 @@ export class DashboardHome {
       };
     }
     return {
-      label: 'Go available',
-      description: 'Open Live Connect when you are ready to support someone.',
+      label: 'Go online',
+      description: 'Start accepting new support requests.',
       route: `/${ROUTE_PATHS.ONLINE_DOCTOR}`,
       queryParams: null,
     };

@@ -621,8 +621,7 @@ export class ConsultationWebrtcCallService {
     try {
       await this.pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
     } catch {
-      if (!this.ignoreOffer)
-        this.error.set('A network candidate could not be applied. Reconnecting…');
+      if (!this.ignoreOffer) this.error.set('Your connection changed. Reconnecting…');
     }
   }
 
@@ -1238,7 +1237,7 @@ export class ConsultationWebrtcCallService {
     requireRelay = false
   ): Promise<{ ok: boolean; relay: boolean; message: string }> {
     if (typeof RTCPeerConnection === 'undefined') {
-      return { ok: false, relay: false, message: 'WebRTC is not supported in this browser.' };
+      return { ok: false, relay: false, message: 'Calls are not supported in this browser.' };
     }
     const pc = new RTCPeerConnection({
       iceServers: normalizeIceServers(iceServers),
@@ -1270,11 +1269,11 @@ export class ConsultationWebrtcCallService {
         relay: foundRelay,
         message: ok
           ? foundRelay
-            ? 'Private relay connection is ready.'
-            : 'Direct browser connection is ready.'
+            ? 'Your protected connection is ready.'
+            : 'Your connection is ready.'
           : requireRelay
-            ? 'Private relay is unavailable. Check TURN configuration or use standard connection.'
-            : 'No usable network path was found. Check your connection and retry.'
+            ? 'Extra privacy is unavailable right now. Turn it off and try again.'
+            : 'We could not connect. Check your internet and try again.'
       };
     } catch {
       return { ok: false, relay: false, message: 'Could not complete the connection test.' };
