@@ -6,7 +6,15 @@ type GroupHelpConfigEntry = {
   key: string;
   label: string;
   description: string;
-  section: 'connection' | 'messages' | 'moderation' | 'commands';
+  section:
+    | 'connection'
+    | 'messages'
+    | 'onboarding'
+    | 'moderation'
+    | 'content'
+    | 'people'
+    | 'operations'
+    | 'commands';
   type: 'text' | 'textarea' | 'number' | 'select';
   maxLength: number;
   placeholder?: string;
@@ -30,7 +38,11 @@ const IMAGE_UPLOAD_LIMIT_BYTES = 5 * 1024 * 1024;
 const SECTION_LABELS: Record<GroupHelpConfigEntry['section'], string> = {
   connection: 'Connection',
   messages: 'Messages',
+  onboarding: 'Member onboarding',
   moderation: 'Moderation',
+  content: 'Content controls',
+  people: 'People and staff',
+  operations: 'Operations',
   commands: 'Command templates',
 };
 
@@ -58,11 +70,59 @@ export class GroupHelpPage {
   readonly selectedDirectMessageKey = signal('telegramGroupHelpPinnedMessage');
   readonly pinDirectMessage = signal(false);
   readonly capabilityGroups = signal<Array<{ title: string; options: readonly string[] }>>([]);
+  readonly actionHistory = signal<
+    Array<{
+      id: string;
+      action: string;
+      targetId: string;
+      summary?: string | null;
+      createdAt: string;
+    }>
+  >([]);
+  readonly actionStatuses = signal<Record<string, 'applied' | 'confirmation'>>({});
+  readonly connectionDetails = signal<{
+    bot?: string;
+    group?: string;
+    runtime?: string;
+    permissions?: string[];
+  }>({});
+  readonly moderatorAction = signal('warn');
+  readonly moderatorTarget = signal('');
+  readonly moderatorReason = signal('');
+  readonly moderatorActions = [
+    { value: 'warn', label: 'Warn member', needsTarget: true },
+    { value: 'mute', label: 'Mute member', needsTarget: true },
+    { value: 'kick', label: 'Kick member', needsTarget: true },
+    { value: 'ban', label: 'Ban member', needsTarget: true },
+    { value: 'unban', label: 'Unban member', needsTarget: true },
+    { value: 'info', label: 'Member information', needsTarget: true },
+    { value: 'warns', label: 'Review warnings', needsTarget: true },
+    { value: 'admin', label: 'Add administrator', needsTarget: true },
+    { value: 'unadmin', label: 'Remove administrator', needsTarget: true },
+    { value: 'mod', label: 'Add moderator', needsTarget: true },
+    { value: 'unmod', label: 'Remove moderator', needsTarget: true },
+    { value: 'muter', label: 'Add muter role', needsTarget: true },
+    { value: 'unmuter', label: 'Remove muter role', needsTarget: true },
+    { value: 'cleaner', label: 'Add cleaner role', needsTarget: true },
+    { value: 'uncleaner', label: 'Remove cleaner role', needsTarget: true },
+    { value: 'helper', label: 'Add helper role', needsTarget: true },
+    { value: 'unhelper', label: 'Remove helper role', needsTarget: true },
+    { value: 'silence', label: 'Silence group', needsTarget: false },
+    { value: 'unsilence', label: 'Unsilence group', needsTarget: false },
+    { value: 'staff', label: 'Show staff', needsTarget: false },
+    { value: 'list', label: 'Member activity list', needsTarget: false },
+    { value: 'graphic', label: 'Growth chart', needsTarget: false },
+    { value: 'trend', label: 'Growth trend', needsTarget: false },
+  ] as const;
 
   readonly sectionOrder: Array<GroupHelpConfigEntry['section']> = [
     'connection',
     'messages',
+    'onboarding',
     'moderation',
+    'content',
+    'people',
+    'operations',
     'commands',
   ];
   readonly sectionLabels = SECTION_LABELS;
@@ -88,6 +148,14 @@ export class GroupHelpPage {
       this.messageCommands = actions.filter((action) => Boolean(action.imageUrlKey));
       this.moderationCommands = actions.filter((action) => !action.imageUrlKey);
       this.capabilityGroups.set(res.capabilityGroups || []);
+      this.actionHistory.set(res.actionHistory || []);
+      const latestStatuses: Record<string, 'applied' | 'confirmation'> = {};
+      for (const entry of res.actionHistory || []) {
+        if (latestStatuses[entry.targetId]) continue;
+        latestStatuses[entry.targetId] =
+          entry.action === 'telegram_group_help.action_apply' ? 'applied' : 'confirmation';
+      }
+      this.actionStatuses.set(latestStatuses);
       this.localValues.set(Object.fromEntries(res.config.map((entry) => [entry.key, entry.value])));
     } catch {
       this.error.set('Could not load Group Help config.');
@@ -153,6 +221,21 @@ export class GroupHelpPage {
         return;
       }
       this.tokenConfigured.set(result.tokenConfigured);
+      const membership = result.botMembership || {};
+      const permissions = [
+        membership.can_manage_chat && 'Manage group',
+        membership.can_delete_messages && 'Delete messages',
+        membership.can_restrict_members && 'Restrict members',
+        membership.can_invite_users && 'Invite users',
+        membership.can_pin_messages && 'Pin messages',
+        membership.can_promote_members && 'Promote members',
+      ].filter(Boolean) as string[];
+      this.connectionDetails.set({
+        bot: result.me?.username ? `@${result.me.username}` : undefined,
+        group: result.chat?.title,
+        runtime: result.webhook?.url ? 'External webhook' : 'External polling/runtime',
+        permissions,
+      });
       this.message.set(
         result.chatError
           ? `Bot connected, but the group could not be reached: ${result.chatError}`
@@ -188,6 +271,7 @@ export class GroupHelpPage {
       if (!(await this.saveAll())) return;
       const result = await this.api.applyTelegramGroupHelpAction(item.id);
       if (result.mode === 'APPLIED') {
+        this.actionStatuses.update((current) => ({ ...current, [item.id]: 'applied' }));
         this.message.set(`${item.title} applied to the configured Telegram group.`);
         return;
       }
@@ -196,6 +280,7 @@ export class GroupHelpPage {
       }
       await navigator.clipboard.writeText(result.command);
       this.telegramApplyUrl.set(result.botUrl);
+      this.actionStatuses.update((current) => ({ ...current, [item.id]: 'confirmation' }));
       window.open(result.botUrl, '_blank', 'noopener,noreferrer');
       this.message.set(
         `${item.title} command copied. Telegram opened—send it as a group admin to confirm.`,
@@ -297,5 +382,37 @@ export class GroupHelpPage {
     } finally {
       this.sending.set(false);
     }
+  }
+
+  moderatorCommand() {
+    const action = this.moderatorActions.find((item) => item.value === this.moderatorAction());
+    if (!action) return '';
+    const target = this.moderatorTarget()
+      .trim()
+      .replace(/[\r\n]/g, ' ');
+    const reason = this.moderatorReason()
+      .trim()
+      .replace(/[\r\n]/g, ' ');
+    if (action.needsTarget && !target) return '';
+    return [`/${action.value}`, action.needsTarget ? target : '', reason].filter(Boolean).join(' ');
+  }
+
+  async prepareModeratorCommand() {
+    const command = this.moderatorCommand();
+    if (!command) {
+      this.error.set(
+        'Enter a Telegram username, numeric user ID, or prepare the command as a reply.',
+      );
+      return;
+    }
+    await this.copy(command, 'moderator-tool');
+    const username = (this.value('telegramGroupHelpBotUsername') || 'Hopehubaibot').replace(
+      /^@/,
+      '',
+    );
+    window.open(`https://t.me/${encodeURIComponent(username)}`, '_blank', 'noopener,noreferrer');
+    this.message.set(
+      'Moderator command copied. Verify the target carefully before sending it in Telegram.',
+    );
   }
 }

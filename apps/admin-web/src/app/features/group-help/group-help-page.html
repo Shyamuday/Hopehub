@@ -34,14 +34,29 @@
   </p>
 </section>
 
+@if (connectionDetails().bot) {
+  <section class="connection-summary" aria-label="Group Help connection status">
+    <div><small>Bot</small><strong>{{ connectionDetails().bot }}</strong></div>
+    <div><small>Group</small><strong>{{ connectionDetails().group || 'Group not reachable' }}</strong></div>
+    <div><small>Runtime</small><strong>{{ connectionDetails().runtime }}</strong></div>
+    <div class="permission-summary">
+      <small>Detected permissions</small>
+      <strong>{{ connectionDetails().permissions?.join(', ') || 'No admin permissions detected' }}</strong>
+    </div>
+  </section>
+}
+
 @if (loading()) {
   <p class="loading-text">Loading Group Help config…</p>
 }
 
 <section class="config-grid">
   @for (section of sectionOrder; track section) {
-    <article class="panel">
-      <h2>{{ sectionLabels[section] }}</h2>
+    <details class="panel config-section" [open]="section === 'connection' || section === 'messages'">
+      <summary>
+        <span>{{ sectionLabels[section] }}</span>
+        <small>{{ fieldsFor(section).length }} settings</small>
+      </summary>
       <div class="field-list">
         @for (entry of fieldsFor(section); track entry.key) {
           <label class="config-field">
@@ -79,7 +94,7 @@
           </label>
         }
       </div>
-    </article>
+    </details>
   }
 </section>
 
@@ -97,7 +112,14 @@
   <div class="command-grid">
     @for (item of messageCommands; track item.id) {
       <article class="command-card">
-        <h3>{{ item.title }}</h3>
+        <div class="command-title">
+          <h3>{{ item.title }}</h3>
+          @if (actionStatuses()[item.id]) {
+            <span class="action-status" [class.action-status--pending]="actionStatuses()[item.id] === 'confirmation'">
+              {{ actionStatuses()[item.id] === 'applied' ? 'Applied' : 'Confirm in Telegram' }}
+            </span>
+          }
+        </div>
         <p>{{ item.helper }}</p>
         @if (item.imageUrlKey) {
           <div class="image-tools">
@@ -147,7 +169,14 @@
 
     @for (item of moderationCommands; track item.id) {
       <article class="command-card">
-        <h3>{{ item.title }}</h3>
+        <div class="command-title">
+          <h3>{{ item.title }}</h3>
+          @if (actionStatuses()[item.id]) {
+            <span class="action-status" [class.action-status--pending]="actionStatuses()[item.id] === 'confirmation'">
+              {{ actionStatuses()[item.id] === 'applied' ? 'Applied' : 'Confirm in Telegram' }}
+            </span>
+          }
+        </div>
         <p>{{ item.helper }}</p>
         <pre>{{ commandFor(item) }}</pre>
         <div class="command-actions">
@@ -166,6 +195,47 @@
       </article>
     }
   </div>
+</section>
+
+<section class="panel moderator-panel">
+  <div class="panel-head">
+    <div>
+      <h2>Moderator tools</h2>
+      <p>Prepare a Group Help command, then verify and send it from an authorized Telegram account.</p>
+    </div>
+  </div>
+  <div class="moderator-form">
+    <label>
+      Action
+      <select [value]="moderatorAction()" (change)="moderatorAction.set($any($event.target).value)">
+        @for (action of moderatorActions; track action.value) {
+          <option [value]="action.value">{{ action.label }}</option>
+        }
+      </select>
+    </label>
+    <label>
+      Target user
+      <input
+        type="text"
+        [value]="moderatorTarget()"
+        (input)="moderatorTarget.set($any($event.target).value)"
+        placeholder="@username or numeric Telegram ID"
+      />
+    </label>
+    <label>
+      Reason or note
+      <input
+        type="text"
+        [value]="moderatorReason()"
+        (input)="moderatorReason.set($any($event.target).value)"
+        placeholder="Optional"
+      />
+    </label>
+  </div>
+  <pre>{{ moderatorCommand() || 'Choose an action and enter its required target.' }}</pre>
+  <button type="button" class="primary" (click)="prepareModeratorCommand()">
+    Copy and open Telegram
+  </button>
 </section>
 
 <section class="panel capability-panel">
@@ -191,6 +261,22 @@
     }
   </div>
 </section>
+
+<details class="panel activity-panel">
+  <summary>Recent configuration activity</summary>
+  @if (!actionHistory().length) {
+    <p>No Group Help configuration actions recorded yet.</p>
+  } @else {
+    <div class="activity-list">
+      @for (entry of actionHistory(); track entry.id) {
+        <article>
+          <strong>{{ entry.summary || entry.targetId }}</strong>
+          <small>{{ entry.createdAt | date: 'medium' }}</small>
+        </article>
+      }
+    </div>
+  }
+</details>
 
 <section class="panel direct-panel">
   <h2>Direct announcement</h2>

@@ -247,11 +247,26 @@ export class AdminOpsApi extends AdminApiBase {
           applyMode: 'TELEGRAM_ADMIN_CONFIRMATION' | 'DIRECT_PIN';
         }>;
         capabilityGroups: Array<{ title: string; options: readonly string[] }>;
+        actionHistory: Array<{
+          id: string;
+          action: string;
+          targetId: string;
+          summary?: string | null;
+          createdAt: string;
+        }>;
         config: Array<{
           key: string;
           label: string;
           description: string;
-          section: 'connection' | 'messages' | 'moderation' | 'commands';
+          section:
+            | 'connection'
+            | 'messages'
+            | 'onboarding'
+            | 'moderation'
+            | 'content'
+            | 'people'
+            | 'operations'
+            | 'commands';
           type: 'text' | 'textarea' | 'number' | 'select';
           maxLength: number;
           placeholder?: string;
@@ -276,9 +291,18 @@ export class AdminOpsApi extends AdminApiBase {
         tokenConfigured: boolean;
         ok: boolean;
         message?: string;
-        me?: unknown;
-        webhook?: unknown;
-        chat?: unknown;
+        me?: { id?: number; username?: string };
+        webhook?: { url?: string };
+        chat?: { id?: number | string; title?: string };
+        botMembership?: {
+          status?: string;
+          can_manage_chat?: boolean;
+          can_delete_messages?: boolean;
+          can_restrict_members?: boolean;
+          can_invite_users?: boolean;
+          can_pin_messages?: boolean;
+          can_promote_members?: boolean;
+        };
         chatError?: string | null;
       }>(`${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_TEST}`, {}),
     );

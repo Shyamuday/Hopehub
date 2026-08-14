@@ -304,11 +304,25 @@ export function registerAdminTelegramBotRoutes(router: Router) {
     authRequired,
     allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (_req, res) => {
-      const values = await groupHelpConfigMap();
+      const [values, actionHistory] = await Promise.all([
+        groupHelpConfigMap(),
+        prisma.auditLog.findMany({
+          where: {
+            targetType: 'telegram_group_help',
+            action: {
+              in: ['telegram_group_help.action_apply', 'telegram_group_help.action_prepare']
+            }
+          },
+          select: { id: true, action: true, targetId: true, summary: true, createdAt: true },
+          orderBy: { createdAt: 'desc' },
+          take: 50
+        })
+      ]);
       res.json({
         tokenConfigured: Boolean(groupHelpBotToken()),
         actions: GROUP_HELP_ACTIONS,
         capabilityGroups: GROUP_HELP_CAPABILITY_GROUPS,
+        actionHistory,
         config: GROUP_HELP_CONFIG_KEYS.map((key) => ({
           ...GROUP_HELP_CONFIG_META[key],
           value: values[key] ?? GROUP_HELP_CONFIG_DEFAULTS[key] ?? ''
@@ -343,6 +357,28 @@ export function registerAdminTelegramBotRoutes(router: Router) {
           return res
             .status(400)
             .json({ message: `${meta.label} is too long. Maximum ${meta.maxLength} characters.` });
+        }
+        if (meta.type === 'select' && meta.options && !meta.options.includes(value)) {
+          return res.status(400).json({ message: `${meta.label} has an unsupported option.` });
+        }
+        if (meta.type === 'number' && value && !/^\d+$/.test(value)) {
+          return res.status(400).json({ message: `${meta.label} must be a whole number.` });
+        }
+        if (
+          ['telegramGroupHelpNightStart', 'telegramGroupHelpNightEnd'].includes(entry.key) &&
+          value &&
+          !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value)
+        ) {
+          return res.status(400).json({ message: `${meta.label} must use HH:MM format.` });
+        }
+        if (
+          entry.key === 'telegramGroupHelpAntiFloodLimit' &&
+          value &&
+          !/^\d+\s+\d+$/.test(value)
+        ) {
+          return res
+            .status(400)
+            .json({ message: 'Anti-flood threshold must use “count seconds”.' });
         }
         updates.push({ key: entry.key, value, meta });
       }
@@ -450,15 +486,19 @@ export function registerAdminTelegramBotRoutes(router: Router) {
       const values = await groupHelpConfigMap();
       const chatId = values.telegramGroupHelpGroupChatId?.trim();
       const [me, webhook] = await Promise.all([
-        callGroupHelpTelegramApi('getMe', {}),
+        callGroupHelpTelegramApi<{ id: number; username?: string }>('getMe', {}),
         callGroupHelpTelegramApi('getWebhookInfo', {})
       ]);
 
       let chat: unknown = null;
+      let botMembership: unknown = null;
       let chatError: string | null = null;
       if (chatId) {
         try {
-          chat = await callGroupHelpTelegramApi('getChat', { chat_id: chatId });
+          [chat, botMembership] = await Promise.all([
+            callGroupHelpTelegramApi('getChat', { chat_id: chatId }),
+            callGroupHelpTelegramApi('getChatMember', { chat_id: chatId, user_id: me.id })
+          ]);
         } catch (error) {
           chatError = error instanceof Error ? error.message : 'Could not read Telegram chat.';
         }
@@ -470,6 +510,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         me,
         webhook,
         chat,
+        botMembership,
         chatError
       });
     })

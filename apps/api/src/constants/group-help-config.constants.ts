@@ -4,7 +4,15 @@ export type GroupHelpConfigField = {
   key: string;
   label: string;
   description: string;
-  section: 'connection' | 'messages' | 'moderation' | 'commands';
+  section:
+    | 'connection'
+    | 'messages'
+    | 'onboarding'
+    | 'moderation'
+    | 'content'
+    | 'people'
+    | 'operations'
+    | 'commands';
   type: GroupHelpConfigFieldType;
   maxLength: number;
   placeholder?: string;
@@ -23,7 +31,7 @@ export type GroupHelpAction = {
   applyMode: 'TELEGRAM_ADMIN_CONFIRMATION' | 'DIRECT_PIN';
 };
 
-export const GROUP_HELP_ACTIONS: GroupHelpAction[] = [
+const GROUP_HELP_CORE_ACTIONS: GroupHelpAction[] = [
   {
     id: 'welcome',
     title: 'Welcome message',
@@ -112,6 +120,151 @@ export const GROUP_HELP_ACTIONS: GroupHelpAction[] = [
   }
 ];
 
+const GROUP_HELP_ADVANCED_ACTIONS: GroupHelpAction[] = [
+  [
+    'anti-flood',
+    'Anti-flood action',
+    'Apply rapid-message protection.',
+    'telegramGroupHelpAntiFloodAction',
+    'telegramGroupHelpAntiFloodCommandTemplate'
+  ],
+  [
+    'anti-flood-limit',
+    'Anti-flood sensitivity',
+    'Apply message-count and time-window thresholds.',
+    'telegramGroupHelpAntiFloodLimit',
+    'telegramGroupHelpAntiFloodLimitCommandTemplate'
+  ],
+  [
+    'anti-spam',
+    'Anti-spam action',
+    'Apply the preferred spam response.',
+    'telegramGroupHelpAntiSpamAction',
+    'telegramGroupHelpAntiSpamCommandTemplate'
+  ],
+  [
+    'anti-porn',
+    'NSFW protection',
+    'Open/apply explicit-media protection.',
+    'telegramGroupHelpAntiPornAction',
+    'telegramGroupHelpAntiPornCommandTemplate'
+  ],
+  [
+    'join-protection',
+    'Join protection',
+    'Open/apply new-member protection.',
+    'telegramGroupHelpJoinProtection',
+    'telegramGroupHelpJoinProtectionCommandTemplate'
+  ],
+  [
+    'join-leave',
+    'Join and leave notices',
+    'Open/apply member event messages.',
+    'telegramGroupHelpJoinLeaveMessages',
+    'telegramGroupHelpJoinLeaveCommandTemplate'
+  ],
+  [
+    'media',
+    'Media permissions',
+    'Open/apply the saved media policy.',
+    'telegramGroupHelpMediaPolicy',
+    'telegramGroupHelpMediaCommandTemplate'
+  ],
+  [
+    'forwards',
+    'Forwarded messages',
+    'Open/apply forwarded-message protection.',
+    'telegramGroupHelpForwardPolicy',
+    'telegramGroupHelpForwardCommandTemplate'
+  ],
+  [
+    'auto-delete',
+    'Scheduled deletion',
+    'Open/apply automatic message deletion.',
+    'telegramGroupHelpAutoDeleteSeconds',
+    'telegramGroupHelpAutoDeleteCommandTemplate'
+  ],
+  [
+    'night-mode',
+    'Night mode',
+    'Open/apply quiet-hour restrictions.',
+    'telegramGroupHelpNightMode',
+    'telegramGroupHelpNightModeCommandTemplate'
+  ],
+  [
+    'language',
+    'Bot language',
+    'Apply the Group Help interface language.',
+    'telegramGroupHelpLanguage',
+    'telegramGroupHelpLanguageCommandTemplate'
+  ],
+  [
+    'log-channel',
+    'Log channel',
+    'Open/apply moderation event logging.',
+    'telegramGroupHelpLogChannelId',
+    'telegramGroupHelpLogChannelCommandTemplate'
+  ],
+  [
+    'staff-group',
+    'Staff group',
+    'Open/apply the connected staff group.',
+    'telegramGroupHelpStaffGroupId',
+    'telegramGroupHelpStaffGroupCommandTemplate'
+  ],
+  [
+    'reports',
+    'Member reports',
+    'Open/apply member reporting behavior.',
+    'telegramGroupHelpReportsMode',
+    'telegramGroupHelpReportsCommandTemplate'
+  ],
+  [
+    'custom-replies',
+    'Custom replies',
+    'Open/apply saved automatic replies.',
+    'telegramGroupHelpCustomReplies',
+    'telegramGroupHelpCustomRepliesCommandTemplate'
+  ],
+  [
+    'inactive-members',
+    'Inactive members',
+    'Request the inactive-member review list.',
+    'telegramGroupHelpInactiveDays',
+    'telegramGroupHelpInactiveCommandTemplate'
+  ],
+  [
+    'backup',
+    'Settings backup',
+    'Request a Group Help settings backup.',
+    'telegramGroupHelpBackupRequest',
+    'telegramGroupHelpBackupCommandTemplate'
+  ],
+  [
+    'reload-admins',
+    'Reload administrators',
+    'Refresh Group Help administrator permissions.',
+    'telegramGroupHelpReloadRequest',
+    'telegramGroupHelpReloadCommandTemplate'
+  ]
+].map(
+  ([id, title, description, valueKey, templateKey]) =>
+    ({
+      id,
+      title,
+      description,
+      valueKey,
+      templateKey,
+      placeholder: valueKey === 'telegramGroupHelpCustomReplies' ? 'lines' : 'value',
+      applyMode: 'TELEGRAM_ADMIN_CONFIRMATION'
+    }) as GroupHelpAction
+);
+
+export const GROUP_HELP_ACTIONS: GroupHelpAction[] = [
+  ...GROUP_HELP_CORE_ACTIONS,
+  ...GROUP_HELP_ADVANCED_ACTIONS
+];
+
 export const GROUP_HELP_CAPABILITY_GROUPS = [
   {
     title: 'Member onboarding',
@@ -151,7 +304,7 @@ export const GROUP_HELP_CAPABILITY_GROUPS = [
   }
 ] as const;
 
-export const GROUP_HELP_CONFIG_FIELDS: GroupHelpConfigField[] = [
+const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
   {
     key: 'telegramGroupHelpBotUsername',
     label: 'Group Help bot username',
@@ -420,6 +573,333 @@ export const GROUP_HELP_CONFIG_FIELDS: GroupHelpConfigField[] = [
     maxLength: 1000,
     defaultValue: '/filter {lines}'
   }
+];
+
+const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
+  {
+    key: 'telegramGroupHelpWelcomeCleanup',
+    label: 'Remove previous welcome message',
+    description: 'Desired cleanup behavior when the next member joins.',
+    section: 'onboarding',
+    type: 'select',
+    options: ['off', 'on'],
+    maxLength: 10,
+    defaultValue: 'on'
+  },
+  {
+    key: 'telegramGroupHelpJoinProtection',
+    label: 'Join protection',
+    description: 'Desired new-member verification mode.',
+    section: 'onboarding',
+    type: 'select',
+    options: ['off', 'captcha', 'strict'],
+    maxLength: 20,
+    defaultValue: 'captcha'
+  },
+  {
+    key: 'telegramGroupHelpJoinLeaveMessages',
+    label: 'Join and leave messages',
+    description: 'Show or suppress member join/leave notices.',
+    section: 'onboarding',
+    type: 'select',
+    options: ['off', 'join only', 'join and leave'],
+    maxLength: 30,
+    defaultValue: 'join only'
+  },
+  {
+    key: 'telegramGroupHelpNewMemberAction',
+    label: 'Failed verification action',
+    description: 'Preferred action when a new member fails verification.',
+    section: 'onboarding',
+    type: 'select',
+    options: ['kick', 'ban', 'mute'],
+    maxLength: 10,
+    defaultValue: 'kick'
+  },
+  {
+    key: 'telegramGroupHelpAntiFloodAction',
+    label: 'Anti-flood action',
+    description: 'Action for rapid repeated messages.',
+    section: 'moderation',
+    type: 'select',
+    options: ['off', 'warn', 'mute', 'kick', 'ban'],
+    maxLength: 10,
+    defaultValue: 'mute'
+  },
+  {
+    key: 'telegramGroupHelpAntiFloodLimit',
+    label: 'Anti-flood threshold',
+    description: 'Messages and seconds in “count seconds” format, for example “5 2”.',
+    section: 'moderation',
+    type: 'text',
+    maxLength: 20,
+    placeholder: '5 2',
+    defaultValue: '5 2'
+  },
+  {
+    key: 'telegramGroupHelpAntiSpamAction',
+    label: 'Anti-spam action',
+    description: 'Desired action for detected spam.',
+    section: 'moderation',
+    type: 'select',
+    options: ['off', 'warn', 'mute', 'kick', 'ban'],
+    maxLength: 10,
+    defaultValue: 'warn'
+  },
+  {
+    key: 'telegramGroupHelpAntiPornAction',
+    label: 'NSFW protection',
+    description: 'Desired action for explicit or unsafe media.',
+    section: 'moderation',
+    type: 'select',
+    options: ['off', 'delete', 'warn', 'mute', 'kick', 'ban'],
+    maxLength: 10,
+    defaultValue: 'delete'
+  },
+  {
+    key: 'telegramGroupHelpChannelSenderPolicy',
+    label: 'Messages sent as channels',
+    description: 'How anonymous/channel-sender messages should be handled.',
+    section: 'moderation',
+    type: 'select',
+    options: ['allow', 'delete', 'warn', 'mute'],
+    maxLength: 10,
+    defaultValue: 'delete'
+  },
+  {
+    key: 'telegramGroupHelpWarnAction',
+    label: 'Warning-limit action',
+    description: 'Action after a member reaches the warning limit.',
+    section: 'moderation',
+    type: 'select',
+    options: ['mute', 'kick', 'ban'],
+    maxLength: 10,
+    defaultValue: 'mute'
+  },
+  {
+    key: 'telegramGroupHelpMediaPolicy',
+    label: 'Media policy',
+    description: 'Overall media setting; refine individual types in Telegram settings.',
+    section: 'content',
+    type: 'select',
+    options: ['allow', 'admins only', 'delete', 'warn'],
+    maxLength: 20,
+    defaultValue: 'allow'
+  },
+  {
+    key: 'telegramGroupHelpAllowedMedia',
+    label: 'Allowed media types',
+    description:
+      'One allowed type per line: photo, video, audio, voice, GIF, sticker, document, poll.',
+    section: 'content',
+    type: 'textarea',
+    maxLength: 1000,
+    defaultValue: 'photo\nvideo\naudio\nvoice\nGIF\nsticker\ndocument\npoll'
+  },
+  {
+    key: 'telegramGroupHelpForwardPolicy',
+    label: 'Forwarded-message policy',
+    description: 'How forwarded messages should be handled.',
+    section: 'content',
+    type: 'select',
+    options: ['allow', 'delete', 'warn', 'mute'],
+    maxLength: 10,
+    defaultValue: 'warn'
+  },
+  {
+    key: 'telegramGroupHelpQuotePolicy',
+    label: 'External quote policy',
+    description: 'How quoted content from outside the group should be handled.',
+    section: 'content',
+    type: 'select',
+    options: ['allow', 'delete', 'warn'],
+    maxLength: 10,
+    defaultValue: 'warn'
+  },
+  {
+    key: 'telegramGroupHelpAutoDeleteSeconds',
+    label: 'Automatic deletion',
+    description: 'Desired deletion delay in seconds; use 0 to disable.',
+    section: 'content',
+    type: 'number',
+    maxLength: 8,
+    defaultValue: '0'
+  },
+  {
+    key: 'telegramGroupHelpMaxMessageLength',
+    label: 'Maximum message length',
+    description: 'Desired maximum characters per member message; use 0 for no limit.',
+    section: 'content',
+    type: 'number',
+    maxLength: 8,
+    defaultValue: '0'
+  },
+  {
+    key: 'telegramGroupHelpReportsMode',
+    label: 'Member reports',
+    description: 'How member reports should be delivered.',
+    section: 'people',
+    type: 'select',
+    options: ['off', 'admins', 'staff group'],
+    maxLength: 20,
+    defaultValue: 'admins'
+  },
+  {
+    key: 'telegramGroupHelpStaffGroupId',
+    label: 'Staff group ID',
+    description: 'Optional private staff group used by Group Help.',
+    section: 'people',
+    type: 'text',
+    maxLength: 80,
+    placeholder: '-1001234567890',
+    defaultValue: ''
+  },
+  {
+    key: 'telegramGroupHelpCustomReplies',
+    label: 'Custom replies',
+    description: 'One “trigger => response” definition per line.',
+    section: 'people',
+    type: 'textarea',
+    maxLength: 4000,
+    placeholder: 'support => Visit https://hopehub.in',
+    defaultValue: ''
+  },
+  {
+    key: 'telegramGroupHelpStaffNotes',
+    label: 'Staff and role notes',
+    description: 'Track intended founders, admins, moderators, muters, cleaners, and helpers.',
+    section: 'people',
+    type: 'textarea',
+    maxLength: 4000,
+    defaultValue: ''
+  },
+  {
+    key: 'telegramGroupHelpLanguage',
+    label: 'Bot language',
+    description: 'Preferred Group Help interface language.',
+    section: 'operations',
+    type: 'select',
+    options: ['English', 'Hindi', 'Italian', 'Spanish', 'Portuguese', 'German', 'French'],
+    maxLength: 30,
+    defaultValue: 'English'
+  },
+  {
+    key: 'telegramGroupHelpLogChannelId',
+    label: 'Log channel ID',
+    description: 'Channel/group where moderation events should be logged.',
+    section: 'operations',
+    type: 'text',
+    maxLength: 80,
+    placeholder: '-1001234567890',
+    defaultValue: ''
+  },
+  {
+    key: 'telegramGroupHelpNightMode',
+    label: 'Night mode',
+    description: 'Desired quiet-hours behavior.',
+    section: 'operations',
+    type: 'select',
+    options: ['off', 'mute all', 'delete media', 'delete all'],
+    maxLength: 20,
+    defaultValue: 'off'
+  },
+  {
+    key: 'telegramGroupHelpNightStart',
+    label: 'Night mode starts',
+    description: 'Local group time in HH:MM format.',
+    section: 'operations',
+    type: 'text',
+    maxLength: 5,
+    placeholder: '22:00',
+    defaultValue: '22:00'
+  },
+  {
+    key: 'telegramGroupHelpNightEnd',
+    label: 'Night mode ends',
+    description: 'Local group time in HH:MM format.',
+    section: 'operations',
+    type: 'text',
+    maxLength: 5,
+    placeholder: '07:00',
+    defaultValue: '07:00'
+  },
+  {
+    key: 'telegramGroupHelpInactiveDays',
+    label: 'Inactive-member window',
+    description: 'Days without messages before a member appears in inactive review.',
+    section: 'operations',
+    type: 'number',
+    maxLength: 5,
+    defaultValue: '60'
+  },
+  {
+    key: 'telegramGroupHelpStatisticsMode',
+    label: 'Activity statistics',
+    description: 'Desired member and growth statistics behavior.',
+    section: 'operations',
+    type: 'select',
+    options: ['off', 'on', 'admins only'],
+    maxLength: 20,
+    defaultValue: 'admins only'
+  },
+  {
+    key: 'telegramGroupHelpBackupRequest',
+    label: 'Settings backup',
+    description: 'Keep enabled to expose the backup command action.',
+    section: 'operations',
+    type: 'select',
+    options: ['enabled', 'disabled'],
+    maxLength: 10,
+    defaultValue: 'enabled'
+  },
+  {
+    key: 'telegramGroupHelpReloadRequest',
+    label: 'Administrator refresh',
+    description: 'Keep enabled to expose the admin reload action.',
+    section: 'operations',
+    type: 'select',
+    options: ['enabled', 'disabled'],
+    maxLength: 10,
+    defaultValue: 'enabled'
+  },
+  ...[
+    ['telegramGroupHelpAntiFloodCommandTemplate', 'Anti-flood action', '/antiflood {value}'],
+    [
+      'telegramGroupHelpAntiFloodLimitCommandTemplate',
+      'Anti-flood sensitivity',
+      '/setantiflood {value}'
+    ],
+    ['telegramGroupHelpAntiSpamCommandTemplate', 'Anti-spam', '/settings'],
+    ['telegramGroupHelpAntiPornCommandTemplate', 'NSFW protection', '/settings'],
+    ['telegramGroupHelpJoinProtectionCommandTemplate', 'Join protection', '/settings'],
+    ['telegramGroupHelpJoinLeaveCommandTemplate', 'Join/leave messages', '/settings'],
+    ['telegramGroupHelpMediaCommandTemplate', 'Media permissions', '/settings'],
+    ['telegramGroupHelpForwardCommandTemplate', 'Forwarded messages', '/settings'],
+    ['telegramGroupHelpAutoDeleteCommandTemplate', 'Scheduled deletion', '/settings'],
+    ['telegramGroupHelpNightModeCommandTemplate', 'Night mode', '/settings'],
+    ['telegramGroupHelpLanguageCommandTemplate', 'Language', '/language {value}'],
+    ['telegramGroupHelpLogChannelCommandTemplate', 'Log channel', '/settings'],
+    ['telegramGroupHelpStaffGroupCommandTemplate', 'Staff group', '/settings'],
+    ['telegramGroupHelpReportsCommandTemplate', 'Member reports', '/settings'],
+    ['telegramGroupHelpCustomRepliesCommandTemplate', 'Custom replies', '/settings'],
+    ['telegramGroupHelpInactiveCommandTemplate', 'Inactive members', '/inactives {value}'],
+    ['telegramGroupHelpBackupCommandTemplate', 'Settings backup', '/backup'],
+    ['telegramGroupHelpReloadCommandTemplate', 'Reload administrators', '/reload']
+  ].map(([key, label, defaultValue]) => ({
+    key,
+    label: `${label} command template`,
+    description:
+      'Editable command sent by a Telegram group administrator. /settings opens Group Help options that have no stable direct command.',
+    section: 'commands' as const,
+    type: 'text' as const,
+    maxLength: 500,
+    defaultValue
+  }))
+];
+
+export const GROUP_HELP_CONFIG_FIELDS: GroupHelpConfigField[] = [
+  ...GROUP_HELP_CORE_CONFIG_FIELDS,
+  ...GROUP_HELP_ADVANCED_CONFIG_FIELDS
 ];
 
 export const GROUP_HELP_CONFIG_KEYS = GROUP_HELP_CONFIG_FIELDS.map((field) => field.key);
