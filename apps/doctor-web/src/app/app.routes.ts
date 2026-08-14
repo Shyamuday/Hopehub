@@ -3,31 +3,12 @@ import { doctorAuthGuard } from './core/guards/doctor-auth-guard';
 import { providerCapabilityGuard } from './core/guards/provider-capability-guard';
 import { providerOnboardingGuard } from './core/guards/provider-onboarding-guard';
 import { ROUTE_PATHS } from './core/constants/app-routes.constants';
-import { Login } from './features/auth/login/login';
-import { DoctorShell } from './layout/doctor-shell/doctor-shell';
-import { WorklistPage } from './features/worklist/worklist-page/worklist-page';
-import { DashboardHome } from './features/dashboard/dashboard-home/dashboard-home';
-import { AppointmentsPage } from './features/appointments/appointments-page/appointments-page';
-import { CaseAnalysisPage } from './features/case-analysis/case-analysis-page/case-analysis-page';
-import { PatientsPage } from './features/patients/patients-page/patients-page';
-import { ProfilePage } from './features/profile/profile-page/profile-page';
-import { MyLeaves } from './features/leaves/my-leaves/my-leaves';
-import { SlotsPage } from './features/slots/slots-page/slots-page';
-import { EarningsPage } from './features/earnings/earnings-page/earnings-page';
-import { PatientScanPage } from './features/scan/patient-scan-page/patient-scan-page';
-import { DoctorPatientScanLauncherPage } from './features/scan/patient-scan-launcher-page/patient-scan-launcher-page';
-import { RepertoryBrowserPage } from './features/repertory-browser/repertory-browser';
-import { DiseasePagesPage } from './features/disease-pages/disease-pages-page';
-import { DoctorBlogPage } from './features/blog/doctor-blog-page';
-import { OnlineDoctorPage } from './features/online-doctor/online-doctor-page';
-import { NotificationsInboxPage } from './features/notifications-inbox/notifications-inbox-page';
-import { ProviderPathPage } from './features/onboarding/provider-path-page/provider-path-page';
-import { ProviderSupportPage } from './features/support/provider-support-page/provider-support-page';
-import { ProviderSupportHomeRedirect } from './features/support/provider-support-home-redirect';
-import { ListenerScreeningPage } from './features/onboarding/listener-screening-page/listener-screening-page';
 
 export const routes: Routes = [
-  { path: ROUTE_PATHS.LOGIN, component: Login },
+  {
+    path: ROUTE_PATHS.LOGIN,
+    loadComponent: () => import('./features/auth/login/login').then((m) => m.Login),
+  },
   {
     path: 'auth/verify-email',
     loadComponent: () =>
@@ -35,26 +16,53 @@ export const routes: Routes = [
         (m) => m.ProviderEmailVerification,
       ),
   },
-  { path: ROUTE_PATHS.SUPPORT, component: ProviderSupportPage },
-  { path: '', pathMatch: 'full', component: ProviderSupportHomeRedirect },
+  {
+    path: ROUTE_PATHS.SUPPORT,
+    loadComponent: () =>
+      import('./features/support/provider-support-page/provider-support-page').then(
+        (m) => m.ProviderSupportPage,
+      ),
+  },
   {
     path: '',
-    component: DoctorShell,
+    pathMatch: 'full',
+    loadComponent: () =>
+      import('./features/support/provider-support-home-redirect').then(
+        (m) => m.ProviderSupportHomeRedirect,
+      ),
+  },
+  {
+    path: '',
+    loadComponent: () => import('./layout/doctor-shell/doctor-shell').then((m) => m.DoctorShell),
     canActivate: [doctorAuthGuard],
     children: [
-      { path: ROUTE_PATHS.WELCOME, component: ProviderPathPage },
+      {
+        path: ROUTE_PATHS.WELCOME,
+        loadComponent: () =>
+          import('./features/onboarding/provider-path-page/provider-path-page').then(
+            (m) => m.ProviderPathPage,
+          ),
+      },
       {
         path: ROUTE_PATHS.LISTENER_SCREENING,
-        component: ListenerScreeningPage,
+        loadComponent: () =>
+          import('./features/onboarding/listener-screening-page/listener-screening-page').then(
+            (m) => m.ListenerScreeningPage,
+          ),
         canActivate: [providerCapabilityGuard],
         data: { capability: 'listenerSupport' },
       },
       {
         path: ROUTE_PATHS.WORKLIST,
-        component: WorklistPage,
+        loadComponent: () =>
+          import('./features/worklist/worklist-page/worklist-page').then((m) => m.WorklistPage),
         canActivate: [providerOnboardingGuard],
       },
-      { path: ROUTE_PATHS.DASHBOARD, component: DashboardHome },
+      {
+        path: ROUTE_PATHS.DASHBOARD,
+        loadComponent: () =>
+          import('./features/dashboard/dashboard-home/dashboard-home').then((m) => m.DashboardHome),
+      },
       {
         path: `${ROUTE_PATHS.CASE_ANALYSIS}/:consultationId`,
         pathMatch: 'full',
@@ -62,25 +70,37 @@ export const routes: Routes = [
       },
       {
         path: `${ROUTE_PATHS.CASE_ANALYSIS}/:consultationId/case-analysis`,
-        component: CaseAnalysisPage,
+        loadComponent: () =>
+          import('./features/case-analysis/case-analysis-page/case-analysis-page').then(
+            (m) => m.CaseAnalysisPage,
+          ),
         canActivate: [providerOnboardingGuard, providerCapabilityGuard],
         data: { capability: 'caseAnalysis' },
       },
       {
         path: `${ROUTE_PATHS.CASE_ANALYSIS}/:consultationId/prescription`,
-        component: AppointmentsPage,
+        loadComponent: () =>
+          import('./features/appointments/appointments-page/appointments-page').then(
+            (m) => m.AppointmentsPage,
+          ),
         canActivate: [providerOnboardingGuard, providerCapabilityGuard],
         data: { capability: 'prescribe' },
       },
       {
         path: ROUTE_PATHS.APPOINTMENTS,
-        component: AppointmentsPage,
+        loadComponent: () =>
+          import('./features/appointments/appointments-page/appointments-page').then(
+            (m) => m.AppointmentsPage,
+          ),
         canActivate: [providerOnboardingGuard, providerCapabilityGuard],
         data: { capability: 'prescribe' },
       },
       {
         path: ROUTE_PATHS.CASE_ANALYSIS_STUDIO,
-        component: CaseAnalysisPage,
+        loadComponent: () =>
+          import('./features/case-analysis/case-analysis-page/case-analysis-page').then(
+            (m) => m.CaseAnalysisPage,
+          ),
         canActivate: [providerOnboardingGuard, providerCapabilityGuard],
         data: { standalone: true, capability: 'caseAnalysis' },
       },
@@ -91,25 +111,29 @@ export const routes: Routes = [
       },
       {
         path: ROUTE_PATHS.PATIENTS,
-        component: PatientsPage,
+        loadComponent: () =>
+          import('./features/patients/patients-page/patients-page').then((m) => m.PatientsPage),
         canActivate: [providerOnboardingGuard, providerCapabilityGuard],
         data: { capability: 'patients' },
       },
       {
         path: ROUTE_PATHS.DISEASE_PAGES,
-        component: DiseasePagesPage,
+        loadComponent: () =>
+          import('./features/disease-pages/disease-pages-page').then((m) => m.DiseasePagesPage),
         canActivate: [providerOnboardingGuard, providerCapabilityGuard],
         data: { capability: 'treatmentPages' },
       },
       {
         path: ROUTE_PATHS.BLOG,
-        component: DoctorBlogPage,
+        loadComponent: () =>
+          import('./features/blog/doctor-blog-page').then((m) => m.DoctorBlogPage),
         canActivate: [providerOnboardingGuard, providerCapabilityGuard],
         data: { capability: 'content' },
       },
       {
         path: ROUTE_PATHS.ONLINE_DOCTOR,
-        component: OnlineDoctorPage,
+        loadComponent: () =>
+          import('./features/online-doctor/online-doctor-page').then((m) => m.OnlineDoctorPage),
         canActivate: [providerOnboardingGuard, providerCapabilityGuard],
         data: { capability: 'onlineConsult' },
       },
@@ -124,43 +148,62 @@ export const routes: Routes = [
       },
       {
         path: ROUTE_PATHS.REPERTORY_BROWSER,
-        component: RepertoryBrowserPage,
+        loadComponent: () =>
+          import('./features/repertory-browser/repertory-browser').then(
+            (m) => m.RepertoryBrowserPage,
+          ),
         canActivate: [providerOnboardingGuard, providerCapabilityGuard],
         data: { capability: 'caseAnalysis' },
       },
-      { path: ROUTE_PATHS.PROFILE, component: ProfilePage },
+      {
+        path: ROUTE_PATHS.PROFILE,
+        loadComponent: () =>
+          import('./features/profile/profile-page/profile-page').then((m) => m.ProfilePage),
+      },
       {
         path: ROUTE_PATHS.LEAVES,
-        component: MyLeaves,
+        loadComponent: () =>
+          import('./features/leaves/my-leaves/my-leaves').then((m) => m.MyLeaves),
         canActivate: [providerOnboardingGuard, providerCapabilityGuard],
         data: { capability: 'leaves' },
       },
       {
         path: ROUTE_PATHS.SLOTS,
-        component: SlotsPage,
+        loadComponent: () =>
+          import('./features/slots/slots-page/slots-page').then((m) => m.SlotsPage),
         canActivate: [providerCapabilityGuard],
         data: { capability: 'slots' },
       },
       {
         path: ROUTE_PATHS.EARNINGS,
-        component: EarningsPage,
+        loadComponent: () =>
+          import('./features/earnings/earnings-page/earnings-page').then((m) => m.EarningsPage),
         canActivate: [providerOnboardingGuard, providerCapabilityGuard],
         data: { capability: 'earnings' },
       },
       {
         path: ROUTE_PATHS.SCAN,
-        component: DoctorPatientScanLauncherPage,
+        loadComponent: () =>
+          import('./features/scan/patient-scan-launcher-page/patient-scan-launcher-page').then(
+            (m) => m.DoctorPatientScanLauncherPage,
+          ),
         canActivate: [providerOnboardingGuard, providerCapabilityGuard],
         data: { capability: 'scan' },
       },
       {
         path: ROUTE_PATHS.NOTIFICATIONS_INBOX,
-        component: NotificationsInboxPage,
+        loadComponent: () =>
+          import('./features/notifications-inbox/notifications-inbox-page').then(
+            (m) => m.NotificationsInboxPage,
+          ),
         canActivate: [providerOnboardingGuard],
       },
       {
         path: `${ROUTE_PATHS.PATIENT_SCAN}/:patientCode`,
-        component: PatientScanPage,
+        loadComponent: () =>
+          import('./features/scan/patient-scan-page/patient-scan-page').then(
+            (m) => m.PatientScanPage,
+          ),
         canActivate: [providerOnboardingGuard, providerCapabilityGuard],
         data: { capability: 'scan' },
       },

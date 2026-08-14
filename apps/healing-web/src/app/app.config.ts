@@ -8,8 +8,6 @@ import {
 } from '@angular/core';
 import {
   provideRouter,
-  withPreloading,
-  PreloadAllModules,
   withRouterConfig,
   withInMemoryScrolling,
   withNavigationErrorHandler,
@@ -69,7 +67,6 @@ export const appConfig: ApplicationConfig = {
 
     provideRouter(
       routes,
-      withPreloading(PreloadAllModules),
       withRouterConfig({
         onSameUrlNavigation: 'reload',
         paramsInheritanceStrategy: 'emptyOnly',
