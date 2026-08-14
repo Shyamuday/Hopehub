@@ -120,7 +120,6 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
   if (!devices.length) return { attempted: 0, delivered: 0, disabled: 0 };
 
   const fcmDevices = devices.filter((device) => device.provider !== 'WEB_PUSH');
-  const webDevices = devices.filter((device) => device.provider === 'WEB_PUSH');
   if (fcmDevices.length && (!firebaseAuth || !firebaseProjectId)) {
     if (!warnedMissingFirebaseConfig) {
       warnedMissingFirebaseConfig = true;
@@ -154,7 +153,15 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
                 body: payload.body,
                 icon: '/icons/icon-192x192.png',
                 badge: '/icons/icon-72x72.png',
-                data: payload.data || {},
+                data: {
+                  ...(payload.data || {}),
+                  onActionClick: {
+                    default: {
+                      operation: 'openWindow',
+                      url: payload.data?.['route'] || '/'
+                    }
+                  }
+                },
                 requireInteraction: true
               }
             }),

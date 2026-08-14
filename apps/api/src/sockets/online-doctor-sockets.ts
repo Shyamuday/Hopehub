@@ -1,6 +1,6 @@
 import type { Server as SocketIoServer, Socket } from 'socket.io';
 import { consultationAllowsCallMode } from '../services/quick-talk-modes.js';
-import { ConsultationStatus, LivePresenceStatus, Role } from '@prisma/client';
+import { ConsultationStatus, Role } from '@prisma/client';
 import { SOCKET_EVENTS, SOCKET_ROOM_PREFIXES } from '../constants/socket.constants.js';
 import { prisma } from '../db.js';
 import {
@@ -24,7 +24,9 @@ type CallSignalPayload = {
 
 const ACTIVE_CALL_STATUSES = ['RINGING', 'CONNECTING', 'CONNECTED', 'RECONNECTING'] as const;
 const CALL_SETUP_STALE_MS = 2 * 60 * 1000;
-const CONNECTED_CALL_STALE_MS = 6 * 60 * 60 * 1000;
+// Connected browsers report every 20 seconds. Two minutes allows temporary network/browser
+// throttling while ensuring a crashed tab cannot block the next call for hours.
+const CONNECTED_CALL_STALE_MS = 2 * 60 * 1000;
 const signalBuckets = new Map<string, { startedAt: number; count: number }>();
 const lastSignalSequences = new Map<string, number>();
 const CALL_ALLOWED_CONSULTATION_STATUSES: ConsultationStatus[] = [
@@ -137,11 +139,19 @@ function relayCallSignal(
   io: SocketIoServer,
   fromUserId: string,
   event: string,
-  payload: CallSignalPayload
+  payload: CallSignalPayload,
+  sender?: { name: string; profileImageUrl: string | null; role: Role }
 ) {
   io.to(`${SOCKET_ROOM_PREFIXES.USER}${payload.targetUserId}`).emit(event, {
     ...payload,
-    fromUserId
+    fromUserId,
+    ...(sender
+      ? {
+          fromName: sender.name,
+          fromImageUrl: sender.profileImageUrl,
+          fromRole: sender.role
+        }
+      : {})
   });
 }
 
@@ -515,6 +525,7 @@ export function registerOnlineDoctorSockets(io: SocketIoServer, socket: Socket, 
     { event: SOCKET_EVENTS.CALL_END, relay: SOCKET_EVENTS.CALL_END },
     { event: SOCKET_EVENTS.CALL_REJECT, relay: SOCKET_EVENTS.CALL_REJECT },
     { event: SOCKET_EVENTS.CALL_RING, relay: SOCKET_EVENTS.CALL_RING },
+    { event: SOCKET_EVENTS.CALL_RING_ACK, relay: SOCKET_EVENTS.CALL_RING_ACK },
     { event: SOCKET_EVENTS.CALL_HEARTBEAT, relay: SOCKET_EVENTS.CALL_HEARTBEAT }
   ];
 
@@ -534,7 +545,7 @@ export function registerOnlineDoctorSockets(io: SocketIoServer, socket: Socket, 
         return;
       }
       void recordCallSignal(userId, event, payload)
-        .then((result) => {
+        .then(async (result) => {
           if (!result.relay) {
             socket.emit(SOCKET_EVENTS.CALL_REJECT, {
               consultationId: payload.consultationId,
@@ -547,20 +558,22 @@ export function registerOnlineDoctorSockets(io: SocketIoServer, socket: Socket, 
           if (event === SOCKET_EVENTS.CALL_RING || event === SOCKET_EVENTS.CALL_OFFER) {
             void markConsultationInProgressFromCall(io, userId, payload);
           }
-          if (event === SOCKET_EVENTS.CALL_RING) {
-            void prisma.user
-              .findUnique({ where: { id: userId }, select: { name: true } })
-              .then((sender) =>
-                sendIncomingCallPush({
-                  targetUserId: payload.targetUserId,
-                  consultationId: payload.consultationId,
-                  fromName: sender?.name,
-                  mode: payload.mode
+          const sender =
+            event === SOCKET_EVENTS.CALL_RING
+              ? await prisma.user.findUnique({
+                  where: { id: userId },
+                  select: { name: true, profileImageUrl: true, role: true }
                 })
-              )
-              .catch((error) => console.warn('[push] Incoming call push failed', error));
+              : null;
+          if (event === SOCKET_EVENTS.CALL_RING) {
+            void sendIncomingCallPush({
+              targetUserId: payload.targetUserId,
+              consultationId: payload.consultationId,
+              fromName: sender?.name,
+              mode: payload.mode
+            }).catch((error) => console.warn('[push] Incoming call push failed', error));
           }
-          relayCallSignal(io, userId, relay, payload);
+          relayCallSignal(io, userId, relay, payload, sender ?? undefined);
         })
         .catch((error) => console.error('[call-signal] Could not process signal', error));
     });

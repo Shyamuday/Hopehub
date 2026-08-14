@@ -299,7 +299,8 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
     return `Last checked ${last.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
   }
 
-  callStatusLabel(status: string): string {
+  callStatusLabel(status: string, reason?: string | null): string {
+    if (reason === 'no_answer') return 'Missed / no answer';
     const labels: Record<string, string> = {
       RINGING: 'Calling',
       CONNECTING: 'Connecting',
@@ -308,6 +309,7 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
       ENDED: 'Ended',
       FAILED: 'Could not connect',
       REJECTED: 'Declined',
+      MISSED: 'Missed',
       CANCELLED: 'Cancelled',
     };
     return status ? (labels[status.toUpperCase()] ?? 'Call update') : 'Waiting';
@@ -316,8 +318,9 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
   callReasonLabel(reason?: string | null): string {
     if (!reason) return '';
     const labels: Record<string, string> = {
-      active_call_exists: 'Another call was already active',
-      consultation_call_already_active: 'Session already had an active call',
+      active_call_exists: 'This call is already open. Use the live call controls above.',
+      consultation_call_already_active:
+        'This call is already open. Use the live call controls above.',
       no_answer: 'No answer',
       media_timeout: 'Media did not connect',
       connection_failed: 'Connection failed',

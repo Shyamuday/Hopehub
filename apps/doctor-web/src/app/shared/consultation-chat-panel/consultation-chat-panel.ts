@@ -8,6 +8,7 @@ import { environment } from '../../../environments/environment';
 import { API_PATHS } from '../../core/constants/api-paths.constants';
 import { ConsultationApiService } from '../../core/services/consultation-api.service';
 import { DoctorRealtimeService } from '../../core/services/doctor-realtime.service';
+import { PushNotificationService } from '../../core/services/push-notification.service';
 import type { ConsultationMessage } from '../../core/types/consultation.types';
 
 @Component({
@@ -20,6 +21,7 @@ export class ConsultationChatPanelComponent implements OnChanges, OnDestroy {
   private readonly consultationApi = inject(ConsultationApiService);
   private readonly realtime = inject(DoctorRealtimeService);
   private readonly http = inject(HttpClient);
+  private readonly pushNotifications = inject(PushNotificationService);
 
   @Input({ required: true }) consultationId = '';
   @Input() interactionEnabled = true;
@@ -39,6 +41,7 @@ export class ConsultationChatPanelComponent implements OnChanges, OnDestroy {
   readonly iceServers = signal<IceServerConfig[]>([{ urls: 'stun:stun.l.google.com:19302' }]);
   readonly draftModel = signal({ body: '' });
   readonly draftForm = form(this.draftModel);
+  readonly enableBackgroundCallAlerts = () => this.pushNotifications.enableBrowserCalls();
   private subscribedConsultationId = '';
   private readonly handleMessage = () => {
     if (this.consultationId) void this.load();

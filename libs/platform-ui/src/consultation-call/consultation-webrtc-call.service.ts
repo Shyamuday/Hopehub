@@ -19,8 +19,27 @@ const NETWORK_SAMPLE_INTERVAL_MS = 3_000;
 const CALL_TAB_LOCK_TTL_MS = 15_000;
 const CALL_TAB_LOCK_REFRESH_MS = 5_000;
 const CALL_TAB_LOCK_PREFIX = 'hopehub:active-call:';
+const CALL_RECOVERY_KEY = 'hopehub:recoverable-call';
+const CALL_RECOVERY_MAX_AGE_MS = 5 * 60 * 1000;
+const DELIVERY_ACK_TIMEOUT_MS = 8_000;
 
 export type CallNetworkQuality = 'unknown' | 'good' | 'unstable' | 'poor';
+export type CallParticipant = { name: string; imageUrl?: string; role?: string };
+export type CallSummary = {
+  consultationId: string;
+  mode: CallMode;
+  title: string;
+  message: string;
+  endedAt: number;
+};
+export type RecoverableCall = {
+  consultationId: string;
+  targetUserId: string;
+  mode: CallMode;
+  participant: CallParticipant;
+  privacyRelay: boolean;
+  savedAt: number;
+};
 
 function sdpHasVideo(sdp: string): boolean {
   return /m=video /i.test(sdp);
@@ -84,7 +103,9 @@ function mediaAccessErrorMessage(error: unknown, mode: CallMode): string {
     return `${needsCamera ? 'Camera or microphone' : 'Microphone'} is blocked. Allow access from the browser address-bar lock icon, then retry.`;
   }
   if (errorName === 'NotFoundError' || errorName === 'DevicesNotFoundError') {
-    return `No ${deviceLabel} was found. Connect a device and retry.`;
+    return needsCamera
+      ? 'The browser could not find a camera or microphone. Check the selected devices and retry.'
+      : 'The browser could not find a microphone. Check Windows sound input and browser microphone settings, then retry.';
   }
   if (errorName === 'NotReadableError' || errorName === 'TrackStartError') {
     return `The ${deviceLabel} is busy in another app. Close the other call or recording app, then retry.`;
@@ -118,6 +139,15 @@ export class ConsultationWebrtcCallService {
   readonly privacyRelay = signal(false);
   readonly connectionOnline = signal(typeof navigator === 'undefined' ? true : navigator.onLine);
   readonly voiceFallbackSuggested = signal(false);
+  readonly activeConsultationId = signal('');
+  readonly activeTargetUserId = signal('');
+  readonly remoteRinging = signal(false);
+  readonly micEnabled = signal(true);
+  readonly cameraEnabled = signal(true);
+  readonly participant = signal<CallParticipant>({ name: 'Hope Hub member' });
+  readonly lastCallSummary = signal<CallSummary | null>(null);
+  readonly recoverableCall = signal<RecoverableCall | null>(null);
+  readonly receiverUnavailable = signal(false);
 
   private pc: RTCPeerConnection | null = null;
   private socket: CallSignalingSocket | null = null;
@@ -131,9 +161,11 @@ export class ConsultationWebrtcCallService {
   private iceRestartTimer: ReturnType<typeof setTimeout> | null = null;
   private networkSampleTimer: ReturnType<typeof setInterval> | null = null;
   private callHeartbeatTimer: ReturnType<typeof setInterval> | null = null;
+  private deliveryAckTimeout: ReturnType<typeof setTimeout> | null = null;
   private ringtoneTimer: ReturnType<typeof setInterval> | null = null;
   private ringtoneContext: AudioContext | null = null;
   private incomingNotification: Notification | null = null;
+  private connectedToneCallId = '';
   private wakeLock: WakeLockSentinel | null = null;
   private isInitiator = false;
   private activeCallId = '';
@@ -157,7 +189,12 @@ export class ConsultationWebrtcCallService {
   private callLockKey = '';
   private callLockHeartbeat: ReturnType<typeof setInterval> | null = null;
   private beforeUnloadBound = false;
+  private ringToneUnlockBound = false;
   private readonly releaseLockBeforeUnload = () => this.releaseCallLock();
+  private readonly unlockRingToneOnInteraction = () => {
+    void this.primeRingTone();
+    this.ringToneUnlockBound = false;
+  };
   private readonly handleOnline = () => {
     this.connectionOnline.set(true);
     if (this.callContext && this.pc) {
@@ -180,6 +217,7 @@ export class ConsultationWebrtcCallService {
       reason: 'page_closed',
       metadata: this.callMetadata()
     });
+    this.persistRecoveryContext();
     this.releaseCallLock();
   };
   private readonly handleVisibilityChange = () => {
@@ -214,6 +252,11 @@ export class ConsultationWebrtcCallService {
       window.addEventListener('pagehide', this.handlePageHide);
       document.addEventListener('visibilitychange', this.handleVisibilityChange);
       this.storageListenerBound = true;
+      this.restoreRecoveryContext();
+    }
+    if (typeof window !== 'undefined' && !this.ringToneUnlockBound) {
+      window.addEventListener('pointerdown', this.unlockRingToneOnInteraction, { once: true });
+      this.ringToneUnlockBound = true;
     }
 
     socket.on('connect', () => {
@@ -238,16 +281,47 @@ export class ConsultationWebrtcCallService {
     });
 
     socket.on(CALL_SOCKET_EVENTS.RING, (raw: unknown) => {
-      const payload = raw as { fromUserId?: string; consultationId?: string; callId?: string };
+      const payload = raw as {
+        fromUserId?: string;
+        consultationId?: string;
+        callId?: string;
+        mode?: CallMode;
+        fromName?: string;
+        fromImageUrl?: string | null;
+        fromRole?: string;
+      };
       if (!payload?.fromUserId) return;
       if (this.activeCallId && payload.callId && payload.callId !== this.activeCallId) return;
       if (payload.consultationId) {
         this.observedCallLockKey = `${CALL_TAB_LOCK_PREFIX}${payload.consultationId}`;
+        this.activeConsultationId.set(payload.consultationId);
       }
       if (payload.callId) this.activeCallId = payload.callId;
+      if (payload.mode === 'audio' || payload.mode === 'video') this.callMode.set(payload.mode);
+      this.setParticipant({
+        name: payload.fromName || 'Hope Hub member',
+        imageUrl: payload.fromImageUrl || undefined,
+        role: payload.fromRole
+      });
+      this.activeTargetUserId.set(payload.fromUserId);
       this.incomingCall.set(true);
       if (this.state() === 'idle') this.state.set('ringing');
       void this.startIncomingAlert();
+      if (payload.consultationId) {
+        this.emitSignal(CALL_SOCKET_EVENTS.RING_ACK, {
+          consultationId: payload.consultationId,
+          targetUserId: payload.fromUserId,
+          mode: payload.mode ?? this.callMode()
+        });
+      }
+    });
+
+    socket.on(CALL_SOCKET_EVENTS.RING_ACK, (raw: unknown) => {
+      const payload = raw as { consultationId?: string; fromUserId?: string; callId?: string };
+      if (!this.matchesCallContext(payload)) return;
+      this.clearDeliveryAckTimeout();
+      this.receiverUnavailable.set(false);
+      this.remoteRinging.set(true);
     });
 
     socket.on(CALL_SOCKET_EVENTS.OFFER, (raw: unknown) => {
@@ -286,6 +360,12 @@ export class ConsultationWebrtcCallService {
     } catch {
       // Device enumeration is optional and may be unavailable before permission is granted.
     }
+  }
+
+  async resetMediaDeviceSelection() {
+    this.selectedAudioInputId.set('');
+    this.selectedVideoInputId.set('');
+    await this.refreshMediaDevices();
   }
 
   async selectAudioInput(deviceId: string) {
@@ -360,6 +440,11 @@ export class ConsultationWebrtcCallService {
     iceServers?: IceServerConfig[];
     privacyRelay?: boolean;
   }) {
+    if (this.hasActiveCall()) {
+      const message = 'Your current call is already open. Use the active call controls.';
+      this.error.set(message);
+      throw new Error(message);
+    }
     if (!this.acquireCallLock(params.consultationId)) {
       const message = 'This call is already open in another browser tab.';
       this.error.set(message);
@@ -368,26 +453,37 @@ export class ConsultationWebrtcCallService {
     }
     this.bindSocket(params.socket);
     this.callContext = { consultationId: params.consultationId, targetUserId: params.targetUserId };
+    this.activeTargetUserId.set(params.targetUserId);
     this.incomingCall.set(false);
     this.stopIncomingAlert();
     this.isInitiator = true;
     this.activeCallId = this.newCallId();
+    this.connectedToneCallId = '';
     this.signalSequence = 0;
     this.iceRestartAttempts = 0;
     this.totalReconnectCount = 0;
     this.privacyRelay.set(params.privacyRelay === true);
     this.voiceFallbackSuggested.set(false);
+    this.remoteRinging.set(false);
+    this.micEnabled.set(true);
+    this.cameraEnabled.set(params.mode === 'video');
     this.callMode.set(params.mode);
     this.error.set('');
+    this.lastCallSummary.set(null);
+    this.recoverableCall.set(null);
+    this.receiverUnavailable.set(false);
 
     try {
       await this.ensurePeer(params.mode, params.iceServers ?? DEFAULT_STUN, this.privacyRelay());
+      this.activeConsultationId.set(params.consultationId);
+      this.persistRecoveryContext();
       this.makingOffer = true;
       await this.pc!.setLocalDescription();
       const offer = this.pc!.localDescription!;
       this.makingOffer = false;
 
       this.state.set('ringing');
+      void this.startOutgoingAlert();
       this.emitSignal(CALL_SOCKET_EVENTS.RING, {
         consultationId: params.consultationId,
         targetUserId: params.targetUserId,
@@ -401,10 +497,14 @@ export class ConsultationWebrtcCallService {
         sdp: offer,
         metadata: { ...this.callMetadata(), privacyRelay: this.privacyRelay() }
       });
+      this.startDeliveryAckTimeout();
       this.startAnswerTimeout();
     } catch (error) {
       this.makingOffer = false;
-      this.releaseCallLock();
+      const message =
+        this.error() || (error instanceof Error ? error.message : 'Could not start call.');
+      this.cleanup('error');
+      this.error.set(message);
       throw error;
     }
   }
@@ -419,11 +519,14 @@ export class ConsultationWebrtcCallService {
     }
 
     this.activeCallId = offer.callId;
+    this.connectedToneCallId = '';
     this.signalSequence = 0;
     this.callContext = {
       consultationId: offer.consultationId,
       targetUserId: offer.fromUserId
     };
+    this.activeConsultationId.set(offer.consultationId);
+    this.activeTargetUserId.set(offer.fromUserId);
     this.callMode.set(offer.mode);
     this.error.set('');
     this.incomingCall.set(false);
@@ -431,6 +534,10 @@ export class ConsultationWebrtcCallService {
     this.isInitiator = false;
     this.iceRestartAttempts = 0;
     this.totalReconnectCount = 0;
+    this.remoteRinging.set(false);
+    this.micEnabled.set(true);
+    this.cameraEnabled.set(offer.mode === 'video');
+    this.persistRecoveryContext();
 
     try {
       await this.ensurePeer(offer.mode, iceServers, this.privacyRelay());
@@ -458,9 +565,12 @@ export class ConsultationWebrtcCallService {
       reason: params.reason || 'rejected',
       metadata: this.callMetadata()
     });
+    this.setCallSummary(params.consultationId, 'Call declined', 'You declined this call.');
+    this.clearRecoveryContext();
     this.pendingOffer.set(null);
     this.incomingCall.set(false);
     this.cleanup('ended');
+    void this.playStatusTone('ended');
   }
 
   async endCall(params: { consultationId: string; targetUserId: string; reason?: string }) {
@@ -469,10 +579,56 @@ export class ConsultationWebrtcCallService {
       reason: params.reason || 'ended_by_user',
       metadata: await this.callMetadataWithStats()
     });
+    const switching = Boolean(params.reason?.startsWith('switch_to_'));
+    const silentClose = ['signed_out', 'page_closed'].includes(params.reason || '');
+    if (!switching && !silentClose) {
+      this.setCallSummary(params.consultationId, 'Call ended', 'Your private call has ended.');
+    }
+    if (!switching) this.clearRecoveryContext();
     this.cleanup('ended');
+    if (silentClose) this.lastCallSummary.set(null);
+    if (!switching) void this.playStatusTone('ended');
+  }
+
+  setParticipant(participant: CallParticipant) {
+    this.participant.set({
+      name: participant.name.trim() || 'Hope Hub member',
+      imageUrl: participant.imageUrl || undefined,
+      role: participant.role || undefined
+    });
+  }
+
+  dismissCallSummary() {
+    this.lastCallSummary.set(null);
+    if (this.state() === 'ended') this.state.set('idle');
+  }
+
+  async resumeRecoverableCall(iceServers: IceServerConfig[] = DEFAULT_STUN) {
+    const recovery = this.recoverableCall();
+    if (!recovery || !this.socket) return;
+    this.setParticipant(recovery.participant);
+    this.recoverableCall.set(null);
+    try {
+      await this.startCall({
+        socket: this.socket,
+        consultationId: recovery.consultationId,
+        targetUserId: recovery.targetUserId,
+        mode: recovery.mode,
+        iceServers,
+        privacyRelay: recovery.privacyRelay
+      });
+    } catch (error) {
+      this.recoverableCall.set(recovery);
+      throw error;
+    }
+  }
+
+  dismissRecoverableCall() {
+    this.clearRecoveryContext();
   }
 
   setMicEnabled(enabled: boolean) {
+    this.micEnabled.set(enabled);
     this.localStream()
       ?.getAudioTracks()
       .forEach((track) => {
@@ -481,6 +637,7 @@ export class ConsultationWebrtcCallService {
   }
 
   setCameraEnabled(enabled: boolean) {
+    this.cameraEnabled.set(enabled);
     this.localStream()
       ?.getVideoTracks()
       .forEach((track) => {
@@ -493,6 +650,7 @@ export class ConsultationWebrtcCallService {
     this.stopIncomingAlert();
     this.stopNetworkSampling();
     this.stopCallHeartbeat();
+    this.clearDeliveryAckTimeout();
     void this.releaseWakeLock();
     this.releaseCallLock();
     this.localStream()
@@ -503,6 +661,10 @@ export class ConsultationWebrtcCallService {
     this.pc?.close();
     this.pc = null;
     this.callContext = null;
+    this.activeConsultationId.set('');
+    this.activeTargetUserId.set('');
+    this.remoteRinging.set(false);
+    this.receiverUnavailable.set(false);
     this.pendingOffer.set(null);
     this.incomingCall.set(false);
     this.iceQueue = [];
@@ -524,8 +686,34 @@ export class ConsultationWebrtcCallService {
     this.consecutivePoorSamples = 0;
     this.networkQuality.set('unknown');
     this.voiceFallbackSuggested.set(false);
+    this.micEnabled.set(true);
+    this.cameraEnabled.set(true);
     this.state.set(state);
     this.error.set('');
+  }
+
+  hasActiveCall() {
+    return ['ringing', 'connecting', 'connected', 'reconnecting'].includes(this.state());
+  }
+
+  async endCurrentCall(reason = 'ended_by_user') {
+    const consultationId = this.activeConsultationId();
+    const targetUserId = this.activeTargetUserId();
+    if (!consultationId || !targetUserId) return;
+    await this.endCall({ consultationId, targetUserId, reason });
+  }
+
+  async switchCurrentCallMode(mode: CallMode, iceServers: IceServerConfig[] = DEFAULT_STUN) {
+    if (!this.socket || !this.callContext || this.callMode() === mode) return;
+    const socket = this.socket;
+    const context = { ...this.callContext };
+    const privacyRelay = this.privacyRelay();
+    await this.endCall({
+      ...context,
+      reason: mode === 'video' ? 'switch_to_video' : 'switch_to_voice'
+    });
+    await new Promise<void>((resolve) => setTimeout(resolve, 200));
+    await this.startCall({ socket, ...context, mode, iceServers, privacyRelay });
   }
 
   private async onRemoteOffer(raw: unknown) {
@@ -536,6 +724,9 @@ export class ConsultationWebrtcCallService {
       sdp?: RTCSessionDescriptionInit;
       metadata?: Record<string, unknown>;
       callId?: string;
+      fromName?: string;
+      fromImageUrl?: string | null;
+      fromRole?: string;
     };
     if (!payload?.fromUserId || !payload.consultationId || !payload.sdp?.sdp || !payload.callId)
       return;
@@ -571,6 +762,13 @@ export class ConsultationWebrtcCallService {
     const mode: CallMode =
       payload.mode === 'video' ? 'video' : sdpHasVideo(payload.sdp.sdp) ? 'video' : 'audio';
     this.activeCallId = payload.callId;
+    if (payload.fromName) {
+      this.setParticipant({
+        name: payload.fromName,
+        imageUrl: payload.fromImageUrl || undefined,
+        role: payload.fromRole
+      });
+    }
     this.privacyRelay.set(payload.metadata?.['privacyRelay'] === true);
     this.callMode.set(mode);
     this.pendingOffer.set({
@@ -580,6 +778,7 @@ export class ConsultationWebrtcCallService {
       sdp: payload.sdp,
       mode
     });
+    this.activeConsultationId.set(payload.consultationId);
     this.incomingCall.set(true);
     this.state.set('ringing');
     void this.startIncomingAlert();
@@ -594,10 +793,13 @@ export class ConsultationWebrtcCallService {
     };
     if (!payload?.sdp || !this.pc) return;
     if (!this.matchesCallContext(payload)) return;
+    this.clearDeliveryAckTimeout();
+    this.receiverUnavailable.set(false);
     this.clearAnswerTimeout();
     this.isSettingRemoteAnswerPending = true;
     try {
       await this.pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+      this.stopIncomingAlert();
     } finally {
       this.isSettingRemoteAnswerPending = false;
     }
@@ -634,7 +836,15 @@ export class ConsultationWebrtcCallService {
     };
     if (!this.matchesCallContext(payload)) return;
     const message = callReasonMessage(payload?.reason);
+    const switchedMode = Boolean(payload?.reason?.startsWith('switch_to_'));
+    const consultationId = payload.consultationId || this.activeConsultationId();
+    if (!switchedMode && consultationId) {
+      const title = payload.reason === 'rejected' ? 'Call declined' : 'Call ended';
+      this.setCallSummary(consultationId, title, message);
+    }
+    if (!switchedMode) this.clearRecoveryContext();
     this.cleanup('ended');
+    if (!switchedMode) void this.playStatusTone('ended');
     if (
       payload?.reason &&
       payload.reason !== 'ended_by_user' &&
@@ -896,6 +1106,11 @@ export class ConsultationWebrtcCallService {
       this.clearMediaTimeout();
       this.clearReconnectTimeout();
       this.state.set('connected');
+      this.stopIncomingAlert();
+      if (this.activeCallId && this.connectedToneCallId !== this.activeCallId) {
+        this.connectedToneCallId = this.activeCallId;
+        void this.playStatusTone('connected');
+      }
       this.iceRestartAttempts = 0;
       this.iceRestartInProgress = false;
       this.clearIceRestartTimer();
@@ -1086,19 +1301,33 @@ export class ConsultationWebrtcCallService {
   }
 
   private async startIncomingAlert() {
+    await this.startRingToneLoop(true);
+  }
+
+  private async startOutgoingAlert() {
+    await this.startRingToneLoop(false);
+  }
+
+  private async startRingToneLoop(showNotification: boolean) {
     if (this.ringtoneTimer) return;
     await this.playRingTone();
     this.ringtoneTimer = setInterval(() => void this.playRingTone(), 1_800);
     if (
+      showNotification &&
       typeof document !== 'undefined' &&
       document.hidden &&
       typeof Notification !== 'undefined' &&
       Notification.permission === 'granted'
     ) {
       this.incomingNotification?.close();
-      this.incomingNotification = new Notification('Incoming Hope Hub call', {
-        body: 'Open the session to accept or decline.'
+      this.incomingNotification = new Notification(`${this.participant().name} is calling`, {
+        body: `${this.callMode() === 'video' ? 'Video' : 'Voice'} call · Open to accept or decline.`,
+        icon: this.participant().imageUrl
       });
+      this.incomingNotification.onclick = () => {
+        window.focus();
+        this.incomingNotification?.close();
+      };
     }
   }
 
@@ -1136,6 +1365,47 @@ export class ConsultationWebrtcCallService {
     } catch {
       this.incomingAlertsEnabled.set(false);
     }
+  }
+
+  private async primeRingTone() {
+    if (typeof window === 'undefined') return;
+    const AudioContextConstructor =
+      window.AudioContext ||
+      (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextConstructor) return;
+    this.ringtoneContext ||= new AudioContextConstructor();
+    try {
+      await this.ringtoneContext.resume();
+      this.incomingAlertsEnabled.set(this.ringtoneContext.state === 'running');
+    } catch {
+      this.incomingAlertsEnabled.set(false);
+    }
+  }
+
+  private async playStatusTone(kind: 'connected' | 'ended') {
+    if (typeof window === 'undefined') return;
+    await this.primeRingTone();
+    if (!this.ringtoneContext || this.ringtoneContext.state !== 'running') return;
+
+    const context = this.ringtoneContext;
+    const notes = kind === 'connected' ? [520, 740] : [420, 260];
+    const noteLength = kind === 'connected' ? 0.12 : 0.16;
+    const gap = 0.045;
+
+    notes.forEach((frequency, index) => {
+      const start = context.currentTime + index * (noteLength + gap);
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(frequency, start);
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(0.09, start + 0.018);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + noteLength);
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start(start);
+      oscillator.stop(start + noteLength + 0.01);
+    });
   }
 
   private startAnswerTimeout() {
@@ -1177,8 +1447,88 @@ export class ConsultationWebrtcCallService {
         metadata: await this.callMetadataWithStats()
       });
     }
+    this.clearRecoveryContext();
+    if (context) {
+      this.setCallSummary(
+        context.consultationId,
+        reason === 'no_answer' ? 'No answer' : 'Call could not connect',
+        message
+      );
+    }
     this.cleanup('ended');
+    void this.playStatusTone('ended');
     this.error.set(message);
+  }
+
+  private setCallSummary(consultationId: string, title: string, message: string) {
+    this.lastCallSummary.set({
+      consultationId,
+      mode: this.callMode(),
+      title,
+      message,
+      endedAt: Date.now()
+    });
+  }
+
+  private startDeliveryAckTimeout() {
+    this.clearDeliveryAckTimeout();
+    this.deliveryAckTimeout = setTimeout(() => {
+      if (this.state() !== 'ringing' || this.remoteRinging()) return;
+      this.receiverUnavailable.set(true);
+    }, DELIVERY_ACK_TIMEOUT_MS);
+  }
+
+  private clearDeliveryAckTimeout() {
+    if (this.deliveryAckTimeout) clearTimeout(this.deliveryAckTimeout);
+    this.deliveryAckTimeout = null;
+  }
+
+  private persistRecoveryContext() {
+    if (!this.callContext || typeof sessionStorage === 'undefined') return;
+    const recovery: RecoverableCall = {
+      ...this.callContext,
+      mode: this.callMode(),
+      participant: this.participant(),
+      privacyRelay: this.privacyRelay(),
+      savedAt: Date.now()
+    };
+    try {
+      sessionStorage.setItem(CALL_RECOVERY_KEY, JSON.stringify(recovery));
+    } catch {
+      // Call recovery remains optional when storage is unavailable.
+    }
+  }
+
+  private restoreRecoveryContext() {
+    if (typeof sessionStorage === 'undefined') return;
+    try {
+      const raw = sessionStorage.getItem(CALL_RECOVERY_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as RecoverableCall;
+      const valid =
+        typeof parsed.consultationId === 'string' &&
+        typeof parsed.targetUserId === 'string' &&
+        (parsed.mode === 'audio' || parsed.mode === 'video') &&
+        Date.now() - Number(parsed.savedAt || 0) <= CALL_RECOVERY_MAX_AGE_MS;
+      if (!valid) {
+        sessionStorage.removeItem(CALL_RECOVERY_KEY);
+        return;
+      }
+      this.recoverableCall.set(parsed);
+      this.setParticipant(parsed.participant || { name: 'Hope Hub member' });
+    } catch {
+      sessionStorage.removeItem(CALL_RECOVERY_KEY);
+    }
+  }
+
+  private clearRecoveryContext() {
+    this.recoverableCall.set(null);
+    if (typeof sessionStorage === 'undefined') return;
+    try {
+      sessionStorage.removeItem(CALL_RECOVERY_KEY);
+    } catch {
+      // Ignore blocked storage.
+    }
   }
 
   private clearAnswerTimeout() {

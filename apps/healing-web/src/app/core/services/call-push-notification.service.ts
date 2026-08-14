@@ -12,6 +12,10 @@ export class CallPushNotificationService {
   private readonly router = inject(Router);
   private clickListenerBound = false;
 
+  init(): void {
+    if (this.swPush.isEnabled) this.bindNotificationClicks();
+  }
+
   async enable(): Promise<boolean> {
     if (!this.swPush.isEnabled) return false;
     try {

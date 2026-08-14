@@ -1,14 +1,19 @@
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
-import { filter } from 'rxjs';
+import { filter, firstValueFrom } from 'rxjs';
 import {
   RoleTaskGuideComponent,
   NotificationBellHostComponent,
   ProfileAvatarDisplayComponent,
+  ConsultationCallInviteComponent,
+  ConsultationWebrtcCallService,
+  type IceServerConfig,
 } from '@hopehub/platform-ui';
 import { environment } from '../../../environments/environment';
 import { AUTH_TOKEN_KEY } from '../../core/constants/auth.constants';
 import { ROUTE_PATHS } from '../../core/constants/app-routes.constants';
+import { API_PATHS } from '../../core/constants/api-paths.constants';
 import {
   profileNavItem,
   type DoctorNavChildLink,
@@ -53,6 +58,7 @@ const EXPANDED_GROUPS_KEY = 'doctor:nav-expanded-groups';
     RoleTaskGuideComponent,
     NotificationBellHostComponent,
     ProfileAvatarDisplayComponent,
+    ConsultationCallInviteComponent,
   ],
   templateUrl: './doctor-shell.html',
   styleUrl: './doctor-shell.scss',
@@ -85,11 +91,14 @@ export class DoctorShell implements OnInit, OnDestroy {
   expandedGroupIds = signal<Set<string>>(new Set());
   lastWorkspace = signal<LastConsultationWorkspace | null>(null);
   currentUrl = signal('');
+  readonly callIceServers = signal<IceServerConfig[]>([{ urls: 'stun:stun.l.google.com:19302' }]);
 
   private readonly realtime = inject(DoctorRealtimeService);
   private readonly router = inject(Router);
   private readonly consultationNav = inject(ConsultationNavigationService);
   private readonly onlineDoctor = inject(OnlineDoctorService);
+  private readonly globalCall = inject(ConsultationWebrtcCallService);
+  private readonly http = inject(HttpClient);
   private navSubscription?: { unsubscribe: () => void };
   private incomingCountdownTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -108,6 +117,7 @@ export class DoctorShell implements OnInit, OnDestroy {
   ) {}
 
   async ngOnInit() {
+    void this.loadCallIceServers();
     try {
       const profile = await this.session.load();
       this.doctorName = profile.name;
@@ -158,6 +168,8 @@ export class DoctorShell implements OnInit, OnDestroy {
       }
       window.setTimeout(() => this.assignmentNotice.set(''), 5000);
     });
+    const callSocket = this.realtime.getSocket();
+    if (callSocket) this.globalCall.bindSocket(callSocket);
 
     this.syncFocusMode(this.router.url);
     this.currentUrl.set(this.router.url);
@@ -177,6 +189,24 @@ export class DoctorShell implements OnInit, OnDestroy {
           this.refreshLastWorkspace();
         }
       });
+  }
+
+  private async loadCallIceServers() {
+    try {
+      const response = await firstValueFrom(
+        this.http.get<{ iceServers: IceServerConfig[] }>(
+          `${environment.apiUrl}${API_PATHS.RTC_ICE_SERVERS}`,
+        ),
+      );
+      if (response.iceServers?.length) this.callIceServers.set(response.iceServers);
+    } catch {
+      // Keep public STUN so calls can still work on straightforward networks.
+    }
+  }
+
+  openIncomingCall(consultationId: string): void {
+    if (!consultationId) return;
+    void this.router.navigate(['/', ROUTE_PATHS.SESSIONS, consultationId]);
   }
 
   private async refreshOnboardingState(): Promise<void> {
@@ -349,7 +379,10 @@ export class DoctorShell implements OnInit, OnDestroy {
     this.navSubscription?.unsubscribe();
   }
 
-  logout() {
+  async logout() {
+    if (this.globalCall.hasActiveCall()) {
+      await this.globalCall.endCurrentCall('signed_out');
+    }
     this.onlineDoctor.disconnectRealtime();
     this.session.clear();
     this.auth.logout();

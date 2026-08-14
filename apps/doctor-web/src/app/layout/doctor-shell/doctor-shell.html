@@ -1,4 +1,8 @@
 <main class="doctor-shell" [class.focus-mode]="focusMode()">
+  <hopehub-consultation-call-invite
+    [iceServers]="callIceServers()"
+    (opened)="openIncomingCall($event)"
+  />
   <header class="topbar">
     <div class="topbar-start">
       @if (onboardingComplete()) {

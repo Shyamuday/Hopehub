@@ -1,0 +1,154 @@
+@if (visible()) {
+  <div class="call-overlay" [class.call-overlay--minimized]="minimized()">
+    <section class="call-surface" role="dialog" aria-modal="true" aria-label="Hope Hub call">
+      <header class="call-surface__header">
+        <div>
+          <small>Hope Hub · private 1:1</small>
+          <strong>{{ statusLabel() }}</strong>
+        </div>
+        <div class="call-surface__header-actions">
+          <button type="button" (click)="openSession()">Open session</button>
+          @if (call.hasActiveCall()) {
+            <button type="button" (click)="openSettings()" aria-label="Call settings">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.25A3.25 3.25 0 1 0 12 8.75a3.25 3.25 0 0 0 0 6.5Z" /><path d="M19.1 13.8a7.8 7.8 0 0 0 0-3.6l2-1.55-2-3.45-2.45 1a8 8 0 0 0-3.1-1.8L13.2 2h-4.4l-.35 2.4a8 8 0 0 0-3.1 1.8l-2.45-1-2 3.45 2 1.55a7.8 7.8 0 0 0 0 3.6l-2 1.55 2 3.45 2.45-1a8 8 0 0 0 3.1 1.8l.35 2.4h4.4l.35-2.4a8 8 0 0 0 3.1-1.8l2.45 1 2-3.45-2-1.55Z" /></svg>
+            </button>
+          }
+          <button type="button" (click)="minimized.set(!minimized())" [attr.aria-label]="minimized() ? 'Expand call' : 'Minimize call'">
+            {{ minimized() ? '□' : '−' }}
+          </button>
+        </div>
+      </header>
+
+      @if (!minimized()) {
+        <div
+          class="call-surface__stage"
+          [class.call-surface__stage--video]="call.callMode() === 'video' && !call.incomingCall() && call.hasActiveCall()"
+        >
+          @if (call.recoverableCall() && !call.hasActiveCall()) {
+            <div class="call-surface__avatar call-surface__avatar--recovery">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8v5h5" /><path d="M6.3 16.5a7 7 0 1 0 .2-9.2L5 9" /></svg>
+            </div>
+            <strong>Continue your {{ call.recoverableCall()?.mode === 'video' ? 'video' : 'voice' }} call?</strong>
+            <span>The page was refreshed. We’ll reconnect both participants safely.</span>
+          } @else if (call.lastCallSummary() && !call.hasActiveCall()) {
+            <div class="call-surface__avatar call-surface__avatar--ended">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 12.5 3.1 3.1L17.5 8" /></svg>
+            </div>
+            <strong>{{ call.lastCallSummary()?.title }}</strong>
+            <span>{{ call.lastCallSummary()?.message }}</span>
+          } @else if (call.callMode() === 'video' && !call.incomingCall()) {
+            <video #remoteVideo class="call-surface__remote-video" autoplay playsinline></video>
+            <video #localVideo class="call-surface__local-video" autoplay playsinline muted></video>
+            <strong>{{ call.participant().name }}</strong>
+            <span>{{ call.state() === 'connected' ? durationLabel() + ' · ' + networkLabel() : 'Securing your connection…' }}</span>
+          } @else {
+            <div class="call-surface__avatar" [class.call-surface__avatar--ringing]="call.state() === 'ringing'">
+              @if (call.participant().imageUrl) {
+                <img [src]="call.participant().imageUrl" [alt]="call.participant().name" />
+              } @else {
+                <span>{{ participantInitial() }}</span>
+              }
+            </div>
+            <strong>{{ call.participant().name }}</strong>
+            <span class="call-surface__role">{{ participantRoleLabel() }} · {{ modeLabel() }}</span>
+            @if (call.state() === 'connected') {
+              <span>{{ durationLabel() }} · {{ networkLabel() }}</span>
+            } @else if (call.incomingCall()) {
+              <span>Choose Accept to join this private call.</span>
+            } @else if (call.state() === 'connecting' || call.state() === 'reconnecting') {
+              <span>{{ call.state() === 'reconnecting' ? 'Restoring your connection…' : 'Securing your connection…' }}</span>
+            } @else {
+              <span>{{ call.receiverUnavailable() ? 'Their device did not confirm the call. You can cancel or wait a little longer.' : call.remoteRinging() ? 'Their device is ringing.' : 'Contacting their device…' }}</span>
+            }
+          }
+        </div>
+
+        <div class="call-surface__controls">
+          @if (call.recoverableCall() && !call.hasActiveCall()) {
+            <button type="button" class="summary-action summary-action--quiet" (click)="call.dismissRecoverableCall()">Not now</button>
+            <button type="button" class="summary-action" (click)="resumeCall()" [disabled]="busy()">{{ busy() ? 'Reconnecting…' : 'Rejoin call' }}</button>
+          } @else if (call.lastCallSummary() && !call.hasActiveCall()) {
+            <button type="button" class="summary-action" (click)="call.dismissCallSummary()">Close</button>
+          } @else if (call.incomingCall() && (call.state() === 'ringing' || (call.state() === 'error' && call.pendingOffer()))) {
+            <button type="button" class="control control--decline" (click)="decline()" [disabled]="busy()">
+              <span class="control__icon control__icon--hangup" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5.4 17.3 3 13.2c4.9-3.25 13.1-3.25 18 0l-2.4 4.1-3.1-1.25.2-2.2a13.1 13.1 0 0 0-7.4 0l.2 2.2-3.1 1.25Z" /></svg></span>Decline
+            </button>
+            <button type="button" class="control control--accept" (click)="accept()" [disabled]="busy() || !call.pendingOffer()">
+              <span class="control__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7.2 3.75 9.4 8.5 7.7 10a15.3 15.3 0 0 0 6.3 6.3l1.5-1.7 4.75 2.2-.65 3.15c-.2.95-1.08 1.6-2.05 1.5C9.3 20.65 3.35 14.7 2.55 6.45c-.1-.97.55-1.85 1.5-2.05l3.15-.65Z" /></svg></span>{{ busy() ? 'Joining…' : call.state() === 'error' ? 'Try again' : 'Accept' }}
+            </button>
+          } @else if (call.state() === 'ringing') {
+            <button type="button" class="control control--end" (click)="endCall()" [disabled]="busy()">
+              <span class="control__icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5.4 17.3 3 13.2c4.9-3.25 13.1-3.25 18 0l-2.4 4.1-3.1-1.25.2-2.2a13.1 13.1 0 0 0-7.4 0l.2 2.2-3.1 1.25Z" /></svg></span>Cancel
+            </button>
+          } @else {
+            <button type="button" class="control" [class.control--off]="!call.micEnabled()" (click)="toggleMic()">
+              <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3.25a4 4 0 0 0-4 4v4.25a4 4 0 0 0 8 0V7.25a4 4 0 0 0-4-4Z" /><path d="M5.5 10.75v.75a6.5 6.5 0 0 0 13 0v-.75M12 18v3M9 21h6" /></svg></span>{{ call.micEnabled() ? 'Mute' : 'Unmute' }}
+            </button>
+            @if (call.callMode() === 'video') {
+              <button type="button" class="control" [class.control--off]="!call.cameraEnabled()" (click)="toggleCamera()">
+                <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4.75 7.5A2.75 2.75 0 0 1 7.5 4.75h6A2.75 2.75 0 0 1 16.25 7.5v9a2.75 2.75 0 0 1-2.75 2.75h-6a2.75 2.75 0 0 1-2.75-2.75v-9Z" /><path d="m16.25 9.2 3.6-2.05v9.7l-3.6-2.05V9.2Z" /></svg></span>{{ call.cameraEnabled() ? 'Camera off' : 'Camera on' }}
+              </button>
+              <button type="button" class="control" (click)="switchMode('audio')" [disabled]="busy()">
+                <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 13v-1a8 8 0 0 1 16 0v1M5 12h2.5v7H5a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2ZM19 12h-2.5v7H19a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2Z" /></svg></span>Voice
+              </button>
+            } @else if (call.state() === 'connected') {
+              <button type="button" class="control" (click)="switchMode('video')" [disabled]="busy()">
+                <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4.75 7.5A2.75 2.75 0 0 1 7.5 4.75h6A2.75 2.75 0 0 1 16.25 7.5v9a2.75 2.75 0 0 1-2.75 2.75h-6a2.75 2.75 0 0 1-2.75-2.75v-9Z" /><path d="m16.25 9.2 3.6-2.05v9.7l-3.6-2.05V9.2Z" /></svg></span>Video
+              </button>
+            }
+            <button type="button" class="control control--end" (click)="endCall()" [disabled]="busy()">
+              <span aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5.4 17.3 3 13.2c4.9-3.25 13.1-3.25 18 0l-2.4 4.1-3.1-1.25.2-2.2a13.1 13.1 0 0 0-7.4 0l.2 2.2-3.1 1.25Z" /></svg></span>End
+            </button>
+          }
+        </div>
+
+        @if (!call.lastCallSummary() && call.callMode() === 'audio' && call.state() !== 'ringing') {
+          <audio #remoteAudio autoplay></audio>
+        }
+        @if (call.error() && call.hasActiveCall()) {
+          <p class="call-surface__error" role="alert">{{ call.error() }}</p>
+        }
+
+        @if (settingsOpen() && call.hasActiveCall()) {
+          <button class="call-settings__backdrop" type="button" aria-label="Close call settings" (click)="settingsOpen.set(false)"></button>
+          <section class="call-settings" role="dialog" aria-modal="true" aria-label="Call settings">
+            <header>
+              <div><small>Voice & video</small><strong>Call settings</strong></div>
+              <button type="button" aria-label="Close call settings" (click)="settingsOpen.set(false)">×</button>
+            </header>
+            <label>
+              <span>Microphone</span>
+              <select [value]="call.selectedAudioInputId()" (change)="changeAudioInput($event)">
+                @for (device of call.audioInputs(); track device.deviceId; let index = $index) {
+                  <option [value]="device.deviceId">{{ deviceLabel(device, index, 'Microphone') }}</option>
+                }
+              </select>
+            </label>
+            @if (call.callMode() === 'video') {
+              <label>
+                <span>Camera</span>
+                <select [value]="call.selectedVideoInputId()" (change)="changeVideoInput($event)">
+                  @for (device of call.videoInputs(); track device.deviceId; let index = $index) {
+                    <option [value]="device.deviceId">{{ deviceLabel(device, index, 'Camera') }}</option>
+                  }
+                </select>
+              </label>
+            }
+            @if (call.audioOutputs().length) {
+              <label>
+                <span>Speaker</span>
+                <select [value]="call.selectedAudioOutputId()" (change)="changeAudioOutput($event)">
+                  @for (device of call.audioOutputs(); track device.deviceId; let index = $index) {
+                    <option [value]="device.deviceId">{{ deviceLabel(device, index, 'Speaker') }}</option>
+                  }
+                </select>
+              </label>
+            }
+            <button class="call-settings__test" type="button" (click)="testSpeaker()">Test speaker</button>
+            @if (settingsMessage()) { <p role="status">{{ settingsMessage() }}</p> }
+          </section>
+        }
+      }
+    </section>
+  </div>
+}

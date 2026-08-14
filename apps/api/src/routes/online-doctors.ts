@@ -24,7 +24,11 @@ import {
   setDoctorLiveStatus
 } from '../services/online-doctor-presence.js';
 import { asyncRoute, routeParam } from '../utils/helpers.js';
-import { registerUserPushDevice } from '../services/push-devices.js';
+import {
+  getWebPushPublicKey,
+  registerUserPushDevice,
+  registerUserWebPushDevice
+} from '../services/push-devices.js';
 
 export function createOnlineDoctorsRouter(io: SocketIoServer) {
   const router = Router();
@@ -330,6 +334,33 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
         platform: body.platform
       });
       res.json({ ok: true, token: body.token.slice(0, 8) + '…' });
+    })
+  );
+
+  router.get(
+    '/doctor/web-push-config',
+    authRequired,
+    allowRoles(Role.DOCTOR),
+    asyncRoute(async (_req, res) => {
+      const publicKey = getWebPushPublicKey();
+      res.json({ enabled: Boolean(publicKey), publicKey });
+    })
+  );
+
+  router.post(
+    '/doctor/web-push-subscription',
+    authRequired,
+    allowRoles(Role.DOCTOR),
+    asyncRoute(async (req, res) => {
+      const subscription = z
+        .object({
+          endpoint: z.string().url(),
+          expirationTime: z.number().nullable().optional(),
+          keys: z.object({ p256dh: z.string().min(1), auth: z.string().min(1) })
+        })
+        .parse(req.body);
+      await registerUserWebPushDevice({ userId: req.user!.id, subscription });
+      res.json({ ok: true });
     })
   );
 

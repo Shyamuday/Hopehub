@@ -47,6 +47,7 @@ export {
 } from './cross-app-links/cross-app-links';
 export { ConsultationWebrtcCallService } from './consultation-call/consultation-webrtc-call.service';
 export { ConsultationCallPanelComponent } from './consultation-call/consultation-call-panel.component';
+export { ConsultationCallInviteComponent } from './consultation-call/consultation-call-invite.component';
 export {
   CALL_SOCKET_EVENTS,
   type CallMode,

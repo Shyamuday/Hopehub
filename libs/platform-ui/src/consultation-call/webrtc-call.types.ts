@@ -29,6 +29,7 @@ export const CALL_SOCKET_EVENTS = {
   END: 'call:end',
   REJECT: 'call:reject',
   RING: 'call:ring',
+  RING_ACK: 'call:ring-ack',
   SYNC: 'call:sync',
   STATE: 'call:state',
   HEARTBEAT: 'call:heartbeat'

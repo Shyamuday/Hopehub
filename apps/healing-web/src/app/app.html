@@ -1,4 +1,8 @@
 <div class="min-h-screen flex flex-col bg-white">
+  <hopehub-consultation-call-invite
+    [iceServers]="callIceServers()"
+    (opened)="openIncomingCall($event)"
+  ></hopehub-consultation-call-invite>
   <app-header class="sticky top-0 z-50"></app-header>
   <!-- <app-announcement-banner
     variant="marquee"

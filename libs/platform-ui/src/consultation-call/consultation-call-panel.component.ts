@@ -20,6 +20,24 @@ import type {
   MediaAccessResult
 } from './webrtc-call.types';
 
+function mediaAccessErrorMessageForCheck(error: unknown, mode: CallMode) {
+  const name = error && typeof error === 'object' && 'name' in error ? String(error.name) : '';
+  if (name === 'NotAllowedError' || name === 'SecurityError') {
+    return 'Allow microphone and camera access from the browser address bar, then check again.';
+  }
+  if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+    return mode === 'video'
+      ? 'A microphone or camera was not found. Connect the device, then check again.'
+      : 'A microphone was not found. Connect it, then check again.';
+  }
+  if (name === 'NotReadableError' || name === 'TrackStartError') {
+    return 'A device is busy in another app. Close the other call or recording app, then retry.';
+  }
+  return error instanceof Error && error.message
+    ? error.message
+    : 'Could not check your devices. Review browser permissions and retry.';
+}
+
 @Component({
   selector: 'hopehub-consultation-call-panel',
   standalone: true,
@@ -41,10 +59,13 @@ export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDest
   @Input() participantImageUrl = '';
   @Input() ensureMediaAccess?: (mode: CallMode) => Promise<MediaAccessResult>;
   @Input() enableBackgroundAlerts?: () => Promise<boolean>;
+  @Input() globalOverlayEnabled = true;
 
   private localVideoElement: HTMLVideoElement | null = null;
   private remoteVideoElement: HTMLVideoElement | null = null;
   private remoteAudioElement: HTMLAudioElement | null = null;
+  private preCallVideoElement: HTMLVideoElement | null = null;
+  private preCallStream: MediaStream | null = null;
 
   @ViewChild('localVideo')
   set localVideoRef(ref: ElementRef<HTMLVideoElement> | undefined) {
@@ -64,15 +85,27 @@ export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDest
     void this.attachRemoteStream(this.remoteAudioElement);
   }
 
+  @ViewChild('preCallVideo')
+  set preCallVideoRef(ref: ElementRef<HTMLVideoElement> | undefined) {
+    this.preCallVideoElement = ref?.nativeElement ?? null;
+    if (this.preCallVideoElement) this.preCallVideoElement.srcObject = this.preCallStream;
+  }
+
   readonly busy = signal(false);
-  readonly micOn = signal(true);
-  readonly cameraOn = signal(true);
   readonly mediaCheckMessage = signal('');
   readonly mediaChecking = signal(false);
   readonly deviceChanging = signal(false);
   readonly audioPlaybackBlocked = signal(false);
   readonly callAlertMessage = signal('');
   readonly settingsOpen = signal(false);
+  readonly preCallOpen = signal(false);
+  readonly preCallMode = signal<CallMode>('audio');
+  readonly preCallChecking = signal(false);
+  readonly preCallMicReady = signal(false);
+  readonly preCallCameraReady = signal(false);
+  readonly preCallSpeakerReady = signal(false);
+  readonly preCallNetworkReady = signal(false);
+  readonly preCallMessage = signal('');
 
   private readonly handleDeviceChange = () => void this.call.refreshMediaDevices();
 
@@ -107,10 +140,26 @@ export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDest
   }
 
   ngOnDestroy() {
+    this.stopPreCallStream();
     if (typeof navigator !== 'undefined') {
       navigator.mediaDevices?.removeEventListener?.('devicechange', this.handleDeviceChange);
     }
-    this.call.cleanup();
+    if (
+      !this.globalOverlayEnabled &&
+      this.isThisCall() &&
+      this.call.hasActiveCall() &&
+      !(this.call.state() === 'ringing' && this.call.incomingCall()) &&
+      this.consultationId &&
+      this.targetUserId
+    ) {
+      void this.call.endCall({
+        consultationId: this.consultationId,
+        targetUserId: this.targetUserId,
+        reason: 'page_closed'
+      });
+    } else if (this.isThisCall() && this.call.state() === 'error') {
+      this.call.cleanup();
+    }
   }
 
   canCall() {
@@ -123,8 +172,28 @@ export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDest
     );
   }
 
+  isThisCall() {
+    const activeConsultationId = this.call.activeConsultationId();
+    if (activeConsultationId) return activeConsultationId === this.consultationId;
+    const pendingConsultationId = this.call.pendingOffer()?.consultationId;
+    return !pendingConsultationId || pendingConsultationId === this.consultationId;
+  }
+
+  anotherCallIsActive() {
+    return this.call.hasActiveCall() && !this.isThisCall();
+  }
+
+  canStartCall() {
+    return (
+      this.isThisCall() &&
+      !this.call.hasActiveCall() &&
+      (this.call.state() === 'idle' || this.call.state() === 'ended')
+    );
+  }
+
   isVideoActive() {
     return (
+      this.isThisCall() &&
       this.call.callMode() === 'video' &&
       (this.call.state() === 'connected' ||
         this.call.state() === 'connecting' ||
@@ -133,6 +202,7 @@ export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDest
   }
 
   statusLabel() {
+    if (this.anotherCallIsActive()) return 'Call already in progress';
     const idleLabel =
       this.allowAudio && this.allowVideo
         ? 'Voice & video consultation available'
@@ -141,7 +211,11 @@ export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDest
           : 'Voice consultation available';
     const map: Record<string, string> = {
       idle: idleLabel,
-      ringing: this.call.incomingCall() ? 'Incoming call…' : 'Calling…',
+      ringing: this.call.incomingCall()
+        ? 'Incoming call…'
+        : this.call.remoteRinging()
+          ? 'Ringing…'
+          : 'Calling…',
       connecting: 'Connecting…',
       connected: this.call.callMode() === 'video' ? 'On video call' : 'On voice call',
       reconnecting: 'Reconnecting…',
@@ -155,8 +229,26 @@ export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDest
     return this.allowAudio && this.call.callMode() === 'video' && Boolean(this.call.error());
   }
 
-  isMediaPermissionError() {
-    return /microphone|camera|browser permission|secure https|another app/i.test(this.call.error());
+  isMediaPermissionBlocked() {
+    return /blocked|allow access|permission|secure https/i.test(this.call.error());
+  }
+
+  isMediaDeviceMissing() {
+    return /could not find|no microphone|no camera|selected .* unavailable/i.test(
+      this.call.error()
+    );
+  }
+
+  isMediaDeviceBusy() {
+    return /busy in another app/i.test(this.call.error());
+  }
+
+  retryActionLabel() {
+    if (this.busy()) return 'Checking…';
+    if (this.isMediaPermissionBlocked()) return 'Request access again';
+    if (this.isMediaDeviceMissing()) return 'Check devices & retry';
+    if (this.isMediaDeviceBusy()) return 'Retry device';
+    return 'Retry call';
   }
 
   showDeviceSettings() {
@@ -275,7 +367,11 @@ export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDest
 
   async start(mode: CallMode) {
     if ((mode === 'audio' && !this.allowAudio) || (mode === 'video' && !this.allowVideo)) return;
-    if (!this.socket || !this.consultationId || !this.targetUserId) return;
+    if (!this.socket || !this.consultationId || !this.targetUserId || !this.canStartCall()) return;
+    this.call.setParticipant({
+      name: this.participantName || 'Hope Hub member',
+      imageUrl: this.participantImageUrl || undefined
+    });
     this.busy.set(true);
     try {
       await this.call.startCall({
@@ -293,6 +389,83 @@ export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDest
     }
   }
 
+  async prepareCall(mode: CallMode) {
+    if ((mode === 'audio' && !this.allowAudio) || (mode === 'video' && !this.allowVideo)) return;
+    if (!this.canStartCall() || this.preCallChecking()) return;
+    this.stopPreCallStream();
+    this.preCallMode.set(mode);
+    this.preCallOpen.set(true);
+    this.preCallChecking.set(true);
+    this.preCallMicReady.set(false);
+    this.preCallCameraReady.set(mode === 'audio');
+    this.preCallSpeakerReady.set(false);
+    this.preCallNetworkReady.set(false);
+    this.preCallMessage.set('Checking your devices and connection…');
+    try {
+      if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+        throw new Error('Calls are not supported in this browser.');
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: this.call.selectedAudioInputId()
+          ? { deviceId: { exact: this.call.selectedAudioInputId() } }
+          : true,
+        video:
+          mode === 'video'
+            ? this.call.selectedVideoInputId()
+              ? { deviceId: { exact: this.call.selectedVideoInputId() } }
+              : true
+            : false
+      });
+      this.preCallStream = stream;
+      if (this.preCallVideoElement) {
+        this.preCallVideoElement.srcObject = stream;
+        await this.preCallVideoElement.play().catch(() => undefined);
+      }
+      this.preCallMicReady.set(stream.getAudioTracks().length > 0);
+      this.preCallCameraReady.set(mode === 'audio' || stream.getVideoTracks().length > 0);
+      this.preCallSpeakerReady.set(await this.call.testSpeaker());
+      const connectivity = await this.call.testConnectivity(
+        this.iceServers,
+        this.call.privacyRelay()
+      );
+      this.preCallNetworkReady.set(connectivity.ok);
+      this.preCallMessage.set(
+        connectivity.ok ? 'Everything needed for your call is ready.' : connectivity.message
+      );
+    } catch (error) {
+      this.preCallMessage.set(mediaAccessErrorMessageForCheck(error, mode));
+    } finally {
+      this.preCallChecking.set(false);
+    }
+  }
+
+  preCallReady() {
+    return (
+      this.preCallMicReady() &&
+      this.preCallCameraReady() &&
+      this.preCallSpeakerReady() &&
+      this.preCallNetworkReady()
+    );
+  }
+
+  async confirmPreparedCall() {
+    if (!this.preCallReady() || this.preCallChecking()) return;
+    const mode = this.preCallMode();
+    this.closePreCall();
+    await this.start(mode);
+  }
+
+  closePreCall() {
+    this.stopPreCallStream();
+    this.preCallOpen.set(false);
+  }
+
+  private stopPreCallStream() {
+    this.preCallStream?.getTracks().forEach((track) => track.stop());
+    this.preCallStream = null;
+    if (this.preCallVideoElement) this.preCallVideoElement.srcObject = null;
+  }
+
   async tryVoiceFallback() {
     this.call.cleanup('ended');
     await this.start('audio');
@@ -302,6 +475,9 @@ export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDest
     if (this.busy()) return;
     this.busy.set(true);
     try {
+      if (this.isMediaDeviceMissing()) {
+        await this.call.resetMediaDeviceSelection();
+      }
       if (this.call.pendingOffer()) {
         await this.call.acceptIncoming(this.iceServers);
         return;
@@ -398,14 +574,12 @@ export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDest
   }
 
   toggleMic() {
-    const next = !this.micOn();
-    this.micOn.set(next);
+    const next = !this.call.micEnabled();
     this.call.setMicEnabled(next);
   }
 
   toggleCamera() {
-    const next = !this.cameraOn();
-    this.cameraOn.set(next);
+    const next = !this.call.cameraEnabled();
     this.call.setCameraEnabled(next);
   }
 

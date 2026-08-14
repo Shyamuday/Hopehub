@@ -273,7 +273,7 @@
                   <article class="call-history-item">
                     <div>
                       <strong>{{ call.mode === 'video' ? 'Video' : 'Voice' }}</strong>
-                      <span>{{ callStatusLabel(call.status) }}</span>
+                      <span>{{ callStatusLabel(call.status, call.endReason) }}</span>
                     </div>
                     <small>
                       {{ formatShortDate(call.startedAt) }} · {{ callDurationLabel(call) }}

@@ -1,5 +1,5 @@
 import { Component, signal, OnInit, PLATFORM_ID, inject } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Router, RouterOutlet } from '@angular/router';
 import { isPlatformBrowser } from '@angular/common';
 import { filter, take } from 'rxjs';
 import { HeaderComponent, FooterComponent } from './layout';
@@ -11,11 +11,18 @@ import {
   ScrollToTopComponent,
   NotificationCenterComponent,
 } from './shared/components';
-import { NavigationService, SEOService } from './core/services';
+import {
+  ConsultationCallInviteComponent,
+  ConsultationWebrtcCallService,
+  type IceServerConfig,
+} from '@hopehub/platform-ui';
+import { HopeHubRealtimeService, NavigationService, SEOService } from './core/services';
 import { AuthModalService } from './core/services/auth-modal.service';
 import { AuthService } from './core/services/auth.service';
+import { BookingService } from './core/services/booking.service';
 import { FontLoader } from './core/utils/font-loader.util';
 import { captureReferralAttribution } from './core/utils/referral-attribution.util';
+import { CallPushNotificationService } from './core/services/call-push-notification.service';
 
 @Component({
   selector: 'app-root',
@@ -29,6 +36,7 @@ import { captureReferralAttribution } from './core/utils/referral-attribution.ut
     AuthModalComponent,
     ScrollToTopComponent,
     NotificationCenterComponent,
+    ConsultationCallInviteComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
@@ -40,6 +48,12 @@ export class App implements OnInit {
   private platformId = inject(PLATFORM_ID);
   private authService = inject(AuthService);
   private authModalService = inject(AuthModalService);
+  private router = inject(Router);
+  private realtime = inject(HopeHubRealtimeService);
+  private globalCall = inject(ConsultationWebrtcCallService);
+  private bookingService = inject(BookingService);
+  private callPush = inject(CallPushNotificationService);
+  readonly callIceServers = signal<IceServerConfig[]>([{ urls: 'stun:stun.l.google.com:19302' }]);
 
   constructor(private navigationService: NavigationService) {}
 
@@ -55,7 +69,38 @@ export class App implements OnInit {
       this.seoService.addOrganizationStructuredData();
 
       this.openAuthModalWhenSessionMissing();
+      this.bindGlobalCallAlerts();
+      this.callPush.init();
+      this.loadCallIceServers();
     }
+  }
+
+  openIncomingCall(consultationId: string): void {
+    if (!consultationId) return;
+    void this.router.navigate(['/live-session', consultationId]);
+  }
+
+  private bindGlobalCallAlerts(): void {
+    this.authService.authState$.subscribe((state) => {
+      if (!state.isAuthenticated && !this.authService.getToken()) {
+        if (this.globalCall.hasActiveCall()) void this.globalCall.endCurrentCall('signed_out');
+        return;
+      }
+      const socket = this.realtime.connect();
+      if (socket) this.globalCall.bindSocket(socket);
+    });
+  }
+
+  private loadCallIceServers(): void {
+    this.bookingService
+      .iceServers()
+      .pipe(take(1))
+      .subscribe({
+        next: ({ iceServers }) => {
+          if (iceServers?.length) this.callIceServers.set(iceServers);
+        },
+        error: () => undefined,
+      });
   }
 
   private openAuthModalWhenSessionMissing(): void {

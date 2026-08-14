@@ -1,8 +1,8 @@
 @if (canCall()) {
   <section
     class="call-panel"
-    [class.call-panel--ringing]="call.state() === 'ringing'"
-    [class.call-panel--active]="call.state() === 'connected' || call.state() === 'connecting' || call.state() === 'reconnecting'"
+    [class.call-panel--ringing]="isThisCall() && call.state() === 'ringing'"
+    [class.call-panel--active]="isThisCall() && (call.state() === 'connected' || call.state() === 'connecting' || call.state() === 'reconnecting')"
   >
     <div class="call-panel__glow" aria-hidden="true"></div>
 
@@ -27,7 +27,7 @@
       <div class="call-heading">
         <span class="call-eyebrow">Hope Hub · private 1:1</span>
         <strong class="call-status">{{ statusLabel() }}</strong>
-        <span class="call-subtitle">{{ participantName || 'Private call' }}</span>
+        <span class="call-subtitle">{{ anotherCallIsActive() ? 'Return to your active session' : participantName || 'Private call' }}</span>
       </div>
 
       <div class="call-header-tools">
@@ -51,9 +51,9 @@
     </header>
 
     <div class="call-actions">
-      @if (call.state() === 'idle' || call.state() === 'ended') {
+      @if (canStartCall()) {
         @if (allowAudio) {
-          <button type="button" class="call-control call-control--primary" (click)="start('audio')" [disabled]="busy()">
+          <button type="button" class="call-control call-control--primary" (click)="prepareCall('audio')" [disabled]="busy()">
             <span class="control-icon">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 3.75 9.4 8.5 7.7 10a15.3 15.3 0 0 0 6.3 6.3l1.5-1.7 4.75 2.2-.65 3.15c-.2.95-1.08 1.6-2.05 1.5C9.3 20.65 3.35 14.7 2.55 6.45c-.1-.97.55-1.85 1.5-2.05l3.15-.65Z" /></svg>
             </span>
@@ -61,16 +61,19 @@
           </button>
         }
         @if (allowVideo) {
-          <button type="button" class="call-control call-control--primary" (click)="start('video')" [disabled]="busy()">
+          <button type="button" class="call-control call-control--primary" (click)="prepareCall('video')" [disabled]="busy()">
             <span class="control-icon">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.75 7.5A2.75 2.75 0 0 1 7.5 4.75h6A2.75 2.75 0 0 1 16.25 7.5v9a2.75 2.75 0 0 1-2.75 2.75h-6a2.75 2.75 0 0 1-2.75-2.75v-9Z" /><path d="m16.25 9.2 3.6-2.05v9.7l-3.6-2.05V9.2Z" /></svg>
             </span>
             <span class="control-label">Video</span>
           </button>
         }
+        <p class="call-permission-note">
+          Chrome will ask for {{ allowVideo ? 'microphone or camera' : 'microphone' }} access when you start.
+        </p>
       }
 
-      @if (call.state() === 'ringing' && call.incomingCall()) {
+      @if (!globalOverlayEnabled && isThisCall() && call.state() === 'ringing' && call.incomingCall()) {
         <button type="button" class="call-control call-control--accept" (click)="accept()">
           <span class="control-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.2 3.75 9.4 8.5 7.7 10a15.3 15.3 0 0 0 6.3 6.3l1.5-1.7 4.75 2.2-.65 3.15c-.2.95-1.08 1.6-2.05 1.5C9.3 20.65 3.35 14.7 2.55 6.45c-.1-.97.55-1.85 1.5-2.05l3.15-.65Z" /></svg></span>
           <span class="control-label">Accept</span>
@@ -81,15 +84,22 @@
         </button>
       }
 
-      @if (call.state() === 'connected' || call.state() === 'connecting' || call.state() === 'reconnecting') {
+      @if (!globalOverlayEnabled && isThisCall() && call.state() === 'ringing' && !call.incomingCall()) {
+        <button type="button" class="call-control call-control--danger" (click)="hangUp()">
+          <span class="control-icon control-icon--hangup"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5.4 17.3 3 13.2c4.9-3.25 13.1-3.25 18 0l-2.4 4.1-3.1-1.25.2-2.2a13.1 13.1 0 0 0-7.4 0l.2 2.2-3.1 1.25Z" /></svg></span>
+          <span class="control-label">Cancel call</span>
+        </button>
+      }
+
+      @if (!globalOverlayEnabled && isThisCall() && (call.state() === 'connected' || call.state() === 'connecting' || call.state() === 'reconnecting')) {
         <button type="button" class="call-control call-control--quiet" (click)="toggleMic()">
           <span class="control-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.25a4 4 0 0 0-4 4v4.25a4 4 0 0 0 8 0V7.25a4 4 0 0 0-4-4Z" /><path d="M5.5 10.75v.75a6.5 6.5 0 0 0 13 0v-.75M12 18v3M9 21h6" /></svg></span>
-          <span class="control-label">{{ micOn() ? 'Mute' : 'Unmute' }}</span>
+          <span class="control-label">{{ call.micEnabled() ? 'Mute' : 'Unmute' }}</span>
         </button>
         @if (call.callMode() === 'video') {
           <button type="button" class="call-control call-control--quiet" (click)="toggleCamera()">
             <span class="control-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.75 7.5A2.75 2.75 0 0 1 7.5 4.75h6A2.75 2.75 0 0 1 16.25 7.5v9a2.75 2.75 0 0 1-2.75 2.75h-6a2.75 2.75 0 0 1-2.75-2.75v-9Z" /><path d="m16.25 9.2 3.6-2.05v9.7l-3.6-2.05V9.2Z" /></svg></span>
-            <span class="control-label">{{ cameraOn() ? 'Camera off' : 'Camera on' }}</span>
+            <span class="control-label">{{ call.cameraEnabled() ? 'Camera off' : 'Camera on' }}</span>
           </button>
         }
         @if (call.state() === 'connected' && call.callMode() === 'audio' && allowVideo) {
@@ -111,6 +121,18 @@
       }
     </div>
 
+    @if (globalOverlayEnabled && isThisCall() && call.hasActiveCall()) {
+      <div class="call-notice" role="status">
+        Your call is open in the call window, so it stays available while you move through the app.
+      </div>
+    }
+
+    @if (anotherCallIsActive()) {
+      <div class="call-notice" role="status">
+        Your current call is still active. Finish it before starting another session.
+      </div>
+    }
+
     @if (!call.connectionOnline()) {
       <div class="call-notice call-notice--error" role="status">You are offline. The call will reconnect automatically when your connection returns.</div>
     }
@@ -128,20 +150,38 @@
         <div class="notice-actions">
           @if (call.state() === 'error') {
             <button type="button" class="btn-retry" (click)="retryCall()" [disabled]="busy()">
-              {{ busy() ? 'Checking…' : isMediaPermissionError() ? 'Allow mic & retry' : 'Retry call' }}
+              {{ retryActionLabel() }}
             </button>
           }
           @if (showVoiceFallback()) {
             <button type="button" class="btn-inline" (click)="tryVoiceFallback()" [disabled]="busy()">Try voice instead</button>
           }
         </div>
-        @if (isMediaPermissionError()) {
+        @if (isMediaPermissionBlocked()) {
           <details class="call-permission-help">
             <summary>How to allow access</summary>
             <ol>
               <li>Click the lock or site-controls icon beside the browser address.</li>
               <li>Set Microphone to Allow. For video, also set Camera to Allow.</li>
               <li>Reload this page, then select Retry call.</li>
+            </ol>
+          </details>
+        } @else if (isMediaDeviceMissing()) {
+          <details class="call-permission-help">
+            <summary>Check microphone or camera</summary>
+            <ol>
+              <li>Open Windows Settings → System → Sound and confirm an input device appears.</li>
+              <li>Open Chrome Settings → Privacy and security → Site settings → Microphone.</li>
+              <li>Select the correct device, return here, and retry.</li>
+            </ol>
+          </details>
+        } @else if (isMediaDeviceBusy()) {
+          <details class="call-permission-help">
+            <summary>Free the microphone or camera</summary>
+            <ol>
+              <li>Close Meet, Zoom, Teams, WhatsApp, OBS, or other recording apps.</li>
+              <li>Reconnect a Bluetooth or USB headset if you use one.</li>
+              <li>Retry the call.</li>
             </ol>
           </details>
         }
@@ -155,11 +195,11 @@
       </div>
     }
 
-    @if ((call.state() === 'connected' || call.state() === 'connecting' || call.state() === 'reconnecting') && call.callMode() === 'audio') {
+    @if (!globalOverlayEnabled && (call.state() === 'connected' || call.state() === 'connecting' || call.state() === 'reconnecting') && call.callMode() === 'audio') {
       <audio #remoteAudio autoplay></audio>
     }
 
-    @if (isVideoActive()) {
+    @if (!globalOverlayEnabled && isVideoActive()) {
       <div class="video-stage">
         <video #remoteVideo class="remote-video" autoplay playsinline></video>
         <video #localVideo class="local-video" autoplay playsinline muted></video>
@@ -242,6 +282,45 @@
         @if (mediaCheckMessage()) {
           <div class="call-settings-message" role="status">{{ mediaCheckMessage() }}</div>
         }
+      </section>
+    }
+
+    @if (preCallOpen()) {
+      <button type="button" class="pre-call-backdrop" aria-label="Close call check" (click)="closePreCall()"></button>
+      <section class="pre-call-sheet" role="dialog" aria-modal="true" aria-labelledby="pre-call-title">
+        <header>
+          <div>
+            <small>Before you connect</small>
+            <h3 id="pre-call-title">Check your {{ preCallMode() === 'video' ? 'video call' : 'voice call' }}</h3>
+          </div>
+          <button type="button" aria-label="Close call check" (click)="closePreCall()">×</button>
+        </header>
+
+        @if (preCallMode() === 'video') {
+          <div class="pre-call-preview">
+            <video #preCallVideo autoplay playsinline muted></video>
+            @if (!preCallCameraReady()) { <span>Camera preview will appear here</span> }
+          </div>
+        }
+
+        <div class="pre-call-results" aria-live="polite">
+          <span [class.is-ready]="preCallMicReady()"><b>{{ preCallMicReady() ? '✓' : '•' }}</b> Microphone</span>
+          @if (preCallMode() === 'video') {
+            <span [class.is-ready]="preCallCameraReady()"><b>{{ preCallCameraReady() ? '✓' : '•' }}</b> Camera</span>
+          }
+          <span [class.is-ready]="preCallSpeakerReady()"><b>{{ preCallSpeakerReady() ? '✓' : '•' }}</b> Speaker</span>
+          <span [class.is-ready]="preCallNetworkReady()"><b>{{ preCallNetworkReady() ? '✓' : '•' }}</b> Connection</span>
+        </div>
+
+        <p class="pre-call-message" [class.pre-call-message--ready]="preCallReady()">{{ preCallMessage() }}</p>
+        <div class="pre-call-actions">
+          <button type="button" class="pre-call-secondary" (click)="prepareCall(preCallMode())" [disabled]="preCallChecking()">
+            {{ preCallChecking() ? 'Checking…' : 'Check again' }}
+          </button>
+          <button type="button" class="pre-call-primary" (click)="confirmPreparedCall()" [disabled]="!preCallReady() || preCallChecking()">
+            Start {{ preCallMode() === 'video' ? 'video' : 'voice' }} call
+          </button>
+        </div>
       </section>
     }
   </section>
