@@ -1,0 +1,47 @@
+/* One responsive contract for legacy and new admin data tables. */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  vertical-align: top;
+}
+
+@media (max-width: 768px) {
+  table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: inline proximity;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table th,
+  table td {
+    min-width: 8.5rem;
+    white-space: normal;
+  }
+
+  table th:first-child,
+  table td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    min-width: 9.5rem;
+    background: inherit;
+    box-shadow: 1px 0 0 rgba(148, 163, 184, 0.2);
+  }
+
+  table th:first-child {
+    z-index: 2;
+  }
+
+  table button,
+  table a {
+    min-height: 2.5rem;
+  }
+}

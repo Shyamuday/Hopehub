@@ -1,8 +1,12 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminApi } from '../../core/services/admin-api';
 import { AdminCanDirective } from '../../core/directives/admin-can.directive';
 import { ADMIN_PERMISSIONS } from '../../core/admin-permissions';
+import {
+  AdminFormDrawerComponent,
+  type AdminFormStep,
+} from '../../shared/ui/admin-form-drawer.component';
 
 type Tab = 'offers' | 'banners' | 'leads';
 
@@ -39,7 +43,7 @@ const MEDIA_ACCESS_MODES = ['PUBLIC', 'LOGIN_REQUIRED', 'PAID_ONLY'];
 @Component({
   selector: 'app-hope-hub-offers-page',
   standalone: true,
-  imports: [FormsModule, AdminCanDirective],
+  imports: [FormsModule, AdminCanDirective, AdminFormDrawerComponent],
   templateUrl: './hope-hub-offers-page.html',
   styleUrl: './hope-hub-offers-page.scss',
 })
@@ -64,6 +68,46 @@ export class HopeHubOffersPage implements OnInit {
 
   readonly offerForm = signal(this.emptyOffer());
   readonly bannerForm = signal(this.emptyBanner());
+  readonly offerEditorOpen = signal(false);
+  readonly offerStep = signal(0);
+  readonly bannerEditorOpen = signal(false);
+  readonly bannerStep = signal(0);
+  readonly offerSteps: readonly AdminFormStep[] = [
+    { id: 'basics', label: 'Basics' },
+    { id: 'pricing', label: 'Pricing' },
+    { id: 'delivery', label: 'Delivery' },
+    { id: 'access', label: 'Access' },
+    { id: 'review', label: 'Review' },
+  ];
+  readonly offerEditorTitle = computed(() =>
+    this.offerForm().id ? `Edit ${this.offerForm().title}` : 'Create offer',
+  );
+  readonly offerEditorDescription = computed(() => {
+    const copy = [
+      'Set the public identity and booking route.',
+      'Configure price, discounts, and partial payment.',
+      'Add package, event, benefits, and audience details.',
+      'Configure recordings and access eligibility.',
+      'Confirm visibility and review the final consumer price.',
+    ];
+    return copy[this.offerStep()] || copy[0];
+  });
+  readonly bannerSteps: readonly AdminFormStep[] = [
+    { id: 'content', label: 'Content' },
+    { id: 'schedule', label: 'Schedule' },
+    { id: 'review', label: 'Review' },
+  ];
+  readonly bannerEditorTitle = computed(() =>
+    this.bannerForm().id ? `Edit ${this.bannerForm().title}` : 'Create banner',
+  );
+  readonly bannerEditorDescription = computed(() => {
+    const copy = [
+      'Add the message, destination, and visual details.',
+      'Choose when and where the banner should appear.',
+      'Review the public banner before saving.',
+    ];
+    return copy[this.bannerStep()] || copy[0];
+  });
 
   ngOnInit(): void {
     void this.load();
@@ -87,6 +131,10 @@ export class HopeHubOffersPage implements OnInit {
 
   setTab(tab: Tab): void {
     this.tab.set(tab);
+    this.offerEditorOpen.set(false);
+    this.offerStep.set(0);
+    this.bannerEditorOpen.set(false);
+    this.bannerStep.set(0);
   }
 
   editOffer(offer: any): void {
@@ -120,6 +168,36 @@ export class HopeHubOffersPage implements OnInit {
       allowedOfferingCodesText: (offer.metadata?.allowedOfferingCodes || []).join('\n'),
     });
     this.tab.set('offers');
+    this.offerStep.set(0);
+    this.offerEditorOpen.set(true);
+  }
+
+  newOffer(): void {
+    this.offerForm.set(this.emptyOffer());
+    this.offerStep.set(0);
+    this.offerEditorOpen.set(true);
+  }
+
+  closeOfferEditor(): void {
+    if (this.saving()) return;
+    this.offerEditorOpen.set(false);
+    this.offerStep.set(0);
+    this.offerForm.set(this.emptyOffer());
+  }
+
+  nextOfferStep(): void {
+    if (this.offerNextDisabled()) return;
+    this.offerStep.update((step) => Math.min(step + 1, this.offerSteps.length - 1));
+  }
+
+  previousOfferStep(): void {
+    this.offerStep.update((step) => Math.max(0, step - 1));
+  }
+
+  offerNextDisabled(): boolean {
+    if (this.offerStep() !== 0) return false;
+    const form = this.offerForm();
+    return !form.code.trim() || !form.title.trim() || !form.description.trim();
   }
 
   editBanner(banner: any): void {
@@ -130,6 +208,36 @@ export class HopeHubOffersPage implements OnInit {
       endsAt: this.inputDateTime(banner.endsAt),
     });
     this.tab.set('banners');
+    this.bannerStep.set(0);
+    this.bannerEditorOpen.set(true);
+  }
+
+  newBanner(): void {
+    this.bannerForm.set(this.emptyBanner());
+    this.bannerStep.set(0);
+    this.bannerEditorOpen.set(true);
+  }
+
+  closeBannerEditor(): void {
+    if (this.saving()) return;
+    this.bannerEditorOpen.set(false);
+    this.bannerStep.set(0);
+    this.bannerForm.set(this.emptyBanner());
+  }
+
+  nextBannerStep(): void {
+    if (this.bannerNextDisabled()) return;
+    this.bannerStep.update((step) => Math.min(step + 1, this.bannerSteps.length - 1));
+  }
+
+  previousBannerStep(): void {
+    this.bannerStep.update((step) => Math.max(0, step - 1));
+  }
+
+  bannerNextDisabled(): boolean {
+    if (this.bannerStep() !== 0) return false;
+    const form = this.bannerForm();
+    return !form.title.trim() || !form.routePath.trim();
   }
 
   async saveOffer(): Promise<void> {
@@ -193,6 +301,8 @@ export class HopeHubOffersPage implements OnInit {
         await this.api.createHopeHubOffering(payload);
       }
       this.offerForm.set(this.emptyOffer());
+      this.offerEditorOpen.set(false);
+      this.offerStep.set(0);
       await this.load();
       this.showToast('Offer saved');
     } catch {
@@ -227,6 +337,8 @@ export class HopeHubOffersPage implements OnInit {
         await this.api.createHopeHubBanner(payload);
       }
       this.bannerForm.set(this.emptyBanner());
+      this.bannerEditorOpen.set(false);
+      this.bannerStep.set(0);
       await this.load();
       this.showToast('Banner saved');
     } catch {

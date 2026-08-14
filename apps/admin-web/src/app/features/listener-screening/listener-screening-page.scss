@@ -69,6 +69,15 @@
   align-items: start;
 }
 
+.screening-layout {
+  display: block;
+}
+
+.screening-layout > .side-stack {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+  align-items: start;
+}
+
 .editor,
 .versions,
 .questions,

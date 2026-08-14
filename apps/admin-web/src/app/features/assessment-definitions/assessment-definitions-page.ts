@@ -1,8 +1,15 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminApi } from '../../core/services/admin-api';
 import { AdminCanDirective } from '../../core/directives/admin-can.directive';
 import { ADMIN_PERMISSIONS } from '../../core/admin-permissions';
+import {
+  AdminFormDrawerComponent,
+  type AdminFormStep,
+} from '../../shared/ui/admin-form-drawer.component';
+import { AdminFeedbackComponent } from '../../shared/ui/admin-feedback.component';
+import { AdminContentStateComponent } from '../../shared/ui/admin-content-state.component';
+import { AdminConfirmDialogComponent } from '../../shared/ui/admin-confirm-dialog.component';
 
 type DefinitionForm = {
   id: string;
@@ -29,7 +36,14 @@ type DefinitionForm = {
 @Component({
   selector: 'app-assessment-definitions-page',
   standalone: true,
-  imports: [FormsModule, AdminCanDirective],
+  imports: [
+    FormsModule,
+    AdminCanDirective,
+    AdminFormDrawerComponent,
+    AdminFeedbackComponent,
+    AdminContentStateComponent,
+    AdminConfirmDialogComponent,
+  ],
   templateUrl: './assessment-definitions-page.html',
   styleUrl: './assessment-definitions-page.scss',
 })
@@ -54,10 +68,22 @@ export class AssessmentDefinitionsPage implements OnInit {
     pagination: {},
   });
   readonly form = signal<DefinitionForm>(this.emptyForm());
+  readonly editorOpen = signal(false);
+  readonly editorStep = signal(0);
+  readonly reportOpen = signal(false);
+  readonly pendingUnpublish = signal<any | null>(null);
+  readonly editorSteps: readonly AdminFormStep[] = [
+    { id: 'identity', label: 'Identity' },
+    { id: 'access', label: 'Access' },
+    { id: 'config', label: 'Questions' },
+    { id: 'review', label: 'Review' },
+  ];
+  readonly editorTitle = computed(() =>
+    this.form().id ? `Edit ${this.form().title || 'assessment'}` : 'Create assessment',
+  );
 
   ngOnInit(): void {
     void this.load();
-    void this.loadAccessReport();
   }
 
   async load(): Promise<void> {
@@ -136,10 +162,51 @@ export class AssessmentDefinitionsPage implements OnInit {
       isActive: Boolean(definition.isActive),
       configJson: JSON.stringify(definition.config, null, 2),
     });
+    this.editorStep.set(0);
+    this.editorOpen.set(true);
   }
 
   newDraft(): void {
     this.form.set(this.emptyForm());
+    this.editorStep.set(0);
+    this.editorOpen.set(true);
+  }
+
+  closeEditor(): void {
+    if (this.saving()) return;
+    this.editorOpen.set(false);
+    this.editorStep.set(0);
+    this.form.set(this.emptyForm());
+  }
+
+  nextEditorStep(): void {
+    if (this.editorNextDisabled()) return;
+    this.editorStep.update((step) => Math.min(step + 1, this.editorSteps.length - 1));
+  }
+
+  previousEditorStep(): void {
+    this.editorStep.update((step) => Math.max(0, step - 1));
+  }
+
+  editorNextDisabled(): boolean {
+    const current = this.form();
+    if (this.editorStep() === 0) {
+      return !current.id.trim() || !current.type.trim() || !current.title.trim();
+    }
+    if (this.editorStep() === 2) {
+      try {
+        JSON.parse(current.configJson);
+        return false;
+      } catch {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  toggleReport(): void {
+    this.reportOpen.update((open) => !open);
+    if (this.reportOpen() && !this.accessReport().payments.length) void this.loadAccessReport();
   }
 
   async save(): Promise<void> {
@@ -190,6 +257,8 @@ export class AssessmentDefinitionsPage implements OnInit {
       }
 
       this.toast.set('Assessment saved.');
+      this.editorOpen.set(false);
+      this.editorStep.set(0);
       await this.load();
     } catch (error: any) {
       this.error.set(
@@ -209,6 +278,16 @@ export class AssessmentDefinitionsPage implements OnInit {
 
   async unpublish(definition: any): Promise<void> {
     await this.togglePublish(definition.id, false);
+    this.pendingUnpublish.set(null);
+  }
+
+  requestUnpublish(definition: any): void {
+    this.pendingUnpublish.set(definition);
+  }
+
+  confirmUnpublish(): void {
+    const definition = this.pendingUnpublish();
+    if (definition) void this.unpublish(definition);
   }
 
   private async togglePublish(id: string, active: boolean): Promise<void> {

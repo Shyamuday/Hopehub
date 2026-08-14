@@ -1,65 +1,23 @@
-<section class="workspace-context-panel" [class.hope-hub]="workspaceKey() === 'hope-hub'">
-  <div>
-    <p>{{ workspaceLabel() }} workspace</p>
-    <h2>
-      {{ providerPluralTitleLabel() }}
-    </h2>
-    <span>
-      {{
-        workspaceKey() === 'hope-hub'
-          ? 'Showing ' +
-            providerPluralLabel() +
-            ' only. Provider roles decide whether someone appears as a psychologist, coach, guide, or listener.'
-          : 'Showing ' +
-            providerPluralLabel() +
-            ' only. ' +
-            hopeHubProviderPluralLabel +
-            ' stay in the Hope Hub workspace.'
-      }}
-    </span>
-  </div>
-</section>
+<app-provider-workspace-context
+  [workspaceKey]="workspaceKey()"
+  [workspaceLabel]="workspaceLabel()"
+  [providerPluralTitle]="providerPluralTitleLabel()"
+  [providerPlural]="providerPluralLabel()"
+  [hopeHubProviderPlural]="hopeHubProviderPluralLabel"
+/>
 
-<section class="panel website-settings-panel panel--compact" [adminCan]="manageDirectoryPermissions" adminCanMatch="any">
-  <div class="panel-header">
-    <div>
-      <h2>Website — {{ providerPluralTitleLabel() }} Directory Settings</h2>
-      <p class="panel-hint">Public directory limit and display order.</p>
-    </div>
-    <button
-      type="button"
-      class="btn-secondary"
-      (click)="showDirectorySettings.set(!showDirectorySettings())"
-    >
-      {{ showDirectorySettings() ? 'Hide settings' : 'Show settings' }}
-    </button>
-  </div>
-  @if (showDirectorySettings()) {
-    <p class="panel-hint">
-      Control how many {{ providerPluralLabel() }} appear on the public
-      <em>{{ publicDirectoryLabel() }}</em
-      >. Use the <em>Display order</em> field below to set the listing sequence.
-    </p>
-    <div class="config-row">
-      <label for="doctorListLimit">Max {{ providerPluralLabel() }} shown on website (1–50)</label>
-      <input
-        id="doctorListLimit"
-        type="number"
-        min="1"
-        max="50"
-        [value]="doctorListLimitValue()"
-        (input)="doctorListLimitValue.set($any($event.target).value)"
-        [disabled]="savingConfig()"
-      />
-      <button type="button" (click)="saveDoctorListLimit()" [disabled]="savingConfig()">
-        {{ savingConfig() ? 'Saving…' : 'Save limit' }}
-      </button>
-    </div>
-    @if (configMessage()) {
-      <p class="success config-msg">{{ configMessage() }}</p>
-    }
-  }
-</section>
+<app-provider-directory-settings
+  [permissions]="manageDirectoryPermissions"
+  [providerPlural]="providerPluralLabel()"
+  [directoryLabel]="publicDirectoryLabel()"
+  [open]="showDirectorySettings()"
+  [limit]="doctorListLimitValue()"
+  [saving]="savingConfig()"
+  [message]="configMessage()"
+  (toggle)="showDirectorySettings.set(!showDirectorySettings())"
+  (limitChange)="doctorListLimitValue.set($event)"
+  (save)="saveDoctorListLimit()"
+/>
 
 <section class="panel panel--compact" [adminCan]="manageProviderPermission">
   <div class="panel-header">
@@ -502,130 +460,150 @@
 </section>
 
 <section class="panel">
-  <h2>{{ providerSingularTitle() }} Setup / Visibility Review</h2>
-  <p class="panel-hint">
-    Provider accounts can log in immediately. Use this area only to review setup readiness, website
-    visibility, and accounts that need attention.
-  </p>
+  <div class="panel-header">
+    <div>
+      <h2>{{ providerSingularTitle() }} setup review</h2>
+      <p class="panel-hint">Open only when an account needs setup or visibility attention.</p>
+    </div>
+    <button type="button" class="btn-secondary" (click)="showSetupReview.set(!showSetupReview())">
+      {{ showSetupReview() ? 'Close review' : 'Open review queue' }}
+    </button>
+  </div>
+  @if (showSetupReview()) {
+    <p class="panel-hint">
+      Provider accounts can log in immediately. Use this area only to review setup readiness,
+      website visibility, and accounts that need attention.
+    </p>
 
-  @if (loading()) {
-    <p class="loading-text">Loading...</p>
-  }
-
-  <fieldset class="toolbar" [disabled]="loading()">
-    <input
-      [placeholder]="'Search setup review ' + providerPluralLabel() + '...'"
-      [formField]="pendingFilterForm.searchTerm"
-      (change)="onPendingFilterChange()"
-    />
-    @if (workspaceKey() === 'hope-hub') {
-      <select [formField]="pendingFilterForm.supportPath" (change)="onPendingFilterChange()">
-        @for (option of supportPathOptions; track option.value) {
-          <option [value]="option.value">{{ option.label }}</option>
-        }
-      </select>
+    @if (loading()) {
+      <p class="loading-text">Loading...</p>
     }
-    <label class="select-all" [adminCan]="manageProviderPermission">
-      <input
-        type="checkbox"
-        [checked]="allVisiblePendingSelected()"
-        (change)="toggleSelectAllVisiblePending($any($event.target).checked)"
-        [disabled]="loading() || mutating()"
-      />
-      Select visible
-    </label>
-    <button
-      type="button"
-      [adminCan]="manageProviderPermission"
-      (click)="bulkApproveSelected()"
-      [disabled]="loading() || mutating() || !selectedPendingDoctorIds.length"
-    >
-      {{ mutating() ? 'Working...' : 'Bulk activate account' }}
-    </button>
-    <button
-      type="button"
-      [adminCan]="manageProviderPermission"
-      (click)="bulkRejectSelected()"
-      [disabled]="loading() || mutating() || !selectedPendingDoctorIds.length"
-    >
-      Bulk deactivate account
-    </button>
-  </fieldset>
 
-  @if (!loading()) {
-    <div class="provider-list-scroll">
-      @for (doctor of visiblePendingDoctors(); track doctor.id) {
-        <article class="card" [class.card--selected]="selectedDoctorId === doctor.id">
-          <label class="select-doctor" [adminCan]="manageProviderPermission">
-            <input
-              type="checkbox"
-              [checked]="isPendingDoctorSelected(doctor.id)"
-              (change)="togglePendingDoctorSelection(doctor.id, $any($event.target).checked)"
-              [disabled]="mutating()"
-            />
-            Select
-          </label>
-          <strong>{{ doctor.name }}</strong>
-          <p>{{ doctor.email }} | {{ doctor.mobile || 'No mobile' }}</p>
-          <small
-            >{{
-              workspaceKey() === 'hope-hub'
-                ? providerPrimaryRoleLabel(doctor)
-                : doctorTypeLabel(doctor.doctorProfile?.doctorType)
-            }}
-            | {{ doctor.doctorProfile?.specialty || 'Specialty not set' }} |
-            {{ doctor.doctorProfile?.registrationNo || 'No registration no.' }}</small
-          >
-          @if (workspaceKey() === 'hope-hub') {
-            <div class="support-path-row">
-              <span class="support-path-chip">{{ supportPathForDoctor(doctor).label }}</span>
-              @if (supportPathTypeSummary(doctor)) {
-                <small>{{ supportPathTypeSummary(doctor) }}</small>
+    <fieldset class="toolbar" [disabled]="loading()">
+      <input
+        [placeholder]="'Search setup review ' + providerPluralLabel() + '...'"
+        [formField]="pendingFilterForm.searchTerm"
+        (change)="onPendingFilterChange()"
+      />
+      @if (workspaceKey() === 'hope-hub') {
+        <select [formField]="pendingFilterForm.supportPath" (change)="onPendingFilterChange()">
+          @for (option of supportPathOptions; track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      }
+      <label class="select-all" [adminCan]="manageProviderPermission">
+        <input
+          type="checkbox"
+          [checked]="allVisiblePendingSelected()"
+          (change)="toggleSelectAllVisiblePending($any($event.target).checked)"
+          [disabled]="loading() || mutating()"
+        />
+        Select visible
+      </label>
+      <button
+        type="button"
+        [adminCan]="manageProviderPermission"
+        (click)="bulkApproveSelected()"
+        [disabled]="loading() || mutating() || !selectedPendingDoctorIds.length"
+      >
+        {{ mutating() ? 'Working...' : 'Bulk activate account' }}
+      </button>
+      <button
+        type="button"
+        [adminCan]="manageProviderPermission"
+        (click)="bulkRejectSelected()"
+        [disabled]="loading() || mutating() || !selectedPendingDoctorIds.length"
+      >
+        Bulk deactivate account
+      </button>
+    </fieldset>
+
+    @if (!loading()) {
+      <div class="provider-list-scroll">
+        @for (doctor of visiblePendingDoctors(); track doctor.id) {
+          <article class="card" [class.card--selected]="selectedDoctorId === doctor.id">
+            <label class="select-doctor" [adminCan]="manageProviderPermission">
+              <input
+                type="checkbox"
+                [checked]="isPendingDoctorSelected(doctor.id)"
+                (change)="togglePendingDoctorSelection(doctor.id, $any($event.target).checked)"
+                [disabled]="mutating()"
+              />
+              Select
+            </label>
+            <strong>{{ doctor.name }}</strong>
+            <p>{{ doctor.email }} | {{ doctor.mobile || 'No mobile' }}</p>
+            <small
+              >{{
+                workspaceKey() === 'hope-hub'
+                  ? providerPrimaryRoleLabel(doctor)
+                  : doctorTypeLabel(doctor.doctorProfile?.doctorType)
+              }}
+              | {{ doctor.doctorProfile?.specialty || 'Specialty not set' }} |
+              {{ doctor.doctorProfile?.registrationNo || 'No registration no.' }}</small
+            >
+            @if (workspaceKey() === 'hope-hub') {
+              <div class="support-path-row">
+                <span class="support-path-chip">{{ supportPathForDoctor(doctor).label }}</span>
+                @if (supportPathTypeSummary(doctor)) {
+                  <small>{{ supportPathTypeSummary(doctor) }}</small>
+                }
+              </div>
+            }
+            <div class="readiness-badges" [title]="providerReadinessSummary(doctor)">
+              @for (badge of providerReadinessBadges(doctor); track badge.label) {
+                <span class="readiness-badge" [class]="'readiness-badge--' + badge.tone">
+                  {{ badge.label }}
+                </span>
               }
             </div>
-          }
-          <div class="readiness-badges" [title]="providerReadinessSummary(doctor)">
-            @for (badge of providerReadinessBadges(doctor); track badge.label) {
-              <span class="readiness-badge" [class]="'readiness-badge--' + badge.tone">
-                {{ badge.label }}
-              </span>
-            }
-          </div>
-          <div class="actions">
-            <button
-              type="button"
-              class="link-action"
-              (click)="setSelectedDoctor(doctor.id)"
-              [disabled]="mutating()"
-            >
-              View details
-            </button>
-            <button type="button" [adminCan]="manageProviderPermission" (click)="approveDoctor(doctor.id)" [disabled]="mutating()">
-              {{ mutating() ? '...' : 'Activate account' }}
-            </button>
-            <button type="button" [adminCan]="manageProviderPermission" (click)="rejectDoctor(doctor.id)" [disabled]="mutating()">
-              Deactivate account
-            </button>
-          </div>
-        </article>
-      } @empty {
-        <p class="empty-state">No {{ providerSingularLabel() }} accounts need setup review.</p>
+            <div class="actions">
+              <button
+                type="button"
+                class="link-action"
+                (click)="setSelectedDoctor(doctor.id)"
+                [disabled]="mutating()"
+              >
+                View details
+              </button>
+              <button
+                type="button"
+                [adminCan]="manageProviderPermission"
+                (click)="approveDoctor(doctor.id)"
+                [disabled]="mutating()"
+              >
+                {{ mutating() ? '...' : 'Activate account' }}
+              </button>
+              <button
+                type="button"
+                [adminCan]="manageProviderPermission"
+                (click)="rejectDoctor(doctor.id)"
+                [disabled]="mutating()"
+              >
+                Deactivate account
+              </button>
+            </div>
+          </article>
+        } @empty {
+          <p class="empty-state">No {{ providerSingularLabel() }} accounts need setup review.</p>
+        }
+      </div>
+    }
+    <div class="pagination">
+      @for (page of pendingPages(); track page) {
+        <button
+          type="button"
+          [class.active]="pendingPage === page"
+          [class.pagination-gap]="isPaginationGap(page)"
+          [disabled]="isPaginationGap(page)"
+          (click)="setPendingPageFromToken(page)"
+        >
+          {{ isPaginationGap(page) ? '…' : page }}
+        </button>
       }
     </div>
   }
-  <div class="pagination">
-    @for (page of pendingPages(); track page) {
-      <button
-        type="button"
-        [class.active]="pendingPage === page"
-        [class.pagination-gap]="isPaginationGap(page)"
-        [disabled]="isPaginationGap(page)"
-        (click)="setPendingPageFromToken(page)"
-      >
-        {{ isPaginationGap(page) ? '…' : page }}
-      </button>
-    }
-  </div>
 </section>
 
 <section class="provider-master-detail">

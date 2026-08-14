@@ -58,11 +58,36 @@
 }
 
 .toast {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 260;
   border-radius: 0.5rem;
   background: #ecfdf5;
   color: #047857;
   padding: 0.75rem 1rem;
   font-weight: 800;
+}
+
+.offer-layout {
+  display: block;
+}
+
+.banner-layout {
+  display: block;
+}
+
+.list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.9rem;
+}
+
+.list-head .muted {
+  margin: 0.2rem 0 0;
+  font-size: 0.8rem;
 }
 
 .loading,
@@ -79,6 +104,16 @@
 
 .edit-form,
 .rows {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.offer-drawer-form {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.banner-drawer-form {
   display: grid;
   gap: 0.8rem;
 }
@@ -241,6 +276,42 @@ textarea {
   font-weight: 800;
 }
 
+.offer-review {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.offer-review article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.15rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: #ffffff;
+  padding: 0.75rem;
+}
+
+.offer-review span,
+.offer-review small {
+  color: #64748b;
+  font-size: 0.74rem;
+}
+
+.offer-review strong {
+  color: #0f172a;
+  font-size: 0.86rem;
+  text-align: right;
+}
+
+.offer-review small {
+  grid-column: 1 / -1;
+}
+
+.review-checks {
+  padding-top: 0.75rem;
+  border-top: 1px solid #e5e7eb;
+}
+
 .row-card,
 .lead-card {
   display: flex;
@@ -305,5 +376,9 @@ textarea {
 
   .lead-actions {
     min-width: 0;
+  }
+
+  .list-head {
+    align-items: flex-start;
   }
 }

@@ -7,9 +7,15 @@
   </header>
 
   <nav class="tabs" aria-label="Healing Hub offer sections">
-    <button type="button" [class.active]="tab() === 'offers'" (click)="setTab('offers')">Offers</button>
-    <button type="button" [class.active]="tab() === 'banners'" (click)="setTab('banners')">Home banners</button>
-    <button type="button" [class.active]="tab() === 'leads'" (click)="setTab('leads')">Organisation leads</button>
+    <button type="button" [class.active]="tab() === 'offers'" (click)="setTab('offers')">
+      Offers
+    </button>
+    <button type="button" [class.active]="tab() === 'banners'" (click)="setTab('banners')">
+      Home banners
+    </button>
+    <button type="button" [class.active]="tab() === 'leads'" (click)="setTab('leads')">
+      Organisation leads
+    </button>
   </nav>
 
   @if (toast()) {
@@ -21,200 +27,554 @@
   } @else {
     @switch (tab()) {
       @case ('offers') {
-        <section class="grid-layout">
-          <form class="panel edit-form" [adminCan]="managePermission" (ngSubmit)="saveOffer()">
-            <h3>{{ offerForm().id ? 'Edit offer' : 'New offer' }}</h3>
-
-            <section class="form-section">
-              <div class="section-head">
-                <strong>Basic details</strong>
-                <span>Name, route, and how this offer appears.</span>
-              </div>
-              <div class="two">
-                <label>Code <input name="code" [(ngModel)]="offerForm().code" required /></label>
-                <label>Slug <input name="slug" [(ngModel)]="offerForm().slug" /></label>
-                <label>Title <input name="title" [(ngModel)]="offerForm().title" required /></label>
-                <label>Subtitle <input name="subtitle" [(ngModel)]="offerForm().subtitle" /></label>
-                <label>Type
-                  <select name="type" [(ngModel)]="offerForm().type">
-                    @for (type of offerTypes; track type) { <option [value]="type">{{ type }}</option> }
-                  </select>
-                </label>
-                <label>Delivery
-                  <select name="deliveryMode" [(ngModel)]="offerForm().deliveryMode">
-                    @for (mode of deliveryModes; track mode) { <option [value]="mode">{{ mode }}</option> }
-                  </select>
-                </label>
-                <label>CTA <input name="cta" [(ngModel)]="offerForm().ctaLabel" /></label>
-                <label>Route <input name="route" [(ngModel)]="offerForm().routePath" placeholder="/packages/monthly-care" /></label>
-              </div>
-              <label>Description <textarea rows="4" name="description" [(ngModel)]="offerForm().description" required></textarea></label>
-            </section>
-
-            <section class="form-section">
-              <div class="section-head">
-                <strong>Pricing</strong>
-                <span>Base price, public discount, and deposit settings.</span>
-              </div>
-              <div class="two">
-                <label>Price (₹) <input type="number" name="price" [(ngModel)]="offerForm().priceRupees" /></label>
-                <label>Original price (₹) <input type="number" name="compare" [(ngModel)]="offerForm().compareAtRupees" /></label>
-              </div>
-
-              <div class="toggle-row">
-                <label><input type="checkbox" name="discountEnabled" [(ngModel)]="offerForm().discountEnabled" /> Discount</label>
-                <label><input type="checkbox" name="partialEnabled" [(ngModel)]="offerForm().partialPaymentEnabled" /> Partial payment</label>
-              </div>
-
-              @if (offerForm().discountEnabled) {
-                <div class="sub-section">
+        <section class="offer-layout">
+          <app-admin-form-drawer
+            [adminCan]="managePermission"
+            [open]="offerEditorOpen()"
+            [title]="offerEditorTitle()"
+            [description]="offerEditorDescription()"
+            [steps]="offerSteps"
+            [currentStep]="offerStep()"
+            [busy]="saving()"
+            [nextDisabled]="offerNextDisabled()"
+            [submitLabel]="offerForm().id ? 'Save offer' : 'Create offer'"
+            (closed)="closeOfferEditor()"
+            (previous)="previousOfferStep()"
+            (next)="nextOfferStep()"
+            (submitted)="saveOffer()"
+          >
+            <div class="edit-form offer-drawer-form">
+              @if (offerStep() === 0) {
+                <section class="form-section">
+                  <div class="section-head">
+                    <strong>Basic details</strong>
+                    <span>Name, route, and how this offer appears.</span>
+                  </div>
                   <div class="two">
-                    <label>Discount type
-                      <select name="discountType" [(ngModel)]="offerForm().discountType">
-                        @for (type of discountTypes; track type) { <option [value]="type">{{ type }}</option> }
+                    <label
+                      >Code <input name="code" [(ngModel)]="offerForm().code" required
+                    /></label>
+                    <label>Slug <input name="slug" [(ngModel)]="offerForm().slug" /></label>
+                    <label
+                      >Title <input name="title" [(ngModel)]="offerForm().title" required
+                    /></label>
+                    <label
+                      >Subtitle <input name="subtitle" [(ngModel)]="offerForm().subtitle"
+                    /></label>
+                    <label
+                      >Type
+                      <select name="type" [(ngModel)]="offerForm().type">
+                        @for (type of offerTypes; track type) {
+                          <option [value]="type">{{ type }}</option>
+                        }
                       </select>
                     </label>
-                    <label>Discount label <input name="discountLabel" [(ngModel)]="offerForm().discountLabel" placeholder="Referral, launch offer" /></label>
-                    <label>Discount code <input name="discountCode" [(ngModel)]="offerForm().discountCode" /></label>
-                    <label>Discount starts <input type="datetime-local" name="discountStarts" [(ngModel)]="offerForm().discountStartsAt" /></label>
-                    <label>Discount ends <input type="datetime-local" name="discountEnds" [(ngModel)]="offerForm().discountEndsAt" /></label>
-                    @if (showDiscountPercent()) {
-                      <label>Discount % <input type="number" name="discountPercent" [(ngModel)]="offerForm().discountPercent" /></label>
-                    }
-                    @if (showDiscountFlat()) {
-                      <label>Flat discount (₹) <input type="number" name="discountFlat" [(ngModel)]="offerForm().discountFlatRupees" /></label>
-                    }
-                    @if (showDiscountPercent()) {
-                      <label>Max discount (₹) <input type="number" name="discountMax" [(ngModel)]="offerForm().discountMaxRupees" /></label>
-                    }
-                  </div>
-                </div>
-              }
-
-              @if (offerForm().partialPaymentEnabled) {
-                <div class="sub-section">
-                  <div class="two">
-                    <label>Partial type
-                      <select name="partialType" [(ngModel)]="offerForm().partialPaymentType">
-                        @for (type of partialPaymentTypes; track type) { <option [value]="type">{{ type }}</option> }
+                    <label
+                      >Delivery
+                      <select name="deliveryMode" [(ngModel)]="offerForm().deliveryMode">
+                        @for (mode of deliveryModes; track mode) {
+                          <option [value]="mode">{{ mode }}</option>
+                        }
                       </select>
                     </label>
-                    <label>Partial label <input name="partialLabel" [(ngModel)]="offerForm().partialPaymentLabel" placeholder="Pay 40% today" /></label>
-                    @if (showPartialPercent()) {
-                      <label>Partial % <input type="number" name="partialPercent" [(ngModel)]="offerForm().partialPaymentPercent" /></label>
-                    }
-                    @if (showPartialFlat()) {
-                      <label>Partial flat (₹) <input type="number" name="partialFlat" [(ngModel)]="offerForm().partialPaymentFlatRupees" /></label>
-                    }
+                    <label>CTA <input name="cta" [(ngModel)]="offerForm().ctaLabel" /></label>
+                    <label
+                      >Route
+                      <input
+                        name="route"
+                        [(ngModel)]="offerForm().routePath"
+                        placeholder="/packages/monthly-care"
+                    /></label>
                   </div>
-                </div>
+                  <label
+                    >Description
+                    <textarea
+                      rows="4"
+                      name="description"
+                      [(ngModel)]="offerForm().description"
+                      required
+                    ></textarea>
+                  </label>
+                </section>
               }
 
-              <div class="price-preview">
-                <div><span>Price</span><strong>{{ formatRupees(previewPriceRupees()) }}</strong></div>
-                <div><span>Discount</span><strong>-{{ formatRupees(previewDiscountRupees()) }}</strong></div>
-                <div><span>Final price</span><strong>{{ formatRupees(previewFinalRupees()) }}</strong></div>
-                <div class="preview-total"><span>Pay today</span><strong>{{ formatRupees(previewPayTodayRupees()) }}</strong></div>
-                <div><span>Balance</span><strong>{{ formatRupees(previewBalanceRupees()) }}</strong></div>
-              </div>
-              @if (offerForm().discountEnabled && !isPreviewDiscountActive()) {
-                <p class="schedule-note">Discount is scheduled but not active right now.</p>
+              @if (offerStep() === 1) {
+                <section class="form-section">
+                  <div class="section-head">
+                    <strong>Pricing</strong>
+                    <span>Base price, public discount, and deposit settings.</span>
+                  </div>
+                  <div class="two">
+                    <label
+                      >Price (₹)
+                      <input type="number" name="price" [(ngModel)]="offerForm().priceRupees"
+                    /></label>
+                    <label
+                      >Original price (₹)
+                      <input type="number" name="compare" [(ngModel)]="offerForm().compareAtRupees"
+                    /></label>
+                  </div>
+
+                  <div class="toggle-row">
+                    <label
+                      ><input
+                        type="checkbox"
+                        name="discountEnabled"
+                        [(ngModel)]="offerForm().discountEnabled"
+                      />
+                      Discount</label
+                    >
+                    <label
+                      ><input
+                        type="checkbox"
+                        name="partialEnabled"
+                        [(ngModel)]="offerForm().partialPaymentEnabled"
+                      />
+                      Partial payment</label
+                    >
+                  </div>
+
+                  @if (offerForm().discountEnabled) {
+                    <div class="sub-section">
+                      <div class="two">
+                        <label
+                          >Discount type
+                          <select name="discountType" [(ngModel)]="offerForm().discountType">
+                            @for (type of discountTypes; track type) {
+                              <option [value]="type">{{ type }}</option>
+                            }
+                          </select>
+                        </label>
+                        <label
+                          >Discount label
+                          <input
+                            name="discountLabel"
+                            [(ngModel)]="offerForm().discountLabel"
+                            placeholder="Referral, launch offer"
+                        /></label>
+                        <label
+                          >Discount code
+                          <input name="discountCode" [(ngModel)]="offerForm().discountCode"
+                        /></label>
+                        <label
+                          >Discount starts
+                          <input
+                            type="datetime-local"
+                            name="discountStarts"
+                            [(ngModel)]="offerForm().discountStartsAt"
+                        /></label>
+                        <label
+                          >Discount ends
+                          <input
+                            type="datetime-local"
+                            name="discountEnds"
+                            [(ngModel)]="offerForm().discountEndsAt"
+                        /></label>
+                        @if (showDiscountPercent()) {
+                          <label
+                            >Discount %
+                            <input
+                              type="number"
+                              name="discountPercent"
+                              [(ngModel)]="offerForm().discountPercent"
+                          /></label>
+                        }
+                        @if (showDiscountFlat()) {
+                          <label
+                            >Flat discount (₹)
+                            <input
+                              type="number"
+                              name="discountFlat"
+                              [(ngModel)]="offerForm().discountFlatRupees"
+                          /></label>
+                        }
+                        @if (showDiscountPercent()) {
+                          <label
+                            >Max discount (₹)
+                            <input
+                              type="number"
+                              name="discountMax"
+                              [(ngModel)]="offerForm().discountMaxRupees"
+                          /></label>
+                        }
+                      </div>
+                    </div>
+                  }
+
+                  @if (offerForm().partialPaymentEnabled) {
+                    <div class="sub-section">
+                      <div class="two">
+                        <label
+                          >Partial type
+                          <select name="partialType" [(ngModel)]="offerForm().partialPaymentType">
+                            @for (type of partialPaymentTypes; track type) {
+                              <option [value]="type">{{ type }}</option>
+                            }
+                          </select>
+                        </label>
+                        <label
+                          >Partial label
+                          <input
+                            name="partialLabel"
+                            [(ngModel)]="offerForm().partialPaymentLabel"
+                            placeholder="Pay 40% today"
+                        /></label>
+                        @if (showPartialPercent()) {
+                          <label
+                            >Partial %
+                            <input
+                              type="number"
+                              name="partialPercent"
+                              [(ngModel)]="offerForm().partialPaymentPercent"
+                          /></label>
+                        }
+                        @if (showPartialFlat()) {
+                          <label
+                            >Partial flat (₹)
+                            <input
+                              type="number"
+                              name="partialFlat"
+                              [(ngModel)]="offerForm().partialPaymentFlatRupees"
+                          /></label>
+                        }
+                      </div>
+                    </div>
+                  }
+
+                  <div class="price-preview">
+                    <div>
+                      <span>Price</span><strong>{{ formatRupees(previewPriceRupees()) }}</strong>
+                    </div>
+                    <div>
+                      <span>Discount</span
+                      ><strong>-{{ formatRupees(previewDiscountRupees()) }}</strong>
+                    </div>
+                    <div>
+                      <span>Final price</span
+                      ><strong>{{ formatRupees(previewFinalRupees()) }}</strong>
+                    </div>
+                    <div class="preview-total">
+                      <span>Pay today</span
+                      ><strong>{{ formatRupees(previewPayTodayRupees()) }}</strong>
+                    </div>
+                    <div>
+                      <span>Balance</span
+                      ><strong>{{ formatRupees(previewBalanceRupees()) }}</strong>
+                    </div>
+                  </div>
+                  @if (offerForm().discountEnabled && !isPreviewDiscountActive()) {
+                    <p class="schedule-note">Discount is scheduled but not active right now.</p>
+                  }
+                </section>
               }
-            </section>
 
-            <section class="form-section">
-              <div class="section-head">
-                <strong>Package or event details</strong>
-                <span>Use only the fields that apply to this offer.</span>
-              </div>
-              <div class="two">
-                <label>Validity days <input type="number" name="validity" [(ngModel)]="offerForm().validityDays" /></label>
-                <label>Sessions <input type="number" name="sessions" [(ngModel)]="offerForm().sessionCount" /></label>
-                <label>Session minutes <input type="number" name="minutes" [(ngModel)]="offerForm().sessionDurationMinutes" /></label>
-                <label>Seats <input type="number" name="seats" [(ngModel)]="offerForm().seatLimit" /></label>
-                <label>Event starts <input type="datetime-local" name="starts" [(ngModel)]="offerForm().eventStartsAt" /></label>
-                <label>Event ends <input type="datetime-local" name="ends" [(ngModel)]="offerForm().eventEndsAt" /></label>
-                <label>Venue <input name="venue" [(ngModel)]="offerForm().venue" /></label>
-                <label>Image URL <input name="image" [(ngModel)]="offerForm().imageUrl" /></label>
-              </div>
-              <div class="two">
-                <label>Benefits <textarea rows="4" name="benefits" [(ngModel)]="offerForm().benefitsText"></textarea></label>
-                <label>Audience <textarea rows="4" name="audience" [(ngModel)]="offerForm().audienceText"></textarea></label>
-              </div>
-            </section>
+              @if (offerStep() === 2) {
+                <section class="form-section">
+                  <div class="section-head">
+                    <strong>Package or event details</strong>
+                    <span>Use only the fields that apply to this offer.</span>
+                  </div>
+                  <div class="two">
+                    <label
+                      >Validity days
+                      <input type="number" name="validity" [(ngModel)]="offerForm().validityDays"
+                    /></label>
+                    <label
+                      >Sessions
+                      <input type="number" name="sessions" [(ngModel)]="offerForm().sessionCount"
+                    /></label>
+                    <label
+                      >Session minutes
+                      <input
+                        type="number"
+                        name="minutes"
+                        [(ngModel)]="offerForm().sessionDurationMinutes"
+                    /></label>
+                    <label
+                      >Seats <input type="number" name="seats" [(ngModel)]="offerForm().seatLimit"
+                    /></label>
+                    <label
+                      >Event starts
+                      <input
+                        type="datetime-local"
+                        name="starts"
+                        [(ngModel)]="offerForm().eventStartsAt"
+                    /></label>
+                    <label
+                      >Event ends
+                      <input
+                        type="datetime-local"
+                        name="ends"
+                        [(ngModel)]="offerForm().eventEndsAt"
+                    /></label>
+                    <label>Venue <input name="venue" [(ngModel)]="offerForm().venue" /></label>
+                    <label
+                      >Image URL <input name="image" [(ngModel)]="offerForm().imageUrl"
+                    /></label>
+                  </div>
+                  <div class="two">
+                    <label
+                      >Benefits
+                      <textarea
+                        rows="4"
+                        name="benefits"
+                        [(ngModel)]="offerForm().benefitsText"
+                      ></textarea>
+                    </label>
+                    <label
+                      >Audience
+                      <textarea
+                        rows="4"
+                        name="audience"
+                        [(ngModel)]="offerForm().audienceText"
+                      ></textarea>
+                    </label>
+                  </div>
+                </section>
+              }
 
-            <section class="form-section">
-              <div class="section-head">
-                <strong>Recorded session links</strong>
-                <span>Use for Telegram group recordings, uploaded audio/video, or YouTube sessions.</span>
-              </div>
-              <div class="two">
-                <label>Access
-                  <select name="mediaAccessMode" [(ngModel)]="offerForm().mediaAccessMode">
-                    @for (mode of mediaAccessModes; track mode) { <option [value]="mode">{{ mode }}</option> }
-                  </select>
-                </label>
-                <label>Telegram group URL <input name="telegramGroupUrl" [(ngModel)]="offerForm().telegramGroupUrl" placeholder="https://t.me/..." /></label>
-                <label>Telegram audio URL <input name="telegramAudioUrl" [(ngModel)]="offerForm().telegramAudioUrl" placeholder="https://t.me/..." /></label>
-                <label>Telegram video URL <input name="telegramVideoUrl" [(ngModel)]="offerForm().telegramVideoUrl" placeholder="https://t.me/..." /></label>
-                <label>Recorded audio URL
-                  <input name="recordedAudioUrl" [(ngModel)]="offerForm().recordedAudioUrl" placeholder="https://..." />
-                  <span class="inline-upload">
-                    <input type="file" accept="audio/*" (change)="uploadRecordedMedia($event, 'recordedAudioUrl')" />
-                    {{ uploadingMedia() === 'recordedAudioUrl' ? 'Uploading audio...' : 'Upload small audio' }}
-                  </span>
-                </label>
-                <label>Recorded video URL
-                  <input name="recordedVideoUrl" [(ngModel)]="offerForm().recordedVideoUrl" placeholder="https://..." />
-                  <span class="inline-upload">
-                    <input type="file" accept="video/mp4,video/webm,video/quicktime" (change)="uploadRecordedMedia($event, 'recordedVideoUrl')" />
-                    {{ uploadingMedia() === 'recordedVideoUrl' ? 'Uploading video...' : 'Upload small video' }}
-                  </span>
-                </label>
-                <label>YouTube URL <input name="youtubeUrl" [(ngModel)]="offerForm().youtubeUrl" placeholder="https://youtube.com/..." /></label>
-              </div>
-              <label>Access note <textarea rows="3" name="mediaAccessNote" [(ngModel)]="offerForm().mediaAccessNote" placeholder="Any joining or access instruction for this recording"></textarea></label>
-              <div class="two">
-                <label>Unlock by offer slugs
-                  <textarea rows="3" name="allowedOfferingSlugs" [(ngModel)]="offerForm().allowedOfferingSlugsText" placeholder="weekly-care-package&#10;goa-wellness-meetup"></textarea>
-                </label>
-                <label>Unlock by offer codes
-                  <textarea rows="3" name="allowedOfferingCodes" [(ngModel)]="offerForm().allowedOfferingCodesText" placeholder="WEEKLY_CARE&#10;GOA_MEETUP"></textarea>
-                </label>
-              </div>
-              <label>Unlock by offer IDs <textarea rows="2" name="allowedOfferingIds" [(ngModel)]="offerForm().allowedOfferingIdsText" placeholder="Optional internal offering IDs, one per line"></textarea></label>
-            </section>
+              @if (offerStep() === 3) {
+                <section class="form-section">
+                  <div class="section-head">
+                    <strong>Recorded session links</strong>
+                    <span
+                      >Use for Telegram group recordings, uploaded audio/video, or YouTube
+                      sessions.</span
+                    >
+                  </div>
+                  <div class="two">
+                    <label
+                      >Access
+                      <select name="mediaAccessMode" [(ngModel)]="offerForm().mediaAccessMode">
+                        @for (mode of mediaAccessModes; track mode) {
+                          <option [value]="mode">{{ mode }}</option>
+                        }
+                      </select>
+                    </label>
+                    <label
+                      >Telegram group URL
+                      <input
+                        name="telegramGroupUrl"
+                        [(ngModel)]="offerForm().telegramGroupUrl"
+                        placeholder="https://t.me/..."
+                    /></label>
+                    <label
+                      >Telegram audio URL
+                      <input
+                        name="telegramAudioUrl"
+                        [(ngModel)]="offerForm().telegramAudioUrl"
+                        placeholder="https://t.me/..."
+                    /></label>
+                    <label
+                      >Telegram video URL
+                      <input
+                        name="telegramVideoUrl"
+                        [(ngModel)]="offerForm().telegramVideoUrl"
+                        placeholder="https://t.me/..."
+                    /></label>
+                    <label
+                      >Recorded audio URL
+                      <input
+                        name="recordedAudioUrl"
+                        [(ngModel)]="offerForm().recordedAudioUrl"
+                        placeholder="https://..."
+                      />
+                      <span class="inline-upload">
+                        <input
+                          type="file"
+                          accept="audio/*"
+                          (change)="uploadRecordedMedia($event, 'recordedAudioUrl')"
+                        />
+                        {{
+                          uploadingMedia() === 'recordedAudioUrl'
+                            ? 'Uploading audio...'
+                            : 'Upload small audio'
+                        }}
+                      </span>
+                    </label>
+                    <label
+                      >Recorded video URL
+                      <input
+                        name="recordedVideoUrl"
+                        [(ngModel)]="offerForm().recordedVideoUrl"
+                        placeholder="https://..."
+                      />
+                      <span class="inline-upload">
+                        <input
+                          type="file"
+                          accept="video/mp4,video/webm,video/quicktime"
+                          (change)="uploadRecordedMedia($event, 'recordedVideoUrl')"
+                        />
+                        {{
+                          uploadingMedia() === 'recordedVideoUrl'
+                            ? 'Uploading video...'
+                            : 'Upload small video'
+                        }}
+                      </span>
+                    </label>
+                    <label
+                      >YouTube URL
+                      <input
+                        name="youtubeUrl"
+                        [(ngModel)]="offerForm().youtubeUrl"
+                        placeholder="https://youtube.com/..."
+                    /></label>
+                  </div>
+                  <label
+                    >Access note
+                    <textarea
+                      rows="3"
+                      name="mediaAccessNote"
+                      [(ngModel)]="offerForm().mediaAccessNote"
+                      placeholder="Any joining or access instruction for this recording"
+                    ></textarea>
+                  </label>
+                  <div class="two">
+                    <label
+                      >Unlock by offer slugs
+                      <textarea
+                        rows="3"
+                        name="allowedOfferingSlugs"
+                        [(ngModel)]="offerForm().allowedOfferingSlugsText"
+                        placeholder="weekly-care-package&#10;goa-wellness-meetup"
+                      ></textarea>
+                    </label>
+                    <label
+                      >Unlock by offer codes
+                      <textarea
+                        rows="3"
+                        name="allowedOfferingCodes"
+                        [(ngModel)]="offerForm().allowedOfferingCodesText"
+                        placeholder="WEEKLY_CARE&#10;GOA_MEETUP"
+                      ></textarea>
+                    </label>
+                  </div>
+                  <label
+                    >Unlock by offer IDs
+                    <textarea
+                      rows="2"
+                      name="allowedOfferingIds"
+                      [(ngModel)]="offerForm().allowedOfferingIdsText"
+                      placeholder="Optional internal offering IDs, one per line"
+                    ></textarea>
+                  </label>
+                </section>
+              }
 
-            <div class="checks">
-              <label><input type="checkbox" name="active" [(ngModel)]="offerForm().isActive" /> Active</label>
-              <label><input type="checkbox" name="featured" [(ngModel)]="offerForm().isFeatured" /> Featured</label>
-              <label><input type="checkbox" name="lead" [(ngModel)]="offerForm().requiresLeadForm" /> Lead form only</label>
-              <label>Sort <input type="number" name="sort" [(ngModel)]="offerForm().sortOrder" /></label>
+              @if (offerStep() === 4) {
+                <section class="form-section review-section">
+                  <div class="section-head">
+                    <strong>Review offer</strong
+                    ><span>Confirm pricing and visibility before saving.</span>
+                  </div>
+                  <div class="offer-review">
+                    <article>
+                      <span>Offer</span><strong>{{ offerForm().title }}</strong
+                      ><small>{{ offerForm().code }} · {{ offerForm().type }}</small>
+                    </article>
+                    <article>
+                      <span>Delivery</span><strong>{{ offerForm().deliveryMode }}</strong
+                      ><small
+                        >{{ offerForm().sessionCount || 0 }} sessions ·
+                        {{ offerForm().validityDays || 0 }} days</small
+                      >
+                    </article>
+                    <article>
+                      <span>Final price</span
+                      ><strong>{{ formatRupees(previewFinalRupees()) }}</strong
+                      ><small>Pay today {{ formatRupees(previewPayTodayRupees()) }}</small>
+                    </article>
+                    <article>
+                      <span>Media access</span><strong>{{ offerForm().mediaAccessMode }}</strong
+                      ><small>{{
+                        offerForm().youtubeUrl ||
+                        offerForm().recordedVideoUrl ||
+                        offerForm().recordedAudioUrl
+                          ? 'Recording configured'
+                          : 'No recording'
+                      }}</small>
+                    </article>
+                  </div>
+                  <div class="checks review-checks">
+                    <label
+                      ><input type="checkbox" name="active" [(ngModel)]="offerForm().isActive" />
+                      Active</label
+                    >
+                    <label
+                      ><input
+                        type="checkbox"
+                        name="featured"
+                        [(ngModel)]="offerForm().isFeatured"
+                      />
+                      Featured</label
+                    >
+                    <label
+                      ><input
+                        type="checkbox"
+                        name="lead"
+                        [(ngModel)]="offerForm().requiresLeadForm"
+                      />
+                      Lead form only</label
+                    >
+                    <label
+                      >Sort <input type="number" name="sort" [(ngModel)]="offerForm().sortOrder"
+                    /></label>
+                  </div>
+                </section>
+              }
             </div>
-            <div class="actions">
-              <button type="submit" class="primary" [disabled]="saving()">{{ saving() ? 'Saving...' : 'Save offer' }}</button>
-              <button type="button" (click)="resetOffer()">Clear</button>
-            </div>
-          </form>
+          </app-admin-form-drawer>
 
           <section class="panel">
-            <h3>Configured offers</h3>
+            <div class="list-head">
+              <div>
+                <h3>Configured offers</h3>
+                <p class="muted">Select an offer to edit it.</p>
+              </div>
+              <button
+                type="button"
+                class="primary"
+                [adminCan]="managePermission"
+                (click)="newOffer()"
+              >
+                New offer
+              </button>
+            </div>
             <div class="rows">
               @for (offer of offerings(); track offer.id) {
                 <article class="row-card">
                   <div>
                     <strong>{{ offer.title }}</strong>
                     <span>{{ offer.type }} / {{ formatPaise(offer.priceInPaise) }}</span>
-                    @if (offer.discountEnabled) { <span>Discount: {{ offer.discountLabel || offer.discountType }}</span> }
-                    @if (offer.partialPaymentEnabled) { <span>Partial: {{ offer.partialPaymentLabel || offer.partialPaymentType }}</span> }
-                    @if (offer.metadata?.youtubeUrl || offer.metadata?.telegramGroupUrl || offer.metadata?.recordedAudioUrl || offer.metadata?.recordedVideoUrl) {
+                    @if (offer.discountEnabled) {
+                      <span>Discount: {{ offer.discountLabel || offer.discountType }}</span>
+                    }
+                    @if (offer.partialPaymentEnabled) {
+                      <span
+                        >Partial: {{ offer.partialPaymentLabel || offer.partialPaymentType }}</span
+                      >
+                    }
+                    @if (
+                      offer.metadata?.youtubeUrl ||
+                      offer.metadata?.telegramGroupUrl ||
+                      offer.metadata?.recordedAudioUrl ||
+                      offer.metadata?.recordedVideoUrl
+                    ) {
                       <span>Media links added</span>
                     }
                   </div>
                   <div class="row-actions">
-                    @if (offer.isActive) { <span class="badge">Active</span> } @else { <span class="badge off">Off</span> }
-                    @if (offer.isFeatured) { <span class="badge feature">Featured</span> }
-                    <button type="button" [adminCan]="managePermission" (click)="editOffer(offer)">Edit</button>
+                    @if (offer.isActive) {
+                      <span class="badge">Active</span>
+                    } @else {
+                      <span class="badge off">Off</span>
+                    }
+                    @if (offer.isFeatured) {
+                      <span class="badge feature">Featured</span>
+                    }
+                    <button type="button" [adminCan]="managePermission" (click)="editOffer(offer)">
+                      Edit
+                    </button>
                   </div>
                 </article>
               }
@@ -224,39 +584,159 @@
       }
 
       @case ('banners') {
-        <section class="grid-layout">
-          <form class="panel edit-form" [adminCan]="managePermission" (ngSubmit)="saveBanner()">
-            <h3>{{ bannerForm().id ? 'Edit banner' : 'New banner' }}</h3>
-            <div class="two">
-              <label>Title <input name="bannerTitle" [(ngModel)]="bannerForm().title" required /></label>
-              <label>Eyebrow <input name="bannerEyebrow" [(ngModel)]="bannerForm().eyebrow" /></label>
-              <label>CTA <input name="bannerCta" [(ngModel)]="bannerForm().ctaLabel" /></label>
-              <label>Route <input name="bannerRoute" [(ngModel)]="bannerForm().routePath" required /></label>
-              <label>Offer
-                <select name="bannerOffer" [(ngModel)]="bannerForm().offeringId">
-                  <option value="">No linked offer</option>
-                  @for (offer of offerings(); track offer.id) { <option [value]="offer.id">{{ offer.title }}</option> }
-                </select>
-              </label>
-              <label>Image URL <input name="bannerImage" [(ngModel)]="bannerForm().imageUrl" /></label>
-              <label>Starts <input type="datetime-local" name="bannerStarts" [(ngModel)]="bannerForm().startsAt" /></label>
-              <label>Ends <input type="datetime-local" name="bannerEnds" [(ngModel)]="bannerForm().endsAt" /></label>
-              <label>Background <input name="bannerBg" [(ngModel)]="bannerForm().backgroundColor" /></label>
-              <label>Text color <input name="bannerText" [(ngModel)]="bannerForm().textColor" /></label>
+        <section class="banner-layout">
+          <app-admin-form-drawer
+            [open]="bannerEditorOpen()"
+            [title]="bannerEditorTitle()"
+            [description]="bannerEditorDescription()"
+            [steps]="bannerSteps"
+            [currentStep]="bannerStep()"
+            [busy]="saving()"
+            [nextDisabled]="bannerNextDisabled()"
+            [submitLabel]="bannerForm().id ? 'Update banner' : 'Create banner'"
+            (closed)="closeBannerEditor()"
+            (previous)="previousBannerStep()"
+            (next)="nextBannerStep()"
+            (submitted)="saveBanner()"
+          >
+            <div class="edit-form banner-drawer-form" [adminCan]="managePermission">
+              @if (bannerStep() === 0) {
+                <section class="form-section">
+                  <div class="section-head">
+                    <strong>Banner content</strong>
+                    <span>Keep the message short and make the destination clear.</span>
+                  </div>
+                  <div class="two">
+                    <label
+                      >Title <input name="bannerTitle" [(ngModel)]="bannerForm().title" required
+                    /></label>
+                    <label
+                      >Eyebrow <input name="bannerEyebrow" [(ngModel)]="bannerForm().eyebrow"
+                    /></label>
+                    <label
+                      >Button label <input name="bannerCta" [(ngModel)]="bannerForm().ctaLabel"
+                    /></label>
+                    <label
+                      >Destination route
+                      <input name="bannerRoute" [(ngModel)]="bannerForm().routePath" required
+                    /></label>
+                  </div>
+                  <label
+                    >Subtitle
+                    <textarea
+                      rows="3"
+                      name="bannerSubtitle"
+                      [(ngModel)]="bannerForm().subtitle"
+                    ></textarea>
+                  </label>
+                  <label
+                    >Image URL <input name="bannerImage" [(ngModel)]="bannerForm().imageUrl"
+                  /></label>
+                </section>
+              }
+
+              @if (bannerStep() === 1) {
+                <section class="form-section">
+                  <div class="section-head">
+                    <strong>Placement and schedule</strong>
+                    <span>Leave the dates empty to keep the banner available continuously.</span>
+                  </div>
+                  <label
+                    >Linked offer
+                    <select name="bannerOffer" [(ngModel)]="bannerForm().offeringId">
+                      <option value="">No linked offer</option>
+                      @for (offer of offerings(); track offer.id) {
+                        <option [value]="offer.id">{{ offer.title }}</option>
+                      }
+                    </select>
+                  </label>
+                  <div class="two">
+                    <label
+                      >Starts
+                      <input
+                        type="datetime-local"
+                        name="bannerStarts"
+                        [(ngModel)]="bannerForm().startsAt"
+                    /></label>
+                    <label
+                      >Ends
+                      <input
+                        type="datetime-local"
+                        name="bannerEnds"
+                        [(ngModel)]="bannerForm().endsAt"
+                    /></label>
+                    <label
+                      >Background color
+                      <input name="bannerBg" [(ngModel)]="bannerForm().backgroundColor"
+                    /></label>
+                    <label
+                      >Text color <input name="bannerText" [(ngModel)]="bannerForm().textColor"
+                    /></label>
+                    <label
+                      >Sort order
+                      <input type="number" name="bannerSort" [(ngModel)]="bannerForm().sortOrder"
+                    /></label>
+                  </div>
+                  <div class="checks">
+                    <label
+                      ><input
+                        type="checkbox"
+                        name="bannerActive"
+                        [(ngModel)]="bannerForm().isActive"
+                      />
+                      Active</label
+                    >
+                  </div>
+                </section>
+              }
+
+              @if (bannerStep() === 2) {
+                <section class="form-section offer-review">
+                  <div class="section-head">
+                    <strong>Ready to publish?</strong>
+                    <span>Confirm what visitors will see and where the button takes them.</span>
+                  </div>
+                  <article>
+                    <span>Message</span>
+                    <strong>{{ bannerForm().eyebrow || 'Homepage banner' }}</strong>
+                    <p>{{ bannerForm().title }}</p>
+                    @if (bannerForm().subtitle) {
+                      <small>{{ bannerForm().subtitle }}</small>
+                    }
+                  </article>
+                  <article>
+                    <span>Action</span>
+                    <strong>{{ bannerForm().ctaLabel || 'Explore' }}</strong>
+                    <p>{{ bannerForm().routePath }}</p>
+                  </article>
+                  <article>
+                    <span>Visibility</span>
+                    <strong>{{ bannerForm().isActive ? 'Active' : 'Saved as inactive' }}</strong>
+                    <p>
+                      {{ bannerForm().startsAt || 'Starts immediately' }} ·
+                      {{ bannerForm().endsAt || 'No end date' }}
+                    </p>
+                  </article>
+                </section>
+              }
             </div>
-            <label>Subtitle <textarea rows="3" name="bannerSubtitle" [(ngModel)]="bannerForm().subtitle"></textarea></label>
-            <div class="checks">
-              <label><input type="checkbox" name="bannerActive" [(ngModel)]="bannerForm().isActive" /> Active</label>
-              <label>Sort <input type="number" name="bannerSort" [(ngModel)]="bannerForm().sortOrder" /></label>
-            </div>
-            <div class="actions">
-              <button type="submit" class="primary" [disabled]="saving()">Save banner</button>
-              <button type="button" (click)="resetBanner()">Clear</button>
-            </div>
-          </form>
+          </app-admin-form-drawer>
 
           <section class="panel">
-            <h3>Homepage banners</h3>
+            <div class="list-head">
+              <div>
+                <h3>Homepage banners</h3>
+                <p class="muted">Review current banners, then open one only when it needs work.</p>
+              </div>
+              <button
+                type="button"
+                class="primary"
+                [adminCan]="managePermission"
+                (click)="newBanner()"
+              >
+                New banner
+              </button>
+            </div>
             <div class="rows">
               @for (banner of banners(); track banner.id) {
                 <article class="row-card">
@@ -265,8 +745,18 @@
                     <span>{{ banner.routePath }}</span>
                   </div>
                   <div class="row-actions">
-                    @if (banner.isActive) { <span class="badge">Active</span> } @else { <span class="badge off">Off</span> }
-                    <button type="button" [adminCan]="managePermission" (click)="editBanner(banner)">Edit</button>
+                    @if (banner.isActive) {
+                      <span class="badge">Active</span>
+                    } @else {
+                      <span class="badge off">Off</span>
+                    }
+                    <button
+                      type="button"
+                      [adminCan]="managePermission"
+                      (click)="editBanner(banner)"
+                    >
+                      Edit
+                    </button>
                   </div>
                 </article>
               }
@@ -285,14 +775,30 @@
                   <strong>{{ lead.organizationName }}</strong>
                   <span>{{ lead.organizationType }} / {{ lead.city || 'City not shared' }}</span>
                   <p>{{ lead.contactName }} / {{ lead.contactEmail || lead.contactPhone }}</p>
-                  @if (lead.notes) { <p>{{ lead.notes }}</p> }
+                  @if (lead.notes) {
+                    <p>{{ lead.notes }}</p>
+                  }
                 </div>
                 <div class="lead-actions">
                   <select [(ngModel)]="lead.status" [name]="'lead-status-' + lead.id">
-                    @for (status of leadStatuses; track status) { <option [value]="status">{{ status }}</option> }
+                    @for (status of leadStatuses; track status) {
+                      <option [value]="status">{{ status }}</option>
+                    }
                   </select>
-                  <textarea rows="2" [(ngModel)]="lead.followUpNotes" [name]="'lead-notes-' + lead.id" placeholder="Follow-up notes"></textarea>
-                  <button type="button" class="primary" [adminCan]="managePermission" (click)="saveLead(lead)">Save</button>
+                  <textarea
+                    rows="2"
+                    [(ngModel)]="lead.followUpNotes"
+                    [name]="'lead-notes-' + lead.id"
+                    placeholder="Follow-up notes"
+                  ></textarea>
+                  <button
+                    type="button"
+                    class="primary"
+                    [adminCan]="managePermission"
+                    (click)="saveLead(lead)"
+                  >
+                    Save
+                  </button>
                 </div>
               </article>
             } @empty {

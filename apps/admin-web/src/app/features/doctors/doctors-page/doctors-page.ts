@@ -34,6 +34,8 @@ import {
 } from '../constants/doctor-types.constants';
 import type { SortDirection } from '../../../shared/constants/filter.constants';
 import { AdminCanDirective } from '../../../core/directives/admin-can.directive';
+import { ProviderWorkspaceContextComponent } from '../components/provider-workspace-context.component';
+import { ProviderDirectorySettingsComponent } from '../components/provider-directory-settings.component';
 import {
   ADMIN_PERMISSIONS,
   staffHasAllPermissions,
@@ -241,6 +243,8 @@ function emptyEditModel() {
     MultiSelectComponent,
     RouterLink,
     AdminCanDirective,
+    ProviderWorkspaceContextComponent,
+    ProviderDirectorySettingsComponent,
   ],
   templateUrl: './doctors-page.html',
   styleUrl: './doctors-page.scss',
@@ -352,6 +356,7 @@ export class DoctorsPage {
   readonly configMessage = signal('');
   readonly doctorListLimitValue = signal('12');
   readonly showDirectorySettings = signal(false);
+  readonly showSetupReview = signal(false);
   readonly showCreateProviderForm = signal(false);
 
   constructor(private readonly api: AdminApi) {

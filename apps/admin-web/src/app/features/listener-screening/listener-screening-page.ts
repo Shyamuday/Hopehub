@@ -1,8 +1,14 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminApi } from '../../core/services/admin-api';
 import { AdminCanDirective } from '../../core/directives/admin-can.directive';
 import { ADMIN_PERMISSIONS } from '../../core/admin-permissions';
+import {
+  AdminFormDrawerComponent,
+  type AdminFormStep,
+} from '../../shared/ui/admin-form-drawer.component';
+import { AdminFeedbackComponent } from '../../shared/ui/admin-feedback.component';
+import { AdminContentStateComponent } from '../../shared/ui/admin-content-state.component';
 
 type ListenerScreeningOptionForm = {
   id: string;
@@ -29,7 +35,13 @@ type ListenerScreeningSetForm = {
 @Component({
   selector: 'app-listener-screening-page',
   standalone: true,
-  imports: [FormsModule, AdminCanDirective],
+  imports: [
+    FormsModule,
+    AdminCanDirective,
+    AdminFormDrawerComponent,
+    AdminFeedbackComponent,
+    AdminContentStateComponent,
+  ],
   templateUrl: './listener-screening-page.html',
   styleUrl: './listener-screening-page.scss',
 })
@@ -47,6 +59,16 @@ export class ListenerScreeningPage implements OnInit {
   readonly form = signal<ListenerScreeningSetForm>(this.emptyForm());
   readonly previewOpen = signal(false);
   readonly validationIssues = signal<string[]>([]);
+  readonly editorOpen = signal(false);
+  readonly editorStep = signal(0);
+  readonly editorSteps: readonly AdminFormStep[] = [
+    { id: 'basics', label: 'Basics' },
+    { id: 'questions', label: 'Questions' },
+    { id: 'review', label: 'Review' },
+  ];
+  readonly editorTitle = computed(() =>
+    this.form().id ? `Edit ${this.form().version}` : 'Create listener test',
+  );
 
   ngOnInit(): void {
     void this.load();
@@ -61,7 +83,7 @@ export class ListenerScreeningPage implements OnInit {
       this.auditLogs.set(response.auditLogs || []);
       const current =
         response.questionSets?.find((set: any) => set.isActive) ?? response.questionSets?.[0];
-      if (current && !this.form().id) this.edit(current);
+      if (current && !this.form().id) this.edit(current, false);
       await this.loadLiveGroupReports();
     } catch (error: any) {
       this.error.set(error?.error?.message || error?.message || 'Could not load listener tests.');
@@ -70,7 +92,7 @@ export class ListenerScreeningPage implements OnInit {
     }
   }
 
-  edit(questionSet: any): void {
+  edit(questionSet: any, openEditor = true): void {
     this.form.set({
       id: questionSet.id,
       title: questionSet.title || 'Listener screening test',
@@ -88,12 +110,18 @@ export class ListenerScreeningPage implements OnInit {
         })),
       })),
     });
+    if (openEditor) {
+      this.editorStep.set(0);
+      this.editorOpen.set(true);
+    }
   }
 
   newDraft(): void {
     this.form.set(this.emptyForm());
     this.previewOpen.set(false);
     this.validationIssues.set([]);
+    this.editorStep.set(0);
+    this.editorOpen.set(true);
   }
 
   duplicateAsDraft(questionSet: any | null): void {
@@ -104,6 +132,36 @@ export class ListenerScreeningPage implements OnInit {
       isActive: false,
       version: this.nextVersion(),
     });
+  }
+
+  closeEditor(): void {
+    if (this.saving()) return;
+    this.editorOpen.set(false);
+    this.editorStep.set(0);
+    this.previewOpen.set(false);
+    this.validationIssues.set([]);
+  }
+
+  nextEditorStep(): void {
+    if (this.editorNextDisabled()) return;
+    if (this.editorStep() === 1) {
+      const validationMessage = this.validateForm();
+      this.validationIssues.set(validationMessage ? [validationMessage] : []);
+      this.error.set(validationMessage);
+      if (validationMessage) return;
+      this.previewOpen.set(true);
+    }
+    this.editorStep.update((step) => Math.min(step + 1, this.editorSteps.length - 1));
+  }
+
+  previousEditorStep(): void {
+    this.editorStep.update((step) => Math.max(0, step - 1));
+  }
+
+  editorNextDisabled(): boolean {
+    if (this.editorStep() !== 0) return false;
+    const current = this.form();
+    return !current.title.trim() || !current.version.trim() || Number(current.passScore) < 1;
   }
 
   selectedQuestionSet(): any | null {
@@ -194,7 +252,9 @@ export class ListenerScreeningPage implements OnInit {
       this.toast.set(
         current.isActive ? 'Listener test saved and published.' : 'Listener test saved.',
       );
-      this.edit(response.questionSet);
+      this.edit(response.questionSet, false);
+      this.editorOpen.set(false);
+      this.editorStep.set(0);
       await this.load();
     } catch (error: any) {
       this.error.set(

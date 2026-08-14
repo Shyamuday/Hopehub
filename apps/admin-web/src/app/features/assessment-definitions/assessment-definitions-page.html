@@ -4,15 +4,12 @@
       <p>Healing Hub</p>
       <h2>Assessment Definitions</h2>
     </div>
-    <button type="button" class="primary" [adminCan]="managePermission" (click)="newDraft()">New draft</button>
+    <button type="button" class="primary" [adminCan]="managePermission" (click)="newDraft()">
+      New draft
+    </button>
   </header>
 
-  @if (toast()) {
-    <div class="toast">{{ toast() }}</div>
-  }
-  @if (error()) {
-    <div class="error">{{ error() }}</div>
-  }
+  <app-admin-feedback [success]="toast()" [error]="error()" />
 
   <section class="toolbar">
     <input
@@ -25,175 +22,314 @@
     <button type="button" (click)="load()">Search</button>
   </section>
 
-  <section class="panel access-report">
+  <section class="panel access-report" [class.compact]="!reportOpen()">
     <div class="report-head">
       <div>
         <h3>Assessment access</h3>
-        <p>Paid unlocks, pending orders, and one-time coupon usage.</p>
+        <p>Open only when you need payment and coupon reporting.</p>
       </div>
-      <div class="report-filters">
-        <input
-          name="reportQuery"
-          placeholder="Search user, test, order"
-          [ngModel]="reportQuery()"
-          (ngModelChange)="reportQuery.set($event)"
-          (keyup.enter)="loadAccessReport()"
-        />
-        <select name="reportStatus" [ngModel]="reportStatus()" (ngModelChange)="reportStatus.set($event)">
-          <option value="">All payments</option>
-          <option value="PAID">Paid</option>
-          <option value="CREATED">Pending</option>
-          <option value="FAILED">Failed</option>
-        </select>
-        <button type="button" (click)="loadAccessReport()">Refresh</button>
-      </div>
+      <button type="button" (click)="toggleReport()">
+        {{ reportOpen() ? 'Hide report' : 'Open report' }}
+      </button>
     </div>
 
-    @if (reportLoading()) {
-      <p class="muted">Loading access report...</p>
-    } @else {
-      <div class="summary-grid">
-        <div>
-          <span>Paid revenue</span>
-          <strong>{{ rupees(accessReport().summary?.paidAmountInPaise) }}</strong>
-          <small>{{ accessReport().summary?.paidCount || 0 }} unlocks</small>
-        </div>
-        <div>
-          <span>Pending orders</span>
-          <strong>{{ rupees(accessReport().summary?.pendingAmountInPaise) }}</strong>
-          <small>{{ accessReport().summary?.pendingCount || 0 }} orders</small>
-        </div>
-        <div>
-          <span>Coupon redemptions</span>
-          <strong>{{ accessReport().summary?.redemptionCount || 0 }}</strong>
-          <small>one use per user/test/code</small>
+    @if (reportOpen()) {
+      <div class="report-head report-controls">
+        <span></span>
+        <div class="report-filters">
+          <input
+            name="reportQuery"
+            placeholder="Search user, test, order"
+            [ngModel]="reportQuery()"
+            (ngModelChange)="reportQuery.set($event)"
+            (keyup.enter)="loadAccessReport()"
+          />
+          <select
+            name="reportStatus"
+            [ngModel]="reportStatus()"
+            (ngModelChange)="reportStatus.set($event)"
+          >
+            <option value="">All payments</option>
+            <option value="PAID">Paid</option>
+            <option value="CREATED">Pending</option>
+            <option value="FAILED">Failed</option>
+          </select>
+          <button type="button" (click)="loadAccessReport()">Refresh</button>
         </div>
       </div>
 
-      <div class="report-columns">
-        <section>
-          <h4>Coupon usage</h4>
-          <div class="compact-list">
-            @for (coupon of accessReport().couponUsage; track coupon.assessmentId + coupon.couponCode) {
-              <article>
-                <strong>{{ coupon.title }}</strong>
-                <span>
-                  {{ coupon.couponCode || 'No code' }} · {{ coupon.used || 0 }}
-                  @if (coupon.couponMaxRedemptions) {
-                    / {{ coupon.couponMaxRedemptions }}
-                  }
-                  used
-                  · {{ coupon.couponDiscountType || 'FREE' }}
-                  @if (coupon.couponDiscountValue) {
-                    {{ coupon.couponDiscountType === 'FLAT' ? rupees(coupon.couponDiscountValue) : coupon.couponDiscountValue + '%' }}
-                  }
-                </span>
-              </article>
-            } @empty {
-              <p class="muted">No paid or coupon assessments yet.</p>
-            }
+      @if (reportLoading()) {
+        <p class="muted">Loading access report...</p>
+      } @else {
+        <div class="summary-grid">
+          <div>
+            <span>Paid revenue</span>
+            <strong>{{ rupees(accessReport().summary?.paidAmountInPaise) }}</strong>
+            <small>{{ accessReport().summary?.paidCount || 0 }} unlocks</small>
           </div>
-        </section>
+          <div>
+            <span>Pending orders</span>
+            <strong>{{ rupees(accessReport().summary?.pendingAmountInPaise) }}</strong>
+            <small>{{ accessReport().summary?.pendingCount || 0 }} orders</small>
+          </div>
+          <div>
+            <span>Coupon redemptions</span>
+            <strong>{{ accessReport().summary?.redemptionCount || 0 }}</strong>
+            <small>one use per user/test/code</small>
+          </div>
+        </div>
 
-        <section>
-          <h4>Recent payments</h4>
-          <div class="compact-list">
-            @for (payment of accessReport().payments; track payment.id) {
-              <article>
-                <strong>{{ payment.assessment?.title || payment.assessmentId }}</strong>
-                <span>
-                  {{ payment.user?.name || 'User' }} · {{ payment.user?.email || payment.user?.mobile || 'No contact' }}
-                </span>
-                <span>
-                  {{ payment.status }} · {{ rupees(payment.amountInPaise) }} · {{ formatDate(payment.createdAt) }}
-                </span>
-                <small>{{ payment.providerPaymentId || payment.providerOrderId }}</small>
-              </article>
-            } @empty {
-              <p class="muted">No assessment payments yet.</p>
-            }
-          </div>
-        </section>
+        <div class="report-columns">
+          <section>
+            <h4>Coupon usage</h4>
+            <div class="compact-list">
+              @for (
+                coupon of accessReport().couponUsage;
+                track coupon.assessmentId + coupon.couponCode
+              ) {
+                <article>
+                  <strong>{{ coupon.title }}</strong>
+                  <span>
+                    {{ coupon.couponCode || 'No code' }} · {{ coupon.used || 0 }}
+                    @if (coupon.couponMaxRedemptions) {
+                      / {{ coupon.couponMaxRedemptions }}
+                    }
+                    used · {{ coupon.couponDiscountType || 'FREE' }}
+                    @if (coupon.couponDiscountValue) {
+                      {{
+                        coupon.couponDiscountType === 'FLAT'
+                          ? rupees(coupon.couponDiscountValue)
+                          : coupon.couponDiscountValue + '%'
+                      }}
+                    }
+                  </span>
+                </article>
+              } @empty {
+                <p class="muted">No paid or coupon assessments yet.</p>
+              }
+            </div>
+          </section>
 
-        <section>
-          <h4>Recent coupon unlocks</h4>
-          <div class="compact-list">
-            @for (redemption of accessReport().redemptions; track redemption.id) {
-              <article>
-                <strong>{{ redemption.assessment?.title || redemption.assessmentId }}</strong>
-                <span>
-                  {{ redemption.user?.name || 'User' }} · {{ redemption.user?.email || redemption.user?.mobile || 'No contact' }}
-                </span>
-                <span>{{ redemption.couponCode }} · {{ formatDate(redemption.createdAt) }}</span>
-              </article>
-            } @empty {
-              <p class="muted">No coupon redemptions yet.</p>
-            }
-          </div>
-        </section>
-      </div>
+          <section>
+            <h4>Recent payments</h4>
+            <div class="compact-list">
+              @for (payment of accessReport().payments; track payment.id) {
+                <article>
+                  <strong>{{ payment.assessment?.title || payment.assessmentId }}</strong>
+                  <span>
+                    {{ payment.user?.name || 'User' }} ·
+                    {{ payment.user?.email || payment.user?.mobile || 'No contact' }}
+                  </span>
+                  <span>
+                    {{ payment.status }} · {{ rupees(payment.amountInPaise) }} ·
+                    {{ formatDate(payment.createdAt) }}
+                  </span>
+                  <small>{{ payment.providerPaymentId || payment.providerOrderId }}</small>
+                </article>
+              } @empty {
+                <p class="muted">No assessment payments yet.</p>
+              }
+            </div>
+          </section>
+
+          <section>
+            <h4>Recent coupon unlocks</h4>
+            <div class="compact-list">
+              @for (redemption of accessReport().redemptions; track redemption.id) {
+                <article>
+                  <strong>{{ redemption.assessment?.title || redemption.assessmentId }}</strong>
+                  <span>
+                    {{ redemption.user?.name || 'User' }} ·
+                    {{ redemption.user?.email || redemption.user?.mobile || 'No contact' }}
+                  </span>
+                  <span>{{ redemption.couponCode }} · {{ formatDate(redemption.createdAt) }}</span>
+                </article>
+              } @empty {
+                <p class="muted">No coupon redemptions yet.</p>
+              }
+            </div>
+          </section>
+        </div>
+      }
     }
   </section>
 
-  <section class="grid-layout">
-    <form class="panel edit-form" [adminCan]="managePermission" (ngSubmit)="save()">
-      <h3>{{ form().id ? 'Edit assessment' : 'New assessment' }}</h3>
-      <div class="two">
-        <label>Id <input name="id" [(ngModel)]="form().id" required /></label>
-        <label>Version <input name="version" [(ngModel)]="form().version" required /></label>
-        <label>Type <input name="type" [(ngModel)]="form().type" required /></label>
-        <label>Category <input name="category" [(ngModel)]="form().category" required /></label>
-        <label>Title <input name="title" [(ngModel)]="form().title" required /></label>
-        <label>Sort order <input type="number" name="sortOrder" [(ngModel)]="form().sortOrder" /></label>
+  <section class="definitions-layout">
+    <app-admin-form-drawer
+      [open]="editorOpen()"
+      [title]="editorTitle()"
+      [description]="'Complete one focused section at a time.'"
+      [steps]="editorSteps"
+      [currentStep]="editorStep()"
+      [busy]="saving()"
+      [nextDisabled]="editorNextDisabled()"
+      [submitLabel]="form().id ? 'Update assessment' : 'Create assessment'"
+      (closed)="closeEditor()"
+      (previous)="previousEditorStep()"
+      (next)="nextEditorStep()"
+      (submitted)="save()"
+    >
+      <div class="edit-form" [adminCan]="managePermission">
+        @if (editorStep() === 0) {
+          <section class="form-section">
+            <h3>Identity</h3>
+            <div class="two">
+              <label>Id <input name="id" [(ngModel)]="form().id" required /></label>
+              <label>Version <input name="version" [(ngModel)]="form().version" required /></label>
+              <label>Type <input name="type" [(ngModel)]="form().type" required /></label>
+              <label
+                >Category <input name="category" [(ngModel)]="form().category" required
+              /></label>
+              <label>Title <input name="title" [(ngModel)]="form().title" required /></label>
+              <label
+                >Sort order <input type="number" name="sortOrder" [(ngModel)]="form().sortOrder"
+              /></label>
+            </div>
+            <label
+              >Description
+              <textarea
+                rows="3"
+                name="description"
+                [(ngModel)]="form().description"
+                required
+              ></textarea>
+            </label>
+          </section>
+        }
+
+        @if (editorStep() === 1) {
+          <section class="form-section">
+            <h3>Access and coupon</h3>
+            <div class="two">
+              <label
+                >Access
+                <select name="accessMode" [(ngModel)]="form().accessMode">
+                  <option value="FREE">Free</option>
+                  <option value="LOGIN_REQUIRED">Free after sign in</option>
+                  <option value="PAID">Paid</option>
+                </select>
+              </label>
+              <label
+                >Price (INR)
+                <input type="number" min="0" name="priceRupees" [(ngModel)]="form().priceRupees"
+              /></label>
+              <label
+                >Coupon code
+                <input name="couponCode" [(ngModel)]="form().couponCode" placeholder="TESTFREE"
+              /></label>
+              <label
+                >Coupon label
+                <input
+                  name="couponLabel"
+                  [(ngModel)]="form().couponLabel"
+                  placeholder="Free access code"
+              /></label>
+              <label
+                >Coupon type
+                <select name="couponDiscountType" [(ngModel)]="form().couponDiscountType">
+                  <option value="FREE">Free unlock</option>
+                  <option value="PERCENT">Percent discount</option>
+                  <option value="FLAT">Flat discount</option>
+                </select>
+              </label>
+              <label
+                >Coupon value
+                <input
+                  type="number"
+                  min="0"
+                  name="couponDiscountValue"
+                  [(ngModel)]="form().couponDiscountValue"
+                  placeholder="% or INR"
+              /></label>
+              <label
+                >Coupon starts
+                <input
+                  type="datetime-local"
+                  name="couponStartsAt"
+                  [(ngModel)]="form().couponStartsAt"
+              /></label>
+              <label
+                >Coupon ends
+                <input type="datetime-local" name="couponEndsAt" [(ngModel)]="form().couponEndsAt"
+              /></label>
+              <label
+                >Max redemptions
+                <input
+                  type="number"
+                  min="1"
+                  name="couponMaxRedemptions"
+                  [(ngModel)]="form().couponMaxRedemptions"
+              /></label>
+            </div>
+            <label
+              >Access note
+              <textarea
+                rows="2"
+                name="accessNote"
+                [(ngModel)]="form().accessNote"
+                placeholder="Shown to users before unlocking"
+              ></textarea>
+            </label>
+          </section>
+        }
+
+        @if (editorStep() === 2) {
+          <section class="form-section">
+            <h3>Questions and scoring</h3>
+            <p class="muted">
+              Advanced JSON remains available, but is isolated from normal publishing fields.
+            </p>
+            <label
+              >Config JSON
+              <textarea
+                class="json"
+                rows="24"
+                name="configJson"
+                [(ngModel)]="form().configJson"
+                required
+              ></textarea>
+            </label>
+          </section>
+        }
+
+        @if (editorStep() === 3) {
+          <section class="form-section review-card">
+            <h3>Review</h3>
+            <strong>{{ form().title }}</strong>
+            <span>{{ form().id }} · {{ form().category }} · {{ form().version }}</span>
+            <span
+              >{{ form().accessMode }}
+              @if (form().priceRupees) {
+                · ₹{{ form().priceRupees }}
+              }
+            </span>
+            <label class="check"
+              ><input type="checkbox" name="active" [(ngModel)]="form().isActive" /> Publish after
+              save</label
+            >
+          </section>
+        }
       </div>
-      <label>Description <textarea rows="3" name="description" [(ngModel)]="form().description" required></textarea></label>
-      <div class="two">
-        <label>
-          Access
-          <select name="accessMode" [(ngModel)]="form().accessMode">
-            <option value="FREE">Free</option>
-            <option value="LOGIN_REQUIRED">Free after sign in</option>
-            <option value="PAID">Paid</option>
-          </select>
-        </label>
-        <label>Price (INR) <input type="number" min="0" name="priceRupees" [(ngModel)]="form().priceRupees" /></label>
-        <label>Coupon code <input name="couponCode" [(ngModel)]="form().couponCode" placeholder="TESTFREE" /></label>
-        <label>Coupon label <input name="couponLabel" [(ngModel)]="form().couponLabel" placeholder="Free access code" /></label>
-        <label>
-          Coupon type
-          <select name="couponDiscountType" [(ngModel)]="form().couponDiscountType">
-            <option value="FREE">Free unlock</option>
-            <option value="PERCENT">Percent discount</option>
-            <option value="FLAT">Flat discount</option>
-          </select>
-        </label>
-        <label>
-          Coupon value
-          <input
-            type="number"
-            min="0"
-            name="couponDiscountValue"
-            [(ngModel)]="form().couponDiscountValue"
-            placeholder="% or INR"
-          />
-        </label>
-        <label>Coupon starts <input type="datetime-local" name="couponStartsAt" [(ngModel)]="form().couponStartsAt" /></label>
-        <label>Coupon ends <input type="datetime-local" name="couponEndsAt" [(ngModel)]="form().couponEndsAt" /></label>
-        <label>Max redemptions <input type="number" min="1" name="couponMaxRedemptions" [(ngModel)]="form().couponMaxRedemptions" /></label>
-      </div>
-      <label>Access note <textarea rows="2" name="accessNote" [(ngModel)]="form().accessNote" placeholder="Shown to users before unlocking"></textarea></label>
-      <label class="check"><input type="checkbox" name="active" [(ngModel)]="form().isActive" /> Publish after save</label>
-      <label>Config JSON <textarea class="json" rows="24" name="configJson" [(ngModel)]="form().configJson" required></textarea></label>
-      <div class="actions">
-        <button type="submit" class="primary" [disabled]="saving()">{{ saving() ? 'Saving...' : 'Save assessment' }}</button>
-      </div>
-    </form>
+    </app-admin-form-drawer>
 
     <section class="panel rows">
-      <h3>Assessments</h3>
-      @if (loading()) {
-        <p class="muted">Loading...</p>
-      } @else {
+      <div class="list-head">
+        <div>
+          <h3>Assessments</h3>
+          <p class="muted">Select a definition only when it needs editing.</p>
+        </div>
+        <button type="button" class="primary" [adminCan]="managePermission" (click)="newDraft()">
+          New draft
+        </button>
+      </div>
+      <app-admin-content-state
+        [loading]="loading()"
+        [empty]="!loading() && definitions().length === 0"
+        loadingLabel="Loading assessments…"
+        emptyTitle="No assessments found"
+        emptyMessage="Create a draft or change the search term."
+      />
+      @if (!loading()) {
         @for (definition of definitions(); track definition.id) {
           <article class="row">
             <div>
@@ -207,12 +343,29 @@
               </span>
             </div>
             <div class="row-actions">
-              <span class="status" [class.live]="definition.isActive">{{ definition.isActive ? 'Live' : 'Draft' }}</span>
-              <button type="button" [adminCan]="managePermission" (click)="edit(definition)">Edit</button>
+              <span class="status" [class.live]="definition.isActive">{{
+                definition.isActive ? 'Live' : 'Draft'
+              }}</span>
+              <button type="button" [adminCan]="managePermission" (click)="edit(definition)">
+                Edit
+              </button>
               @if (definition.isActive) {
-                <button type="button" [adminCan]="managePermission" (click)="unpublish(definition)">Unpublish</button>
+                <button
+                  type="button"
+                  [adminCan]="managePermission"
+                  (click)="requestUnpublish(definition)"
+                >
+                  Unpublish
+                </button>
               } @else {
-                <button type="button" class="primary" [adminCan]="managePermission" (click)="publish(definition)">Publish</button>
+                <button
+                  type="button"
+                  class="primary"
+                  [adminCan]="managePermission"
+                  (click)="publish(definition)"
+                >
+                  Publish
+                </button>
               }
             </div>
           </article>
@@ -220,4 +373,17 @@
       }
     </section>
   </section>
+  <app-admin-confirm-dialog
+    [open]="!!pendingUnpublish()"
+    title="Unpublish this assessment?"
+    [message]="
+      'Users will no longer be able to start ' +
+      (pendingUnpublish()?.title || 'this assessment') +
+      '.'
+    "
+    confirmLabel="Unpublish"
+    [busy]="saving()"
+    (cancelled)="pendingUnpublish.set(null)"
+    (confirmed)="confirmUnpublish()"
+  />
 </div>
