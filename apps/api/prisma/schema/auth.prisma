@@ -63,185 +63,185 @@ enum TelegramBotKind {
 }
 
 model User {
-  id                  String         @id @default(cuid())
-  name                String
-  email               String?
-  mobile              String?
-  passwordHash        String?
-  role                Role
-  isActive            Boolean        @default(true)
-  patientCode         String?        @unique
-  profileImageKey     String?
-  profileImageUrl     String?
-  homeClinicStoreId   String?
-  homeClinicStore     Store?         @relation("PatientHomeClinic", fields: [homeClinicStoreId], references: [id])
-  allergies           String?
-  currentMedications  String?
-  chronicConditions   String?
-  dateOfBirth         DateTime?
-  gender              PatientGender?
-  bloodGroup          String?
-  alternateMobile     String?
-  addressLine1        String?
-  addressLine2        String?
-  city                String?
-  state               String?
-  pincode             String?
-  country             String?        @default("India")
-  emergencyContactName     String?
-  emergencyContactPhone    String?
-  emergencyContactRelation String?
-  occupation          String?
-  maritalStatus       MaritalStatus?
-  heightCm            Int?
-  weightKg            Float?
-  pastSurgeries       String?        @db.Text
-  familyMedicalHistory String?       @db.Text
-  smokingStatus       LifestyleStatus?
-  alcoholUse          LifestyleStatus?
-  preferredLanguage   String?
-  patientNotes        String?        @db.Text
-  dietType            DietType?
-  foodHabits          String?        @db.Text
-  foodCravings        String?        @db.Text
-  foodAversions       String?        @db.Text
-  appetiteNotes       String?        @db.Text
-  thirstNotes         String?        @db.Text
-  sleepPattern        String?        @db.Text
-  dreamNotes          String?        @db.Text
-  thermalPreference   ThermalPreference?
-  perspirationNotes   String?        @db.Text
-  bowelHabits         String?        @db.Text
-  urineHabits         String?        @db.Text
-  menstrualHistory    String?        @db.Text
-  mentalTemperament   String?        @db.Text
-  fearsPhobias        String?        @db.Text
-  angerGriefPatterns  String?        @db.Text
-  concentrationMemory String?        @db.Text
-  socialBehaviour     String?        @db.Text
-  stressTriggers      String?        @db.Text
-  childhoodIllnesses  String?        @db.Text
-  vaccinationHistory  String?        @db.Text
-  previousHomeopathicTreatment String? @db.Text
-  aggravatingFactors  String?        @db.Text
-  relievingFactors    String?        @db.Text
-  exerciseHabits      String?        @db.Text
-  stimulantHabits     String?        @db.Text
-  constitutionalNotes String?        @db.Text
-  skinHairNailNotes   String?        @db.Text
-  weatherSensitivity  String?        @db.Text
-  doctorProfile       Doctor?
-  patientConsults     Consultation[] @relation("PatientConsultations")
-  doctorConsults      Consultation[] @relation("DoctorConsultations")
-  doctorProviderEarnings ProviderEarning[] @relation("DoctorProviderEarnings")
-  patientProviderEarnings ProviderEarning[] @relation("PatientProviderEarnings")
-  providerEarningsPaid ProviderEarning[] @relation("ProviderEarningsPaidBy")
-  consultationReminders ConsultationReminder[] @relation("UserConsultationReminders")
-  messages            Message[]
-  uploadedPrescriptions Prescription[]
-  patientPrescriptions Prescription[] @relation("PatientPrescriptions")
-  createdPrescriptionOptions PrescriptionOption[] @relation("PrescriptionOptionCreator")
-  prescriptionTemplates      PrescriptionTemplate[] @relation("DoctorTemplates")
-  doseEvents           MedicineDoseEvent[] @relation("PatientDoseEvents")
-  reminderPreference  ReminderPreference?
-  auditLogs          AuditLog[]      @relation("AuditActor")
-  supportNotesAuthored SupportCaseNote[] @relation("SupportNoteAuthor")
-  patientSupportNotes  SupportCaseNote[] @relation("PatientSupportNotes")
-  productEvents        ProductEvent[]    @relation("ProductEventActor")
-  passwordResetTokens PasswordResetToken[]
-  emailVerificationTokens EmailVerificationToken[]
-  authSessions        AuthSession[]
-  hrProfile              HrProfile?
-  receptionistProfile    ReceptionistProfile?
-  clinicManagerProfile   ClinicManagerProfile?
-  accountantProfile      AccountantProfile?
-  supplierProfile        SupplierProfile?
-  warehouseManagerProfile WarehouseManagerProfile?
-  deliveryExecutiveProfile DeliveryExecutiveProfile?
-  diagnosticCenterProfile  DiagnosticCenterProfile?
-  branchOwnerProfile       BranchOwnerProfile?
-  patientCoordinatorProfile PatientCoordinatorProfile?
-  callCenterProfile        CallCenterProfile?
-  marketingProfile         MarketingProfile?
-  corporateWellnessProfile CorporateWellnessProfile?
-  insurancePartnerProfile  InsurancePartnerProfile?
-  staffProfile             StaffProfile?
-  corporateEnrollments     CorporateEnrollment[] @relation("CorporateEnrollments")
-  insuranceClaims          InsuranceClaim[]      @relation("PatientInsuranceClaims")
-  assignedDeliveries     MedicineDelivery[] @relation("AssignedDeliveries")
-  patientDeliveries      MedicineDelivery[] @relation("PatientDeliveries")
-  patientAddresses       PatientAddress[]   @relation("PatientAddresses")
-  patientLabReferrals    LabReferral[]      @relation("PatientLabReferrals")
-  hrStoreAccess          HrStoreAccess[] @relation("HrUserAccess")
-  hrStoreGrants      HrStoreAccess[] @relation("HrAccessGrantor")
-  leaveApprovals     LeaveRequest[]  @relation("LeaveApprovals")
-  caseAnalyses       CaseAnalysis[]  @relation("DoctorCaseAnalyses")
-  patientClinicalMedia ClinicalMedia[] @relation("PatientClinicalMedia")
-  clinicalMediaUploads ClinicalMedia[] @relation("ClinicalMediaUploadedBy")
-  notificationBroadcasts NotificationBroadcast[] @relation("NotificationBroadcasts")
-  inAppNotifications   InAppNotification[]   @relation("UserInAppNotifications")
-  createdVacancies     JobVacancy[]           @relation("VacancyCreator")
-  reviewedCounsellorApplications CounsellorApplication[] @relation("CounsellorApplicationReviewer")
-  chatSessions         ChatSession[]          @relation("UserChatSessions")
-  websiteLeads         WebsiteLead[]          @relation("UserWebsiteLeads")
-  leadsCalled          WebsiteLead[]          @relation("LeadCalledBy")
-  salaryUpdates        EmployeeSalary[]         @relation("SalaryUpdatedBy")
-  referredByUserId     String?
-  referredByUser       User?                  @relation("PatientReferredBy", fields: [referredByUserId], references: [id], onDelete: SetNull)
-  patientsReferred     User[]                 @relation("PatientReferredBy")
-  referralCode         PatientReferralCode?
-  referralsMade        PatientReferral[]      @relation("ReferralsMade")
-  referralReceived     PatientReferral?       @relation("ReferralReceived")
-  referralFreeCallRewards ReferralFreeCallReward[]
-  patientWallet        PatientWallet?
-  walletLedger         WalletLedgerEntry[]    @relation("WalletLedgerPatient")
-  rewardRedemptions    RewardRedemption[]     @relation("RewardRedemptionPatient")
-  blogPostsAuthored    BlogPost[]             @relation("BlogPostAuthor")
-  blogComments         BlogComment[]          @relation("BlogCommentAuthor")
-  doctorOnlineSession  DoctorOnlineSession?
-  hopeHubAssessmentAttempts HopeHubAssessmentAttempt[] @relation("UserHopeHubAssessmentAttempts")
-  hopeHubAssessmentSafetyReviews HopeHubAssessmentAttempt[] @relation("HopeHubAssessmentSafetyReviews")
-  followUpEntitlements ConsultationFollowUpEntitlement[] @relation("UserFollowUpEntitlements")
-  practiceSessions    UserPracticeSession[] @relation("UserPracticeSessions")
-  dailyPlans          PatientDailyPlan[] @relation("PatientDailyPlans")
-  dailyPlanUploads    PatientDailyPlanImage[] @relation("PatientDailyPlanUploads")
-  telegramBotSessions TelegramBotSession[] @relation("UserTelegramBotSessions")
-  leadAssignmentsReceived WebsiteLeadAssignment[] @relation("LeadAssignmentProvider")
-  leadAssignmentsCreated WebsiteLeadAssignment[] @relation("LeadAssignmentAdmin")
-  lifestyleTipSessions UserLifestyleTipSession[] @relation("UserLifestyleTipSessions")
-  assessmentAccessGrants AssessmentAccessGrant[] @relation("AssessmentAccessGrants")
-  assessmentCouponRedemptions AssessmentCouponRedemption[] @relation("AssessmentCouponRedemptions")
-  assessmentPayments AssessmentPayment[] @relation("AssessmentPayments")
-  emailVerified      Boolean        @default(false)
-  authProvider       String?
-  lastLoginAt        DateTime?
-  lastLoginMethod    String?
-  externalAvatarUrl  String?
-  identities         UserIdentity[] @relation("UserIdentities")
-  createdAt           DateTime       @default(now())
-  updatedAt           DateTime       @updatedAt
+  id                             String                            @id @default(cuid())
+  name                           String
+  email                          String?
+  mobile                         String?
+  passwordHash                   String?
+  role                           Role
+  isActive                       Boolean                           @default(true)
+  patientCode                    String?                           @unique
+  profileImageKey                String?
+  profileImageUrl                String?
+  homeClinicStoreId              String?
+  homeClinicStore                Store?                            @relation("PatientHomeClinic", fields: [homeClinicStoreId], references: [id])
+  allergies                      String?
+  currentMedications             String?
+  chronicConditions              String?
+  dateOfBirth                    DateTime?
+  gender                         PatientGender?
+  bloodGroup                     String?
+  alternateMobile                String?
+  addressLine1                   String?
+  addressLine2                   String?
+  city                           String?
+  state                          String?
+  pincode                        String?
+  country                        String?                           @default("India")
+  emergencyContactName           String?
+  emergencyContactPhone          String?
+  emergencyContactRelation       String?
+  occupation                     String?
+  maritalStatus                  MaritalStatus?
+  heightCm                       Int?
+  weightKg                       Float?
+  pastSurgeries                  String?                           @db.Text
+  familyMedicalHistory           String?                           @db.Text
+  smokingStatus                  LifestyleStatus?
+  alcoholUse                     LifestyleStatus?
+  preferredLanguage              String?
+  patientNotes                   String?                           @db.Text
+  dietType                       DietType?
+  foodHabits                     String?                           @db.Text
+  foodCravings                   String?                           @db.Text
+  foodAversions                  String?                           @db.Text
+  appetiteNotes                  String?                           @db.Text
+  thirstNotes                    String?                           @db.Text
+  sleepPattern                   String?                           @db.Text
+  dreamNotes                     String?                           @db.Text
+  thermalPreference              ThermalPreference?
+  perspirationNotes              String?                           @db.Text
+  bowelHabits                    String?                           @db.Text
+  urineHabits                    String?                           @db.Text
+  menstrualHistory               String?                           @db.Text
+  mentalTemperament              String?                           @db.Text
+  fearsPhobias                   String?                           @db.Text
+  angerGriefPatterns             String?                           @db.Text
+  concentrationMemory            String?                           @db.Text
+  socialBehaviour                String?                           @db.Text
+  stressTriggers                 String?                           @db.Text
+  childhoodIllnesses             String?                           @db.Text
+  vaccinationHistory             String?                           @db.Text
+  previousHomeopathicTreatment   String?                           @db.Text
+  aggravatingFactors             String?                           @db.Text
+  relievingFactors               String?                           @db.Text
+  exerciseHabits                 String?                           @db.Text
+  stimulantHabits                String?                           @db.Text
+  constitutionalNotes            String?                           @db.Text
+  skinHairNailNotes              String?                           @db.Text
+  weatherSensitivity             String?                           @db.Text
+  doctorProfile                  Doctor?
+  patientConsults                Consultation[]                    @relation("PatientConsultations")
+  doctorConsults                 Consultation[]                    @relation("DoctorConsultations")
+  doctorProviderEarnings         ProviderEarning[]                 @relation("DoctorProviderEarnings")
+  patientProviderEarnings        ProviderEarning[]                 @relation("PatientProviderEarnings")
+  providerEarningsPaid           ProviderEarning[]                 @relation("ProviderEarningsPaidBy")
+  consultationReminders          ConsultationReminder[]            @relation("UserConsultationReminders")
+  messages                       Message[]
+  uploadedPrescriptions          Prescription[]
+  patientPrescriptions           Prescription[]                    @relation("PatientPrescriptions")
+  createdPrescriptionOptions     PrescriptionOption[]              @relation("PrescriptionOptionCreator")
+  prescriptionTemplates          PrescriptionTemplate[]            @relation("DoctorTemplates")
+  doseEvents                     MedicineDoseEvent[]               @relation("PatientDoseEvents")
+  reminderPreference             ReminderPreference?
+  auditLogs                      AuditLog[]                        @relation("AuditActor")
+  supportNotesAuthored           SupportCaseNote[]                 @relation("SupportNoteAuthor")
+  patientSupportNotes            SupportCaseNote[]                 @relation("PatientSupportNotes")
+  productEvents                  ProductEvent[]                    @relation("ProductEventActor")
+  passwordResetTokens            PasswordResetToken[]
+  emailVerificationTokens        EmailVerificationToken[]
+  authSessions                   AuthSession[]
+  hrProfile                      HrProfile?
+  receptionistProfile            ReceptionistProfile?
+  clinicManagerProfile           ClinicManagerProfile?
+  accountantProfile              AccountantProfile?
+  supplierProfile                SupplierProfile?
+  warehouseManagerProfile        WarehouseManagerProfile?
+  deliveryExecutiveProfile       DeliveryExecutiveProfile?
+  diagnosticCenterProfile        DiagnosticCenterProfile?
+  branchOwnerProfile             BranchOwnerProfile?
+  patientCoordinatorProfile      PatientCoordinatorProfile?
+  callCenterProfile              CallCenterProfile?
+  marketingProfile               MarketingProfile?
+  corporateWellnessProfile       CorporateWellnessProfile?
+  insurancePartnerProfile        InsurancePartnerProfile?
+  staffProfile                   StaffProfile?
+  corporateEnrollments           CorporateEnrollment[]             @relation("CorporateEnrollments")
+  insuranceClaims                InsuranceClaim[]                  @relation("PatientInsuranceClaims")
+  assignedDeliveries             MedicineDelivery[]                @relation("AssignedDeliveries")
+  patientDeliveries              MedicineDelivery[]                @relation("PatientDeliveries")
+  patientAddresses               PatientAddress[]                  @relation("PatientAddresses")
+  patientLabReferrals            LabReferral[]                     @relation("PatientLabReferrals")
+  hrStoreAccess                  HrStoreAccess[]                   @relation("HrUserAccess")
+  hrStoreGrants                  HrStoreAccess[]                   @relation("HrAccessGrantor")
+  leaveApprovals                 LeaveRequest[]                    @relation("LeaveApprovals")
+  caseAnalyses                   CaseAnalysis[]                    @relation("DoctorCaseAnalyses")
+  patientClinicalMedia           ClinicalMedia[]                   @relation("PatientClinicalMedia")
+  clinicalMediaUploads           ClinicalMedia[]                   @relation("ClinicalMediaUploadedBy")
+  notificationBroadcasts         NotificationBroadcast[]           @relation("NotificationBroadcasts")
+  inAppNotifications             InAppNotification[]               @relation("UserInAppNotifications")
+  createdVacancies               JobVacancy[]                      @relation("VacancyCreator")
+  reviewedCounsellorApplications CounsellorApplication[]           @relation("CounsellorApplicationReviewer")
+  chatSessions                   ChatSession[]                     @relation("UserChatSessions")
+  websiteLeads                   WebsiteLead[]                     @relation("UserWebsiteLeads")
+  leadsCalled                    WebsiteLead[]                     @relation("LeadCalledBy")
+  salaryUpdates                  EmployeeSalary[]                  @relation("SalaryUpdatedBy")
+  referredByUserId               String?
+  referredByUser                 User?                             @relation("PatientReferredBy", fields: [referredByUserId], references: [id], onDelete: SetNull)
+  patientsReferred               User[]                            @relation("PatientReferredBy")
+  referralCode                   PatientReferralCode?
+  referralsMade                  PatientReferral[]                 @relation("ReferralsMade")
+  referralReceived               PatientReferral?                  @relation("ReferralReceived")
+  referralFreeCallRewards        ReferralFreeCallReward[]
+  patientWallet                  PatientWallet?
+  walletLedger                   WalletLedgerEntry[]               @relation("WalletLedgerPatient")
+  rewardRedemptions              RewardRedemption[]                @relation("RewardRedemptionPatient")
+  blogPostsAuthored              BlogPost[]                        @relation("BlogPostAuthor")
+  blogComments                   BlogComment[]                     @relation("BlogCommentAuthor")
+  doctorOnlineSession            DoctorOnlineSession?
+  hopeHubAssessmentAttempts      HopeHubAssessmentAttempt[]        @relation("UserHopeHubAssessmentAttempts")
+  hopeHubAssessmentSafetyReviews HopeHubAssessmentAttempt[]        @relation("HopeHubAssessmentSafetyReviews")
+  followUpEntitlements           ConsultationFollowUpEntitlement[] @relation("UserFollowUpEntitlements")
+  practiceSessions               UserPracticeSession[]             @relation("UserPracticeSessions")
+  dailyPlans                     PatientDailyPlan[]                @relation("PatientDailyPlans")
+  dailyPlanUploads               PatientDailyPlanImage[]           @relation("PatientDailyPlanUploads")
+  telegramBotSessions            TelegramBotSession[]              @relation("UserTelegramBotSessions")
+  leadAssignmentsReceived        WebsiteLeadAssignment[]           @relation("LeadAssignmentProvider")
+  leadAssignmentsCreated         WebsiteLeadAssignment[]           @relation("LeadAssignmentAdmin")
+  lifestyleTipSessions           UserLifestyleTipSession[]         @relation("UserLifestyleTipSessions")
+  assessmentAccessGrants         AssessmentAccessGrant[]           @relation("AssessmentAccessGrants")
+  assessmentCouponRedemptions    AssessmentCouponRedemption[]      @relation("AssessmentCouponRedemptions")
+  assessmentPayments             AssessmentPayment[]               @relation("AssessmentPayments")
+  emailVerified                  Boolean                           @default(false)
+  authProvider                   String?
+  lastLoginAt                    DateTime?
+  lastLoginMethod                String?
+  externalAvatarUrl              String?
+  identities                     UserIdentity[]                    @relation("UserIdentities")
+  createdAt                      DateTime                          @default(now())
+  updatedAt                      DateTime                          @updatedAt
 
+  @@unique([email, role])
   @@index([mobile])
   @@index([homeClinicStoreId])
   @@index([authProvider])
   @@index([lastLoginAt])
-  @@unique([email, role])
 }
 
 model UserIdentity {
-  id             String   @id @default(cuid())
+  id             String    @id @default(cuid())
   userId         String
   provider       String
   providerUserId String
   email          String?
-  emailVerified  Boolean  @default(false)
+  emailVerified  Boolean   @default(false)
   displayName    String?
   avatarUrl      String?
   rawProfile     Json?
   lastLoginAt    DateTime?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  user           User     @relation("UserIdentities", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  user           User      @relation("UserIdentities", fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerUserId])
   @@index([userId])
@@ -303,19 +303,19 @@ model ReminderPreference {
 }
 
 model PatientDailyPlan {
-  id          String                 @id @default(cuid())
-  userId      String
-  planDate    DateTime
-  title       String
-  focus       String?
-  summary     String?                @db.Text
-  reviewNote  String?                @db.Text
-  reviewedAt  DateTime?
-  tasks       PatientDailyPlanTask[]
-  images      PatientDailyPlanImage[]
-  user        User                   @relation("PatientDailyPlans", fields: [userId], references: [id], onDelete: Cascade)
-  createdAt   DateTime               @default(now())
-  updatedAt   DateTime               @updatedAt
+  id         String                  @id @default(cuid())
+  userId     String
+  planDate   DateTime
+  title      String
+  focus      String?
+  summary    String?                 @db.Text
+  reviewNote String?                 @db.Text
+  reviewedAt DateTime?
+  tasks      PatientDailyPlanTask[]
+  images     PatientDailyPlanImage[]
+  user       User                    @relation("PatientDailyPlans", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime                @default(now())
+  updatedAt  DateTime                @updatedAt
 
   @@unique([userId, planDate])
   @@index([userId, planDate])
@@ -340,20 +340,20 @@ model PatientDailyPlanTask {
 }
 
 model PatientDailyPlanImage {
-  id          String                @id @default(cuid())
-  userId      String
-  planId      String
-  taskId      String?
-  storageKey  String
-  imageUrl    String?
-  mimeType    String
-  fileName    String?
-  byteSize    Int
-  caption     String?               @db.Text
-  createdAt   DateTime              @default(now())
-  user        User                  @relation("PatientDailyPlanUploads", fields: [userId], references: [id], onDelete: Cascade)
-  plan        PatientDailyPlan      @relation(fields: [planId], references: [id], onDelete: Cascade)
-  task        PatientDailyPlanTask? @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  id         String                @id @default(cuid())
+  userId     String
+  planId     String
+  taskId     String?
+  storageKey String
+  imageUrl   String?
+  mimeType   String
+  fileName   String?
+  byteSize   Int
+  caption    String?               @db.Text
+  createdAt  DateTime              @default(now())
+  user       User                  @relation("PatientDailyPlanUploads", fields: [userId], references: [id], onDelete: Cascade)
+  plan       PatientDailyPlan      @relation(fields: [planId], references: [id], onDelete: Cascade)
+  task       PatientDailyPlanTask? @relation(fields: [taskId], references: [id], onDelete: SetNull)
 
   @@index([userId, createdAt])
   @@index([planId, createdAt])
@@ -361,7 +361,7 @@ model PatientDailyPlanImage {
 }
 
 model TelegramBotSession {
-  id             String          @id @default(cuid())
+  id             String             @id @default(cuid())
   botKind        TelegramBotKind
   chatId         String
   telegramUserId String?
@@ -369,13 +369,13 @@ model TelegramBotSession {
   firstName      String?
   lastName       String?
   linkedUserId   String?
-  linkedUser     User?           @relation("UserTelegramBotSessions", fields: [linkedUserId], references: [id], onDelete: SetNull)
-  state          String          @default("NEW")
+  linkedUser     User?              @relation("UserTelegramBotSessions", fields: [linkedUserId], references: [id], onDelete: SetNull)
+  state          String             @default("NEW")
   lastCommand    String?
   metadata       Json?
   events         TelegramBotEvent[]
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
 
   @@unique([botKind, chatId])
   @@index([telegramUserId])
@@ -400,41 +400,41 @@ model TelegramBotEvent {
 }
 
 model PasswordResetToken {
-  id        String   @id @default(cuid())
-  tokenHash String   @unique
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
   userId    String
   expiresAt DateTime
   usedAt    DateTime?
-  user      User     @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
+  user      User      @relation(fields: [userId], references: [id])
+  createdAt DateTime  @default(now())
 }
 
 model EmailVerificationToken {
-  id        String   @id @default(cuid())
-  tokenHash String   @unique
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
   userId    String
   email     String
   expiresAt DateTime
   usedAt    DateTime?
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
 
   @@index([userId, createdAt])
   @@index([email, createdAt])
 }
 
 model AuthSession {
-  id               String   @id @default(cuid())
+  id               String    @id @default(cuid())
   userId           String
-  refreshTokenHash String   @unique
+  refreshTokenHash String    @unique
   userAgent        String?
   ipAddress        String?
   expiresAt        DateTime
   revokedAt        DateTime?
   lastUsedAt       DateTime?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
   @@index([expiresAt])

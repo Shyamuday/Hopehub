@@ -20,6 +20,7 @@ import {
   HopeHubRealtimeService,
 } from '../../../../core/services';
 import { CONSUMER_ROUTES } from '../../../../core/constants/consumer-routes.constants';
+import { APP_CONSTANTS } from '../../../../core/constants/app.constants';
 import { CONSUMER_STORAGE_KEYS } from '../../../../core/constants/storage-keys.constants';
 import {
   HopeHubLiveGroup,
@@ -54,6 +55,7 @@ export class GroupChatTeaserComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
   readonly ROUTES = CONSUMER_ROUTES;
+  readonly APP_CONSTANTS = APP_CONSTANTS;
 
   readonly isOpen = signal(false);
   readonly isMinimized = signal(false);
@@ -406,6 +408,7 @@ export class GroupChatTeaserComponent implements OnInit {
   }
 
   private roleLabel(role: string): string {
+    if (role === 'TELEGRAM_MEMBER') return 'Telegram member';
     if (role === 'DOCTOR') return 'Provider';
     if (role === 'ADMIN') return 'Admin';
     if (role === 'HR') return 'Host';

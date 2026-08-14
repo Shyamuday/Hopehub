@@ -3,6 +3,15 @@ import {
   editCommunityReplyMarkup,
   sendCommunityMessage
 } from './telegram-community-bots.client.js';
+import {
+  clearCommunityState,
+  createCommunitySubmission,
+  deleteDraftCommunitySubmission,
+  findCommunitySubmission,
+  getCommunityState,
+  setCommunityState,
+  updateCommunitySubmission
+} from './telegram-community-bots.store.js';
 import type { CommunityTelegramUpdate, TelegramKeyboard } from './telegram-community-bots.types.js';
 
 const slug = 'confession' as const;
@@ -13,17 +22,8 @@ const keyOf = (value: string | number) => String(value);
 const isCommand = (text: string, command: string) =>
   new RegExp(`^/${command}(?:@[A-Za-z0-9_]+)?(?:\\s|$)`, 'i').test(text.trim());
 
-type State = { state: 'writing' } | { state: 'preview'; confessionId: string };
-type Confession = {
-  id: string;
-  number: number;
-  userId: string | number;
-  text: string;
-  status: 'draft' | 'pending' | 'approved' | 'rejected';
-};
-const userStates = new Map<string, State>();
-const pending = new Map<string, Confession>();
-let counter = Number.parseInt(process.env.TELEGRAM_CONFESSION_START_NUMBER || '1000', 10);
+const confessionNumber = (serial: bigint) =>
+  Number(serial) + Number.parseInt(process.env.TELEGRAM_CONFESSION_START_NUMBER || '1000', 10);
 
 const mainKeyboard: TelegramKeyboard = {
   inline_keyboard: [
@@ -39,7 +39,7 @@ const cancelKeyboard: TelegramKeyboard = {
 };
 
 async function showStart(chatId: string | number) {
-  userStates.delete(keyOf(chatId));
+  await clearCommunityState(slug, keyOf(chatId));
   await sendCommunityMessage(
     slug,
     chatId,
@@ -60,7 +60,7 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
     const data = callback.data;
     await answerCommunityCallback(slug, callback.id);
     if (data === 'send_confession') {
-      userStates.set(stateKey, { state: 'writing' });
+      await setCommunityState(slug, stateKey, 'writing');
       await sendCommunityMessage(
         slug,
         chatId,
@@ -73,16 +73,18 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
       return;
     }
     if (data === 'cancel_confession' || data.startsWith('cancel_preview_')) {
-      if (data.startsWith('cancel_preview_')) pending.delete(data.slice('cancel_preview_'.length));
-      userStates.delete(stateKey);
+      if (data.startsWith('cancel_preview_')) {
+        await deleteDraftCommunitySubmission(data.slice('cancel_preview_'.length), stateKey);
+      }
+      await clearCommunityState(slug, stateKey);
       await sendCommunityMessage(slug, chatId, `❌ Confession cancelled. Nothing was submitted.`, {
         reply_markup: mainKeyboard
       });
       return;
     }
     if (data.startsWith('submit_')) {
-      const confession = pending.get(data.slice('submit_'.length));
-      if (!confession) {
+      const confession = await findCommunitySubmission(data.slice('submit_'.length));
+      if (!confession || confession.bot !== slug || confession.userChatId !== stateKey) {
         await sendCommunityMessage(
           slug,
           chatId,
@@ -93,19 +95,19 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
       }
       const approvalTarget = approvalGroupId() || adminChatId();
       if (!approvalTarget) throw new Error('TELEGRAM_CONFESSION_ADMIN_CHAT_ID is not configured.');
-      confession.status = 'pending';
-      userStates.delete(stateKey);
+      await updateCommunitySubmission(confession.reference, { status: 'pending' });
+      await clearCommunityState(slug, stateKey);
       await sendCommunityMessage(
         slug,
         approvalTarget,
-        `🔔 *NEW ANONYMOUS CONFESSION*\n\n🆔 Confession #${confession.number}\n━━━━━━━━━━━━━━\n\n${confession.text}\n\n━━━━━━━━━━━━━━`,
+        `🔔 *NEW ANONYMOUS CONFESSION*\n\n🆔 Confession #${confessionNumber(confession.serial)}\n━━━━━━━━━━━━━━\n\n${confession.text}\n\n━━━━━━━━━━━━━━`,
         {
           parse_mode: 'Markdown',
           reply_markup: {
             inline_keyboard: [
               [
-                { text: '✅ Approve & Publish', callback_data: `approve_${confession.id}` },
-                { text: '❌ Reject', callback_data: `reject_${confession.id}` }
+                { text: '✅ Approve & Publish', callback_data: `approve_${confession.reference}` },
+                { text: '❌ Reject', callback_data: `reject_${confession.reference}` }
               ]
             ]
           }
@@ -126,8 +128,8 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
       if (!isAdmin(chatId)) return;
       const approved = data.startsWith('approve_');
       const id = data.slice(approved ? 'approve_'.length : 'reject_'.length);
-      const confession = pending.get(id);
-      if (!confession) {
+      const confession = await findCommunitySubmission(id);
+      if (!confession || confession.bot !== slug || confession.status !== 'pending') {
         await sendCommunityMessage(slug, chatId, '⚠️ Confession not found or already processed.');
         return;
       }
@@ -137,11 +139,13 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
         await sendCommunityMessage(
           slug,
           target,
-          `🕊 *Anonymous Confession #${confession.number}*\n\n${confession.text}\n\n━━━━━━━━━━━━━━\n💙 *HopeHub Anonymous Confessions*\n_t.me/Hopehubconfessionbot_`,
+          `🕊 *Anonymous Confession #${confessionNumber(confession.serial)}*\n\n${confession.text}\n\n━━━━━━━━━━━━━━\n💙 *HopeHub Anonymous Confessions*\n_t.me/Hopehubconfessionbot_`,
           { parse_mode: 'Markdown' }
         );
       }
-      confession.status = approved ? 'approved' : 'rejected';
+      await updateCommunitySubmission(confession.reference, {
+        status: approved ? 'approved' : 'rejected'
+      });
       await editCommunityReplyMarkup(slug, chatId, callback.message.message_id, {
         inline_keyboard: [
           [
@@ -155,7 +159,7 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
       try {
         await sendCommunityMessage(
           slug,
-          confession.userId,
+          confession.userChatId,
           approved
             ? `💙 *Your confession has been approved and published anonymously.*`
             : `Your confession wasn't approved for publication at this time.`,
@@ -167,7 +171,6 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
       } catch {
         /* A user may block the bot. */
       }
-      pending.delete(id);
       return;
     }
     if (data === 'already_processed') {
@@ -187,7 +190,7 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
   const text = message.text.trim();
   if (isCommand(text, 'start')) return showStart(chatId);
   if (isCommand(text, 'cancel')) {
-    userStates.delete(stateKey);
+    await clearCommunityState(slug, stateKey);
     await sendCommunityMessage(slug, chatId, '❌ Confession cancelled.', {
       reply_markup: mainKeyboard
     });
@@ -203,7 +206,7 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
     return;
   }
   if (text.startsWith('/')) return;
-  const state = userStates.get(stateKey);
+  const state = await getCommunityState(slug, stateKey);
   if (!state || state.state !== 'writing') {
     await sendCommunityMessage(
       slug,
@@ -223,10 +226,15 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
     );
     return;
   }
-  const id = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-  const confession: Confession = { id, number: ++counter, userId: chatId, text, status: 'draft' };
-  pending.set(id, confession);
-  userStates.set(stateKey, { state: 'preview', confessionId: id });
+  const id = `CONF-${Date.now().toString(36).toUpperCase()}`;
+  await createCommunitySubmission({
+    reference: id,
+    bot: slug,
+    userChatId: stateKey,
+    text,
+    status: 'draft'
+  });
+  await setCommunityState(slug, stateKey, 'preview', { confessionId: id });
   await sendCommunityMessage(
     slug,
     chatId,

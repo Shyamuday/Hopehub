@@ -2,12 +2,15 @@ export type CommunityBotSlug = 'contact' | 'confession' | 'rules';
 
 export type CommunityTelegramUser = {
   id: number;
+  is_bot?: boolean;
   first_name?: string;
+  last_name?: string;
   username?: string;
 };
 
 export type CommunityTelegramMessage = {
   message_id: number;
+  date?: number;
   text?: string;
   chat: { id: number | string; type?: string };
   from?: CommunityTelegramUser;

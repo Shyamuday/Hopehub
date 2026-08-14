@@ -6,7 +6,13 @@
     </div>
     <div class="header-actions">
       <button type="button" class="btn-sec" (click)="load()" [disabled]="loading()">Refresh</button>
-      <button type="button" class="btn-primary" [adminCan]="managePermission" (click)="setupAll()" [disabled]="saving() === 'all'">
+      <button
+        type="button"
+        class="btn-primary"
+        [adminCan]="managePermission"
+        (click)="setupAll()"
+        [disabled]="saving() === 'all'"
+      >
         {{ saving() === 'all' ? 'Updating…' : 'Setup all' }}
       </button>
     </div>
@@ -59,12 +65,33 @@
             </span>
           </div>
 
-          @if (!bot.externallyManaged) {
+          @if (!bot.externallyManaged && bot.expectedRole) {
             <div class="metrics">
-              <span><strong>{{ bot.summary.totalSessions }}</strong> sessions</span>
-              <span><strong>{{ bot.summary.linkedSessions }}</strong> linked</span>
-              <span><strong>{{ bot.summary.activeLinkedSessions }}</strong> active</span>
+              <span
+                ><strong>{{ bot.summary.totalSessions }}</strong> sessions</span
+              >
+              <span
+                ><strong>{{ bot.summary.linkedSessions }}</strong> linked</span
+              >
+              <span
+                ><strong>{{ bot.summary.activeLinkedSessions }}</strong> active</span
+              >
             </div>
+          } @else if (!bot.externallyManaged) {
+            <div class="metrics">
+              <span
+                ><strong>{{ submissionCount(bot) }}</strong> submissions</span
+              >
+              <span
+                ><strong>{{ bot.summary.processedUpdates || 0 }}</strong> recent updates</span
+              >
+              <span
+                ><strong>{{ bot.summary.failedUpdates || 0 }}</strong> failed</span
+              >
+            </div>
+            @if (bot.summary.lastFailure) {
+              <p class="issue">Last processing issue: {{ bot.summary.lastFailure.error }}</p>
+            }
           }
 
           <div class="webhook">
@@ -93,10 +120,18 @@
     </section>
 
     <section class="summary-strip">
-      <span><strong>{{ sessions().length }}</strong> sessions</span>
-      <span><strong>{{ linkedSessions() }}</strong> linked</span>
-      <span><strong>{{ unlinkedSessions() }}</strong> waiting/linking</span>
-      <span><strong>{{ events().length }}</strong> recent events</span>
+      <span
+        ><strong>{{ sessions().length }}</strong> sessions</span
+      >
+      <span
+        ><strong>{{ linkedSessions() }}</strong> linked</span
+      >
+      <span
+        ><strong>{{ unlinkedSessions() }}</strong> waiting/linking</span
+      >
+      <span
+        ><strong>{{ events().length }}</strong> recent events</span
+      >
     </section>
 
     <section class="panel">
@@ -133,9 +168,14 @@
                   <td>
                     @if (session.linkedUser) {
                       <strong>{{ session.linkedUser.name }}</strong>
-                      <span>{{ session.linkedUser.email || session.linkedUser.mobile || session.linkedUser.id }}</span>
+                      <span>{{
+                        session.linkedUser.email ||
+                          session.linkedUser.mobile ||
+                          session.linkedUser.id
+                      }}</span>
                       <span class="mini-badge" [class.off]="!session.linkedUser.isActive">
-                        {{ session.linkedUser.role }} · {{ session.linkedUser.isActive ? 'active' : 'inactive' }}
+                        {{ session.linkedUser.role }} ·
+                        {{ session.linkedUser.isActive ? 'active' : 'inactive' }}
                       </span>
                     } @else {
                       <span class="muted">Not linked</span>
@@ -145,7 +185,7 @@
                     <strong>{{ session.state }}</strong>
                     <span>{{ session.lastCommand || 'No command yet' }}</span>
                   </td>
-                  <td>{{ session.updatedAt | date:'medium' }}</td>
+                  <td>{{ session.updatedAt | date: 'medium' }}</td>
                   <td>
                     <button
                       type="button"
@@ -180,8 +220,11 @@
           @for (event of events(); track event.id) {
             <article>
               <strong>{{ event.eventType }}</strong>
-              <span>{{ event.botKind }} · chat {{ event.chatId || '-' }} · update {{ event.updateId || '-' }}</span>
-              <small>{{ event.createdAt | date:'medium' }}</small>
+              <span
+                >{{ event.botKind }} · chat {{ event.chatId || '-' }} · update
+                {{ event.updateId || '-' }}</span
+              >
+              <small>{{ event.createdAt | date: 'medium' }}</small>
             </article>
           }
         </div>
@@ -190,4 +233,6 @@
   }
 </div>
 
-@if (toast()) { <div class="toast">{{ toast() }}</div> }
+@if (toast()) {
+  <div class="toast">{{ toast() }}</div>
+}

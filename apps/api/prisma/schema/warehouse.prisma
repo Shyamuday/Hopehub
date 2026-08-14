@@ -19,19 +19,19 @@ model StockTransfer {
 }
 
 model StockTransferLine {
-  id                    String        @id @default(cuid())
-  transferId            String
-  medicineId            String
-  qtyRequested          Int
-  qtyDispatched         Int           @default(0)
-  qtyReceived           Int           @default(0)
-  sourceBatchId         String?
-  batchNumber           String?
-  expiryDate            DateTime?
-  purchasePricePerUnit  Int?
-  sellingPricePerUnit   Int?
-  transfer              StockTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
-  medicine              StoreMedicine @relation(fields: [medicineId], references: [id])
+  id                   String        @id @default(cuid())
+  transferId           String
+  medicineId           String
+  qtyRequested         Int
+  qtyDispatched        Int           @default(0)
+  qtyReceived          Int           @default(0)
+  sourceBatchId        String?
+  batchNumber          String?
+  expiryDate           DateTime?
+  purchasePricePerUnit Int?
+  sellingPricePerUnit  Int?
+  transfer             StockTransfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  medicine             StoreMedicine @relation(fields: [medicineId], references: [id])
 
   @@index([transferId])
 }

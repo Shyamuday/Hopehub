@@ -100,6 +100,13 @@ export class TelegramBotsPage implements OnInit {
     return bot.webhook.result?.last_error_message || '';
   }
 
+  submissionCount(bot: any) {
+    return Object.values(bot.summary?.submissions || {}).reduce(
+      (total: number, value) => total + Number(value || 0),
+      0,
+    );
+  }
+
   private setupPayload() {
     return {
       dropPendingUpdates: this.dropPendingUpdates(),

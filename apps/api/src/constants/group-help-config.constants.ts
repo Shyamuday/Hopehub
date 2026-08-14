@@ -326,6 +326,27 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
     defaultValue: ''
   },
   {
+    key: 'telegramLiveChatBridgeEnabled',
+    label: 'Website live-chat bridge',
+    description:
+      'Mirror the configured Telegram group into the signed-in Hope Hub live chat using the Rules bot.',
+    section: 'connection',
+    type: 'select',
+    maxLength: 20,
+    options: ['Enabled', 'Disabled'],
+    defaultValue: 'Enabled'
+  },
+  {
+    key: 'telegramLiveChatGroupSlug',
+    label: 'Website live-chat room slug',
+    description: 'Stable Hope Hub live-chat room used for the Telegram bridge.',
+    section: 'connection',
+    type: 'text',
+    maxLength: 160,
+    placeholder: 'telegram-community',
+    defaultValue: 'telegram-community'
+  },
+  {
     key: 'telegramGroupHelpGroupTitle',
     label: 'Group title',
     description: 'Friendly name shown in admin for this Group Help managed community.',

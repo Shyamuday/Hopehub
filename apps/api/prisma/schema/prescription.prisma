@@ -17,33 +17,33 @@ enum DoseEventStatus {
 }
 
 model Prescription {
-  id             String             @id @default(cuid())
-  consultationId String
-  uploadedById   String
-  patientId      String
-  version        Int
-  isLatest       Boolean            @default(true)
-  methodOptionId String?
+  id                       String              @id @default(cuid())
+  consultationId           String
+  uploadedById             String
+  patientId                String
+  version                  Int
+  isLatest                 Boolean             @default(true)
+  methodOptionId           String?
   diagnosedDiseaseOptionId String?
-  caseAnalysisId String?
-  diagnosis      String
-  advice         String?
-  notes          String
-  fileUrl        String?
-  followUpDate   DateTime?
-  status         PrescriptionStatus @default(DRAFT)
-  consultation   Consultation       @relation(fields: [consultationId], references: [id])
-  uploadedBy     User               @relation(fields: [uploadedById], references: [id])
-  patient        User               @relation("PatientPrescriptions", fields: [patientId], references: [id])
-  methodOption   PrescriptionOption? @relation("PrescriptionMethod", fields: [methodOptionId], references: [id])
-  diagnosedDiseaseOption PrescriptionOption? @relation("PrescriptionDiagnosedDisease", fields: [diagnosedDiseaseOptionId], references: [id])
-  caseAnalysis   CaseAnalysis?       @relation(fields: [caseAnalysisId], references: [id], onDelete: SetNull)
-  items          PrescriptionItem[]
-  doseEvents     MedicineDoseEvent[]
-  medicineDeliveries MedicineDelivery[]
-  stockMovements StockMovement[]
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
+  caseAnalysisId           String?
+  diagnosis                String
+  advice                   String?
+  notes                    String
+  fileUrl                  String?
+  followUpDate             DateTime?
+  status                   PrescriptionStatus  @default(DRAFT)
+  consultation             Consultation        @relation(fields: [consultationId], references: [id])
+  uploadedBy               User                @relation(fields: [uploadedById], references: [id])
+  patient                  User                @relation("PatientPrescriptions", fields: [patientId], references: [id])
+  methodOption             PrescriptionOption? @relation("PrescriptionMethod", fields: [methodOptionId], references: [id])
+  diagnosedDiseaseOption   PrescriptionOption? @relation("PrescriptionDiagnosedDisease", fields: [diagnosedDiseaseOptionId], references: [id])
+  caseAnalysis             CaseAnalysis?       @relation(fields: [caseAnalysisId], references: [id], onDelete: SetNull)
+  items                    PrescriptionItem[]
+  doseEvents               MedicineDoseEvent[]
+  medicineDeliveries       MedicineDelivery[]
+  stockMovements           StockMovement[]
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime            @updatedAt
 
   @@unique([consultationId, version])
   @@index([consultationId, isLatest])
@@ -51,72 +51,72 @@ model Prescription {
 }
 
 model PrescriptionOption {
-  id              String                @id @default(cuid())
-  type            PrescriptionOptionType
-  label           String
-  normalizedLabel String
-  isSystem        Boolean               @default(false)
-  createdById     String?
-  createdBy       User?                 @relation("PrescriptionOptionCreator", fields: [createdById], references: [id])
-  methodPrescriptions Prescription[]    @relation("PrescriptionMethod")
-  diagnosedDiseasePrescriptions Prescription[] @relation("PrescriptionDiagnosedDisease")
-  doctorsWithDefault Doctor[]           @relation("DoctorDefaultMethod")
-  caseAnalyses       CaseAnalysis[]     @relation("CaseAnalysisMethod")
-  createdAt       DateTime              @default(now())
-  updatedAt       DateTime              @updatedAt
+  id                            String                 @id @default(cuid())
+  type                          PrescriptionOptionType
+  label                         String
+  normalizedLabel               String
+  isSystem                      Boolean                @default(false)
+  createdById                   String?
+  createdBy                     User?                  @relation("PrescriptionOptionCreator", fields: [createdById], references: [id])
+  methodPrescriptions           Prescription[]         @relation("PrescriptionMethod")
+  diagnosedDiseasePrescriptions Prescription[]         @relation("PrescriptionDiagnosedDisease")
+  doctorsWithDefault            Doctor[]               @relation("DoctorDefaultMethod")
+  caseAnalyses                  CaseAnalysis[]         @relation("CaseAnalysisMethod")
+  createdAt                     DateTime               @default(now())
+  updatedAt                     DateTime               @updatedAt
 
   @@unique([type, normalizedLabel])
 }
 
 model PrescriptionItem {
-  id          String       @id @default(cuid())
+  id             String              @id @default(cuid())
   prescriptionId String
-  medicineName String
-  strength    String?
-  dose        String?
-  frequency   String?
-  duration    String?
-  instructions String?
-  durationDays Int?
-  intakeTimes  Json?
-  sortOrder   Int          @default(0)
-  prescription Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
-  doseEvents   MedicineDoseEvent[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  medicineName   String
+  strength       String?
+  dose           String?
+  frequency      String?
+  duration       String?
+  instructions   String?
+  durationDays   Int?
+  intakeTimes    Json?
+  sortOrder      Int                 @default(0)
+  prescription   Prescription        @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+  doseEvents     MedicineDoseEvent[]
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
 }
 
 model MedicineDoseEvent {
-  id                 String          @id @default(cuid())
+  id                 String           @id @default(cuid())
   patientId          String
   prescriptionId     String
   prescriptionItemId String
   scheduledFor       DateTime
-  status             DoseEventStatus @default(PENDING)
+  status             DoseEventStatus  @default(PENDING)
   takenAt            DateTime?
   skippedAt          DateTime?
   note               String?
-  patient            User            @relation("PatientDoseEvents", fields: [patientId], references: [id])
-  prescription       Prescription    @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+  patient            User             @relation("PatientDoseEvents", fields: [patientId], references: [id])
+  prescription       Prescription     @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
   prescriptionItem   PrescriptionItem @relation(fields: [prescriptionItemId], references: [id], onDelete: Cascade)
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
 
   @@unique([prescriptionItemId, scheduledFor])
   @@index([patientId, scheduledFor])
 }
 
 model PrescriptionTemplate {
-  id          String                   @id @default(cuid())
-  doctorId    String
-  doctor      User                     @relation("DoctorTemplates", fields: [doctorId], references: [id])
-  name        String
-  diagnosis   String                   @default("")
-  advice      String?
-  notes       String                   @default("")
-  items       PrescriptionTemplateItem[]
-  createdAt   DateTime                 @default(now())
-  updatedAt   DateTime                 @updatedAt
+  id        String                     @id @default(cuid())
+  doctorId  String
+  doctor    User                       @relation("DoctorTemplates", fields: [doctorId], references: [id])
+  name      String
+  diagnosis String                     @default("")
+  advice    String?
+  notes     String                     @default("")
+  items     PrescriptionTemplateItem[]
+  createdAt DateTime                   @default(now())
+  updatedAt DateTime                   @updatedAt
 
   @@index([doctorId])
 }

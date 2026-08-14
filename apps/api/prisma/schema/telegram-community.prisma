@@ -1,0 +1,48 @@
+model TelegramCommunityState {
+  id        String   @id @default(cuid())
+  bot       String
+  chatId    String
+  state     String
+  payload   Json?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([bot, chatId])
+  @@index([expiresAt])
+}
+
+model TelegramCommunitySubmission {
+  id             String   @id @default(cuid())
+  serial         BigInt   @unique @default(autoincrement())
+  reference      String   @unique
+  bot            String
+  userChatId     String
+  firstName      String?
+  username       String?
+  category       String?
+  text           String
+  status         String
+  groupChatId    String?
+  groupMessageId Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([bot, userChatId, createdAt])
+  @@index([bot, groupChatId, groupMessageId])
+  @@index([bot, status, createdAt])
+}
+
+model TelegramWebhookReceipt {
+  id        String   @id @default(cuid())
+  bot       String
+  updateId  BigInt
+  status    String
+  error     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([bot, updateId])
+  @@index([status, updatedAt])
+  @@index([createdAt])
+}

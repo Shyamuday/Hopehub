@@ -1,5 +1,6 @@
 import { answerCommunityCallback, sendCommunityMessage } from './telegram-community-bots.client.js';
 import type { CommunityTelegramUpdate, TelegramKeyboard } from './telegram-community-bots.types.js';
+import { ingestTelegramLiveChatMessage } from './telegram-live-chat-bridge.js';
 
 const slug = 'rules' as const;
 const mainMenu: TelegramKeyboard = {
@@ -66,6 +67,10 @@ export async function handleRulesBotUpdate(update: CommunityTelegramUpdate) {
     return;
   }
   const message = update.message;
+  if (message && message.chat.type !== 'private') {
+    await ingestTelegramLiveChatMessage(message);
+    return;
+  }
   if (!message?.text || message.chat.type !== 'private') return;
   const requested = command(message.text);
   if (!requested) return;

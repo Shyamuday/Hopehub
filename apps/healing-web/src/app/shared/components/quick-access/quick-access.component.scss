@@ -104,6 +104,20 @@
   padding: 0.35rem 0.75rem;
   white-space: nowrap;
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.14);
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  right: calc(100% + 0.65rem);
+  transform: translateX(0.35rem);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.quick-access__main:hover .quick-access__label,
+.quick-access__main:focus-visible .quick-access__label {
+  opacity: 1;
+  transform: translateX(0);
 }
 
 .quick-access__item {
@@ -143,7 +157,12 @@
     right: 1rem;
   }
 
-  .quick-access__main--telegram {
+  .quick-access__main {
+    height: 3.25rem;
+    width: 3.25rem;
+  }
+
+  .quick-access__label {
     display: none;
   }
 

@@ -81,14 +81,14 @@ model AssessmentPayment {
 }
 
 model AssessmentAccessGrant {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   userId       String
   assessmentId String
   source       String
   couponCode   String?
   paymentId    String?
   expiresAt    DateTime?
-  createdAt    DateTime @default(now())
+  createdAt    DateTime  @default(now())
 
   user       User                 @relation("AssessmentAccessGrants", fields: [userId], references: [id], onDelete: Cascade)
   assessment AssessmentDefinition @relation(fields: [assessmentId], references: [id], onDelete: Cascade)

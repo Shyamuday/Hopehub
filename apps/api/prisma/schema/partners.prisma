@@ -55,25 +55,25 @@ model MarketingProfile {
 }
 
 model CorporateAccount {
-  id          String              @id @default(cuid())
-  code        String              @unique
-  name        String
+  id           String                     @id @default(cuid())
+  code         String                     @unique
+  name         String
   contactEmail String?
-  isActive    Boolean             @default(true)
-  enrollments CorporateEnrollment[]
-  profiles    CorporateWellnessProfile[]
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
+  isActive     Boolean                    @default(true)
+  enrollments  CorporateEnrollment[]
+  profiles     CorporateWellnessProfile[]
+  createdAt    DateTime                   @default(now())
+  updatedAt    DateTime                   @updatedAt
 }
 
 model CorporateWellnessProfile {
-  id            String           @id @default(cuid())
-  userId        String           @unique
-  corporateId   String
-  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  corporate     CorporateAccount @relation(fields: [corporateId], references: [id])
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  id          String           @id @default(cuid())
+  userId      String           @unique
+  corporateId String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  corporate   CorporateAccount @relation(fields: [corporateId], references: [id])
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 
   @@index([corporateId])
 }
@@ -91,28 +91,28 @@ model CorporateEnrollment {
 }
 
 model InsurancePartnerProfile {
-  id          String   @id @default(cuid())
-  userId      String   @unique
+  id          String           @id @default(cuid())
+  userId      String           @unique
   companyName String
-  companyCode String   @unique
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyCode String           @unique
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   claims      InsuranceClaim[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 }
 
 model InsuranceClaim {
-  id                 String               @id @default(cuid())
-  claimNumber        String               @unique
+  id                 String                  @id @default(cuid())
+  claimNumber        String                  @unique
   partnerId          String
   patientId          String
-  status             InsuranceClaimStatus @default(SUBMITTED)
+  status             InsuranceClaimStatus    @default(SUBMITTED)
   claimAmountInPaise Int
   description        String?
   partner            InsurancePartnerProfile @relation(fields: [partnerId], references: [id])
-  patient            User                 @relation("PatientInsuranceClaims", fields: [patientId], references: [id])
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @updatedAt
+  patient            User                    @relation("PatientInsuranceClaims", fields: [patientId], references: [id])
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
 
   @@index([partnerId, status])
 }

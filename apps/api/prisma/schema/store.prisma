@@ -33,51 +33,51 @@ enum StockTransferStatus {
 }
 
 model Store {
-  id        String          @id @default(cuid())
-  name      String
-  code      String          @unique
-  address   String?
-  phone     String?
-  isActive  Boolean         @default(true)
-  kind      StoreKind       @default(BRANCH)
-  racks     StoreRack[]
-  stocks    MedicineStock[]
-  staff     StoreStaff[]
-  movements StockMovement[]
-  doctors   Doctor[]        @relation("DoctorClinic")
-  homePatients User[]       @relation("PatientHomeClinic")
-  consultations Consultation[] @relation("ConsultationClinic")
-  hrAccess  HrStoreAccess[]
-  receptionists ReceptionistProfile[]
-  clinicManagers ClinicManagerProfile[]
-  expenses  BusinessExpense[]
-  purchaseOrders PurchaseOrder[]
-  goodsReceipts  GoodsReceiptNote[]
-  transfersOut   StockTransfer[] @relation("TransferFrom")
-  transfersIn    StockTransfer[] @relation("TransferTo")
-  warehouseManagers WarehouseManagerProfile[]
-  medicineDeliveries MedicineDelivery[]
-  deliveryExecutives DeliveryExecutiveProfile[]
-  labReferrals       LabReferral[]
-  branchOwners       BranchOwnerProfile[]
+  id                  String                      @id @default(cuid())
+  name                String
+  code                String                      @unique
+  address             String?
+  phone               String?
+  isActive            Boolean                     @default(true)
+  kind                StoreKind                   @default(BRANCH)
+  racks               StoreRack[]
+  stocks              MedicineStock[]
+  staff               StoreStaff[]
+  movements           StockMovement[]
+  doctors             Doctor[]                    @relation("DoctorClinic")
+  homePatients        User[]                      @relation("PatientHomeClinic")
+  consultations       Consultation[]              @relation("ConsultationClinic")
+  hrAccess            HrStoreAccess[]
+  receptionists       ReceptionistProfile[]
+  clinicManagers      ClinicManagerProfile[]
+  expenses            BusinessExpense[]
+  purchaseOrders      PurchaseOrder[]
+  goodsReceipts       GoodsReceiptNote[]
+  transfersOut        StockTransfer[]             @relation("TransferFrom")
+  transfersIn         StockTransfer[]             @relation("TransferTo")
+  warehouseManagers   WarehouseManagerProfile[]
+  medicineDeliveries  MedicineDelivery[]
+  deliveryExecutives  DeliveryExecutiveProfile[]
+  labReferrals        LabReferral[]
+  branchOwners        BranchOwnerProfile[]
   patientCoordinators PatientCoordinatorProfile[]
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  createdAt           DateTime                    @default(now())
+  updatedAt           DateTime                    @updatedAt
 }
 
 model StoreStaff {
-    id               String         @id @default(cuid())
-    name             String
-    profileImageKey  String?
-    profileImageUrl  String?
-    staffCode        String         @unique
-  employeeId       String?        @unique
-  pinHash          String
-  role             StoreRole      @default(STAFF)
-  storeId          String
-  store            Store          @relation(fields: [storeId], references: [id])
-  isActive         Boolean        @default(true)
-  employeeStatus   EmployeeStatus @default(ACTIVE)
+  id              String         @id @default(cuid())
+  name            String
+  profileImageKey String?
+  profileImageUrl String?
+  staffCode       String         @unique
+  employeeId      String?        @unique
+  pinHash         String
+  role            StoreRole      @default(STAFF)
+  storeId         String
+  store           Store          @relation(fields: [storeId], references: [id])
+  isActive        Boolean        @default(true)
+  employeeStatus  EmployeeStatus @default(ACTIVE)
 
   phone            String?
   email            String?
@@ -87,22 +87,22 @@ model StoreStaff {
   joiningDate      DateTime?
   probationEndDate DateTime?
   salaryPerMonth   Int?
-  workShift        WorkShift      @default(FULL_DAY)
+  workShift        WorkShift @default(FULL_DAY)
   shiftStart       String?
   shiftEnd         String?
-  weeklyOffDays    String[]       @default([])
+  weeklyOffDays    String[]  @default([])
   emergencyContact String?
   emergencyPhone   String?
 
-  movements        StockMovement[]
-  joiningLetter    JoiningLetter?
-  leaveRequests    LeaveRequest[]
-  goodsReceipts    GoodsReceiptNote[]
+  movements          StockMovement[]
+  joiningLetter      JoiningLetter?
+  leaveRequests      LeaveRequest[]
+  goodsReceipts      GoodsReceiptNote[]
   inAppNotifications InAppNotification[] @relation("StoreStaffInAppNotifications")
-  auditLogs        AuditLog[]     @relation("StoreStaffAuditActor")
-  salaryStructure  EmployeeSalary?
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  auditLogs          AuditLog[]          @relation("StoreStaffAuditActor")
+  salaryStructure    EmployeeSalary?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 }
 
 model StoreRack {
@@ -123,7 +123,7 @@ model StoreRack {
 }
 
 model StoreMedicine {
-  id            String          @id @default(cuid())
+  id            String                 @id @default(cuid())
   name          String
   shortName     String?
   alternateName String?
@@ -131,76 +131,76 @@ model StoreMedicine {
   potency       String
   category      String?
   description   String?
-  minStockLevel Int             @default(10)
-  isActive      Boolean         @default(true)
-  qrCode        String?         @unique
-  barcode       String?         @unique
+  minStockLevel Int                    @default(10)
+  isActive      Boolean                @default(true)
+  qrCode        String?                @unique
+  barcode       String?                @unique
   stocks        MedicineStock[]
   orderLines    PurchaseOrderLine[]
   transferLines StockTransferLine[]
   deliveryLines MedicineDeliveryLine[]
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
 
   @@index([name])
   @@index([potency])
 }
 
 model MedicineStock {
-  id          String          @id @default(cuid())
-  medicineId  String
-  storeId     String
-  rackId      String?
-  currentQty  Int             @default(0)
-  status      StockStatus     @default(ACTIVE)
-  medicine    StoreMedicine   @relation(fields: [medicineId], references: [id])
-  store       Store           @relation(fields: [storeId], references: [id])
-  rack        StoreRack?      @relation(fields: [rackId], references: [id])
-  batches     StockBatch[]
-  movements   StockMovement[]
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  id         String          @id @default(cuid())
+  medicineId String
+  storeId    String
+  rackId     String?
+  currentQty Int             @default(0)
+  status     StockStatus     @default(ACTIVE)
+  medicine   StoreMedicine   @relation(fields: [medicineId], references: [id])
+  store      Store           @relation(fields: [storeId], references: [id])
+  rack       StoreRack?      @relation(fields: [rackId], references: [id])
+  batches    StockBatch[]
+  movements  StockMovement[]
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
 
   @@unique([medicineId, storeId])
   @@index([storeId, status])
 }
 
 model StockBatch {
-  id                   String        @id @default(cuid())
+  id                   String          @id @default(cuid())
   stockId              String
   batchNumber          String
   manufacturer         String?
-  purchaseDate         DateTime      @default(now())
+  purchaseDate         DateTime        @default(now())
   expiryDate           DateTime
   purchasePricePerUnit Int
   sellingPricePerUnit  Int
   qty                  Int
-  stock                MedicineStock @relation(fields: [stockId], references: [id])
+  stock                MedicineStock   @relation(fields: [stockId], references: [id])
   movements            StockMovement[]
-  createdAt            DateTime      @default(now())
-  updatedAt            DateTime      @updatedAt
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
 
   @@index([expiryDate])
   @@index([stockId])
 }
 
 model StockMovement {
-  id            String            @id @default(cuid())
-  stockId       String
-  storeId       String
-  batchId       String?
-  staffId       String?
+  id             String            @id @default(cuid())
+  stockId        String
+  storeId        String
+  batchId        String?
+  staffId        String?
   prescriptionId String?
-  type          StockMovementType
-  qty           Int
-  amountInPaise Int?
-  note          String?
-  stock         MedicineStock     @relation(fields: [stockId], references: [id])
-  store         Store             @relation(fields: [storeId], references: [id])
-  batch         StockBatch?       @relation(fields: [batchId], references: [id])
-  staff         StoreStaff?       @relation(fields: [staffId], references: [id])
-  prescription  Prescription?     @relation(fields: [prescriptionId], references: [id])
-  createdAt     DateTime          @default(now())
+  type           StockMovementType
+  qty            Int
+  amountInPaise  Int?
+  note           String?
+  stock          MedicineStock     @relation(fields: [stockId], references: [id])
+  store          Store             @relation(fields: [storeId], references: [id])
+  batch          StockBatch?       @relation(fields: [batchId], references: [id])
+  staff          StoreStaff?       @relation(fields: [staffId], references: [id])
+  prescription   Prescription?     @relation(fields: [prescriptionId], references: [id])
+  createdAt      DateTime          @default(now())
 
   @@index([storeId, createdAt])
   @@index([stockId])

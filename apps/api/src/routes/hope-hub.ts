@@ -44,6 +44,7 @@ import {
   markDoctorBusy
 } from '../services/online-doctor-presence.js';
 import { emitHopeHubLiveGroupMessage } from '../services/hope-hub-live-groups-realtime.js';
+import { mirrorHopeHubLiveChatMessageToTelegram } from '../services/telegram-live-chat-bridge.js';
 import { emitConsultationAssignedToDoctor } from '../services/consultation-realtime.js';
 import { INSTANT_ASSIGNMENT_RESPONSE_TIMEOUT_MS } from '../constants/online-doctor.constants.js';
 import {
@@ -2207,6 +2208,10 @@ hopeHubRouter.post(
     });
     const payload = serializeLiveGroupMessage(message);
     emitHopeHubLiveGroupMessage(group.id, payload);
+    await mirrorHopeHubLiveChatMessageToTelegram({
+      groupSlug: group.slug,
+      body: message.body
+    });
     res.status(201).json({ message: payload });
   })
 );

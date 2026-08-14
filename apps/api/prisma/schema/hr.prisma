@@ -60,64 +60,64 @@ enum DoctorCompensationModel {
 }
 
 model Doctor {
-  id               String         @id @default(cuid())
-  userId           String         @unique
-  doctorType       HomeopathicDoctorType @default(JUNIOR_DOCTOR)
-  providerDomain   ProviderDomain @default(HOMEOPATHY)
-  specialtyFocus     HomeopathicSpecialtyFocus?
-  specialty        String
-  registrationNo   String?
-  isAvailable      Boolean        @default(true)
-  isOnline         Boolean        @default(true)
-  clinicStoreId    String?
-  clinicStore      Store?         @relation("DoctorClinic", fields: [clinicStoreId], references: [id])
-  user             User           @relation(fields: [userId], references: [id])
+  id             String                     @id @default(cuid())
+  userId         String                     @unique
+  doctorType     HomeopathicDoctorType      @default(JUNIOR_DOCTOR)
+  providerDomain ProviderDomain             @default(HOMEOPATHY)
+  specialtyFocus HomeopathicSpecialtyFocus?
+  specialty      String
+  registrationNo String?
+  isAvailable    Boolean                    @default(true)
+  isOnline       Boolean                    @default(true)
+  clinicStoreId  String?
+  clinicStore    Store?                     @relation("DoctorClinic", fields: [clinicStoreId], references: [id])
+  user           User                       @relation(fields: [userId], references: [id])
 
-  employeeId       String?        @unique
-  designation      String?
-  department       String?
-  joiningDate      DateTime?
-  probationEndDate DateTime?
-  salaryPerMonth   Int?
-  consultationFee  Int?
+  employeeId               String?                 @unique
+  designation              String?
+  department               String?
+  joiningDate              DateTime?
+  probationEndDate         DateTime?
+  salaryPerMonth           Int?
+  consultationFee          Int?
   /// How this doctor is paid: fixed salary, per-consultation only, or both.
-  compensationModel DoctorCompensationModel @default(HYBRID)
+  compensationModel        DoctorCompensationModel @default(HYBRID)
   /// Share of paid consultation revenue (percent). Defaults to 60 when unset in logic.
-  consultationSharePercent Int @default(60)
-  workShift        WorkShift      @default(FULL_DAY)
-  shiftStart       String?
-  shiftEnd         String?
-  weeklyOffDays    String[]       @default([])
-  employeeStatus   EmployeeStatus @default(ACTIVE)
-  phone            String?
-  address          String?
-  emergencyContact String?
-  emergencyPhone   String?
+  consultationSharePercent Int                     @default(60)
+  workShift                WorkShift               @default(FULL_DAY)
+  shiftStart               String?
+  shiftEnd                 String?
+  weeklyOffDays            String[]                @default([])
+  employeeStatus           EmployeeStatus          @default(ACTIVE)
+  phone                    String?
+  address                  String?
+  emergencyContact         String?
+  emergencyPhone           String?
 
   /// Public-facing fields shown on the clinic website
-  bio              String?        @db.Text
-  showOnWebsite    Boolean        @default(false)
-  websiteOrder     Int?
+  bio               String?   @db.Text
+  showOnWebsite     Boolean   @default(false)
+  websiteOrder      Int?
   yearsOfExperience Int?
-  focusAreas       String[]       @default([])
-  suspendedAt      DateTime?
-  suspendedReason  String?        @db.Text
-  suspendedById    String?
+  focusAreas        String[]  @default([])
+  suspendedAt       DateTime?
+  suspendedReason   String?   @db.Text
+  suspendedById     String?
 
   /// Default homeopathic approach / method pre-selected in case taking and prescriptions.
   defaultMethodOptionId String?
   defaultMethodOption   PrescriptionOption? @relation("DoctorDefaultMethod", fields: [defaultMethodOptionId], references: [id], onDelete: SetNull)
 
-  joiningLetter    JoiningLetter?
-  leaveRequests    LeaveRequest[]
-  slots            DoctorSlot[]
-  availabilityRules ProviderAvailabilityRule[]
-  onlineSession    DoctorOnlineSession?
+  joiningLetter       JoiningLetter?
+  leaveRequests       LeaveRequest[]
+  slots               DoctorSlot[]
+  availabilityRules   ProviderAvailabilityRule[]
+  onlineSession       DoctorOnlineSession?
   mentalHealthProfile MentalHealthProviderProfile?
-  roleAssignments ProviderRoleAssignment[]
-  salaryStructure  EmployeeSalary?
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  roleAssignments     ProviderRoleAssignment[]
+  salaryStructure     EmployeeSalary?
+  createdAt           DateTime                     @default(now())
+  updatedAt           DateTime                     @updatedAt
 
   @@index([suspendedAt])
   @@index([suspendedById])
@@ -139,8 +139,8 @@ model HrStoreAccess {
   hrUserId    String
   storeId     String
   grantedById String
-  hrUser      User     @relation("HrUserAccess",  fields: [hrUserId],    references: [id], onDelete: Cascade)
-  store       Store    @relation(fields: [storeId],     references: [id], onDelete: Cascade)
+  hrUser      User     @relation("HrUserAccess", fields: [hrUserId], references: [id], onDelete: Cascade)
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   grantedBy   User     @relation("HrAccessGrantor", fields: [grantedById], references: [id])
   createdAt   DateTime @default(now())
 
@@ -252,21 +252,21 @@ model JoiningLetter {
 }
 
 model DoctorSlot {
-  id          String   @id @default(cuid())
-  doctorId    String
+  id                String                    @id @default(cuid())
+  doctorId          String
   careTeamServiceId String?
   generatedByRuleId String?
-  date        DateTime @db.Date
-  startTime   String
-  endTime     String
-  bufferMinutes Int    @default(0)
-  isBooked    Boolean  @default(false)
-  isBlocked   Boolean  @default(false)
-  doctor      Doctor   @relation(fields: [doctorId], references: [id])
-  careTeamService CareTeamService? @relation(fields: [careTeamServiceId], references: [id], onDelete: SetNull)
-  generatedByRule ProviderAvailabilityRule? @relation(fields: [generatedByRuleId], references: [id], onDelete: SetNull)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  date              DateTime                  @db.Date
+  startTime         String
+  endTime           String
+  bufferMinutes     Int                       @default(0)
+  isBooked          Boolean                   @default(false)
+  isBlocked         Boolean                   @default(false)
+  doctor            Doctor                    @relation(fields: [doctorId], references: [id])
+  careTeamService   CareTeamService?          @relation(fields: [careTeamServiceId], references: [id], onDelete: SetNull)
+  generatedByRule   ProviderAvailabilityRule? @relation(fields: [generatedByRuleId], references: [id], onDelete: SetNull)
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
 
   @@unique([doctorId, date, startTime])
   @@index([doctorId, date])
@@ -276,25 +276,25 @@ model DoctorSlot {
 }
 
 model ProviderAvailabilityRule {
-  id                  String   @id @default(cuid())
+  id                  String    @id @default(cuid())
   doctorId            String
   careTeamServiceId   String?
   label               String
   weekday             Int
   startTime           String
   endTime             String
-  slotDurationMinutes Int      @default(30)
-  bufferMinutes       Int      @default(0)
+  slotDurationMinutes Int       @default(30)
+  bufferMinutes       Int       @default(0)
   maxSessionsPerDay   Int?
-  startsOn            DateTime @db.Date
+  startsOn            DateTime  @db.Date
   endsOn              DateTime? @db.Date
-  isActive            Boolean  @default(true)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  isActive            Boolean   @default(true)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
-  doctor              Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
-  careTeamService     CareTeamService? @relation(fields: [careTeamServiceId], references: [id], onDelete: SetNull)
-  generatedSlots      DoctorSlot[]
+  doctor          Doctor           @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  careTeamService CareTeamService? @relation(fields: [careTeamServiceId], references: [id], onDelete: SetNull)
+  generatedSlots  DoctorSlot[]
 
   @@index([doctorId, weekday, isActive])
   @@index([careTeamServiceId])
@@ -302,39 +302,39 @@ model ProviderAvailabilityRule {
 
 /// Admin-managed monthly salary breakdown (Basic, HRA, PF, ESIC, etc.)
 model EmployeeSalary {
-  id                    String       @id @default(cuid())
-  employeeType          EmployeeType
-  doctorId              String?      @unique
-  storeStaffId          String?      @unique
-  doctor                Doctor?      @relation(fields: [doctorId], references: [id], onDelete: Cascade)
-  storeStaff            StoreStaff?  @relation(fields: [storeStaffId], references: [id], onDelete: Cascade)
+  id           String       @id @default(cuid())
+  employeeType EmployeeType
+  doctorId     String?      @unique
+  storeStaffId String?      @unique
+  doctor       Doctor?      @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  storeStaff   StoreStaff?  @relation(fields: [storeStaffId], references: [id], onDelete: Cascade)
 
-  basicPaise            Int          @default(0)
-  hraPaise              Int          @default(0)
-  conveyancePaise       Int          @default(0)
-  medicalAllowancePaise Int          @default(0)
-  specialAllowancePaise Int          @default(0)
-  otherAllowancePaise   Int          @default(0)
+  basicPaise            Int @default(0)
+  hraPaise              Int @default(0)
+  conveyancePaise       Int @default(0)
+  medicalAllowancePaise Int @default(0)
+  specialAllowancePaise Int @default(0)
+  otherAllowancePaise   Int @default(0)
 
-  employerPfPaise       Int          @default(0)
-  employeePfPaise       Int          @default(0)
-  employerEsiPaise      Int          @default(0)
-  employeeEsiPaise      Int          @default(0)
-  professionalTaxPaise  Int          @default(0)
-  tdsPaise              Int          @default(0)
-  otherDeductionPaise   Int          @default(0)
+  employerPfPaise      Int @default(0)
+  employeePfPaise      Int @default(0)
+  employerEsiPaise     Int @default(0)
+  employeeEsiPaise     Int @default(0)
+  professionalTaxPaise Int @default(0)
+  tdsPaise             Int @default(0)
+  otherDeductionPaise  Int @default(0)
 
-  grossPaise            Int          @default(0)
-  netPaise              Int          @default(0)
-  ctcPaise              Int          @default(0)
+  grossPaise Int @default(0)
+  netPaise   Int @default(0)
+  ctcPaise   Int @default(0)
 
-  effectiveFrom         DateTime     @default(now())
-  notes                 String?
-  updatedById           String?
-  updatedBy             User?        @relation("SalaryUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+  effectiveFrom DateTime @default(now())
+  notes         String?
+  updatedById   String?
+  updatedBy     User?    @relation("SalaryUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
 
-  createdAt             DateTime     @default(now())
-  updatedAt             DateTime     @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([employeeType])
 }

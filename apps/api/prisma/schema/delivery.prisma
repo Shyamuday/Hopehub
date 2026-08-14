@@ -40,32 +40,32 @@ model PatientAddress {
 }
 
 model MedicineDelivery {
-  id                   String                 @id @default(cuid())
-  deliveryNumber       String                 @unique
-  storeId              String
-  patientId            String
-  prescriptionId       String?
-  assignedExecutiveId  String?
-  patientAddressId     String?
-  status               MedicineDeliveryStatus @default(PENDING)
-  deliveryAddress      String
-  deliveryPhone        String
-  notes                String?
-  otpHash              String?
-  failureReason        String?
-  proofNote            String?
-  assignedAt           DateTime?
-  pickedUpAt           DateTime?
-  deliveredAt          DateTime?
-  failedAt             DateTime?
-  store                Store                  @relation(fields: [storeId], references: [id])
-  patient              User                   @relation("PatientDeliveries", fields: [patientId], references: [id])
-  prescription         Prescription?          @relation(fields: [prescriptionId], references: [id])
-  assignedExecutive    User?                  @relation("AssignedDeliveries", fields: [assignedExecutiveId], references: [id])
-  patientAddress       PatientAddress?        @relation(fields: [patientAddressId], references: [id], onDelete: SetNull)
-  lines                MedicineDeliveryLine[]
-  createdAt            DateTime               @default(now())
-  updatedAt            DateTime               @updatedAt
+  id                  String                 @id @default(cuid())
+  deliveryNumber      String                 @unique
+  storeId             String
+  patientId           String
+  prescriptionId      String?
+  assignedExecutiveId String?
+  patientAddressId    String?
+  status              MedicineDeliveryStatus @default(PENDING)
+  deliveryAddress     String
+  deliveryPhone       String
+  notes               String?
+  otpHash             String?
+  failureReason       String?
+  proofNote           String?
+  assignedAt          DateTime?
+  pickedUpAt          DateTime?
+  deliveredAt         DateTime?
+  failedAt            DateTime?
+  store               Store                  @relation(fields: [storeId], references: [id])
+  patient             User                   @relation("PatientDeliveries", fields: [patientId], references: [id])
+  prescription        Prescription?          @relation(fields: [prescriptionId], references: [id])
+  assignedExecutive   User?                  @relation("AssignedDeliveries", fields: [assignedExecutiveId], references: [id])
+  patientAddress      PatientAddress?        @relation(fields: [patientAddressId], references: [id], onDelete: SetNull)
+  lines               MedicineDeliveryLine[]
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
 
   @@index([storeId, status])
   @@index([assignedExecutiveId, status])

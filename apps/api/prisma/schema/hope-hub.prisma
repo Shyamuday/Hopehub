@@ -1,34 +1,34 @@
 model HopeHubAssessmentAttempt {
-  id             String   @id @default(cuid())
-  userId         String
-  assessmentId   String
-  assessmentType String
-  category       String?
-  title          String
-  version        String   @default("v1")
-  answers        Json
-  totalScore     Int
-  maxScore       Int
-  level          String
-  color          String?
-  description    String?  @db.Text
-  suggestions    Json?
-  safetyFlag     Boolean  @default(false)
-  retakeNumber   Int      @default(1)
-  previousId     String?
-  source         String?
-  entryPage      String?
-  safetyReviewedAt DateTime?
+  id                 String    @id @default(cuid())
+  userId             String
+  assessmentId       String
+  assessmentType     String
+  category           String?
+  title              String
+  version            String    @default("v1")
+  answers            Json
+  totalScore         Int
+  maxScore           Int
+  level              String
+  color              String?
+  description        String?   @db.Text
+  suggestions        Json?
+  safetyFlag         Boolean   @default(false)
+  retakeNumber       Int       @default(1)
+  previousId         String?
+  source             String?
+  entryPage          String?
+  safetyReviewedAt   DateTime?
   safetyReviewedById String?
-  safetyReviewNote String? @db.Text
-  completedAt    DateTime
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  safetyReviewNote   String?   @db.Text
+  completedAt        DateTime
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  user           User     @relation("UserHopeHubAssessmentAttempts", fields: [userId], references: [id], onDelete: Cascade)
-  safetyReviewedBy User?   @relation("HopeHubAssessmentSafetyReviews", fields: [safetyReviewedById], references: [id], onDelete: SetNull)
-  previous       HopeHubAssessmentAttempt? @relation("HopeHubAssessmentRetakes", fields: [previousId], references: [id], onDelete: SetNull)
-  retakes        HopeHubAssessmentAttempt[] @relation("HopeHubAssessmentRetakes")
+  user             User                       @relation("UserHopeHubAssessmentAttempts", fields: [userId], references: [id], onDelete: Cascade)
+  safetyReviewedBy User?                      @relation("HopeHubAssessmentSafetyReviews", fields: [safetyReviewedById], references: [id], onDelete: SetNull)
+  previous         HopeHubAssessmentAttempt?  @relation("HopeHubAssessmentRetakes", fields: [previousId], references: [id], onDelete: SetNull)
+  retakes          HopeHubAssessmentAttempt[] @relation("HopeHubAssessmentRetakes")
 
   @@index([userId, assessmentId, completedAt])
   @@index([userId, completedAt])
@@ -61,26 +61,26 @@ enum ProviderRoleAssignmentStatus {
 }
 
 model ProviderRoleDefinition {
-  code                      String   @id
+  code                      String         @id
   domain                    ProviderDomain @default(HOPE_HUB)
   label                     String
   shortLabel                String
   category                  String
   tone                      String
-  description               String   @db.Text
-  scope                     String   @db.Text
-  bestFor                   String[] @default([])
-  notFor                    String[] @default([])
+  description               String         @db.Text
+  scope                     String         @db.Text
+  bestFor                   String[]       @default([])
+  notFor                    String[]       @default([])
   ctaLabel                  String
-  requiresCredentials       Boolean  @default(false)
-  requiresListenerScreening Boolean  @default(false)
-  isClinicalCare            Boolean  @default(false)
-  supportedModes            String[] @default(["CHAT", "VOICE", "VIDEO"])
-  isActive                  Boolean  @default(true)
-  sortOrder                 Int      @default(0)
-  version                   Int      @default(1)
-  createdAt                 DateTime @default(now())
-  updatedAt                 DateTime @updatedAt
+  requiresCredentials       Boolean        @default(false)
+  requiresListenerScreening Boolean        @default(false)
+  isClinicalCare            Boolean        @default(false)
+  supportedModes            String[]       @default(["CHAT", "VOICE", "VIDEO"])
+  isActive                  Boolean        @default(true)
+  sortOrder                 Int            @default(0)
+  version                   Int            @default(1)
+  createdAt                 DateTime       @default(now())
+  updatedAt                 DateTime       @updatedAt
 
   assignments ProviderRoleAssignment[]
   services    CareTeamService[]
@@ -90,17 +90,17 @@ model ProviderRoleDefinition {
 }
 
 model ProviderRoleAssignment {
-  id               String   @id @default(cuid())
+  id               String                       @id @default(cuid())
   doctorId         String
   roleCode         String
   status           ProviderRoleAssignmentStatus @default(ACTIVE)
-  isPrimary        Boolean  @default(false)
+  isPrimary        Boolean                      @default(false)
   credentialStatus CredentialVerificationStatus @default(NOT_REQUIRED)
   verifiedAt       DateTime?
   verifiedById     String?
   assignedById     String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt        DateTime                     @default(now())
+  updatedAt        DateTime                     @updatedAt
 
   doctor Doctor                 @relation(fields: [doctorId], references: [id], onDelete: Cascade)
   role   ProviderRoleDefinition @relation(fields: [roleCode], references: [code], onDelete: Restrict)
@@ -120,35 +120,35 @@ enum CareTeamServicePricingMode {
 }
 
 model MentalHealthProviderProfile {
-  id                    String   @id @default(cuid())
-  doctorId              String   @unique
-  careTeamType          CareTeamMemberType @default(MENTAL_WELLNESS_PROFESSIONAL)
-  careTeamTypes         CareTeamMemberType[] @default([])
-  qualifications         String[] @default([])
-  qualifiedFrom          String?
-  licenseNumber          String?
-  licenseCouncil         String?
-  languages              String[] @default([])
-  modalities             String[] @default([])
-  sessionTypes           String[] @default([])
-  ageGroups              String[] @default([])
-  concernsHandled        String[] @default([])
-  introSessionTitle      String?
-  counsellingApproach    String?  @db.Text
-  safetyEscalationNote   String?  @db.Text
-  listenerSafetyAcknowledgedAt DateTime?
+  id                                String               @id @default(cuid())
+  doctorId                          String               @unique
+  careTeamType                      CareTeamMemberType   @default(MENTAL_WELLNESS_PROFESSIONAL)
+  careTeamTypes                     CareTeamMemberType[] @default([])
+  qualifications                    String[]             @default([])
+  qualifiedFrom                     String?
+  licenseNumber                     String?
+  licenseCouncil                    String?
+  languages                         String[]             @default([])
+  modalities                        String[]             @default([])
+  sessionTypes                      String[]             @default([])
+  ageGroups                         String[]             @default([])
+  concernsHandled                   String[]             @default([])
+  introSessionTitle                 String?
+  counsellingApproach               String?              @db.Text
+  safetyEscalationNote              String?              @db.Text
+  listenerSafetyAcknowledgedAt      DateTime?
   listenerSafetyAcknowledgedVersion String?
-  onboardingPathSelectedAt DateTime?
-  acceptsHighRiskCases   Boolean  @default(false)
-  autoMatchEnabled       Boolean  @default(true)
-  acceptingNewUsers      Boolean  @default(true)
-  maxSessionsPerDay      Int?
-  maxSessionsPerWeek     Int?
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  onboardingPathSelectedAt          DateTime?
+  acceptsHighRiskCases              Boolean              @default(false)
+  autoMatchEnabled                  Boolean              @default(true)
+  acceptingNewUsers                 Boolean              @default(true)
+  maxSessionsPerDay                 Int?
+  maxSessionsPerWeek                Int?
+  createdAt                         DateTime             @default(now())
+  updatedAt                         DateTime             @updatedAt
 
-  doctor                Doctor   @relation(fields: [doctorId], references: [id], onDelete: Cascade)
-  services              CareTeamService[]
+  doctor   Doctor            @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  services CareTeamService[]
 
   @@index([doctorId])
   @@index([careTeamType])
@@ -157,33 +157,33 @@ model MentalHealthProviderProfile {
 }
 
 model CareTeamService {
-  id                     String   @id @default(cuid())
-  mentalHealthProfileId  String
-  title                  String
-  description            String?  @db.Text
-  providerRole           CareTeamMemberType?
-  providerRoleCode       String
-  pricingMode            CareTeamServicePricingMode @default(FIXED)
-  priceInPaise           Int      @default(0)
+  id                       String                     @id @default(cuid())
+  mentalHealthProfileId    String
+  title                    String
+  description              String?                    @db.Text
+  providerRole             CareTeamMemberType?
+  providerRoleCode         String
+  pricingMode              CareTeamServicePricingMode @default(FIXED)
+  priceInPaise             Int                        @default(0)
   firstSessionPriceInPaise Int?
-  followUpPriceInPaise   Int?
-  introSessionLimit      Int      @default(1)
-  packageSessionCount    Int?
-  packagePriceInPaise    Int?
-  freeMinutes            Int      @default(0)
-  pricePerMinuteInPaise  Int?
-  currency               String   @default("INR")
-  durationMinutes        Int      @default(30)
-  isFree                 Boolean  @default(false)
-  isActive               Boolean  @default(true)
-  sortOrder              Int      @default(0)
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  followUpPriceInPaise     Int?
+  introSessionLimit        Int                        @default(1)
+  packageSessionCount      Int?
+  packagePriceInPaise      Int?
+  freeMinutes              Int                        @default(0)
+  pricePerMinuteInPaise    Int?
+  currency                 String                     @default("INR")
+  durationMinutes          Int                        @default(30)
+  isFree                   Boolean                    @default(false)
+  isActive                 Boolean                    @default(true)
+  sortOrder                Int                        @default(0)
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime                   @updatedAt
 
-  mentalHealthProfile    MentalHealthProviderProfile @relation(fields: [mentalHealthProfileId], references: [id], onDelete: Cascade)
-  roleDefinition         ProviderRoleDefinition @relation(fields: [providerRoleCode], references: [code], onDelete: Restrict)
-  availabilityRules      ProviderAvailabilityRule[]
-  slots                  DoctorSlot[]
+  mentalHealthProfile MentalHealthProviderProfile @relation(fields: [mentalHealthProfileId], references: [id], onDelete: Cascade)
+  roleDefinition      ProviderRoleDefinition      @relation(fields: [providerRoleCode], references: [code], onDelete: Restrict)
+  availabilityRules   ProviderAvailabilityRule[]
+  slots               DoctorSlot[]
 
   @@index([mentalHealthProfileId, isActive, sortOrder])
   @@index([providerRole, isActive])
@@ -191,53 +191,53 @@ model CareTeamService {
 }
 
 model CareTeamPricingTemplate {
-  id                       String   @id @default(cuid())
-  applicableRoleCodes      String[] @default([])
+  id                       String                     @id @default(cuid())
+  applicableRoleCodes      String[]                   @default([])
   title                    String
-  description              String?  @db.Text
+  description              String?                    @db.Text
   pricingMode              CareTeamServicePricingMode @default(FIXED)
-  priceInPaise             Int      @default(0)
+  priceInPaise             Int                        @default(0)
   firstSessionPriceInPaise Int?
   followUpPriceInPaise     Int?
-  introSessionLimit        Int      @default(1)
+  introSessionLimit        Int                        @default(1)
   packageSessionCount      Int?
   packagePriceInPaise      Int?
-  freeMinutes              Int      @default(0)
+  freeMinutes              Int                        @default(0)
   pricePerMinuteInPaise    Int?
-  durationMinutes          Int      @default(30)
-  isFree                   Boolean  @default(false)
-  isActive                 Boolean  @default(true)
-  sortOrder                Int      @default(0)
-  createdAt                DateTime @default(now())
-  updatedAt                DateTime @updatedAt
+  durationMinutes          Int                        @default(30)
+  isFree                   Boolean                    @default(false)
+  isActive                 Boolean                    @default(true)
+  sortOrder                Int                        @default(0)
+  createdAt                DateTime                   @default(now())
+  updatedAt                DateTime                   @updatedAt
 
   @@index([isActive, sortOrder])
 }
 
 model HopeHubLiveGroup {
-  id              String   @id @default(cuid())
+  id              String    @id @default(cuid())
   title           String
-  slug            String   @unique
-  description     String?  @db.Text
+  slug            String    @unique
+  description     String?   @db.Text
   callTitle       String?
-  callAgenda      String?  @db.Text
-  pinnedMessage   String?  @db.Text
-  roomRules       String?  @db.Text
-  status          String   @default("LIVE")
-  mode            String   @default("CHAT")
-  slowModeSeconds Int      @default(0)
+  callAgenda      String?   @db.Text
+  pinnedMessage   String?   @db.Text
+  roomRules       String?   @db.Text
+  status          String    @default("LIVE")
+  mode            String    @default("CHAT")
+  slowModeSeconds Int       @default(0)
   hostUserId      String?
   createdByUserId String?
-  isPublic        Boolean  @default(true)
-  isActive        Boolean  @default(true)
+  isPublic        Boolean   @default(true)
+  isActive        Boolean   @default(true)
   startsAt        DateTime?
   endedAt         DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
-  messages        HopeHubLiveGroupMessage[]
-  moderation      HopeHubLiveGroupMemberModeration[]
-  reports         HopeHubLiveGroupReport[]
+  messages   HopeHubLiveGroupMessage[]
+  moderation HopeHubLiveGroupMemberModeration[]
+  reports    HopeHubLiveGroupReport[]
 
   @@index([status, isActive])
   @@index([hostUserId])
@@ -245,26 +245,26 @@ model HopeHubLiveGroup {
 }
 
 model HopeHubLiveGroupMessage {
-  id             String   @id @default(cuid())
-  groupId        String
-  senderId       String
-  senderName     String
-  senderRole     String?
-  body           String   @db.Text
-  isDeleted      Boolean  @default(false)
-  deletedAt      DateTime?
+  id              String    @id @default(cuid())
+  groupId         String
+  senderId        String
+  senderName      String
+  senderRole      String?
+  body            String    @db.Text
+  isDeleted       Boolean   @default(false)
+  deletedAt       DateTime?
   deletedByUserId String?
-  createdAt      DateTime @default(now())
+  createdAt       DateTime  @default(now())
 
-  group          HopeHubLiveGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  reports        HopeHubLiveGroupReport[]
+  group   HopeHubLiveGroup         @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  reports HopeHubLiveGroupReport[]
 
   @@index([groupId, createdAt])
   @@index([senderId, createdAt])
 }
 
 model HopeHubLiveGroupReport {
-  id                String   @id @default(cuid())
+  id                String    @id @default(cuid())
   groupId           String
   messageId         String?
   reporterUserId    String
@@ -272,15 +272,15 @@ model HopeHubLiveGroupReport {
   targetUserId      String?
   targetDisplayName String?
   reason            String
-  details           String?  @db.Text
-  status            String   @default("OPEN")
+  details           String?   @db.Text
+  status            String    @default("OPEN")
   reviewedByUserId  String?
   reviewedAt        DateTime?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  group             HopeHubLiveGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  message           HopeHubLiveGroupMessage? @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  group   HopeHubLiveGroup         @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  message HopeHubLiveGroupMessage? @relation(fields: [messageId], references: [id], onDelete: SetNull)
 
   @@index([groupId, status])
   @@index([messageId])
@@ -289,22 +289,22 @@ model HopeHubLiveGroupReport {
 }
 
 model HopeHubLiveGroupMemberModeration {
-  id                String   @id @default(cuid())
+  id                String    @id @default(cuid())
   groupId           String
   userId            String
   displayName       String?
   role              String?
-  isMuted           Boolean  @default(false)
+  isMuted           Boolean   @default(false)
   mutedUntil        DateTime?
-  isBanned          Boolean  @default(false)
+  isBanned          Boolean   @default(false)
   bannedAt          DateTime?
   removedAt         DateTime?
-  reason            String?  @db.Text
+  reason            String?   @db.Text
   moderatedByUserId String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  group             HopeHubLiveGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  group HopeHubLiveGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
   @@unique([groupId, userId])
   @@index([groupId, isMuted])
@@ -422,53 +422,53 @@ enum LifestyleTipStatus {
 }
 
 model HopeHubOffering {
-  id                     String              @id @default(cuid())
-  code                   String              @unique
-  slug                   String              @unique
-  title                  String
-  subtitle               String?
-  description            String              @db.Text
-  type                   HopeHubOfferingType
-  priceInPaise           Int?
-  compareAtPriceInPaise  Int?
-  currency               String              @default("INR")
-  discountEnabled        Boolean             @default(false)
-  discountType           HopeHubDiscountType  @default(NONE)
-  discountLabel          String?
-  discountCode           String?
-  discountPercent        Int?
-  discountFlatInPaise    Int?
-  discountMaxInPaise     Int?
-  discountStartsAt       DateTime?
-  discountEndsAt         DateTime?
-  partialPaymentEnabled  Boolean             @default(false)
-  partialPaymentType     HopeHubPartialPaymentType @default(NONE)
-  partialPaymentLabel    String?
-  partialPaymentPercent  Int?
+  id                        String                    @id @default(cuid())
+  code                      String                    @unique
+  slug                      String                    @unique
+  title                     String
+  subtitle                  String?
+  description               String                    @db.Text
+  type                      HopeHubOfferingType
+  priceInPaise              Int?
+  compareAtPriceInPaise     Int?
+  currency                  String                    @default("INR")
+  discountEnabled           Boolean                   @default(false)
+  discountType              HopeHubDiscountType       @default(NONE)
+  discountLabel             String?
+  discountCode              String?
+  discountPercent           Int?
+  discountFlatInPaise       Int?
+  discountMaxInPaise        Int?
+  discountStartsAt          DateTime?
+  discountEndsAt            DateTime?
+  partialPaymentEnabled     Boolean                   @default(false)
+  partialPaymentType        HopeHubPartialPaymentType @default(NONE)
+  partialPaymentLabel       String?
+  partialPaymentPercent     Int?
   partialPaymentFlatInPaise Int?
-  validityDays           Int?
-  sessionCount           Int?
-  sessionDurationMinutes Int?
-  deliveryMode           HopeHubDeliveryMode @default(ONLINE_AUDIO)
-  eventStartsAt          DateTime?
-  eventEndsAt            DateTime?
-  seatLimit              Int?
-  venue                  String?
-  imageUrl               String?
-  ctaLabel               String              @default("Book now")
-  routePath              String?
-  benefits               String[]            @default([])
-  audience               String[]            @default([])
-  metadata               Json?
-  isActive               Boolean             @default(true)
-  isFeatured             Boolean             @default(false)
-  requiresLeadForm       Boolean             @default(false)
-  sortOrder              Int                 @default(0)
-  createdAt              DateTime            @default(now())
-  updatedAt              DateTime            @updatedAt
+  validityDays              Int?
+  sessionCount              Int?
+  sessionDurationMinutes    Int?
+  deliveryMode              HopeHubDeliveryMode       @default(ONLINE_AUDIO)
+  eventStartsAt             DateTime?
+  eventEndsAt               DateTime?
+  seatLimit                 Int?
+  venue                     String?
+  imageUrl                  String?
+  ctaLabel                  String                    @default("Book now")
+  routePath                 String?
+  benefits                  String[]                  @default([])
+  audience                  String[]                  @default([])
+  metadata                  Json?
+  isActive                  Boolean                   @default(true)
+  isFeatured                Boolean                   @default(false)
+  requiresLeadForm          Boolean                   @default(false)
+  sortOrder                 Int                       @default(0)
+  createdAt                 DateTime                  @default(now())
+  updatedAt                 DateTime                  @updatedAt
 
-  banners                HopeHubBanner[]
-  organizationLeads      HopeHubOrganizationLead[]
+  banners           HopeHubBanner[]
+  organizationLeads HopeHubOrganizationLead[]
 
   @@index([type, isActive])
   @@index([isFeatured, sortOrder])
@@ -541,52 +541,52 @@ model ConsultationFollowUpEntitlement {
   createdAt       DateTime                  @default(now())
   updatedAt       DateTime                  @updatedAt
 
-  consultation    Consultation              @relation(fields: [consultationId], references: [id], onDelete: Cascade)
-  patient         User                      @relation("UserFollowUpEntitlements", fields: [patientId], references: [id], onDelete: Cascade)
+  consultation Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  patient      User         @relation("UserFollowUpEntitlements", fields: [patientId], references: [id], onDelete: Cascade)
 
   @@index([patientId, status])
   @@index([expiresAt])
 }
 
 model Practice {
-  id                      String              @id @default(cuid())
-  slug                    String              @unique
-  title                   String
-  shortDescription        String
-  description             String              @db.Text
-  type                    PracticeType
-  difficulty              PracticeDifficulty  @default(BEGINNER)
-  durationMinutes         Int?
-  durationLabel           String?
-  concernSlugs            String[]            @default([])
-  categories              String[]            @default([])
-  benefits                String[]            @default([])
-  steps                   Json
-  tips                    String[]            @default([])
-  whenToUse               String[]            @default([])
-  contraindications       String[]            @default([])
-  avoidIf                 String[]            @default([])
-  tags                    String[]            @default([])
-  mediaUrl                String?
-  audioUrl                String?
-  videoUrl                String?
-  youtubeUrl              String?
-  telegramUrl             String?
-  thumbnailUrl            String?
-  language                String              @default("en")
-  sourceSystem            String?
-  expertReviewed          Boolean             @default(false)
-  expertReviewedBy        String?
-  expertReviewedAt        DateTime?
-  safetyLevel             String              @default("LOW")
-  status                  PracticeStatus      @default(DRAFT)
-  sortOrder               Int                 @default(0)
-  metadata                Json?
-  createdAt               DateTime            @default(now())
-  updatedAt               DateTime            @updatedAt
+  id                String             @id @default(cuid())
+  slug              String             @unique
+  title             String
+  shortDescription  String
+  description       String             @db.Text
+  type              PracticeType
+  difficulty        PracticeDifficulty @default(BEGINNER)
+  durationMinutes   Int?
+  durationLabel     String?
+  concernSlugs      String[]           @default([])
+  categories        String[]           @default([])
+  benefits          String[]           @default([])
+  steps             Json
+  tips              String[]           @default([])
+  whenToUse         String[]           @default([])
+  contraindications String[]           @default([])
+  avoidIf           String[]           @default([])
+  tags              String[]           @default([])
+  mediaUrl          String?
+  audioUrl          String?
+  videoUrl          String?
+  youtubeUrl        String?
+  telegramUrl       String?
+  thumbnailUrl      String?
+  language          String             @default("en")
+  sourceSystem      String?
+  expertReviewed    Boolean            @default(false)
+  expertReviewedBy  String?
+  expertReviewedAt  DateTime?
+  safetyLevel       String             @default("LOW")
+  status            PracticeStatus     @default(DRAFT)
+  sortOrder         Int                @default(0)
+  metadata          Json?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
 
-  recommendationRules     PracticeRecommendationRule[]
-  sessions                UserPracticeSession[]
+  recommendationRules PracticeRecommendationRule[]
+  sessions            UserPracticeSession[]
 
   @@index([status, sortOrder])
   @@index([type, status])
@@ -607,7 +607,7 @@ model PracticeRecommendationRule {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  practice       Practice @relation(fields: [practiceId], references: [id], onDelete: Cascade)
+  practice Practice @relation(fields: [practiceId], references: [id], onDelete: Cascade)
 
   @@index([assessmentType, minScore, maxScore])
   @@index([concernSlug, priority])
@@ -628,8 +628,8 @@ model UserPracticeSession {
   metadata        Json?
   createdAt       DateTime @default(now())
 
-  user            User     @relation("UserPracticeSessions", fields: [userId], references: [id], onDelete: Cascade)
-  practice        Practice @relation(fields: [practiceId], references: [id], onDelete: Cascade)
+  user     User     @relation("UserPracticeSessions", fields: [userId], references: [id], onDelete: Cascade)
+  practice Practice @relation(fields: [practiceId], references: [id], onDelete: Cascade)
 
   @@index([userId, completedAt])
   @@index([practiceId, completedAt])
@@ -681,21 +681,21 @@ model LifestyleTip {
 }
 
 model LifestyleTipRecommendationRule {
-  id             String       @id @default(cuid())
+  id             String   @id @default(cuid())
   lifestyleTipId String
   assessmentType String?
   concernSlug    String?
   minScore       Int?
   maxScore       Int?
   level          String?
-  priority       Int          @default(3)
+  priority       Int      @default(3)
   routineSlot    String?
-  isActive       Boolean      @default(true)
-  notes          String?      @db.Text
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  isActive       Boolean  @default(true)
+  notes          String?  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  lifestyleTip   LifestyleTip @relation(fields: [lifestyleTipId], references: [id], onDelete: Cascade)
+  lifestyleTip LifestyleTip @relation(fields: [lifestyleTipId], references: [id], onDelete: Cascade)
 
   @@index([assessmentType, minScore, maxScore])
   @@index([concernSlug, priority])
@@ -703,18 +703,18 @@ model LifestyleTipRecommendationRule {
 }
 
 model UserLifestyleTipSession {
-  id              String       @id @default(cuid())
-  userId          String
-  lifestyleTipId  String
-  completedAt     DateTime     @default(now())
-  helpfulRating   Int?
-  notes           String?      @db.Text
-  source          String?
-  metadata        Json?
-  createdAt       DateTime     @default(now())
+  id             String   @id @default(cuid())
+  userId         String
+  lifestyleTipId String
+  completedAt    DateTime @default(now())
+  helpfulRating  Int?
+  notes          String?  @db.Text
+  source         String?
+  metadata       Json?
+  createdAt      DateTime @default(now())
 
-  user            User         @relation("UserLifestyleTipSessions", fields: [userId], references: [id], onDelete: Cascade)
-  lifestyleTip    LifestyleTip @relation(fields: [lifestyleTipId], references: [id], onDelete: Cascade)
+  user         User         @relation("UserLifestyleTipSessions", fields: [userId], references: [id], onDelete: Cascade)
+  lifestyleTip LifestyleTip @relation(fields: [lifestyleTipId], references: [id], onDelete: Cascade)
 
   @@index([userId, completedAt])
   @@index([lifestyleTipId, completedAt])

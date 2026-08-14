@@ -136,31 +136,31 @@ model RepertoryRubricRemedy {
 }
 
 model CaseAnalysis {
-  id               String               @id @default(cuid())
-  consultationId   String?
-  doctorId         String
-  sourceId         String?
-  status           CaseAnalysisStatus   @default(DRAFT)
-  notes            String?
-  caseSheet        Json?
-  approachData     Json?
-  methodOptionId   String?
-  methodRationale           String?
-  remedySuggestionSnapshot  Json?
-  remedyOverrideRationale   String?
-  selectedRemedyId          String?
-  methodOption     PrescriptionOption?  @relation("CaseAnalysisMethod", fields: [methodOptionId], references: [id], onDelete: SetNull)
-  consultation     Consultation?        @relation(fields: [consultationId], references: [id], onDelete: Cascade)
-  doctor           User                 @relation("DoctorCaseAnalyses", fields: [doctorId], references: [id], onDelete: Restrict)
-  source           RepertorySource?     @relation(fields: [sourceId], references: [id], onDelete: SetNull)
-  selectedRemedy   HomeopathicRemedy?   @relation("SelectedRemedy", fields: [selectedRemedyId], references: [id], onDelete: SetNull)
-  rubrics          CaseAnalysisRubric[]
-  results          CaseAnalysisResult[]
-  prescriptions    Prescription[]
-  clinicalMedia         ClinicalMedia[]
-  imagingInterpretations ImagingInterpretation[]
-  createdAt        DateTime             @default(now())
-  updatedAt        DateTime             @updatedAt
+  id                       String                  @id @default(cuid())
+  consultationId           String?
+  doctorId                 String
+  sourceId                 String?
+  status                   CaseAnalysisStatus      @default(DRAFT)
+  notes                    String?
+  caseSheet                Json?
+  approachData             Json?
+  methodOptionId           String?
+  methodRationale          String?
+  remedySuggestionSnapshot Json?
+  remedyOverrideRationale  String?
+  selectedRemedyId         String?
+  methodOption             PrescriptionOption?     @relation("CaseAnalysisMethod", fields: [methodOptionId], references: [id], onDelete: SetNull)
+  consultation             Consultation?           @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  doctor                   User                    @relation("DoctorCaseAnalyses", fields: [doctorId], references: [id], onDelete: Restrict)
+  source                   RepertorySource?        @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  selectedRemedy           HomeopathicRemedy?      @relation("SelectedRemedy", fields: [selectedRemedyId], references: [id], onDelete: SetNull)
+  rubrics                  CaseAnalysisRubric[]
+  results                  CaseAnalysisResult[]
+  prescriptions            Prescription[]
+  clinicalMedia            ClinicalMedia[]
+  imagingInterpretations   ImagingInterpretation[]
+  createdAt                DateTime                @default(now())
+  updatedAt                DateTime                @updatedAt
 
   @@index([consultationId, createdAt])
   @@index([doctorId])
@@ -192,28 +192,28 @@ model CaseAnalysisResult {
 }
 
 model ClinicalMedia {
-  id               String             @id @default(cuid())
-  patientId        String
-  caseAnalysisId   String?
-  consultationId   String?
-  diseaseId        String?
-  conditionLabel   String?
-  uploadedById     String
-  mediaType        ClinicalMediaType
-  bodyRegion       String?
-  storageKey       String
-  mimeType         String
-  fileName         String?
-  observations     String?
-  patientConsent   Boolean            @default(false)
-  patient          User               @relation("PatientClinicalMedia", fields: [patientId], references: [id], onDelete: Cascade)
-  caseAnalysis     CaseAnalysis?      @relation(fields: [caseAnalysisId], references: [id], onDelete: Cascade)
-  consultation     Consultation?      @relation(fields: [consultationId], references: [id], onDelete: SetNull)
-  disease          Disease?           @relation(fields: [diseaseId], references: [id], onDelete: SetNull)
-  uploadedBy            User                      @relation("ClinicalMediaUploadedBy", fields: [uploadedById], references: [id], onDelete: Restrict)
+  id                     String                  @id @default(cuid())
+  patientId              String
+  caseAnalysisId         String?
+  consultationId         String?
+  diseaseId              String?
+  conditionLabel         String?
+  uploadedById           String
+  mediaType              ClinicalMediaType
+  bodyRegion             String?
+  storageKey             String
+  mimeType               String
+  fileName               String?
+  observations           String?
+  patientConsent         Boolean                 @default(false)
+  patient                User                    @relation("PatientClinicalMedia", fields: [patientId], references: [id], onDelete: Cascade)
+  caseAnalysis           CaseAnalysis?           @relation(fields: [caseAnalysisId], references: [id], onDelete: Cascade)
+  consultation           Consultation?           @relation(fields: [consultationId], references: [id], onDelete: SetNull)
+  disease                Disease?                @relation(fields: [diseaseId], references: [id], onDelete: SetNull)
+  uploadedBy             User                    @relation("ClinicalMediaUploadedBy", fields: [uploadedById], references: [id], onDelete: Restrict)
   imagingInterpretations ImagingInterpretation[]
-  createdAt             DateTime                  @default(now())
-  updatedAt             DateTime                  @updatedAt
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
 
   @@index([patientId, createdAt])
   @@index([caseAnalysisId, createdAt])

@@ -19,6 +19,11 @@ import {
   setupCommunityBot,
   type CommunityTelegramUpdate
 } from '../services/telegram-community-bots.js';
+import {
+  claimCommunityWebhookUpdate,
+  completeCommunityWebhookUpdate,
+  failCommunityWebhookUpdate
+} from '../services/telegram-community-bots.store.js';
 import { groupHelpBotStatus } from '../services/telegram-group-help.client.js';
 
 export const telegramBotsRouter = Router();
@@ -59,9 +64,24 @@ telegramBotsRouter.post(
     const communityBot = communityBotFromSlug(botSlug);
     if (!kind && !communityBot) return res.status(404).json({ message: 'Unknown Telegram bot.' });
 
-    if (kind) await handleTelegramUpdate(kind, req.body as TelegramUpdate);
-    else await handleCommunityBotUpdate(communityBot!, req.body as CommunityTelegramUpdate);
-    res.json({ ok: true });
+    const update = req.body as TelegramUpdate & CommunityTelegramUpdate;
+    const claimed = await claimCommunityWebhookUpdate(botSlug, update.update_id);
+    if (!claimed) return res.json({ ok: true, duplicate: true });
+
+    try {
+      if (kind) await handleTelegramUpdate(kind, update);
+      else await handleCommunityBotUpdate(communityBot!, update);
+      await completeCommunityWebhookUpdate(botSlug, update.update_id);
+      res.json({ ok: true });
+    } catch (error) {
+      await failCommunityWebhookUpdate(botSlug, update.update_id, error).catch((receiptError) =>
+        console.error('[telegram] Could not record failed webhook update.', receiptError)
+      );
+      console.error(`[telegram] ${botSlug} update ${update.update_id} failed.`, error);
+      // Telegram retries every non-2xx response. Acknowledge handled failures so one blocked
+      // user or malformed update cannot create a retry storm; diagnostics remain in the database.
+      res.json({ ok: true, handled: false });
+    }
   })
 );
 

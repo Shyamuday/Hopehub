@@ -1,26 +1,21 @@
 import { answerCommunityCallback, sendCommunityMessage } from './telegram-community-bots.client.js';
+import {
+  clearCommunityState,
+  createCommunitySubmission,
+  deleteDraftCommunitySubmission,
+  findCommunitySubmission,
+  getCommunityState,
+  latestCommunitySubmission,
+  setCommunityState,
+  submissionForGroupMessage,
+  updateCommunitySubmission
+} from './telegram-community-bots.store.js';
 import type { CommunityTelegramUpdate, TelegramKeyboard } from './telegram-community-bots.types.js';
 
 const slug = 'contact' as const;
 const supportGroupId = () => process.env.TELEGRAM_CONTACT_SUPPORT_GROUP_ID?.trim() || '';
 
 type ContactState = { state: 'writing'; category: string } | { state: 'preview'; ticketId: string };
-type ContactTicket = {
-  id: string;
-  userId: string | number;
-  firstName: string;
-  username: string | null;
-  category: string;
-  text: string;
-  status: 'draft' | 'open' | 'replied';
-  createdAt: number;
-  groupMessageId?: number;
-};
-
-const userStates = new Map<string, ContactState>();
-const tickets = new Map<string, ContactTicket>();
-const groupMessageToTicket = new Map<number, string>();
-let ticketCounter = 1000;
 
 const categoryLabels: Record<string, string> = {
   cat_suggestion: '💡 Suggestion',
@@ -54,7 +49,7 @@ const isCommand = (text: string, command: string) =>
   new RegExp(`^/${command}(?:@[A-Za-z0-9_]+)?(?:\\s|$)`, 'i').test(text.trim());
 
 async function showStart(chatId: string | number) {
-  userStates.delete(keyOf(chatId));
+  await clearCommunityState(slug, keyOf(chatId));
   await sendCommunityMessage(
     slug,
     chatId,
@@ -71,7 +66,7 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
     const data = callback.data;
     await answerCommunityCallback(slug, callback.id);
     if (data === 'cancel') {
-      userStates.delete(stateKey);
+      await clearCommunityState(slug, stateKey);
       await sendCommunityMessage(
         slug,
         chatId,
@@ -83,7 +78,7 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
       return;
     }
     if (data.startsWith('cat_')) {
-      userStates.set(stateKey, { state: 'writing', category: data });
+      await setCommunityState(slug, stateKey, 'writing', { category: data });
       await sendCommunityMessage(
         slug,
         chatId,
@@ -94,8 +89,8 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
     }
     if (data.startsWith('confirm_')) {
       const ticketId = data.slice('confirm_'.length);
-      const ticket = tickets.get(ticketId);
-      if (!ticket) {
+      const ticket = await findCommunitySubmission(ticketId);
+      if (!ticket || ticket.bot !== slug || ticket.userChatId !== stateKey) {
         await sendCommunityMessage(slug, chatId, '⚠️ Message expired. Please start again.', {
           reply_markup: mainKeyboard
         });
@@ -103,28 +98,30 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
       }
       const groupId = supportGroupId();
       if (!groupId) throw new Error('TELEGRAM_CONTACT_SUPPORT_GROUP_ID is not configured.');
-      userStates.delete(stateKey);
-      ticket.status = 'open';
+      await clearCommunityState(slug, stateKey);
       const sent = await sendCommunityMessage(
         slug,
         groupId,
-        `📬 *New Message — ${categoryLabels[ticket.category] || ticket.category}*\n\n🆔 ${ticket.id}\n👤 From: ${ticket.firstName}${ticket.username ? ` (${ticket.username})` : ''}\n🕐 ${new Date(ticket.createdAt).toLocaleString()}\n━━━━━━━━━━━━━━\n\n${ticket.text}\n\n━━━━━━━━━━━━━━\n_Reply to this message in the group to respond to the user._`,
+        `📬 *New Message — ${categoryLabels[ticket.category || ''] || ticket.category}*\n\n🆔 ${ticket.reference}\n👤 From: ${ticket.firstName || 'Telegram user'}${ticket.username ? ` (${ticket.username})` : ''}\n🕐 ${ticket.createdAt.toLocaleString()}\n━━━━━━━━━━━━━━\n\n${ticket.text}\n\n━━━━━━━━━━━━━━\n_Reply to this message in the group to respond to the user._`,
         { parse_mode: 'Markdown' }
       );
-      ticket.groupMessageId = sent.message_id;
-      groupMessageToTicket.set(sent.message_id, ticketId);
+      await updateCommunitySubmission(ticketId, {
+        status: 'open',
+        groupChatId: keyOf(groupId),
+        groupMessageId: sent.message_id
+      });
       await sendCommunityMessage(
         slug,
         chatId,
-        `✅ *Message sent successfully!*\n\n🆔 Reference: *${ticket.id}*\n\nOur team will get back to you as soon as possible. 💙\n\nUse /status to check anytime.`,
+        `✅ *Message sent successfully!*\n\n🆔 Reference: *${ticket.reference}*\n\nOur team will get back to you as soon as possible. 💙\n\nUse /status to check anytime.`,
         { parse_mode: 'Markdown', reply_markup: mainKeyboard }
       );
       return;
     }
     if (data.startsWith('cancelsubmit_')) {
       const ticketId = data.slice('cancelsubmit_'.length);
-      tickets.delete(ticketId);
-      userStates.delete(stateKey);
+      await deleteDraftCommunitySubmission(ticketId, stateKey);
+      await clearCommunityState(slug, stateKey);
       await sendCommunityMessage(
         slug,
         chatId,
@@ -144,20 +141,28 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
   const stateKey = keyOf(chatId);
 
   if (keyOf(chatId) === supportGroupId() && message.reply_to_message) {
-    const ticketId = groupMessageToTicket.get(message.reply_to_message.message_id);
-    const ticket = ticketId ? tickets.get(ticketId) : undefined;
+    const ticket = await submissionForGroupMessage(
+      slug,
+      stateKey,
+      message.reply_to_message.message_id
+    );
     if (!ticket || !text || text.startsWith('/')) return;
     try {
       await sendCommunityMessage(
         slug,
-        ticket.userId,
-        `💙 *Response from HopeHub Team*\n\n📂 Re: ${categoryLabels[ticket.category] || ticket.category} (${ticket.id})\n\n━━━━━━━━━━━━━━\n\n${text}\n\n━━━━━━━━━━━━━━\n\n_Use a category below if you need a follow-up._`,
+        ticket.userChatId,
+        `💙 *Response from HopeHub Team*\n\n📂 Re: ${categoryLabels[ticket.category || ''] || ticket.category} (${ticket.reference})\n\n━━━━━━━━━━━━━━\n\n${text}\n\n━━━━━━━━━━━━━━\n\n_Use a category below if you need a follow-up._`,
         { parse_mode: 'Markdown', reply_markup: mainKeyboard }
       );
-      ticket.status = 'replied';
-      await sendCommunityMessage(slug, chatId, `✅ Reply delivered to user for ${ticket.id}.`, {
-        reply_to_message_id: message.message_id
-      });
+      await updateCommunitySubmission(ticket.reference, { status: 'replied' });
+      await sendCommunityMessage(
+        slug,
+        chatId,
+        `✅ Reply delivered to user for ${ticket.reference}.`,
+        {
+          reply_to_message_id: message.message_id
+        }
+      );
     } catch {
       await sendCommunityMessage(
         slug,
@@ -185,29 +190,31 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
     return;
   }
   if (isCommand(text, 'cancel')) {
-    userStates.delete(stateKey);
+    await clearCommunityState(slug, stateKey);
     await sendCommunityMessage(slug, chatId, '🚫 Cancelled. Tap a category to start again.', {
       reply_markup: mainKeyboard
     });
     return;
   }
   if (isCommand(text, 'status')) {
-    const latest = [...tickets.values()]
-      .filter((ticket) => keyOf(ticket.userId) === stateKey)
-      .sort((a, b) => b.createdAt - a.createdAt)[0];
+    const latest = await latestCommunitySubmission(slug, stateKey);
     await sendCommunityMessage(
       slug,
       chatId,
       latest
-        ? `*Your latest message*\n\n🆔 ${latest.id}\n📂 ${categoryLabels[latest.category]}\nStatus: ${latest.status}\n\n_${latest.text.slice(0, 100)}${latest.text.length > 100 ? '…' : ''}_`
+        ? `*Your latest message*\n\n🆔 ${latest.reference}\n📂 ${categoryLabels[latest.category || ''] || latest.category}\nStatus: ${latest.status}\n\n_${latest.text.slice(0, 100)}${latest.text.length > 100 ? '…' : ''}_`
         : `You haven't submitted any messages yet.`,
       { parse_mode: 'Markdown', reply_markup: mainKeyboard }
     );
     return;
   }
   if (text.startsWith('/')) return;
-  const state = userStates.get(stateKey);
-  if (!state || state.state !== 'writing') {
+  const storedState = await getCommunityState<{ category?: string }>(slug, stateKey);
+  const state: ContactState | null =
+    storedState?.state === 'writing' && storedState.payload?.category
+      ? { state: 'writing', category: storedState.payload.category }
+      : null;
+  if (!state) {
     await sendCommunityMessage(slug, chatId, '💙 Tap a category below to send us a message.', {
       reply_markup: mainKeyboard
     });
@@ -223,19 +230,18 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
     );
     return;
   }
-  const ticketId = `TKT-${++ticketCounter}`;
-  const ticket: ContactTicket = {
-    id: ticketId,
-    userId: chatId,
+  const ticketId = `TKT-${Date.now().toString(36).toUpperCase()}`;
+  await createCommunitySubmission({
+    reference: ticketId,
+    bot: slug,
+    userChatId: stateKey,
     firstName: message.from?.first_name || 'Telegram user',
     username: message.from?.username ? `@${message.from.username}` : null,
     category: state.category,
     text,
-    status: 'draft',
-    createdAt: Date.now()
-  };
-  tickets.set(ticketId, ticket);
-  userStates.set(stateKey, { state: 'preview', ticketId });
+    status: 'draft'
+  });
+  await setCommunityState(slug, stateKey, 'preview', { ticketId });
   await sendCommunityMessage(
     slug,
     chatId,

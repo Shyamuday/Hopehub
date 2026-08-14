@@ -1,9 +1,9 @@
 <div class="quick-access">
-  <!-- Temporarily hidden floating support-chat button. Keep its implementation for later.
   <button
     type="button"
     class="quick-access__main quick-access__main--chat"
     aria-label="Open Hope Hub support chat"
+    title="Hope Hub chat — sign up only when you reply"
     (click)="openChatTeaser()">
     <svg class="quick-access__chat-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
@@ -22,21 +22,22 @@
     @if (unreadCount() > 0) {
       <span class="quick-access__badge">{{ unreadCount() > 9 ? '9+' : unreadCount() }}</span>
     }
+    <span class="quick-access__label">Hope Hub chat</span>
   </button>
-  -->
 
-  <!-- Telegram floating action button -->
   <a
     [href]="APP_CONSTANTS.TELEGRAM.GROUP_URL"
     target="_blank"
     rel="noopener noreferrer"
     class="quick-access__main quick-access__main--telegram"
-    aria-label="Join Telegram group">
+    aria-label="Join the live Hope Hub Telegram chat"
+    title="Join live Telegram chat">
     <svg class="quick-access__telegram-icon" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
       <path
         d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71l-4.16-3.07-2.01 1.93c-.23.23-.42.43-.79.43z"
       />
     </svg>
+    <span class="quick-access__label">Join live Telegram chat</span>
   </a>
 
   <!-- Other quick-access actions are paused for now:

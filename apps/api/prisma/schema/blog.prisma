@@ -18,7 +18,7 @@ model BlogPost {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  author   User?          @relation("BlogPostAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  author   User?         @relation("BlogPostAuthor", fields: [authorId], references: [id], onDelete: SetNull)
   comments BlogComment[]
 
   @@index([isPublished, isHidden, category])

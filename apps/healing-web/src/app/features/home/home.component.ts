@@ -7,8 +7,7 @@ import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants'
 import { CONSUMER_CONCERN_FLOWS } from '../../core/constants/consumer-concerns.constants';
 import { IMAGE_ASSETS } from '../../core/constants/image-assets.constants';
 import { ConsumerFlowsService } from '../../core/services';
-// Temporarily disabled with the homepage group-chat entry in home.component.html.
-// import { GroupChatTeaserComponent } from './components/group-chat-teaser/group-chat-teaser.component';
+import { GroupChatTeaserComponent } from './components/group-chat-teaser/group-chat-teaser.component';
 import { HomeHeroComponent } from './components/home-hero/home-hero.component';
 import { HomeToolsComponent } from './components/home-tools/home-tools.component';
 import { LiveConnectComponent } from './components/live-connect/live-connect.component';
@@ -18,7 +17,7 @@ import { LiveConnectComponent } from './components/live-connect/live-connect.com
   standalone: true,
   imports: [
     AppButtonComponent,
-    // GroupChatTeaserComponent,
+    GroupChatTeaserComponent,
     HomeHeroComponent,
     HomeToolsComponent,
     LiveConnectComponent,

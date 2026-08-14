@@ -200,64 +200,91 @@ export function registerAdminTelegramBotRoutes(router: Router) {
     authRequired,
     allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (_req, res) => {
-      const [sessions, events, webhookInfos, communityWebhookInfos, groupHelpWebhookInfo] =
-        await Promise.all([
-          prisma.telegramBotSession.findMany({
-            select: {
-              id: true,
-              botKind: true,
-              chatId: true,
-              telegramUserId: true,
-              username: true,
-              firstName: true,
-              lastName: true,
-              linkedUserId: true,
-              state: true,
-              lastCommand: true,
-              createdAt: true,
-              updatedAt: true,
-              linkedUser: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                  mobile: true,
-                  role: true,
-                  isActive: true
-                }
+      const [
+        sessions,
+        events,
+        webhookReceipts,
+        communitySubmissionCounts,
+        webhookInfos,
+        communityWebhookInfos,
+        groupHelpWebhookInfo
+      ] = await Promise.all([
+        prisma.telegramBotSession.findMany({
+          select: {
+            id: true,
+            botKind: true,
+            chatId: true,
+            telegramUserId: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            linkedUserId: true,
+            state: true,
+            lastCommand: true,
+            createdAt: true,
+            updatedAt: true,
+            linkedUser: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                mobile: true,
+                role: true,
+                isActive: true
               }
-            },
-            orderBy: { updatedAt: 'desc' },
-            take: 100
-          }),
-          prisma.telegramBotEvent.findMany({
-            select: {
-              id: true,
-              sessionId: true,
-              botKind: true,
-              updateId: true,
-              chatId: true,
-              eventType: true,
-              createdAt: true
-            },
-            orderBy: { createdAt: 'desc' },
-            take: 50
-          }),
-          Promise.all(
-            Object.values(TelegramBotKind).map(
-              async (kind) => [kind, await safeWebhookInfo(kind)] as const
-            )
-          ),
-          Promise.all(
-            communityBotStatus().map(
-              async (bot) => [bot.slug, await safeCommunityWebhookInfo(bot.slug)] as const
-            )
-          ),
-          safeGroupHelpWebhookInfo()
-        ]);
+            }
+          },
+          orderBy: { updatedAt: 'desc' },
+          take: 100
+        }),
+        prisma.telegramBotEvent.findMany({
+          select: {
+            id: true,
+            sessionId: true,
+            botKind: true,
+            updateId: true,
+            chatId: true,
+            eventType: true,
+            createdAt: true
+          },
+          orderBy: { createdAt: 'desc' },
+          take: 50
+        }),
+        prisma.telegramWebhookReceipt.findMany({
+          select: { bot: true, updateId: true, status: true, error: true, updatedAt: true },
+          orderBy: { updatedAt: 'desc' },
+          take: 200
+        }),
+        prisma.telegramCommunitySubmission.groupBy({
+          by: ['bot', 'status'],
+          _count: { _all: true }
+        }),
+        Promise.all(
+          Object.values(TelegramBotKind).map(
+            async (kind) => [kind, await safeWebhookInfo(kind)] as const
+          )
+        ),
+        Promise.all(
+          communityBotStatus().map(
+            async (bot) => [bot.slug, await safeCommunityWebhookInfo(bot.slug)] as const
+          )
+        ),
+        safeGroupHelpWebhookInfo()
+      ]);
 
       const webhookInfoByKind = Object.fromEntries(webhookInfos);
       const communityWebhookInfoBySlug = Object.fromEntries(communityWebhookInfos);
+      const receiptSummary = (slug: string) => {
+        const rows = webhookReceipts.filter((receipt) => receipt.bot === slug);
+        const lastFailure = rows.find((receipt) => receipt.status === 'FAILED');
+        return {
+          processedUpdates: rows.filter((receipt) => receipt.status === 'COMPLETED').length,
+          failedUpdates: rows.filter((receipt) => receipt.status === 'FAILED').length,
+          lastFailure: lastFailure
+            ? { error: lastFailure.error, updatedAt: lastFailure.updatedAt }
+            : null
+        };
+      };
       const accountBots = telegramBotStatus().map((bot) => {
         const botSessions = sessions.filter((session) => session.botKind === bot.kind);
         return {
@@ -268,16 +295,30 @@ export function registerAdminTelegramBotRoutes(router: Router) {
             totalSessions: botSessions.length,
             linkedSessions: botSessions.filter((session) => Boolean(session.linkedUserId)).length,
             activeLinkedSessions: botSessions.filter((session) => session.linkedUser?.isActive)
-              .length
+              .length,
+            ...receiptSummary(bot.slug)
           }
         };
       });
-      const communityBots = communityBotStatus().map((bot) => ({
-        ...bot,
-        expectedRole: null,
-        webhook: communityWebhookInfoBySlug[bot.slug],
-        summary: { totalSessions: 0, linkedSessions: 0, activeLinkedSessions: 0 }
-      }));
+      const communityBots = communityBotStatus().map((bot) => {
+        const submissionCounts = Object.fromEntries(
+          communitySubmissionCounts
+            .filter((row) => row.bot === bot.slug)
+            .map((row) => [row.status, row._count._all])
+        );
+        return {
+          ...bot,
+          expectedRole: null,
+          webhook: communityWebhookInfoBySlug[bot.slug],
+          summary: {
+            totalSessions: 0,
+            linkedSessions: 0,
+            activeLinkedSessions: 0,
+            submissions: submissionCounts,
+            ...receiptSummary(bot.slug)
+          }
+        };
+      });
       const groupHelpBot = {
         ...groupHelpBotStatus(),
         expectedRole: null,

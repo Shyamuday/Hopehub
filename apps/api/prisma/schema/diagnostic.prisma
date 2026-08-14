@@ -35,26 +35,26 @@ model DiagnosticCenterProfile {
 }
 
 model LabReferral {
-  id                   String            @id @default(cuid())
-  referralNumber       String            @unique
-  diagnosticCenterId   String
-  storeId              String
-  patientId            String
-  consultationId       String?
-  status               LabReferralStatus @default(SENT)
-  clinicalNotes        String?
-  partnerNotes         String?
-  expectedResultDate   DateTime?
-  acceptedAt           DateTime?
-  completedAt          DateTime?
-  createdById          String?
-  diagnosticCenter     DiagnosticCenter  @relation(fields: [diagnosticCenterId], references: [id])
-  store                Store             @relation(fields: [storeId], references: [id])
-  patient              User              @relation("PatientLabReferrals", fields: [patientId], references: [id])
-  consultation         Consultation?     @relation(fields: [consultationId], references: [id])
-  lines                LabReferralLine[]
-  createdAt            DateTime          @default(now())
-  updatedAt            DateTime          @updatedAt
+  id                 String            @id @default(cuid())
+  referralNumber     String            @unique
+  diagnosticCenterId String
+  storeId            String
+  patientId          String
+  consultationId     String?
+  status             LabReferralStatus @default(SENT)
+  clinicalNotes      String?
+  partnerNotes       String?
+  expectedResultDate DateTime?
+  acceptedAt         DateTime?
+  completedAt        DateTime?
+  createdById        String?
+  diagnosticCenter   DiagnosticCenter  @relation(fields: [diagnosticCenterId], references: [id])
+  store              Store             @relation(fields: [storeId], references: [id])
+  patient            User              @relation("PatientLabReferrals", fields: [patientId], references: [id])
+  consultation       Consultation?     @relation(fields: [consultationId], references: [id])
+  lines              LabReferralLine[]
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
 
   @@index([diagnosticCenterId, status])
   @@index([storeId, status])
@@ -62,15 +62,15 @@ model LabReferral {
 }
 
 model LabReferralLine {
-  id              String      @id @default(cuid())
-  referralId      String
-  testName        String
-  testCode        String?
-  specimen        String?
-  resultSummary   String?
-  resultFileUrl   String?
-  completedAt     DateTime?
-  referral        LabReferral @relation(fields: [referralId], references: [id], onDelete: Cascade)
+  id            String      @id @default(cuid())
+  referralId    String
+  testName      String
+  testCode      String?
+  specimen      String?
+  resultSummary String?
+  resultFileUrl String?
+  completedAt   DateTime?
+  referral      LabReferral @relation(fields: [referralId], references: [id], onDelete: Cascade)
 
   @@index([referralId])
 }
