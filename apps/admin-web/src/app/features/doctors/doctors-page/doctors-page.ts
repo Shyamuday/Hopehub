@@ -37,6 +37,10 @@ import { AdminCanDirective } from '../../../core/directives/admin-can.directive'
 import { ProviderWorkspaceContextComponent } from '../components/provider-workspace-context.component';
 import { ProviderDirectorySettingsComponent } from '../components/provider-directory-settings.component';
 import {
+  AdminFormDrawerComponent,
+  type AdminFormStep,
+} from '../../../shared/ui/admin-form-drawer.component';
+import {
   ADMIN_PERMISSIONS,
   staffHasAllPermissions,
   staffHasAnyPermission,
@@ -245,6 +249,7 @@ function emptyEditModel() {
     AdminCanDirective,
     ProviderWorkspaceContextComponent,
     ProviderDirectorySettingsComponent,
+    AdminFormDrawerComponent,
   ],
   templateUrl: './doctors-page.html',
   styleUrl: './doctors-page.scss',
@@ -358,6 +363,13 @@ export class DoctorsPage {
   readonly showDirectorySettings = signal(false);
   readonly showSetupReview = signal(false);
   readonly showCreateProviderForm = signal(false);
+  readonly createProviderStep = signal(0);
+  readonly createProviderSteps: readonly AdminFormStep[] = [
+    { id: 'account', label: 'Account' },
+    { id: 'role', label: 'Role' },
+    { id: 'services', label: 'Services' },
+    { id: 'review', label: 'Review' },
+  ];
 
   constructor(private readonly api: AdminApi) {
     effect(() => {
@@ -688,12 +700,49 @@ export class DoctorsPage {
       this.message.set(`${this.providerSingularTitle()} created successfully.`);
       this.createModel.set(emptyCreateModel());
       this.createCareServices.set([]);
+      this.showCreateProviderForm.set(false);
+      this.createProviderStep.set(0);
       await this.load();
     } catch {
       this.error.set(`Could not create ${this.providerSingularLabel()}.`);
     } finally {
       this.mutating.set(false);
     }
+  }
+
+  openCreateProvider(): void {
+    this.createProviderStep.set(0);
+    this.showCreateProviderForm.set(true);
+  }
+
+  closeCreateProvider(): void {
+    if (this.mutating()) return;
+    this.showCreateProviderForm.set(false);
+    this.createProviderStep.set(0);
+  }
+
+  nextCreateProviderStep(): void {
+    if (this.createProviderNextDisabled()) return;
+    this.createProviderStep.update((step) =>
+      Math.min(step + 1, this.createProviderSteps.length - 1),
+    );
+  }
+
+  previousCreateProviderStep(): void {
+    this.createProviderStep.update((step) => Math.max(0, step - 1));
+  }
+
+  createProviderNextDisabled(): boolean {
+    const create = this.createModel();
+    if (this.createProviderStep() === 0) {
+      return (
+        !create.name.trim() || !create.email.trim() || !create.mobile.trim() || !create.password
+      );
+    }
+    if (this.createProviderStep() === 1) {
+      return !create.specialty.trim() || !create.designation.trim();
+    }
+    return false;
   }
 
   togglePendingDoctorSelection(doctorId: string, checked: boolean) {

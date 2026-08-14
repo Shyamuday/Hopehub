@@ -25,16 +25,28 @@
       <h2>Create {{ providerTitleLabel() }}</h2>
       <p class="panel-hint">Keep closed during daily review so the page stays short.</p>
     </div>
-    <button
-      type="button"
-      class="btn-primary"
-      (click)="showCreateProviderForm.set(!showCreateProviderForm())"
-    >
-      {{ showCreateProviderForm() ? 'Close form' : 'Add ' + providerSingularLabel() }}
+    <button type="button" class="btn-primary" (click)="openCreateProvider()">
+      Add {{ providerSingularLabel() }}
     </button>
   </div>
-  @if (showCreateProviderForm()) {
-    <fieldset class="create-doctor-form form-grid" [disabled]="mutating()">
+</section>
+
+<app-admin-form-drawer
+  [open]="showCreateProviderForm()"
+  [title]="'Create ' + providerSingularTitle()"
+  [description]="'Add only the information needed for this stage.'"
+  [steps]="createProviderSteps"
+  [currentStep]="createProviderStep()"
+  [busy]="mutating()"
+  [nextDisabled]="createProviderNextDisabled()"
+  [submitLabel]="'Create ' + providerSingularLabel()"
+  (closed)="closeCreateProvider()"
+  (previous)="previousCreateProviderStep()"
+  (next)="nextCreateProviderStep()"
+  (submitted)="createDoctor()"
+>
+  <fieldset class="create-doctor-form form-grid" [disabled]="mutating()">
+    @if (createProviderStep() === 0) {
       <div class="field">
         <label class="field-label" for="doc-create-name">Name</label>
         <input
@@ -86,6 +98,8 @@
           </button>
         </span>
       </div>
+    }
+    @if (createProviderStep() === 1) {
       @if (workspaceKey() === 'homeopathy') {
         <div class="field">
           <label class="field-label" for="doc-create-type">Provider type</label>
@@ -262,6 +276,10 @@
             placeholder="Anxiety&#10;Stress&#10;Relationship concerns"
           ></textarea>
         </div>
+      }
+    }
+    @if (createProviderStep() === 2) {
+      @if (isPsychologistType(createModel().doctorType)) {
         <div class="field">
           <label class="field-label" for="doc-create-services">Services & pricing</label>
           <div class="service-editor">
@@ -452,12 +470,38 @@
           </p>
         </div>
       }
-      <button type="button" (click)="createDoctor()" [disabled]="mutating() || loading()">
-        {{ mutating() ? 'Creating...' : 'Create ' + providerSingularLabel() }}
-      </button>
-    </fieldset>
-  }
-</section>
+      @if (!isPsychologistType(createModel().doctorType)) {
+        <div class="create-step-note">
+          <strong>No consumer services required</strong>
+          <span>Clinical services can be configured from the provider profile after creation.</span>
+        </div>
+      }
+    }
+    @if (createProviderStep() === 3) {
+      <section class="create-provider-review">
+        <div>
+          <span>Account</span>
+          <strong>{{ createModel().name }}</strong>
+          <small>{{ createModel().email }} · {{ createModel().mobile }}</small>
+        </div>
+        <div>
+          <span>Role</span>
+          <strong>{{ specialtyLabel(createModel().doctorType) }}</strong>
+          <small>{{ createModel().specialty }} · {{ createModel().designation }}</small>
+        </div>
+        @if (isPsychologistType(createModel().doctorType)) {
+          <div>
+            <span>Services</span>
+            <strong>{{ createCareServices().length }} configured</strong>
+            <small>{{
+              createModel().acceptingNewUsers ? 'Accepting bookings' : 'Bookings paused'
+            }}</small>
+          </div>
+        }
+      </section>
+    }
+  </fieldset>
+</app-admin-form-drawer>
 
 <section class="panel">
   <div class="panel-header">
