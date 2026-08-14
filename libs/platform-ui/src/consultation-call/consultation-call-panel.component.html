@@ -34,8 +34,23 @@
       </div>
       @if (call.error()) {
         <span class="call-error">{{ call.error() }}</span>
+        @if (call.state() === 'error') {
+          <button type="button" class="btn-retry" (click)="retryCall()" [disabled]="busy()">
+            {{ busy() ? 'Checking…' : isMediaPermissionError() ? 'Allow mic & retry' : 'Retry call' }}
+          </button>
+        }
         @if (showVoiceFallback()) {
           <button type="button" class="btn-voice" (click)="tryVoiceFallback()" [disabled]="busy()">Try voice instead</button>
+        }
+        @if (isMediaPermissionError()) {
+          <details class="call-permission-help">
+            <summary>How to allow access</summary>
+            <ol>
+              <li>Click the lock or site-controls icon beside the browser address.</li>
+              <li>Set Microphone to Allow. For video, also set Camera to Allow.</li>
+              <li>Reload this page, then select Retry call.</li>
+            </ol>
+          </details>
         }
       }
       @if (mediaCheckMessage()) {

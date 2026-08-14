@@ -119,6 +119,10 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
     return this.allowAudio && this.call.callMode() === 'video' && Boolean(this.call.error());
   }
 
+  isMediaPermissionError() {
+    return /microphone|camera|browser permission|secure https|another app/i.test(this.call.error());
+  }
+
   async start(mode: CallMode) {
     if ((mode === 'audio' && !this.allowAudio) || (mode === 'video' && !this.allowVideo)) return;
     if (!this.socket || !this.consultationId || !this.targetUserId) return;
@@ -141,6 +145,32 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
   async tryVoiceFallback() {
     this.call.cleanup('ended');
     await this.start('audio');
+  }
+
+  async retryCall() {
+    if (this.busy()) return;
+    this.busy.set(true);
+    try {
+      if (this.call.pendingOffer()) {
+        await this.call.acceptIncoming(this.iceServers);
+        return;
+      }
+
+      const mode = this.call.callMode();
+      this.call.cleanup('ended');
+      if (!this.socket || !this.consultationId || !this.targetUserId) return;
+      await this.call.startCall({
+        socket: this.socket,
+        consultationId: this.consultationId,
+        targetUserId: this.targetUserId,
+        mode,
+        iceServers: this.iceServers
+      });
+    } catch {
+      // The call service exposes the actionable error message.
+    } finally {
+      this.busy.set(false);
+    }
   }
 
   async switchMode(mode: CallMode) {

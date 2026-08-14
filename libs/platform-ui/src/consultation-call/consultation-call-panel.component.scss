@@ -51,10 +51,19 @@
 .btn-mic,
 .btn-cam,
 .btn-switch,
-.btn-test {
+.btn-test,
+.btn-retry {
   background: #fff;
   color: #1e3a8a;
   border: 1px solid #bfdbfe !important;
+}
+
+.btn-retry {
+  border-radius: 0.35rem;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
 }
 
 .btn-switch {
@@ -72,6 +81,25 @@
   color: #1e40af;
   font-size: 0.8rem;
   font-weight: 600;
+}
+
+.call-permission-help {
+  flex-basis: 100%;
+  color: #334155;
+  font-size: 0.8rem;
+}
+
+.call-permission-help summary {
+  width: fit-content;
+  color: #1d4ed8;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.call-permission-help ol {
+  margin: 0.45rem 0 0;
+  padding-left: 1.15rem;
+  line-height: 1.5;
 }
 
 .video-stage {

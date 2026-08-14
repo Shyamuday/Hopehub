@@ -54,6 +54,38 @@ function callReasonMessage(reason: unknown): string {
   return messages[normalized] || normalized.replace(/_/g, ' ');
 }
 
+function mediaAccessErrorMessage(error: unknown, mode: CallMode): string {
+  const needsCamera = mode === 'video';
+  const deviceLabel = needsCamera ? 'camera and microphone' : 'microphone';
+  const errorName = error && typeof error === 'object' && 'name' in error ? String(error.name) : '';
+  const errorMessage = error instanceof Error ? error.message : '';
+
+  if (errorMessage === 'MEDIA_NOT_SUPPORTED') {
+    return `This browser cannot access the ${deviceLabel}. Open Hope Hub in a current Chrome, Edge, Firefox, or Safari browser.`;
+  }
+
+  if (typeof window !== 'undefined' && !window.isSecureContext) {
+    return `The ${deviceLabel} can only be used on a secure HTTPS page.`;
+  }
+
+  if (errorName === 'NotAllowedError' || errorName === 'SecurityError') {
+    return `${needsCamera ? 'Camera or microphone' : 'Microphone'} is blocked. Allow access from the browser address-bar lock icon, then retry.`;
+  }
+  if (errorName === 'NotFoundError' || errorName === 'DevicesNotFoundError') {
+    return `No ${deviceLabel} was found. Connect a device and retry.`;
+  }
+  if (errorName === 'NotReadableError' || errorName === 'TrackStartError') {
+    return `The ${deviceLabel} is busy in another app. Close the other call or recording app, then retry.`;
+  }
+  if (errorName === 'OverconstrainedError' || errorName === 'ConstraintNotSatisfiedError') {
+    return `The selected ${deviceLabel} is unavailable. Choose another device in browser settings and retry.`;
+  }
+
+  return needsCamera
+    ? 'Could not start the camera or microphone. Check browser permission and retry.'
+    : 'Could not start the microphone. Check browser permission and retry.';
+}
+
 @Injectable({ providedIn: 'root' })
 export class ConsultationWebrtcCallService {
   readonly state = signal<CallState>('idle');
@@ -322,34 +354,35 @@ export class ConsultationWebrtcCallService {
   private async ensurePeer(mode: CallMode, iceServers: IceServerConfig[] = DEFAULT_STUN) {
     if (this.pc) return;
 
-    const access = this.ensureMediaAccess
-      ? await this.ensureMediaAccess(mode)
-      : await this.defaultMediaAccess(mode);
-    if (!access.granted) {
-      this.error.set(access.message ?? 'Camera or microphone permission required.');
+    if (this.ensureMediaAccess) {
+      const access = await this.ensureMediaAccess(mode);
+      if (!access.granted) {
+        this.error.set(access.message ?? 'Camera or microphone permission required.');
+        this.state.set('error');
+        throw new Error(access.message ?? 'Media permission denied');
+      }
+    }
+
+    let stream: MediaStream;
+    try {
+      if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+        throw new Error('MEDIA_NOT_SUPPORTED');
+      }
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: mode === 'video'
+      });
+    } catch (error) {
+      const message = mediaAccessErrorMessage(error, mode);
+      this.error.set(message);
       this.state.set('error');
-      throw new Error(access.message ?? 'Media permission denied');
+      throw new Error(message);
     }
 
     this.pc = new RTCPeerConnection({
       iceServers: normalizeIceServers(iceServers),
       iceTransportPolicy: 'all'
     });
-    let stream: MediaStream;
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: mode === 'video'
-      });
-    } catch {
-      const message =
-        mode === 'video'
-          ? 'Camera and microphone access are required for video calls.'
-          : 'Microphone access is required for voice calls.';
-      this.error.set(message);
-      this.state.set('error');
-      throw new Error(message);
-    }
     this.localStream.set(stream);
 
     for (const track of stream.getTracks()) {
@@ -547,28 +580,6 @@ export class ConsultationWebrtcCallService {
       };
     } catch {
       return {};
-    }
-  }
-
-  private async defaultMediaAccess(mode: CallMode): Promise<MediaAccessResult> {
-    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
-      return { granted: false, message: 'Calls are not supported on this device.' };
-    }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: mode === 'video'
-      });
-      stream.getTracks().forEach((track) => track.stop());
-      return { granted: true };
-    } catch {
-      return {
-        granted: false,
-        message:
-          mode === 'video'
-            ? 'Camera and microphone access are required for video calls.'
-            : 'Microphone access is required for voice calls.'
-      };
     }
   }
 
