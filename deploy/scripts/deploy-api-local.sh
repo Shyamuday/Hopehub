@@ -112,6 +112,20 @@ chmod 600 .env
 npm install --no-audit --no-fund
 npm run prisma:generate
 npm run prisma:deploy
+# Explicitly pass server-resolved production credentials to PM2. GitHub Actions
+# may expose older repository secrets in the runner environment, and PM2 keeps
+# inherited values ahead of dotenv unless they are replaced during restart.
+RAZORPAY_KEY_ID="$RAZORPAY_KEY_ID_VALUE" \
+RAZORPAY_KEY_SECRET="$RAZORPAY_KEY_SECRET_VALUE" \
+RAZORPAY_WEBHOOK_SECRET="$RAZORPAY_WEBHOOK_SECRET_VALUE" \
+GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" \
+AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID_VALUE" \
+AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY_VALUE" \
+TELEGRAM_USER_BOT_TOKEN="$TELEGRAM_USER_BOT_TOKEN_VALUE" \
+TELEGRAM_DOCTOR_BOT_TOKEN="$TELEGRAM_DOCTOR_BOT_TOKEN_VALUE" \
+TELEGRAM_ADMIN_BOT_TOKEN="$TELEGRAM_ADMIN_BOT_TOKEN_VALUE" \
+TELEGRAM_WEBHOOK_SECRET="$TELEGRAM_WEBHOOK_SECRET_VALUE" \
+TELEGRAM_SETUP_SECRET="$TELEGRAM_SETUP_SECRET_VALUE" \
 pm2 restart hopehub-api --update-env
 pm2 save
 

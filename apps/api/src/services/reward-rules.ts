@@ -36,9 +36,9 @@ export const DEFAULT_REWARD_RULES = [
     maxUsesPerPatient: null
   },
   {
-    code: 'FIRSTTALK1_LISTENER_TEST',
-    name: 'First Talk ₹1 listener test',
-    description: 'Test coupon that lets patients book listener support for ₹1 any number of times.',
+    code: 'FIRSTTALK1_LISTENER_OFFER',
+    name: 'First Talk ₹1 listener offer',
+    description: 'Promotional coupon for eligible listener support sessions at ₹1.',
     kind: RewardProgramKind.PROMO,
     trigger: RewardTrigger.CONSULTATION_PAID,
     beneficiary: RewardBeneficiary.PAYING_PATIENT,
