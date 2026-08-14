@@ -1,10 +1,11 @@
 <section
   class="coupon-box"
   [class.coupon-box--applied]="applied"
+  [class.coupon-box--compact]="compact"
   aria-label="Coupon code"
   (keydown.enter)="applyFromKeyboard($event)"
 >
-  @if (suggestedCode) {
+  @if (suggestedCode && !compact) {
     <button
       type="button"
       class="coupon-box__offer"
@@ -23,23 +24,25 @@
     </button>
   }
 
-  <div class="coupon-box__head">
-    <div>
-      <span>{{ title }}</span>
-      <strong>{{ subtitle }}</strong>
+  @if (!compact) {
+    <div class="coupon-box__head">
+      <div>
+        <span>{{ title }}</span>
+        <strong>{{ subtitle }}</strong>
+      </div>
+      @if (showClear && normalizedValue()) {
+        <app-button
+          type="button"
+          variant="link"
+          size="xs"
+          [disabled]="loading"
+          (click)="clear.emit()"
+        >
+          Clear
+        </app-button>
+      }
     </div>
-    @if (showClear && normalizedValue()) {
-      <app-button
-        type="button"
-        variant="link"
-        size="xs"
-        [disabled]="loading"
-        (click)="clear.emit()"
-      >
-        Clear
-      </app-button>
-    }
-  </div>
+  }
 
   <div class="coupon-box__control">
     <app-form-field

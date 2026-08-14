@@ -23,6 +23,27 @@ export const DEFAULT_REWARD_RULES = [
     maxUsesPerPatient: 1
   },
   {
+    code: 'FIRSTCHAT_LISTENER_FREE',
+    name: 'First Chat free listener session',
+    description: 'Reusable test coupon for a fully free listener support session.',
+    kind: RewardProgramKind.PROMO,
+    trigger: RewardTrigger.CONSULTATION_PAID,
+    beneficiary: RewardBeneficiary.PAYING_PATIENT,
+    valueType: RewardValueType.CHECKOUT_DISCOUNT_PERCENT,
+    valueAmount: 10_000,
+    appliesTo: RewardAppliesTo.CONSULTATION,
+    promoCode: 'FIRSTCHAT',
+    priority: 110,
+    maxUsesPerPatient: null,
+    minPayableInPaise: 0,
+    conditions: {
+      targetPayableInPaise: 0,
+      providerCareTeamTypes: ['PEER_SUPPORT_VOLUNTEER', 'PSYCHOLOGY_STUDENT_VOLUNTEER'],
+      showToConsumers: false,
+      featured: false
+    }
+  },
+  {
     code: 'FIRSTTALK1_LISTENER_OFFER',
     name: 'First Talk ₹1 listener offer',
     description: 'Promotional coupon for eligible listener support sessions at ₹1.',

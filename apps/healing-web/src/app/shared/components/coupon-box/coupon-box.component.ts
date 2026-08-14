@@ -26,6 +26,7 @@ export class CouponBoxComponent {
   @Input() suggestedCode = '';
   @Input() suggestedLabel = '';
   @Input() suggestedDescription = '';
+  @Input() compact = false;
 
   @Output() valueChange = new EventEmitter<string>();
   @Output() apply = new EventEmitter<void>();

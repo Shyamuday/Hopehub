@@ -36,6 +36,9 @@ type PaymentLifecycle = {
   onOrderCreated?: () => void;
   onCheckoutOpened?: () => void;
   onVerifying?: () => void;
+  prefillName?: string | null;
+  prefillEmail?: string | null;
+  prefillPhone?: string | null;
 };
 
 declare global {
@@ -105,9 +108,9 @@ export class PaymentService {
     lifecycle?.onCheckoutOpened?.();
     const payment = await this.openCheckout(order, {
       amount: Math.round(order.amountInPaise / 100),
-      donorName: consultation.patient?.name || '',
-      donorEmail: consultation.patient?.email || '',
-      donorPhone: consultation.patient?.mobile || '',
+      donorName: lifecycle?.prefillName || consultation.patient?.name || '',
+      donorEmail: lifecycle?.prefillEmail || consultation.patient?.email || '',
+      donorPhone: lifecycle?.prefillPhone || consultation.patient?.mobile || '',
       description: this.checkoutDescription(consultation),
     });
 
@@ -233,6 +236,15 @@ export class PaymentService {
           name: donor.donorName || '',
           email: donor.donorEmail || '',
           contact: donor.donorPhone || '',
+        },
+        readonly: {
+          name: false,
+          email: false,
+          contact: false,
+        },
+        hidden: {
+          contact: false,
+          email: false,
         },
         theme: { color: '#4a6fa5' },
         handler: (response: RazorpayCheckoutResponse) => {

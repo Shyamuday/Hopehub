@@ -50,7 +50,7 @@ import {
   AppButtonComponent,
   StatusChipComponent,
   PageHeaderComponent,
-  ConnectComfortDialogComponent,
+  CouponBoxComponent,
   AppModalComponent,
 } from '../../../../shared/components';
 
@@ -67,7 +67,7 @@ type LiveConnectRoleGroup = '' | ConsumerSupportPath;
     EmptyStateComponent,
     StatusChipComponent,
     PageHeaderComponent,
-    ConnectComfortDialogComponent,
+    CouponBoxComponent,
     AppModalComponent,
   ],
   templateUrl: './live-connect.component.html',
@@ -104,6 +104,8 @@ export class LiveConnectComponent implements OnInit {
   readonly couponLoading = signal(false);
   readonly couponError = signal('');
   readonly couponSuccess = signal('');
+  readonly checkoutPhone = signal('');
+  readonly phoneError = signal('');
   readonly featuredCoupon = signal<HopeHubPublicCoupon | null>(null);
   readonly view = signal<'providers' | 'groups'>('providers');
   readonly mode = signal<LiveConnectMode>('chat');
@@ -335,6 +337,9 @@ export class LiveConnectComponent implements OnInit {
   requestStart(provider: HopeHubProvider): void {
     if (this.startingProviderId()) return;
     this.clearLiveCoupon();
+    this.checkoutPhone.set(this.currentUser()?.mobile || '');
+    this.phoneError.set('');
+    if (this.featuredCoupon()?.code) this.updateLiveCoupon(this.featuredCoupon()!.code);
     this.pendingProvider.set(provider);
     this.pendingMode.set(null);
   }
@@ -343,6 +348,8 @@ export class LiveConnectComponent implements OnInit {
     this.pendingProvider.set(null);
     this.pendingMode.set(null);
     this.clearLiveCoupon();
+    this.checkoutPhone.set('');
+    this.phoneError.set('');
   }
 
   chooseConnectionMode(mode: LiveConnectMode): void {
@@ -353,6 +360,7 @@ export class LiveConnectComponent implements OnInit {
     ) {
       return;
     }
+    if (this.pendingMode() && this.pendingMode() !== mode) this.clearLiveCoupon();
     this.pendingMode.set(mode);
   }
 
@@ -365,6 +373,15 @@ export class LiveConnectComponent implements OnInit {
     const provider = this.pendingProvider();
     const selectedMode = this.pendingMode();
     if (!provider || !selectedMode) return;
+    const service = providerServiceForLiveConnectMode(provider, selectedMode);
+    const grossInPaise = Number(
+      service?.effectivePriceInPaise ?? service?.priceInPaise ?? provider.sessionFeeInPaise ?? 0,
+    );
+    const payableInPaise = this.couponQuote()?.payableInPaise ?? grossInPaise;
+    if (payableInPaise > 0 && this.checkoutPhone().replace(/\D/g, '').length < 8) {
+      this.phoneError.set('Enter a valid phone number for secure payment.');
+      return;
+    }
     this.mode.set(selectedMode);
     this.pendingMode.set(null);
     this.pendingProvider.set(null);
@@ -373,6 +390,7 @@ export class LiveConnectComponent implements OnInit {
       await this.liveConnectAction.connect(provider, selectedMode, {
         careTeamServiceId: this.providerServiceForMode(provider)?.id || '',
         promoCode: this.appliedCouponCode(),
+        checkoutPhone: this.checkoutPhone(),
         fallbackQueryParams: {
           source: 'live-connect',
           supportPath: this.roleGroup() || undefined,
@@ -413,6 +431,9 @@ export class LiveConnectComponent implements OnInit {
           onOrderCreated: () => this.paymentFlowState.set('OPENING_CHECKOUT'),
           onCheckoutOpened: () => this.paymentFlowState.set('OPENING_CHECKOUT'),
           onVerifying: () => this.paymentFlowState.set('VERIFYING'),
+          prefillName: this.currentUser()?.name || '',
+          prefillEmail: this.currentUser()?.email || '',
+          prefillPhone: this.checkoutPhone(),
         });
       }
 
@@ -446,6 +467,14 @@ export class LiveConnectComponent implements OnInit {
       this.couponSuccess.set('');
     }
     this.couponError.set('');
+  }
+
+  updateCheckoutPhone(value: string): void {
+    const normalized = String(value || '')
+      .replace(/[^\d+\s()-]/g, '')
+      .slice(0, 20);
+    this.checkoutPhone.set(normalized);
+    this.phoneError.set('');
   }
 
   async applyLiveCoupon(): Promise<void> {
@@ -552,6 +581,9 @@ export class LiveConnectComponent implements OnInit {
         onOrderCreated: () => this.paymentFlowState.set('OPENING_CHECKOUT'),
         onCheckoutOpened: () => this.paymentFlowState.set('OPENING_CHECKOUT'),
         onVerifying: () => this.paymentFlowState.set('VERIFYING'),
+        prefillName: this.currentUser()?.name || '',
+        prefillEmail: this.currentUser()?.email || '',
+        prefillPhone: this.checkoutPhone(),
       })
       .then(() => {
         this.paymentFlowState.set('SUCCESS');

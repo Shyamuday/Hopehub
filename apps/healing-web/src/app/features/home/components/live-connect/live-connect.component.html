@@ -175,7 +175,7 @@
             icon="💬"
             title="No live support chats are open right now"
             message="You can still explore community support options."
-            compact
+            [compact]="true"
           >
             <app-button [routerLink]="ROUTES.links.community" variant="secondary"
               >See community options</app-button
@@ -196,30 +196,11 @@
   (close)="closePaymentOverlay()"
 ></app-payment-status-overlay>
 
-<app-connect-comfort-dialog
-  [open]="pendingMode() !== null"
-  [mode]="pendingMode() || 'chat'"
-  [couponCode]="couponCode()"
-  [couponLoading]="couponLoading()"
-  [couponApplied]="!!appliedCouponCode()"
-  [couponError]="couponError()"
-  [couponSuccess]="couponSuccess()"
-  [suggestedCouponCode]="featuredCoupon()?.code || ''"
-  [suggestedCouponLabel]="featuredCoupon()?.label || ''"
-  [suggestedCouponDescription]="featuredCoupon()?.description || ''"
-  (couponCodeChange)="updateLiveCoupon($event)"
-  (couponApply)="applyLiveCoupon()"
-  (couponClear)="clearLiveCoupon()"
-  (suggestedCouponApply)="applySuggestedCoupon($event)"
-  (confirmed)="confirmStart()"
-  (cancelled)="changeConnectionMode()"
-/>
-
 <app-modal
-  [open]="pendingProvider() !== null && pendingMode() === null"
+  [open]="pendingProvider() !== null"
   [showClose]="true"
-  title="How would you feel comfortable connecting?"
-  description="Choose what feels easiest today. You can switch at any time to another option this listener supports."
+  title="Connect now"
+  description="Choose a mode, apply a coupon if you have one, and continue."
   (closed)="cancelStart()"
 >
   @if (pendingProvider(); as provider) {
@@ -229,6 +210,7 @@
           type="button"
           class="connect-mode-picker__option"
           [disabled]="!option.enabled"
+          [class.connect-mode-picker__option--selected]="pendingMode() === option.mode"
           (click)="chooseConnectionMode(option.mode)"
         >
           <span>{{ option.icon }}</span>
@@ -244,9 +226,60 @@
               }}
             </small>
           </span>
-          <b>{{ option.enabled ? 'Choose' : 'Unavailable' }}</b>
+          <b>{{
+            pendingMode() === option.mode ? 'Selected' : option.enabled ? 'Choose' : 'Unavailable'
+          }}</b>
         </button>
       }
     </div>
+
+    @if (pendingMode()) {
+      <div class="connect-checkout-fields">
+        <label>
+          <span>Coupon code</span>
+          <app-coupon-box
+            [compact]="true"
+            placeholder="Enter coupon code"
+            applyLabel="Apply"
+            checkingLabel="Applying…"
+            [value]="couponCode()"
+            [loading]="couponLoading()"
+            [applied]="!!appliedCouponCode()"
+            [error]="couponError()"
+            [success]="couponSuccess()"
+            (valueChange)="updateLiveCoupon($event)"
+            (apply)="applyLiveCoupon()"
+          />
+        </label>
+        <label>
+          <span>Phone number for payment</span>
+          <input
+            type="tel"
+            inputmode="tel"
+            autocomplete="tel"
+            [value]="checkoutPhone()"
+            (input)="updateCheckoutPhone($any($event.target).value)"
+            placeholder="+91 98765 43210"
+          />
+          @if (phoneError()) {
+            <small class="connect-checkout-fields__error">{{ phoneError() }}</small>
+          }
+        </label>
+      </div>
+    }
   }
+
+  <footer modalFooter class="connect-checkout-actions">
+    <button type="button" class="connect-checkout-actions__cancel" (click)="cancelStart()">
+      Cancel
+    </button>
+    <button
+      type="button"
+      class="connect-checkout-actions__continue"
+      [disabled]="!pendingMode() || couponLoading() || !!startingProviderId()"
+      (click)="confirmStart()"
+    >
+      {{ startingProviderId() ? 'Connecting…' : 'Continue' }}
+    </button>
+  </footer>
 </app-modal>

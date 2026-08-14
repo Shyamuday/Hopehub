@@ -14,6 +14,7 @@ describe('LiveConnectActionService', () => {
   const authService = {
     user$: user$.asObservable(),
     getToken: vi.fn<() => string | null>(),
+    getCurrentUser: vi.fn(() => null),
   };
   const authModalService = { openRegister: vi.fn() };
   const bookingService = {
@@ -66,7 +67,7 @@ describe('LiveConnectActionService', () => {
     authService.getToken.mockReturnValue(null);
     const service = TestBed.inject(LiveConnectActionService);
 
-    await service.connect(provider(), 'chat');
+    await service.connect(provider(), 'chat', { checkoutPhone: '+91 98765 43210' });
 
     expect(authModalService.openRegister).toHaveBeenCalledOnce();
     expect(bookingService.createQuickTalk).not.toHaveBeenCalled();
@@ -141,7 +142,12 @@ describe('LiveConnectActionService', () => {
     paymentService.payConsultation.mockRejectedValue(new Error('Payment was closed.'));
     const service = TestBed.inject(LiveConnectActionService);
 
-    await service.connect(provider(), 'chat');
+    await service.connect(provider(), 'chat', { checkoutPhone: '+91 98765 43210' });
+
+    expect(paymentService.payConsultation).toHaveBeenCalledWith(
+      consultation,
+      expect.objectContaining({ prefillPhone: '+91 98765 43210' }),
+    );
 
     expect(router.navigate).toHaveBeenCalledTimes(1);
     expect(router.navigate).toHaveBeenCalledWith(['/dashboard'], {

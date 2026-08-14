@@ -337,7 +337,10 @@
   border-radius: 1.25rem;
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.07);
   padding: 1.15rem;
-  transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease,
+    border-color 0.2s ease;
 
   &:hover {
     border-color: rgba(16, 185, 129, 0.34);
@@ -548,7 +551,10 @@
   grid-template-columns: 2rem minmax(0, 1fr) auto;
   padding: 0.8rem;
   text-align: left;
-  transition: border-color 0.18s ease, background-color 0.18s ease, transform 0.18s ease;
+  transition:
+    border-color 0.18s ease,
+    background-color 0.18s ease,
+    transform 0.18s ease;
 
   > span:first-child {
     font-size: 1.35rem;
@@ -584,6 +590,77 @@
   &:disabled {
     cursor: not-allowed;
     opacity: 0.45;
+  }
+}
+
+.connect-mode-picker__option--selected {
+  border-color: #10b981;
+  background: #ecfdf5;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.12);
+}
+
+.connect-checkout-fields {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid #e2e8f0;
+
+  > label {
+    display: grid;
+    gap: 0.38rem;
+  }
+
+  > label > span {
+    color: #334155;
+    font-size: 0.78rem;
+    font-weight: 750;
+  }
+
+  input {
+    width: 100%;
+    min-height: 2.75rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.75rem;
+    padding: 0.65rem 0.75rem;
+    color: #0f172a;
+  }
+}
+
+.connect-checkout-fields__error {
+  color: #b91c1c;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.connect-checkout-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  padding: 0 1.5rem 1.5rem;
+
+  button {
+    min-height: 2.65rem;
+    border-radius: 0.75rem;
+    padding: 0.6rem 0.9rem;
+    font-weight: 800;
+  }
+}
+
+.connect-checkout-actions__cancel {
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #475569;
+}
+
+.connect-checkout-actions__continue {
+  border: 1px solid #059669;
+  background: #059669;
+  color: #fff;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
   }
 }
 
@@ -624,4 +701,11 @@
     grid-template-columns: 1fr;
   }
 
+  .connect-checkout-actions {
+    flex-direction: column-reverse;
+  }
+
+  .connect-checkout-actions button {
+    width: 100%;
+  }
 }

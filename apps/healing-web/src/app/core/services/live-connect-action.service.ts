@@ -31,6 +31,7 @@ type PendingLiveConnectAction = {
   mode: LiveConnectActionMode;
   careTeamServiceId?: string;
   promoCode?: string;
+  checkoutPhone?: string;
   fallbackQueryParams?: Record<string, unknown>;
 };
 
@@ -65,6 +66,7 @@ export class LiveConnectActionService {
     options: {
       careTeamServiceId?: string;
       promoCode?: string;
+      checkoutPhone?: string;
       fallbackQueryParams?: Record<string, unknown>;
     } = {},
   ): Promise<void> {
@@ -92,6 +94,7 @@ export class LiveConnectActionService {
         mode,
         careTeamServiceId: options.careTeamServiceId,
         promoCode: options.promoCode,
+        checkoutPhone: options.checkoutPhone,
         fallbackQueryParams: options.fallbackQueryParams,
       });
       this.notificationService.info(CONSUMER_UX_COPY.messages.authRequiredLive);
@@ -139,7 +142,9 @@ export class LiveConnectActionService {
     const payableInPaise = Number(consultation?.payment?.amountInPaise ?? 0);
     if (payableInPaise > 0) {
       try {
-        await this.paymentService.payConsultation(consultation);
+        await this.paymentService.payConsultation(consultation, {
+          prefillPhone: options.checkoutPhone || this.authService.getCurrentUser()?.mobile || '',
+        });
       } catch (error) {
         this.notificationService.error(this.readErrorMessage(error));
         this.notificationService.info(
@@ -194,6 +199,7 @@ export class LiveConnectActionService {
       await this.connect(provider, pending.mode, {
         careTeamServiceId: pending.careTeamServiceId,
         promoCode: pending.promoCode,
+        checkoutPhone: pending.checkoutPhone,
         fallbackQueryParams: pending.fallbackQueryParams,
       });
     } catch {
@@ -229,6 +235,7 @@ export class LiveConnectActionService {
             ? value.fallbackQueryParams
             : undefined,
         promoCode: typeof value.promoCode === 'string' ? value.promoCode : undefined,
+        checkoutPhone: typeof value.checkoutPhone === 'string' ? value.checkoutPhone : undefined,
       };
     } catch {
       return null;

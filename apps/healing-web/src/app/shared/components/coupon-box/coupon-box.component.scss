@@ -11,6 +11,18 @@
   box-shadow: var(--hope-selected-shadow-soft, 0 18px 45px rgba(34, 197, 94, 0.14));
 }
 
+.coupon-box--compact {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+}
+
+.coupon-box--compact .coupon-box__control {
+  margin-top: 0;
+}
+
 .coupon-box__offer {
   width: 100%;
   display: flex;
