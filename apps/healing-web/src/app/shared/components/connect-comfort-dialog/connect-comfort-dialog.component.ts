@@ -1,22 +1,31 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CONSUMER_CONNECT_MODE_META } from '../../../core/constants/consumer-form-options.constants';
 import { AppModalComponent } from '../app-modal/app-modal.component';
+import { CouponBoxComponent } from '../coupon-box/coupon-box.component';
 
 export type ComfortConnectMode = 'chat' | 'voice' | 'video';
 
 @Component({
   selector: 'app-connect-comfort-dialog',
   standalone: true,
-  imports: [AppModalComponent],
+  imports: [AppModalComponent, CouponBoxComponent],
   templateUrl: './connect-comfort-dialog.component.html',
   styleUrl: './connect-comfort-dialog.component.scss',
 })
 export class ConnectComfortDialogComponent {
   @Input() open = false;
   @Input() mode: ComfortConnectMode = 'chat';
+  @Input() couponCode = '';
+  @Input() couponLoading = false;
+  @Input() couponApplied = false;
+  @Input() couponError = '';
+  @Input() couponSuccess = '';
 
   @Output() confirmed = new EventEmitter<ComfortConnectMode>();
   @Output() cancelled = new EventEmitter<void>();
+  @Output() couponCodeChange = new EventEmitter<string>();
+  @Output() couponApply = new EventEmitter<void>();
+  @Output() couponClear = new EventEmitter<void>();
 
   label(): string {
     return CONSUMER_CONNECT_MODE_META[this.mode].label;
@@ -37,6 +46,7 @@ export class ConnectComfortDialogComponent {
   }
 
   confirm(): void {
+    if (this.couponLoading) return;
     this.confirmed.emit(this.mode);
   }
 }

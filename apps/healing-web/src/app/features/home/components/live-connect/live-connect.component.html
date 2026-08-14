@@ -10,7 +10,11 @@
           description="Choose the kind of support you need. Pick chat, voice, or video only after you select a person."
         />
         <figure class="live-connect-intro__visual">
-          <img [src]="liveConnectImage" alt="Private live support session on a phone" loading="lazy" />
+          <img
+            [src]="liveConnectImage"
+            alt="Private live support session on a phone"
+            loading="lazy"
+          />
         </figure>
       </div>
 
@@ -18,7 +22,9 @@
         @if (loading()) {
           <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             @for (item of [1, 2, 3, 4]; track item) {
-              <div class="h-56 animate-pulse rounded-3xl border border-emerald-100 bg-white/80"></div>
+              <div
+                class="h-56 animate-pulse rounded-3xl border border-emerald-100 bg-white/80"
+              ></div>
             }
           </div>
         } @else if (providers().length) {
@@ -57,17 +63,15 @@
                   [disabled]="startingProviderId() === provider.id"
                   (click)="requestStart(provider)"
                 >
-                  {{
-                    startingProviderId() === provider.id
-                      ? 'Starting...'
-                      : buttonLabel(provider)
-                  }}
+                  {{ startingProviderId() === provider.id ? 'Starting...' : buttonLabel(provider) }}
                 </app-button>
               </article>
             }
           </div>
           <div class="live-connect__directory-link">
-            <a [routerLink]="ROUTES.links.careTeam">View all support team <span aria-hidden="true">→</span></a>
+            <a [routerLink]="ROUTES.links.careTeam"
+              >View all support team <span aria-hidden="true">→</span></a
+            >
           </div>
         } @else {
           <app-empty-state
@@ -96,7 +100,10 @@
             <div>
               <app-status-chip label="Provider/admin tool" tone="warning" />
               <h3>Open a moderated support chat</h3>
-              <p>Start a simple chat room for live emotional support. Voice/video can be added later with SFU media.</p>
+              <p>
+                Start a simple chat room for live emotional support. Voice/video can be added later
+                with SFU media.
+              </p>
             </div>
             <div class="live-group-create__fields">
               <input
@@ -134,7 +141,9 @@
         @if (groupsLoading()) {
           <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             @for (item of [1, 2, 3]; track item) {
-              <div class="h-48 animate-pulse rounded-3xl border border-emerald-100 bg-white/80"></div>
+              <div
+                class="h-48 animate-pulse rounded-3xl border border-emerald-100 bg-white/80"
+              ></div>
             }
           </div>
         } @else if (groups().length) {
@@ -168,7 +177,9 @@
             message="You can still explore community support options."
             compact
           >
-            <app-button [routerLink]="ROUTES.links.community" variant="secondary">See community options</app-button>
+            <app-button [routerLink]="ROUTES.links.community" variant="secondary"
+              >See community options</app-button
+            >
           </app-empty-state>
         }
       }
@@ -188,8 +199,16 @@
 <app-connect-comfort-dialog
   [open]="pendingMode() !== null"
   [mode]="pendingMode() || 'chat'"
+  [couponCode]="couponCode()"
+  [couponLoading]="couponLoading()"
+  [couponApplied]="!!appliedCouponCode()"
+  [couponError]="couponError()"
+  [couponSuccess]="couponSuccess()"
+  (couponCodeChange)="updateLiveCoupon($event)"
+  (couponApply)="applyLiveCoupon()"
+  (couponClear)="clearLiveCoupon()"
   (confirmed)="confirmStart()"
-  (cancelled)="pendingMode.set(null)"
+  (cancelled)="changeConnectionMode()"
 />
 
 <app-modal

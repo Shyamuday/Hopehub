@@ -35,4 +35,13 @@ export class CouponBoxComponent {
   canApply(): boolean {
     return !this.loading && !this.disabled && Boolean(this.normalizedValue());
   }
+
+  applyFromKeyboard(event: Event): void {
+    // A coupon box can live inside a larger checkout form. Without this guard,
+    // Enter submits that parent form and may open the payment gateway before
+    // the coupon has been validated.
+    event.preventDefault();
+    event.stopPropagation();
+    if (this.canApply()) this.apply.emit();
+  }
 }

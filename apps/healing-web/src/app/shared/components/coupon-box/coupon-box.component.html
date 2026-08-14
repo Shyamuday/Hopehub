@@ -1,11 +1,22 @@
-<section class="coupon-box" [class.coupon-box--applied]="applied" aria-label="Coupon code">
+<section
+  class="coupon-box"
+  [class.coupon-box--applied]="applied"
+  aria-label="Coupon code"
+  (keydown.enter)="applyFromKeyboard($event)"
+>
   <div class="coupon-box__head">
     <div>
       <span>{{ title }}</span>
       <strong>{{ subtitle }}</strong>
     </div>
     @if (showClear && normalizedValue()) {
-      <app-button type="button" variant="link" size="xs" [disabled]="loading" (click)="clear.emit()">
+      <app-button
+        type="button"
+        variant="link"
+        size="xs"
+        [disabled]="loading"
+        (click)="clear.emit()"
+      >
         Clear
       </app-button>
     }
@@ -20,7 +31,13 @@
       customClass="coupon-box__input"
       (valueChange)="valueChange.emit($event)"
     />
-    <app-button type="button" variant="secondary" [disabled]="!canApply()" [loading]="loading" (click)="apply.emit()">
+    <app-button
+      type="button"
+      variant="secondary"
+      [disabled]="!canApply()"
+      [loading]="loading"
+      (click)="apply.emit()"
+    >
       {{ loading ? checkingLabel : applyLabel }}
     </app-button>
   </div>

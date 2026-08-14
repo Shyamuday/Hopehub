@@ -30,7 +30,11 @@ import {
   supportPathMeta,
 } from '../../../../core/constants/support-paths.constants';
 import { User } from '../../../../core/models/auth.model';
-import { HopeHubLiveGroup, HopeHubProvider } from '../../../../core/services/booking.service';
+import {
+  HopeHubCheckoutQuote,
+  HopeHubLiveGroup,
+  HopeHubProvider,
+} from '../../../../core/services/booking.service';
 import {
   LISTENER_SUPPORT_CONSENT_MESSAGE,
   providerAcceptsLiveConnectMode,
@@ -92,6 +96,12 @@ export class LiveConnectComponent implements OnInit {
   readonly startingProviderId = signal('');
   readonly pendingProvider = signal<HopeHubProvider | null>(null);
   readonly pendingMode = signal<LiveConnectMode | null>(null);
+  readonly couponCode = signal('');
+  readonly appliedCouponCode = signal('');
+  readonly couponQuote = signal<HopeHubCheckoutQuote | null>(null);
+  readonly couponLoading = signal(false);
+  readonly couponError = signal('');
+  readonly couponSuccess = signal('');
   readonly view = signal<'providers' | 'groups'>('providers');
   readonly mode = signal<LiveConnectMode>('chat');
   readonly roleGroup = signal<LiveConnectRoleGroup>('EMOTIONAL_LISTENER');
@@ -320,6 +330,7 @@ export class LiveConnectComponent implements OnInit {
 
   requestStart(provider: HopeHubProvider): void {
     if (this.startingProviderId()) return;
+    this.clearLiveCoupon();
     this.pendingProvider.set(provider);
     this.pendingMode.set(null);
   }
@@ -327,6 +338,7 @@ export class LiveConnectComponent implements OnInit {
   cancelStart(): void {
     this.pendingProvider.set(null);
     this.pendingMode.set(null);
+    this.clearLiveCoupon();
   }
 
   chooseConnectionMode(mode: LiveConnectMode): void {
@@ -340,6 +352,11 @@ export class LiveConnectComponent implements OnInit {
     this.pendingMode.set(mode);
   }
 
+  changeConnectionMode(): void {
+    this.pendingMode.set(null);
+    this.clearLiveCoupon();
+  }
+
   async confirmStart(): Promise<void> {
     const provider = this.pendingProvider();
     const selectedMode = this.pendingMode();
@@ -351,6 +368,7 @@ export class LiveConnectComponent implements OnInit {
     if (!this.currentUser()) {
       await this.liveConnectAction.connect(provider, selectedMode, {
         careTeamServiceId: this.providerServiceForMode(provider)?.id || '',
+        promoCode: this.appliedCouponCode(),
         fallbackQueryParams: {
           source: 'live-connect',
           supportPath: this.roleGroup() || undefined,
@@ -377,6 +395,7 @@ export class LiveConnectComponent implements OnInit {
           sessionMode: this.sessionMode(),
           preferredLanguage: provider.languages?.[0] || '',
           listenerSupportConsent: listenerConsent,
+          promoCode: this.appliedCouponCode(),
           message: `Homepage Live Connect ${this.modeLabel()} request`,
           entryPage: typeof window === 'undefined' ? undefined : window.location.href,
         }),
@@ -398,6 +417,7 @@ export class LiveConnectComponent implements OnInit {
         `${this.modeLabel()} session is ready with ${response.provider?.name || provider.name}.`,
       );
       this.notificationService.success(CONSUMER_UX_COPY.messages.liveSessionConfirmed);
+      this.clearLiveCoupon();
       void this.openLiveSession(response.consultation?.id);
     } catch (error) {
       const message = this.readErrorMessage(error);
@@ -408,6 +428,88 @@ export class LiveConnectComponent implements OnInit {
     } finally {
       this.startingProviderId.set('');
     }
+  }
+
+  updateLiveCoupon(value: string): void {
+    const normalized = value
+      .toUpperCase()
+      .replace(/[^A-Z0-9_-]/g, '')
+      .slice(0, 32);
+    this.couponCode.set(normalized);
+    if (this.appliedCouponCode() !== normalized) {
+      this.appliedCouponCode.set('');
+      this.couponQuote.set(null);
+      this.couponSuccess.set('');
+    }
+    this.couponError.set('');
+  }
+
+  async applyLiveCoupon(): Promise<void> {
+    const provider = this.pendingProvider();
+    const code = this.couponCode().trim().toUpperCase();
+    if (!provider || code.length < 2 || this.couponLoading()) {
+      this.couponError.set(CONSUMER_UX_COPY.messages.couponInvalid);
+      return;
+    }
+
+    if (!this.currentUser()) {
+      this.appliedCouponCode.set(code);
+      this.couponError.set('');
+      this.couponSuccess.set('Coupon saved. It will be checked after you sign in.');
+      return;
+    }
+
+    const service = providerServiceForLiveConnectMode(provider, this.pendingMode() || this.mode());
+    const grossInPaise = Number(
+      service?.effectivePriceInPaise ?? service?.priceInPaise ?? provider.sessionFeeInPaise ?? 0,
+    );
+    if (grossInPaise <= 0) {
+      this.couponError.set('This live session is already free.');
+      return;
+    }
+
+    this.couponLoading.set(true);
+    this.couponError.set('');
+    this.couponSuccess.set('');
+    try {
+      const { quote } = await firstValueFrom(
+        this.bookingService.checkoutQuote({
+          grossInPaise,
+          promoCode: code,
+          serviceName: service?.title || 'Quick Hope Hub talk',
+          careTeamServiceId: service?.id || undefined,
+          providerId: provider.id,
+        }),
+      );
+      if (quote.discountInPaise <= 0) {
+        this.appliedCouponCode.set('');
+        this.couponQuote.set(null);
+        this.couponError.set('This coupon does not apply to this live session.');
+        return;
+      }
+      this.appliedCouponCode.set(code);
+      this.couponQuote.set(quote);
+      this.couponSuccess.set(
+        quote.payableInPaise <= 0
+          ? `${code} applied. No payment will be needed.`
+          : `${code} applied. Pay ${this.formatPaise(quote.payableInPaise)} after confirmation.`,
+      );
+    } catch (error) {
+      this.appliedCouponCode.set('');
+      this.couponQuote.set(null);
+      this.couponError.set(this.readErrorMessage(error));
+    } finally {
+      this.couponLoading.set(false);
+    }
+  }
+
+  clearLiveCoupon(): void {
+    this.couponCode.set('');
+    this.appliedCouponCode.set('');
+    this.couponQuote.set(null);
+    this.couponLoading.set(false);
+    this.couponError.set('');
+    this.couponSuccess.set('');
   }
 
   private needsListenerSupportConsent(provider: HopeHubProvider): boolean {

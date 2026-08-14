@@ -76,7 +76,7 @@ describe('LiveConnectActionService', () => {
   it('resumes the stored provider and mode after login', async () => {
     authService.getToken.mockReturnValue(null);
     const service = TestBed.inject(LiveConnectActionService);
-    await service.connect(provider(), 'video');
+    await service.connect(provider(), 'video', { promoCode: 'FIRSTTALK1' });
 
     bookingService.provider.mockReturnValue(of({ provider: provider() }));
     bookingService.createQuickTalk.mockReturnValue(
@@ -90,7 +90,11 @@ describe('LiveConnectActionService', () => {
 
     await vi.waitFor(() => {
       expect(bookingService.createQuickTalk).toHaveBeenCalledWith(
-        expect.objectContaining({ providerId: 'provider-1', sessionMode: 'online_video' }),
+        expect.objectContaining({
+          providerId: 'provider-1',
+          sessionMode: 'online_video',
+          promoCode: 'FIRSTTALK1',
+        }),
       );
       expect(router.navigate).toHaveBeenCalledWith(['/live-session', 'consultation-after-login']);
     });

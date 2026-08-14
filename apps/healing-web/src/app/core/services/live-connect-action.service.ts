@@ -30,6 +30,7 @@ type PendingLiveConnectAction = {
   providerId: string;
   mode: LiveConnectActionMode;
   careTeamServiceId?: string;
+  promoCode?: string;
   fallbackQueryParams?: Record<string, unknown>;
 };
 
@@ -63,6 +64,7 @@ export class LiveConnectActionService {
     mode: LiveConnectActionMode,
     options: {
       careTeamServiceId?: string;
+      promoCode?: string;
       fallbackQueryParams?: Record<string, unknown>;
     } = {},
   ): Promise<void> {
@@ -89,6 +91,7 @@ export class LiveConnectActionService {
         providerId: provider.id,
         mode,
         careTeamServiceId: options.careTeamServiceId,
+        promoCode: options.promoCode,
         fallbackQueryParams: options.fallbackQueryParams,
       });
       this.notificationService.info(CONSUMER_UX_COPY.messages.authRequiredLive);
@@ -113,6 +116,7 @@ export class LiveConnectActionService {
           sessionMode: this.sessionMode(mode),
           preferredLanguage: provider.languages?.[0] || '',
           listenerSupportConsent: providerNeedsListenerSupportConsent(provider),
+          promoCode: options.promoCode || '',
           message: `${consumerModeLabel(mode)} Live Connect request`,
           entryPage: typeof window === 'undefined' ? undefined : window.location.href,
         }),
@@ -158,6 +162,7 @@ export class LiveConnectActionService {
     options: {
       fallbackQueryParams?: Record<string, unknown>;
       careTeamServiceId?: string;
+      promoCode?: string;
     } = {},
   ): Promise<void> {
     this.savePreference(provider, mode, options.fallbackQueryParams);
@@ -188,6 +193,7 @@ export class LiveConnectActionService {
       const { provider } = await firstValueFrom(this.bookingService.provider(pending.providerId));
       await this.connect(provider, pending.mode, {
         careTeamServiceId: pending.careTeamServiceId,
+        promoCode: pending.promoCode,
         fallbackQueryParams: pending.fallbackQueryParams,
       });
     } catch {
@@ -222,6 +228,7 @@ export class LiveConnectActionService {
           value.fallbackQueryParams && typeof value.fallbackQueryParams === 'object'
             ? value.fallbackQueryParams
             : undefined,
+        promoCode: typeof value.promoCode === 'string' ? value.promoCode : undefined,
       };
     } catch {
       return null;
