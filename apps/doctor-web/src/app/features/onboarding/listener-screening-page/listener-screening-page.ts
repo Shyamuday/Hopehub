@@ -31,6 +31,24 @@ type ScreeningAttempt = {
   maxScore?: number | null;
   passed?: boolean | null;
   completedAt?: string | null;
+  review?: ScreeningReviewItem[] | null;
+};
+
+type ScreeningReviewItem = {
+  questionId: string;
+  questionText: string;
+  selectedOptionId: string;
+  selectedOptionText: string;
+  correctOptionId: string;
+  correctOptionText: string;
+  correct: boolean;
+};
+
+type ScreeningResult = {
+  score: number;
+  maxScore: number;
+  passed: boolean;
+  review?: ScreeningReviewItem[];
 };
 
 @Component({
@@ -46,7 +64,6 @@ export class ListenerScreeningPage {
   private readonly apiBase = environment.apiUrl;
 
   readonly dashboardPath = `/${ROUTE_PATHS.PROFILE}`;
-  readonly availabilityPath = `/${ROUTE_PATHS.SLOTS}`;
   readonly loading = signal(true);
   readonly submitting = signal(false);
   readonly questionSet = signal<ScreeningQuestionSet | null>(null);
@@ -54,7 +71,8 @@ export class ListenerScreeningPage {
   readonly answers = signal<Record<string, string>>({});
   readonly currentQuestionIndex = signal(0);
   readonly error = signal('');
-  readonly result = signal<{ score: number; maxScore: number; passed: boolean } | null>(null);
+  readonly result = signal<ScreeningResult | null>(null);
+  readonly showReview = signal(false);
 
   constructor() {
     void this.load();
@@ -73,8 +91,17 @@ export class ListenerScreeningPage {
     return count ? Math.round((this.answeredCount() / count) * 100) : 0;
   }
 
+  scorePercent() {
+    const result = this.result();
+    return result?.maxScore ? Math.round((result.score / result.maxScore) * 100) : 0;
+  }
+
   selectedOption(questionId: string) {
     return this.answers()[questionId] ?? '';
+  }
+
+  optionLetter(index: number) {
+    return String.fromCharCode(65 + index);
   }
 
   selectAnswer(questionId: string, optionId: string) {
@@ -108,11 +135,12 @@ export class ListenerScreeningPage {
       );
       this.questionSet.set(response.questionSet);
       this.latestAttempt.set(response.latestAttempt);
-      if (response.latestAttempt?.passed) {
+      if (response.latestAttempt?.score != null) {
         this.result.set({
           score: response.latestAttempt.score ?? 0,
           maxScore: response.latestAttempt.maxScore ?? response.questionSet.questions.length,
-          passed: true,
+          passed: Boolean(response.latestAttempt.passed),
+          review: response.latestAttempt.review ?? undefined,
         });
       }
     } catch (error: any) {
@@ -139,7 +167,7 @@ export class ListenerScreeningPage {
     try {
       const response = await firstValueFrom(
         this.http.post<{
-          result: { score: number; maxScore: number; passed: boolean };
+          result: ScreeningResult;
           readiness: ProviderReadiness;
         }>(`${this.apiBase}${API_PATHS.DOCTOR.LISTENER_SCREENING}`, {
           questionSetId: questionSet.id,
@@ -151,16 +179,30 @@ export class ListenerScreeningPage {
         }),
       );
       this.result.set(response.result);
+      this.showReview.set(false);
       await this.session.load(true);
-      if (response.result.passed) {
-        await this.router.navigate(['/', ROUTE_PATHS.SLOTS], {
-          queryParams: { setup: 'availability' },
-        });
-      }
     } catch (error: any) {
       this.error.set(error?.error?.message || 'Could not submit the screening test.');
     } finally {
       this.submitting.set(false);
     }
+  }
+
+  toggleReview() {
+    this.showReview.update((visible) => !visible);
+  }
+
+  tryAgain() {
+    this.result.set(null);
+    this.showReview.set(false);
+    this.answers.set({});
+    this.currentQuestionIndex.set(0);
+    this.error.set('');
+  }
+
+  continueToAvailability() {
+    void this.router.navigate(['/', ROUTE_PATHS.SLOTS], {
+      queryParams: { setup: 'availability' },
+    });
   }
 }

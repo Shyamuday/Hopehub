@@ -3,13 +3,75 @@
 
   @if (loading()) {
     <section class="screening-card"><p>Loading your screening test…</p></section>
-  } @else if (result()?.passed) {
-    <section class="screening-card result-card result-card--passed">
-      <span class="result-icon">✓</span>
-      <h1>Listener screening passed</h1>
-      <p>You scored {{ result()?.score }}/{{ result()?.maxScore }}. This step is complete.</p>
-      <app-button [routerLink]="availabilityPath">Continue to availability</app-button>
+  } @else if (result(); as outcome) {
+    <section
+      class="screening-card result-card"
+      [class.result-card--passed]="outcome.passed"
+      [class.result-card--retry]="!outcome.passed"
+    >
+      <span class="result-icon">{{ outcome.passed ? '✓' : '↻' }}</span>
+      <p class="eyebrow">Screening complete</p>
+      <h1>{{ outcome.passed ? 'Congratulations, you passed!' : 'Keep learning — try again' }}</h1>
+      <div class="score-summary" aria-label="Screening score">
+        <strong>{{ outcome.score }}/{{ outcome.maxScore }}</strong>
+        <span>{{ scorePercent() }}% score</span>
+      </div>
+      <p>
+        @if (outcome.passed) {
+          Your listener screening is complete. Review your answers now or return to them later.
+        } @else {
+          You need {{ questionSet()?.passScore }} correct answers to pass. Review each answer before
+          your next attempt.
+        }
+      </p>
+
+      <div class="result-actions">
+        @if (outcome.review?.length) {
+          <app-button variant="outline" (click)="toggleReview()">
+            {{ showReview() ? 'Hide answer review' : 'Review answers' }}
+          </app-button>
+        }
+        @if (outcome.passed) {
+          <app-button (click)="continueToAvailability()">Continue to availability</app-button>
+        } @else {
+          <app-button (click)="tryAgain()">Try again</app-button>
+        }
+      </div>
     </section>
+
+    @if (showReview() && outcome.review?.length) {
+      <section class="answer-review" aria-label="Answer review">
+        <header>
+          <div>
+            <span class="eyebrow">Your answers</span>
+            <h2>Review what was correct</h2>
+          </div>
+          <span>{{ outcome.score }} correct</span>
+        </header>
+        @for (item of outcome.review || []; track item.questionId; let number = $index) {
+          <article class="review-item" [class.review-item--correct]="item.correct">
+            <div class="review-item__heading">
+              <span>{{ item.correct ? '✓' : '×' }}</span>
+              <strong>Question {{ number + 1 }}</strong>
+              <small>{{ item.correct ? 'Correct' : 'Needs review' }}</small>
+            </div>
+            <p>{{ item.questionText }}</p>
+            <dl>
+              <div>
+                <dt>Your answer</dt>
+                <dd>{{ item.selectedOptionText }}</dd>
+              </div>
+              @if (!item.correct) {
+                <div class="correct-answer">
+                  <dt>Correct answer</dt>
+                  <dd>{{ item.correctOptionText }}</dd>
+                </div>
+              }
+            </dl>
+          </article>
+        }
+      </section>
+    }
   } @else if (questionSet(); as test) {
     <header class="screening-header">
       <span class="eyebrow">Required listener step</span>
@@ -23,11 +85,16 @@
     </header>
 
     @if (currentQuestion(); as question) {
-      <section class="screening-card">
-        <small>Question {{ currentQuestionIndex() + 1 }} of {{ test.questions.length }}</small>
+      <section class="screening-card question-card">
+        <div class="question-meta">
+          <span>Question {{ currentQuestionIndex() + 1 }} of {{ test.questions.length }}</span>
+          <small [class.question-meta__selected]="selectedOption(question.id)">
+            {{ selectedOption(question.id) ? 'Answer selected' : 'Choose one answer' }}
+          </small>
+        </div>
         <h2>{{ question.text }}</h2>
-        <div class="answer-list">
-          @for (option of question.options; track option.id) {
+        <div class="answer-list" role="radiogroup" [attr.aria-label]="question.text">
+          @for (option of question.options; track option.id; let optionIndex = $index) {
             <label [class.selected]="selectedOption(question.id) === option.id">
               <input
                 type="radio"
@@ -36,7 +103,9 @@
                 [checked]="selectedOption(question.id) === option.id"
                 (change)="selectAnswer(question.id, option.id)"
               />
-              <span>{{ option.text }}</span>
+              <span class="answer-letter">{{ optionLetter(optionIndex) }}</span>
+              <span class="answer-copy">{{ option.text }}</span>
+              <span class="answer-check" aria-hidden="true">✓</span>
             </label>
           }
         </div>
@@ -62,16 +131,6 @@
         </app-button>
       }
     </footer>
-
-    @if (result() && !result()?.passed) {
-      <section class="screening-card result-card">
-        <h2>Not passed yet</h2>
-        <p>
-          Score: {{ result()?.score }}/{{ result()?.maxScore }}. Review Hope Hub safety guidance
-          before trying again.
-        </p>
-      </section>
-    }
   } @else if (error()) {
     <section class="screening-card result-card">
       <h1>Screening unavailable</h1>

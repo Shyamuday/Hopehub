@@ -6,6 +6,7 @@ import {
   CareTeamServicePricingMode,
   HomeopathicDoctorType,
   PatientGender,
+  Prisma,
   Role
 } from '@prisma/client';
 import bcrypt from 'bcryptjs';
@@ -38,6 +39,7 @@ import {
 } from '@hopehub/contracts';
 import {
   publicListenerScreeningQuestionSet,
+  listenerScreeningReviewDetails,
   sanitizeListenerScreeningQuestions,
   scoreListenerScreening
 } from '../../services/listener-screening-question-sets.js';
@@ -179,6 +181,7 @@ async function latestListenerScreeningForEmail(email?: string | null) {
         score: true,
         maxScore: true,
         passed: true,
+        review: true,
         createdAt: true,
         questionSetVersion: true
       }
@@ -211,7 +214,8 @@ async function latestListenerScreeningForEmail(email?: string | null) {
       maxScore: application.listenerScreeningMaxScore,
       passed: application.listenerScreeningPassed,
       completedAt: applicationCompletedAt,
-      questionSetVersion: application.listenerScreeningQuestionSetVersion
+      questionSetVersion: application.listenerScreeningQuestionSetVersion,
+      review: null
     };
   }
 
@@ -221,7 +225,8 @@ async function latestListenerScreeningForEmail(email?: string | null) {
     maxScore: attempt.maxScore,
     passed: attempt.passed,
     completedAt: attempt.createdAt,
-    questionSetVersion: attempt.questionSetVersion
+    questionSetVersion: attempt.questionSetVersion,
+    review: attempt.review
   };
 }
 
@@ -580,6 +585,7 @@ export function registerAuthDoctorRoutes(router: Router) {
       }
 
       const result = scoreListenerScreening(questions, body.answers, questionSet.passScore);
+      const review = listenerScreeningReviewDetails(questions, body.answers);
       const applicationTrack =
         listenerType === CareTeamMemberType.PSYCHOLOGY_STUDENT_VOLUNTEER
           ? CounsellorApplicationTrack.PSYCHOLOGY_STUDENT_VOLUNTEER
@@ -594,6 +600,7 @@ export function registerAuthDoctorRoutes(router: Router) {
           score: result.score,
           maxScore: result.maxScore,
           passed: result.passed,
+          review: review as Prisma.InputJsonValue,
           cooldownExpiresAt: result.passed
             ? null
             : new Date(Date.now() + LISTENER_SCREENING_COOLDOWN_HOURS * 60 * 60 * 1000),
@@ -608,7 +615,7 @@ export function registerAuthDoctorRoutes(router: Router) {
         where: { userId: req.user!.id },
         data: { showOnWebsite: readiness.ready }
       });
-      res.status(201).json({ result, readiness });
+      res.status(201).json({ result: { ...result, review }, readiness });
     })
   );
 

@@ -195,6 +195,7 @@ model ListenerScreeningAttempt {
   score                   Int
   maxScore                Int
   passed                  Boolean                     @default(false)
+  review                  Json?
   guidelinesAccepted      Boolean                     @default(false)
   guidelinesVersion       String?
   guidelinesReadSessionId String?
