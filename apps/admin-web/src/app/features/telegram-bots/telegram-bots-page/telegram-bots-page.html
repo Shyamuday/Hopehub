@@ -2,7 +2,7 @@
   <div class="page-header">
     <div>
       <h2>Telegram bots</h2>
-      <p class="muted">Monitor Hope Hub Care, Provider, and Ops bots without exposing tokens.</p>
+      <p class="muted">Monitor all Hope Hub Telegram bots without exposing tokens.</p>
     </div>
     <div class="header-actions">
       <button type="button" class="btn-sec" (click)="load()" [disabled]="loading()">Refresh</button>
@@ -43,18 +43,29 @@
           <div class="bot-title">
             <div>
               <h3>{{ bot.name }}</h3>
-              <p>{{ bot.slug }} bot · links {{ bot.expectedRole }} accounts</p>
+              <p>
+                {{ bot.username || bot.slug + ' bot' }} ·
+                {{
+                  bot.externallyManaged
+                    ? 'Group Help managed runtime'
+                    : bot.expectedRole
+                      ? 'links ' + bot.expectedRole + ' accounts'
+                      : 'API webhook workflow'
+                }}
+              </p>
             </div>
             <span class="badge" [class.off]="!bot.configured">
               {{ bot.configured ? 'Configured' : 'Missing token' }}
             </span>
           </div>
 
-          <div class="metrics">
-            <span><strong>{{ bot.summary.totalSessions }}</strong> sessions</span>
-            <span><strong>{{ bot.summary.linkedSessions }}</strong> linked</span>
-            <span><strong>{{ bot.summary.activeLinkedSessions }}</strong> active</span>
-          </div>
+          @if (!bot.externallyManaged) {
+            <div class="metrics">
+              <span><strong>{{ bot.summary.totalSessions }}</strong> sessions</span>
+              <span><strong>{{ bot.summary.linkedSessions }}</strong> linked</span>
+              <span><strong>{{ bot.summary.activeLinkedSessions }}</strong> active</span>
+            </div>
+          }
 
           <div class="webhook">
             <small>Webhook</small>
@@ -64,15 +75,19 @@
             }
           </div>
 
-          <button
-            type="button"
-            class="btn-sec"
-            [adminCan]="managePermission"
-            [disabled]="!bot.configured || saving() === bot.slug"
-            (click)="setup(bot)"
-          >
-            {{ saving() === bot.slug ? 'Updating…' : 'Update commands + webhook' }}
-          </button>
+          @if (bot.externallyManaged) {
+            <a class="btn-sec bot-control-link" href="/group-help">Open Group Help controls</a>
+          } @else {
+            <button
+              type="button"
+              class="btn-sec"
+              [adminCan]="managePermission"
+              [disabled]="!bot.configured || saving() === bot.slug"
+              (click)="setup(bot)"
+            >
+              {{ saving() === bot.slug ? 'Updating…' : 'Update commands + webhook' }}
+            </button>
+          }
         </article>
       }
     </section>

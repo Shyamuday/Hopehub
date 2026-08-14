@@ -12,6 +12,14 @@ import {
   telegramWebhookSecret,
   type TelegramUpdate
 } from '../services/telegram-bots.js';
+import {
+  communityBotFromSlug,
+  communityBotStatus,
+  handleCommunityBotUpdate,
+  setupCommunityBot,
+  type CommunityTelegramUpdate
+} from '../services/telegram-community-bots.js';
+import { groupHelpBotStatus } from '../services/telegram-group-help.client.js';
 
 export const telegramBotsRouter = Router();
 
@@ -34,7 +42,7 @@ function assertTelegramSetupSecret(req: import('express').Request) {
 
 telegramBotsRouter.get('/telegram/bots/health', (_req, res) => {
   res.json({
-    bots: telegramBotStatus(),
+    bots: [...telegramBotStatus(), ...communityBotStatus(), groupHelpBotStatus()],
     webhookSecretConfigured: Boolean(telegramWebhookSecret())
   });
 });
@@ -46,10 +54,13 @@ telegramBotsRouter.post(
       return res.status(401).json({ message: 'Invalid Telegram webhook secret.' });
     }
 
-    const kind = telegramBotKindFromSlug(routeParam(req, 'bot'));
-    if (!kind) return res.status(404).json({ message: 'Unknown Telegram bot.' });
+    const botSlug = routeParam(req, 'bot');
+    const kind = telegramBotKindFromSlug(botSlug);
+    const communityBot = communityBotFromSlug(botSlug);
+    if (!kind && !communityBot) return res.status(404).json({ message: 'Unknown Telegram bot.' });
 
-    await handleTelegramUpdate(kind, req.body as TelegramUpdate);
+    if (kind) await handleTelegramUpdate(kind, req.body as TelegramUpdate);
+    else await handleCommunityBotUpdate(communityBot!, req.body as CommunityTelegramUpdate);
     res.json({ ok: true });
   })
 );
@@ -61,8 +72,10 @@ telegramBotsRouter.post(
       return res.status(401).json({ message: 'Telegram setup secret is required.' });
     }
 
-    const kind = telegramBotKindFromSlug(routeParam(req, 'bot'));
-    if (!kind) return res.status(404).json({ message: 'Unknown Telegram bot.' });
+    const botSlug = routeParam(req, 'bot');
+    const kind = telegramBotKindFromSlug(botSlug);
+    const communityBot = communityBotFromSlug(botSlug);
+    if (!kind && !communityBot) return res.status(404).json({ message: 'Unknown Telegram bot.' });
 
     const body = setupSchema.parse(req.body);
     const publicApiUrl =
@@ -71,17 +84,26 @@ telegramBotsRouter.post(
       process.env.API_URL ||
       SERVER_CONFIG.ORIGINS.WEB;
 
-    await setTelegramCommands(kind);
     const menuButton = kind === 'USER' ? await setTelegramWebsiteMenuButton(kind) : null;
-    const webhookResult = await setTelegramWebhook({
-      kind,
-      publicApiUrl,
-      dropPendingUpdates: body.dropPendingUpdates
-    });
+    const webhookResult = kind
+      ? await (async () => {
+          await setTelegramCommands(kind);
+          return setTelegramWebhook({
+            kind,
+            publicApiUrl,
+            dropPendingUpdates: body.dropPendingUpdates
+          });
+        })()
+      : await setupCommunityBot({
+          slug: communityBot!,
+          publicApiUrl,
+          webhookSecret: telegramWebhookSecret(),
+          dropPendingUpdates: body.dropPendingUpdates
+        });
 
     res.json({
       ok: true,
-      bot: kind,
+      bot: kind || communityBot,
       publicApiUrl,
       menuButton,
       webhookResult
@@ -119,6 +141,19 @@ telegramBotsRouter.post(
         dropPendingUpdates: body.dropPendingUpdates
       });
       results.push({ bot: status.kind, skipped: false, menuButton, webhookResult });
+    }
+    for (const status of communityBotStatus()) {
+      if (!status.configured) {
+        results.push({ bot: status.kind, skipped: true, reason: `${status.tokenEnv} missing` });
+        continue;
+      }
+      const webhookResult = await setupCommunityBot({
+        slug: status.slug,
+        publicApiUrl,
+        webhookSecret: telegramWebhookSecret(),
+        dropPendingUpdates: body.dropPendingUpdates
+      });
+      results.push({ bot: status.kind, skipped: false, menuButton: null, webhookResult });
     }
 
     res.json({ ok: true, publicApiUrl, results });

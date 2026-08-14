@@ -16,6 +16,19 @@ import {
 import { roleByKind } from '../../services/telegram-bots.config.js';
 import { telegramBotKindFromSlug } from '../../services/telegram-bots.menus.js';
 import {
+  communityBotFromSlug,
+  communityBotStatus,
+  getCommunityWebhookInfo,
+  setupCommunityBot
+} from '../../services/telegram-community-bots.js';
+import { apiUrl } from '../../services/telegram-bots.ui.js';
+import {
+  callGroupHelpTelegramApi,
+  getGroupHelpWebhookInfo,
+  groupHelpBotStatus,
+  groupHelpBotToken
+} from '../../services/telegram-group-help.client.js';
+import {
   GROUP_HELP_ACTIONS,
   GROUP_HELP_CAPABILITY_GROUPS,
   GROUP_HELP_CONFIG_DEFAULTS,
@@ -79,6 +92,33 @@ async function safeWebhookInfo(kind: TelegramBotKind): Promise<WebhookSnapshot |
   }
 }
 
+async function safeCommunityWebhookInfo(
+  slug: 'contact' | 'confession' | 'rules'
+): Promise<WebhookSnapshot | null> {
+  const configured = communityBotStatus().find((bot) => bot.slug === slug)?.configured;
+  if (!configured) return null;
+  try {
+    return { ok: true, result: await getCommunityWebhookInfo(slug) };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : 'Could not read Telegram webhook info.'
+    };
+  }
+}
+
+async function safeGroupHelpWebhookInfo(): Promise<WebhookSnapshot | null> {
+  if (!groupHelpBotToken()) return null;
+  try {
+    return { ok: true, result: await getGroupHelpWebhookInfo() };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : 'Could not read Group Help webhook info.'
+    };
+  }
+}
+
 function linkedName(session: {
   firstName: string | null;
   lastName: string | null;
@@ -88,38 +128,18 @@ function linkedName(session: {
   return name || (session.username ? `@${session.username}` : 'Telegram user');
 }
 
-function groupHelpBotToken() {
-  return (
-    process.env.TELEGRAM_HOPEHUBBOT_TOKEN?.trim() ||
-    process.env.TELEGRAM_GROUP_HELP_BOT_TOKEN?.trim() ||
-    ''
-  );
-}
-
-async function callGroupHelpTelegramApi<T>(method: string, payload: unknown): Promise<T> {
-  const token = groupHelpBotToken();
-  if (!token) throw new Error('TELEGRAM_HOPEHUBBOT_TOKEN is not configured.');
-
-  const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-  const body = (await response.json()) as { ok?: boolean; description?: string; result?: T };
-  if (!response.ok || !body.ok) {
-    throw new Error(body.description || `Telegram ${method} failed.`);
-  }
-  return body.result as T;
-}
-
 async function groupHelpConfigMap() {
   const rows = await prisma.siteConfig.findMany({
     where: { key: { in: GROUP_HELP_CONFIG_KEYS } }
   });
-  return {
+  const values = {
     ...GROUP_HELP_CONFIG_DEFAULTS,
     ...Object.fromEntries(rows.map((row) => [row.key, row.value]))
   };
+  if (values.telegramGroupHelpBotUsername?.replace(/^@/, '').toLowerCase() === 'hopehubbot') {
+    values.telegramGroupHelpBotUsername = 'Hopehubaibot';
+  }
+  return values;
 }
 
 function renderGroupHelpCommand(
@@ -180,57 +200,65 @@ export function registerAdminTelegramBotRoutes(router: Router) {
     authRequired,
     allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (_req, res) => {
-      const [sessions, events, webhookInfos] = await Promise.all([
-        prisma.telegramBotSession.findMany({
-          select: {
-            id: true,
-            botKind: true,
-            chatId: true,
-            telegramUserId: true,
-            username: true,
-            firstName: true,
-            lastName: true,
-            linkedUserId: true,
-            state: true,
-            lastCommand: true,
-            createdAt: true,
-            updatedAt: true,
-            linkedUser: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                mobile: true,
-                role: true,
-                isActive: true
+      const [sessions, events, webhookInfos, communityWebhookInfos, groupHelpWebhookInfo] =
+        await Promise.all([
+          prisma.telegramBotSession.findMany({
+            select: {
+              id: true,
+              botKind: true,
+              chatId: true,
+              telegramUserId: true,
+              username: true,
+              firstName: true,
+              lastName: true,
+              linkedUserId: true,
+              state: true,
+              lastCommand: true,
+              createdAt: true,
+              updatedAt: true,
+              linkedUser: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  mobile: true,
+                  role: true,
+                  isActive: true
+                }
               }
-            }
-          },
-          orderBy: { updatedAt: 'desc' },
-          take: 100
-        }),
-        prisma.telegramBotEvent.findMany({
-          select: {
-            id: true,
-            sessionId: true,
-            botKind: true,
-            updateId: true,
-            chatId: true,
-            eventType: true,
-            createdAt: true
-          },
-          orderBy: { createdAt: 'desc' },
-          take: 50
-        }),
-        Promise.all(
-          Object.values(TelegramBotKind).map(
-            async (kind) => [kind, await safeWebhookInfo(kind)] as const
-          )
-        )
-      ]);
+            },
+            orderBy: { updatedAt: 'desc' },
+            take: 100
+          }),
+          prisma.telegramBotEvent.findMany({
+            select: {
+              id: true,
+              sessionId: true,
+              botKind: true,
+              updateId: true,
+              chatId: true,
+              eventType: true,
+              createdAt: true
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 50
+          }),
+          Promise.all(
+            Object.values(TelegramBotKind).map(
+              async (kind) => [kind, await safeWebhookInfo(kind)] as const
+            )
+          ),
+          Promise.all(
+            communityBotStatus().map(
+              async (bot) => [bot.slug, await safeCommunityWebhookInfo(bot.slug)] as const
+            )
+          ),
+          safeGroupHelpWebhookInfo()
+        ]);
 
       const webhookInfoByKind = Object.fromEntries(webhookInfos);
-      const bots = telegramBotStatus().map((bot) => {
+      const communityWebhookInfoBySlug = Object.fromEntries(communityWebhookInfos);
+      const accountBots = telegramBotStatus().map((bot) => {
         const botSessions = sessions.filter((session) => session.botKind === bot.kind);
         return {
           ...bot,
@@ -244,9 +272,21 @@ export function registerAdminTelegramBotRoutes(router: Router) {
           }
         };
       });
+      const communityBots = communityBotStatus().map((bot) => ({
+        ...bot,
+        expectedRole: null,
+        webhook: communityWebhookInfoBySlug[bot.slug],
+        summary: { totalSessions: 0, linkedSessions: 0, activeLinkedSessions: 0 }
+      }));
+      const groupHelpBot = {
+        ...groupHelpBotStatus(),
+        expectedRole: null,
+        webhook: groupHelpWebhookInfo,
+        summary: { totalSessions: 0, linkedSessions: 0, activeLinkedSessions: 0 }
+      };
 
       res.json({
-        bots,
+        bots: [...accountBots, ...communityBots, groupHelpBot],
         sessions: sessions.map((session) => ({
           ...session,
           displayName: linkedName(session)
@@ -373,7 +413,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         return res.json({ ok: true, mode: 'APPLIED', action, result });
       }
 
-      const username = (values.telegramGroupHelpBotUsername || 'Hopehubbot').replace(/^@/, '');
+      const username = (values.telegramGroupHelpBotUsername || 'Hopehubaibot').replace(/^@/, '');
       await writeAuditLog({
         actorId: req.user!.id,
         actorRole: req.user!.role,
@@ -546,7 +586,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         targetType: 'telegram_group_help',
         targetId: 'bot_menu',
         summary: 'Cleared website menu button from Group Help bot.',
-        metadata: { bot: 'Hopehubbot' }
+        metadata: { bot: 'Hopehubaibot' }
       });
 
       res.json({ ok: true, result });
@@ -560,28 +600,36 @@ export function registerAdminTelegramBotRoutes(router: Router) {
     asyncRoute(async (req, res) => {
       const slug = routeParam(req, 'bot');
       const kind = telegramBotKindFromSlug(slug);
-      if (!kind) return res.status(404).json({ message: 'Unknown Telegram bot.' });
+      const communityBot = communityBotFromSlug(slug);
+      if (!kind && !communityBot) return res.status(404).json({ message: 'Unknown Telegram bot.' });
 
       const parsed = setupSchema.safeParse(req.body ?? {});
       if (!parsed.success) {
         return res.status(400).json({ message: 'Invalid Telegram setup payload.' });
       }
 
-      await setTelegramCommands(kind);
+      if (kind) await setTelegramCommands(kind);
       const menuButton =
         kind === TelegramBotKind.USER ? await setTelegramWebsiteMenuButton(kind) : null;
-      const webhook = await setTelegramWebhook({
-        kind,
-        dropPendingUpdates: parsed.data.dropPendingUpdates,
-        publicApiUrl: parsed.data.publicApiUrl
-      });
+      const webhook = kind
+        ? await setTelegramWebhook({
+            kind,
+            dropPendingUpdates: parsed.data.dropPendingUpdates,
+            publicApiUrl: parsed.data.publicApiUrl
+          })
+        : await setupCommunityBot({
+            slug: communityBot!,
+            dropPendingUpdates: parsed.data.dropPendingUpdates,
+            publicApiUrl: parsed.data.publicApiUrl || apiUrl(),
+            webhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET || ''
+          });
 
       await writeAuditLog({
         actorId: req.user!.id,
         actorRole: req.user!.role,
         action: 'telegram_bot.setup',
         targetType: 'telegram_bot',
-        targetId: kind,
+        targetId: kind || communityBot!,
         summary: `Updated Telegram commands, menu button, and webhook for ${slug} bot.`,
         metadata: { slug, dropPendingUpdates: Boolean(parsed.data.dropPendingUpdates) }
       });
@@ -600,19 +648,37 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         return res.status(400).json({ message: 'Invalid Telegram setup payload.' });
       }
 
-      const results = await Promise.all(
-        Object.values(TelegramBotKind).map(async (kind) => {
-          await setTelegramCommands(kind);
-          const menuButton =
-            kind === TelegramBotKind.USER ? await setTelegramWebsiteMenuButton(kind) : null;
-          const webhook = await setTelegramWebhook({
-            kind,
-            dropPendingUpdates: parsed.data.dropPendingUpdates,
-            publicApiUrl: parsed.data.publicApiUrl
-          });
-          return { kind, webhook, menuButton };
-        })
+      const accountResults = await Promise.all(
+        telegramBotStatus()
+          .filter((bot) => bot.configured)
+          .map(async (bot) => {
+            const kind = bot.kind;
+            await setTelegramCommands(kind);
+            const menuButton =
+              kind === TelegramBotKind.USER ? await setTelegramWebsiteMenuButton(kind) : null;
+            const webhook = await setTelegramWebhook({
+              kind,
+              dropPendingUpdates: parsed.data.dropPendingUpdates,
+              publicApiUrl: parsed.data.publicApiUrl
+            });
+            return { kind, webhook, menuButton };
+          })
       );
+      const communityResults = await Promise.all(
+        communityBotStatus()
+          .filter((bot) => bot.configured)
+          .map(async (bot) => ({
+            kind: bot.kind,
+            menuButton: null,
+            webhook: await setupCommunityBot({
+              slug: bot.slug,
+              dropPendingUpdates: parsed.data.dropPendingUpdates,
+              publicApiUrl: parsed.data.publicApiUrl || apiUrl(),
+              webhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET || ''
+            })
+          }))
+      );
+      const results = [...accountResults, ...communityResults];
 
       await writeAuditLog({
         actorId: req.user!.id,

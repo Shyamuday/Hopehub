@@ -1,0 +1,145 @@
+import type { CommunityBotSlug, TelegramKeyboard } from './telegram-community-bots.types.js';
+
+const COMMUNITY_BOTS: Record<
+  CommunityBotSlug,
+  {
+    name: string;
+    tokenEnv: string;
+    commands: Array<{ command: string; description: string }>;
+    allowedUpdates: string[];
+  }
+> = {
+  contact: {
+    name: 'Hope Hub Contact Bot',
+    tokenEnv: 'TELEGRAM_CONTACT_BOT_TOKEN',
+    commands: [
+      { command: 'start', description: 'Contact Hope Hub' },
+      { command: 'status', description: 'Check your latest message' },
+      { command: 'cancel', description: 'Cancel current message' },
+      { command: 'help', description: 'Contact bot help' }
+    ],
+    allowedUpdates: ['message', 'callback_query', 'my_chat_member']
+  },
+  confession: {
+    name: 'Hope Hub Confession Bot',
+    tokenEnv: 'TELEGRAM_CONFESSION_BOT_TOKEN',
+    commands: [
+      { command: 'start', description: 'Send an anonymous confession' },
+      { command: 'cancel', description: 'Cancel current confession' },
+      { command: 'help', description: 'Confession bot help' }
+    ],
+    allowedUpdates: ['message', 'callback_query', 'my_chat_member', 'chat_member', 'channel_post']
+  },
+  rules: {
+    name: 'Hope Hub Rules Bot',
+    tokenEnv: 'TELEGRAM_RULES_BOT_TOKEN',
+    commands: [
+      { command: 'start', description: 'Open rules menu' },
+      { command: 'rules', description: 'Community rules' },
+      { command: 'about', description: 'About Hope Hub' },
+      { command: 'disclaimer', description: 'Community disclaimer' },
+      { command: 'privacy', description: 'Privacy guide' },
+      { command: 'report', description: 'How to report' },
+      { command: 'helpline', description: 'Mental health helplines' },
+      { command: 'help', description: 'Rules bot help' }
+    ],
+    allowedUpdates: ['message', 'callback_query']
+  }
+};
+
+export function communityBotFromSlug(value: string): CommunityBotSlug | null {
+  return value in COMMUNITY_BOTS ? (value as CommunityBotSlug) : null;
+}
+
+export function communityBotToken(slug: CommunityBotSlug) {
+  return process.env[COMMUNITY_BOTS[slug].tokenEnv]?.trim() || '';
+}
+
+export function communityBotStatus() {
+  return (Object.keys(COMMUNITY_BOTS) as CommunityBotSlug[]).map((slug) => ({
+    kind: slug.toUpperCase(),
+    slug,
+    name: COMMUNITY_BOTS[slug].name,
+    configured: Boolean(communityBotToken(slug)),
+    tokenEnv: COMMUNITY_BOTS[slug].tokenEnv,
+    runtime: 'api-webhook' as const
+  }));
+}
+
+export async function callCommunityTelegramApi<T>(
+  slug: CommunityBotSlug,
+  method: string,
+  payload: unknown
+) {
+  const token = communityBotToken(slug);
+  if (!token) throw new Error(`${COMMUNITY_BOTS[slug].tokenEnv} is not configured.`);
+  const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const body = (await response.json()) as { ok?: boolean; description?: string; result?: T };
+  if (!response.ok || !body.ok) throw new Error(body.description || `Telegram ${method} failed.`);
+  return body.result as T;
+}
+
+export function sendCommunityMessage(
+  slug: CommunityBotSlug,
+  chatId: string | number,
+  text: string,
+  options: {
+    parse_mode?: 'Markdown';
+    reply_markup?: TelegramKeyboard;
+    reply_to_message_id?: number;
+  } = {}
+) {
+  return callCommunityTelegramApi<{ message_id: number }>(slug, 'sendMessage', {
+    chat_id: chatId,
+    text,
+    ...options
+  });
+}
+
+export function answerCommunityCallback(
+  slug: CommunityBotSlug,
+  callbackQueryId: string,
+  text?: string
+) {
+  return callCommunityTelegramApi(slug, 'answerCallbackQuery', {
+    callback_query_id: callbackQueryId,
+    text
+  });
+}
+
+export function editCommunityReplyMarkup(
+  slug: CommunityBotSlug,
+  chatId: string | number,
+  messageId: number,
+  replyMarkup: TelegramKeyboard
+) {
+  return callCommunityTelegramApi(slug, 'editMessageReplyMarkup', {
+    chat_id: chatId,
+    message_id: messageId,
+    reply_markup: replyMarkup
+  });
+}
+
+export function getCommunityWebhookInfo(slug: CommunityBotSlug) {
+  return callCommunityTelegramApi(slug, 'getWebhookInfo', {});
+}
+
+export async function setupCommunityBot(input: {
+  slug: CommunityBotSlug;
+  publicApiUrl: string;
+  webhookSecret?: string;
+  dropPendingUpdates?: boolean;
+}) {
+  const config = COMMUNITY_BOTS[input.slug];
+  await callCommunityTelegramApi(input.slug, 'setMyCommands', { commands: config.commands });
+  return callCommunityTelegramApi(input.slug, 'setWebhook', {
+    url: `${input.publicApiUrl.replace(/\/$/, '')}/telegram/webhook/${input.slug}`,
+    secret_token: input.webhookSecret || undefined,
+    allowed_updates: config.allowedUpdates,
+    drop_pending_updates: Boolean(input.dropPendingUpdates)
+  });
+}

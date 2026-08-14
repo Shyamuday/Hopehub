@@ -155,11 +155,11 @@ export const GROUP_HELP_CONFIG_FIELDS: GroupHelpConfigField[] = [
   {
     key: 'telegramGroupHelpBotUsername',
     label: 'Group Help bot username',
-    description: 'Username of the GroupHelp-powered bot. Keep @Hopehubbot here.',
+    description: 'Username of the GroupHelp-powered bot. Keep @Hopehubaibot here.',
     section: 'connection',
     type: 'text',
     maxLength: 80,
-    defaultValue: 'Hopehubbot'
+    defaultValue: 'Hopehubaibot'
   },
   {
     key: 'telegramGroupHelpGroupChatId',
@@ -337,7 +337,7 @@ export const GROUP_HELP_CONFIG_FIELDS: GroupHelpConfigField[] = [
     type: 'textarea',
     maxLength: 4000,
     defaultValue:
-      'GroupHelp controls the bot runtime. Do not set HopeHub API webhook for @Hopehubbot.'
+      'GroupHelp controls the bot runtime. Do not set a HopeHub API webhook for @Hopehubaibot.'
   },
   {
     key: 'telegramGroupHelpWelcomeCommandTemplate',

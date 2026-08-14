@@ -36,6 +36,7 @@ td span { color: #64748b; font-size: 0.78rem; margin-top: 0.15rem; }
 .btn-primary { background: #2563eb; color: #fff; border: none; }
 .btn-sec { background: #f1f5f9; border: 1px solid #cbd5e1; color: #0f172a; }
 .btn-ghost { background: #fff; border: 1px solid #e5e7eb; color: #334155; }
+.bot-control-link { display: inline-flex; justify-content: center; text-decoration: none; }
 button:disabled { cursor: not-allowed; opacity: 0.5; }
 .toast { position: fixed; bottom: 1rem; right: 1rem; background: #0f766e; color: #fff; padding: 0.6rem 1rem; border-radius: 10px; z-index: 30; }
 
