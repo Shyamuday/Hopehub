@@ -165,7 +165,7 @@
 
       <section class="content">
         @if (onboardingComplete()) {
-          <app-role-task-guide appKey="doctor-web" [variantKey]="doctorTypeKey" />
+          <app-role-task-guide appKey="doctor-web" [variantKey]="doctorTypeKey" presentation="side" />
         }
         <router-outlet />
       </section>

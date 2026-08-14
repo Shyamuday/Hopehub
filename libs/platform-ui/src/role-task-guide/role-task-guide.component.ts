@@ -14,6 +14,7 @@ export class RoleTaskGuideComponent implements OnInit, OnChanges {
   @Input({ required: true }) appKey!: string;
   @Input() variantKey: string | null = null;
   @Input() theme: 'light' | 'dark' = 'light';
+  @Input() presentation: 'inline' | 'side' = 'inline';
 
   guide = signal<RoleTaskGuide | null>(null);
   expanded = signal(true);
@@ -55,7 +56,7 @@ export class RoleTaskGuideComponent implements OnInit, OnChanges {
   private loadGuideState() {
     if (!this.appKey) return;
     this.guide.set(getRoleTaskGuide(this.appKey, this.variantKey));
-    this.expanded.set(true);
+    this.expanded.set(this.presentation === 'inline');
     this.hidden.set(false);
     const storageKey = this.storageKey();
     if (typeof localStorage !== 'undefined' && localStorage.getItem(storageKey) === 'collapsed') {

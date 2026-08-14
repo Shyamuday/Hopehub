@@ -1,5 +1,22 @@
 @if (!hidden() && guide(); as g) {
-  <section class="role-guide" [class.theme-dark]="theme === 'dark'" [class.is-collapsed]="!expanded()">
+  @if (presentation === 'side' && !expanded()) {
+    <button
+      type="button"
+      class="role-guide-reopen side-trigger"
+      [class.theme-dark]="theme === 'dark'"
+      (click)="showAgain()"
+      aria-label="Open role and task guide"
+      title="Role and task guide"
+    >
+      <span aria-hidden="true">?</span>
+    </button>
+  } @else {
+  <section
+    class="role-guide"
+    [class.theme-dark]="theme === 'dark'"
+    [class.is-collapsed]="!expanded()"
+    [class.side-panel]="presentation === 'side'"
+  >
     <header class="role-guide-header">
       <div class="role-guide-title-block">
         <p class="eyebrow">Your role & tasks</p>
@@ -8,7 +25,7 @@
       </div>
       <div class="role-guide-actions">
         <button type="button" class="btn-text" (click)="toggle()">
-          {{ expanded() ? 'Collapse' : 'Expand' }}
+          {{ presentation === 'side' ? 'Close' : expanded() ? 'Collapse' : 'Expand' }}
         </button>
         <button type="button" class="btn-text btn-muted" (click)="dismiss()" title="Hide until you choose to show again">
           Got it
@@ -53,8 +70,21 @@
       </div>
     }
   </section>
+  }
 } @else if (guide()) {
-  <button type="button" class="role-guide-reopen" [class.theme-dark]="theme === 'dark'" (click)="showAgain()">
-    📋 Show my role & tasks
+  <button
+    type="button"
+    class="role-guide-reopen"
+    [class.side-trigger]="presentation === 'side'"
+    [class.theme-dark]="theme === 'dark'"
+    (click)="showAgain()"
+    aria-label="Open role and task guide"
+    title="Role and task guide"
+  >
+    @if (presentation === 'side') {
+      <span aria-hidden="true">?</span>
+    } @else {
+      📋 Show my role &amp; tasks
+    }
   </button>
 }
