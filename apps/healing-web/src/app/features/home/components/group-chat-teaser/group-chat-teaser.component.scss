@@ -121,6 +121,26 @@
   border-radius: 999px;
 }
 
+.chat-teaser__empty {
+  align-self: center;
+  color: #64748b;
+  display: grid;
+  gap: 0.35rem;
+  justify-items: center;
+  padding: 2rem 1rem;
+  text-align: center;
+
+  strong {
+    color: #334155;
+    font-size: 0.9rem;
+  }
+
+  span {
+    font-size: 0.82rem;
+    line-height: 1.45;
+  }
+}
+
 .chat-teaser__message {
   border: 1px solid rgba(148, 163, 184, 0.13);
   border-radius: 1.05rem;

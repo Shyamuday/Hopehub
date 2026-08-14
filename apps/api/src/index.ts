@@ -14,6 +14,7 @@ import { Server as SocketIoServer } from 'socket.io';
 import { z } from 'zod';
 
 import { type AuthUser } from './auth.js';
+import { prisma } from './db.js';
 import { DEFAULT_JWT_SECRET } from './constants/auth.constants.js';
 import { SERVER_CONFIG, SCHEDULER_CONFIG } from './constants/config.constants.js';
 import { SOCKET_EVENTS, SOCKET_ROOM_PREFIXES } from './constants/socket.constants.js';
@@ -137,7 +138,10 @@ scheduleAuthProcessLogRetention();
 
 io.use((socket, next) => {
   const token = socket.handshake.auth['token'] as string | undefined;
-  if (!token) return next(new Error('Unauthorized'));
+  if (!token) {
+    (socket as any).isAnonymous = true;
+    return next();
+  }
 
   const socketJwtSecret = process.env.JWT_SECRET || DEFAULT_JWT_SECRET;
   try {
@@ -172,16 +176,20 @@ io.on('connection', (socket) => {
     void socket.join(`${SOCKET_ROOM_PREFIXES.STORE_STAFF}${storeStaffId}`);
   }
   socket.on(SOCKET_EVENTS.SUBSCRIBE_CONSULTATION, (consultationId: unknown) => {
-    if (typeof consultationId === 'string') {
+    if (userId && typeof consultationId === 'string') {
       void socket.join(`${SOCKET_ROOM_PREFIXES.CONSULTATION}${consultationId}`);
     }
   });
-  socket.on(SOCKET_EVENTS.SUBSCRIBE_HOPE_HUB_GROUP, (groupId: unknown) => {
-    if (typeof groupId === 'string') {
-      void socket.join(`${SOCKET_ROOM_PREFIXES.HOPE_HUB_GROUP}${groupId}`);
-    }
+  socket.on(SOCKET_EVENTS.SUBSCRIBE_HOPE_HUB_GROUP, async (groupId: unknown) => {
+    if (typeof groupId !== 'string') return;
+    const publicGroup = await prisma.hopeHubLiveGroup.findFirst({
+      where: { id: groupId, isActive: true, isPublic: true },
+      select: { id: true }
+    });
+    if (publicGroup) await socket.join(`${SOCKET_ROOM_PREFIXES.HOPE_HUB_GROUP}${groupId}`);
   });
   socket.on(SOCKET_EVENTS.HOPE_HUB_GROUP_TYPING, (payload: unknown) => {
+    if (!userId) return;
     const data = payload as {
       groupId?: unknown;
       displayName?: unknown;

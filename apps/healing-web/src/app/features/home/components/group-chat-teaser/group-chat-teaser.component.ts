@@ -4,6 +4,8 @@ import {
   DestroyRef,
   OnInit,
   PLATFORM_ID,
+  ElementRef,
+  ViewChild,
   computed,
   inject,
   signal,
@@ -46,6 +48,7 @@ const GROUP_MESSAGE_EVENT = 'hopehub-group:message:new';
   styleUrl: './group-chat-teaser.component.scss',
 })
 export class GroupChatTeaserComponent implements OnInit {
+  @ViewChild('messageList') private messageList?: ElementRef<HTMLDivElement>;
   private readonly authService = inject(AuthService);
   private readonly authModalService = inject(AuthModalService);
   private readonly bookingService = inject(BookingService);
@@ -60,61 +63,21 @@ export class GroupChatTeaserComponent implements OnInit {
   readonly isOpen = signal(false);
   readonly isMinimized = signal(false);
   readonly isAuthenticated = signal(false);
-  readonly visibleMessageCount = signal(2);
   readonly draft = signal('');
   readonly sending = signal(false);
   readonly activeGroup = signal<HopeHubLiveGroup | null>(null);
   readonly realMessages = signal<TeaserMessage[]>([]);
-  readonly hasRealChat = computed(() => this.realMessages().length > 0);
-  readonly displayedMessages = computed(() =>
-    this.hasRealChat() ? this.realMessages() : this.fallbackMessages,
-  );
+  readonly hasRealChat = computed(() => Boolean(this.activeGroup()));
+  readonly displayedMessages = computed(() => this.realMessages());
   readonly roomTitle = computed(() => this.activeGroup()?.title || 'Live user chat');
   readonly teaserLabel = computed(() =>
     this.hasRealChat() ? 'Live user chat' : 'Community chat preview',
-  );
-  readonly footerLinkLabel = computed(() =>
-    this.hasRealChat() ? 'See live support' : 'Explore support options',
   );
   readonly primaryActionLabel = computed(() => {
     if (!this.isAuthenticated()) return 'Sign up free to chat';
     return this.hasRealChat() ? 'Open support chat' : 'See live support';
   });
 
-  readonly fallbackMessages: TeaserMessage[] = [
-    {
-      author: 'Asha',
-      role: 'Host',
-      body: 'Hey, welcome in. You can just sit here and read for a bit — no pressure to explain everything.',
-      tone: 'host',
-    },
-    {
-      author: 'Meera',
-      role: 'Member',
-      body: 'Today was honestly too much. I kept smiling at work but inside I was so irritated and tired.',
-      tone: 'member',
-    },
-    {
-      author: 'Rohan',
-      role: 'Member',
-      body: 'Same here. I got angry over a small thing at home, then felt guilty for hours. Just needed to say it somewhere.',
-      tone: 'member',
-    },
-    {
-      author: 'Kabir',
-      role: 'Emotional support listener',
-      body: 'That makes sense. Sometimes we carry the whole day quietly, and it comes out sideways. You’re not bad for feeling overwhelmed.',
-      tone: 'listener',
-    },
-    {
-      author: 'Asha',
-      role: 'Host',
-      body: 'If you want to reply or vent safely, sign up free. We keep the room moderated so it stays kind.',
-      tone: 'host',
-    },
-  ];
-
-  private revealTimer: number | null = null;
   private openTimer: number | null = null;
   private socket: Socket | null = null;
   private subscribedGroupId = '';
@@ -128,9 +91,9 @@ export class GroupChatTeaserComponent implements OnInit {
 
     this.realMessages.update((messages) => {
       if (messages.some((item) => item.id === message.id)) return messages;
-      return [...messages, this.toTeaserMessage(message)].slice(-4);
+      return [...messages, this.toTeaserMessage(message)].slice(-100);
     });
-    this.visibleMessageCount.set(this.displayedMessages().length);
+    this.scrollToLatest();
     if (!this.isOpen() || this.isMinimized()) {
       this.groupChatTeaser.incrementUnread();
     }
@@ -151,6 +114,7 @@ export class GroupChatTeaserComponent implements OnInit {
         this.isAuthenticated.set(isAuthenticated);
         if (isAuthenticated) {
           this.restorePendingDraft();
+          this.realtime.connect();
           this.bindRealtimeForActiveGroup();
           this.openTeaserAfterAuth();
         }
@@ -176,7 +140,6 @@ export class GroupChatTeaserComponent implements OnInit {
 
     this.destroyRef.onDestroy(() => {
       if (this.openTimer) window.clearTimeout(this.openTimer);
-      if (this.revealTimer) window.clearInterval(this.revealTimer);
       this.socket?.off?.(GROUP_MESSAGE_EVENT, this.handleIncomingMessage);
       this.realtime.unsubscribeLiveGroup(this.subscribedGroupId);
     });
@@ -185,10 +148,6 @@ export class GroupChatTeaserComponent implements OnInit {
   close(): void {
     this.isOpen.set(false);
     this.markDismissed();
-    if (this.revealTimer) {
-      window.clearInterval(this.revealTimer);
-      this.revealTimer = null;
-    }
   }
 
   minimize(): void {
@@ -199,7 +158,7 @@ export class GroupChatTeaserComponent implements OnInit {
     this.isMinimized.set(false);
     this.isOpen.set(true);
     this.groupChatTeaser.clearUnread();
-    this.startMessageReveal();
+    this.scrollToLatest();
   }
 
   askToJoin(): void {
@@ -238,14 +197,13 @@ export class GroupChatTeaserComponent implements OnInit {
       this.sending.set(true);
       this.bookingService.sendLiveGroupMessage(group.slug || group.id, reply).subscribe({
         next: (res) => {
-          this.realMessages.update((messages) => [
-            ...messages,
-            this.toTeaserMessage(res.message, true),
-          ]);
-          this.visibleMessageCount.set(this.displayedMessages().length);
+          this.realMessages.update((messages) =>
+            [...messages, this.toTeaserMessage(res.message, true)].slice(-100),
+          );
           this.draft.set('');
           this.clearPendingDraft();
           this.sending.set(false);
+          this.scrollToLatest();
         },
         error: () => {
           this.draft.set('');
@@ -265,7 +223,7 @@ export class GroupChatTeaserComponent implements OnInit {
         this.isMinimized.set(false);
         this.isOpen.set(true);
         this.groupChatTeaser.clearUnread();
-        this.startMessageReveal();
+        this.scrollToLatest();
       }
     }, 500);
   }
@@ -275,23 +233,7 @@ export class GroupChatTeaserComponent implements OnInit {
     this.isMinimized.set(false);
     this.isOpen.set(true);
     this.groupChatTeaser.clearUnread();
-    this.startMessageReveal();
-  }
-
-  private startMessageReveal(): void {
-    if (this.revealTimer) return;
-    this.revealTimer = window.setInterval(() => {
-      this.visibleMessageCount.update((count) => {
-        if (count >= this.displayedMessages().length) {
-          if (this.revealTimer) {
-            window.clearInterval(this.revealTimer);
-            this.revealTimer = null;
-          }
-          return count;
-        }
-        return count + 1;
-      });
-    }, 1800);
+    this.scrollToLatest();
   }
 
   private wasDismissed(): boolean {
@@ -352,9 +294,11 @@ export class GroupChatTeaserComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (res) => {
-          const activeGroup = (res.groups || []).find(
-            (group) => Number(group.messageCount || 0) > 0,
-          );
+          const groups = res.groups || [];
+          const activeGroup =
+            groups.find((group) => group.slug === 'telegram-community') ||
+            groups.find((group) => Number(group.messageCount || 0) > 0) ||
+            groups[0];
           if (!activeGroup) {
             this.activeGroup.set(null);
             this.realMessages.set([]);
@@ -368,19 +312,13 @@ export class GroupChatTeaserComponent implements OnInit {
               next: (groupRes) => {
                 const realMessages = (groupRes.messages || [])
                   .filter((message) => !message.isDeleted && !!message.body?.trim())
-                  .slice(-4)
+                  .slice(-100)
                   .map((message) => this.toTeaserMessage(message));
-
-                if (!realMessages.length) {
-                  this.activeGroup.set(null);
-                  this.realMessages.set([]);
-                  return;
-                }
 
                 this.activeGroup.set(groupRes.group);
                 this.realMessages.set(realMessages);
-                this.visibleMessageCount.set(Math.min(2, realMessages.length));
                 this.bindRealtimeForActiveGroup();
+                this.scrollToLatest();
               },
               error: () => {
                 this.activeGroup.set(null);
@@ -418,7 +356,7 @@ export class GroupChatTeaserComponent implements OnInit {
 
   private bindRealtimeForActiveGroup(): void {
     const group = this.activeGroup();
-    if (!group || !this.isAuthenticated()) return;
+    if (!group) return;
     if (this.subscribedGroupId === group.id) return;
 
     this.socket?.off?.(GROUP_MESSAGE_EVENT, this.handleIncomingMessage);
@@ -427,5 +365,12 @@ export class GroupChatTeaserComponent implements OnInit {
     this.socket?.off?.(GROUP_MESSAGE_EVENT, this.handleIncomingMessage);
     this.socket?.on?.(GROUP_MESSAGE_EVENT, this.handleIncomingMessage);
     this.subscribedGroupId = group.id;
+  }
+
+  private scrollToLatest(): void {
+    window.setTimeout(() => {
+      const element = this.messageList?.nativeElement;
+      if (element) element.scrollTop = element.scrollHeight;
+    });
   }
 }

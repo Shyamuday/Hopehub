@@ -22,16 +22,16 @@ export class HopeHubRealtimeService implements OnDestroy {
     if (!isPlatformBrowser(this.platformId)) return null;
 
     const token = this.auth.getToken();
-    if (!token) return null;
+    const socketIdentity = token || 'anonymous';
 
-    if ((this.socket?.connected || this.socket?.active) && this.socketToken === token) {
+    if ((this.socket?.connected || this.socket?.active) && this.socketToken === socketIdentity) {
       return this.socket;
     }
 
     this.socket?.disconnect();
-    this.socketToken = token;
+    this.socketToken = socketIdentity;
     this.socket = io(environment.apiUrl, {
-      auth: { token },
+      auth: token ? { token } : {},
       transports: [...SOCKET_TRANSPORTS],
     });
     this.socket.on('connect', () => this.restoreSubscriptions());

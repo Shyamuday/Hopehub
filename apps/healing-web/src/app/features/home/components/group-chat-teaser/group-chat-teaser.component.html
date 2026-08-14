@@ -15,13 +15,11 @@
           <h2>{{ roomTitle() }}</h2>
           <p>
             @if (hasRealChat() && isAuthenticated()) {
-              Real members are chatting now. Reply here or open the full support chat.
+              The latest 100 Telegram and Hope Hub messages appear here live. Reply below or open the full chat.
             } @else if (hasRealChat()) {
-              Real members are chatting now. Read quietly, then sign up free to reply.
-            } @else if (isAuthenticated()) {
-              No members are chatting right now. This preview shows the kind of supportive conversation you can join.
+              The latest 100 messages appear here live. Read quietly, then sign up free to reply.
             } @else {
-              No members are chatting right now. This preview shows how the space feels — sign up free when you want to join.
+              Connecting to the live Telegram community chat.
             }
           </p>
         </div>
@@ -31,8 +29,8 @@
         </div>
       </header>
 
-      <div class="chat-teaser__messages">
-        @for (message of displayedMessages().slice(0, visibleMessageCount()); track message.author + message.body) {
+      <div #messageList class="chat-teaser__messages">
+        @for (message of displayedMessages(); track message.id || message.author + message.body) {
           <article
             class="chat-teaser__message"
             [class.chat-teaser__message--host]="message.tone === 'host'"
@@ -41,10 +39,17 @@
           >
             <div>
               <strong>{{ message.author }}</strong>
-              <span>{{ message.role }}</span>
+              @if (message.role !== message.author) {
+                <span>{{ message.role }}</span>
+              }
             </div>
             <p>{{ message.body }}</p>
           </article>
+        } @empty {
+          <div class="chat-teaser__empty">
+            <strong>No messages yet</strong>
+            <span>New Telegram and Hope Hub messages will appear here automatically.</span>
+          </div>
         }
       </div>
 
@@ -63,15 +68,11 @@
         <button type="button" class="chat-teaser__primary" (click)="askToJoin()">
           {{ primaryActionLabel() }}
         </button>
-        @if (hasRealChat()) {
-          <a [routerLink]="ROUTES.links.home" [fragment]="ROUTES.fragments.liveConnect">{{ footerLinkLabel() }}</a>
-        } @else {
-          <a
-            [href]="APP_CONSTANTS.TELEGRAM.GROUP_URL"
-            target="_blank"
-            rel="noopener noreferrer"
-          >Join live Telegram chat</a>
-        }
+        <a
+          [href]="APP_CONSTANTS.TELEGRAM.GROUP_URL"
+          target="_blank"
+          rel="noopener noreferrer"
+        >Join live Telegram chat</a>
       </div>
     </aside>
   }

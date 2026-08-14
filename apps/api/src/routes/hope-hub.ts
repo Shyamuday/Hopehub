@@ -2145,13 +2145,13 @@ hopeHubRouter.get(
 
     const messages = await prisma.hopeHubLiveGroupMessage.findMany({
       where: { groupId: group.id },
-      orderBy: { createdAt: 'asc' },
+      orderBy: { createdAt: 'desc' },
       take: 100
     });
 
     res.json({
       group: serializeLiveGroup(group),
-      messages: messages.map(serializeLiveGroupMessage),
+      messages: [...messages].reverse().map(serializeLiveGroupMessage),
       requiresLoginToSpeak: !req.user,
       moderation: moderationSummary(moderation)
     });
