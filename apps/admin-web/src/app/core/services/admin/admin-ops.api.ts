@@ -202,6 +202,21 @@ export class AdminOpsApi extends AdminApiBase {
     );
   }
 
+  getTelegramBotControls() {
+    return firstValueFrom(
+      this.http.get<{ controls: any[] }>(`${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_BOT_CONTROLS}`),
+    );
+  }
+
+  saveTelegramBotControls(entries: Array<{ key: string; value: string }>) {
+    return firstValueFrom(
+      this.http.patch<{ controls: any[] }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_BOT_CONTROLS}`,
+        { entries },
+      ),
+    );
+  }
+
   setupTelegramBot(
     slug: string,
     payload?: { dropPendingUpdates?: boolean; publicApiUrl?: string },

@@ -35,6 +35,15 @@ import {
   GROUP_HELP_CONFIG_KEYS,
   GROUP_HELP_CONFIG_META
 } from '../../constants/group-help-config.constants.js';
+import {
+  TELEGRAM_BOT_CONTROL_DEFAULTS,
+  TELEGRAM_BOT_CONTROL_KEYS,
+  TELEGRAM_BOT_CONTROL_META
+} from '../../constants/telegram-bot-controls.constants.js';
+import {
+  clearTelegramBotControlsCache,
+  getTelegramBotControls
+} from '../../services/telegram-bot-controls.js';
 
 const setupSchema = z.object({
   dropPendingUpdates: z.boolean().optional(),
@@ -51,6 +60,13 @@ const groupHelpSaveSchema = z.object({
     )
     .min(1)
     .max(GROUP_HELP_CONFIG_KEYS.length)
+});
+
+const botControlsSaveSchema = z.object({
+  entries: z
+    .array(z.object({ key: z.string(), value: z.string() }))
+    .min(1)
+    .max(TELEGRAM_BOT_CONTROL_KEYS.length)
 });
 
 const groupHelpSendSchema = z.object({
@@ -195,6 +211,115 @@ async function sendGroupHelpPost(input: { message: string; imageUrl?: string; pi
 }
 
 export function registerAdminTelegramBotRoutes(router: Router) {
+  router.get(
+    '/admin/telegram-bots/controls',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (_req, res) => {
+      const values = await getTelegramBotControls();
+      res.json({
+        controls: TELEGRAM_BOT_CONTROL_KEYS.map((key) => ({
+          key,
+          ...TELEGRAM_BOT_CONTROL_META[key],
+          value: values[key] ?? TELEGRAM_BOT_CONTROL_DEFAULTS[key]
+        }))
+      });
+    })
+  );
+
+  router.patch(
+    '/admin/telegram-bots/controls',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (req, res) => {
+      const parsed = botControlsSaveSchema.safeParse(req.body ?? {});
+      if (!parsed.success) return res.status(400).json({ message: 'Invalid bot control payload.' });
+
+      const updates: Array<{
+        key: (typeof TELEGRAM_BOT_CONTROL_KEYS)[number];
+        value: string;
+        label: string;
+      }> = [];
+      for (const entry of parsed.data.entries) {
+        if (!TELEGRAM_BOT_CONTROL_KEYS.includes(entry.key as any)) {
+          return res.status(400).json({ message: `Unknown bot control: ${entry.key}` });
+        }
+        const key = entry.key as (typeof TELEGRAM_BOT_CONTROL_KEYS)[number];
+        const meta = TELEGRAM_BOT_CONTROL_META[key];
+        const value = entry.value.trim();
+        if (value.length > meta.maxLength) {
+          return res.status(400).json({ message: `${meta.label} is too long.` });
+        }
+        if (meta.type === 'boolean' && !['true', 'false'].includes(value)) {
+          return res.status(400).json({ message: `${meta.label} must be enabled or disabled.` });
+        }
+        if (meta.type === 'textarea' && value.length < 5) {
+          return res
+            .status(400)
+            .json({ message: `${meta.label} must contain at least 5 characters.` });
+        }
+        if (meta.type === 'number') {
+          if (!/^\d+$/.test(value)) {
+            return res.status(400).json({ message: `${meta.label} must be a whole number.` });
+          }
+          const number = Number(value);
+          if ((meta.min != null && number < meta.min) || (meta.max != null && number > meta.max)) {
+            return res.status(400).json({
+              message: `${meta.label} must be between ${meta.min} and ${meta.max}.`
+            });
+          }
+        }
+        updates.push({ key, value, label: meta.label });
+      }
+
+      const current = await getTelegramBotControls();
+      const merged = {
+        ...current,
+        ...Object.fromEntries(updates.map((item) => [item.key, item.value]))
+      };
+      if (
+        Number(merged.telegramConfessionMinCharacters) >
+        Number(merged.telegramConfessionMaxCharacters)
+      ) {
+        return res.status(400).json({ message: 'Confession minimum cannot exceed its maximum.' });
+      }
+      if (
+        Number(merged.telegramContactMinCharacters) > Number(merged.telegramContactMaxCharacters)
+      ) {
+        return res.status(400).json({ message: 'Contact minimum cannot exceed its maximum.' });
+      }
+
+      await prisma.$transaction(
+        updates.map((item) =>
+          prisma.siteConfig.upsert({
+            where: { key: item.key },
+            create: { key: item.key, value: item.value, label: item.label },
+            update: { value: item.value, label: item.label }
+          })
+        )
+      );
+      clearTelegramBotControlsCache();
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'telegram_bots.controls_update',
+        targetType: 'telegram_bots',
+        targetId: 'controls',
+        summary: `Updated ${updates.length} Telegram bot control(s).`,
+        metadata: { keys: updates.map((item) => item.key) }
+      });
+
+      const values = await getTelegramBotControls();
+      res.json({
+        controls: TELEGRAM_BOT_CONTROL_KEYS.map((key) => ({
+          key,
+          ...TELEGRAM_BOT_CONTROL_META[key],
+          value: values[key]
+        }))
+      });
+    })
+  );
+
   router.get(
     '/admin/telegram-bots',
     authRequired,

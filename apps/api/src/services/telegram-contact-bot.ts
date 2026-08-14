@@ -1,6 +1,7 @@
 import { answerCommunityCallback, sendCommunityMessage } from './telegram-community-bots.client.js';
 import {
   clearCommunityState,
+  communitySubmissionLimitReached,
   createCommunitySubmission,
   deleteDraftCommunitySubmission,
   findCommunitySubmission,
@@ -11,6 +12,7 @@ import {
   updateCommunitySubmission
 } from './telegram-community-bots.store.js';
 import type { CommunityTelegramUpdate, TelegramKeyboard } from './telegram-community-bots.types.js';
+import { controlNumber, getTelegramBotControls } from './telegram-bot-controls.js';
 
 const slug = 'contact' as const;
 const supportGroupId = () => process.env.TELEGRAM_CONTACT_SUPPORT_GROUP_ID?.trim() || '';
@@ -50,11 +52,12 @@ const isCommand = (text: string, command: string) =>
 
 async function showStart(chatId: string | number) {
   await clearCommunityState(slug, keyOf(chatId));
+  const controls = await getTelegramBotControls();
   await sendCommunityMessage(
     slug,
     chatId,
-    `👋 *Welcome to HopeHub Support*\n\nWe're here to help. Choose a category below and our team will respond as soon as possible.\n\n🌐 *Website:* [hopehub.in](https://hopehub.in)\n🩷 *Confession Bot:* [t.me/Hopehubconfessionbot](https://t.me/Hopehubconfessionbot)\n\n💙 *What would you like to contact us about?*`,
-    { parse_mode: 'Markdown', reply_markup: mainKeyboard }
+    `${controls.telegramContactWelcomeText}\n\nChoose what you would like to contact us about.`,
+    { reply_markup: mainKeyboard }
   );
 }
 
@@ -90,10 +93,34 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
     if (data.startsWith('confirm_')) {
       const ticketId = data.slice('confirm_'.length);
       const ticket = await findCommunitySubmission(ticketId);
-      if (!ticket || ticket.bot !== slug || ticket.userChatId !== stateKey) {
+      if (
+        !ticket ||
+        ticket.bot !== slug ||
+        ticket.userChatId !== stateKey ||
+        ticket.status !== 'draft'
+      ) {
         await sendCommunityMessage(slug, chatId, '⚠️ Message expired. Please start again.', {
           reply_markup: mainKeyboard
         });
+        return;
+      }
+      const controls = await getTelegramBotControls();
+      const dailyLimit = controlNumber(controls.telegramContactDailyLimit, 10);
+      if (
+        await communitySubmissionLimitReached({
+          bot: slug,
+          userChatId: stateKey,
+          limit: dailyLimit
+        })
+      ) {
+        await deleteDraftCommunitySubmission(ticket.reference, stateKey);
+        await clearCommunityState(slug, stateKey);
+        await sendCommunityMessage(
+          slug,
+          chatId,
+          `You have reached today’s contact limit (${dailyLimit}). Please try again after 24 hours.`,
+          { reply_markup: mainKeyboard }
+        );
         return;
       }
       const groupId = supportGroupId();
@@ -220,13 +247,16 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
     });
     return;
   }
-  if (text.length < 5 || text.length > 4000) {
+  const controls = await getTelegramBotControls();
+  const minCharacters = controlNumber(controls.telegramContactMinCharacters, 5);
+  const maxCharacters = controlNumber(controls.telegramContactMaxCharacters, 4000);
+  if (text.length < minCharacters || text.length > maxCharacters) {
     await sendCommunityMessage(
       slug,
       chatId,
-      text.length < 5
-        ? 'Please write a little more so we can help properly. 💙'
-        : 'Please keep your message under 4,000 characters.'
+      text.length < minCharacters
+        ? `Please write at least ${minCharacters} characters so we can help properly. 💙`
+        : `Please keep your message under ${maxCharacters.toLocaleString()} characters.`
     );
     return;
   }

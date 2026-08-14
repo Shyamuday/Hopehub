@@ -767,6 +767,16 @@ export class AdminApi {
   getTelegramBots(...args: Parameters<AdminOpsApi['getTelegramBots']>) {
     return this.ops.getTelegramBots(...(args as Parameters<AdminOpsApi['getTelegramBots']>));
   }
+  getTelegramBotControls(...args: Parameters<AdminOpsApi['getTelegramBotControls']>) {
+    return this.ops.getTelegramBotControls(
+      ...(args as Parameters<AdminOpsApi['getTelegramBotControls']>),
+    );
+  }
+  saveTelegramBotControls(...args: Parameters<AdminOpsApi['saveTelegramBotControls']>) {
+    return this.ops.saveTelegramBotControls(
+      ...(args as Parameters<AdminOpsApi['saveTelegramBotControls']>),
+    );
+  }
   setupTelegramBot(...args: Parameters<AdminOpsApi['setupTelegramBot']>) {
     return this.ops.setupTelegramBot(...(args as Parameters<AdminOpsApi['setupTelegramBot']>));
   }

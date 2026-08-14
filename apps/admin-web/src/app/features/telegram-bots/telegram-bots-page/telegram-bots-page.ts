@@ -19,6 +19,8 @@ export class TelegramBotsPage implements OnInit {
   bots = signal<any[]>([]);
   sessions = signal<any[]>([]);
   events = signal<any[]>([]);
+  controls = signal<any[]>([]);
+  controlValues = signal<Record<string, string>>({});
   loading = signal(true);
   saving = signal('');
   error = signal('');
@@ -28,6 +30,14 @@ export class TelegramBotsPage implements OnInit {
 
   linkedSessions = computed(() => this.sessions().filter((session) => session.linkedUserId).length);
   unlinkedSessions = computed(() => this.sessions().length - this.linkedSessions());
+  controlGroups = computed(() =>
+    ['Protection', 'Confession bot', 'Contact bot', 'Rules bot']
+      .map((name) => ({
+        name,
+        controls: this.controls().filter((control) => control.group === name),
+      }))
+      .filter((group) => group.controls.length),
+  );
 
   ngOnInit(): void {
     void this.load();
@@ -37,10 +47,14 @@ export class TelegramBotsPage implements OnInit {
     this.loading.set(true);
     this.error.set('');
     try {
-      const response = await this.api.getTelegramBots();
+      const [response, controlsResponse] = await Promise.all([
+        this.api.getTelegramBots(),
+        this.api.getTelegramBotControls(),
+      ]);
       this.bots.set(response.bots);
       this.sessions.set(response.sessions);
       this.events.set(response.events);
+      this.applyControls(controlsResponse.controls);
     } catch (e: any) {
       this.error.set(e?.error?.message || 'Could not load Telegram bot status.');
     } finally {
@@ -89,6 +103,33 @@ export class TelegramBotsPage implements OnInit {
     }
   }
 
+  controlValue(key: string) {
+    return this.controlValues()[key] ?? '';
+  }
+
+  setControlValue(key: string, value: string) {
+    this.controlValues.update((current) => ({ ...current, [key]: String(value) }));
+  }
+
+  async saveControlGroup(group: { name: string; controls: any[] }) {
+    const savingKey = `controls:${group.name}`;
+    this.saving.set(savingKey);
+    try {
+      const response = await this.api.saveTelegramBotControls(
+        group.controls.map((control) => ({
+          key: control.key,
+          value: this.controlValue(control.key),
+        })),
+      );
+      this.applyControls(response.controls);
+      this.showToast(`${group.name} settings saved.`);
+    } catch (e: any) {
+      this.showToast(e?.error?.message || `Could not save ${group.name.toLowerCase()} settings.`);
+    } finally {
+      this.saving.set('');
+    }
+  }
+
   webhookUrl(bot: any) {
     return bot.webhook?.ok ? bot.webhook.result?.url || 'No webhook URL set' : 'Unavailable';
   }
@@ -112,6 +153,13 @@ export class TelegramBotsPage implements OnInit {
       dropPendingUpdates: this.dropPendingUpdates(),
       ...(this.publicApiUrl().trim() ? { publicApiUrl: this.publicApiUrl().trim() } : {}),
     };
+  }
+
+  private applyControls(controls: any[]) {
+    this.controls.set(controls);
+    this.controlValues.set(
+      Object.fromEntries(controls.map((control) => [control.key, String(control.value ?? '')])),
+    );
   }
 
   private showToast(msg: string) {

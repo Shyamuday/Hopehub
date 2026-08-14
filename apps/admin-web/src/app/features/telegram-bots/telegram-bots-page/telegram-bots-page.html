@@ -38,6 +38,78 @@
     </label>
   </section>
 
+  @if (!loading() && controlGroups().length) {
+    <section class="controls-panel" [adminCan]="managePermission">
+      <div class="section-header">
+        <div>
+          <h3>Bot behaviour and protection</h3>
+          <p class="muted">
+            Configure bot limits and user-facing welcome text. Tokens remain in server environment variables.
+          </p>
+        </div>
+      </div>
+
+      <div class="control-groups">
+        @for (group of controlGroups(); track group.name) {
+          <form class="control-card" (submit)="$event.preventDefault(); saveControlGroup(group)">
+            <div class="control-card__header">
+              <h4>{{ group.name }}</h4>
+              <button
+                type="submit"
+                class="btn-primary"
+                [disabled]="saving() === 'controls:' + group.name"
+              >
+                {{ saving() === 'controls:' + group.name ? 'Saving…' : 'Apply' }}
+              </button>
+            </div>
+
+            @for (control of group.controls; track control.key) {
+              @if (control.type === 'boolean') {
+                <label class="control-field control-field--check">
+                  <input
+                    type="checkbox"
+                    [ngModel]="controlValue(control.key) === 'true'"
+                    (ngModelChange)="setControlValue(control.key, $event ? 'true' : 'false')"
+                    [name]="control.key"
+                  />
+                  <span>
+                    <strong>{{ control.label }}</strong>
+                    <small>{{ control.description }}</small>
+                  </span>
+                </label>
+              } @else if (control.type === 'number') {
+                <label class="control-field">
+                  <strong>{{ control.label }}</strong>
+                  <small>{{ control.description }}</small>
+                  <input
+                    type="number"
+                    [min]="control.min"
+                    [max]="control.max"
+                    [ngModel]="controlValue(control.key)"
+                    (ngModelChange)="setControlValue(control.key, $event)"
+                    [name]="control.key"
+                  />
+                </label>
+              } @else {
+                <label class="control-field">
+                  <strong>{{ control.label }}</strong>
+                  <small>{{ control.description }}</small>
+                  <textarea
+                    rows="4"
+                    [maxlength]="control.maxLength"
+                    [ngModel]="controlValue(control.key)"
+                    (ngModelChange)="setControlValue(control.key, $event)"
+                    [name]="control.key"
+                  ></textarea>
+                </label>
+              }
+            }
+          </form>
+        }
+      </div>
+    </section>
+  }
+
   @if (loading()) {
     <p class="loading-text">Loading Telegram status...</p>
   } @else if (error()) {

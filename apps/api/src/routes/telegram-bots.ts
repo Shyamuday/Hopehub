@@ -20,10 +20,18 @@ import {
   type CommunityTelegramUpdate
 } from '../services/telegram-community-bots.js';
 import {
+  checkTelegramPrivateRateLimit,
   claimCommunityWebhookUpdate,
   completeCommunityWebhookUpdate,
   failCommunityWebhookUpdate
 } from '../services/telegram-community-bots.store.js';
+import {
+  controlBoolean,
+  controlNumber,
+  getTelegramBotControls
+} from '../services/telegram-bot-controls.js';
+import { sendTelegramMessage } from '../services/telegram-bots.client.js';
+import { sendCommunityMessage } from '../services/telegram-community-bots.client.js';
 import { groupHelpBotStatus } from '../services/telegram-group-help.client.js';
 
 export const telegramBotsRouter = Router();
@@ -69,6 +77,31 @@ telegramBotsRouter.post(
     if (!claimed) return res.json({ ok: true, duplicate: true });
 
     try {
+      const chat = update.message?.chat || update.callback_query?.message?.chat;
+      if (update.message && chat?.type === 'private') {
+        const controls = await getTelegramBotControls();
+        if (controlBoolean(controls.telegramProtectionEnabled)) {
+          const rate = await checkTelegramPrivateRateLimit({
+            bot: botSlug,
+            chatId: String(chat.id),
+            limit: controlNumber(controls.telegramRateLimitPerMinute, 15),
+            blockMinutes: controlNumber(controls.telegramRateLimitBlockMinutes, 5)
+          });
+          if (!rate.allowed) {
+            if (rate.newlyBlocked && update.message) {
+              const minutes = Math.max(1, Math.ceil(rate.retryAfterSeconds / 60));
+              const text = `You are moving a little too quickly. Please try again in about ${minutes} minute${minutes === 1 ? '' : 's'}.`;
+              if (kind) {
+                await sendTelegramMessage(kind, { chat_id: String(chat.id), text });
+              } else {
+                await sendCommunityMessage(communityBot!, chat.id, text);
+              }
+            }
+            await completeCommunityWebhookUpdate(botSlug, update.update_id);
+            return res.json({ ok: true, rateLimited: true });
+          }
+        }
+      }
       if (kind) await handleTelegramUpdate(kind, update);
       else await handleCommunityBotUpdate(communityBot!, update);
       await completeCommunityWebhookUpdate(botSlug, update.update_id);

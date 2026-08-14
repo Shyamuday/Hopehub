@@ -6,6 +6,7 @@ import {
 import {
   clearCommunityState,
   createCommunitySubmission,
+  communitySubmissionLimitReached,
   deleteDraftCommunitySubmission,
   findCommunitySubmission,
   getCommunityState,
@@ -13,6 +14,7 @@ import {
   updateCommunitySubmission
 } from './telegram-community-bots.store.js';
 import type { CommunityTelegramUpdate, TelegramKeyboard } from './telegram-community-bots.types.js';
+import { controlBoolean, controlNumber, getTelegramBotControls } from './telegram-bot-controls.js';
 
 const slug = 'confession' as const;
 const adminChatId = () => process.env.TELEGRAM_CONFESSION_ADMIN_CHAT_ID?.trim() || '';
@@ -40,13 +42,17 @@ const cancelKeyboard: TelegramKeyboard = {
 
 async function showStart(chatId: string | number) {
   await clearCommunityState(slug, keyOf(chatId));
+  const controls = await getTelegramBotControls();
   await sendCommunityMessage(
     slug,
     chatId,
-    `💙 *Welcome to the Anonymous Confession Bot*\n\nThis is your space to say what you can't say anywhere else—anonymously and without judgment.\n\n🔒 *Your confession is anonymous.* We do not publish your Telegram name, username, or profile.\n\n⚠️ This bot is not a substitute for professional medical advice or emergency help.\n\n👇 When you're ready, tap *Send Confession*.`,
-    { parse_mode: 'Markdown', reply_markup: mainKeyboard }
+    `${controls.telegramConfessionWelcomeText}\n\n🔒 Your Telegram name, username, and profile are not published.\n\n⚠️ This bot is not emergency support.\n\nTap Send Confession when you are ready.`,
+    { reply_markup: mainKeyboard }
   );
 }
+
+const POSSIBLE_IMMEDIATE_RISK =
+  /\b(suicid(?:e|al)|kill myself|end my life|self[- ]?harm|hurt myself|overdose|cannot stay safe|can't stay safe)\b/i;
 
 function isAdmin(chatId: string | number) {
   return keyOf(chatId) === adminChatId() || keyOf(chatId) === approvalGroupId();
@@ -84,11 +90,35 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
     }
     if (data.startsWith('submit_')) {
       const confession = await findCommunitySubmission(data.slice('submit_'.length));
-      if (!confession || confession.bot !== slug || confession.userChatId !== stateKey) {
+      if (
+        !confession ||
+        confession.bot !== slug ||
+        confession.userChatId !== stateKey ||
+        confession.status !== 'draft'
+      ) {
         await sendCommunityMessage(
           slug,
           chatId,
           '⚠️ This confession expired. Please start again.',
+          { reply_markup: mainKeyboard }
+        );
+        return;
+      }
+      const controls = await getTelegramBotControls();
+      const dailyLimit = controlNumber(controls.telegramConfessionDailyLimit, 5);
+      if (
+        await communitySubmissionLimitReached({
+          bot: slug,
+          userChatId: stateKey,
+          limit: dailyLimit
+        })
+      ) {
+        await deleteDraftCommunitySubmission(confession.reference, stateKey);
+        await clearCommunityState(slug, stateKey);
+        await sendCommunityMessage(
+          slug,
+          chatId,
+          `You have reached today’s confession limit (${dailyLimit}). Please try again after 24 hours.`,
           { reply_markup: mainKeyboard }
         );
         return;
@@ -100,7 +130,7 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
       await sendCommunityMessage(
         slug,
         approvalTarget,
-        `🔔 *NEW ANONYMOUS CONFESSION*\n\n🆔 Confession #${confessionNumber(confession.serial)}\n━━━━━━━━━━━━━━\n\n${confession.text}\n\n━━━━━━━━━━━━━━`,
+        `${confession.category === 'SAFETY_REVIEW' ? '🚨 *POSSIBLE URGENT SAFETY REVIEW*\n\n' : ''}🔔 *NEW ANONYMOUS CONFESSION*\n\n🆔 Confession #${confessionNumber(confession.serial)}\n━━━━━━━━━━━━━━\n\n${confession.text}\n\n━━━━━━━━━━━━━━`,
         {
           parse_mode: 'Markdown',
           reply_markup: {
@@ -216,21 +246,35 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
     );
     return;
   }
-  if (text.length < 5 || text.length > 4000) {
+  const controls = await getTelegramBotControls();
+  const minCharacters = controlNumber(controls.telegramConfessionMinCharacters, 5);
+  const maxCharacters = controlNumber(controls.telegramConfessionMaxCharacters, 4000);
+  if (text.length < minCharacters || text.length > maxCharacters) {
     await sendCommunityMessage(
       slug,
       chatId,
-      text.length < 5
-        ? 'Please write a little more. 💙'
-        : 'Please keep your confession under 4,000 characters.'
+      text.length < minCharacters
+        ? `Please write at least ${minCharacters} characters. 💙`
+        : `Please keep your confession under ${maxCharacters.toLocaleString()} characters.`
     );
     return;
+  }
+  const needsSafetyReview =
+    controlBoolean(controls.telegramConfessionSafetyScreeningEnabled) &&
+    POSSIBLE_IMMEDIATE_RISK.test(text);
+  if (needsSafetyReview) {
+    await sendCommunityMessage(
+      slug,
+      chatId,
+      'Your message may describe immediate danger. This bot cannot provide emergency help. If you may act now or cannot stay safe, contact local emergency services or a trusted person who can stay with you. Your confession can still be reviewed anonymously below.'
+    );
   }
   const id = `CONF-${Date.now().toString(36).toUpperCase()}`;
   await createCommunitySubmission({
     reference: id,
     bot: slug,
     userChatId: stateKey,
+    category: needsSafetyReview ? 'SAFETY_REVIEW' : null,
     text,
     status: 'draft'
   });

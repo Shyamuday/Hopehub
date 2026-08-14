@@ -18,6 +18,7 @@ export const API_PATHS = {
     ADMINS: '/admin/admins',
     ADMIN_STATUS: (id: string) => `/admin/admins/${id}/status`,
     TELEGRAM_BOTS: '/admin/telegram-bots',
+    TELEGRAM_BOT_CONTROLS: '/admin/telegram-bots/controls',
     TELEGRAM_BOT_SETUP: (slug: string) => `/admin/telegram-bots/${slug}/setup`,
     TELEGRAM_BOTS_SETUP_ALL: '/admin/telegram-bots/setup-all',
     TELEGRAM_BOT_SESSION_UNLINK: (id: string) => `/admin/telegram-bots/sessions/${id}/unlink`,

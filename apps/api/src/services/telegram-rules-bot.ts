@@ -1,6 +1,7 @@
 import { answerCommunityCallback, sendCommunityMessage } from './telegram-community-bots.client.js';
 import type { CommunityTelegramUpdate, TelegramKeyboard } from './telegram-community-bots.types.js';
 import { ingestTelegramLiveChatMessage } from './telegram-live-chat-bridge.js';
+import { getTelegramBotControls } from './telegram-bot-controls.js';
 
 const slug = 'rules' as const;
 const mainMenu: TelegramKeyboard = {
@@ -43,12 +44,10 @@ const command = (text: string) =>
     ?.toLowerCase();
 
 async function showMenu(chatId: string | number) {
-  await sendCommunityMessage(
-    slug,
-    chatId,
-    `💙 *HopeHub Rules & Guidelines*\n\nChoose a topic below.`,
-    { parse_mode: 'Markdown', reply_markup: mainMenu }
-  );
+  const controls = await getTelegramBotControls();
+  await sendCommunityMessage(slug, chatId, controls.telegramRulesWelcomeText, {
+    reply_markup: mainMenu
+  });
 }
 async function showSection(chatId: string | number, section: string) {
   if (CONTENT[section])

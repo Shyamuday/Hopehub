@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../db.js';
 import type { CommunityBotSlug } from './telegram-community-bots.types.js';
+import { controlNumber, getTelegramBotControls } from './telegram-bot-controls.js';
 
 const STATE_TTL_MS = 24 * 60 * 60 * 1000;
 const RECEIPT_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -42,8 +43,17 @@ export async function setCommunityState(
   chatId: string,
   state: string,
   payload?: Record<string, unknown>,
-  ttlMs = STATE_TTL_MS
+  ttlMs?: number
 ) {
+  const resolvedTtlMs =
+    ttlMs ??
+    controlNumber(
+      (await getTelegramBotControls()).telegramCommunityStateTtlHours,
+      STATE_TTL_MS / (60 * 60 * 1000)
+    ) *
+      60 *
+      60 *
+      1000;
   return prisma.telegramCommunityState.upsert({
     where: { bot_chatId: { bot, chatId } },
     create: {
@@ -51,14 +61,91 @@ export async function setCommunityState(
       chatId,
       state,
       payload: payload as Prisma.InputJsonValue | undefined,
-      expiresAt: new Date(Date.now() + ttlMs)
+      expiresAt: new Date(Date.now() + resolvedTtlMs)
     },
     update: {
       state,
       payload: payload as Prisma.InputJsonValue | undefined,
-      expiresAt: new Date(Date.now() + ttlMs)
+      expiresAt: new Date(Date.now() + resolvedTtlMs)
     }
   });
+}
+
+export async function checkTelegramPrivateRateLimit(input: {
+  bot: string;
+  chatId: string;
+  limit: number;
+  blockMinutes: number;
+}) {
+  const now = new Date();
+  const rateBot = `rate:${input.bot}`;
+  return prisma.$transaction(async (tx) => {
+    const current = await tx.telegramCommunityState.findUnique({
+      where: { bot_chatId: { bot: rateBot, chatId: input.chatId } },
+      select: { payload: true, expiresAt: true }
+    });
+    const payload = (current?.payload || {}) as {
+      count?: number;
+      windowStartedAt?: string;
+      blockedUntil?: string;
+    };
+    const blockedUntil = payload.blockedUntil ? new Date(payload.blockedUntil) : null;
+    if (blockedUntil && blockedUntil > now) {
+      return {
+        allowed: false,
+        newlyBlocked: false,
+        retryAfterSeconds: Math.max(1, Math.ceil((blockedUntil.getTime() - now.getTime()) / 1000))
+      };
+    }
+
+    const windowStartedAt = payload.windowStartedAt ? new Date(payload.windowStartedAt) : now;
+    const sameWindow = now.getTime() - windowStartedAt.getTime() < 60_000;
+    const count = sameWindow ? Number(payload.count || 0) + 1 : 1;
+    const shouldBlock = count > input.limit;
+    const nextBlockedUntil = shouldBlock
+      ? new Date(now.getTime() + input.blockMinutes * 60_000)
+      : null;
+    const nextPayload = {
+      count,
+      windowStartedAt: (sameWindow ? windowStartedAt : now).toISOString(),
+      blockedUntil: nextBlockedUntil?.toISOString()
+    };
+    const expiresAt = new Date(
+      Math.max(now.getTime() + 2 * 60_000, nextBlockedUntil?.getTime() || 0)
+    );
+    await tx.telegramCommunityState.upsert({
+      where: { bot_chatId: { bot: rateBot, chatId: input.chatId } },
+      create: {
+        bot: rateBot,
+        chatId: input.chatId,
+        state: 'rate-limit',
+        payload: nextPayload,
+        expiresAt
+      },
+      update: { payload: nextPayload, expiresAt }
+    });
+    return {
+      allowed: !shouldBlock,
+      newlyBlocked: shouldBlock,
+      retryAfterSeconds: shouldBlock ? input.blockMinutes * 60 : 0
+    };
+  });
+}
+
+export async function communitySubmissionLimitReached(input: {
+  bot: 'contact' | 'confession';
+  userChatId: string;
+  limit: number;
+}) {
+  const count = await prisma.telegramCommunitySubmission.count({
+    where: {
+      bot: input.bot,
+      userChatId: input.userChatId,
+      status: { not: 'draft' },
+      createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
+    }
+  });
+  return count >= input.limit;
 }
 
 export function clearCommunityState(bot: CommunityBotSlug, chatId: string) {
