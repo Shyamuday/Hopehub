@@ -39,6 +39,25 @@ TURN_CREDENTIAL="$(sudo cat /etc/hopehub-turn-credential 2>/dev/null || true)"
 TURN_SHARED_SECRET="$(sudo cat /etc/hopehub-turn-shared-secret 2>/dev/null || true)"
 TURN_USERNAME_PREFIX="$(sudo cat /etc/hopehub-turn-username-prefix 2>/dev/null || echo hopehub)"
 TURN_TTL_SECONDS="$(sudo cat /etc/hopehub-turn-ttl-seconds 2>/dev/null || echo 3600)"
+WEB_PUSH_VAPID_PUBLIC_KEY="$(sudo cat /etc/hopehub-web-push-vapid-public-key 2>/dev/null || true)"
+WEB_PUSH_VAPID_PRIVATE_KEY="$(sudo cat /etc/hopehub-web-push-vapid-private-key 2>/dev/null || true)"
+WEB_PUSH_VAPID_SUBJECT="$(sudo cat /etc/hopehub-web-push-vapid-subject 2>/dev/null || echo mailto:contact@hopehub.in)"
+
+if [ -z "$WEB_PUSH_VAPID_PUBLIC_KEY" ] || [ -z "$WEB_PUSH_VAPID_PRIVATE_KEY" ]; then
+  echo "Generating persistent Web Push VAPID keys on the server..."
+  mapfile -t VAPID_KEYS < <(node -e 'const { createECDH } = require("node:crypto"); const key = createECDH("prime256v1"); key.generateKeys(); console.log(key.getPublicKey().toString("base64url")); console.log(key.getPrivateKey().toString("base64url"));')
+  if [ "${#VAPID_KEYS[@]}" -ne 2 ] || [ -z "${VAPID_KEYS[0]}" ] || [ -z "${VAPID_KEYS[1]}" ]; then
+    echo "Could not generate VAPID keys"
+    exit 1
+  fi
+  WEB_PUSH_VAPID_PUBLIC_KEY="${VAPID_KEYS[0]}"
+  WEB_PUSH_VAPID_PRIVATE_KEY="${VAPID_KEYS[1]}"
+  printf '%s\n' "$WEB_PUSH_VAPID_PUBLIC_KEY" | sudo tee /etc/hopehub-web-push-vapid-public-key >/dev/null
+  printf '%s\n' "$WEB_PUSH_VAPID_PRIVATE_KEY" | sudo tee /etc/hopehub-web-push-vapid-private-key >/dev/null
+  printf '%s\n' "$WEB_PUSH_VAPID_SUBJECT" | sudo tee /etc/hopehub-web-push-vapid-subject >/dev/null
+  sudo chmod 644 /etc/hopehub-web-push-vapid-public-key /etc/hopehub-web-push-vapid-subject
+  sudo chmod 600 /etc/hopehub-web-push-vapid-private-key
+fi
 GOOGLE_CLIENT_ID="$(sudo cat /etc/hopehub-google-client-id 2>/dev/null || echo "${GOOGLE_CLIENT_ID:-}")"
 RAZORPAY_KEY_ID_VALUE="$(sudo cat /etc/hopehub-razorpay-key-id 2>/dev/null || echo "${RAZORPAY_KEY_ID:-}")"
 RAZORPAY_KEY_SECRET_VALUE="$(sudo cat /etc/hopehub-razorpay-key-secret 2>/dev/null || echo "${RAZORPAY_KEY_SECRET:-}")"
@@ -96,6 +115,13 @@ TURN_CREDENTIAL="${TURN_CREDENTIAL}"
 TURN_SHARED_SECRET="${TURN_SHARED_SECRET}"
 TURN_USERNAME_PREFIX="${TURN_USERNAME_PREFIX}"
 TURN_TTL_SECONDS="${TURN_TTL_SECONDS}"
+WEB_PUSH_VAPID_PUBLIC_KEY="${WEB_PUSH_VAPID_PUBLIC_KEY}"
+WEB_PUSH_VAPID_PRIVATE_KEY="${WEB_PUSH_VAPID_PRIVATE_KEY}"
+WEB_PUSH_VAPID_SUBJECT="${WEB_PUSH_VAPID_SUBJECT}"
+CALL_MAINTENANCE_INTERVAL_MS="300000"
+CALL_METADATA_RETENTION_DAYS="30"
+CALL_QUALITY_RETENTION_DAYS="180"
+PUSH_DEVICE_RETENTION_DAYS="90"
 GOOGLE_CLIENT_ID="${GOOGLE_CLIENT_ID}"
 RAZORPAY_KEY_ID="${RAZORPAY_KEY_ID_VALUE}"
 RAZORPAY_KEY_SECRET="${RAZORPAY_KEY_SECRET_VALUE}"
@@ -137,6 +163,9 @@ RAZORPAY_KEY_ID="$RAZORPAY_KEY_ID_VALUE" \
 RAZORPAY_KEY_SECRET="$RAZORPAY_KEY_SECRET_VALUE" \
 RAZORPAY_WEBHOOK_SECRET="$RAZORPAY_WEBHOOK_SECRET_VALUE" \
 GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" \
+WEB_PUSH_VAPID_PUBLIC_KEY="$WEB_PUSH_VAPID_PUBLIC_KEY" \
+WEB_PUSH_VAPID_PRIVATE_KEY="$WEB_PUSH_VAPID_PRIVATE_KEY" \
+WEB_PUSH_VAPID_SUBJECT="$WEB_PUSH_VAPID_SUBJECT" \
 AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID_VALUE" \
 AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY_VALUE" \
 TELEGRAM_USER_BOT_TOKEN="$TELEGRAM_USER_BOT_TOKEN_VALUE" \

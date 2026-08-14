@@ -40,6 +40,11 @@ import {
   readPatientDailyPlanImage,
   savePatientDailyPlanImage
 } from '../../services/patient-daily-plan-storage.js';
+import {
+  getWebPushPublicKey,
+  registerUserPushDevice,
+  registerUserWebPushDevice
+} from '../../services/push-devices.js';
 
 async function serializePatientProfile(user: {
   passwordHash?: string | null;
@@ -314,7 +319,39 @@ export function registerAuthProfileRoutes(router: Router) {
           platform: z.enum(['ios', 'android', 'web']).optional()
         })
         .parse(req.body);
+      await registerUserPushDevice({
+        userId: req.user!.id,
+        token: body.token,
+        platform: body.platform
+      });
       res.json({ ok: true, token: body.token.slice(0, 8) + '…' });
+    })
+  );
+
+  router.get(
+    '/patient/web-push-config',
+    authRequired,
+    allowRoles(Role.PATIENT),
+    asyncRoute(async (_req, res) => {
+      const publicKey = getWebPushPublicKey();
+      res.json({ enabled: Boolean(publicKey), publicKey });
+    })
+  );
+
+  router.post(
+    '/patient/web-push-subscription',
+    authRequired,
+    allowRoles(Role.PATIENT),
+    asyncRoute(async (req, res) => {
+      const subscription = z
+        .object({
+          endpoint: z.string().url(),
+          expirationTime: z.number().nullable().optional(),
+          keys: z.object({ p256dh: z.string().min(1), auth: z.string().min(1) })
+        })
+        .parse(req.body);
+      await registerUserWebPushDevice({ userId: req.user!.id, subscription });
+      res.json({ ok: true });
     })
   );
 
@@ -333,6 +370,11 @@ export function registerAuthProfileRoutes(router: Router) {
           platform: z.enum(['ios', 'android', 'web']).optional()
         })
         .parse(req.body);
+      await registerUserPushDevice({
+        userId: req.user!.id,
+        token: body.token,
+        platform: body.platform
+      });
       res.json({ ok: true, token: body.token.slice(0, 8) + '…' });
     })
   );

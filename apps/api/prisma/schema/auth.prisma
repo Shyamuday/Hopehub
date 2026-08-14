@@ -137,6 +137,7 @@ model User {
   patientProviderEarnings        ProviderEarning[]                 @relation("PatientProviderEarnings")
   providerEarningsPaid           ProviderEarning[]                 @relation("ProviderEarningsPaidBy")
   consultationReminders          ConsultationReminder[]            @relation("UserConsultationReminders")
+  pushDevices                    PushDevice[]
   messages                       Message[]
   uploadedPrescriptions          Prescription[]
   patientPrescriptions           Prescription[]                    @relation("PatientPrescriptions")

@@ -13,6 +13,14 @@ const DEFAULT_STUN: IceServerConfig[] = [{ urls: 'stun:stun.l.google.com:19302' 
 const CALL_ANSWER_TIMEOUT_MS = 45_000;
 const MEDIA_CONNECT_TIMEOUT_MS = 25_000;
 const RECONNECT_GRACE_MS = 20_000;
+const ICE_RESTART_DELAY_MS = 1_500;
+const MAX_ICE_RESTART_ATTEMPTS = 2;
+const NETWORK_SAMPLE_INTERVAL_MS = 3_000;
+const CALL_TAB_LOCK_TTL_MS = 15_000;
+const CALL_TAB_LOCK_REFRESH_MS = 5_000;
+const CALL_TAB_LOCK_PREFIX = 'hopehub:active-call:';
+
+export type CallNetworkQuality = 'unknown' | 'good' | 'unstable' | 'poor';
 
 function sdpHasVideo(sdp: string): boolean {
   return /m=video /i.test(sdp);
@@ -49,7 +57,11 @@ function callReasonMessage(reason: unknown): string {
     provider_not_assigned: 'An expert is not assigned to this session yet.',
     call_participant_mismatch: 'This call is not allowed for this session.',
     call_mode_not_allowed: 'This session does not allow this call type.',
-    call_not_allowed: 'This call is not allowed.'
+    call_not_allowed: 'This call is not allowed.',
+    call_not_active: 'This call is no longer active.',
+    rate_limited: 'Too many call requests were sent. Wait a moment and try again.',
+    invalid_call_id: 'This call request is invalid. Start a new call.',
+    stale_call_signal: 'An old call update was ignored.'
   };
   return messages[normalized] || normalized.replace(/_/g, ' ');
 }
@@ -95,6 +107,17 @@ export class ConsultationWebrtcCallService {
   readonly remoteStream = signal<MediaStream | null>(null);
   readonly incomingCall = signal(false);
   readonly pendingOffer = signal<PendingOffer | null>(null);
+  readonly audioInputs = signal<MediaDeviceInfo[]>([]);
+  readonly videoInputs = signal<MediaDeviceInfo[]>([]);
+  readonly audioOutputs = signal<MediaDeviceInfo[]>([]);
+  readonly selectedAudioInputId = signal('');
+  readonly selectedVideoInputId = signal('');
+  readonly selectedAudioOutputId = signal('');
+  readonly networkQuality = signal<CallNetworkQuality>('unknown');
+  readonly incomingAlertsEnabled = signal(false);
+  readonly privacyRelay = signal(false);
+  readonly connectionOnline = signal(typeof navigator === 'undefined' ? true : navigator.onLine);
+  readonly voiceFallbackSuggested = signal(false);
 
   private pc: RTCPeerConnection | null = null;
   private socket: CallSignalingSocket | null = null;
@@ -105,6 +128,78 @@ export class ConsultationWebrtcCallService {
   private answerTimeout: ReturnType<typeof setTimeout> | null = null;
   private mediaTimeout: ReturnType<typeof setTimeout> | null = null;
   private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
+  private iceRestartTimer: ReturnType<typeof setTimeout> | null = null;
+  private networkSampleTimer: ReturnType<typeof setInterval> | null = null;
+  private callHeartbeatTimer: ReturnType<typeof setInterval> | null = null;
+  private ringtoneTimer: ReturnType<typeof setInterval> | null = null;
+  private ringtoneContext: AudioContext | null = null;
+  private incomingNotification: Notification | null = null;
+  private wakeLock: WakeLockSentinel | null = null;
+  private isInitiator = false;
+  private activeCallId = '';
+  private signalSequence = 0;
+  private makingOffer = false;
+  private ignoreOffer = false;
+  private isSettingRemoteAnswerPending = false;
+  private iceRestartAttempts = 0;
+  private totalReconnectCount = 0;
+  private iceRestartInProgress = false;
+  private latestNetworkMetrics = {
+    packetLossPercent: 0,
+    maxJitterMs: 0,
+    averageRttMs: 0
+  };
+  private consecutivePoorSamples = 0;
+  private readonly callTabId =
+    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `call-tab-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  private callLockKey = '';
+  private callLockHeartbeat: ReturnType<typeof setInterval> | null = null;
+  private beforeUnloadBound = false;
+  private readonly releaseLockBeforeUnload = () => this.releaseCallLock();
+  private readonly handleOnline = () => {
+    this.connectionOnline.set(true);
+    if (this.callContext && this.pc) {
+      this.state.set('reconnecting');
+      this.startReconnectTimeout();
+      void this.attemptIceRestart(true);
+    }
+  };
+  private readonly handleOffline = () => {
+    this.connectionOnline.set(false);
+    if (this.callContext) {
+      this.state.set('reconnecting');
+      this.startReconnectTimeout();
+    }
+  };
+  private readonly handlePageHide = (event: PageTransitionEvent) => {
+    if (event.persisted || !this.callContext) return;
+    this.emitSignal(CALL_SOCKET_EVENTS.END, {
+      ...this.callContext,
+      reason: 'page_closed',
+      metadata: this.callMetadata()
+    });
+    this.releaseCallLock();
+  };
+  private readonly handleVisibilityChange = () => {
+    if (typeof document === 'undefined' || document.visibilityState !== 'visible') return;
+    if (this.state() === 'connected') void this.acquireWakeLock();
+    if (this.state() === 'reconnecting') void this.attemptIceRestart(true);
+  };
+  private observedCallLockKey = '';
+  private storageListenerBound = false;
+  private readonly handleCallLockStorage = (event: StorageEvent) => {
+    if (!this.observedCallLockKey || event.key !== this.observedCallLockKey || !event.newValue)
+      return;
+    const lock = this.readCallLock(this.observedCallLockKey);
+    if (!lock || lock.tabId === this.callTabId || lock.expiresAt <= Date.now()) return;
+    this.stopIncomingAlert();
+    this.pendingOffer.set(null);
+    this.incomingCall.set(false);
+    if (this.state() === 'ringing') this.state.set('ended');
+    this.error.set('This call was opened in another browser tab.');
+  };
 
   bindSocket(socket: CallSignalingSocket) {
     if (this.socket === socket && this.boundSocketId) return;
@@ -112,12 +207,47 @@ export class ConsultationWebrtcCallService {
     this.unbindSocketListeners();
     this.socket = socket;
     this.boundSocketId = Symbol('call-socket');
+    if (typeof window !== 'undefined' && !this.storageListenerBound) {
+      window.addEventListener('storage', this.handleCallLockStorage);
+      window.addEventListener('online', this.handleOnline);
+      window.addEventListener('offline', this.handleOffline);
+      window.addEventListener('pagehide', this.handlePageHide);
+      document.addEventListener('visibilitychange', this.handleVisibilityChange);
+      this.storageListenerBound = true;
+    }
+
+    socket.on('connect', () => {
+      if (!this.callContext || !this.activeCallId) return;
+      this.emitSignal(CALL_SOCKET_EVENTS.SYNC, {
+        ...this.callContext,
+        mode: this.callMode()
+      });
+    });
+
+    socket.on('disconnect', () => {
+      if (!this.callContext || this.state() === 'ended') return;
+      this.state.set('reconnecting');
+      this.startReconnectTimeout();
+    });
+
+    socket.on(CALL_SOCKET_EVENTS.STATE, (raw: unknown) => {
+      const payload = raw as { active?: boolean; callId?: string };
+      if (!this.callContext || !payload.active) return;
+      if (payload.callId && payload.callId !== this.activeCallId) return;
+      void this.attemptIceRestart(true);
+    });
 
     socket.on(CALL_SOCKET_EVENTS.RING, (raw: unknown) => {
-      const payload = raw as { fromUserId?: string; consultationId?: string };
+      const payload = raw as { fromUserId?: string; consultationId?: string; callId?: string };
       if (!payload?.fromUserId) return;
+      if (this.activeCallId && payload.callId && payload.callId !== this.activeCallId) return;
+      if (payload.consultationId) {
+        this.observedCallLockKey = `${CALL_TAB_LOCK_PREFIX}${payload.consultationId}`;
+      }
+      if (payload.callId) this.activeCallId = payload.callId;
       this.incomingCall.set(true);
       if (this.state() === 'idle') this.state.set('ringing');
+      void this.startIncomingAlert();
     });
 
     socket.on(CALL_SOCKET_EVENTS.OFFER, (raw: unknown) => {
@@ -140,44 +270,156 @@ export class ConsultationWebrtcCallService {
     this.ensureMediaAccess = handler;
   }
 
+  async refreshMediaDevices() {
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.enumerateDevices) return;
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const audioInputs = devices.filter((device) => device.kind === 'audioinput');
+      const videoInputs = devices.filter((device) => device.kind === 'videoinput');
+      const audioOutputs = devices.filter((device) => device.kind === 'audiooutput');
+      this.audioInputs.set(audioInputs);
+      this.videoInputs.set(videoInputs);
+      this.audioOutputs.set(audioOutputs);
+      this.keepAvailableDeviceSelection(this.selectedAudioInputId, audioInputs);
+      this.keepAvailableDeviceSelection(this.selectedVideoInputId, videoInputs);
+      this.keepAvailableDeviceSelection(this.selectedAudioOutputId, audioOutputs);
+    } catch {
+      // Device enumeration is optional and may be unavailable before permission is granted.
+    }
+  }
+
+  async selectAudioInput(deviceId: string) {
+    const previousId = this.selectedAudioInputId();
+    this.selectedAudioInputId.set(deviceId);
+    if (!this.localStream()) return;
+    try {
+      await this.replaceLocalTrack('audio', deviceId);
+    } catch (error) {
+      this.selectedAudioInputId.set(previousId);
+      const message = mediaAccessErrorMessage(error, 'audio');
+      this.error.set(message);
+      throw new Error(message);
+    }
+  }
+
+  async selectVideoInput(deviceId: string) {
+    const previousId = this.selectedVideoInputId();
+    this.selectedVideoInputId.set(deviceId);
+    if (!this.localStream() || this.callMode() !== 'video') return;
+    try {
+      await this.replaceLocalTrack('video', deviceId);
+    } catch (error) {
+      this.selectedVideoInputId.set(previousId);
+      const message = mediaAccessErrorMessage(error, 'video');
+      this.error.set(message);
+      throw new Error(message);
+    }
+  }
+
+  selectAudioOutput(deviceId: string) {
+    this.selectedAudioOutputId.set(deviceId);
+  }
+
+  async enableIncomingAlerts() {
+    if (typeof window === 'undefined') return false;
+    const AudioContextConstructor =
+      window.AudioContext ||
+      (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (AudioContextConstructor) {
+      this.ringtoneContext ||= new AudioContextConstructor();
+      try {
+        await this.ringtoneContext.resume();
+      } catch {
+        // The browser may still require its site-level sound permission.
+      }
+    }
+
+    if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+      try {
+        await Notification.requestPermission();
+      } catch {
+        // Ringtone remains available when notifications are unsupported or denied.
+      }
+    }
+
+    const enabled = this.ringtoneContext?.state === 'running';
+    this.incomingAlertsEnabled.set(enabled);
+    return enabled;
+  }
+
+  async testSpeaker() {
+    await this.playRingTone();
+    return this.incomingAlertsEnabled();
+  }
+
   async startCall(params: {
     socket: CallSignalingSocket;
     consultationId: string;
     targetUserId: string;
     mode: CallMode;
     iceServers?: IceServerConfig[];
+    privacyRelay?: boolean;
   }) {
+    if (!this.acquireCallLock(params.consultationId)) {
+      const message = 'This call is already open in another browser tab.';
+      this.error.set(message);
+      this.state.set('error');
+      throw new Error(message);
+    }
     this.bindSocket(params.socket);
     this.callContext = { consultationId: params.consultationId, targetUserId: params.targetUserId };
     this.incomingCall.set(false);
+    this.stopIncomingAlert();
+    this.isInitiator = true;
+    this.activeCallId = this.newCallId();
+    this.signalSequence = 0;
+    this.iceRestartAttempts = 0;
+    this.totalReconnectCount = 0;
+    this.privacyRelay.set(params.privacyRelay === true);
+    this.voiceFallbackSuggested.set(false);
     this.callMode.set(params.mode);
     this.error.set('');
 
-    await this.ensurePeer(params.mode, params.iceServers ?? DEFAULT_STUN);
-    const offer = await this.pc!.createOffer();
-    await this.pc!.setLocalDescription(offer);
+    try {
+      await this.ensurePeer(params.mode, params.iceServers ?? DEFAULT_STUN, this.privacyRelay());
+      this.makingOffer = true;
+      await this.pc!.setLocalDescription();
+      const offer = this.pc!.localDescription!;
+      this.makingOffer = false;
 
-    this.state.set('ringing');
-    params.socket.emit(CALL_SOCKET_EVENTS.RING, {
-      consultationId: params.consultationId,
-      targetUserId: params.targetUserId,
-      mode: params.mode,
-      metadata: this.callMetadata()
-    });
-    params.socket.emit(CALL_SOCKET_EVENTS.OFFER, {
-      consultationId: params.consultationId,
-      targetUserId: params.targetUserId,
-      mode: params.mode,
-      sdp: offer,
-      metadata: this.callMetadata()
-    });
-    this.startAnswerTimeout();
+      this.state.set('ringing');
+      this.emitSignal(CALL_SOCKET_EVENTS.RING, {
+        consultationId: params.consultationId,
+        targetUserId: params.targetUserId,
+        mode: params.mode,
+        metadata: { ...this.callMetadata(), privacyRelay: this.privacyRelay() }
+      });
+      this.emitSignal(CALL_SOCKET_EVENTS.OFFER, {
+        consultationId: params.consultationId,
+        targetUserId: params.targetUserId,
+        mode: params.mode,
+        sdp: offer,
+        metadata: { ...this.callMetadata(), privacyRelay: this.privacyRelay() }
+      });
+      this.startAnswerTimeout();
+    } catch (error) {
+      this.makingOffer = false;
+      this.releaseCallLock();
+      throw error;
+    }
   }
 
   async acceptIncoming(iceServers: IceServerConfig[] = DEFAULT_STUN) {
     const offer = this.pendingOffer();
     if (!offer || !this.socket) return;
+    if (!this.acquireCallLock(offer.consultationId)) {
+      this.error.set('This call is already open in another browser tab.');
+      this.state.set('error');
+      return;
+    }
 
+    this.activeCallId = offer.callId;
+    this.signalSequence = 0;
     this.callContext = {
       consultationId: offer.consultationId,
       targetUserId: offer.fromUserId
@@ -185,14 +427,18 @@ export class ConsultationWebrtcCallService {
     this.callMode.set(offer.mode);
     this.error.set('');
     this.incomingCall.set(false);
+    this.stopIncomingAlert();
+    this.isInitiator = false;
+    this.iceRestartAttempts = 0;
+    this.totalReconnectCount = 0;
 
     try {
-      await this.ensurePeer(offer.mode, iceServers);
+      await this.ensurePeer(offer.mode, iceServers, this.privacyRelay());
       await this.pc!.setRemoteDescription(new RTCSessionDescription(offer.sdp));
       const answer = await this.pc!.createAnswer();
       await this.pc!.setLocalDescription(answer);
       await this.flushIceQueue();
-      this.socket.emit(CALL_SOCKET_EVENTS.ANSWER, {
+      this.emitSignal(CALL_SOCKET_EVENTS.ANSWER, {
         consultationId: offer.consultationId,
         targetUserId: offer.fromUserId,
         sdp: answer
@@ -200,13 +446,14 @@ export class ConsultationWebrtcCallService {
       this.pendingOffer.set(null);
       this.startMediaTimeout();
     } catch (err) {
+      this.releaseCallLock();
       this.error.set(err instanceof Error ? err.message : 'Could not join call.');
       this.state.set('error');
     }
   }
 
   rejectCall(params: { consultationId: string; targetUserId: string; reason?: string }) {
-    this.socket?.emit(CALL_SOCKET_EVENTS.REJECT, {
+    this.emitSignal(CALL_SOCKET_EVENTS.REJECT, {
       ...params,
       reason: params.reason || 'rejected',
       metadata: this.callMetadata()
@@ -217,7 +464,7 @@ export class ConsultationWebrtcCallService {
   }
 
   async endCall(params: { consultationId: string; targetUserId: string; reason?: string }) {
-    this.socket?.emit(CALL_SOCKET_EVENTS.END, {
+    this.emitSignal(CALL_SOCKET_EVENTS.END, {
       ...params,
       reason: params.reason || 'ended_by_user',
       metadata: await this.callMetadataWithStats()
@@ -243,6 +490,11 @@ export class ConsultationWebrtcCallService {
 
   cleanup(state: CallState = 'idle') {
     this.clearCallTimers();
+    this.stopIncomingAlert();
+    this.stopNetworkSampling();
+    this.stopCallHeartbeat();
+    void this.releaseWakeLock();
+    this.releaseCallLock();
     this.localStream()
       ?.getTracks()
       .forEach((track) => track.stop());
@@ -254,6 +506,24 @@ export class ConsultationWebrtcCallService {
     this.pendingOffer.set(null);
     this.incomingCall.set(false);
     this.iceQueue = [];
+    this.observedCallLockKey = '';
+    this.isInitiator = false;
+    this.activeCallId = '';
+    this.signalSequence = 0;
+    this.makingOffer = false;
+    this.ignoreOffer = false;
+    this.isSettingRemoteAnswerPending = false;
+    this.iceRestartAttempts = 0;
+    this.totalReconnectCount = 0;
+    this.iceRestartInProgress = false;
+    this.latestNetworkMetrics = {
+      packetLossPercent: 0,
+      maxJitterMs: 0,
+      averageRttMs: 0
+    };
+    this.consecutivePoorSamples = 0;
+    this.networkQuality.set('unknown');
+    this.voiceFallbackSuggested.set(false);
     this.state.set(state);
     this.error.set('');
   }
@@ -264,13 +534,47 @@ export class ConsultationWebrtcCallService {
       consultationId?: string;
       mode?: CallMode;
       sdp?: RTCSessionDescriptionInit;
+      metadata?: Record<string, unknown>;
+      callId?: string;
     };
-    if (!payload?.fromUserId || !payload.consultationId || !payload.sdp?.sdp) return;
+    if (!payload?.fromUserId || !payload.consultationId || !payload.sdp?.sdp || !payload.callId)
+      return;
+    this.observedCallLockKey = `${CALL_TAB_LOCK_PREFIX}${payload.consultationId}`;
+
+    if (this.pc && !this.matchesCallContext(payload)) return;
+    if (this.pc) {
+      const readyForOffer =
+        !this.makingOffer &&
+        (this.pc.signalingState === 'stable' || this.isSettingRemoteAnswerPending);
+      const offerCollision = !readyForOffer;
+      this.ignoreOffer = this.isInitiator && offerCollision;
+      if (this.ignoreOffer) return;
+      try {
+        if (payload.metadata?.['iceRestart'] === true) this.state.set('reconnecting');
+        await this.pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+        await this.pc.setLocalDescription();
+        const answer = this.pc.localDescription!;
+        await this.flushIceQueue();
+        this.emitSignal(CALL_SOCKET_EVENTS.ANSWER, {
+          consultationId: payload.consultationId,
+          targetUserId: payload.fromUserId,
+          mode: this.callMode(),
+          sdp: answer,
+          metadata: { iceRestart: payload.metadata?.['iceRestart'] === true }
+        });
+      } catch {
+        this.startReconnectTimeout();
+      }
+      return;
+    }
 
     const mode: CallMode =
       payload.mode === 'video' ? 'video' : sdpHasVideo(payload.sdp.sdp) ? 'video' : 'audio';
+    this.activeCallId = payload.callId;
+    this.privacyRelay.set(payload.metadata?.['privacyRelay'] === true);
     this.callMode.set(mode);
     this.pendingOffer.set({
+      callId: payload.callId,
       fromUserId: payload.fromUserId,
       consultationId: payload.consultationId,
       sdp: payload.sdp,
@@ -278,6 +582,7 @@ export class ConsultationWebrtcCallService {
     });
     this.incomingCall.set(true);
     this.state.set('ringing');
+    void this.startIncomingAlert();
   }
 
   private async onRemoteAnswer(raw: unknown) {
@@ -285,11 +590,17 @@ export class ConsultationWebrtcCallService {
       consultationId?: string;
       fromUserId?: string;
       sdp?: RTCSessionDescriptionInit;
+      callId?: string;
     };
     if (!payload?.sdp || !this.pc) return;
     if (!this.matchesCallContext(payload)) return;
     this.clearAnswerTimeout();
-    await this.pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+    this.isSettingRemoteAnswerPending = true;
+    try {
+      await this.pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+    } finally {
+      this.isSettingRemoteAnswerPending = false;
+    }
     await this.flushIceQueue();
     this.startMediaTimeout();
   }
@@ -299,6 +610,7 @@ export class ConsultationWebrtcCallService {
       consultationId?: string;
       fromUserId?: string;
       candidate?: RTCIceCandidateInit;
+      callId?: string;
     };
     if (!payload?.candidate) return;
     if (!this.matchesCallContext(payload)) return;
@@ -309,12 +621,18 @@ export class ConsultationWebrtcCallService {
     try {
       await this.pc.addIceCandidate(new RTCIceCandidate(payload.candidate));
     } catch {
-      // stale candidate after reconnect — safe to ignore
+      if (!this.ignoreOffer)
+        this.error.set('A network candidate could not be applied. Reconnecting…');
     }
   }
 
   private onRemoteCallClosed(raw: unknown) {
-    const payload = raw as { consultationId?: string; fromUserId?: string; reason?: string };
+    const payload = raw as {
+      consultationId?: string;
+      fromUserId?: string;
+      callId?: string;
+      reason?: string;
+    };
     if (!this.matchesCallContext(payload)) return;
     const message = callReasonMessage(payload?.reason);
     this.cleanup('ended');
@@ -327,7 +645,11 @@ export class ConsultationWebrtcCallService {
     }
   }
 
-  private matchesCallContext(payload: { consultationId?: string; fromUserId?: string }) {
+  private matchesCallContext(payload: {
+    consultationId?: string;
+    fromUserId?: string;
+    callId?: string;
+  }) {
     if (!this.callContext) return true;
     if (payload.consultationId && payload.consultationId !== this.callContext.consultationId) {
       return false;
@@ -335,6 +657,7 @@ export class ConsultationWebrtcCallService {
     if (payload.fromUserId && payload.fromUserId !== this.callContext.targetUserId) {
       return false;
     }
+    if (payload.callId && this.activeCallId && payload.callId !== this.activeCallId) return false;
     return true;
   }
 
@@ -351,7 +674,11 @@ export class ConsultationWebrtcCallService {
     }
   }
 
-  private async ensurePeer(mode: CallMode, iceServers: IceServerConfig[] = DEFAULT_STUN) {
+  private async ensurePeer(
+    mode: CallMode,
+    iceServers: IceServerConfig[] = DEFAULT_STUN,
+    privacyRelay = false
+  ) {
     if (this.pc) return;
 
     if (this.ensureMediaAccess) {
@@ -368,10 +695,7 @@ export class ConsultationWebrtcCallService {
       if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
         throw new Error('MEDIA_NOT_SUPPORTED');
       }
-      stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: mode === 'video'
-      });
+      stream = await navigator.mediaDevices.getUserMedia(this.mediaConstraints(mode));
     } catch (error) {
       const message = mediaAccessErrorMessage(error, mode);
       this.error.set(message);
@@ -381,13 +705,15 @@ export class ConsultationWebrtcCallService {
 
     this.pc = new RTCPeerConnection({
       iceServers: normalizeIceServers(iceServers),
-      iceTransportPolicy: 'all'
+      iceTransportPolicy: privacyRelay ? 'relay' : 'all'
     });
     this.localStream.set(stream);
+    void this.refreshMediaDevices();
 
     for (const track of stream.getTracks()) {
       this.pc.addTrack(track, stream);
     }
+    if (mode === 'video') await this.applyVideoProfile('balanced');
 
     this.pc.ontrack = (event) => {
       const [remote] = event.streams;
@@ -396,7 +722,7 @@ export class ConsultationWebrtcCallService {
 
     this.pc.onicecandidate = (event) => {
       if (!event.candidate || !this.socket || !this.callContext) return;
-      this.socket.emit(CALL_SOCKET_EVENTS.ICE, {
+      this.emitSignal(CALL_SOCKET_EVENTS.ICE, {
         consultationId: this.callContext.consultationId,
         targetUserId: this.callContext.targetUserId,
         candidate: event.candidate.toJSON()
@@ -409,6 +735,158 @@ export class ConsultationWebrtcCallService {
     this.state.set('connecting');
   }
 
+  private mediaConstraints(mode: CallMode): MediaStreamConstraints {
+    const audioDeviceId = this.selectedAudioInputId();
+    const videoDeviceId = this.selectedVideoInputId();
+    return {
+      audio: {
+        ...(audioDeviceId ? { deviceId: { exact: audioDeviceId } } : {}),
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true
+      },
+      video:
+        mode === 'video'
+          ? videoDeviceId
+            ? {
+                deviceId: { exact: videoDeviceId },
+                width: { ideal: 640 },
+                height: { ideal: 360 },
+                frameRate: { ideal: 24, max: 30 }
+              }
+            : {
+                width: { ideal: 640 },
+                height: { ideal: 360 },
+                frameRate: { ideal: 24, max: 30 }
+              }
+          : false
+    };
+  }
+
+  private keepAvailableDeviceSelection(
+    selected: { (): string; set(value: string): void },
+    devices: MediaDeviceInfo[]
+  ) {
+    const selectedId = selected();
+    if (selectedId && !devices.some((device) => device.deviceId === selectedId)) {
+      selected.set('');
+    }
+  }
+
+  private async replaceLocalTrack(kind: 'audio' | 'video', deviceId: string) {
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      throw new Error('MEDIA_NOT_SUPPORTED');
+    }
+
+    const replacementStream = await navigator.mediaDevices.getUserMedia({
+      audio: kind === 'audio' ? (deviceId ? { deviceId: { exact: deviceId } } : true) : false,
+      video: kind === 'video' ? (deviceId ? { deviceId: { exact: deviceId } } : true) : false
+    });
+    const replacementTrack =
+      kind === 'audio'
+        ? replacementStream.getAudioTracks()[0]
+        : replacementStream.getVideoTracks()[0];
+    if (!replacementTrack) {
+      replacementStream.getTracks().forEach((track) => track.stop());
+      throw new Error(`No ${kind} device is available.`);
+    }
+
+    const currentStream = this.localStream();
+    if (!currentStream) {
+      replacementStream.getTracks().forEach((track) => track.stop());
+      return;
+    }
+
+    const sender = this.pc?.getSenders().find((candidate) => candidate.track?.kind === kind);
+    if (this.pc && !sender) {
+      replacementTrack.stop();
+      throw new Error(`The active call has no ${kind} track to replace.`);
+    }
+    try {
+      await sender?.replaceTrack(replacementTrack);
+      const retainedTracks = currentStream.getTracks().filter((track) => track.kind !== kind);
+      currentStream
+        .getTracks()
+        .filter((track) => track.kind === kind)
+        .forEach((track) => track.stop());
+      this.localStream.set(new MediaStream([...retainedTracks, replacementTrack]));
+      await this.refreshMediaDevices();
+    } catch (error) {
+      replacementTrack.stop();
+      throw error;
+    }
+  }
+
+  private acquireCallLock(consultationId: string) {
+    if (typeof localStorage === 'undefined') return true;
+    const key = `${CALL_TAB_LOCK_PREFIX}${consultationId}`;
+    this.observedCallLockKey = key;
+    const now = Date.now();
+    try {
+      const current = this.readCallLock(key);
+      if (current && current.tabId !== this.callTabId && current.expiresAt > now) return false;
+
+      localStorage.setItem(
+        key,
+        JSON.stringify({ tabId: this.callTabId, expiresAt: now + CALL_TAB_LOCK_TTL_MS })
+      );
+      const confirmed = this.readCallLock(key);
+      if (!confirmed || confirmed.tabId !== this.callTabId) return false;
+
+      this.releaseCallLock();
+      this.callLockKey = key;
+      this.refreshCallLock();
+      this.callLockHeartbeat = setInterval(() => this.refreshCallLock(), CALL_TAB_LOCK_REFRESH_MS);
+      if (typeof window !== 'undefined' && !this.beforeUnloadBound) {
+        window.addEventListener('beforeunload', this.releaseLockBeforeUnload);
+        this.beforeUnloadBound = true;
+      }
+      return true;
+    } catch {
+      return true;
+    }
+  }
+
+  private readCallLock(key: string): { tabId: string; expiresAt: number } | null {
+    try {
+      const value = localStorage.getItem(key);
+      if (!value) return null;
+      const parsed = JSON.parse(value) as { tabId?: unknown; expiresAt?: unknown };
+      if (typeof parsed.tabId !== 'string' || typeof parsed.expiresAt !== 'number') return null;
+      return { tabId: parsed.tabId, expiresAt: parsed.expiresAt };
+    } catch {
+      return null;
+    }
+  }
+
+  private refreshCallLock() {
+    if (!this.callLockKey || typeof localStorage === 'undefined') return;
+    const current = this.readCallLock(this.callLockKey);
+    if (current && current.tabId !== this.callTabId && current.expiresAt > Date.now()) {
+      this.releaseCallLock();
+      void this.failCall('active_call_exists', 'This call was continued in another browser tab.');
+      return;
+    }
+    localStorage.setItem(
+      this.callLockKey,
+      JSON.stringify({ tabId: this.callTabId, expiresAt: Date.now() + CALL_TAB_LOCK_TTL_MS })
+    );
+  }
+
+  private releaseCallLock() {
+    if (this.callLockHeartbeat) clearInterval(this.callLockHeartbeat);
+    this.callLockHeartbeat = null;
+    if (this.callLockKey && typeof localStorage !== 'undefined') {
+      const current = this.readCallLock(this.callLockKey);
+      if (current?.tabId === this.callTabId) localStorage.removeItem(this.callLockKey);
+    }
+    this.callLockKey = '';
+    if (typeof window !== 'undefined' && this.beforeUnloadBound) {
+      window.removeEventListener('beforeunload', this.releaseLockBeforeUnload);
+      this.beforeUnloadBound = false;
+    }
+  }
+
   private handlePeerConnectionState() {
     const pc = this.pc;
     if (!pc) return;
@@ -419,20 +897,245 @@ export class ConsultationWebrtcCallService {
       this.clearMediaTimeout();
       this.clearReconnectTimeout();
       this.state.set('connected');
+      this.iceRestartAttempts = 0;
+      this.iceRestartInProgress = false;
+      this.clearIceRestartTimer();
+      this.startNetworkSampling();
+      this.startCallHeartbeat();
+      void this.acquireWakeLock();
       return;
     }
 
     if (connectionState === 'failed' || iceState === 'failed') {
-      void this.failCall(
-        'connection_failed',
-        'Call connection failed. Please try again or continue in chat.'
-      );
+      this.state.set('reconnecting');
+      this.startReconnectTimeout();
+      void this.attemptIceRestart();
       return;
     }
 
     if (connectionState === 'disconnected' || iceState === 'disconnected') {
       if (this.state() === 'connected') this.state.set('reconnecting');
       this.startReconnectTimeout();
+      this.scheduleIceRestart();
+    }
+  }
+
+  private scheduleIceRestart() {
+    if (this.iceRestartTimer || this.iceRestartInProgress) return;
+    this.iceRestartTimer = setTimeout(() => {
+      this.iceRestartTimer = null;
+      void this.attemptIceRestart();
+    }, ICE_RESTART_DELAY_MS);
+  }
+
+  private async attemptIceRestart(force = false) {
+    if (
+      !this.pc ||
+      !this.socket ||
+      !this.callContext ||
+      this.iceRestartInProgress ||
+      (!force && this.iceRestartAttempts >= MAX_ICE_RESTART_ATTEMPTS)
+    ) {
+      return;
+    }
+
+    this.iceRestartInProgress = true;
+    this.iceRestartAttempts += 1;
+    this.totalReconnectCount += 1;
+    try {
+      this.pc.restartIce?.();
+      this.makingOffer = true;
+      const offer = await this.pc.createOffer({ iceRestart: true });
+      await this.pc.setLocalDescription(offer);
+      this.emitSignal(CALL_SOCKET_EVENTS.OFFER, {
+        consultationId: this.callContext.consultationId,
+        targetUserId: this.callContext.targetUserId,
+        mode: this.callMode(),
+        sdp: offer,
+        metadata: {
+          iceRestart: true,
+          attempt: this.iceRestartAttempts,
+          ...this.callMetadata()
+        }
+      });
+    } catch {
+      if (this.iceRestartAttempts < MAX_ICE_RESTART_ATTEMPTS) this.scheduleIceRestart();
+    } finally {
+      this.makingOffer = false;
+      this.iceRestartInProgress = false;
+    }
+  }
+
+  private startNetworkSampling() {
+    if (this.networkSampleTimer) return;
+    void this.sampleNetworkQuality();
+    this.networkSampleTimer = setInterval(
+      () => void this.sampleNetworkQuality(),
+      NETWORK_SAMPLE_INTERVAL_MS
+    );
+  }
+
+  private stopNetworkSampling() {
+    if (this.networkSampleTimer) clearInterval(this.networkSampleTimer);
+    this.networkSampleTimer = null;
+  }
+
+  private startCallHeartbeat() {
+    if (this.callHeartbeatTimer || !this.callContext) return;
+    this.callHeartbeatTimer = setInterval(() => {
+      if (!this.callContext || this.state() !== 'connected') return;
+      this.emitSignal(CALL_SOCKET_EVENTS.HEARTBEAT, {
+        ...this.callContext,
+        mode: this.callMode()
+      });
+    }, 20_000);
+  }
+
+  private stopCallHeartbeat() {
+    if (this.callHeartbeatTimer) clearInterval(this.callHeartbeatTimer);
+    this.callHeartbeatTimer = null;
+  }
+
+  private async acquireWakeLock() {
+    if (this.wakeLock || typeof navigator === 'undefined' || !('wakeLock' in navigator)) return;
+    try {
+      this.wakeLock = await navigator.wakeLock.request('screen');
+      this.wakeLock.addEventListener('release', () => {
+        this.wakeLock = null;
+      });
+    } catch {
+      // Wake lock is optional and may be denied by battery-saving settings.
+    }
+  }
+
+  private async releaseWakeLock() {
+    const lock = this.wakeLock;
+    this.wakeLock = null;
+    await lock?.release().catch(() => undefined);
+  }
+
+  private async sampleNetworkQuality() {
+    if (!this.pc?.getStats || this.state() !== 'connected') return;
+    try {
+      const stats = await this.pc.getStats();
+      let packetsLost = 0;
+      let packetsReceived = 0;
+      let jitter = 0;
+      let roundTripTime = 0;
+
+      stats.forEach((report) => {
+        if (report.type === 'inbound-rtp' && !report.isRemote) {
+          packetsLost += Number(report.packetsLost || 0);
+          packetsReceived += Number(report.packetsReceived || 0);
+          jitter = Math.max(jitter, Number(report.jitter || 0));
+        }
+        if (report.type === 'candidate-pair' && report.state === 'succeeded') {
+          roundTripTime = Math.max(roundTripTime, Number(report.currentRoundTripTime || 0));
+        }
+      });
+
+      const totalPackets = packetsLost + packetsReceived;
+      const lossPercent = totalPackets > 0 ? (packetsLost / totalPackets) * 100 : 0;
+      this.latestNetworkMetrics = {
+        packetLossPercent: Math.round(lossPercent * 100) / 100,
+        maxJitterMs: Math.round(jitter * 1_000),
+        averageRttMs: Math.round(roundTripTime * 1_000)
+      };
+      if (lossPercent >= 8 || jitter >= 0.08 || roundTripTime >= 0.6) {
+        this.networkQuality.set('poor');
+        this.consecutivePoorSamples += 1;
+        if (this.callMode() === 'video') {
+          void this.applyVideoProfile('low');
+          if (this.consecutivePoorSamples >= 3) this.voiceFallbackSuggested.set(true);
+        }
+      } else if (lossPercent >= 3 || jitter >= 0.03 || roundTripTime >= 0.25) {
+        this.networkQuality.set('unstable');
+        this.consecutivePoorSamples = 0;
+        if (this.callMode() === 'video') void this.applyVideoProfile('low');
+      } else {
+        this.networkQuality.set('good');
+        this.consecutivePoorSamples = 0;
+        this.voiceFallbackSuggested.set(false);
+        if (this.callMode() === 'video') void this.applyVideoProfile('balanced');
+      }
+    } catch {
+      this.networkQuality.set('unknown');
+    }
+  }
+
+  private async applyVideoProfile(profile: 'balanced' | 'low') {
+    const sender = this.pc?.getSenders().find((item) => item.track?.kind === 'video');
+    if (!sender?.track) return;
+    try {
+      const parameters = sender.getParameters();
+      parameters.encodings ??= [{}];
+      parameters.encodings[0] = {
+        ...parameters.encodings[0],
+        maxBitrate: profile === 'low' ? 250_000 : 700_000,
+        maxFramerate: profile === 'low' ? 15 : 24,
+        scaleResolutionDownBy: profile === 'low' ? 2 : 1
+      };
+      await sender.setParameters(parameters);
+      await sender.track.applyConstraints({
+        width: { ideal: profile === 'low' ? 320 : 640 },
+        height: { ideal: profile === 'low' ? 180 : 360 },
+        frameRate: { ideal: profile === 'low' ? 15 : 24, max: profile === 'low' ? 18 : 30 }
+      });
+    } catch {
+      // Browsers may support only part of the sender parameter surface.
+    }
+  }
+
+  private async startIncomingAlert() {
+    if (this.ringtoneTimer) return;
+    await this.playRingTone();
+    this.ringtoneTimer = setInterval(() => void this.playRingTone(), 1_800);
+    if (
+      typeof document !== 'undefined' &&
+      document.hidden &&
+      typeof Notification !== 'undefined' &&
+      Notification.permission === 'granted'
+    ) {
+      this.incomingNotification?.close();
+      this.incomingNotification = new Notification('Incoming Hope Hub call', {
+        body: 'Open the session to accept or decline.'
+      });
+    }
+  }
+
+  private stopIncomingAlert() {
+    if (this.ringtoneTimer) clearInterval(this.ringtoneTimer);
+    this.ringtoneTimer = null;
+    this.incomingNotification?.close();
+    this.incomingNotification = null;
+  }
+
+  private async playRingTone() {
+    if (typeof window === 'undefined') return;
+    const AudioContextConstructor =
+      window.AudioContext ||
+      (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextConstructor) return;
+    this.ringtoneContext ||= new AudioContextConstructor();
+    try {
+      await this.ringtoneContext.resume();
+      if (this.ringtoneContext.state !== 'running') return;
+      this.incomingAlertsEnabled.set(true);
+      const oscillator = this.ringtoneContext.createOscillator();
+      const gain = this.ringtoneContext.createGain();
+      const now = this.ringtoneContext.currentTime;
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(680, now);
+      oscillator.frequency.setValueAtTime(820, now + 0.18);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.12, now + 0.025);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.42);
+      oscillator.connect(gain);
+      gain.connect(this.ringtoneContext.destination);
+      oscillator.start(now);
+      oscillator.stop(now + 0.44);
+    } catch {
+      this.incomingAlertsEnabled.set(false);
     }
   }
 
@@ -469,7 +1172,7 @@ export class ConsultationWebrtcCallService {
   private async failCall(reason: string, message: string) {
     const context = this.callContext;
     if (context) {
-      this.socket?.emit(CALL_SOCKET_EVENTS.END, {
+      this.emitSignal(CALL_SOCKET_EVENTS.END, {
         ...context,
         reason,
         metadata: await this.callMetadataWithStats()
@@ -497,10 +1200,17 @@ export class ConsultationWebrtcCallService {
     this.reconnectTimeout = null;
   }
 
+  private clearIceRestartTimer() {
+    if (!this.iceRestartTimer) return;
+    clearTimeout(this.iceRestartTimer);
+    this.iceRestartTimer = null;
+  }
+
   private clearCallTimers() {
     this.clearAnswerTimeout();
     this.clearMediaTimeout();
     this.clearReconnectTimeout();
+    this.clearIceRestartTimer();
   }
 
   private callMetadata(): Record<string, unknown> {
@@ -519,10 +1229,87 @@ export class ConsultationWebrtcCallService {
     };
   }
 
+  setPrivacyRelay(enabled: boolean) {
+    this.privacyRelay.set(enabled);
+  }
+
+  async testConnectivity(
+    iceServers: IceServerConfig[],
+    requireRelay = false
+  ): Promise<{ ok: boolean; relay: boolean; message: string }> {
+    if (typeof RTCPeerConnection === 'undefined') {
+      return { ok: false, relay: false, message: 'WebRTC is not supported in this browser.' };
+    }
+    const pc = new RTCPeerConnection({
+      iceServers: normalizeIceServers(iceServers),
+      iceTransportPolicy: requireRelay ? 'relay' : 'all'
+    });
+    let foundCandidate = false;
+    let foundRelay = false;
+    try {
+      pc.createDataChannel('hopehub-connectivity-test');
+      pc.onicecandidate = (event) => {
+        if (!event.candidate) return;
+        foundCandidate = true;
+        if (event.candidate.type === 'relay' || / typ relay /i.test(event.candidate.candidate)) {
+          foundRelay = true;
+        }
+      };
+      await pc.setLocalDescription(await pc.createOffer());
+      await new Promise<void>((resolve) => {
+        const timeout = setTimeout(resolve, 6_000);
+        pc.onicegatheringstatechange = () => {
+          if (pc.iceGatheringState !== 'complete') return;
+          clearTimeout(timeout);
+          resolve();
+        };
+      });
+      const ok = requireRelay ? foundRelay : foundCandidate;
+      return {
+        ok,
+        relay: foundRelay,
+        message: ok
+          ? foundRelay
+            ? 'Private relay connection is ready.'
+            : 'Direct browser connection is ready.'
+          : requireRelay
+            ? 'Private relay is unavailable. Check TURN configuration or use standard connection.'
+            : 'No usable network path was found. Check your connection and retry.'
+      };
+    } catch {
+      return { ok: false, relay: false, message: 'Could not complete the connection test.' };
+    } finally {
+      pc.close();
+    }
+  }
+
+  private emitSignal(event: string, payload: Record<string, unknown>) {
+    if (!this.socket || !this.activeCallId) return;
+    this.signalSequence += 1;
+    this.socket.emit(event, {
+      ...payload,
+      callId: this.activeCallId,
+      sequence: this.signalSequence
+    });
+  }
+
+  private newCallId() {
+    return typeof crypto !== 'undefined' && 'randomUUID' in crypto
+      ? crypto.randomUUID()
+      : `call-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  }
+
   private async callMetadataWithStats(): Promise<Record<string, unknown>> {
+    const candidateMetadata = await this.selectedCandidateMetadata();
     return {
       ...this.callMetadata(),
-      ...(await this.selectedCandidateMetadata())
+      ...candidateMetadata,
+      qualitySummary: {
+        quality: this.networkQuality(),
+        reconnectCount: this.totalReconnectCount,
+        usedTurnRelay: candidateMetadata['usedTurnRelay'] === true,
+        ...this.latestNetworkMetrics
+      }
     };
   }
 

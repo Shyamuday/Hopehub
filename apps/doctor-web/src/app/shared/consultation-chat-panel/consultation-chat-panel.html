@@ -11,6 +11,8 @@
     [enabled]="callEnabled()"
     [allowAudio]="allowAudio"
     [allowVideo]="allowVideo"
+    [participantName]="patientName()"
+    [participantImageUrl]="patientImageUrl()"
   />
 
   @if (error()) {

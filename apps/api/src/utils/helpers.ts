@@ -42,6 +42,7 @@ export const publicUserSelect = {
   email: true,
   mobile: true,
   role: true,
+  profileImageUrl: true,
   patientCode: true,
   homeClinicStoreId: true
 } as const;

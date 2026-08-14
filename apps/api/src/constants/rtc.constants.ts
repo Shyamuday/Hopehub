@@ -53,3 +53,27 @@ export function getPublicIceServers(): IceServerConfig[] {
 
   return servers;
 }
+
+export function getRtcConfigurationStatus() {
+  const urls = turnUrls();
+  const normalized = urls.map((url) => url.toLowerCase());
+  return {
+    stunConfigured: PUBLIC_STUN_SERVERS.length > 0,
+    turnConfigured:
+      urls.length > 0 &&
+      Boolean(
+        temporaryTurnCredentials() ||
+        (process.env.TURN_USERNAME?.trim() && process.env.TURN_CREDENTIAL?.trim())
+      ),
+    transports: {
+      udp: normalized.some((url) => !url.includes('transport=') || url.includes('transport=udp')),
+      tcp: normalized.some((url) => url.includes('transport=tcp')),
+      tls443: normalized.some((url) => url.startsWith('turns:') && /:443(?:\?|$)/.test(url))
+    },
+    credentialMode: process.env.TURN_SHARED_SECRET?.trim()
+      ? 'temporary'
+      : process.env.TURN_USERNAME?.trim() && process.env.TURN_CREDENTIAL?.trim()
+        ? 'static'
+        : 'none'
+  };
+}

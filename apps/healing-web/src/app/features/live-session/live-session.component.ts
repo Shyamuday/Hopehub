@@ -16,6 +16,7 @@ import {
   HOPE_HUB_ANALYTICS_EVENTS,
   ProductAnalyticsService,
 } from '../../core/services/product-analytics.service';
+import { CallPushNotificationService } from '../../core/services/call-push-notification.service';
 
 type LiveSessionMessage = {
   id: string;
@@ -30,7 +31,7 @@ type LiveSessionConsultation = {
   id: string;
   status: string;
   createdAt: string;
-  assignedDoctor?: { id: string; name?: string | null } | null;
+  assignedDoctor?: { id: string; name?: string | null; profileImageUrl?: string | null } | null;
   disease?: { name?: string | null } | null;
   intakeAnswers?: {
     sessionMode?: string;
@@ -78,6 +79,7 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
   private readonly notificationService = inject(NotificationService);
   private readonly realtimeService = inject(HopeHubRealtimeService);
   private readonly productAnalytics = inject(ProductAnalyticsService);
+  private readonly callPush = inject(CallPushNotificationService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly user = signal<User | null>(null);
@@ -94,6 +96,7 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
   readonly lastRefreshedAt = signal<Date | null>(null);
 
   private consultationId = '';
+  readonly enableBackgroundCallAlerts = () => this.callPush.enable();
   private trackedSessionId = '';
   private autoRefreshTimer: ReturnType<typeof setInterval> | null = null;
   private readonly handleIncomingMessage = (raw: unknown) => {

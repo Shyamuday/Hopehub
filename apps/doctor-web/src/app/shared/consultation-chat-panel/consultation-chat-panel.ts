@@ -34,6 +34,8 @@ export class ConsultationChatPanelComponent implements OnChanges, OnDestroy {
   readonly sending = signal(false);
   readonly error = signal('');
   readonly patientUserId = signal('');
+  readonly patientName = signal('');
+  readonly patientImageUrl = signal('');
   readonly iceServers = signal<IceServerConfig[]>([{ urls: 'stun:stun.l.google.com:19302' }]);
   readonly draftModel = signal({ body: '' });
   readonly draftForm = form(this.draftModel);
@@ -55,6 +57,8 @@ export class ConsultationChatPanelComponent implements OnChanges, OnDestroy {
       this.subscribedConsultationId = '';
       this.messages.set([]);
       this.patientUserId.set('');
+      this.patientName.set('');
+      this.patientImageUrl.set('');
     }
   }
 
@@ -104,10 +108,14 @@ export class ConsultationChatPanelComponent implements OnChanges, OnDestroy {
       const consultation = await this.consultationApi.loadConsultation(this.consultationId);
       this.messages.set(consultation.messages || []);
       this.patientUserId.set(consultation.patient?.id ?? '');
+      this.patientName.set(consultation.patient?.name ?? 'Your client');
+      this.patientImageUrl.set(consultation.patient?.profileImageUrl ?? '');
     } catch {
       this.error.set('Could not load messages.');
       this.messages.set([]);
       this.patientUserId.set('');
+      this.patientName.set('');
+      this.patientImageUrl.set('');
     } finally {
       this.loading.set(false);
     }

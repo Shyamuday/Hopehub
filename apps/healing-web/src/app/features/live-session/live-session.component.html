@@ -231,6 +231,9 @@
               [enabled]="canInteract()"
               [allowAudio]="allowAudioCall()"
               [allowVideo]="allowVideoCall()"
+              [participantName]="session.assignedDoctor?.name || 'Your expert'"
+              [participantImageUrl]="session.assignedDoctor?.profileImageUrl || ''"
+              [enableBackgroundAlerts]="enableBackgroundCallAlerts"
             ></hopehub-consultation-call-panel>
           </div>
         } @else {

@@ -1,9 +1,11 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
 import { CONSUMER_ROUTES } from '../constants/consumer-routes.constants';
 import { CONSUMER_STORAGE_KEYS } from '../constants/storage-keys.constants';
 import { ConsumerFlowPreferencesService } from './consumer-flow-preferences.service';
+import { AuthService } from './auth.service';
 
 export type HopeGuideTip = {
   question: string;
@@ -19,12 +21,16 @@ export class HopeGuideService {
   private readonly storageKey = CONSUMER_STORAGE_KEYS.guideEnabled;
   private readonly router = inject(Router);
   private readonly preferences = inject(ConsumerFlowPreferencesService);
+  private readonly auth = inject(AuthService);
 
   readonly enabled = signal(this.readEnabled());
   readonly open = signal(false);
   readonly currentUrl = signal(this.router.url || '/');
+  readonly isAuthenticated = toSignal(this.auth.isAuthenticated$, {
+    initialValue: this.auth.isAuthenticated(),
+  });
 
-  readonly tips = computed(() => this.tipsForUrl(this.currentUrl()));
+  readonly tips = computed(() => this.tipsForUrl(this.currentUrl(), this.isAuthenticated()));
 
   constructor() {
     this.router.events
@@ -63,7 +69,7 @@ export class HopeGuideService {
     localStorage.setItem(this.storageKey, String(enabled));
   }
 
-  private tipsForUrl(url: string): HopeGuideTip[] {
+  private tipsForUrl(url: string, isAuthenticated: boolean): HopeGuideTip[] {
     const cleanUrl = url.split('?')[0].split('#')[0];
     const saved = this.preferences.read();
     const concern = saved.concern || 'your concern';
@@ -146,18 +152,29 @@ export class HopeGuideService {
     }
 
     if (cleanUrl.startsWith('/live-session') || cleanUrl.startsWith('/live-groups')) {
-      return [
+      const tips: HopeGuideTip[] = [
         {
           question: 'Which connection mode should I choose?',
           answer:
             'Choose chat, voice, or video only when it feels comfortable. You can stop a session if it does not feel right.',
         },
-        {
+      ];
+
+      if (isAuthenticated) {
+        tips.push({
+          question: 'Can I return to this session?',
+          answer:
+            'Yes. This private session stays connected to your account, so you can return without signing up again.',
+        });
+      } else {
+        tips.push({
           question: 'Why do I need to sign up?',
           answer:
             'Guests can preview some spaces, but private participation needs a free account for safety and continuity.',
-        },
-      ];
+        });
+      }
+
+      return tips;
     }
 
     return [

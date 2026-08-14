@@ -24,6 +24,7 @@
     "verify:doctor-earnings": "tsx scripts/verify-doctor-earnings.ts",
     "verify:finance-period": "tsx scripts/verify-finance-period.ts",
     "telegram:setup": "tsx scripts/setup-telegram-bots.ts",
+    "push:vapid:generate": "web-push generate-vapid-keys",
     "assets:migrate:s3": "tsx scripts/migrate-local-assets-to-s3.ts"
   },
   "dependencies": {
@@ -50,6 +51,7 @@
     "razorpay": "^2.9.6",
     "redis": "^4.7.1",
     "socket.io": "^4.8.1",
+    "web-push": "^3.6.7",
     "zod": "^4.2.1"
   },
   "devDependencies": {
@@ -59,6 +61,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.0.3",
     "@types/nodemailer": "^6.4.17",
+    "@types/web-push": "^3.6.4",
     "prisma": "^7.2.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"

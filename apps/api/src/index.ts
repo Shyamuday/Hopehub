@@ -107,6 +107,10 @@ import {
 } from './services/online-doctor-presence.js';
 import { ONLINE_PRESENCE_SWEEP_INTERVAL_MS } from './constants/online-doctor.constants.js';
 import { setConsultationRealtimeSocket } from './services/consultation-realtime.js';
+import {
+  callMaintenanceIntervalMs,
+  runCallSessionMaintenance
+} from './services/call-session-maintenance.js';
 
 // ── App & HTTP server ──────────────────────────────────────────────────────────
 
@@ -398,6 +402,9 @@ httpServer.listen(port, () => {
   void expireStaleDoctorPresence(io).catch((e) =>
     console.error('[scheduler] Initial provider presence sweep failed', e)
   );
+  void runCallSessionMaintenance().catch((e) =>
+    console.error('[scheduler] Initial call maintenance failed', e)
+  );
 
   const doseTimer = setInterval(() => {
     void runDoseSchedulers().catch((e) =>
@@ -426,6 +433,13 @@ httpServer.listen(port, () => {
     );
   }, ONLINE_PRESENCE_SWEEP_INTERVAL_MS);
   providerPresenceTimer.unref();
+
+  const callMaintenanceTimer = setInterval(() => {
+    void runCallSessionMaintenance().catch((e) =>
+      console.error('[scheduler] Call maintenance failed', e)
+    );
+  }, callMaintenanceIntervalMs);
+  callMaintenanceTimer.unref();
 
   void restoreEmployeesFromLeave().catch((e) =>
     console.error('[scheduler] Leave restore failed', e)

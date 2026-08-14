@@ -18,7 +18,10 @@ export const SOCKET_EVENTS = {
   CALL_ICE: 'call:ice-candidate',
   CALL_END: 'call:end',
   CALL_REJECT: 'call:reject',
-  CALL_RING: 'call:ring'
+  CALL_RING: 'call:ring',
+  CALL_SYNC: 'call:sync',
+  CALL_STATE: 'call:state',
+  CALL_HEARTBEAT: 'call:heartbeat'
 } as const;
 
 export const SOCKET_ROOM_PREFIXES = {

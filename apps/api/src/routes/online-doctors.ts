@@ -24,6 +24,7 @@ import {
   setDoctorLiveStatus
 } from '../services/online-doctor-presence.js';
 import { asyncRoute, routeParam } from '../utils/helpers.js';
+import { registerUserPushDevice } from '../services/push-devices.js';
 
 export function createOnlineDoctorsRouter(io: SocketIoServer) {
   const router = Router();
@@ -323,7 +324,11 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
           platform: z.enum(['ios', 'android', 'web']).optional()
         })
         .parse(req.body);
-      // Stored when PushDevice model is added; accept now so mobile apps can register.
+      await registerUserPushDevice({
+        userId: req.user!.id,
+        token: body.token,
+        platform: body.platform
+      });
       res.json({ ok: true, token: body.token.slice(0, 8) + '…' });
     })
   );

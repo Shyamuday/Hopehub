@@ -4,6 +4,7 @@ import {
   Input,
   OnChanges,
   OnDestroy,
+  OnInit,
   SimpleChanges,
   ViewChild,
   effect,
@@ -24,7 +25,7 @@ import type {
   templateUrl: './consultation-call-panel.component.html',
   styleUrl: './consultation-call-panel.component.scss'
 })
-export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
+export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDestroy {
   readonly call = inject(ConsultationWebrtcCallService);
 
   @Input() consultationId = '';
@@ -34,34 +35,64 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
   @Input() enabled = true;
   @Input() allowAudio = true;
   @Input() allowVideo = true;
+  @Input() allowPrivacyRelay = true;
+  @Input() participantName = '';
+  @Input() participantImageUrl = '';
   @Input() ensureMediaAccess?: (mode: CallMode) => Promise<MediaAccessResult>;
+  @Input() enableBackgroundAlerts?: () => Promise<boolean>;
 
-  @ViewChild('localVideo') localVideoRef?: ElementRef<HTMLVideoElement>;
-  @ViewChild('remoteVideo') remoteVideoRef?: ElementRef<HTMLVideoElement>;
-  @ViewChild('remoteAudio') remoteAudioRef?: ElementRef<HTMLAudioElement>;
+  private localVideoElement: HTMLVideoElement | null = null;
+  private remoteVideoElement: HTMLVideoElement | null = null;
+  private remoteAudioElement: HTMLAudioElement | null = null;
+
+  @ViewChild('localVideo')
+  set localVideoRef(ref: ElementRef<HTMLVideoElement> | undefined) {
+    this.localVideoElement = ref?.nativeElement ?? null;
+    this.attachLocalStream();
+  }
+
+  @ViewChild('remoteVideo')
+  set remoteVideoRef(ref: ElementRef<HTMLVideoElement> | undefined) {
+    this.remoteVideoElement = ref?.nativeElement ?? null;
+    void this.attachRemoteStream(this.remoteVideoElement);
+  }
+
+  @ViewChild('remoteAudio')
+  set remoteAudioRef(ref: ElementRef<HTMLAudioElement> | undefined) {
+    this.remoteAudioElement = ref?.nativeElement ?? null;
+    void this.attachRemoteStream(this.remoteAudioElement);
+  }
 
   readonly busy = signal(false);
   readonly micOn = signal(true);
   readonly cameraOn = signal(true);
   readonly mediaCheckMessage = signal('');
   readonly mediaChecking = signal(false);
+  readonly deviceChanging = signal(false);
+  readonly audioPlaybackBlocked = signal(false);
+  readonly callAlertMessage = signal('');
+
+  private readonly handleDeviceChange = () => void this.call.refreshMediaDevices();
 
   constructor() {
     effect(() => {
-      const local = this.call.localStream();
-      const el = this.localVideoRef?.nativeElement;
-      if (el) el.srcObject = local;
+      this.call.localStream();
+      this.attachLocalStream();
     });
     effect(() => {
-      const remote = this.call.remoteStream();
-      const el = this.remoteVideoRef?.nativeElement;
-      if (el) el.srcObject = remote;
+      const remoteStream = this.call.remoteStream();
+      this.call.selectedAudioOutputId();
+      if (!remoteStream) this.audioPlaybackBlocked.set(false);
+      void this.attachRemoteStream(this.remoteVideoElement);
+      void this.attachRemoteStream(this.remoteAudioElement);
     });
-    effect(() => {
-      const remote = this.call.remoteStream();
-      const el = this.remoteAudioRef?.nativeElement;
-      if (el) el.srcObject = remote;
-    });
+  }
+
+  ngOnInit() {
+    void this.call.refreshMediaDevices();
+    if (typeof navigator !== 'undefined') {
+      navigator.mediaDevices?.addEventListener?.('devicechange', this.handleDeviceChange);
+    }
   }
 
   ngOnChanges(changes: SimpleChanges) {
@@ -74,6 +105,9 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
   }
 
   ngOnDestroy() {
+    if (typeof navigator !== 'undefined') {
+      navigator.mediaDevices?.removeEventListener?.('devicechange', this.handleDeviceChange);
+    }
     this.call.cleanup();
   }
 
@@ -123,6 +157,107 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
     return /microphone|camera|browser permission|secure https|another app/i.test(this.call.error());
   }
 
+  showDeviceSettings() {
+    return (
+      this.call.audioInputs().length > 0 ||
+      this.call.videoInputs().length > 0 ||
+      this.call.audioOutputs().length > 0
+    );
+  }
+
+  canSelectAudioOutput() {
+    return (
+      typeof HTMLMediaElement !== 'undefined' &&
+      'setSinkId' in HTMLMediaElement.prototype &&
+      this.call.audioOutputs().length > 0
+    );
+  }
+
+  networkQualityLabel() {
+    const quality = this.call.networkQuality();
+    if (quality === 'good') return 'Good network';
+    if (quality === 'unstable') return 'Unstable network';
+    if (quality === 'poor') return 'Poor network';
+    return 'Checking network';
+  }
+
+  participantInitial() {
+    return (this.participantName.trim().charAt(0) || 'H').toUpperCase();
+  }
+
+  async enableCallAlerts() {
+    const enabled = await this.call.enableIncomingAlerts();
+    const backgroundEnabled = this.enableBackgroundAlerts
+      ? await this.enableBackgroundAlerts()
+      : false;
+    this.callAlertMessage.set(
+      enabled || backgroundEnabled
+        ? backgroundEnabled
+          ? 'Incoming call sound and background alerts are on.'
+          : 'Incoming call sound is on.'
+        : 'Browser sound is blocked. Allow sound from the address-bar site settings.'
+    );
+  }
+
+  deviceLabel(device: MediaDeviceInfo, index: number, kind: 'microphone' | 'camera' | 'speaker') {
+    return (
+      device.label ||
+      `${kind === 'microphone' ? 'Microphone' : kind === 'camera' ? 'Camera' : 'Speaker'} ${index + 1}`
+    );
+  }
+
+  async changeAudioInput(event: Event) {
+    const deviceId = (event.target as HTMLSelectElement).value;
+    this.deviceChanging.set(true);
+    try {
+      await this.call.selectAudioInput(deviceId);
+    } catch {
+      // The shared call service exposes the device error.
+    } finally {
+      this.deviceChanging.set(false);
+    }
+  }
+
+  async changeVideoInput(event: Event) {
+    const deviceId = (event.target as HTMLSelectElement).value;
+    this.deviceChanging.set(true);
+    try {
+      await this.call.selectVideoInput(deviceId);
+    } catch {
+      // The shared call service exposes the device error.
+    } finally {
+      this.deviceChanging.set(false);
+    }
+  }
+
+  async changeAudioOutput(event: Event) {
+    const deviceId = (event.target as HTMLSelectElement).value;
+    this.call.selectAudioOutput(deviceId);
+    await this.applyAudioOutput(this.remoteAudioElement);
+    await this.applyAudioOutput(this.remoteVideoElement);
+  }
+
+  async resumeRemoteAudio() {
+    const element =
+      this.call.callMode() === 'video' ? this.remoteVideoElement : this.remoteAudioElement;
+    if (!element) return;
+    try {
+      await element.play();
+      this.audioPlaybackBlocked.set(false);
+    } catch {
+      this.audioPlaybackBlocked.set(true);
+    }
+  }
+
+  async testSpeaker() {
+    const heard = await this.call.testSpeaker();
+    this.mediaCheckMessage.set(
+      heard
+        ? 'Speaker test played. If you did not hear it, check browser and system volume.'
+        : 'Browser sound is blocked. Allow sound in site settings and retry.'
+    );
+  }
+
   async start(mode: CallMode) {
     if ((mode === 'audio' && !this.allowAudio) || (mode === 'video' && !this.allowVideo)) return;
     if (!this.socket || !this.consultationId || !this.targetUserId) return;
@@ -133,7 +268,8 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
         consultationId: this.consultationId,
         targetUserId: this.targetUserId,
         mode,
-        iceServers: this.iceServers
+        iceServers: this.iceServers,
+        privacyRelay: this.call.privacyRelay()
       });
     } catch {
       // service sets error state
@@ -164,7 +300,8 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
         consultationId: this.consultationId,
         targetUserId: this.targetUserId,
         mode,
-        iceServers: this.iceServers
+        iceServers: this.iceServers,
+        privacyRelay: this.call.privacyRelay()
       });
     } catch {
       // The call service exposes the actionable error message.
@@ -191,7 +328,8 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
         consultationId: this.consultationId,
         targetUserId: this.targetUserId,
         mode,
-        iceServers: this.iceServers
+        iceServers: this.iceServers,
+        privacyRelay: this.call.privacyRelay()
       });
     } catch {
       // service exposes the actionable media/signalling error
@@ -208,13 +346,19 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
       const result = this.ensureMediaAccess
         ? await this.ensureMediaAccess(mode)
         : await this.defaultMediaCheck(mode);
-      this.mediaCheckMessage.set(
-        result.granted
-          ? mode === 'video'
-            ? 'Camera and mic look ready.'
-            : 'Mic looks ready.'
-          : result.message || 'Media access is blocked.'
-      );
+      if (result.granted) {
+        const connectivity = await this.call.testConnectivity(
+          this.iceServers,
+          this.call.privacyRelay()
+        );
+        this.mediaCheckMessage.set(
+          connectivity.ok
+            ? `${result.message || (mode === 'video' ? 'Camera and mic ready.' : 'Mic ready.')} ${connectivity.message}`
+            : connectivity.message
+        );
+        return;
+      }
+      this.mediaCheckMessage.set(result.message || 'Media access is blocked.');
     } finally {
       this.mediaChecking.set(false);
     }
@@ -250,6 +394,11 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
     this.call.setCameraEnabled(next);
   }
 
+  togglePrivacyRelay(event: Event) {
+    this.call.setPrivacyRelay((event.target as HTMLInputElement).checked);
+    this.mediaCheckMessage.set('');
+  }
+
   private async defaultMediaCheck(mode: CallMode): Promise<MediaAccessResult> {
     if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
       return { granted: false, message: 'Calls are not supported on this device/browser.' };
@@ -259,8 +408,16 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
         audio: true,
         video: mode === 'video'
       });
+      const audioDetected = await this.detectMicrophoneSignal(stream);
       stream.getTracks().forEach((track) => track.stop());
-      return { granted: true };
+      return {
+        granted: true,
+        message: `${mode === 'video' ? 'Camera is ready. ' : ''}${
+          audioDetected
+            ? 'Microphone signal detected.'
+            : 'Microphone is allowed, but no sound was detected.'
+        }`
+      };
     } catch {
       return {
         granted: false,
@@ -269,6 +426,57 @@ export class ConsultationCallPanelComponent implements OnChanges, OnDestroy {
             ? 'Camera or mic is blocked. Allow access from browser settings, or try voice.'
             : 'Mic is blocked. Allow microphone access from browser settings.'
       };
+    }
+  }
+
+  private async detectMicrophoneSignal(stream: MediaStream) {
+    if (typeof AudioContext === 'undefined' || !stream.getAudioTracks().length) return false;
+    const context = new AudioContext();
+    try {
+      const analyser = context.createAnalyser();
+      analyser.fftSize = 256;
+      context.createMediaStreamSource(stream).connect(analyser);
+      await new Promise<void>((resolve) => setTimeout(resolve, 350));
+      const samples = new Uint8Array(analyser.frequencyBinCount);
+      analyser.getByteTimeDomainData(samples);
+      return samples.some((sample) => Math.abs(sample - 128) > 2);
+    } catch {
+      return false;
+    } finally {
+      await context.close().catch(() => undefined);
+    }
+  }
+
+  private attachLocalStream() {
+    if (this.localVideoElement) {
+      this.localVideoElement.srcObject = this.call.localStream();
+    }
+  }
+
+  private async attachRemoteStream(element: HTMLMediaElement | null) {
+    if (!element) return;
+    const stream = this.call.remoteStream();
+    element.srcObject = stream;
+    await this.applyAudioOutput(element);
+    if (!stream) return;
+    try {
+      await element.play();
+      this.audioPlaybackBlocked.set(false);
+    } catch {
+      this.audioPlaybackBlocked.set(true);
+    }
+  }
+
+  private async applyAudioOutput(element: HTMLMediaElement | null) {
+    const deviceId = this.call.selectedAudioOutputId();
+    if (!element || !deviceId) return;
+    const outputElement = element as HTMLMediaElement & {
+      setSinkId?: (sinkId: string) => Promise<void>;
+    };
+    try {
+      await outputElement.setSinkId?.(deviceId);
+    } catch {
+      // Output selection is not supported by every browser; default output remains active.
     }
   }
 }

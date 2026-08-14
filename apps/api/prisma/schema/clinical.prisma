@@ -118,6 +118,7 @@ model ConsultationFeedback {
 model ConsultationCallSession {
   id                String       @id @default(cuid())
   consultationId    String
+  activeKey         String?      @unique
   initiatedByUserId String
   targetUserId      String
   mode              String
@@ -129,6 +130,12 @@ model ConsultationCallSession {
   endReason         String?
   lastSignalEvent   String?
   metadata          Json?
+  qualitySummary    Json?
+  reconnectCount    Int          @default(0)
+  usedTurnRelay     Boolean?
+  averageRttMs      Int?
+  packetLossPercent Float?
+  maxJitterMs       Int?
   consultation      Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
@@ -137,6 +144,7 @@ model ConsultationCallSession {
   @@index([initiatedByUserId, startedAt])
   @@index([targetUserId, startedAt])
   @@index([status])
+  @@index([endedAt])
 }
 
 model Payment {

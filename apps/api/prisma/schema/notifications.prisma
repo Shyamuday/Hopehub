@@ -81,3 +81,23 @@ model ConsultationReminder {
   @@index([recipientUserId, status])
   @@index([consultationId])
 }
+model PushDevice {
+  id           String      @id @default(cuid())
+  userId       String?
+  storeStaffId String?
+  token        String      @unique @db.Text
+  platform     String
+  provider     String      @default("FCM")
+  isActive     Boolean     @default(true)
+  failureCount Int         @default(0)
+  lastSeenAt   DateTime    @default(now())
+  disabledAt   DateTime?
+  user         User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storeStaff   StoreStaff? @relation(fields: [storeStaffId], references: [id], onDelete: Cascade)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@index([userId, isActive])
+  @@index([storeStaffId, isActive])
+  @@index([lastSeenAt])
+}

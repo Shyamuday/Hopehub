@@ -4,6 +4,7 @@ import { prisma } from '../../db.js';
 import { asyncRoute, queryPositiveInt, routeParam } from '../../utils/helpers.js';
 import { formatInAppNotification } from '../../services/in-app-notifications.js';
 import { getStoreStaff, storeAuthMiddleware } from './shared.js';
+import { registerStoreStaffPushDevice } from '../../services/push-devices.js';
 
 export function registerStoreNotificationRoutes(router: Router) {
   router.post(
@@ -16,6 +17,12 @@ export function registerStoreNotificationRoutes(router: Router) {
           platform: z.enum(['ios', 'android', 'web']).optional()
         })
         .parse(req.body);
+      const { staffId } = getStoreStaff(req);
+      await registerStoreStaffPushDevice({
+        storeStaffId: staffId,
+        token: body.token,
+        platform: body.platform
+      });
       res.json({ ok: true, token: body.token.slice(0, 8) + '…' });
     })
   );

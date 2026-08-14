@@ -33,7 +33,7 @@
       </div>
 
       <div class="hope-guide__foot">
-        <span>Prefer to explore on your own?</span>
+        <span>{{ guide.isAuthenticated() ? 'Need less guidance?' : 'Prefer to explore on your own?' }}</span>
         <button type="button" (click)="guide.toggleEnabled()">Turn off</button>
       </div>
     </section>
