@@ -237,9 +237,42 @@ export interface LoginCredentials {
 export interface RegisterCredentials {
   email: string;
   password: string;
+  referralCode?: string;
   displayName?: string;
   firstName?: string;
   lastName?: string;
+}
+
+export interface PatientReferralSummary {
+  code: string;
+  sharePath: string;
+  requiredCompletedPaidCalls: number;
+  progressInCurrentCycle: number;
+  qualifyingCount: number;
+  availableFreeCalls: number;
+  stats: {
+    total: number;
+    registered: number;
+    qualified: number;
+    rewarded: number;
+    rejected: number;
+  };
+  rewards: Array<{
+    id: string;
+    cycle: number;
+    couponCode: string;
+    status: 'AVAILABLE' | 'REDEEMED' | 'REVOKED';
+    earnedAt: string;
+    redeemedAt?: string | null;
+  }>;
+  referrals: Array<{
+    id: string;
+    status: 'REGISTERED' | 'QUALIFIED' | 'REWARDED' | 'REJECTED';
+    createdAt: string;
+    qualifiedAt?: string | null;
+    friendLabel: string;
+  }>;
+  terms: string[];
 }
 
 export interface ResetPasswordRequest {

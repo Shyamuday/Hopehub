@@ -192,6 +192,7 @@ model User {
   referralCode         PatientReferralCode?
   referralsMade        PatientReferral[]      @relation("ReferralsMade")
   referralReceived     PatientReferral?       @relation("ReferralReceived")
+  referralFreeCallRewards ReferralFreeCallReward[]
   patientWallet        PatientWallet?
   walletLedger         WalletLedgerEntry[]    @relation("WalletLedgerPatient")
   rewardRedemptions    RewardRedemption[]     @relation("RewardRedemptionPatient")

@@ -34,7 +34,7 @@ import {
   getAssessmentDefinition,
   scoreAssessment
 } from '../services/assessment-definitions.js';
-import { isFirstPaidConsultation } from '../services/referral-codes.js';
+import { isFirstPaidConsultation, redeemReferralFreeCall } from '../services/referral-codes.js';
 import { getSiteConfigMap, getSiteConfigValue } from '../services/site-config.service.js';
 import { upsertProviderEarningForPayment } from '../services/provider-earnings.js';
 import { settleConsultationPaymentRewards } from '../services/reward-settlement.js';
@@ -3224,7 +3224,7 @@ hopeHubRouter.post(
         const claimed = await claimDoctorForInstantConsultation(tx, provider.userId, quickTalkMode);
         if (!claimed) return null;
       }
-      return tx.consultation.create({
+      const created = await tx.consultation.create({
         data: {
           patientId: req.user!.id,
           diseaseId: disease.id,
@@ -3341,6 +3341,14 @@ hopeHubRouter.post(
         },
         include: includeConsultationRelations()
       });
+      if (checkout.referralFreeCallRewardId) {
+        await redeemReferralFreeCall(tx, {
+          rewardId: checkout.referralFreeCallRewardId,
+          patientId: req.user!.id,
+          consultationId: created.id
+        });
+      }
+      return created;
     });
 
     if (!consultation) {
@@ -3844,200 +3852,211 @@ hopeHubRouter.post(
     const grossRevenueSplit = hopeHubRevenueSplit(amountInPaise);
     const payableRevenueSplit = hopeHubRevenueSplit(checkout.payableInPaise);
 
-    const consultation = await prisma.consultation.create({
-      data: {
-        patientId: req.user!.id,
-        diseaseId: disease.id,
-        clinicStoreId: null,
-        assignedDoctorId: requestedProvider?.userId ?? null,
-        status:
-          finalPayableInPaise <= 0 ? ConsultationStatus.PAID : ConsultationStatus.PAYMENT_PENDING,
-        consultationMode: 'INSTANT_ONLINE',
-        providerRoleCode: sessionProviderRole,
-        providerRoleSnapshot: await providerRoleSnapshot(sessionProviderRole),
-        intakeAnswers: {
-          source: 'hope-hub',
-          serviceName: effectiveServiceName,
-          message: body.message || '',
-          appointmentDate: body.appointmentDate,
-          appointmentTime: body.appointmentTime,
-          consultantName: body.consultantName || '',
-          consultantPhone: body.consultantPhone || '',
-          offeringId: selectedOffering?.id || body.offeringId || '',
-          offeringSlug: selectedOffering?.slug || body.offeringSlug || '',
-          offeringTitle: selectedOffering?.title || '',
-          offeringType: selectedOffering?.type || '',
-          careTeamServiceId: selectedCareTeamService?.id || '',
-          careTeamServiceTitle: selectedCareTeamService?.title || '',
-          careTeamPricingMode: selectedCareTeamService?.pricingMode || '',
-          careTeamPricingLabel: careTeamServicePricing?.label || '',
-          isFreeSession: isFreeByPricing,
-          requiresPayment,
-          careTeamFreeMinutes: selectedCareTeamService?.freeMinutes ?? null,
-          careTeamPricePerMinuteInPaise: selectedCareTeamService?.pricePerMinuteInPaise ?? null,
-          careTeamBillableMinutes:
-            selectedCareTeamService?.pricingMode === CareTeamServicePricingMode.PER_MINUTE
-              ? Math.max(
-                  0,
-                  (selectedCareTeamService.durationMinutes || 0) -
-                    (selectedCareTeamService.freeMinutes || 0)
-                )
-              : null,
-          careTeamPreviousUseCount: careTeamServiceUseCount,
-          promoCode: body.promoCode || '',
-          careTeamPackageConsultationId: activeCareTeamPackageBalance?.consultationId || '',
-          careTeamPackageRemainingBefore: activeCareTeamPackageBalance?.remainingSessions ?? null,
-          providerId: requestedProvider?.id || body.providerId || '',
-          requestedProviderName: requestedProvider?.user.name || '',
-          concernCategory: body.concernCategory || '',
-          preferredExpertType: body.preferredExpertType || '',
-          providerRole: sessionProviderRole,
-          providerRoles: sessionProviderRoles,
-          sessionMode: body.sessionMode || '',
-          preferredLanguage: body.preferredLanguage || '',
-          preferredProviderGender: body.preferredProviderGender || '',
-          safetyRisk: body.safetyRisk || '',
-          previousTherapyOrMedication: body.previousTherapyOrMedication || '',
-          emergencyConsent: Boolean(body.emergencyConsent),
-          sessionDuration: `${
-            selectedOffering?.sessionDurationMinutes || selectedServiceDurationMinutes
-          } minutes`,
-          requestedSessionDuration: body.sessionDuration || '',
-          preferredContact: body.preferredContact || '',
-          urgencyLevel: body.urgencyLevel || '',
-          preferredTime: body.preferredTime || '',
-          preferAnonymousTelegram: Boolean(body.preferAnonymousTelegram),
-          entryPage: body.entryPage || ''
-        },
-        billingPlanCode: selectedPlanCode,
-        pricingSnapshot: {
-          source: 'hope-hub',
-          purchaseType: selectedOffering?.type || 'ONE_TIME',
-          offeringId: selectedOffering?.id || null,
-          offeringCode: selectedOffering?.code || null,
-          offeringSlug: selectedOffering?.slug || null,
-          offeringTitle: selectedOffering?.title || null,
-          serviceName: effectiveServiceName,
-          careTeamServiceId: selectedCareTeamService?.id || null,
-          careTeamServiceTitle: selectedCareTeamService?.title || null,
-          careTeamPricingMode: selectedCareTeamService?.pricingMode || null,
-          careTeamPricingLabel: careTeamServicePricing?.label || null,
-          careTeamPricingRule: careTeamServicePricing?.appliedRule || null,
-          isFreeSession: isFreeByPricing,
-          requiresPayment,
-          careTeamFreeMinutes: selectedCareTeamService?.freeMinutes ?? null,
-          careTeamPricePerMinuteInPaise: selectedCareTeamService?.pricePerMinuteInPaise ?? null,
-          careTeamBillableMinutes:
-            selectedCareTeamService?.pricingMode === CareTeamServicePricingMode.PER_MINUTE
-              ? Math.max(
-                  0,
-                  (selectedCareTeamService.durationMinutes || 0) -
-                    (selectedCareTeamService.freeMinutes || 0)
-                )
-              : null,
-          careTeamPreviousUseCount: careTeamServiceUseCount,
-          careTeamPackageConsultationId: activeCareTeamPackageBalance?.consultationId || null,
-          careTeamPackageRemainingBefore: activeCareTeamPackageBalance?.remainingSessions ?? null,
-          sessionFeeInPaise: amountInPaise,
-          netAfterOfferDiscountInPaise,
-          paymentMode: partialPayment.paymentMode,
-          promoCode: body.promoCode || null,
-          balanceDueInPaise: partialPayment.balanceDueInPaise,
-          packageUsage,
-          sessionDurationMinutes:
-            selectedOffering?.sessionDurationMinutes || selectedServiceDurationMinutes,
-          sessionCount: selectedOffering?.sessionCount || 1,
-          validityDays: selectedOffering?.validityDays || null,
-          grossRevenueSplit,
-          payableRevenueSplit,
-          checkout: {
-            ...checkout,
-            packageGrossInPaise: amountInPaise,
-            chargeGrossInPaise,
-            offerDiscountInPaise: offerDiscount.discountInPaise,
-            checkoutDiscountInPaise: checkout.discountInPaise,
-            totalDiscountInPaise,
-            payableTodayInPaise: finalPayableInPaise,
-            balanceDueInPaise: partialPayment.balanceDueInPaise,
-            paymentMode: partialPayment.paymentMode
+    const consultation = await prisma.$transaction(async (tx) => {
+      const created = await tx.consultation.create({
+        data: {
+          patientId: req.user!.id,
+          diseaseId: disease.id,
+          clinicStoreId: null,
+          assignedDoctorId: requestedProvider?.userId ?? null,
+          status:
+            finalPayableInPaise <= 0 ? ConsultationStatus.PAID : ConsultationStatus.PAYMENT_PENDING,
+          consultationMode: 'INSTANT_ONLINE',
+          providerRoleCode: sessionProviderRole,
+          providerRoleSnapshot: await providerRoleSnapshot(sessionProviderRole),
+          intakeAnswers: {
+            source: 'hope-hub',
+            serviceName: effectiveServiceName,
+            message: body.message || '',
+            appointmentDate: body.appointmentDate,
+            appointmentTime: body.appointmentTime,
+            consultantName: body.consultantName || '',
+            consultantPhone: body.consultantPhone || '',
+            offeringId: selectedOffering?.id || body.offeringId || '',
+            offeringSlug: selectedOffering?.slug || body.offeringSlug || '',
+            offeringTitle: selectedOffering?.title || '',
+            offeringType: selectedOffering?.type || '',
+            careTeamServiceId: selectedCareTeamService?.id || '',
+            careTeamServiceTitle: selectedCareTeamService?.title || '',
+            careTeamPricingMode: selectedCareTeamService?.pricingMode || '',
+            careTeamPricingLabel: careTeamServicePricing?.label || '',
+            isFreeSession: isFreeByPricing,
+            requiresPayment,
+            careTeamFreeMinutes: selectedCareTeamService?.freeMinutes ?? null,
+            careTeamPricePerMinuteInPaise: selectedCareTeamService?.pricePerMinuteInPaise ?? null,
+            careTeamBillableMinutes:
+              selectedCareTeamService?.pricingMode === CareTeamServicePricingMode.PER_MINUTE
+                ? Math.max(
+                    0,
+                    (selectedCareTeamService.durationMinutes || 0) -
+                      (selectedCareTeamService.freeMinutes || 0)
+                  )
+                : null,
+            careTeamPreviousUseCount: careTeamServiceUseCount,
+            promoCode: body.promoCode || '',
+            careTeamPackageConsultationId: activeCareTeamPackageBalance?.consultationId || '',
+            careTeamPackageRemainingBefore: activeCareTeamPackageBalance?.remainingSessions ?? null,
+            providerId: requestedProvider?.id || body.providerId || '',
+            requestedProviderName: requestedProvider?.user.name || '',
+            concernCategory: body.concernCategory || '',
+            preferredExpertType: body.preferredExpertType || '',
+            providerRole: sessionProviderRole,
+            providerRoles: sessionProviderRoles,
+            sessionMode: body.sessionMode || '',
+            preferredLanguage: body.preferredLanguage || '',
+            preferredProviderGender: body.preferredProviderGender || '',
+            safetyRisk: body.safetyRisk || '',
+            previousTherapyOrMedication: body.previousTherapyOrMedication || '',
+            emergencyConsent: Boolean(body.emergencyConsent),
+            sessionDuration: `${
+              selectedOffering?.sessionDurationMinutes || selectedServiceDurationMinutes
+            } minutes`,
+            requestedSessionDuration: body.sessionDuration || '',
+            preferredContact: body.preferredContact || '',
+            urgencyLevel: body.urgencyLevel || '',
+            preferredTime: body.preferredTime || '',
+            preferAnonymousTelegram: Boolean(body.preferAnonymousTelegram),
+            entryPage: body.entryPage || ''
           },
-          offerDiscountRule: offerDiscount.rule,
-          partialPaymentRule: partialPayment.partialRule
-        },
-        payment: {
-          create: {
-            provider: paymentProvider,
-            grossAmountInPaise: chargeGrossInPaise,
-            discountInPaise: checkout.discountInPaise,
-            walletRedeemedInPaise: checkout.walletRedeemedInPaise,
-            amountInPaise: finalPayableInPaise,
-            billingPlanCode: selectedPlanCode,
-            appliedRules: checkout.appliedRules,
-            lineItems: {
-              source: 'hope-hub',
-              serviceName: effectiveServiceName,
-              offeringId: selectedOffering?.id || null,
-              offeringCode: selectedOffering?.code || null,
-              offeringSlug: selectedOffering?.slug || null,
-              offeringTitle: selectedOffering?.title || null,
-              offeringType: selectedOffering?.type || null,
-              careTeamServiceId: selectedCareTeamService?.id || null,
-              careTeamServiceTitle: selectedCareTeamService?.title || null,
-              careTeamPricingMode: selectedCareTeamService?.pricingMode || null,
-              careTeamPricingLabel: careTeamServicePricing?.label || null,
-              careTeamPricingRule: careTeamServicePricing?.appliedRule || null,
-              isFreeSession: isFreeByPricing,
-              requiresPayment,
-              careTeamFreeMinutes: selectedCareTeamService?.freeMinutes ?? null,
-              careTeamPricePerMinuteInPaise: selectedCareTeamService?.pricePerMinuteInPaise ?? null,
-              careTeamBillableMinutes:
-                selectedCareTeamService?.pricingMode === CareTeamServicePricingMode.PER_MINUTE
-                  ? Math.max(
-                      0,
-                      (selectedCareTeamService.durationMinutes || 0) -
-                        (selectedCareTeamService.freeMinutes || 0)
-                    )
-                  : null,
-              careTeamPreviousUseCount: careTeamServiceUseCount,
-              promoCode: body.promoCode || null,
-              careTeamPackageConsultationId: activeCareTeamPackageBalance?.consultationId || null,
-              careTeamPackageRemainingBefore:
-                activeCareTeamPackageBalance?.remainingSessions ?? null,
-              providerId: requestedProvider?.id || body.providerId || '',
-              requestedProviderName: requestedProvider?.user.name || '',
-              sessionDurationMinutes:
-                selectedOffering?.sessionDurationMinutes || selectedServiceDurationMinutes,
-              sessionCount: selectedOffering?.sessionCount || 1,
-              validityDays: selectedOffering?.validityDays || null,
+          billingPlanCode: selectedPlanCode,
+          pricingSnapshot: {
+            source: 'hope-hub',
+            purchaseType: selectedOffering?.type || 'ONE_TIME',
+            offeringId: selectedOffering?.id || null,
+            offeringCode: selectedOffering?.code || null,
+            offeringSlug: selectedOffering?.slug || null,
+            offeringTitle: selectedOffering?.title || null,
+            serviceName: effectiveServiceName,
+            careTeamServiceId: selectedCareTeamService?.id || null,
+            careTeamServiceTitle: selectedCareTeamService?.title || null,
+            careTeamPricingMode: selectedCareTeamService?.pricingMode || null,
+            careTeamPricingLabel: careTeamServicePricing?.label || null,
+            careTeamPricingRule: careTeamServicePricing?.appliedRule || null,
+            isFreeSession: isFreeByPricing,
+            requiresPayment,
+            careTeamFreeMinutes: selectedCareTeamService?.freeMinutes ?? null,
+            careTeamPricePerMinuteInPaise: selectedCareTeamService?.pricePerMinuteInPaise ?? null,
+            careTeamBillableMinutes:
+              selectedCareTeamService?.pricingMode === CareTeamServicePricingMode.PER_MINUTE
+                ? Math.max(
+                    0,
+                    (selectedCareTeamService.durationMinutes || 0) -
+                      (selectedCareTeamService.freeMinutes || 0)
+                  )
+                : null,
+            careTeamPreviousUseCount: careTeamServiceUseCount,
+            careTeamPackageConsultationId: activeCareTeamPackageBalance?.consultationId || null,
+            careTeamPackageRemainingBefore: activeCareTeamPackageBalance?.remainingSessions ?? null,
+            sessionFeeInPaise: amountInPaise,
+            netAfterOfferDiscountInPaise,
+            paymentMode: partialPayment.paymentMode,
+            promoCode: body.promoCode || null,
+            balanceDueInPaise: partialPayment.balanceDueInPaise,
+            packageUsage,
+            sessionDurationMinutes:
+              selectedOffering?.sessionDurationMinutes || selectedServiceDurationMinutes,
+            sessionCount: selectedOffering?.sessionCount || 1,
+            validityDays: selectedOffering?.validityDays || null,
+            grossRevenueSplit,
+            payableRevenueSplit,
+            checkout: {
+              ...checkout,
               packageGrossInPaise: amountInPaise,
-              consultationFeeInPaise: chargeGrossInPaise,
+              chargeGrossInPaise,
               offerDiscountInPaise: offerDiscount.discountInPaise,
               checkoutDiscountInPaise: checkout.discountInPaise,
-              discountInPaise: totalDiscountInPaise,
-              walletRedeemedInPaise: checkout.walletRedeemedInPaise,
-              netAfterOfferDiscountInPaise,
-              paymentMode: partialPayment.paymentMode,
+              totalDiscountInPaise,
               payableTodayInPaise: finalPayableInPaise,
               balanceDueInPaise: partialPayment.balanceDueInPaise,
-              packageUsage,
-              payableInPaise: finalPayableInPaise,
-              grossRevenueSplit,
-              payableRevenueSplit,
-              planCode: selectedPlanCode,
-              planName: selectedPlanName,
-              offerDiscountRule: offerDiscount.rule,
-              partialPaymentRule: partialPayment.partialRule,
-              appliedRules: [
-                offerDiscount.rule,
-                partialPayment.partialRule,
-                ...checkout.appliedRules
-              ].filter(Boolean)
+              paymentMode: partialPayment.paymentMode
             },
-            status: finalPayableInPaise <= 0 ? PaymentStatus.PAID : PaymentStatus.CREATED
+            offerDiscountRule: offerDiscount.rule,
+            partialPaymentRule: partialPayment.partialRule
+          },
+          payment: {
+            create: {
+              provider: paymentProvider,
+              grossAmountInPaise: chargeGrossInPaise,
+              discountInPaise: checkout.discountInPaise,
+              walletRedeemedInPaise: checkout.walletRedeemedInPaise,
+              amountInPaise: finalPayableInPaise,
+              billingPlanCode: selectedPlanCode,
+              appliedRules: checkout.appliedRules,
+              lineItems: {
+                source: 'hope-hub',
+                serviceName: effectiveServiceName,
+                offeringId: selectedOffering?.id || null,
+                offeringCode: selectedOffering?.code || null,
+                offeringSlug: selectedOffering?.slug || null,
+                offeringTitle: selectedOffering?.title || null,
+                offeringType: selectedOffering?.type || null,
+                careTeamServiceId: selectedCareTeamService?.id || null,
+                careTeamServiceTitle: selectedCareTeamService?.title || null,
+                careTeamPricingMode: selectedCareTeamService?.pricingMode || null,
+                careTeamPricingLabel: careTeamServicePricing?.label || null,
+                careTeamPricingRule: careTeamServicePricing?.appliedRule || null,
+                isFreeSession: isFreeByPricing,
+                requiresPayment,
+                careTeamFreeMinutes: selectedCareTeamService?.freeMinutes ?? null,
+                careTeamPricePerMinuteInPaise:
+                  selectedCareTeamService?.pricePerMinuteInPaise ?? null,
+                careTeamBillableMinutes:
+                  selectedCareTeamService?.pricingMode === CareTeamServicePricingMode.PER_MINUTE
+                    ? Math.max(
+                        0,
+                        (selectedCareTeamService.durationMinutes || 0) -
+                          (selectedCareTeamService.freeMinutes || 0)
+                      )
+                    : null,
+                careTeamPreviousUseCount: careTeamServiceUseCount,
+                promoCode: body.promoCode || null,
+                careTeamPackageConsultationId: activeCareTeamPackageBalance?.consultationId || null,
+                careTeamPackageRemainingBefore:
+                  activeCareTeamPackageBalance?.remainingSessions ?? null,
+                providerId: requestedProvider?.id || body.providerId || '',
+                requestedProviderName: requestedProvider?.user.name || '',
+                sessionDurationMinutes:
+                  selectedOffering?.sessionDurationMinutes || selectedServiceDurationMinutes,
+                sessionCount: selectedOffering?.sessionCount || 1,
+                validityDays: selectedOffering?.validityDays || null,
+                packageGrossInPaise: amountInPaise,
+                consultationFeeInPaise: chargeGrossInPaise,
+                offerDiscountInPaise: offerDiscount.discountInPaise,
+                checkoutDiscountInPaise: checkout.discountInPaise,
+                discountInPaise: totalDiscountInPaise,
+                walletRedeemedInPaise: checkout.walletRedeemedInPaise,
+                netAfterOfferDiscountInPaise,
+                paymentMode: partialPayment.paymentMode,
+                payableTodayInPaise: finalPayableInPaise,
+                balanceDueInPaise: partialPayment.balanceDueInPaise,
+                packageUsage,
+                payableInPaise: finalPayableInPaise,
+                grossRevenueSplit,
+                payableRevenueSplit,
+                planCode: selectedPlanCode,
+                planName: selectedPlanName,
+                offerDiscountRule: offerDiscount.rule,
+                partialPaymentRule: partialPayment.partialRule,
+                appliedRules: [
+                  offerDiscount.rule,
+                  partialPayment.partialRule,
+                  ...checkout.appliedRules
+                ].filter(Boolean)
+              },
+              status: finalPayableInPaise <= 0 ? PaymentStatus.PAID : PaymentStatus.CREATED
+            }
           }
-        }
-      },
-      include: includeConsultationRelations()
+        },
+        include: includeConsultationRelations()
+      });
+      if (checkout.referralFreeCallRewardId) {
+        await redeemReferralFreeCall(tx, {
+          rewardId: checkout.referralFreeCallRewardId,
+          patientId: req.user!.id,
+          consultationId: created.id
+        });
+      }
+      return created;
     });
 
     if (requestedSlot) {

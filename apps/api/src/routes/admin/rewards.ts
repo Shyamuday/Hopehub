@@ -171,16 +171,25 @@ export function registerAdminRewardsRoutes(router: Router) {
     allowRoles(Role.ADMIN, Role.MARKETING),
     asyncRoute(async (req, res) => {
       const take = Math.min(Number(req.query['limit'] || 50), 200);
-      const referrals = await prisma.patientReferral.findMany({
-        orderBy: { createdAt: 'desc' },
-        take,
-        include: {
-          referrer: { select: { id: true, name: true, mobile: true } },
-          referredUser: { select: { id: true, name: true, mobile: true, createdAt: true } },
-          referralCode: { select: { code: true } }
-        }
-      });
-      res.json({ referrals });
+      const [referrals, freeCallRewards] = await Promise.all([
+        prisma.patientReferral.findMany({
+          orderBy: { createdAt: 'desc' },
+          take,
+          include: {
+            referrer: { select: { id: true, name: true, mobile: true } },
+            referredUser: { select: { id: true, name: true, mobile: true, createdAt: true } },
+            referralCode: { select: { code: true } }
+          }
+        }),
+        prisma.referralFreeCallReward.findMany({
+          orderBy: { earnedAt: 'desc' },
+          take,
+          include: {
+            patient: { select: { id: true, name: true, mobile: true } }
+          }
+        })
+      ]);
+      res.json({ referrals, freeCallRewards });
     })
   );
 

@@ -10,6 +10,7 @@ import type {
   PatientDailyPlanTask,
   PatientProfile,
   PatientProfileUpdateRequest,
+  PatientReferralSummary,
 } from '../../core/models/auth.model';
 
 type ProfileSection = 'basic' | 'emergency' | 'wellness' | 'health';
@@ -33,6 +34,8 @@ export class ProfileComponent implements OnInit {
   readonly needsLogin = signal(false);
   readonly patientCode = signal<string | null>(null);
   readonly profile = signal<PatientProfile | null>(null);
+  readonly referralSummary = signal<PatientReferralSummary | null>(null);
+  readonly referralLoading = signal(false);
   readonly profileWorkspace = signal<'personal' | 'support' | 'plan'>('personal');
   readonly editingSection = signal<ProfileSection | null>(null);
   readonly dailyPlans = signal<PatientDailyPlan[]>([]);
@@ -111,6 +114,7 @@ export class ProfileComponent implements OnInit {
         this.profile.set(profile);
         this.profileForm.reset(this.toFormValue(profile));
         this.loading.set(false);
+        this.loadReferralSummary();
         this.loadDailyPlans();
       },
       error: () => {
@@ -120,6 +124,74 @@ export class ProfileComponent implements OnInit {
         this.loading.set(false);
       },
     });
+  }
+
+  loadReferralSummary(): void {
+    this.referralLoading.set(true);
+    this.auth.loadPatientReferralSummary().subscribe({
+      next: (summary) => {
+        this.referralSummary.set(summary);
+        this.referralLoading.set(false);
+      },
+      error: () => this.referralLoading.set(false),
+    });
+  }
+
+  referralProgressPercent(): number {
+    const summary = this.referralSummary();
+    if (!summary?.requiredCompletedPaidCalls) return 0;
+    return Math.min(
+      100,
+      Math.round((summary.progressInCurrentCycle / summary.requiredCompletedPaidCalls) * 100),
+    );
+  }
+
+  referralShareUrl(): string {
+    const path = this.referralSummary()?.sharePath || '';
+    if (!path) return '';
+    if (typeof window === 'undefined') return path;
+    return new URL(path, window.location.origin).toString();
+  }
+
+  async copyReferralCode(value?: string): Promise<void> {
+    const code = value || this.referralSummary()?.code || '';
+    if (!code) return;
+    try {
+      await navigator.clipboard.writeText(code);
+      this.notificationService.success('Code copied.');
+    } catch {
+      this.notificationService.info(`Your code is ${code}`);
+    }
+  }
+
+  async shareReferral(): Promise<void> {
+    const summary = this.referralSummary();
+    if (!summary) return;
+    const text = `Join Hope Hub with my referral code ${summary.code}. After you complete your first paid support call, it counts toward my free call.`;
+    const url = this.referralShareUrl();
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      await navigator.share({ title: 'Hope Hub referral', text, url }).catch(() => undefined);
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(`${text} ${url}`);
+      this.notificationService.success('Referral link copied.');
+    } catch {
+      this.notificationService.info('Copy your referral code and share it with a friend.');
+    }
+  }
+
+  availableReferralRewards() {
+    return (this.referralSummary()?.rewards || []).filter(
+      (reward) => reward.status === 'AVAILABLE',
+    );
+  }
+
+  referralStatusLabel(status: string): string {
+    if (status === 'REWARDED') return 'Counted toward a free call';
+    if (status === 'QUALIFIED') return 'Paid call completed';
+    if (status === 'REJECTED') return 'Not eligible';
+    return 'Joined — awaiting completed paid call';
   }
 
   beginProfileEdit(section: ProfileSection): void {

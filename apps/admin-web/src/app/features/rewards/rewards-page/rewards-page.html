@@ -151,6 +151,39 @@
       </div>
     </section>
   } @else {
+    @if (freeCallRewards().length) {
+      <section class="panel inner">
+        <h2>Free-call rewards</h2>
+        <p class="hint">Automatically unlocked after five different referred users complete a paid call.</p>
+        <div class="table-wrap desktop-only">
+          <table>
+            <thead><tr><th>User</th><th>Coupon</th><th>Cycle</th><th>Status</th><th>Earned</th></tr></thead>
+            <tbody>
+              @for (reward of freeCallRewards(); track $any(reward).id) {
+                <tr>
+                  <td>{{ $any(reward).patient?.name }}</td>
+                  <td>{{ $any(reward).couponCode }}</td>
+                  <td>{{ $any(reward).cycle }}</td>
+                  <td>{{ $any(reward).status }}</td>
+                  <td>{{ $any(reward).earnedAt | date:'mediumDate' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="mobile-row-cards">
+          @for (reward of freeCallRewards(); track $any(reward).id) {
+            <article class="mobile-row-card">
+              <div class="card-head">
+                <strong>{{ $any(reward).patient?.name }}</strong>
+                <span>{{ $any(reward).status }}</span>
+              </div>
+              <div class="card-row"><span>{{ $any(reward).couponCode }}</span><span>Cycle {{ $any(reward).cycle }}</span></div>
+            </article>
+          }
+        </div>
+      </section>
+    }
     <section class="panel inner">
       <h2>Recent referrals</h2>
       <div class="table-wrap desktop-only">

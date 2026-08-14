@@ -7,6 +7,10 @@ import { asyncRoute, publicUserSelect, logAuthEvent } from '../../utils/helpers.
 import { googleClient, googleClientId } from './shared.js';
 import { recordAuthProcess } from '../../services/auth-process-log.js';
 import { issueAuthSession } from '../../services/auth-sessions.js';
+import {
+  attachReferralOnSignup,
+  isActivePatientReferralCode
+} from '../../services/referral-codes.js';
 
 const googleAuthUserSelect = {
   ...publicUserSelect,
@@ -26,7 +30,12 @@ export function registerAuthGoogleRoutes(router: Router) {
   router.post(
     '/auth/google',
     asyncRoute(async (req, res) => {
-      const body = z.object({ idToken: z.string().min(20) }).parse(req.body);
+      const body = z
+        .object({
+          idToken: z.string().min(20),
+          referralCode: z.string().min(3).max(32).optional()
+        })
+        .parse(req.body);
       if (!googleClient || !googleClientId) {
         await recordAuthProcess({
           processType: 'patient_google',
@@ -120,6 +129,17 @@ export function registerAuthGoogleRoutes(router: Router) {
         });
       }
 
+      if (
+        !existing &&
+        body.referralCode &&
+        !(await isActivePatientReferralCode(body.referralCode))
+      ) {
+        return res.status(400).json({
+          code: 'INVALID_REFERRAL_CODE',
+          message: 'This referral code is not valid or is no longer active.'
+        });
+      }
+
       let user;
       try {
         user = existing
@@ -171,6 +191,9 @@ export function registerAuthGoogleRoutes(router: Router) {
             externalAvatarUrl: avatarUrl
           }
         });
+        if (body.referralCode) {
+          await attachReferralOnSignup(user.id, body.referralCode);
+        }
       }
 
       await prisma.userIdentity.upsert({

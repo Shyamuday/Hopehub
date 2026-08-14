@@ -5,6 +5,10 @@ import {
   SupportNoteCategory
 } from '@prisma/client';
 import { prisma } from '../db.js';
+import {
+  qualifyReferralAfterCompletedPaidCall,
+  restoreReferralFreeCallAfterCancellation
+} from './referral-codes.js';
 
 export type SessionOutcomeStatus =
   'COMPLETED' | 'USER_MISSED' | 'PROVIDER_NO_SHOW' | 'RESCHEDULE_NEEDED';
@@ -183,6 +187,16 @@ export async function applySessionOutcome(input: {
       body: noteLines.join('\n')
     }
   });
+
+  if (input.outcome === 'COMPLETED') {
+    await qualifyReferralAfterCompletedPaidCall(consultation.id).catch((error) => {
+      console.error('[referral] Could not qualify completed paid referral', error);
+    });
+  } else if (nextStatus === ConsultationStatus.CANCELLED) {
+    await restoreReferralFreeCallAfterCancellation(consultation.id).catch((error) => {
+      console.error('[referral] Could not restore cancelled free call', error);
+    });
+  }
 
   return { consultation: updated, sessionOutcome };
 }

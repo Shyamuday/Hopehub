@@ -47,10 +47,16 @@ export async function upsertProviderEarningForPayment(
 
   const snapshot = asRecord(payment.consultation.pricingSnapshot);
   const lineItems = asRecord(payment.lineItems);
+  const checkout = asRecord(snapshot['checkout']);
   const packageUsage = snapshot['packageUsage'] || lineItems['packageUsage'] || null;
+  const isPlatformFundedReferralCall = Boolean(checkout['referralFreeCallRewardId']);
   const grossAmountInPaise = Math.max(
     0,
-    Number(payment.amountInPaise || 0) - Number(payment.refundedAmountInPaise || 0)
+    Number(
+      isPlatformFundedReferralCall
+        ? payment.grossAmountInPaise || payment.amountInPaise || 0
+        : payment.amountInPaise || 0
+    ) - Number(payment.refundedAmountInPaise || 0)
   );
   const isEarnable =
     payment.status === PaymentStatus.PAID || payment.status === PaymentStatus.PARTIALLY_REFUNDED;

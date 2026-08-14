@@ -3,6 +3,7 @@ import { prisma } from '../db.js';
 import { upsertProviderEarningForPayment } from './provider-earnings.js';
 import { cancelConsultationReminders } from './consultation-reminders.js';
 import { restoreDoctorOnlineAfterInstantConsultation } from './online-doctor-presence.js';
+import { restoreReferralFreeCallAfterCancellation } from './referral-codes.js';
 
 function asRecord(value: unknown): Record<string, any> {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -132,6 +133,7 @@ export async function applyConsultationCancellationEffects(input: {
   }
 
   await cancelConsultationReminders(consultation.id, input.reason || null);
+  const referralFreeCall = await restoreReferralFreeCallAfterCancellation(consultation.id);
 
   if (consultation.consultationMode === 'INSTANT_ONLINE' && consultation.assignedDoctorId) {
     await restoreDoctorOnlineAfterInstantConsultation(consultation.assignedDoctorId);
@@ -140,6 +142,7 @@ export async function applyConsultationCancellationEffects(input: {
   return {
     consultationId: consultation.id,
     restoredPackageSession: shouldRestorePackage,
+    restoredReferralFreeCall: referralFreeCall.restored,
     packageConsultationId
   };
 }

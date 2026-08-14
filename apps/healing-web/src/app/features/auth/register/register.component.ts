@@ -1,12 +1,16 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { RouterModule, Router } from '@angular/router';
+import { ActivatedRoute, RouterModule, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../../core/services/auth.service';
 import { AuthModalService } from '../../../core/services/auth-modal.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { RegisterCredentials } from '../../../core/models/auth.model';
 import { AppButtonComponent } from '../../../shared/components/app-button/app-button.component';
+import {
+  captureReferralAttribution,
+  clearReferralAttribution,
+} from '../../../core/utils/referral-attribution.util';
 
 @Component({
   selector: 'app-register',
@@ -21,6 +25,7 @@ export class RegisterComponent implements OnInit {
   private router = inject(Router);
   private authModalService = inject(AuthModalService);
   private notificationService = inject(NotificationService);
+  private route = inject(ActivatedRoute);
 
   registerForm: FormGroup;
   isLoading = signal(false);
@@ -32,6 +37,7 @@ export class RegisterComponent implements OnInit {
     this.registerForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(8)]],
+      referralCode: [''],
     });
 
     // Clear messages when form values change
@@ -54,7 +60,8 @@ export class RegisterComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Component initialization
+    const referralCode = captureReferralAttribution(this.route.snapshot.queryParamMap.get('ref'));
+    if (referralCode) this.registerForm.patchValue({ referralCode });
   }
 
   async onSubmit(): Promise<void> {
@@ -64,9 +71,11 @@ export class RegisterComponent implements OnInit {
         const credentials: RegisterCredentials = {
           email: formValue.email,
           password: formValue.password,
+          referralCode: formValue.referralCode?.trim() || undefined,
         };
 
         await this.authService.register(credentials);
+        clearReferralAttribution();
 
         this.successMessage.set('Account created successfully.');
         this.notificationService.success('Account created successfully.');
@@ -93,7 +102,10 @@ export class RegisterComponent implements OnInit {
 
   async registerWithGoogle(): Promise<void> {
     try {
-      await this.authService.loginWithGoogle();
+      await this.authService.loginWithGoogle(
+        this.registerForm.get('referralCode')?.value?.trim() || undefined,
+      );
+      clearReferralAttribution();
       this.notificationService.success('Account ready. You are signed in with Google.');
       this.authModalService.close();
       if (this.router.url === '/' || this.router.url.startsWith('/auth')) {

@@ -13,6 +13,7 @@ import {
 } from '../../services/admin-payments.js';
 import { applyConsultationCancellationEffects } from '../../services/consultation-cancellation.js';
 import { upsertProviderEarningForPayment } from '../../services/provider-earnings.js';
+import { reconcileReferralAfterConsultationRefund } from '../../services/referral-codes.js';
 
 type RazorpayRefundEntity = {
   id: string;
@@ -380,6 +381,7 @@ export function registerAdminPaymentRoutes(router: Router) {
         forceHold: true,
         payoutNote: `Refund ${nextStatus === PaymentStatus.REFUNDED ? 'full' : 'partial'}: ${body.reason}`
       });
+      await reconcileReferralAfterConsultationRefund(payment.consultationId);
 
       const cancellationResult =
         body.cancelConsultation && nextStatus === PaymentStatus.REFUNDED

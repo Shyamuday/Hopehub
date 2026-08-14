@@ -23,19 +23,6 @@ export const DEFAULT_REWARD_RULES = [
     maxUsesPerPatient: 1
   },
   {
-    code: 'REF_REFERRER_BONUS',
-    name: 'Referrer wallet bonus',
-    description: 'Wallet credit to referrer when referred friend pays first consultation.',
-    kind: RewardProgramKind.REFERRAL,
-    trigger: RewardTrigger.FIRST_CONSULTATION_PAID,
-    beneficiary: RewardBeneficiary.REFERRER,
-    valueType: RewardValueType.WALLET_CREDIT_FLAT,
-    valueAmount: 15_000,
-    appliesTo: RewardAppliesTo.CONSULTATION,
-    priority: 20,
-    maxUsesPerPatient: null
-  },
-  {
     code: 'FIRSTTALK1_LISTENER_OFFER',
     name: 'First Talk ₹1 listener offer',
     description: 'Promotional coupon for eligible listener support sessions at ₹1.',

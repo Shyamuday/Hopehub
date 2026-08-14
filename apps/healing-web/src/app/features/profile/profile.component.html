@@ -44,6 +44,82 @@
             </div>
           </section>
 
+          <section class="overflow-hidden rounded-xl border border-emerald-200 bg-white shadow-sm">
+            <div class="bg-gradient-to-br from-emerald-700 to-teal-700 p-5 text-white">
+              <p class="text-xs font-semibold uppercase tracking-wider text-emerald-100">Refer &amp; get a free call</p>
+              <h2 class="mt-2 text-xl font-semibold">Help five friends find support</h2>
+              <p class="mt-1 text-sm leading-6 text-emerald-50">
+                When five different friends complete their first paid call, you receive one free listener call.
+              </p>
+            </div>
+
+            @if (referralLoading()) {
+              <p class="p-5 text-sm text-gray-600">Preparing your referral code…</p>
+            } @else if (referralSummary(); as referral) {
+              <div class="space-y-5 p-5">
+                <div>
+                  <span class="text-xs font-semibold uppercase tracking-wide text-gray-500">Your referral code</span>
+                  <div class="mt-2 flex items-center gap-2 rounded-lg border border-dashed border-emerald-300 bg-emerald-50 p-2">
+                    <strong class="min-w-0 flex-1 truncate px-2 text-lg tracking-wider text-emerald-900">{{ referral.code }}</strong>
+                    <app-button type="button" size="sm" variant="outline" (click)="copyReferralCode()">Copy</app-button>
+                    <app-button type="button" size="sm" (click)="shareReferral()">Share</app-button>
+                  </div>
+                </div>
+
+                <div>
+                  <div class="flex items-center justify-between gap-3 text-sm">
+                    <strong class="text-gray-900">{{ referral.progressInCurrentCycle }} of {{ referral.requiredCompletedPaidCalls }} toward your next free call</strong>
+                    <span class="font-semibold text-emerald-700">{{ referral.availableFreeCalls }} free call{{ referral.availableFreeCalls === 1 ? '' : 's' }} ready</span>
+                  </div>
+                  <div class="mt-2 h-2 overflow-hidden rounded-full bg-gray-100" role="progressbar" [attr.aria-valuenow]="referralProgressPercent()" aria-valuemin="0" aria-valuemax="100">
+                    <span class="block h-full rounded-full bg-emerald-600 transition-all" [style.width.%]="referralProgressPercent()"></span>
+                  </div>
+                  <p class="mt-2 text-xs leading-5 text-gray-600">
+                    {{ referral.stats.registered }} waiting · {{ referral.qualifyingCount }} qualified in total
+                  </p>
+                </div>
+
+                @if (availableReferralRewards().length) {
+                  <div class="space-y-2 rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+                    <h3 class="text-sm font-semibold text-emerald-950">Your free-call coupon</h3>
+                    @for (reward of availableReferralRewards(); track reward.id) {
+                      <div class="flex items-center justify-between gap-3 rounded-md bg-white p-3">
+                        <div class="min-w-0">
+                          <strong class="block truncate text-sm tracking-wide text-gray-950">{{ reward.couponCode }}</strong>
+                          <span class="text-xs text-gray-600">Use it at listener checkout</span>
+                        </div>
+                        <app-button type="button" variant="outline" size="sm" (click)="copyReferralCode(reward.couponCode)">Copy</app-button>
+                      </div>
+                    }
+                  </div>
+                }
+
+                @if (referral.referrals.length) {
+                  <details class="rounded-lg border border-gray-200 p-4">
+                    <summary class="cursor-pointer text-sm font-semibold text-gray-900">Referral activity ({{ referral.stats.total }})</summary>
+                    <div class="mt-3 space-y-2">
+                      @for (item of referral.referrals.slice(0, 10); track item.id) {
+                        <div class="flex items-start justify-between gap-3 rounded-md bg-gray-50 p-3 text-sm">
+                          <span class="min-w-0 truncate font-semibold text-gray-800">{{ item.friendLabel }}</span>
+                          <span class="max-w-44 text-right text-xs leading-5 text-gray-600">{{ referralStatusLabel(item.status) }}</span>
+                        </div>
+                      }
+                    </div>
+                  </details>
+                }
+
+                <details class="rounded-lg border border-gray-200 p-4">
+                  <summary class="cursor-pointer text-sm font-semibold text-gray-900">Terms and conditions</summary>
+                  <ol class="mt-3 list-decimal space-y-2 pl-5 text-xs leading-5 text-gray-600">
+                    @for (term of referral.terms; track term) {
+                      <li>{{ term }}</li>
+                    }
+                  </ol>
+                </details>
+              </div>
+            }
+          </section>
+
           <section class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm" [formGroup]="profileForm">
             <div class="flex items-start justify-between gap-3">
               <div>

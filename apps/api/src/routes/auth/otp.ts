@@ -12,7 +12,10 @@ import {
 } from '../../services/otp.js';
 import { getMailTransporter } from '../../services/mail.js';
 import { createPatientRecord } from '../../services/patient-identity.js';
-import { attachReferralOnSignup } from '../../services/referral-codes.js';
+import {
+  attachReferralOnSignup,
+  isActivePatientReferralCode
+} from '../../services/referral-codes.js';
 import { asyncRoute, publicUserSelect, logAuthEvent } from '../../utils/helpers.js';
 import { PRODUCT_EVENTS, trackProductEvent } from '../../services/product-analytics.js';
 import { recordAuthProcess } from '../../services/auth-process-log.js';
@@ -164,15 +167,20 @@ export function registerAuthOtpRoutes(router: Router) {
         return res.json(await issueAuthSession(patients[0], req));
       }
 
+      if (body.referralCode && !(await isActivePatientReferralCode(body.referralCode))) {
+        return res.status(400).json({
+          code: 'INVALID_REFERRAL_CODE',
+          message: 'This referral code is not valid or is no longer active.'
+        });
+      }
+
       const user = await createPatientRecord({
         name: body.name?.trim() || 'Patient',
         email
       });
 
       if (body.referralCode) {
-        void attachReferralOnSignup(user.id, body.referralCode).catch((err) => {
-          console.warn('[referral] Could not attach on signup', err);
-        });
+        await attachReferralOnSignup(user.id, body.referralCode);
       }
 
       logAuthEvent('patient_login', { userId: user.id, email, event: 'email_otp_register' });

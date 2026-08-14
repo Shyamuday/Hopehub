@@ -1,6 +1,7 @@
 import { Prisma, Role } from '@prisma/client';
 import { SERVER_CONFIG } from '../constants/config.constants.js';
 import { prisma } from '../db.js';
+import { ensurePatientReferralCode } from './referral-codes.js';
 
 export const patientListSelect = {
   id: true,
@@ -237,7 +238,7 @@ export async function createPatientRecord(data: {
   for (let attempt = 0; attempt < 20; attempt++) {
     const patientCode = await allocatePatientCode(data.homeClinicStoreId);
     try {
-      return await prisma.user.create({
+      const patient = await prisma.user.create({
         data: {
           name: data.name.trim(),
           email,
@@ -249,6 +250,12 @@ export async function createPatientRecord(data: {
         },
         select: patientListSelect
       });
+      try {
+        await ensurePatientReferralCode(patient.id);
+      } catch (error) {
+        console.warn('[referral] Could not prepare referral code for new patient', error);
+      }
+      return patient;
     } catch (error) {
       const targets = uniqueViolationTargets(error);
       if (targets.some((target) => target.includes('patientCode'))) continue;

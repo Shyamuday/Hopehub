@@ -44,6 +44,12 @@ enum WalletLedgerDirection {
   DEBIT
 }
 
+enum ReferralFreeCallRewardStatus {
+  AVAILABLE
+  REDEEMED
+  REVOKED
+}
+
 /// Admin-configurable reward / discount rule. Combine trigger + beneficiary + value type for any program.
 model RewardProgramRule {
   id                 String            @id @default(cuid())
@@ -102,6 +108,23 @@ model PatientReferralCode {
   patient   User              @relation(fields: [patientId], references: [id], onDelete: Cascade)
   referrals PatientReferral[]
   createdAt DateTime          @default(now())
+}
+
+model ReferralFreeCallReward {
+  id                      String                       @id @default(cuid())
+  patientId               String
+  cycle                   Int
+  couponCode              String                       @unique
+  status                  ReferralFreeCallRewardStatus @default(AVAILABLE)
+  qualifyingReferralCount Int                          @default(5)
+  qualifyingReferralIds   Json
+  redeemedConsultationId  String?                      @unique
+  earnedAt                DateTime                     @default(now())
+  redeemedAt              DateTime?
+  patient                 User                         @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@unique([patientId, cycle])
+  @@index([patientId, status, earnedAt])
 }
 
 model PatientReferral {

@@ -24,6 +24,7 @@ import {
   UserPreferences,
   ApiAuthResponse,
   PatientSelectionResponse,
+  PatientReferralSummary,
 } from '../models/auth.model';
 import { environment } from '../../../environments/environment';
 
@@ -242,11 +243,11 @@ export class AuthService {
     }
   }
 
-  async loginWithOtp(email: string, otp: string): Promise<User> {
+  async loginWithOtp(email: string, otp: string, referralCode?: string): Promise<User> {
     this.updateState({ isLoading: true, error: null });
     try {
       const normalizedEmail = email.trim().toLowerCase();
-      const resp = await this.loginPatientOrStaffWithOtp(normalizedEmail, otp);
+      const resp = await this.loginPatientOrStaffWithOtp(normalizedEmail, otp, referralCode);
 
       if ('requiresPatientSelection' in resp) {
         this.updateState({ isLoading: false });
@@ -265,6 +266,7 @@ export class AuthService {
   private async loginPatientOrStaffWithOtp(
     email: string,
     otp: string,
+    referralCode?: string,
   ): Promise<ApiAuthResponse | PatientSelectionResponse> {
     try {
       return await firstValueFrom(
@@ -273,6 +275,7 @@ export class AuthService {
           {
             email,
             otp,
+            ...(referralCode ? { referralCode } : {}),
           },
         ),
       );
@@ -300,6 +303,7 @@ export class AuthService {
           ...(name ? { name } : {}),
           email: credentials.email,
           password: credentials.password,
+          ...(credentials.referralCode ? { referralCode: credentials.referralCode } : {}),
         }),
       );
       return this.applyAuthResponse(resp);
@@ -312,11 +316,14 @@ export class AuthService {
    * Google login — sends the Google ID token to the backend.
    * The caller must obtain the idToken from Google Sign-In first.
    */
-  async loginWithGoogleToken(idToken: string): Promise<User> {
+  async loginWithGoogleToken(idToken: string, referralCode?: string): Promise<User> {
     this.updateState({ isLoading: true, error: null });
     try {
       const resp = await firstValueFrom(
-        this.http.post<ApiAuthResponse>(`${this.apiUrl}/auth/google`, { idToken }),
+        this.http.post<ApiAuthResponse>(`${this.apiUrl}/auth/google`, {
+          idToken,
+          ...(referralCode ? { referralCode } : {}),
+        }),
       );
       return this.applyAuthResponse(resp);
     } catch (err) {
@@ -324,11 +331,11 @@ export class AuthService {
     }
   }
 
-  async loginWithGoogle(): Promise<User> {
+  async loginWithGoogle(referralCode?: string): Promise<User> {
     this.updateState({ isLoading: true, error: null });
     try {
       const idToken = await this.getGoogleIdToken();
-      return await this.loginWithGoogleToken(idToken);
+      return await this.loginWithGoogleToken(idToken, referralCode);
     } catch (err) {
       throw this.handleError(err);
     }
@@ -373,6 +380,10 @@ export class AuthService {
 
   loadPatientProfile() {
     return this.http.get<PatientProfileResponse>(`${this.apiUrl}/patient/profile`);
+  }
+
+  loadPatientReferralSummary() {
+    return this.http.get<PatientReferralSummary>(`${this.apiUrl}/patient/referrals/summary`);
   }
 
   async savePatientProfile(request: PatientProfileUpdateRequest): Promise<PatientProfileResponse> {

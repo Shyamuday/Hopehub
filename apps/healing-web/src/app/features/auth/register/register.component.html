@@ -110,6 +110,27 @@
                     </div>
                 </div>
 
+                <div>
+                    <label for="referralCode" class="block text-sm font-medium text-gray-700">
+                        Referral code <span class="font-normal text-gray-500">(optional)</span>
+                    </label>
+                    <input
+                        id="referralCode"
+                        name="referralCode"
+                        type="text"
+                        autocomplete="off"
+                        formControlName="referralCode"
+                        class="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 uppercase rounded-md focus:outline-none focus:ring-primary-600 focus:border-primary-600 sm:text-sm transition-colors"
+                        placeholder="Referral code"
+                    />
+                    @if (registerForm.get('referralCode')?.value) {
+                        <details class="mt-2 rounded-md bg-emerald-50 px-3 py-2 text-xs leading-5 text-emerald-900">
+                            <summary class="cursor-pointer font-semibold">How referral rewards work</summary>
+                            <p class="mt-1">Your friend receives credit only after you complete a paid 1:1 call. Cancelled, missed, refunded, free, duplicate, or self-referred sessions do not count.</p>
+                        </details>
+                    }
+                </div>
+
             </div>
 
             <div>

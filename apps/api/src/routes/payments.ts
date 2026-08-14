@@ -30,6 +30,10 @@ import { settleConsultationPaymentRewards } from '../services/reward-settlement.
 import { PRODUCT_EVENTS, trackProductEvent } from '../services/product-analytics.js';
 import { tryAssignInstantConsultation } from '../services/online-doctor-presence.js';
 import { notifyConsultationBooked } from '../services/consultation-reminders.js';
+import {
+  qualifyReferralAfterCompletedPaidCall,
+  reconcileReferralAfterConsultationRefund
+} from '../services/referral-codes.js';
 
 type RazorpayPaymentEntity = {
   id: string;
@@ -220,7 +224,7 @@ export function createPaymentsRouter(io: SocketIoServer) {
         id: true,
         amountInPaise: true,
         refundedAmountInPaise: true,
-        consultation: { select: { patientId: true } }
+        consultation: { select: { id: true, patientId: true } }
       }
     });
     if (!payment) return;
@@ -286,6 +290,12 @@ export function createPaymentsRouter(io: SocketIoServer) {
             ? 'Refund webhook: partial refund'
             : undefined
     });
+
+    if (nextPaymentStatus !== PaymentStatus.PAID) {
+      await reconcileReferralAfterConsultationRefund(payment.consultation.id);
+    } else {
+      await qualifyReferralAfterCompletedPaidCall(payment.consultation.id);
+    }
 
     io.to(`user:${payment.consultation.patientId}`).emit('payment:updated', {
       paymentId: payment.id,

@@ -1,10 +1,4 @@
-import {
-  PatientReferralStatus,
-  PaymentStatus,
-  RewardBeneficiary,
-  RewardTrigger,
-  RewardValueType
-} from '@prisma/client';
+import { PaymentStatus, RewardBeneficiary, RewardTrigger, RewardValueType } from '@prisma/client';
 import { prisma } from '../db.js';
 import { debitWallet, creditWallet } from './patient-wallet.js';
 import { isFirstPaidConsultation } from './referral-codes.js';
@@ -21,7 +15,8 @@ async function resolveBeneficiaryPatientId(
   hasReferrer: boolean
 ): Promise<string | null> {
   if (beneficiary === RewardBeneficiary.PAYING_PATIENT) return payingPatientId;
-  if (beneficiary === RewardBeneficiary.REFERRED_PATIENT) return hasReferrer ? payingPatientId : null;
+  if (beneficiary === RewardBeneficiary.REFERRED_PATIENT)
+    return hasReferrer ? payingPatientId : null;
   if (beneficiary === RewardBeneficiary.REFERRER) {
     const patient = await prisma.user.findUnique({
       where: { id: payingPatientId },
@@ -91,7 +86,9 @@ export async function settleConsultationPaymentRewards(paymentId: string) {
         });
       } catch (err) {
         if (err instanceof Error && err.message === 'INSUFFICIENT_WALLET_BALANCE') {
-          console.warn(`[rewards] Wallet debit skipped for payment ${paymentId} — insufficient balance`);
+          console.warn(
+            `[rewards] Wallet debit skipped for payment ${paymentId} — insufficient balance`
+          );
         } else {
           throw err;
         }
@@ -103,7 +100,9 @@ export async function settleConsultationPaymentRewards(paymentId: string) {
     where: { status: PaymentStatus.PAID, consultation: { patientId } }
   });
   const isFirstPayment = paidCount === 1;
-  const trigger = isFirstPayment ? RewardTrigger.FIRST_CONSULTATION_PAID : RewardTrigger.CONSULTATION_PAID;
+  const trigger = isFirstPayment
+    ? RewardTrigger.FIRST_CONSULTATION_PAID
+    : RewardTrigger.CONSULTATION_PAID;
   const rules = await listActiveSettlementRules(trigger);
   const gross = payment.grossAmountInPaise ?? payment.amountInPaise;
   const patient = await prisma.user.findUnique({
@@ -115,7 +114,11 @@ export async function settleConsultationPaymentRewards(paymentId: string) {
   for (const rule of rules) {
     if (rule.valueType !== RewardValueType.WALLET_CREDIT_FLAT) continue;
 
-    const beneficiaryId = await resolveBeneficiaryPatientId(rule.beneficiary, patientId, hasReferrer);
+    const beneficiaryId = await resolveBeneficiaryPatientId(
+      rule.beneficiary,
+      patientId,
+      hasReferrer
+    );
     if (!beneficiaryId) continue;
     if (!(await ruleUsageAllows(rule, beneficiaryId))) continue;
 
@@ -137,22 +140,6 @@ export async function settleConsultationPaymentRewards(paymentId: string) {
       paymentId,
       note: rule.name
     });
-  }
-
-  if (isFirstPayment) {
-    const referral = await prisma.patientReferral.findUnique({
-      where: { referredUserId: patientId }
-    });
-    if (referral && referral.status !== PatientReferralStatus.REJECTED) {
-      await prisma.patientReferral.update({
-        where: { id: referral.id },
-        data: {
-          status: PatientReferralStatus.REWARDED,
-          qualifiedAt: referral.qualifiedAt ?? new Date(),
-          rewardedAt: new Date()
-        }
-      });
-    }
   }
 }
 

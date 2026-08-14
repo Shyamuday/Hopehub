@@ -1,12 +1,16 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { RouterModule, Router } from '@angular/router';
+import { ActivatedRoute, RouterModule, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../../core/services/auth.service';
 import { AuthModalService } from '../../../core/services/auth-modal.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { LoginCredentials } from '../../../core/models/auth.model';
 import { AppButtonComponent } from '../../../shared/components/app-button/app-button.component';
+import {
+  captureReferralAttribution,
+  clearReferralAttribution,
+} from '../../../core/utils/referral-attribution.util';
 
 @Component({
   selector: 'app-login',
@@ -19,6 +23,7 @@ export class LoginComponent implements OnInit {
   private fb = inject(FormBuilder);
   private authService = inject(AuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private authModalService = inject(AuthModalService);
   private notificationService = inject(NotificationService);
 
@@ -86,6 +91,7 @@ export class LoginComponent implements OnInit {
         };
 
         await this.authService.login(credentials);
+        clearReferralAttribution();
         this.notificationService.success('You are signed in.');
 
         // Close modal and navigate
@@ -181,7 +187,12 @@ export class LoginComponent implements OnInit {
     }
 
     try {
-      await this.authService.loginWithOtp(normalizedEmail, String(otp.value).trim());
+      await this.authService.loginWithOtp(
+        normalizedEmail,
+        String(otp.value).trim(),
+        this.referralCode(),
+      );
+      clearReferralAttribution();
       this.notificationService.success('You are signed in.');
       this.authModalService.close();
       await this.continueAfterLogin();
@@ -194,7 +205,8 @@ export class LoginComponent implements OnInit {
 
   async loginWithGoogle(): Promise<void> {
     try {
-      await this.authService.loginWithGoogle();
+      await this.authService.loginWithGoogle(this.referralCode());
+      clearReferralAttribution();
       this.notificationService.success('You are signed in with Google.');
       this.authModalService.close();
       await this.continueAfterLogin();
@@ -205,6 +217,10 @@ export class LoginComponent implements OnInit {
       );
       console.error('Google login error:', error);
     }
+  }
+
+  private referralCode(): string | undefined {
+    return captureReferralAttribution(this.route.snapshot.queryParamMap.get('ref'));
   }
 
   openRegister(): void {

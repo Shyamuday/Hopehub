@@ -15,6 +15,7 @@ import { NavigationService, SEOService } from './core/services';
 import { AuthModalService } from './core/services/auth-modal.service';
 import { AuthService } from './core/services/auth.service';
 import { FontLoader } from './core/utils/font-loader.util';
+import { captureReferralAttribution } from './core/utils/referral-attribution.util';
 
 @Component({
   selector: 'app-root',
@@ -47,6 +48,7 @@ export class App implements OnInit {
 
     // Initialize font loading detection in browser only
     if (isPlatformBrowser(this.platformId)) {
+      captureReferralAttribution(new URLSearchParams(window.location.search).get('ref'));
       FontLoader.init();
 
       // Add organization structured data for SEO
@@ -67,11 +69,15 @@ export class App implements OnInit {
           return;
         }
 
-        window.setTimeout(() => {
-          if (!this.authService.getToken() && !this.authModalService.getCurrentModal()) {
-            this.authModalService.openRegister();
-          }
-        }, 12000);
+        const referralVisit = new URLSearchParams(window.location.search).has('ref');
+        window.setTimeout(
+          () => {
+            if (!this.authService.getToken() && !this.authModalService.getCurrentModal()) {
+              this.authModalService.openRegister();
+            }
+          },
+          referralVisit ? 0 : 12000,
+        );
       });
   }
 }

@@ -183,6 +183,7 @@ export class RewardsPage {
   ] as const;
   readonly rules = signal<RewardRule[]>([]);
   readonly referrals = signal<unknown[]>([]);
+  readonly freeCallRewards = signal<unknown[]>([]);
   readonly loading = signal(false);
   readonly mutating = signal(false);
   readonly error = signal('');
@@ -216,6 +217,7 @@ export class RewardsPage {
       ]);
       this.rules.set(rulesRes.rules as RewardRule[]);
       this.referrals.set(refRes.referrals);
+      this.freeCallRewards.set(refRes.freeCallRewards || []);
     } catch {
       this.error.set('Could not load rewards data.');
     } finally {

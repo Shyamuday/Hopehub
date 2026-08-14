@@ -5,7 +5,7 @@ import {
   type RewardProgramRule
 } from '@prisma/client';
 import { prisma } from '../db.js';
-import { isFirstPaidConsultation } from './referral-codes.js';
+import { findAvailableReferralFreeCall, isFirstPaidConsultation } from './referral-codes.js';
 import {
   computeDiscountAmount,
   getActiveWalletPolicyRule,
@@ -34,6 +34,8 @@ export type ConsultationCheckoutQuote = {
   walletBalanceInPaise: number;
   maxWalletRedeemInPaise: number;
   appliedRules: AppliedCheckoutRule[];
+  referralFreeCallRewardId?: string | null;
+  referralFreeCallCouponCode?: string | null;
 };
 
 type CheckoutContext = {
@@ -146,6 +148,38 @@ async function careTeamTypesForCheckout(context: CheckoutScopeContext): Promise<
   }
 
   return [];
+}
+
+async function isSingleListenerSessionCheckout(context: CheckoutScopeContext) {
+  const [offering, careTeamService] = await Promise.all([
+    context.offeringId
+      ? prisma.hopeHubOffering.findUnique({
+          where: { id: context.offeringId },
+          select: { type: true, sessionCount: true }
+        })
+      : null,
+    context.careTeamServiceId
+      ? prisma.careTeamService.findUnique({
+          where: { id: context.careTeamServiceId },
+          select: { pricingMode: true, packageSessionCount: true }
+        })
+      : null
+  ]);
+
+  if (
+    offering &&
+    (offering.type !== 'INDIVIDUAL_SESSION' || Number(offering.sessionCount || 1) > 1)
+  ) {
+    return false;
+  }
+  if (
+    careTeamService &&
+    (careTeamService.pricingMode === 'PACKAGE' ||
+      Number(careTeamService.packageSessionCount || 1) > 1)
+  ) {
+    return false;
+  }
+  return true;
 }
 
 async function ruleScopeMatchesCheckout(rule: RewardProgramRule, context: CheckoutScopeContext) {
@@ -271,6 +305,27 @@ export async function resolveConsultationCheckout(
       maxWalletRedeemInPaise: 0,
       appliedRules: []
     };
+  }
+
+  const referralFreeCall = await findAvailableReferralFreeCall(patientId, input.promoCode);
+  if (referralFreeCall) {
+    const careTeamTypes = await careTeamTypesForCheckout(input);
+    const isListenerSession = careTeamTypes.some((type) =>
+      ['PEER_SUPPORT_VOLUNTEER', 'PSYCHOLOGY_STUDENT_VOLUNTEER'].includes(type)
+    );
+    if (isListenerSession && (await isSingleListenerSessionCheckout(input))) {
+      return {
+        grossAmountInPaise: grossInPaise,
+        discountInPaise: grossInPaise,
+        walletRedeemedInPaise: 0,
+        payableInPaise: 0,
+        walletBalanceInPaise: await getWalletBalance(patientId),
+        maxWalletRedeemInPaise: 0,
+        appliedRules: [],
+        referralFreeCallRewardId: referralFreeCall.id,
+        referralFreeCallCouponCode: referralFreeCall.couponCode
+      };
+    }
   }
 
   const [walletBalance, isFirstPayment, patient] = await Promise.all([

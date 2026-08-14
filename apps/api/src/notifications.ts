@@ -13,6 +13,7 @@ export type NotificationEventType =
   | 'SESSION_MISSED'
   | 'DOCTOR_ASSIGNED'
   | 'PRESCRIPTION_READY'
+  | 'REFERRAL_REWARD_EARNED'
   | 'PLATFORM_BROADCAST'
   | 'VISITOR_LEAD_NEW';
 

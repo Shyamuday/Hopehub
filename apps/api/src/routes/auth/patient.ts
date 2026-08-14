@@ -16,6 +16,10 @@ import { webOrigin } from './shared.js';
 import { issueAuthSession, revokeAllAuthSessionsForUser } from '../../services/auth-sessions.js';
 import { recordAuthProcess } from '../../services/auth-process-log.js';
 import { createEmailVerificationToken } from '../../services/email-verification.js';
+import {
+  attachReferralOnSignup,
+  isActivePatientReferralCode
+} from '../../services/referral-codes.js';
 
 export function registerAuthPatientRoutes(router: Router) {
   // ─── Patient register / login-password / forgot ────────────────────────────────
@@ -27,13 +31,13 @@ export function registerAuthPatientRoutes(router: Router) {
         .object({
           name: z.string().min(2).optional(),
           email: z.string().email(),
-          password: z.string().min(8)
+          password: z.string().min(8),
+          referralCode: z.string().min(3).max(32).optional()
         })
         .parse(req.body);
 
       const email = body.email.trim().toLowerCase();
       const name = body.name?.trim() || 'Patient';
-
       const existingUser = await prisma.user.findFirst({
         where: { email, role: Role.PATIENT },
         select: { id: true, role: true, passwordHash: true }
@@ -50,6 +54,17 @@ export function registerAuthPatientRoutes(router: Router) {
         return res.status(409).json({
           code: 'PATIENT_ACCOUNT_EXISTS',
           message: 'This email is already registered. Please log in instead.'
+        });
+      }
+
+      if (
+        !existingUser &&
+        body.referralCode &&
+        !(await isActivePatientReferralCode(body.referralCode))
+      ) {
+        return res.status(400).json({
+          code: 'INVALID_REFERRAL_CODE',
+          message: 'This referral code is not valid or is no longer active.'
         });
       }
 
@@ -93,6 +108,10 @@ export function registerAuthPatientRoutes(router: Router) {
           });
         }
         throw error;
+      }
+
+      if (!existingUser && body.referralCode) {
+        await attachReferralOnSignup(user.id, body.referralCode);
       }
 
       logAuthEvent('patient_login', { userId: user.id, event: 'register' });
