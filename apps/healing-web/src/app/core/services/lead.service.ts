@@ -125,6 +125,20 @@ export type FeedbackPayload = {
   consentToPublish: boolean;
 };
 
+export type TelegramAdminApplicationPayload = {
+  fullName: string;
+  telegramUsername: string;
+  email?: string;
+  phone?: string;
+  city?: string;
+  availability: 'DAILY' | 'WEEKDAYS' | 'WEEKENDS' | 'EVENINGS' | 'FLEXIBLE';
+  moderationExperience?: string;
+  motivation: string;
+  ageConfirmed: true;
+  rulesAccepted: true;
+  safetyAccepted: true;
+};
+
 @Injectable({
   providedIn: 'root',
 })
@@ -194,6 +208,15 @@ export class LeadService {
     return this.http
       .post<{ success: boolean }>(
         `${environment.apiUrl}/website-leads/feedback`,
+        this.withBrowserContext(payload),
+      )
+      .pipe(map((response) => response.success));
+  }
+
+  sendTelegramAdminApplication(payload: TelegramAdminApplicationPayload): Observable<boolean> {
+    return this.http
+      .post<{ success: boolean }>(
+        `${this.endpoint}/telegram-admin-applications`,
         this.withBrowserContext(payload),
       )
       .pipe(map((response) => response.success));

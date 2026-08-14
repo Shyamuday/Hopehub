@@ -218,6 +218,20 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'telegram-group-admin',
+    loadComponent: () =>
+      import('./features/telegram-admin-application/telegram-admin-application.component').then(
+        (m) => m.TelegramAdminApplicationComponent,
+      ),
+    title: 'Become a Hope Hub Community Admin',
+    data: {
+      breadcrumb: 'Hope Hub community admin application',
+      description:
+        'Apply to become a Hope Hub community admin and help moderate our Telegram group',
+      keywords: 'Hope Hub Telegram admin, community moderator, Telegram volunteer',
+    },
+  },
+  {
     path: 'about',
     loadComponent: () => import('./features/about/about.component').then((m) => m.AboutComponent),
     title: 'About Us - Hope Hub',

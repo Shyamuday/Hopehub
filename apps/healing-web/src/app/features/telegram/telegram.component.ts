@@ -34,6 +34,26 @@ import { AppButtonComponent } from '../../shared/components';
           </p>
         </div>
 
+        <article
+          class="mx-auto mt-8 max-w-4xl rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-sky-50 p-5 shadow-sm sm:p-7"
+        >
+          <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p class="text-xs font-bold uppercase tracking-wide text-violet-700">
+                Help the community
+              </p>
+              <h2 class="mt-2 text-xl font-bold text-gray-950">
+                Become a Hope Hub community admin
+              </h2>
+              <p class="mt-2 max-w-2xl text-sm leading-6 text-gray-700">
+                Help keep our Telegram group kind, safe, and welcoming. The application takes about
+                two minutes.
+              </p>
+            </div>
+            <app-button routerLink="/telegram-group-admin" class="shrink-0"> Apply now </app-button>
+          </div>
+        </article>
+
         <div class="mx-auto mt-12 grid max-w-4xl gap-5 md:grid-cols-2">
           @for (bot of telegram.BOTS; track bot.key) {
             <article

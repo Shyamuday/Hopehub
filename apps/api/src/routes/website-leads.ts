@@ -52,6 +52,36 @@ const feedbackSchema = z.object({
   visitorKey: z.string().trim().max(80).optional().or(z.literal(''))
 });
 
+const telegramAdminApplicationSchema = z.object({
+  fullName: z.string().trim().min(2).max(120),
+  telegramUsername: z
+    .string()
+    .trim()
+    .regex(/^@?[A-Za-z][A-Za-z0-9_]{4,31}$/, 'Enter a valid Telegram username.'),
+  email: z.string().trim().email().max(254).optional().or(z.literal('')),
+  phone: z.string().trim().max(30).optional().or(z.literal('')),
+  city: z.string().trim().max(120).optional().or(z.literal('')),
+  availability: z.enum(['DAILY', 'WEEKDAYS', 'WEEKENDS', 'EVENINGS', 'FLEXIBLE']),
+  moderationExperience: z.string().trim().max(1500).optional().or(z.literal('')),
+  motivation: z.string().trim().min(20).max(2000),
+  ageConfirmed: z.literal(true),
+  rulesAccepted: z.literal(true),
+  safetyAccepted: z.literal(true),
+  entryPage: z.string().trim().max(500).optional().or(z.literal('')),
+  visitorKey: z.string().trim().max(80).optional().or(z.literal(''))
+});
+
+const TELEGRAM_ADMIN_AVAILABILITY_LABELS: Record<
+  z.infer<typeof telegramAdminApplicationSchema>['availability'],
+  string
+> = {
+  DAILY: 'A little time daily',
+  WEEKDAYS: 'Weekdays',
+  WEEKENDS: 'Weekends',
+  EVENINGS: 'Evenings',
+  FLEXIBLE: 'Flexible / as needed'
+};
+
 const FEEDBACK_TYPE_LABELS: Record<z.infer<typeof feedbackSchema>['feedbackType'], string> = {
   IMPROVEMENT: 'Improvement idea',
   COMPLAINT: 'Complaint',
@@ -104,6 +134,54 @@ websiteLeadsRouter.post(
     });
 
     res.status(201).json({ id: lead.id, success: true });
+  })
+);
+
+websiteLeadsRouter.post(
+  '/website-leads/telegram-admin-applications',
+  authOptional,
+  asyncRoute(async (req, res) => {
+    const body = telegramAdminApplicationSchema.parse(req.body);
+    const username = body.telegramUsername.startsWith('@')
+      ? body.telegramUsername
+      : `@${body.telegramUsername}`;
+    const availability = TELEGRAM_ADMIN_AVAILABILITY_LABELS[body.availability];
+    const concern = [
+      'Application: Telegram group admin',
+      `Telegram: ${username}`,
+      body.city ? `City: ${body.city}` : null,
+      `Availability: ${availability}`,
+      `Moderation experience: ${body.moderationExperience || 'No prior experience shared'}`,
+      `Why they want to help: ${body.motivation}`,
+      'Age 18+ confirmed: Yes',
+      'Community rules accepted: Yes',
+      'Safety, privacy, and escalation responsibilities accepted: Yes'
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    const lead = await prisma.websiteLead.create({
+      data: {
+        source: 'HOME_BOOKING',
+        followUpStatus: 'NEEDS_CALLBACK',
+        visitorName: body.fullName,
+        visitorEmail: body.email || req.user?.email || null,
+        visitorPhone: body.phone || req.user?.mobile || null,
+        concern,
+        entryPage: body.entryPage || req.get('referer') || null,
+        visitorKey: body.visitorKey || null,
+        preferredCallbackTime: `${availability}; Telegram ${username}`,
+        userId: req.user?.id ?? null
+      }
+    });
+
+    void notifyStaffOnVisitorLead(lead);
+
+    res.status(201).json({
+      id: lead.id,
+      success: true,
+      message: 'Telegram group admin application submitted for review.'
+    });
   })
 );
 

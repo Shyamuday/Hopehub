@@ -70,6 +70,11 @@ ${urlEntries}
         priority: 0.8,
       },
       {
+        loc: '/telegram-group-admin',
+        changefreq: 'monthly',
+        priority: 0.6,
+      },
+      {
         loc: '/about',
         lastmod: this.currentDate,
         changefreq: 'monthly',

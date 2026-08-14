@@ -1,4 +1,5 @@
 import type { CommunityBotSlug, TelegramKeyboard } from './telegram-community-bots.types.js';
+import { colorizeTelegramKeyboard } from './telegram-button-styles.js';
 
 const COMMUNITY_BOTS: Record<
   CommunityBotSlug,
@@ -93,10 +94,14 @@ export function sendCommunityMessage(
     reply_to_message_id?: number;
   } = {}
 ) {
+  const replyMarkup = options.reply_markup
+    ? colorizeTelegramKeyboard(options.reply_markup)
+    : undefined;
   return callCommunityTelegramApi<{ message_id: number }>(slug, 'sendMessage', {
     chat_id: chatId,
     text,
-    ...options
+    ...options,
+    reply_markup: replyMarkup
   });
 }
 
@@ -120,7 +125,7 @@ export function editCommunityReplyMarkup(
   return callCommunityTelegramApi(slug, 'editMessageReplyMarkup', {
     chat_id: chatId,
     message_id: messageId,
-    reply_markup: replyMarkup
+    reply_markup: colorizeTelegramKeyboard(replyMarkup)
   });
 }
 

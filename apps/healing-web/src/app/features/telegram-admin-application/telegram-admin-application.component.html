@@ -1,0 +1,114 @@
+<main class="telegram-admin-page">
+  <section class="telegram-admin-page__intro">
+    <a routerLink="/telegram" class="telegram-admin-page__back">← Telegram Hub</a>
+    <span class="telegram-admin-page__icon" aria-hidden="true">🛡️</span>
+    <p class="telegram-admin-page__eyebrow">Hope Hub community</p>
+    <h1>Become a Hope Hub Community Admin</h1>
+    <p>Help keep our Telegram group kind, safe, and welcoming. It takes about two minutes to apply.</p>
+  </section>
+
+  <section class="telegram-admin-page__content">
+    @if (submitted()) {
+      <div class="telegram-admin-success" role="status">
+        <span aria-hidden="true">✓</span>
+        <h2>Application received</h2>
+        <p>Our team will review it and contact you through Telegram or the details you shared.</p>
+        <app-button routerLink="/telegram" variant="outline">Back to Telegram Hub</app-button>
+      </div>
+    } @else {
+      <form [formGroup]="applicationForm" (ngSubmit)="submit()" class="telegram-admin-form">
+        <div class="telegram-admin-form__grid">
+          <app-form-field
+            label="Full name"
+            formControlName="fullName"
+            autocomplete="name"
+            [required]="true"
+            [invalid]="hasError('fullName')"
+            [error]="hasError('fullName') ? 'Enter your name.' : ''"
+          />
+          <app-form-field
+            label="Telegram username"
+            formControlName="telegramUsername"
+            placeholder="@username"
+            helper="We use this to contact you on Telegram."
+            [required]="true"
+            [invalid]="hasError('telegramUsername')"
+            [error]="hasError('telegramUsername') ? 'Enter a valid Telegram username.' : ''"
+          />
+          <app-form-field
+            label="Email"
+            type="email"
+            formControlName="email"
+            autocomplete="email"
+            placeholder="Optional"
+            [invalid]="hasError('email')"
+            [error]="hasError('email') ? 'Enter a valid email.' : ''"
+          />
+          <app-form-field
+            label="Phone / WhatsApp"
+            type="tel"
+            formControlName="phone"
+            autocomplete="tel"
+            placeholder="Optional"
+          />
+          <app-form-field label="City" formControlName="city" placeholder="Optional" />
+
+          <label class="telegram-admin-form__dropdown">
+            <span>When can you help? <strong>*</strong></span>
+            <app-form-dropdown
+              formControlName="availability"
+              [options]="availabilityOptions"
+              placeholder="Choose availability"
+              [invalid]="hasError('availability')"
+            />
+            @if (hasError('availability')) {
+              <small>Choose your usual availability.</small>
+            }
+          </label>
+        </div>
+
+        <app-form-field
+          kind="textarea"
+          label="Any moderation or community experience?"
+          formControlName="moderationExperience"
+          placeholder="Optional — no experience is also okay"
+          rows="3"
+        />
+        <app-form-field
+          kind="textarea"
+          label="Why would you like to help?"
+          formControlName="motivation"
+          placeholder="Tell us briefly why this community matters to you."
+          rows="4"
+          [required]="true"
+          [invalid]="hasError('motivation')"
+          [error]="hasError('motivation') ? 'Please write at least 20 characters.' : ''"
+        />
+
+        <div class="telegram-admin-form__agreements">
+          <app-form-checkbox formControlName="ageConfirmed">
+            I am 18 years or older.
+          </app-form-checkbox>
+          <app-form-checkbox formControlName="rulesAccepted">
+            I will follow and fairly enforce the Hope Hub community rules.
+          </app-form-checkbox>
+          <app-form-checkbox formControlName="safetyAccepted">
+            I understand privacy, crisis escalation, and that admins must not diagnose or provide medical advice.
+          </app-form-checkbox>
+          @if (
+            hasError('ageConfirmed') || hasError('rulesAccepted') || hasError('safetyAccepted')
+          ) {
+            <p>Please accept all three requirements to apply.</p>
+          }
+        </div>
+
+        <app-button type="submit" block [loading]="submitting()" [disabled]="submitting()">
+          {{ submitting() ? 'Submitting...' : 'Submit application' }}
+        </app-button>
+        <p class="telegram-admin-form__note">
+          Applying does not automatically grant admin access. Hope Hub reviews every application.
+        </p>
+      </form>
+    }
+  </section>
+</main>

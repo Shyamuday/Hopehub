@@ -7,6 +7,7 @@ import {
 } from './telegram-bots.config.js';
 import { apiUrl, webUrl } from './telegram-bots.ui.js';
 import type { SendMessagePayload } from './telegram-bots.types.js';
+import { colorizeTelegramKeyboard } from './telegram-button-styles.js';
 
 export function telegramWebhookSecret() {
   return process.env.TELEGRAM_WEBHOOK_SECRET || '';
@@ -37,7 +38,10 @@ async function callTelegramApi<T>(kind: TelegramBotKind, method: string, payload
 }
 
 export function sendTelegramMessage(kind: TelegramBotKind, payload: SendMessagePayload) {
-  return callTelegramApi(kind, 'sendMessage', payload);
+  return callTelegramApi(kind, 'sendMessage', {
+    ...payload,
+    reply_markup: payload.reply_markup ? colorizeTelegramKeyboard(payload.reply_markup) : undefined
+  });
 }
 
 export function answerTelegramCallback(

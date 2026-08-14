@@ -28,5 +28,12 @@ export type CommunityTelegramUpdate = {
 };
 
 export type TelegramKeyboard = {
-  inline_keyboard: Array<Array<{ text: string; callback_data?: string; url?: string }>>;
+  inline_keyboard: Array<
+    Array<{
+      text: string;
+      callback_data?: string;
+      url?: string;
+      style?: 'primary' | 'success' | 'danger';
+    }>
+  >;
 };
