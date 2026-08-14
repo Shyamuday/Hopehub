@@ -19,6 +19,7 @@ describe('LiveConnectActionService', () => {
   const authModalService = { openRegister: vi.fn() };
   const bookingService = {
     createQuickTalk: vi.fn(),
+    checkoutQuote: vi.fn(),
     provider: vi.fn(),
   };
   const notificationService = {
@@ -40,6 +41,7 @@ describe('LiveConnectActionService', () => {
       acceptsVoiceCall: true,
       acceptsVideoCall: true,
       languages: ['English'],
+      sessionFeeInPaise: 9900,
       services: [],
       ...overrides,
     }) as HopeHubProvider;
@@ -49,6 +51,19 @@ describe('LiveConnectActionService', () => {
     sessionStorage.clear();
     vi.resetAllMocks();
     router.navigate.mockResolvedValue(true);
+    bookingService.checkoutQuote.mockReturnValue(
+      of({
+        quote: {
+          grossAmountInPaise: 9900,
+          discountInPaise: 9800,
+          walletRedeemedInPaise: 0,
+          payableInPaise: 100,
+          walletBalanceInPaise: 0,
+          maxWalletRedeemInPaise: 0,
+          appliedRules: [],
+        },
+      }),
+    );
     TestBed.configureTestingModule({
       providers: [
         LiveConnectActionService,
@@ -128,6 +143,37 @@ describe('LiveConnectActionService', () => {
 
     expect(paymentService.payConsultation).not.toHaveBeenCalled();
     expect(router.navigate).toHaveBeenCalledWith(['/live-session', 'consultation-1']);
+  });
+
+  it('never opens Razorpay when a free coupon quote disagrees with the final booking', async () => {
+    authService.getToken.mockReturnValue('token');
+    bookingService.checkoutQuote.mockReturnValue(
+      of({
+        quote: {
+          grossAmountInPaise: 9900,
+          discountInPaise: 9900,
+          walletRedeemedInPaise: 0,
+          payableInPaise: 0,
+          walletBalanceInPaise: 0,
+          maxWalletRedeemInPaise: 0,
+          appliedRules: [],
+        },
+      }),
+    );
+    bookingService.createQuickTalk.mockReturnValue(
+      of({
+        consultation: { id: 'coupon-mismatch', payment: { amountInPaise: 9900 } },
+        provider: { id: 'provider-1', userId: 'user-1', name: 'Asha' },
+      }),
+    );
+    const service = TestBed.inject(LiveConnectActionService);
+
+    await service.connect(provider(), 'chat', { promoCode: 'FIRSTCHAT' });
+
+    expect(paymentService.payConsultation).not.toHaveBeenCalled();
+    expect(notificationService.error).toHaveBeenCalledWith(
+      'The free coupon was not applied by the server. Payment was not opened.',
+    );
   });
 
   it('keeps a created session for dashboard retry when payment fails', async () => {

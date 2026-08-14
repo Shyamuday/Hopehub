@@ -354,7 +354,6 @@ export class ContactComponent implements OnInit {
       safetyRisk: ['none'],
       previousTherapyOrMedication: [''],
       emergencyConsent: [true],
-      listenerSupportConsent: [false],
       preferAnonymousTelegram: [false],
       message: [initialMessage],
       preferredContact: ['telegram', [Validators.required]],
@@ -652,10 +651,6 @@ export class ContactComponent implements OnInit {
     ]);
   }
 
-  listenerSupportConsentAccepted(): boolean {
-    return Boolean(this.contactForm?.get('listenerSupportConsent')?.value);
-  }
-
   matchedProviderMeta(provider: HopeHubProvider): string {
     return [
       provider.supportRoleLabel,
@@ -729,16 +724,6 @@ export class ContactComponent implements OnInit {
           this.notificationService.warning('Select an appointment slot before payment.');
           return;
         }
-        if (this.needsListenerSupportConsent() && !this.listenerSupportConsentAccepted()) {
-          this.showErrorMessage.set(true);
-          this.errorTitle.set('Confirm listener support scope');
-          this.errorMessage.set(
-            'Please confirm you understand listener support is non-clinical and not emergency care.',
-          );
-          this.notificationService.warning(this.errorMessage());
-          return;
-        }
-
         if (appointment) {
           await this.submitBooking(formData, appointment);
         } else {
@@ -827,7 +812,7 @@ export class ContactComponent implements OnInit {
           safetyRisk: (formData as any).safetyRisk || '',
           previousTherapyOrMedication: (formData as any).previousTherapyOrMedication || '',
           emergencyConsent: Boolean((formData as any).emergencyConsent),
-          listenerSupportConsent: this.listenerSupportConsentAccepted(),
+          listenerSupportConsent: this.needsListenerSupportConsent(),
           preferAnonymousTelegram: Boolean(formData.preferAnonymousTelegram),
           entryPage: typeof window === 'undefined' ? undefined : window.location.href,
         })
@@ -894,12 +879,6 @@ export class ContactComponent implements OnInit {
 
     const formData = (this.contactForm?.value || {}) as ContactForm;
     const providerId = provider?.id || this.activeProviderId();
-    if (this.needsListenerSupportConsent(provider) && !this.listenerSupportConsentAccepted()) {
-      this.notificationService.warning(
-        'Please confirm you understand listener support is non-clinical and not emergency care.',
-      );
-      return;
-    }
     this.quickTalkStartingProviderId.set(providerId || 'auto');
     this.isSubmitting.set(true);
     this.paymentFlowError.set('');
@@ -921,7 +900,7 @@ export class ContactComponent implements OnInit {
           safetyRisk: formData.safetyRisk || '',
           previousTherapyOrMedication: formData.previousTherapyOrMedication || '',
           emergencyConsent: Boolean(formData.emergencyConsent),
-          listenerSupportConsent: this.listenerSupportConsentAccepted(),
+          listenerSupportConsent: this.needsListenerSupportConsent(provider),
           promoCode: this.checkoutPromoCode(),
           entryPage: typeof window === 'undefined' ? undefined : window.location.href,
         }),

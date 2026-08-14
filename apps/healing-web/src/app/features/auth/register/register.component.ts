@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterModule, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -28,7 +28,8 @@ export class RegisterComponent implements OnInit {
   private route = inject(ActivatedRoute);
 
   registerForm: FormGroup;
-  isLoading = signal(false);
+  activeAction = signal<'register' | 'google' | null>(null);
+  isLoading = computed(() => this.activeAction() !== null);
   showPassword = signal(false);
   errorMessage = signal<string | null>(null);
   successMessage = signal<string | null>(null);
@@ -52,7 +53,6 @@ export class RegisterComponent implements OnInit {
 
     // Listen to auth state changes
     this.authService.authState$.pipe(takeUntilDestroyed()).subscribe((state: any) => {
-      this.isLoading.set(state.isLoading);
       if (state.error) {
         this.errorMessage.set(state.error);
       }
@@ -66,6 +66,7 @@ export class RegisterComponent implements OnInit {
 
   async onSubmit(): Promise<void> {
     if (this.registerForm.valid && !this.isLoading()) {
+      this.activeAction.set('register');
       try {
         const formValue = this.registerForm.value;
         const credentials: RegisterCredentials = {
@@ -90,6 +91,8 @@ export class RegisterComponent implements OnInit {
           this.readErrorMessage(error, 'Could not create your account. Please try again.'),
         );
         console.error('Registration error:', error);
+      } finally {
+        this.activeAction.set(null);
       }
     } else {
       // Mark all fields as touched to show validation errors
@@ -101,6 +104,8 @@ export class RegisterComponent implements OnInit {
   }
 
   async registerWithGoogle(): Promise<void> {
+    if (this.isLoading()) return;
+    this.activeAction.set('google');
     try {
       await this.authService.loginWithGoogle(
         this.registerForm.get('referralCode')?.value?.trim() || undefined,
@@ -117,6 +122,8 @@ export class RegisterComponent implements OnInit {
         this.readErrorMessage(error, 'Google sign-up failed. Please try again.'),
       );
       console.error('Google registration error:', error);
+    } finally {
+      this.activeAction.set(null);
     }
   }
 

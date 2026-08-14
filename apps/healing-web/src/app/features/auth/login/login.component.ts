@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterModule, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -31,7 +31,13 @@ export class LoginComponent implements OnInit {
   loginMode = signal<'otp' | 'password'>('otp');
   otpSent = signal(false);
   otpSentTo = signal('');
-  isLoading = signal(false);
+  activeAction = signal<'password' | 'request-otp' | 'resend-otp' | 'verify-otp' | 'google' | null>(
+    null,
+  );
+  isLoading = computed(() => this.activeAction() !== null);
+  primaryActionLoading = computed(() =>
+    ['password', 'request-otp', 'verify-otp'].includes(this.activeAction() || ''),
+  );
   showPassword = signal(false);
   errorMessage = signal<string | null>(null);
   statusMessage = signal<string | null>(null);
@@ -62,7 +68,6 @@ export class LoginComponent implements OnInit {
 
     // Listen to auth state changes
     this.authService.authState$.pipe(takeUntilDestroyed()).subscribe((state: any) => {
-      this.isLoading.set(state.isLoading);
       if (state.error) {
         this.errorMessage.set(state.error);
       }
@@ -84,6 +89,7 @@ export class LoginComponent implements OnInit {
     }
 
     if (this.loginForm.valid && !this.isLoading()) {
+      this.activeAction.set('password');
       try {
         const credentials: LoginCredentials = {
           email: this.loginForm.value.email,
@@ -110,6 +116,8 @@ export class LoginComponent implements OnInit {
           this.readErrorMessage(error, 'Sign in failed. Please try again.'),
         );
         console.error('Login error:', error);
+      } finally {
+        this.activeAction.set(null);
       }
     } else {
       // Mark all fields as touched to show validation errors
@@ -139,7 +147,7 @@ export class LoginComponent implements OnInit {
     this.loginForm.patchValue({ otp: '' }, { emitEvent: false });
   }
 
-  async sendOtp(): Promise<void> {
+  async sendOtp(source: 'primary' | 'resend' = 'primary'): Promise<void> {
     const emailControl = this.loginForm.get('email');
     emailControl?.markAsTouched();
     if (!emailControl?.valid || this.isLoading()) return;
@@ -148,7 +156,7 @@ export class LoginComponent implements OnInit {
       .toLowerCase();
 
     try {
-      this.isLoading.set(true);
+      this.activeAction.set(source === 'resend' ? 'resend-otp' : 'request-otp');
       await this.authService.requestOtp(email);
       this.loginForm.patchValue({ otp: '' }, { emitEvent: false });
       this.otpSent.set(true);
@@ -160,7 +168,7 @@ export class LoginComponent implements OnInit {
       this.notificationService.error('Could not send the code. Please try again.');
       console.error('OTP request error:', error);
     } finally {
-      this.isLoading.set(false);
+      this.activeAction.set(null);
     }
   }
 
@@ -187,6 +195,7 @@ export class LoginComponent implements OnInit {
     }
 
     try {
+      this.activeAction.set('verify-otp');
       await this.authService.loginWithOtp(
         normalizedEmail,
         String(otp.value).trim(),
@@ -200,10 +209,14 @@ export class LoginComponent implements OnInit {
       this.errorMessage.set('Invalid or expired code. Send a new code and try again.');
       this.notificationService.error('Invalid or expired code. Send a new code and try again.');
       console.error('OTP login error:', error);
+    } finally {
+      this.activeAction.set(null);
     }
   }
 
   async loginWithGoogle(): Promise<void> {
+    if (this.isLoading()) return;
+    this.activeAction.set('google');
     try {
       await this.authService.loginWithGoogle(this.referralCode());
       clearReferralAttribution();
@@ -216,6 +229,8 @@ export class LoginComponent implements OnInit {
         this.readErrorMessage(error, 'Google sign-in failed. Please try again.'),
       );
       console.error('Google login error:', error);
+    } finally {
+      this.activeAction.set(null);
     }
   }
 

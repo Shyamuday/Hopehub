@@ -18,7 +18,6 @@ import { PaymentService } from './payment.service';
 import { ConsumerFlowPreferencesService } from './consumer-flow-preferences.service';
 import type { ProviderConsumerSessionMode } from '@hopehub/contracts';
 import {
-  LISTENER_SUPPORT_CONSENT_MESSAGE,
   providerAcceptsLiveConnectMode,
   providerNeedsListenerSupportConsent,
   providerServiceForLiveConnectMode,
@@ -102,8 +101,35 @@ export class LiveConnectActionService {
       return;
     }
 
-    if (providerNeedsListenerSupportConsent(provider) && !this.confirmListenerSupportConsent()) {
-      return;
+    let expectedCouponPayableInPaise: number | null = null;
+    const promoCode = options.promoCode?.trim().toUpperCase() || '';
+    const selectedService = providerServiceForLiveConnectMode(provider, mode);
+    const grossInPaise = Number(
+      selectedService?.effectivePriceInPaise ??
+        selectedService?.priceInPaise ??
+        provider.sessionFeeInPaise ??
+        0,
+    );
+    if (promoCode && grossInPaise > 0) {
+      try {
+        const { quote } = await firstValueFrom(
+          this.bookingService.checkoutQuote({
+            grossInPaise,
+            promoCode,
+            serviceName: selectedService?.title || 'Quick Hope Hub talk',
+            careTeamServiceId: selectedService?.id || options.careTeamServiceId,
+            providerId: provider.id,
+          }),
+        );
+        if (quote.discountInPaise <= 0) {
+          this.notificationService.error('This coupon does not apply to this live session.');
+          return;
+        }
+        expectedCouponPayableInPaise = quote.payableInPaise;
+      } catch (error) {
+        this.notificationService.error(this.readErrorMessage(error));
+        return;
+      }
     }
 
     let response: QuickTalkResponse;
@@ -119,7 +145,7 @@ export class LiveConnectActionService {
           sessionMode: this.sessionMode(mode),
           preferredLanguage: provider.languages?.[0] || '',
           listenerSupportConsent: providerNeedsListenerSupportConsent(provider),
-          promoCode: options.promoCode || '',
+          promoCode,
           message: `${consumerModeLabel(mode)} Live Connect request`,
           entryPage: typeof window === 'undefined' ? undefined : window.location.href,
         }),
@@ -140,6 +166,12 @@ export class LiveConnectActionService {
     }
 
     const payableInPaise = Number(consultation?.payment?.amountInPaise ?? 0);
+    if (expectedCouponPayableInPaise === 0 && payableInPaise > 0) {
+      this.notificationService.error(
+        'The free coupon was not applied by the server. Payment was not opened.',
+      );
+      return;
+    }
     if (payableInPaise > 0) {
       try {
         await this.paymentService.payConsultation(consultation, {
@@ -265,11 +297,6 @@ export class LiveConnectActionService {
 
   private modeLabel(mode: LiveConnectActionMode): string {
     return consumerModeLabel(mode);
-  }
-
-  private confirmListenerSupportConsent(): boolean {
-    if (typeof window === 'undefined') return true;
-    return window.confirm(LISTENER_SUPPORT_CONSENT_MESSAGE);
   }
 
   private readErrorMessage(error: unknown): string {

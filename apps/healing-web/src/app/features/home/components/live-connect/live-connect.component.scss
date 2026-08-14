@@ -627,6 +627,49 @@
   }
 }
 
+.connect-checkout-fields--coupon {
+  margin-bottom: 0.85rem;
+}
+
+.connect-checkout-phone {
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.8rem;
+  display: flex;
+  justify-content: space-between;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.72rem;
+
+  span,
+  small,
+  strong {
+    display: block;
+  }
+
+  small {
+    color: #64748b;
+    font-size: 0.68rem;
+    font-weight: 700;
+  }
+
+  strong {
+    color: #0f172a;
+    font-size: 0.86rem;
+    margin-top: 0.08rem;
+  }
+
+  button {
+    background: transparent;
+    border: 0;
+    color: #047857;
+    cursor: pointer;
+    font-size: 0.76rem;
+    font-weight: 800;
+    padding: 0.35rem;
+  }
+}
+
 .connect-checkout-fields__error {
   color: #b91c1c;
   font-size: 0.75rem;

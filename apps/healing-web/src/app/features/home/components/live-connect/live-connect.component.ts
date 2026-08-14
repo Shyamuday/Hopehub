@@ -38,7 +38,6 @@ import {
   featuredConsultationCoupon,
 } from '../../../../core/services/booking.service';
 import {
-  LISTENER_SUPPORT_CONSENT_MESSAGE,
   providerAcceptsLiveConnectMode,
   providerNeedsListenerSupportConsent,
   providerServiceForLiveConnectMode,
@@ -105,6 +104,7 @@ export class LiveConnectComponent implements OnInit {
   readonly couponError = signal('');
   readonly couponSuccess = signal('');
   readonly checkoutPhone = signal('');
+  readonly editingCheckoutPhone = signal(true);
   readonly phoneError = signal('');
   readonly featuredCoupon = signal<HopeHubPublicCoupon | null>(null);
   readonly view = signal<'providers' | 'groups'>('providers');
@@ -113,6 +113,7 @@ export class LiveConnectComponent implements OnInit {
   readonly paymentFlowState = signal<PaymentFlowState>('IDLE');
   readonly paymentFlowError = signal('');
   readonly paymentFlowConsultation = signal<any | null>(null);
+  readonly paymentRetryAvailable = signal(false);
   readonly liveConnectImage = IMAGE_ASSETS.HEALING_HUB.PHOTOS.PHONE_SESSION;
 
   readonly modes = CONSUMER_LIVE_CONNECT_MODE_OPTIONS;
@@ -337,11 +338,17 @@ export class LiveConnectComponent implements OnInit {
   requestStart(provider: HopeHubProvider): void {
     if (this.startingProviderId()) return;
     this.clearLiveCoupon();
-    this.checkoutPhone.set(this.currentUser()?.mobile || '');
+    const savedPhone = this.currentUser()?.mobile?.trim() || '';
+    this.checkoutPhone.set(savedPhone);
+    this.editingCheckoutPhone.set(!savedPhone);
     this.phoneError.set('');
     if (this.featuredCoupon()?.code) this.updateLiveCoupon(this.featuredCoupon()!.code);
+    const availableModes = this.providerModes(provider).filter((option) => option.enabled);
+    const preferredMode = availableModes.some((option) => option.mode === this.mode())
+      ? this.mode()
+      : availableModes[0]?.mode || null;
     this.pendingProvider.set(provider);
-    this.pendingMode.set(null);
+    this.pendingMode.set(preferredMode);
   }
 
   cancelStart(): void {
@@ -349,6 +356,7 @@ export class LiveConnectComponent implements OnInit {
     this.pendingMode.set(null);
     this.clearLiveCoupon();
     this.checkoutPhone.set('');
+    this.editingCheckoutPhone.set(true);
     this.phoneError.set('');
   }
 
@@ -378,7 +386,12 @@ export class LiveConnectComponent implements OnInit {
       service?.effectivePriceInPaise ?? service?.priceInPaise ?? provider.sessionFeeInPaise ?? 0,
     );
     const payableInPaise = this.couponQuote()?.payableInPaise ?? grossInPaise;
+    if (this.couponNeedsApply()) {
+      this.couponError.set('Apply the coupon before continuing.');
+      return;
+    }
     if (payableInPaise > 0 && this.checkoutPhone().replace(/\D/g, '').length < 8) {
+      this.editingCheckoutPhone.set(true);
       this.phoneError.set('Enter a valid phone number for secure payment.');
       return;
     }
@@ -400,14 +413,14 @@ export class LiveConnectComponent implements OnInit {
       return;
     }
 
-    const listenerConsent = this.needsListenerSupportConsent(provider)
-      ? this.confirmListenerSupportConsent()
-      : true;
-    if (!listenerConsent) return;
+    const listenerConsent = this.needsListenerSupportConsent(provider);
 
     this.startingProviderId.set(provider.id);
     this.message.set('');
     this.paymentFlowError.set('');
+    this.paymentFlowConsultation.set(null);
+    this.paymentRetryAvailable.set(false);
+    this.paymentFlowState.set('IDLE');
     try {
       const response = await firstValueFrom(
         this.bookingService.createQuickTalk({
@@ -425,7 +438,16 @@ export class LiveConnectComponent implements OnInit {
 
       this.paymentFlowConsultation.set(response.consultation);
       const payableInPaise = Number(response.consultation?.payment?.amountInPaise ?? 0);
+      if (this.couponQuote()?.payableInPaise === 0 && payableInPaise > 0) {
+        const message = 'The free coupon was not applied by the server. Payment was not opened.';
+        this.paymentFlowError.set(message);
+        this.paymentFlowState.set('ERROR');
+        this.message.set(message);
+        this.notificationService.error(message);
+        return;
+      }
       if (payableInPaise > 0) {
+        this.paymentRetryAvailable.set(true);
         this.paymentFlowState.set('CREATING_ORDER');
         await this.paymentService.payConsultation(response.consultation, {
           onOrderCreated: () => this.paymentFlowState.set('OPENING_CHECKOUT'),
@@ -437,6 +459,7 @@ export class LiveConnectComponent implements OnInit {
         });
       }
 
+      this.paymentRetryAvailable.set(false);
       this.paymentFlowState.set('SUCCESS');
       this.message.set(
         `${this.modeLabel()} session is ready with ${response.provider?.name || provider.name}.`,
@@ -447,9 +470,16 @@ export class LiveConnectComponent implements OnInit {
     } catch (error) {
       const message = this.readErrorMessage(error);
       this.paymentFlowError.set(message);
-      this.paymentFlowState.set('ERROR');
       this.message.set(message);
       this.notificationService.error(message);
+      if (this.paymentFlowConsultation() && this.paymentRetryAvailable()) {
+        this.paymentFlowState.set('ERROR');
+      } else {
+        this.paymentFlowState.set('IDLE');
+        this.paymentFlowConsultation.set(null);
+        this.paymentRetryAvailable.set(false);
+        this.loadProviders();
+      }
     } finally {
       this.startingProviderId.set('');
     }
@@ -469,11 +499,21 @@ export class LiveConnectComponent implements OnInit {
     this.couponError.set('');
   }
 
+  couponNeedsApply(): boolean {
+    const entered = this.couponCode().trim().toUpperCase();
+    return Boolean(entered) && this.appliedCouponCode() !== entered;
+  }
+
   updateCheckoutPhone(value: string): void {
     const normalized = String(value || '')
       .replace(/[^\d+\s()-]/g, '')
       .slice(0, 20);
     this.checkoutPhone.set(normalized);
+    this.phoneError.set('');
+  }
+
+  editCheckoutPhone(): void {
+    this.editingCheckoutPhone.set(true);
     this.phoneError.set('');
   }
 
@@ -566,14 +606,9 @@ export class LiveConnectComponent implements OnInit {
     return providerNeedsListenerSupportConsent(provider);
   }
 
-  private confirmListenerSupportConsent(): boolean {
-    if (typeof window === 'undefined') return true;
-    return window.confirm(LISTENER_SUPPORT_CONSENT_MESSAGE);
-  }
-
   retryPayment(): void {
     const consultation = this.paymentFlowConsultation();
-    if (!consultation || this.startingProviderId()) return;
+    if (!consultation || !this.paymentRetryAvailable() || this.startingProviderId()) return;
     this.paymentFlowError.set('');
     this.paymentFlowState.set('CREATING_ORDER');
     void this.paymentService
@@ -586,6 +621,7 @@ export class LiveConnectComponent implements OnInit {
         prefillPhone: this.checkoutPhone(),
       })
       .then(() => {
+        this.paymentRetryAvailable.set(false);
         this.paymentFlowState.set('SUCCESS');
         this.notificationService.success('Payment confirmed. Opening your session room.');
         void this.openLiveSession(consultation.id);
@@ -594,6 +630,7 @@ export class LiveConnectComponent implements OnInit {
         const message = this.readErrorMessage(error);
         this.paymentFlowError.set(message);
         this.paymentFlowState.set('ERROR');
+        this.paymentRetryAvailable.set(true);
         this.notificationService.error(message);
       });
   }
@@ -603,7 +640,8 @@ export class LiveConnectComponent implements OnInit {
     if (state === 'SUCCESS' || state === 'ERROR') {
       this.paymentFlowState.set('IDLE');
       this.paymentFlowError.set('');
-      if (state === 'SUCCESS') this.paymentFlowConsultation.set(null);
+      this.paymentFlowConsultation.set(null);
+      this.paymentRetryAvailable.set(false);
     }
   }
 
@@ -613,7 +651,11 @@ export class LiveConnectComponent implements OnInit {
     if (state === 'OPENING_CHECKOUT') return 'Secure checkout';
     if (state === 'VERIFYING') return 'Confirming payment';
     if (state === 'SUCCESS') return 'Live session ready';
-    if (state === 'ERROR') return 'Could not start live session';
+    if (state === 'ERROR') {
+      return this.paymentRetryAvailable()
+        ? 'Payment could not be completed'
+        : 'Could not start live session';
+    }
     return '';
   }
 

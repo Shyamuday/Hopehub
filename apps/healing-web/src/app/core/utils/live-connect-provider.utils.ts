@@ -26,9 +26,6 @@ export type LiveConnectProviderLike = {
   services?: LiveConnectService[];
 };
 
-export const LISTENER_SUPPORT_CONSENT_MESSAGE =
-  'Emotional support listeners are non-clinical. They cannot diagnose, prescribe, or handle emergencies alone. Safety concerns may be escalated to Hope Hub/professional support. Continue?';
-
 export function providerAcceptsLiveConnectMode(
   provider: LiveConnectProviderLike,
   mode: ProviderConsumerSessionMode,

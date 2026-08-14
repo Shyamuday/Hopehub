@@ -191,7 +191,7 @@
   [state]="paymentFlowState()"
   [title]="paymentFlowTitle()"
   [message]="paymentFlowMessage()"
-  [canRetry]="!!paymentFlowConsultation()"
+  [canRetry]="paymentRetryAvailable()"
   (retry)="retryPayment()"
   (close)="closePaymentOverlay()"
 ></app-payment-status-overlay>
@@ -200,10 +200,29 @@
   [open]="pendingProvider() !== null"
   [showClose]="true"
   title="Connect now"
-  description="Choose a mode, apply a coupon if you have one, and continue."
+  description="Apply a coupon if you have one, then continue."
   (closed)="cancelStart()"
 >
   @if (pendingProvider(); as provider) {
+    <div class="connect-checkout-fields connect-checkout-fields--coupon">
+      <label>
+        <span>Coupon code</span>
+        <app-coupon-box
+          [compact]="true"
+          placeholder="Enter coupon code"
+          applyLabel="Apply"
+          checkingLabel="Applying…"
+          [value]="couponCode()"
+          [loading]="couponLoading()"
+          [applied]="!!appliedCouponCode()"
+          [error]="couponError()"
+          [success]="couponSuccess()"
+          (valueChange)="updateLiveCoupon($event)"
+          (apply)="applyLiveCoupon()"
+        />
+      </label>
+    </div>
+
     <div class="connect-mode-picker">
       @for (option of providerModes(provider); track option.mode) {
         <button
@@ -233,24 +252,16 @@
       }
     </div>
 
-    @if (pendingMode()) {
-      <div class="connect-checkout-fields">
-        <label>
-          <span>Coupon code</span>
-          <app-coupon-box
-            [compact]="true"
-            placeholder="Enter coupon code"
-            applyLabel="Apply"
-            checkingLabel="Applying…"
-            [value]="couponCode()"
-            [loading]="couponLoading()"
-            [applied]="!!appliedCouponCode()"
-            [error]="couponError()"
-            [success]="couponSuccess()"
-            (valueChange)="updateLiveCoupon($event)"
-            (apply)="applyLiveCoupon()"
-          />
-        </label>
+    <div class="connect-checkout-fields">
+      @if (checkoutPhone() && !editingCheckoutPhone()) {
+        <div class="connect-checkout-phone">
+          <span>
+            <small>Payment phone</small>
+            <strong>{{ checkoutPhone() }}</strong>
+          </span>
+          <button type="button" (click)="editCheckoutPhone()">Change</button>
+        </div>
+      } @else {
         <label>
           <span>Phone number for payment</span>
           <input
@@ -265,8 +276,8 @@
             <small class="connect-checkout-fields__error">{{ phoneError() }}</small>
           }
         </label>
-      </div>
-    }
+      }
+    </div>
   }
 
   <footer modalFooter class="connect-checkout-actions">
@@ -276,7 +287,7 @@
     <button
       type="button"
       class="connect-checkout-actions__continue"
-      [disabled]="!pendingMode() || couponLoading() || !!startingProviderId()"
+      [disabled]="!pendingMode() || couponLoading() || couponNeedsApply() || !!startingProviderId()"
       (click)="confirmStart()"
     >
       {{ startingProviderId() ? 'Connecting…' : 'Continue' }}

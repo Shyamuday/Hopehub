@@ -272,13 +272,6 @@
           I understand this is not emergency care.
         </app-form-checkbox>
 
-        @if (needsListenerSupportConsent()) {
-          <app-form-checkbox formControlName="listenerSupportConsent" tone="success">
-            I understand emotional support listeners are non-clinical, cannot diagnose or
-            prescribe, and safety concerns may be escalated to Hope Hub/professional support.
-          </app-form-checkbox>
-        }
-
         <app-button
           type="submit"
           [disabled]="contactForm.invalid || isSubmitting()"
