@@ -10,105 +10,13 @@
         type="button"
         class="btn-primary"
         [adminCan]="managePermission"
-        (click)="setupAll()"
-        [disabled]="saving() === 'all'"
+        (click)="openConfiguration()"
+        [disabled]="loading()"
       >
-        {{ saving() === 'all' ? 'Updating…' : 'Setup all' }}
+        Configure bots
       </button>
     </div>
   </div>
-
-  <section class="setup-panel" [adminCan]="managePermission">
-    <label>
-      Public API URL override
-      <input
-        type="url"
-        [ngModel]="publicApiUrl()"
-        (ngModelChange)="publicApiUrl.set($event)"
-        placeholder="Optional, e.g. https://api.hopehub..."
-      />
-    </label>
-    <label class="check">
-      <input
-        type="checkbox"
-        [ngModel]="dropPendingUpdates()"
-        (ngModelChange)="dropPendingUpdates.set($event)"
-      />
-      Drop pending updates during setup
-    </label>
-  </section>
-
-  @if (!loading() && controlGroups().length) {
-    <section class="controls-panel" [adminCan]="managePermission">
-      <div class="section-header">
-        <div>
-          <h3>Bot behaviour and protection</h3>
-          <p class="muted">
-            Configure bot limits and user-facing welcome text. Tokens remain in server environment variables.
-          </p>
-        </div>
-      </div>
-
-      <div class="control-groups">
-        @for (group of controlGroups(); track group.name) {
-          <form class="control-card" (submit)="$event.preventDefault(); saveControlGroup(group)">
-            <div class="control-card__header">
-              <h4>{{ group.name }}</h4>
-              <button
-                type="submit"
-                class="btn-primary"
-                [disabled]="saving() === 'controls:' + group.name"
-              >
-                {{ saving() === 'controls:' + group.name ? 'Saving…' : 'Apply' }}
-              </button>
-            </div>
-
-            @for (control of group.controls; track control.key) {
-              @if (control.type === 'boolean') {
-                <label class="control-field control-field--check">
-                  <input
-                    type="checkbox"
-                    [ngModel]="controlValue(control.key) === 'true'"
-                    (ngModelChange)="setControlValue(control.key, $event ? 'true' : 'false')"
-                    [name]="control.key"
-                  />
-                  <span>
-                    <strong>{{ control.label }}</strong>
-                    <small>{{ control.description }}</small>
-                  </span>
-                </label>
-              } @else if (control.type === 'number') {
-                <label class="control-field">
-                  <strong>{{ control.label }}</strong>
-                  <small>{{ control.description }}</small>
-                  <input
-                    type="number"
-                    [min]="control.min"
-                    [max]="control.max"
-                    [ngModel]="controlValue(control.key)"
-                    (ngModelChange)="setControlValue(control.key, $event)"
-                    [name]="control.key"
-                  />
-                </label>
-              } @else {
-                <label class="control-field">
-                  <strong>{{ control.label }}</strong>
-                  <small>{{ control.description }}</small>
-                  <textarea
-                    rows="4"
-                    [maxlength]="control.maxLength"
-                    [ngModel]="controlValue(control.key)"
-                    (ngModelChange)="setControlValue(control.key, $event)"
-                    [name]="control.key"
-                  ></textarea>
-                </label>
-              }
-            }
-          </form>
-        }
-      </div>
-    </section>
-  }
 
   @if (loading()) {
     <p class="loading-text">Loading Telegram status...</p>
@@ -304,6 +212,127 @@
     </section>
   }
 </div>
+
+<app-admin-form-drawer
+  [adminCan]="managePermission"
+  [open]="configurationOpen()"
+  [title]="configurationTitle()"
+  [description]="configurationDescription()"
+  [steps]="configurationSteps()"
+  [currentStep]="configurationStep()"
+  [busy]="configurationBusy()"
+  [nextDisabled]="configurationNextDisabled()"
+  submitLabel="Apply configuration"
+  (closed)="closeConfiguration()"
+  (previous)="previousConfigurationStep()"
+  (next)="nextConfigurationStep()"
+  (submitted)="saveConfiguration()"
+>
+  @if (configurationStep() === 0) {
+    <section class="drawer-step">
+      <div class="drawer-step__intro">
+        <h3>Webhook connection</h3>
+        <p>
+          Defaults are recommended. Only use an override when the public API address has changed.
+        </p>
+      </div>
+      <label class="drawer-field">
+        <strong>Public API URL override</strong>
+        <small>Optional. Leave empty to use the server configuration.</small>
+        <input
+          type="url"
+          [ngModel]="publicApiUrl()"
+          (ngModelChange)="publicApiUrl.set($event)"
+          placeholder="https://api.hopehub.in"
+        />
+        @if (configurationNextDisabled()) {
+          <em>Enter a complete http:// or https:// URL.</em>
+        }
+      </label>
+      <label class="drawer-check">
+        <input
+          type="checkbox"
+          [ngModel]="dropPendingUpdates()"
+          (ngModelChange)="dropPendingUpdates.set($event)"
+        />
+        <span>
+          <strong>Drop pending Telegram updates</strong>
+          <small>Use this only when old queued messages should not be processed after setup.</small>
+        </span>
+      </label>
+    </section>
+  } @else if (activeControlGroup(); as group) {
+    <section class="drawer-step">
+      <div class="drawer-step__intro">
+        <h3>{{ group.name }}</h3>
+        <p>Changes are kept as a draft until the final review step.</p>
+      </div>
+      @for (control of group.controls; track control.key) {
+        @if (control.type === 'boolean') {
+          <label class="drawer-check">
+            <input
+              type="checkbox"
+              [ngModel]="controlValue(control.key) === 'true'"
+              (ngModelChange)="setControlValue(control.key, $event ? 'true' : 'false')"
+            />
+            <span
+              ><strong>{{ control.label }}</strong
+              ><small>{{ control.description }}</small></span
+            >
+          </label>
+        } @else if (control.type === 'number') {
+          <label class="drawer-field">
+            <strong>{{ control.label }}</strong>
+            <small>{{ control.description }}</small>
+            <input
+              type="number"
+              [min]="control.min"
+              [max]="control.max"
+              [ngModel]="controlValue(control.key)"
+              (ngModelChange)="setControlValue(control.key, $event)"
+            />
+          </label>
+        } @else {
+          <label class="drawer-field">
+            <strong>{{ control.label }}</strong>
+            <small>{{ control.description }}</small>
+            <textarea
+              rows="5"
+              [maxlength]="control.maxLength"
+              [ngModel]="controlValue(control.key)"
+              (ngModelChange)="setControlValue(control.key, $event)"
+            ></textarea>
+          </label>
+        }
+      }
+    </section>
+  } @else {
+    <section class="drawer-step">
+      <div class="drawer-step__intro">
+        <h3>Ready to apply</h3>
+        <p>This updates stored controls, Telegram commands, and managed webhook connections.</p>
+      </div>
+      <div class="review-list">
+        <article>
+          <span>Managed bots</span><strong>{{ bots().length }}</strong>
+        </article>
+        <article>
+          <span>Setting groups</span><strong>{{ controlGroups().length }}</strong>
+        </article>
+        <article>
+          <span>Protection controls</span><strong>{{ controls().length }}</strong>
+        </article>
+        <article>
+          <span>Pending updates</span>
+          <strong>{{ dropPendingUpdates() ? 'Will be dropped' : 'Will be kept' }}</strong>
+        </article>
+      </div>
+      <p class="review-note">
+        Bot tokens remain on the server and are never displayed or saved by this form.
+      </p>
+    </section>
+  }
+</app-admin-form-drawer>
 
 @if (toast()) {
   <div class="toast">{{ toast() }}</div>

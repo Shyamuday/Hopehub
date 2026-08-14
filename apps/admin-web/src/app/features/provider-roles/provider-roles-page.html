@@ -1,32 +1,234 @@
 <header class="page-head">
-  <div><p>Hope Hub configuration</p><h1>Provider roles</h1><span>Edit wording, safeguards, modes, and visibility without a frontend release.</span></div>
+  <div>
+    <p>Hope Hub configuration</p>
+    <h1>Provider roles</h1>
+    <span>Choose a role to edit its wording, safeguards, modes, and visibility.</span>
+  </div>
   <button type="button" [adminCan]="managePermission" (click)="newRole()">New role</button>
 </header>
 
-@if (error()) { <p class="notice notice--error">{{ error() }}</p> }
-@if (message()) { <p class="notice">{{ message() }}</p> }
+@if (error()) {
+  <p class="notice notice--error">{{ error() }}</p>
+}
+@if (message()) {
+  <p class="notice">{{ message() }}</p>
+}
 
-<main class="workspace">
-  <aside>
-    @if (loading()) { <p>Loading roles…</p> }
+<main class="roles-list">
+  @if (loading()) {
+    <p class="empty-state">Loading roles…</p>
+  } @else {
     @for (role of roles(); track role.code) {
-      <button type="button" class="role-row" [class.role-row--active]="form().code === role.code" (click)="edit(role)">
-        <strong>{{ role.shortLabel }}</strong><span>{{ role.category }} · v{{ role.version }}</span>
-        <i [class.off]="!role.isActive">{{ role.isActive ? 'Active' : 'Off' }}</i>
+      <button type="button" class="role-card" (click)="edit(role)">
+        <span class="role-card__main">
+          <strong>{{ role.shortLabel || role.label }}</strong>
+          <small>{{ role.label }} · {{ role.category.replaceAll('_', ' ') }}</small>
+        </span>
+        <span class="role-card__meta">
+          <i [class.off]="!role.isActive">{{ role.isActive ? 'Active' : 'Off' }}</i>
+          <small>v{{ role.version }}</small>
+        </span>
+        <b aria-hidden="true">›</b>
       </button>
+    } @empty {
+      <p class="empty-state">No provider roles have been configured.</p>
     }
-  </aside>
-
-  <form (ngSubmit)="save()">
-    <div class="field"><label>Permanent role code</label><input [ngModel]="form().code" (ngModelChange)="setField('code', $event.toUpperCase())" name="code" [disabled]="roles().some(r => r.code === form().code)" placeholder="NEW_PROVIDER_ROLE"></div>
-    <div class="two"><div class="field"><label>Public label</label><input [ngModel]="form().label" (ngModelChange)="setField('label', $event)" name="label"></div><div class="field"><label>Short label</label><input [ngModel]="form().shortLabel" (ngModelChange)="setField('shortLabel', $event)" name="shortLabel"></div></div>
-    <div class="two"><div class="field"><label>Category</label><select [ngModel]="form().category" (ngModelChange)="setField('category', $event)" name="category"><option>PROFESSIONAL_CARE</option><option>EMOTIONAL_LISTENER</option><option>COACH_MENTOR</option></select></div><div class="field"><label>Tone</label><input [ngModel]="form().tone" (ngModelChange)="setField('tone', $event)" name="tone"></div></div>
-    <div class="field"><label>Card description</label><textarea rows="2" [ngModel]="form().description" (ngModelChange)="setField('description', $event)" name="description"></textarea></div>
-    <div class="field"><label>Allowed scope</label><textarea rows="2" [ngModel]="form().scope" (ngModelChange)="setField('scope', $event)" name="scope"></textarea></div>
-    <div class="two"><div class="field"><label>Best for (one per line)</label><textarea rows="4" [ngModel]="form().bestForText" (ngModelChange)="setField('bestForText', $event)" name="bestFor"></textarea></div><div class="field"><label>Not for (one per line)</label><textarea rows="4" [ngModel]="form().notForText" (ngModelChange)="setField('notForText', $event)" name="notFor"></textarea></div></div>
-    <div class="field"><label>Primary button text</label><input [ngModel]="form().ctaLabel" (ngModelChange)="setField('ctaLabel', $event)" name="ctaLabel"></div>
-    <fieldset><legend>Available session modes</legend>@for (mode of sessionModes; track mode) { <label><input type="checkbox" [checked]="form().supportedModes.includes(mode)" (change)="toggleMode(mode)"> {{ modeLabel(mode) }}</label> }</fieldset>
-    <div class="checks"><label><input type="checkbox" [ngModel]="form().requiresCredentials" (ngModelChange)="setField('requiresCredentials', $event)" name="credentials"> Credentials required</label><label><input type="checkbox" [ngModel]="form().requiresListenerScreening" (ngModelChange)="setField('requiresListenerScreening', $event)" name="screening"> Listener test required</label><label><input type="checkbox" [ngModel]="form().isClinicalCare" (ngModelChange)="setField('isClinicalCare', $event)" name="clinical"> Clinical care</label><label><input type="checkbox" [ngModel]="form().isActive" (ngModelChange)="setField('isActive', $event)" name="active"> Active</label></div>
-    <div class="save"><span>Role codes cannot be deleted; turn Active off to retire one safely.</span><button type="submit" [adminCan]="managePermission" [disabled]="saving()">{{ saving() ? 'Saving…' : 'Save role' }}</button></div>
-  </form>
+  }
 </main>
+
+<app-admin-form-drawer
+  [adminCan]="managePermission"
+  [open]="formOpen()"
+  [title]="formTitle()"
+  [description]="formDescription()"
+  [steps]="formSteps"
+  [currentStep]="formStep()"
+  [busy]="saving()"
+  [nextDisabled]="formNextDisabled()"
+  [submitLabel]="editingExisting() ? 'Save role' : 'Create role'"
+  (closed)="closeForm()"
+  (previous)="previousFormStep()"
+  (next)="nextFormStep()"
+  (submitted)="save()"
+>
+  <section class="role-form-step">
+    @if (error()) {
+      <p class="notice notice--error">{{ error() }}</p>
+    }
+    @if (formStep() === 0) {
+      <div class="step-intro">
+        <h3>Role identity</h3>
+        <p>Use clear public language. The permanent code is used by the API.</p>
+      </div>
+      <div class="field">
+        <label>Permanent role code</label>
+        <input
+          [ngModel]="form().code"
+          (ngModelChange)="setField('code', $event.toUpperCase())"
+          [disabled]="editingExisting()"
+          placeholder="NEW_PROVIDER_ROLE"
+        />
+      </div>
+      <div class="two">
+        <div class="field">
+          <label>Public label</label
+          ><input [ngModel]="form().label" (ngModelChange)="setField('label', $event)" />
+        </div>
+        <div class="field">
+          <label>Short label</label
+          ><input [ngModel]="form().shortLabel" (ngModelChange)="setField('shortLabel', $event)" />
+        </div>
+      </div>
+      <div class="two">
+        <div class="field">
+          <label>Category</label>
+          <select [ngModel]="form().category" (ngModelChange)="setField('category', $event)">
+            <option>PROFESSIONAL_CARE</option>
+            <option>EMOTIONAL_LISTENER</option>
+            <option>COACH_MENTOR</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Tone</label
+          ><input [ngModel]="form().tone" (ngModelChange)="setField('tone', $event)" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Primary button text</label
+        ><input [ngModel]="form().ctaLabel" (ngModelChange)="setField('ctaLabel', $event)" />
+      </div>
+    } @else if (formStep() === 1) {
+      <div class="step-intro">
+        <h3>Public scope</h3>
+        <p>Help consumers and admins understand when this role is appropriate.</p>
+      </div>
+      <div class="field">
+        <label>Card description</label
+        ><textarea
+          rows="3"
+          [ngModel]="form().description"
+          (ngModelChange)="setField('description', $event)"
+        ></textarea>
+      </div>
+      <div class="field">
+        <label>Allowed scope</label
+        ><textarea
+          rows="3"
+          [ngModel]="form().scope"
+          (ngModelChange)="setField('scope', $event)"
+        ></textarea>
+      </div>
+      <div class="two">
+        <div class="field">
+          <label>Best for — one per line</label
+          ><textarea
+            rows="6"
+            [ngModel]="form().bestForText"
+            (ngModelChange)="setField('bestForText', $event)"
+          ></textarea>
+        </div>
+        <div class="field">
+          <label>Not for — one per line</label
+          ><textarea
+            rows="6"
+            [ngModel]="form().notForText"
+            (ngModelChange)="setField('notForText', $event)"
+          ></textarea>
+        </div>
+      </div>
+    } @else if (formStep() === 2) {
+      <div class="step-intro">
+        <h3>Modes and safeguards</h3>
+        <p>At least one session mode is required.</p>
+      </div>
+      <fieldset>
+        <legend>Available session modes</legend>
+        @for (mode of sessionModes; track mode) {
+          <label
+            ><input
+              type="checkbox"
+              [checked]="form().supportedModes.includes(mode)"
+              (change)="toggleMode(mode)"
+            />
+            {{ modeLabel(mode) }}</label
+          >
+        }
+      </fieldset>
+      <div class="checks">
+        <label
+          ><input
+            type="checkbox"
+            [ngModel]="form().requiresCredentials"
+            (ngModelChange)="setField('requiresCredentials', $event)"
+          />
+          Credentials required</label
+        >
+        <label
+          ><input
+            type="checkbox"
+            [ngModel]="form().requiresListenerScreening"
+            (ngModelChange)="setField('requiresListenerScreening', $event)"
+          />
+          Listener test required</label
+        >
+        <label
+          ><input
+            type="checkbox"
+            [ngModel]="form().isClinicalCare"
+            (ngModelChange)="setField('isClinicalCare', $event)"
+          />
+          Clinical care</label
+        >
+        <label
+          ><input
+            type="checkbox"
+            [ngModel]="form().isActive"
+            (ngModelChange)="setField('isActive', $event)"
+          />
+          Active</label
+        >
+      </div>
+      <div class="field">
+        <label>Sort order</label
+        ><input
+          type="number"
+          [ngModel]="form().sortOrder"
+          (ngModelChange)="setField('sortOrder', $event)"
+        />
+      </div>
+    } @else {
+      <div class="step-intro">
+        <h3>Review role</h3>
+        <p>Confirm the consumer-facing identity and safety requirements.</p>
+      </div>
+      <div class="review-grid">
+        <article>
+          <span>Role</span><strong>{{ form().label }}</strong
+          ><small>{{ form().code }}</small>
+        </article>
+        <article>
+          <span>Category</span><strong>{{ form().category.replaceAll('_', ' ') }}</strong
+          ><small>{{ form().shortLabel || 'No short label' }}</small>
+        </article>
+        <article>
+          <span>Session modes</span><strong>{{ form().supportedModes.length }}</strong
+          ><small>{{ form().supportedModes.join(', ') }}</small>
+        </article>
+        <article>
+          <span>Requirements</span
+          ><strong>{{ form().isClinicalCare ? 'Clinical care' : 'Non-clinical' }}</strong
+          ><small>{{
+            form().requiresCredentials ? 'Credentials required' : 'No credential requirement'
+          }}</small>
+        </article>
+        <article>
+          <span>Visibility</span><strong>{{ form().isActive ? 'Active' : 'Hidden' }}</strong
+          ><small>Sort order {{ form().sortOrder }}</small>
+        </article>
+      </div>
+      <p class="retire-note">
+        Role codes cannot be deleted. Turn Active off to retire a role safely.
+      </p>
+    }
+  </section>
+</app-admin-form-drawer>

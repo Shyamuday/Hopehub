@@ -5,10 +5,14 @@ import { AdminApi } from '../../../core/services/admin-api';
 import { TOAST_DURATION_MS } from '../../../core/constants/timing.constants';
 import { AdminCanDirective } from '../../../core/directives/admin-can.directive';
 import { ADMIN_PERMISSIONS } from '../../../core/admin-permissions';
+import {
+  AdminFormDrawerComponent,
+  type AdminFormStep,
+} from '../../../shared/ui/admin-form-drawer.component';
 
 @Component({
   selector: 'app-telegram-bots-page',
-  imports: [DatePipe, FormsModule, AdminCanDirective],
+  imports: [DatePipe, FormsModule, AdminCanDirective, AdminFormDrawerComponent],
   templateUrl: './telegram-bots-page.html',
   styleUrl: './telegram-bots-page.scss',
 })
@@ -27,6 +31,13 @@ export class TelegramBotsPage implements OnInit {
   toast = signal('');
   dropPendingUpdates = signal(false);
   publicApiUrl = signal('');
+  configurationOpen = signal(false);
+  configurationStep = signal(0);
+  private configurationSnapshot: {
+    controls: Record<string, string>;
+    publicApiUrl: string;
+    dropPendingUpdates: boolean;
+  } | null = null;
 
   linkedSessions = computed(() => this.sessions().filter((session) => session.linkedUserId).length);
   unlinkedSessions = computed(() => this.sessions().length - this.linkedSessions());
@@ -37,6 +48,33 @@ export class TelegramBotsPage implements OnInit {
         controls: this.controls().filter((control) => control.group === name),
       }))
       .filter((group) => group.controls.length),
+  );
+  configurationSteps = computed<AdminFormStep[]>(() => [
+    { id: 'setup', label: 'Setup' },
+    ...this.controlGroups().map((group) => ({
+      id: group.name.toLowerCase().replace(/\s+/g, '-'),
+      label: group.name.replace(' bot', ''),
+    })),
+    { id: 'review', label: 'Review' },
+  ]);
+  activeControlGroup = computed(() => {
+    const index = this.configurationStep() - 1;
+    return index >= 0 && index < this.controlGroups().length ? this.controlGroups()[index] : null;
+  });
+  configurationTitle = computed(() => {
+    if (this.configurationStep() === 0) return 'Connection setup';
+    if (this.activeControlGroup()) return this.activeControlGroup()!.name;
+    return 'Review configuration';
+  });
+  configurationDescription = computed(() => {
+    if (this.configurationStep() === 0) return 'Set webhook behaviour shared by all managed bots.';
+    if (this.activeControlGroup())
+      return 'Update only the settings for this part of the bot system.';
+    return 'Confirm the configuration before applying it to the API runtime.';
+  });
+  configurationBusy = computed(() => this.saving() === 'configuration');
+  configurationNextDisabled = computed(
+    () => this.configurationStep() === 0 && !this.isPublicApiUrlValid(),
   );
 
   ngOnInit(): void {
@@ -83,6 +121,63 @@ export class TelegramBotsPage implements OnInit {
       await this.load();
     } catch (e: any) {
       this.showToast(e?.error?.message || 'Could not setup all Telegram bots.');
+    } finally {
+      this.saving.set('');
+    }
+  }
+
+  openConfiguration() {
+    this.configurationSnapshot = {
+      controls: { ...this.controlValues() },
+      publicApiUrl: this.publicApiUrl(),
+      dropPendingUpdates: this.dropPendingUpdates(),
+    };
+    this.configurationStep.set(0);
+    this.configurationOpen.set(true);
+  }
+
+  closeConfiguration() {
+    if (this.configurationBusy()) return;
+    if (this.configurationSnapshot) {
+      this.controlValues.set({ ...this.configurationSnapshot.controls });
+      this.publicApiUrl.set(this.configurationSnapshot.publicApiUrl);
+      this.dropPendingUpdates.set(this.configurationSnapshot.dropPendingUpdates);
+    }
+    this.configurationSnapshot = null;
+    this.configurationOpen.set(false);
+    this.configurationStep.set(0);
+  }
+
+  nextConfigurationStep() {
+    if (this.configurationNextDisabled()) return;
+    this.configurationStep.update((step) =>
+      Math.min(step + 1, this.configurationSteps().length - 1),
+    );
+  }
+
+  previousConfigurationStep() {
+    this.configurationStep.update((step) => Math.max(0, step - 1));
+  }
+
+  async saveConfiguration() {
+    if (this.configurationNextDisabled()) return;
+    this.saving.set('configuration');
+    try {
+      const controlsResponse = await this.api.saveTelegramBotControls(
+        this.controls().map((control) => ({
+          key: control.key,
+          value: this.controlValue(control.key),
+        })),
+      );
+      await this.api.setupAllTelegramBots(this.setupPayload());
+      this.applyControls(controlsResponse.controls);
+      this.configurationSnapshot = null;
+      this.configurationOpen.set(false);
+      this.configurationStep.set(0);
+      this.showToast('Bot configuration applied successfully.');
+      await this.load();
+    } catch (e: any) {
+      this.showToast(e?.error?.message || 'Could not apply bot configuration.');
     } finally {
       this.saving.set('');
     }
@@ -146,6 +241,17 @@ export class TelegramBotsPage implements OnInit {
       (total: number, value) => total + Number(value || 0),
       0,
     );
+  }
+
+  private isPublicApiUrlValid() {
+    const value = this.publicApiUrl().trim();
+    if (!value) return true;
+    try {
+      const url = new URL(value);
+      return url.protocol === 'https:' || url.protocol === 'http:';
+    } catch {
+      return false;
+    }
   }
 
   private setupPayload() {

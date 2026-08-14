@@ -6,6 +6,10 @@ import { AdminCanDirective } from '../../core/directives/admin-can.directive';
 import { ADMIN_PERMISSIONS, staffHasAllPermissions } from '../../core/admin-permissions';
 import { AdminAuth } from '../../core/services/admin-auth';
 import {
+  AdminFormDrawerComponent,
+  type AdminFormStep,
+} from '../../shared/ui/admin-form-drawer.component';
+import {
   PROVIDER_SESSION_MODES,
   PROVIDER_SESSION_MODE_DEFINITIONS,
   type ProviderRoleDefinitionDto,
@@ -35,7 +39,7 @@ type ProviderRoleForm = {
 @Component({
   selector: 'app-provider-roles-page',
   standalone: true,
-  imports: [FormsModule, AdminCanDirective],
+  imports: [FormsModule, AdminCanDirective, AdminFormDrawerComponent],
   templateUrl: './provider-roles-page.html',
   styleUrl: './provider-roles-page.scss',
 })
@@ -55,6 +59,36 @@ export class ProviderRolesPage implements OnInit {
   readonly error = signal('');
   readonly message = signal('');
   readonly form = signal<ProviderRoleForm>(this.emptyForm());
+  readonly formOpen = signal(false);
+  readonly formStep = signal(0);
+  readonly formSteps: readonly AdminFormStep[] = [
+    { id: 'basics', label: 'Basics' },
+    { id: 'scope', label: 'Scope' },
+    { id: 'safety', label: 'Modes & safety' },
+    { id: 'review', label: 'Review' },
+  ];
+  readonly editingExisting = computed(() =>
+    this.roles().some((role) => role.code === this.form().code),
+  );
+  readonly formTitle = computed(() =>
+    this.editingExisting()
+      ? `Edit ${this.form().shortLabel || this.form().label}`
+      : 'Create provider role',
+  );
+  readonly formDescription = computed(() => {
+    const descriptions = [
+      'Set the role identity and public wording.',
+      'Explain where this role helps and where it should not be used.',
+      'Choose session modes, requirements, and visibility.',
+      'Review the role before saving it.',
+    ];
+    return descriptions[this.formStep()] || descriptions[0];
+  });
+  readonly formNextDisabled = computed(() => {
+    if (this.formStep() === 0) return !this.form().code.trim() || !this.form().label.trim();
+    if (this.formStep() === 2) return this.form().supportedModes.length === 0;
+    return false;
+  });
 
   ngOnInit(): void {
     this.load();
@@ -69,7 +103,6 @@ export class ProviderRolesPage implements OnInit {
       .subscribe({
         next: ({ roles }) => {
           this.roles.set(roles);
-          if (roles.length && !this.form().code) this.edit(roles[0]);
           this.loading.set(false);
         },
         error: (error) => {
@@ -88,10 +121,31 @@ export class ProviderRolesPage implements OnInit {
     });
     this.error.set('');
     this.message.set('');
+    this.formStep.set(0);
+    this.formOpen.set(true);
   }
 
   newRole(): void {
     this.form.set(this.emptyForm());
+    this.error.set('');
+    this.message.set('');
+    this.formStep.set(0);
+    this.formOpen.set(true);
+  }
+
+  closeForm(): void {
+    if (this.saving()) return;
+    this.formOpen.set(false);
+    this.formStep.set(0);
+  }
+
+  nextFormStep(): void {
+    if (this.formNextDisabled()) return;
+    this.formStep.update((step) => Math.min(step + 1, this.formSteps.length - 1));
+  }
+
+  previousFormStep(): void {
+    this.formStep.update((step) => Math.max(0, step - 1));
   }
 
   setField<K extends keyof ProviderRoleForm>(key: K, value: ProviderRoleForm[K]): void {
@@ -141,6 +195,8 @@ export class ProviderRolesPage implements OnInit {
           exists ? 'Role updated. Existing sessions keep their saved definition.' : 'Role created.',
         );
         this.saving.set(false);
+        this.formOpen.set(false);
+        this.formStep.set(0);
         this.load();
       },
       error: (error) => {
