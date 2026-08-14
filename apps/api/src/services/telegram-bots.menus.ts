@@ -78,10 +78,12 @@ export async function menuFor(kind: TelegramBotKind, linked: boolean): Promise<I
       { text: 'Ops summary', callback_data: 'admin:summary' },
       { text: 'Session quality', callback_data: 'admin:quality:30' }
     ],
+    [{ text: 'Bot health', callback_data: 'admin:bot_health' }],
     [
       { text: 'New leads', callback_data: 'admin:leads' },
       { text: 'Contributors', callback_data: 'admin:contributors' }
     ],
+    [{ text: 'Community admin applications', callback_data: 'admin:community_admins' }],
     [
       linked
         ? { text: 'My account', callback_data: 'common:me' }
@@ -132,8 +134,10 @@ export function helpText(kind: TelegramBotKind) {
     '<b>Ops bot commands</b>',
     '/link admin@example.com - link admin account',
     '/summary - ops summary',
+    '/bothealth - configuration, webhook, pending updates, and Telegram errors',
     '/quality - session quality summary',
     '/leads - new leads',
+    '/communityadmins - Hope Hub community admin applications',
     '/contributors - contributor applications'
   ].join('\n');
 }
@@ -201,6 +205,6 @@ export function startGuideText(kind: TelegramBotKind, session: MenuSession) {
     '',
     `<b>Admin portal</b>\n${adminUrl('/')}`,
     '',
-    'Start with /link, /summary, /leads, /contributors, or /help.'
+    'Start with /link, /summary, /bothealth, /leads, /communityadmins, /contributors, or /help.'
   ].join('\n');
 }

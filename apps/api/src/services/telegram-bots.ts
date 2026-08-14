@@ -71,6 +71,8 @@ import {
 } from './telegram-bots.payments.js';
 import {
   adminContributors,
+  adminBotHealth,
+  adminCommunityAdminApplications,
   adminLeads,
   adminSummary,
   doctorQueue,
@@ -2485,8 +2487,10 @@ async function handleCommand(kind: TelegramBotKind, session: TelegramSession, te
   }
 
   if (command === '/summary') await adminSummary(kind, session);
+  else if (command === '/bothealth') await adminBotHealth(kind, session);
   else if (command === '/quality') await adminQualitySummary(kind, session, 30);
   else if (command === '/leads') await adminLeads(kind, session);
+  else if (command === '/communityadmins') await adminCommunityAdminApplications(kind, session);
   else if (command === '/contributors') await adminContributors(kind, session);
   else await replyMenu(kind, session, 'Choose an option or send /help.');
   return command;
@@ -2735,10 +2739,12 @@ async function handleCallback(
   }
 
   if (data === 'admin:summary') await adminSummary(kind, session);
+  else if (data === 'admin:bot_health') await adminBotHealth(kind, session);
   else if (data.startsWith('admin:quality:')) {
     const days = Number(data.slice('admin:quality:'.length)) || 30;
     await adminQualitySummary(kind, session, days);
   } else if (data === 'admin:leads') await adminLeads(kind, session);
+  else if (data === 'admin:community_admins') await adminCommunityAdminApplications(kind, session);
   else if (data === 'admin:contributors') await adminContributors(kind, session);
   else if (data.startsWith('admin:safety_reviewed:'))
     await markSafetyFlagReviewed(kind, session, data.slice('admin:safety_reviewed:'.length));

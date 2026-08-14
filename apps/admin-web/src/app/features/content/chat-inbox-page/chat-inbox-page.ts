@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, OnDestroy, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AdminApi } from '../../../core/services/admin-api';
 import { AdminMobileLayoutService } from '../../../core/services/admin-mobile-layout.service';
@@ -85,6 +86,7 @@ export class ChatInboxPage implements OnDestroy {
   private readonly api = inject(AdminApi);
   private readonly viewport = inject(ViewportService);
   private readonly mobileLayout = inject(AdminMobileLayoutService);
+  private readonly route = inject(ActivatedRoute);
 
   readonly isMobile = computed(() => this.viewport.isMobile());
   readonly hasSelection = computed(() => !!this.selected());
@@ -120,7 +122,10 @@ export class ChatInboxPage implements OnDestroy {
   readonly canFollowUp = false;
 
   constructor() {
-    void this.load();
+    void this.load().then(() => {
+      const leadId = this.route.snapshot.queryParamMap.get('leadId');
+      if (leadId) void this.selectLead(leadId);
+    });
   }
 
   ngOnDestroy(): void {

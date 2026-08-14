@@ -70,8 +70,10 @@ export const commandMenus: Record<TelegramBotKind, { command: string; descriptio
     { command: 'start', description: 'Open ops menu' },
     { command: 'link', description: 'Link admin account' },
     { command: 'summary', description: 'Ops summary' },
+    { command: 'bothealth', description: 'Telegram bot health' },
     { command: 'quality', description: 'Session quality summary' },
     { command: 'leads', description: 'New leads' },
+    { command: 'communityadmins', description: 'Community admin applications' },
     { command: 'contributors', description: 'Contributor applications' },
     { command: 'me', description: 'Show linked account' },
     { command: 'help', description: 'Ops bot help' }
