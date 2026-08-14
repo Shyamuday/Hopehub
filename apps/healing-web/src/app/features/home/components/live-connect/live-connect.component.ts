@@ -33,7 +33,9 @@ import { User } from '../../../../core/models/auth.model';
 import {
   HopeHubCheckoutQuote,
   HopeHubLiveGroup,
+  HopeHubPublicCoupon,
   HopeHubProvider,
+  featuredConsultationCoupon,
 } from '../../../../core/services/booking.service';
 import {
   LISTENER_SUPPORT_CONSENT_MESSAGE,
@@ -102,6 +104,7 @@ export class LiveConnectComponent implements OnInit {
   readonly couponLoading = signal(false);
   readonly couponError = signal('');
   readonly couponSuccess = signal('');
+  readonly featuredCoupon = signal<HopeHubPublicCoupon | null>(null);
   readonly view = signal<'providers' | 'groups'>('providers');
   readonly mode = signal<LiveConnectMode>('chat');
   readonly roleGroup = signal<LiveConnectRoleGroup>('EMOTIONAL_LISTENER');
@@ -118,6 +121,7 @@ export class LiveConnectComponent implements OnInit {
     });
     this.loadProviders();
     this.loadGroups();
+    this.loadAvailableCoupons();
   }
 
   setView(view: 'providers' | 'groups'): void {
@@ -503,6 +507,11 @@ export class LiveConnectComponent implements OnInit {
     }
   }
 
+  applySuggestedCoupon(code: string): void {
+    this.updateLiveCoupon(code);
+    void this.applyLiveCoupon();
+  }
+
   clearLiveCoupon(): void {
     this.couponCode.set('');
     this.appliedCouponCode.set('');
@@ -510,6 +519,18 @@ export class LiveConnectComponent implements OnInit {
     this.couponLoading.set(false);
     this.couponError.set('');
     this.couponSuccess.set('');
+  }
+
+  private loadAvailableCoupons(): void {
+    this.bookingService
+      .availableCoupons()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ coupons }) => {
+          this.featuredCoupon.set(featuredConsultationCoupon(coupons));
+        },
+        error: () => this.featuredCoupon.set(null),
+      });
   }
 
   private needsListenerSupportConsent(provider: HopeHubProvider): boolean {

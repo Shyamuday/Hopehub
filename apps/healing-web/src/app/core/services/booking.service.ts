@@ -123,6 +123,25 @@ export type HopeHubCheckoutQuote = {
   }>;
 };
 
+export type HopeHubPublicCoupon = {
+  code: string;
+  name: string;
+  label: string;
+  description?: string | null;
+  featured: boolean;
+  appliesTo: string;
+  targetPayableInPaise?: number | null;
+};
+
+export function featuredConsultationCoupon(
+  coupons: HopeHubPublicCoupon[],
+): HopeHubPublicCoupon | null {
+  const eligible = coupons.filter(
+    (coupon) => coupon.appliesTo === 'CONSULTATION' || coupon.appliesTo === 'ANY',
+  );
+  return eligible.find((coupon) => coupon.featured) ?? eligible[0] ?? null;
+}
+
 export type CareTeamServiceQuote = {
   service: {
     id: string;
@@ -485,6 +504,12 @@ export class BookingService {
           ? payload.careTeamServiceId
           : undefined,
       },
+    );
+  }
+
+  availableCoupons(): Observable<{ coupons: HopeHubPublicCoupon[] }> {
+    return this.http.get<{ coupons: HopeHubPublicCoupon[] }>(
+      `${this.apiUrl}/hope-hub/coupons/available`,
     );
   }
 

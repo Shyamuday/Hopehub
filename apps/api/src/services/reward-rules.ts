@@ -51,7 +51,11 @@ export const DEFAULT_REWARD_RULES = [
     minPayableInPaise: 100,
     conditions: {
       targetPayableInPaise: 100,
-      providerCareTeamTypes: ['PEER_SUPPORT_VOLUNTEER', 'PSYCHOLOGY_STUDENT_VOLUNTEER']
+      providerCareTeamTypes: ['PEER_SUPPORT_VOLUNTEER', 'PSYCHOLOGY_STUDENT_VOLUNTEER'],
+      showToConsumers: true,
+      featured: true,
+      publicLabel: 'Talk to a listener for ₹1',
+      publicDescription: 'Apply this offer to an eligible listener session.'
     }
   },
   {
@@ -85,25 +89,9 @@ export async function ensureDefaultRewardRules() {
     DEFAULT_REWARD_RULES.map((rule) =>
       prisma.rewardProgramRule.upsert({
         where: { code: rule.code },
-        update: {
-          name: rule.name,
-          description: rule.description,
-          kind: rule.kind,
-          trigger: rule.trigger,
-          beneficiary: rule.beneficiary,
-          valueType: rule.valueType,
-          valueAmount: rule.valueAmount,
-          appliesTo: rule.appliesTo,
-          promoCode: optionalRuleString(rule, 'promoCode'),
-          priority: rule.priority,
-          maxUsesPerPatient: optionalRuleInt(rule, 'maxUsesPerPatient'),
-          maxUsesGlobal: optionalRuleInt(rule, 'maxUsesGlobal'),
-          maxDiscountInPaise: optionalRuleInt(rule, 'maxDiscountInPaise'),
-          minOrderInPaise: optionalRuleInt(rule, 'minOrderInPaise'),
-          minPayableInPaise: 'minPayableInPaise' in rule ? rule.minPayableInPaise : 100,
-          conditions: 'conditions' in rule ? rule.conditions : undefined,
-          isActive: true
-        },
+        // Defaults are seeds, not forced configuration. Once an admin changes or
+        // disables a rule, normal API reads must not silently overwrite that choice.
+        update: {},
         create: {
           code: rule.code,
           name: rule.name,
@@ -134,6 +122,45 @@ export function isRuleCurrentlyValid(rule: RewardProgramRule, now = new Date()) 
   if (rule.validFrom && rule.validFrom > now) return false;
   if (rule.validUntil && rule.validUntil < now) return false;
   return true;
+}
+
+function ruleConditions(rule: RewardProgramRule): Record<string, unknown> {
+  const conditions = rule.conditions;
+  return conditions && typeof conditions === 'object' && !Array.isArray(conditions)
+    ? (conditions as Record<string, unknown>)
+    : {};
+}
+
+export async function listPublicRewardCoupons() {
+  await ensureDefaultRewardRules();
+  const rules = await prisma.rewardProgramRule.findMany({
+    where: {
+      isActive: true,
+      kind: RewardProgramKind.PROMO,
+      promoCode: { not: null }
+    },
+    orderBy: [{ priority: 'desc' }, { createdAt: 'asc' }]
+  });
+
+  return rules
+    .filter((rule) => isRuleCurrentlyValid(rule))
+    .map((rule) => ({ rule, conditions: ruleConditions(rule) }))
+    .filter(({ conditions }) => conditions['showToConsumers'] === true)
+    .map(({ rule, conditions }) => ({
+      code: rule.promoCode as string,
+      name: rule.name,
+      description:
+        typeof conditions['publicDescription'] === 'string'
+          ? conditions['publicDescription']
+          : rule.description,
+      label: typeof conditions['publicLabel'] === 'string' ? conditions['publicLabel'] : rule.name,
+      featured: conditions['featured'] === true,
+      appliesTo: rule.appliesTo,
+      targetPayableInPaise:
+        typeof conditions['targetPayableInPaise'] === 'number'
+          ? Math.max(0, Math.round(conditions['targetPayableInPaise']))
+          : null
+    }));
 }
 
 export async function countRuleRedemptions(ruleId: string, patientId?: string) {

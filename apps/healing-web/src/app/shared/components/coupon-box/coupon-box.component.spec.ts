@@ -33,4 +33,14 @@ describe('CouponBoxComponent', () => {
     expect(event.stopPropagation).toHaveBeenCalledOnce();
     expect(apply).not.toHaveBeenCalled();
   });
+
+  it('emits the suggested coupon for one-tap apply', () => {
+    const component = new CouponBoxComponent();
+    const suggestedApply = vi.spyOn(component.suggestedApply, 'emit');
+    component.suggestedCode = 'firsttalk1';
+
+    component.useSuggestedCoupon();
+
+    expect(suggestedApply).toHaveBeenCalledWith('FIRSTTALK1');
+  });
 });

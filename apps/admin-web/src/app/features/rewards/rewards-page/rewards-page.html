@@ -70,6 +70,12 @@
             <small>{{ targetHint(createModel()) }}</small>
           </label>
         }
+        <label class="check"><input type="checkbox" [formField]="createForm.showToConsumers" /> Show as public offer</label>
+        @if (createModel().showToConsumers) {
+          <label class="check"><input type="checkbox" [formField]="createForm.featured" /> Feature above coupon field</label>
+          <label>Public offer label <input [formField]="createForm.publicLabel" placeholder="Talk to a listener for ₹1" /></label>
+          <label class="wide">Public offer description <input [formField]="createForm.publicDescription" placeholder="Short eligibility note shown to users" /></label>
+        }
         <label>Priority <input type="number" [formField]="createForm.priority" /></label>
         <label class="check"><input type="checkbox" [formField]="createForm.isActive" /> Active</label>
       </div>
@@ -108,6 +114,12 @@
                     <small>{{ targetHint(editModel()) }}</small>
                   </label>
                 }
+                <label class="check"><input type="checkbox" [formField]="editForm.showToConsumers" /> Show as public offer</label>
+                @if (editModel().showToConsumers) {
+                  <label class="check"><input type="checkbox" [formField]="editForm.featured" /> Feature above coupon field</label>
+                  <label>Public offer label <input [formField]="editForm.publicLabel" /></label>
+                  <label class="wide">Public offer description <input [formField]="editForm.publicDescription" /></label>
+                }
                 <label>Priority <input type="number" [formField]="editForm.priority" /></label>
                 <label class="check"><input type="checkbox" [formField]="editForm.isActive" /> Active</label>
               </div>
@@ -122,6 +134,7 @@
               </div>
               <p class="meta">{{ rule.kind }} · {{ rule.trigger }} · {{ rule.beneficiary }} · {{ formatValue(rule) }}</p>
               @if (rule.promoCode) { <p class="meta">Promo: {{ rule.promoCode }}</p> }
+              @if (isPublicOffer(rule)) { <p class="meta public-offer">Shown to users as a one-tap offer</p> }
               <p class="meta">
                 Uses: {{ rule.maxUsesPerPatient || '∞' }}/patient · {{ rule.maxUsesGlobal || '∞' }} total
                 @if (rule.minOrderInPaise) { · Min ₹{{ rule.minOrderInPaise / 100 }} }

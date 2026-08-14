@@ -42,10 +42,14 @@ import type {
   HopeHubCheckoutQuote,
   HopeHubOffering,
   HopeHubOfferingQuote,
+  HopeHubPublicCoupon,
   HopeHubProvider,
   HopeHubService,
 } from '../../core/services/booking.service';
-import { isBackendCareTeamServiceId } from '../../core/services/booking.service';
+import {
+  featuredConsultationCoupon,
+  isBackendCareTeamServiceId,
+} from '../../core/services/booking.service';
 import {
   HOPE_HUB_ANALYTICS_EVENTS,
   ProductAnalyticsService,
@@ -153,6 +157,7 @@ export class ContactComponent implements OnInit {
   checkoutQuote = signal<HopeHubCheckoutQuote | null>(null);
   checkoutQuoteLoading = signal(false);
   checkoutQuoteError = signal('');
+  featuredCoupon = signal<HopeHubPublicCoupon | null>(null);
   readonly bookingStep = signal<1 | 2 | 3>(1);
   readonly bookingStepError = signal('');
 
@@ -179,6 +184,7 @@ export class ContactComponent implements OnInit {
     this.initializeForm();
     this.restorePendingBooking();
     this.loadDefaultSessionOffer();
+    this.loadAvailableCoupons();
     this.productAnalytics.track(HOPE_HUB_ANALYTICS_EVENTS.BOOKING_FORM_OPENED, {
       source: this.prefilledData().source || 'direct',
       serviceName: this.prefilledData().serviceName || this.prefilledData().service || '',
@@ -1095,11 +1101,28 @@ export class ContactComponent implements OnInit {
     }
   }
 
+  applySuggestedPromoCode(code: string): void {
+    this.updatePromoCode(code);
+    void this.applyPromoCode();
+  }
+
   clearPromoCode(): void {
     this.promoCode.set('');
     this.appliedPromoCode.set('');
     this.checkoutQuote.set(null);
     this.checkoutQuoteError.set('');
+  }
+
+  private loadAvailableCoupons(): void {
+    this.bookingService
+      .availableCoupons()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: ({ coupons }) => {
+          this.featuredCoupon.set(featuredConsultationCoupon(coupons));
+        },
+        error: () => this.featuredCoupon.set(null),
+      });
   }
 
   couponSuccessMessage(): string {

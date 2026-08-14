@@ -4,6 +4,25 @@
   aria-label="Coupon code"
   (keydown.enter)="applyFromKeyboard($event)"
 >
+  @if (suggestedCode) {
+    <button
+      type="button"
+      class="coupon-box__offer"
+      [class.coupon-box__offer--applied]="suggestedCouponApplied()"
+      [disabled]="loading || disabled"
+      (click)="useSuggestedCoupon()"
+    >
+      <span class="coupon-box__offer-copy">
+        <small>Available offer</small>
+        <strong>{{ suggestedLabel || suggestedCode }}</strong>
+        @if (suggestedDescription) {
+          <em>{{ suggestedDescription }}</em>
+        }
+      </span>
+      <b>{{ suggestedCouponApplied() ? 'Applied' : 'Apply' }}</b>
+    </button>
+  }
+
   <div class="coupon-box__head">
     <div>
       <span>{{ title }}</span>

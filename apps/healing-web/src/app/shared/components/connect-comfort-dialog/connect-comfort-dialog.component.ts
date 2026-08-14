@@ -20,12 +20,16 @@ export class ConnectComfortDialogComponent {
   @Input() couponApplied = false;
   @Input() couponError = '';
   @Input() couponSuccess = '';
+  @Input() suggestedCouponCode = '';
+  @Input() suggestedCouponLabel = '';
+  @Input() suggestedCouponDescription = '';
 
   @Output() confirmed = new EventEmitter<ComfortConnectMode>();
   @Output() cancelled = new EventEmitter<void>();
   @Output() couponCodeChange = new EventEmitter<string>();
   @Output() couponApply = new EventEmitter<void>();
   @Output() couponClear = new EventEmitter<void>();
+  @Output() suggestedCouponApply = new EventEmitter<string>();
 
   label(): string {
     return CONSUMER_CONNECT_MODE_META[this.mode].label;

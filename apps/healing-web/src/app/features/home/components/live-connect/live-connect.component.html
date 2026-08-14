@@ -204,9 +204,13 @@
   [couponApplied]="!!appliedCouponCode()"
   [couponError]="couponError()"
   [couponSuccess]="couponSuccess()"
+  [suggestedCouponCode]="featuredCoupon()?.code || ''"
+  [suggestedCouponLabel]="featuredCoupon()?.label || ''"
+  [suggestedCouponDescription]="featuredCoupon()?.description || ''"
   (couponCodeChange)="updateLiveCoupon($event)"
   (couponApply)="applyLiveCoupon()"
   (couponClear)="clearLiveCoupon()"
+  (suggestedCouponApply)="applySuggestedCoupon($event)"
   (confirmed)="confirmStart()"
   (cancelled)="changeConnectionMode()"
 />

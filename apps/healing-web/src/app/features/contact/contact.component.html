@@ -250,9 +250,13 @@
             [error]="checkoutQuoteError()"
             [success]="couponSuccessMessage()"
             [helper]="couponHelperMessage()"
+            [suggestedCode]="featuredCoupon()?.code || ''"
+            [suggestedLabel]="featuredCoupon()?.label || ''"
+            [suggestedDescription]="featuredCoupon()?.description || ''"
             (valueChange)="updatePromoCode($event)"
             (apply)="applyPromoCode()"
             (clear)="clearPromoCode()"
+            (suggestedApply)="applySuggestedPromoCode($event)"
           />
 
           <app-checkout-summary

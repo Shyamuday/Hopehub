@@ -66,6 +66,10 @@ function emptyRule() {
     minPayableInPaise: 100,
     targetType: 'ALL',
     targetValues: '',
+    showToConsumers: false,
+    featured: false,
+    publicLabel: '',
+    publicDescription: '',
     isActive: true,
     priority: 10,
   };
@@ -107,6 +111,37 @@ function targetConditions(targetType: string, targetValues: string) {
   if (targetType === 'OFFERING') return { offeringIds: values };
   if (targetType === 'ASSESSMENT') return { assessmentIds: values };
   return null;
+}
+
+const TARGET_CONDITION_KEYS = [
+  'serviceNames',
+  'careTeamServiceIds',
+  'providerIds',
+  'offeringIds',
+  'assessmentIds',
+] as const;
+
+function ruleConditions(
+  model: ReturnType<typeof emptyRule>,
+  existing?: Record<string, unknown> | null,
+) {
+  const conditions: Record<string, unknown> = { ...(existing ?? {}) };
+  for (const key of TARGET_CONDITION_KEYS) delete conditions[key];
+  Object.assign(conditions, targetConditions(model.targetType, model.targetValues) ?? {});
+
+  if (model.showToConsumers) {
+    conditions['showToConsumers'] = true;
+    conditions['featured'] = model.featured;
+    conditions['publicLabel'] = model.publicLabel.trim() || model.name.trim();
+    conditions['publicDescription'] = model.publicDescription.trim() || model.description.trim();
+  } else {
+    delete conditions['showToConsumers'];
+    delete conditions['featured'];
+    delete conditions['publicLabel'];
+    delete conditions['publicDescription'];
+  }
+
+  return Object.keys(conditions).length ? conditions : null;
 }
 
 function targetTypeFromConditions(conditions?: Record<string, unknown> | null) {
@@ -188,7 +223,10 @@ export class RewardsPage {
     }
   }
 
-  private payloadFromModel(m: ReturnType<typeof emptyRule>) {
+  private payloadFromModel(
+    m: ReturnType<typeof emptyRule>,
+    existingConditions?: Record<string, unknown> | null,
+  ) {
     return {
       code: m.code,
       name: m.name,
@@ -205,7 +243,7 @@ export class RewardsPage {
       maxDiscountInPaise: rupeesToPaise(m.maxDiscountInPaise),
       minOrderInPaise: rupeesToPaise(m.minOrderInPaise),
       minPayableInPaise: Number(m.minPayableInPaise) || 100,
-      conditions: targetConditions(m.targetType, m.targetValues),
+      conditions: ruleConditions(m, existingConditions),
       isActive: m.isActive,
       priority: Number(m.priority) || 0,
     };
@@ -246,6 +284,14 @@ export class RewardsPage {
       minPayableInPaise: rule.minPayableInPaise,
       targetType: targetTypeFromConditions(rule.conditions),
       targetValues: targetValuesFromConditions(rule.conditions),
+      showToConsumers: rule.conditions?.['showToConsumers'] === true,
+      featured: rule.conditions?.['featured'] === true,
+      publicLabel:
+        typeof rule.conditions?.['publicLabel'] === 'string' ? rule.conditions['publicLabel'] : '',
+      publicDescription:
+        typeof rule.conditions?.['publicDescription'] === 'string'
+          ? rule.conditions['publicDescription']
+          : '',
       isActive: rule.isActive,
       priority: rule.priority,
     });
@@ -260,7 +306,11 @@ export class RewardsPage {
     if (!id) return;
     this.mutating.set(true);
     try {
-      await this.api.updateRewardRule(id, this.payloadFromModel(this.editModel()));
+      const existing = this.rules().find((rule) => rule.id === id);
+      await this.api.updateRewardRule(
+        id,
+        this.payloadFromModel(this.editModel(), existing?.conditions),
+      );
       this.editingId.set(null);
       this.message.set('Rule updated.');
       await this.load();
@@ -317,5 +367,9 @@ export class RewardsPage {
     const values = targetValuesFromConditions(rule.conditions);
     const label = this.targetTypes.find((item) => item.value === type)?.label || 'All';
     return values ? `${label}: ${values.split('\n').join(', ')}` : label;
+  }
+
+  isPublicOffer(rule: RewardRule) {
+    return rule.conditions?.['showToConsumers'] === true;
   }
 }

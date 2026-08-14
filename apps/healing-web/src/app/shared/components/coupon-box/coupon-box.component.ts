@@ -23,10 +23,14 @@ export class CouponBoxComponent {
   @Input() helper = '';
   @Input() success = '';
   @Input() showClear = false;
+  @Input() suggestedCode = '';
+  @Input() suggestedLabel = '';
+  @Input() suggestedDescription = '';
 
   @Output() valueChange = new EventEmitter<string>();
   @Output() apply = new EventEmitter<void>();
   @Output() clear = new EventEmitter<void>();
+  @Output() suggestedApply = new EventEmitter<string>();
 
   normalizedValue(): string {
     return String(this.value || '').trim();
@@ -34,6 +38,20 @@ export class CouponBoxComponent {
 
   canApply(): boolean {
     return !this.loading && !this.disabled && Boolean(this.normalizedValue());
+  }
+
+  useSuggestedCoupon(): void {
+    const code = String(this.suggestedCode || '')
+      .trim()
+      .toUpperCase();
+    if (!code || this.loading || this.disabled) return;
+    this.suggestedApply.emit(code);
+  }
+
+  suggestedCouponApplied(): boolean {
+    return (
+      this.applied && this.normalizedValue().toUpperCase() === this.suggestedCode.toUpperCase()
+    );
   }
 
   applyFromKeyboard(event: Event): void {

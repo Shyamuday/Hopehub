@@ -55,6 +55,7 @@ import {
   type HopeHubQuickTalkMode
 } from '../services/quick-talk-modes.js';
 import { providerPublicReadiness } from '../doctor-capabilities.js';
+import { listPublicRewardCoupons } from '../services/reward-rules.js';
 import {
   listProviderRoles,
   providerRoleSnapshot,
@@ -2054,6 +2055,13 @@ hopeHubRouter.get(
   '/provider-taxonomy',
   asyncRoute(async (_req, res) => {
     res.json(await providerTaxonomyPayload());
+  })
+);
+
+hopeHubRouter.get(
+  '/hope-hub/coupons/available',
+  asyncRoute(async (_req, res) => {
+    res.json({ coupons: await listPublicRewardCoupons() });
   })
 );
 

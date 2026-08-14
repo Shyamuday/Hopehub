@@ -27,9 +27,13 @@
       [showClear]="couponApplied"
       [error]="couponError"
       [success]="couponSuccess"
+      [suggestedCode]="suggestedCouponCode"
+      [suggestedLabel]="suggestedCouponLabel"
+      [suggestedDescription]="suggestedCouponDescription"
       (valueChange)="couponCodeChange.emit($event)"
       (apply)="couponApply.emit()"
       (clear)="couponClear.emit()"
+      (suggestedApply)="suggestedCouponApply.emit($event)"
     />
   </div>
 
