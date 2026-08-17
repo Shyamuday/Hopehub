@@ -101,6 +101,7 @@ export class SlotsPage implements OnInit {
   isHopeHub = signal(false);
   readiness = signal<ProviderReadiness | null>(null);
   readinessLoading = signal(false);
+  finishingSetup = signal(false);
   toast = signal('');
   setupMode = signal(false);
   ruleStep = signal<1 | 2 | 3>(1);
@@ -456,8 +457,35 @@ export class SlotsPage implements OnInit {
       this.showToast('Choose at least one available time first.');
       return;
     }
-    await this.session.load(true);
-    await this.router.navigate(['/dashboard'], { queryParams: { setup: 'complete' } });
+    this.finishingSetup.set(true);
+    try {
+      await firstValueFrom(
+        this.http.patch(`${this.base}${API_PATHS.DOCTOR.PROFILE}`, {
+          step: 'identity',
+          isAvailable: true,
+        }),
+      );
+      await firstValueFrom(
+        this.http.patch(`${this.base}${API_PATHS.DOCTOR.PROFILE}`, {
+          step: 'services',
+          mentalHealthProfile: { acceptingNewUsers: true },
+        }),
+      );
+      await this.session.load(true);
+      await this.loadReadiness();
+      const readiness = this.readiness();
+      if (!readiness?.ready) {
+        this.showToast(
+          readiness?.message || 'One setup item still needs your attention before you continue.',
+        );
+        return;
+      }
+      await this.router.navigate(['/dashboard'], { queryParams: { setup: 'complete' } });
+    } catch (error: any) {
+      this.showToast(error?.error?.message || 'Could not finish setup. Please try again.');
+    } finally {
+      this.finishingSetup.set(false);
+    }
   }
 
   async clearDay(): Promise<void> {

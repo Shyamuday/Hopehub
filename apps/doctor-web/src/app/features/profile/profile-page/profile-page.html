@@ -191,15 +191,6 @@
           </div>
         </details>
 
-        @if (isProfileCareTeamTypeSelected('OTHER')) {
-          <label for="otherCareTeamType">Other support type</label>
-          <input
-            id="otherCareTeamType"
-            [formField]="profileForm.otherCareTeamType"
-            placeholder="Write how you support people"
-          />
-        }
-
         <div class="grid two-column">
           <label>Qualifications</label>
           <app-tag-input

@@ -380,7 +380,15 @@ export function registerAuthDoctorRoutes(router: Router) {
                       : 'Peer emotional support listener'
               };
 
-      const updated = await prisma.doctor.update({
+      const existingDoctor = await prisma.doctor.findUnique({
+        where: { userId: req.user!.id },
+        select: { id: true }
+      });
+      if (!existingDoctor) {
+        return res.status(404).json({ message: 'Provider profile not found' });
+      }
+
+      await prisma.doctor.update({
         where: { userId: req.user!.id },
         data: {
           doctorType: HomeopathicDoctorType.PSYCHOLOGIST,
@@ -401,7 +409,21 @@ export function registerAuthDoctorRoutes(router: Router) {
               }
             }
           }
-        },
+        }
+      });
+
+      // Path selection is the provider's role decision. Keep the normalized role
+      // assignments in sync immediately so readiness and service creation do not
+      // disagree with the legacy mental-health profile fields on the next screen.
+      await syncProviderRoleAssignments({
+        doctorId: existingDoctor.id,
+        roleCodes: [selection.careTeamType],
+        primaryRoleCode: selection.careTeamType,
+        actorId: req.user!.id
+      });
+
+      const updated = await prisma.doctor.findUniqueOrThrow({
+        where: { id: existingDoctor.id },
         select: doctorProfileSelect
       });
 

@@ -60,7 +60,14 @@
             <strong>Your first available time is ready</strong>
             <p>You can add more times later from your workspace.</p>
           </div>
-          <button type="button" class="btn-primary" (click)="finishSetup()">Finish setup</button>
+          <button
+            type="button"
+            class="btn-primary"
+            (click)="finishSetup()"
+            [disabled]="finishingSetup()"
+          >
+            {{ finishingSetup() ? 'Finishing…' : 'Finish setup' }}
+          </button>
         </section>
       }
 

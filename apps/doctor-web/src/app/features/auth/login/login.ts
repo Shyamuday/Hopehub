@@ -112,10 +112,6 @@ export class Login {
 
   private async navigateAfterLogin(): Promise<void> {
     const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
-    if (returnUrl && returnUrl.startsWith('/')) {
-      await this.router.navigateByUrl(returnUrl);
-      return;
-    }
 
     try {
       const profile = await this.session.load(true);
@@ -136,6 +132,10 @@ export class Login {
             queryParams: nextStep.queryParams || null,
           }),
         );
+        return;
+      }
+      if (returnUrl && returnUrl.startsWith('/') && !returnUrl.startsWith('//')) {
+        await this.router.navigateByUrl(returnUrl);
         return;
       }
     } catch {

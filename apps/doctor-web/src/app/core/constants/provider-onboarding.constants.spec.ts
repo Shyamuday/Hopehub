@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { PROVIDER_ROLE_DEFINITIONS } from '@hopehub/contracts';
 import type { DoctorProfileSummary } from './doctor-types.constants';
-import { buildProviderOnboardingStatus } from './provider-onboarding.constants';
+import {
+  buildProviderOnboardingStatus,
+  needsProviderPathSelection,
+} from './provider-onboarding.constants';
 
 function readyProfile(careTeamTypes: string[]): DoctorProfileSummary {
   return {
@@ -34,6 +38,31 @@ function readyProfile(careTeamTypes: string[]): DoctorProfileSummary {
 const readySnapshot = { ready: true, blockers: [] };
 
 describe('provider onboarding role flows', () => {
+  it('asks a new psychologist to choose a support path', () => {
+    const profile = readyProfile(['PEER_SUPPORT_VOLUNTEER']);
+    profile.roleAssignments = [];
+    profile.mentalHealthProfile!.onboardingPathSelectedAt = null;
+    expect(needsProviderPathSelection(profile)).toBe(true);
+  });
+
+  it('does not trap an existing psychologist whose active role predates path tracking', () => {
+    const profile = readyProfile(['MENTAL_WELLNESS_PROFESSIONAL']);
+    profile.mentalHealthProfile!.onboardingPathSelectedAt = null;
+    profile.roleAssignments = [
+      {
+        roleCode: 'MENTAL_WELLNESS_PROFESSIONAL',
+        isPrimary: true,
+        status: 'ACTIVE',
+        credentialStatus: 'PENDING',
+        role: {
+          ...PROVIDER_ROLE_DEFINITIONS.MENTAL_WELLNESS_PROFESSIONAL,
+          supportedModes: ['CHAT', 'VOICE', 'VIDEO'],
+        },
+      },
+    ];
+    expect(needsProviderPathSelection(profile)).toBe(false);
+  });
+
   it('renders backend-authored onboarding steps without recalculating requirements', () => {
     const backendStep = {
       id: 'care',

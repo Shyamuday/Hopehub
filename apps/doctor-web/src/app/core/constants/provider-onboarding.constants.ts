@@ -38,8 +38,13 @@ export type ProviderReadinessSnapshot = {
 };
 
 export function needsProviderPathSelection(profile?: DoctorProfileSummary | null): boolean {
+  const hasActiveRole = profile?.roleAssignments?.some(
+    (assignment) => !assignment.status || assignment.status === 'ACTIVE',
+  );
   return (
-    profile?.doctorType === 'PSYCHOLOGIST' && !profile.mentalHealthProfile?.onboardingPathSelectedAt
+    profile?.doctorType === 'PSYCHOLOGIST' &&
+    !profile.mentalHealthProfile?.onboardingPathSelectedAt &&
+    !hasActiveRole
   );
 }
 

@@ -47,6 +47,19 @@ type ProfileCareTeamType = string;
 type SelectableProfileCareTeamType = ProfileCareTeamType | 'OTHER';
 type ProfileSetupStepId = 'identity' | 'public' | 'care' | 'safety' | 'services';
 
+export function resolveProviderServiceRole(
+  providerRole: string | null | undefined,
+  providerRoleCode: string | null | undefined,
+  selectedRoles: readonly string[],
+  primaryRole: string,
+): string {
+  return (
+    [providerRole, providerRoleCode].find((role): role is string =>
+      Boolean(role && selectedRoles.includes(role)),
+    ) || primaryRole
+  );
+}
+
 function emptyProfileModel() {
   return {
     name: '',
@@ -125,7 +138,6 @@ export class ProfilePage implements OnDestroy {
   ];
   careTeamTypeOptions: Array<{ value: SelectableProfileCareTeamType; label: string }> = [
     ...CARE_TEAM_TYPE_OPTIONS.map((value) => ({ value, label: CARE_TEAM_TYPE_LABELS[value] })),
-    { value: 'OTHER', label: 'Other' },
   ];
   private roleDefinitions = new Map<string, ProviderRoleDefinitionDto>();
   readonly careServices = signal<Array<any>>([]);
@@ -351,15 +363,18 @@ export class ProfilePage implements OnDestroy {
   }
 
   private reconcileServiceRoles(): void {
-    const allowed = new Set(this.selectedStructuredCareTeamTypes());
+    const allowed = this.selectedStructuredCareTeamTypes();
     const fallback = this.profileModel().careTeamType as ProfileCareTeamType;
     this.careServices.update((services) =>
-      services.map((service) => ({
-        ...service,
-        providerRole: allowed.has(service.providerRole as ProfileCareTeamType)
-          ? service.providerRole
-          : fallback,
-      })),
+      services.map((service) => {
+        const role = resolveProviderServiceRole(
+          service.providerRole,
+          service.providerRoleCode,
+          allowed,
+          fallback,
+        );
+        return { ...service, providerRole: role, providerRoleCode: role };
+      }),
     );
   }
 
@@ -802,7 +817,6 @@ export class ProfilePage implements OnDestroy {
       );
       this.careTeamTypeOptions = [
         ...(taxonomy.roles || []).map((role) => ({ value: role.code, label: role.label })),
-        { value: 'OTHER', label: 'Other' },
       ];
     } catch {
       // Static shared roles remain available while the API is temporarily unavailable.
@@ -1276,6 +1290,9 @@ export class ProfilePage implements OnDestroy {
         } else {
           next[key] = value;
         }
+        if (key === 'providerRole') {
+          next.providerRoleCode = value;
+        }
         if (key === 'pricingMode') {
           next.isFree = value === 'FREE_VOLUNTEER';
           if (value === 'FREE_VOLUNTEER' || value === 'PER_MINUTE') {
@@ -1342,27 +1359,29 @@ export class ProfilePage implements OnDestroy {
   }
 
   private normalizeServiceList(services: Array<any>) {
-    return services.map((service, index) => ({
-      ...service,
-      providerRole:
-        service.providerRoleCode ||
-        service.providerRole ||
-        this.profileModel().careTeamType ||
-        'MENTAL_WELLNESS_PROFESSIONAL',
-      providerRoleCode:
-        service.providerRoleCode ||
-        service.providerRole ||
-        this.profileModel().careTeamType ||
-        'MENTAL_WELLNESS_PROFESSIONAL',
-      pricingMode: service.pricingMode || 'FIXED',
-      priceInPaise: service.priceInPaise ?? 0,
-      introSessionLimit: service.introSessionLimit || 1,
-      freeMinutes: service.freeMinutes || 0,
-      pricePerMinuteInPaise: service.pricePerMinuteInPaise ?? null,
-      durationMinutes: service.durationMinutes || 30,
-      isActive: service.isActive !== false,
-      sortOrder: service.sortOrder ?? index,
-    }));
+    const selectedRoles = this.selectedStructuredCareTeamTypes();
+    const primaryRole = this.profileModel().careTeamType || 'MENTAL_WELLNESS_PROFESSIONAL';
+    return services.map((service, index) => {
+      const providerRole = resolveProviderServiceRole(
+        service.providerRole,
+        service.providerRoleCode,
+        selectedRoles,
+        primaryRole,
+      );
+      return {
+        ...service,
+        providerRole,
+        providerRoleCode: providerRole,
+        pricingMode: service.pricingMode || 'FIXED',
+        priceInPaise: service.priceInPaise ?? 0,
+        introSessionLimit: service.introSessionLimit || 1,
+        freeMinutes: service.freeMinutes || 0,
+        pricePerMinuteInPaise: service.pricePerMinuteInPaise ?? null,
+        durationMinutes: service.durationMinutes || 30,
+        isActive: service.isActive !== false,
+        sortOrder: service.sortOrder ?? index,
+      };
+    });
   }
 
   private servicesForSave(legacyText: string) {
