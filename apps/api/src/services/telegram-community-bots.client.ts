@@ -17,7 +17,8 @@ const COMMUNITY_BOTS: Record<
       { command: 'start', description: 'Contact Hope Hub' },
       { command: 'status', description: 'Check your latest message' },
       { command: 'cancel', description: 'Cancel current message' },
-      { command: 'help', description: 'Contact bot help' }
+      { command: 'help', description: 'Contact bot help' },
+      { command: 'setsupport', description: 'Connect a private support group (admins)' }
     ],
     allowedUpdates: ['message', 'callback_query', 'my_chat_member']
   },

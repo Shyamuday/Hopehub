@@ -1,4 +1,9 @@
-import { answerCommunityCallback, sendCommunityMessage } from './telegram-community-bots.client.js';
+import { prisma } from '../db.js';
+import {
+  answerCommunityCallback,
+  callCommunityTelegramApi,
+  sendCommunityMessage
+} from './telegram-community-bots.client.js';
 import {
   clearCommunityState,
   communitySubmissionLimitReached,
@@ -13,14 +18,53 @@ import {
 } from './telegram-community-bots.store.js';
 import type { CommunityTelegramUpdate, TelegramKeyboard } from './telegram-community-bots.types.js';
 import { controlNumber, getTelegramBotControls } from './telegram-bot-controls.js';
+import { getSiteConfigValue } from './site-config.service.js';
 
 const slug = 'contact' as const;
-const supportGroupId = () =>
-  process.env.TELEGRAM_CONTACT_SUPPORT_GROUP_ID?.trim() ||
-  process.env.TELEGRAM_CONTACT_ADMIN_CHAT_ID?.trim() ||
-  process.env.SUPPORT_GROUP_ID?.trim() ||
-  process.env.ADMIN_CHAT_ID?.trim() ||
-  '';
+const SUPPORT_GROUP_CONFIG_KEY = 'telegramContactSupportGroupId';
+
+async function supportGroupId() {
+  const saved = (await getSiteConfigValue(SUPPORT_GROUP_CONFIG_KEY)).trim();
+  return (
+    saved ||
+    process.env.TELEGRAM_CONTACT_SUPPORT_GROUP_ID?.trim() ||
+    process.env.TELEGRAM_CONTACT_ADMIN_CHAT_ID?.trim() ||
+    process.env.SUPPORT_GROUP_ID?.trim() ||
+    process.env.ADMIN_CHAT_ID?.trim() ||
+    ''
+  );
+}
+
+async function linkSupportGroup(message: NonNullable<CommunityTelegramUpdate['message']>) {
+  if (!message.from || !['group', 'supergroup'].includes(message.chat.type || '')) return false;
+  const membership = await callCommunityTelegramApi<{ status?: string }>(slug, 'getChatMember', {
+    chat_id: message.chat.id,
+    user_id: message.from.id
+  }).catch(() => null);
+  if (!membership || !['creator', 'administrator'].includes(membership.status || '')) {
+    await sendCommunityMessage(
+      slug,
+      message.chat.id,
+      'Only a Telegram group administrator can connect this support inbox.'
+    );
+    return true;
+  }
+  await prisma.siteConfig.upsert({
+    where: { key: SUPPORT_GROUP_CONFIG_KEY },
+    create: {
+      key: SUPPORT_GROUP_CONFIG_KEY,
+      value: keyOf(message.chat.id),
+      label: 'Telegram contact support group ID'
+    },
+    update: { value: keyOf(message.chat.id), label: 'Telegram contact support group ID' }
+  });
+  await sendCommunityMessage(
+    slug,
+    message.chat.id,
+    '✅ This private group is now connected to the Hope Hub contact bot. New messages will arrive here; reply to a ticket to answer the user.'
+  );
+  return true;
+}
 
 type ContactState = { state: 'writing'; category: string } | { state: 'preview'; ticketId: string };
 
@@ -128,7 +172,7 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
         );
         return;
       }
-      const groupId = supportGroupId();
+      const groupId = await supportGroupId();
       if (!groupId) {
         await sendCommunityMessage(
           slug,
@@ -189,7 +233,10 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
   const text = message.text.trim();
   const stateKey = keyOf(chatId);
 
-  if (keyOf(chatId) === supportGroupId() && message.reply_to_message) {
+  if (isCommand(text, 'setsupport') && (await linkSupportGroup(message))) return;
+
+  const groupId = await supportGroupId();
+  if (keyOf(chatId) === groupId && message.reply_to_message) {
     const ticket = await submissionForGroupMessage(
       slug,
       stateKey,
