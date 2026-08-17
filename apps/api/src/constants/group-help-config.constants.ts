@@ -353,21 +353,22 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
   {
     key: 'telegramGroupHelpBotUsername',
     label: 'Group Help bot username',
-    description: 'Username of the GroupHelp-powered bot. Keep @Hopehubaibot here.',
+    description: 'Username of the Hope Hub community bot. Keep @Hopehubbot here.',
     section: 'connection',
     type: 'text',
     maxLength: 80,
-    defaultValue: 'Hopehubaibot'
+    defaultValue: 'Hopehubbot'
   },
   {
     key: 'telegramGroupModerationRuntime',
     label: 'Active moderation bot',
-    description: 'HopeHubAI owns welcomes, safety rules, moderation, polls, and scheduled posts.',
+    description:
+      'Hope Hub bot owns welcomes, safety rules, moderation, polls, and scheduled posts.',
     section: 'connection',
     type: 'select',
     maxLength: 30,
-    options: ['HopeHubAI', 'Rose'],
-    defaultValue: 'HopeHubAI'
+    options: ['Hope Hub bot', 'Rose'],
+    defaultValue: 'Hope Hub bot'
   },
   {
     key: 'telegramGroupHelpGroupChatId',
@@ -395,7 +396,7 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
     key: 'telegramLiveChatBridgeEnabled',
     label: 'Website live-chat bridge',
     description:
-      'Mirror the configured Telegram group into the signed-in Hope Hub live chat using HopeHubAI.',
+      'Mirror the configured Telegram group into the signed-in Hope Hub live chat using the Hope Hub bot.',
     section: 'connection',
     type: 'select',
     maxLength: 20,
@@ -581,7 +582,7 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
   {
     key: 'telegramRoseBotStatus',
     label: 'Rose handover status',
-    description: 'Shows whether the legacy Rose bot was removed after HopeHubAI took over.',
+    description: 'Shows whether the legacy Rose bot was removed after the Hope Hub bot took over.',
     section: 'connection',
     type: 'text',
     maxLength: 500,
@@ -723,7 +724,7 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
     type: 'textarea',
     maxLength: 4000,
     defaultValue:
-      'HopeHubAI runs from the Hope Hub API. Keep it as a group admin with delete, restrict, ban, and pin permissions. Rose should remain removed to avoid duplicate moderation.'
+      'The Hope Hub bot runs from the Hope Hub API. Keep it as a group admin with delete, restrict, ban, and pin permissions. Rose should remain removed to avoid duplicate moderation.'
   },
   {
     key: 'telegramGroupHelpAdminWhitelist',

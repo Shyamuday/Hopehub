@@ -341,6 +341,7 @@ jobs:
           TELEGRAM_USER_BOT_TOKEN: ${{ secrets.TELEGRAM_USER_BOT_TOKEN }}
           TELEGRAM_DOCTOR_BOT_TOKEN: ${{ secrets.TELEGRAM_DOCTOR_BOT_TOKEN }}
           TELEGRAM_ADMIN_BOT_TOKEN: ${{ secrets.TELEGRAM_ADMIN_BOT_TOKEN }}
+          TELEGRAM_HOPEHUBBOT_TOKEN: ${{ secrets.TELEGRAM_HOPEHUBBOT_TOKEN }}
           TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
           TELEGRAM_SETUP_SECRET: ${{ secrets.TELEGRAM_SETUP_SECRET }}
         run: bash deploy/scripts/deploy-api-local.sh

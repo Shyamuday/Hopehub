@@ -807,10 +807,7 @@ export class GroupHelpPage {
       return;
     }
     await this.copy(command, 'moderator-tool');
-    const username = (this.value('telegramGroupHelpBotUsername') || 'Hopehubaibot').replace(
-      /^@/,
-      '',
-    );
+    const username = (this.value('telegramGroupHelpBotUsername') || 'Hopehubbot').replace(/^@/, '');
     window.open(`https://t.me/${encodeURIComponent(username)}`, '_blank', 'noopener,noreferrer');
     this.message.set(
       'Moderator command copied. Verify the target carefully before sending it in Telegram.',

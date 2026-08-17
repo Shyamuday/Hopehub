@@ -408,7 +408,7 @@ async function seedSiteConfig(chatId: string) {
   const seedDefaults: Record<string, string> = {
     ...GROUP_HELP_CONFIG_DEFAULTS,
     telegramGroupHelpGroupChatId: chatId,
-    telegramGroupModerationRuntime: 'HopeHubAI'
+    telegramGroupModerationRuntime: 'Hope Hub bot'
   };
   for (const field of GROUP_HELP_CONFIG_FIELDS) {
     const value = seedDefaults[field.key] ?? '';

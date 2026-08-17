@@ -31,7 +31,7 @@ export const TELEGRAM_BOT_USERNAMES = {
   CONTACT: '@Contacthopehubbot',
   CONFESSION: '@Hopehubconfessionbot',
   RULES: '@HHrules',
-  GROUP_HELP: '@Hopehubaibot',
+  GROUP_HELP: '@Hopehubbot',
   WEB: '@Hopehubwebbot'
 } as const;
 
@@ -43,4 +43,4 @@ export const TELEGRAM_BOT_URLS = Object.fromEntries(
 ) as { [K in keyof typeof TELEGRAM_BOT_USERNAMES]: string };
 
 export const GROUP_HELP_BOT_SLUG = COMMUNITY_BOT_SLUGS.GROUP_HELP;
-export const GROUP_HELP_BOT_DISPLAY_NAME = 'HopeHubAI';
+export const GROUP_HELP_BOT_DISPLAY_NAME = 'Hope Hub community bot';

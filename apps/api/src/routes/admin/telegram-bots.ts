@@ -301,8 +301,8 @@ async function groupHelpConfigMap() {
     ...GROUP_HELP_CONFIG_DEFAULTS,
     ...Object.fromEntries(rows.map((row) => [row.key, row.value]))
   };
-  if (values.telegramGroupHelpBotUsername?.replace(/^@/, '').toLowerCase() === 'hopehubbot') {
-    values.telegramGroupHelpBotUsername = 'Hopehubaibot';
+  if (values.telegramGroupHelpBotUsername?.replace(/^@/, '').toLowerCase() === 'hopehubaibot') {
+    values.telegramGroupHelpBotUsername = 'Hopehubbot';
   }
   return values;
 }
@@ -1643,7 +1643,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         targetType: 'telegram_group_help',
         targetId: 'bot_menu',
         summary: 'Cleared website menu button from Group Help bot.',
-        metadata: { bot: 'Hopehubaibot' }
+        metadata: { bot: 'Hopehubbot' }
       });
 
       res.json({ ok: true, result });
