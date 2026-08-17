@@ -21,6 +21,7 @@ import {
   getCommunityWebhookInfo,
   setupCommunityBot
 } from '../../services/telegram-community-bots.js';
+import type { CommunityBotSlug } from '../../services/telegram-community-bots.types.js';
 import { apiUrl } from '../../services/telegram-bots.ui.js';
 import {
   callGroupHelpTelegramApi,
@@ -192,9 +193,7 @@ async function safeWebhookInfo(kind: TelegramBotKind): Promise<WebhookSnapshot |
   }
 }
 
-async function safeCommunityWebhookInfo(
-  slug: 'contact' | 'confession' | 'rules'
-): Promise<WebhookSnapshot | null> {
+async function safeCommunityWebhookInfo(slug: CommunityBotSlug): Promise<WebhookSnapshot | null> {
   const configured = communityBotStatus().find((bot) => bot.slug === slug)?.configured;
   if (!configured) return null;
   try {
@@ -722,23 +721,20 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         return res.json({ ok: true, mode: 'APPLIED', action, result });
       }
 
-      const username = (values.telegramGroupHelpBotUsername || 'Hopehubaibot').replace(/^@/, '');
       await writeAuditLog({
         actorId: req.user!.id,
         actorRole: req.user!.role,
-        action: 'telegram_group_help.action_prepare',
+        action: 'telegram_group_help.action_apply',
         targetType: 'telegram_group_help',
         targetId: action.id,
-        summary: `Prepared Group Help admin action: ${action.title}.`,
-        metadata: { mode: action.applyMode }
+        summary: `Applied HopeHubAI setting: ${action.title}.`,
+        metadata: { mode: 'DATABASE_CONFIG' }
       });
       return res.json({
         ok: true,
-        mode: 'TELEGRAM_ADMIN_CONFIRMATION',
+        mode: 'APPLIED',
         action,
-        command: rendered.command,
-        botUrl: `https://t.me/${encodeURIComponent(username)}`,
-        message: 'Command copied. Send it from a Telegram group admin account to apply it.'
+        message: `${action.title} is active in HopeHubAI.`
       });
     })
   );

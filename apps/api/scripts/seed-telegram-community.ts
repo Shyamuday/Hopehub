@@ -3,7 +3,9 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../src/db.js';
 import {
   GROUP_HELP_CONFIG_FIELDS,
-  GROUP_HELP_CONFIG_DEFAULTS
+  GROUP_HELP_CONFIG_DEFAULTS,
+  HOPEHUB_COMMUNITY_WELCOME_MEDIA_URL,
+  HOPEHUB_COMMUNITY_WELCOME_MESSAGE
 } from '../src/constants/group-help-config.constants.js';
 import {
   TELEGRAM_BOT_CONTROL_DEFAULTS,
@@ -21,6 +23,31 @@ type TelegramGetChatResponse = {
   description?: string;
 };
 
+type TelegramApiResponse<T> = {
+  ok: boolean;
+  result?: T;
+  description?: string;
+};
+
+type TelegramAdministrator = {
+  user: { id: number; is_bot?: boolean; username?: string };
+  status: string;
+  can_delete_messages?: boolean;
+  can_restrict_members?: boolean;
+  can_pin_messages?: boolean;
+};
+
+async function telegramApi<T>(token: string, method: string, payload: unknown) {
+  const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const body = (await response.json()) as TelegramApiResponse<T>;
+  if (!response.ok || !body.ok) throw new Error(body.description || `Telegram ${method} failed.`);
+  return body.result as T;
+}
+
 async function resolveGroupChatId() {
   const saved = await prisma.siteConfig.findUnique({
     where: { key: 'telegramGroupHelpGroupChatId' },
@@ -29,10 +56,11 @@ async function resolveGroupChatId() {
   const savedValue = saved?.value.trim() || '';
   if (/^-?\d+$/.test(savedValue)) return savedValue;
 
-  const token = process.env.TELEGRAM_RULES_BOT_TOKEN?.trim();
+  const token =
+    process.env.TELEGRAM_HOPEHUBBOT_TOKEN?.trim() || process.env.TELEGRAM_RULES_BOT_TOKEN?.trim();
   if (!token) {
     throw new Error(
-      'TELEGRAM_RULES_BOT_TOKEN is required to resolve the Hope Hub community group ID.'
+      'TELEGRAM_HOPEHUBBOT_TOKEN is required to resolve the Hope Hub community group ID.'
     );
   }
   const response = await fetch(
@@ -175,15 +203,20 @@ const campaigns = (chatId: string) =>
   ].map((campaign) => ({ ...campaign, chatId }));
 
 async function seedSiteConfig(chatId: string) {
+  const forcedValues: Record<string, string> = {
+    telegramGroupHelpGroupChatId: chatId,
+    telegramGroupModerationRuntime: 'HopeHubAI',
+    telegramCommunityWelcomeEnabled: 'Enabled',
+    telegramCommunityWelcomeText: HOPEHUB_COMMUNITY_WELCOME_MESSAGE,
+    telegramGroupHelpWelcomeMessage: HOPEHUB_COMMUNITY_WELCOME_MESSAGE,
+    telegramGroupHelpWelcomeImageUrl: HOPEHUB_COMMUNITY_WELCOME_MEDIA_URL
+  };
   for (const field of GROUP_HELP_CONFIG_FIELDS) {
-    const value =
-      field.key === 'telegramGroupHelpGroupChatId'
-        ? chatId
-        : GROUP_HELP_CONFIG_DEFAULTS[field.key] || '';
+    const value = forcedValues[field.key] ?? GROUP_HELP_CONFIG_DEFAULTS[field.key] ?? '';
     await prisma.siteConfig.upsert({
       where: { key: field.key },
       create: { key: field.key, value, label: field.label },
-      update: field.key === 'telegramGroupHelpGroupChatId' ? { value: chatId } : {}
+      update: field.key in forcedValues ? { value, label: field.label } : {}
     });
   }
 
@@ -204,11 +237,11 @@ async function seedCampaigns(chatId: string) {
   for (const campaign of campaigns(chatId)) {
     await prisma.telegramCampaign.upsert({
       where: { id: campaign.id },
-      update: { chatId },
+      update: { chatId, bot: 'hopehubai' },
       create: {
         id: campaign.id,
         name: campaign.name,
-        bot: 'rules',
+        bot: 'hopehubai',
         chatId,
         timezone: 'Asia/Kolkata',
         intervalMinutes: campaign.intervalMinutes,
@@ -244,10 +277,68 @@ async function seedCampaigns(chatId: string) {
   }
 }
 
+async function recordRoseStatus(value: string) {
+  await prisma.siteConfig.upsert({
+    where: { key: 'telegramRoseBotStatus' },
+    create: { key: 'telegramRoseBotStatus', value, label: 'Rose bot handover status' },
+    update: { value, label: 'Rose bot handover status' }
+  });
+}
+
+async function retireRoseBot(chatId: string) {
+  const token = process.env.TELEGRAM_HOPEHUBBOT_TOKEN?.trim();
+  if (!token) {
+    await recordRoseStatus('HopeHubAI token missing; Rose was not removed.');
+    return;
+  }
+
+  const [me, administrators] = await Promise.all([
+    telegramApi<{ id: number; username?: string }>(token, 'getMe', {}),
+    telegramApi<TelegramAdministrator[]>(token, 'getChatAdministrators', { chat_id: chatId })
+  ]);
+  const hopeHubAdmin = administrators.find((admin) => admin.user.id === me.id);
+  if (!hopeHubAdmin?.can_delete_messages || !hopeHubAdmin.can_restrict_members) {
+    const missing = [
+      !hopeHubAdmin?.can_delete_messages ? 'delete messages' : '',
+      !hopeHubAdmin?.can_restrict_members ? 'restrict members' : ''
+    ]
+      .filter(Boolean)
+      .join(', ');
+    await recordRoseStatus(`Rose remains active. HopeHubAI needs permission to ${missing}.`);
+    console.warn(`[telegram-seed] Rose not removed: HopeHubAI needs permission to ${missing}.`);
+    return;
+  }
+
+  const rose = administrators.find(
+    (admin) => admin.user.is_bot && /rose/i.test(admin.user.username || '')
+  );
+  if (!rose) {
+    await recordRoseStatus('No Rose administrator bot found; HopeHubAI is the active runtime.');
+    return;
+  }
+
+  await telegramApi(token, 'banChatMember', {
+    chat_id: chatId,
+    user_id: rose.user.id,
+    revoke_messages: false
+  });
+  await telegramApi(token, 'unbanChatMember', {
+    chat_id: chatId,
+    user_id: rose.user.id,
+    only_if_banned: true
+  });
+  const username = rose.user.username ? `@${rose.user.username}` : String(rose.user.id);
+  await recordRoseStatus(
+    `${username} removed on ${new Date().toISOString()}; HopeHubAI is the active runtime.`
+  );
+  console.log(`[telegram-seed] Removed legacy Rose bot ${username} from ${chatId}.`);
+}
+
 try {
   const chatId = await resolveGroupChatId();
   await seedSiteConfig(chatId);
   await seedCampaigns(chatId);
+  await retireRoseBot(chatId);
   console.log(
     `[telegram-seed] Configured ${GROUP_USERNAME} (${chatId}) with ${campaigns(chatId).length} active campaigns.`
   );

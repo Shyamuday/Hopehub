@@ -100,7 +100,7 @@ export async function mirrorHopeHubLiveChatMessageToTelegram(input: {
 
   try {
     const sent = await sendCommunityMessage(
-      'rules',
+      'hopehubai',
       config.telegramChatId,
       `💬 Hope Hub member\n\n${input.body.trim().slice(0, 3900)}`
     );

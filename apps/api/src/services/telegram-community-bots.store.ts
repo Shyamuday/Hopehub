@@ -132,6 +132,86 @@ export async function checkTelegramPrivateRateLimit(input: {
   });
 }
 
+export async function checkTelegramGroupFlood(input: {
+  chatId: string;
+  telegramUserId: string;
+  limit: number;
+  windowSeconds: number;
+}) {
+  const now = new Date();
+  const bot = `group-flood:${input.chatId}`;
+  const chatId = input.telegramUserId;
+  return prisma.$transaction(async (tx) => {
+    const current = await tx.telegramCommunityState.findUnique({
+      where: { bot_chatId: { bot, chatId } },
+      select: { payload: true, expiresAt: true }
+    });
+    const payload = (current?.payload || {}) as { count?: number; startedAt?: string };
+    const startedAt = payload.startedAt ? new Date(payload.startedAt) : now;
+    const inWindow = now.getTime() - startedAt.getTime() <= input.windowSeconds * 1000;
+    const count = inWindow ? Number(payload.count || 0) + 1 : 1;
+    const nextStart = inWindow ? startedAt : now;
+    const expiresAt = new Date(nextStart.getTime() + input.windowSeconds * 1000);
+    await tx.telegramCommunityState.upsert({
+      where: { bot_chatId: { bot, chatId } },
+      create: {
+        bot,
+        chatId,
+        state: 'group-flood',
+        payload: { count, startedAt: nextStart.toISOString() },
+        expiresAt
+      },
+      update: {
+        payload: { count, startedAt: nextStart.toISOString() },
+        expiresAt
+      }
+    });
+    return { exceeded: count > input.limit, count };
+  });
+}
+
+export async function addTelegramGroupWarning(input: {
+  chatId: string;
+  telegramUserId: string;
+  reason: string;
+}) {
+  const bot = `group-warnings:${input.chatId}`;
+  const chatId = input.telegramUserId;
+  const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+  return prisma.$transaction(async (tx) => {
+    const current = await tx.telegramCommunityState.findUnique({
+      where: { bot_chatId: { bot, chatId } },
+      select: { payload: true }
+    });
+    const payload = (current?.payload || {}) as { count?: number; reasons?: string[] };
+    const count = Number(payload.count || 0) + 1;
+    const reasons = [
+      ...(Array.isArray(payload.reasons) ? payload.reasons : []),
+      input.reason
+    ].slice(-10);
+    await tx.telegramCommunityState.upsert({
+      where: { bot_chatId: { bot, chatId } },
+      create: {
+        bot,
+        chatId,
+        state: 'group-warnings',
+        payload: { count, reasons },
+        expiresAt
+      },
+      update: { payload: { count, reasons }, expiresAt }
+    });
+    return count;
+  });
+}
+
+export async function telegramGroupWarningCount(chatId: string, telegramUserId: string) {
+  const row = await prisma.telegramCommunityState.findUnique({
+    where: { bot_chatId: { bot: `group-warnings:${chatId}`, chatId: telegramUserId } },
+    select: { payload: true }
+  });
+  return Number((row?.payload as { count?: number } | null)?.count || 0);
+}
+
 export async function communitySubmissionLimitReached(input: {
   bot: 'contact' | 'confession';
   userChatId: string;

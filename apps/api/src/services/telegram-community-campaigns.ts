@@ -8,7 +8,7 @@ import {
 import type { CommunityTelegramUpdate } from './telegram-community-bots.types.js';
 import { getSiteConfigMap } from './site-config.service.js';
 
-const CAMPAIGN_BOT = 'rules' as const;
+const CAMPAIGN_BOT = 'hopehubai' as const;
 const MAX_DELIVERIES_PER_SWEEP = 20;
 
 export const telegramCampaignSweepEnabled =
@@ -42,6 +42,7 @@ function nextSchedule(now: Date, intervalMinutes: number) {
 const COMMUNITY_CONFIG_KEYS = [
   'telegramCommunityWelcomeEnabled',
   'telegramCommunityWelcomeText',
+  'telegramGroupHelpWelcomeImageUrl',
   'telegramCommunitySupportUrl'
 ] as const;
 
@@ -52,8 +53,19 @@ async function communityConfig() {
     welcomeText:
       values.telegramCommunityWelcomeText ||
       'Welcome to Hope Hub 💙 Participate at your own pace and protect your personal details.',
+    welcomeMediaUrl: values.telegramGroupHelpWelcomeImageUrl?.trim() || '',
     supportUrl: values.telegramCommunitySupportUrl || 'https://hopehub.in/#live-connect'
   };
+}
+
+function escapeTelegramMarkdown(value: string) {
+  return value.replace(/[_*()[\]]/g, '\\$&');
+}
+
+function memberMention(member: { id: number; username?: string; first_name?: string }) {
+  if (member.username) return `@${escapeTelegramMarkdown(member.username)}`;
+  const name = escapeTelegramMarkdown(member.first_name?.trim() || 'there');
+  return `[${name}](tg://user?id=${member.id})`;
 }
 
 async function weeklySummary(chatId: string, intro?: string | null) {
@@ -363,18 +375,24 @@ export async function welcomeTelegramCommunityMembers(update: CommunityTelegramU
     )
   );
   if (!config.welcomeEnabled) return true;
-  await sendCommunityMessage(CAMPAIGN_BOT, message.chat.id, config.welcomeText, {
-    message_thread_id: message.message_thread_id,
-    reply_markup: {
-      inline_keyboard: [
-        [
-          { text: 'Community rules', callback_data: 'rules' },
-          { text: 'Private support', url: config.supportUrl }
-        ],
-        [{ text: 'Share anonymously', url: 'https://t.me/Hopehubconfessionbot' }]
-      ]
-    }
-  });
+  if (config.welcomeMediaUrl) {
+    await callCommunityTelegramApi(CAMPAIGN_BOT, 'sendAnimation', {
+      chat_id: message.chat.id,
+      animation: config.welcomeMediaUrl,
+      message_thread_id: message.message_thread_id
+    }).catch((error) => {
+      console.error('[telegram-community] Could not send welcome animation.', error);
+    });
+  }
+  for (const member of members) {
+    const welcomeText = config.welcomeText
+      .replaceAll('{mention}', memberMention(member))
+      .replaceAll('{id}', String(member.id));
+    await sendCommunityMessage(CAMPAIGN_BOT, message.chat.id, welcomeText, {
+      parse_mode: 'Markdown',
+      message_thread_id: message.message_thread_id
+    });
+  }
   await prisma.telegramCommunityMember.updateMany({
     where: {
       chatId: String(message.chat.id),

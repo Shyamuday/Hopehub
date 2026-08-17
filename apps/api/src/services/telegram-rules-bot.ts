@@ -1,12 +1,10 @@
 import { answerCommunityCallback, sendCommunityMessage } from './telegram-community-bots.client.js';
 import type { CommunityTelegramUpdate, TelegramKeyboard } from './telegram-community-bots.types.js';
-import { ingestTelegramLiveChatMessage } from './telegram-live-chat-bridge.js';
 import { getTelegramBotControls } from './telegram-bot-controls.js';
 import {
   handleTelegramCommunityEventCallback,
   recordTelegramCampaignPollUpdate,
-  recordTelegramCommunityReaction,
-  welcomeTelegramCommunityMembers
+  recordTelegramCommunityReaction
 } from './telegram-community-campaigns.js';
 
 const slug = 'rules' as const;
@@ -84,11 +82,7 @@ export async function handleRulesBotUpdate(update: CommunityTelegramUpdate) {
     return;
   }
   const message = update.message;
-  if (await welcomeTelegramCommunityMembers(update)) return;
-  if (message && message.chat.type !== 'private') {
-    await ingestTelegramLiveChatMessage(message);
-    return;
-  }
+  if (message && message.chat.type !== 'private') return;
   if (!message?.text || message.chat.type !== 'private') return;
   const requested = command(message.text);
   if (!requested) return;

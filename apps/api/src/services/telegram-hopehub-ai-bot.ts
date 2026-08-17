@@ -1,0 +1,292 @@
+import { GROUP_HELP_CONFIG_DEFAULTS } from '../constants/group-help-config.constants.js';
+import { getSiteConfigMap } from './site-config.service.js';
+import {
+  answerCommunityCallback,
+  callCommunityTelegramApi,
+  sendCommunityMessage
+} from './telegram-community-bots.client.js';
+import {
+  addTelegramGroupWarning,
+  checkTelegramGroupFlood,
+  telegramGroupWarningCount
+} from './telegram-community-bots.store.js';
+import type {
+  CommunityTelegramMessage,
+  CommunityTelegramUpdate
+} from './telegram-community-bots.types.js';
+import {
+  handleTelegramCommunityEventCallback,
+  recordTelegramCampaignPollUpdate,
+  recordTelegramCommunityReaction,
+  welcomeTelegramCommunityMembers
+} from './telegram-community-campaigns.js';
+import { ingestTelegramLiveChatMessage } from './telegram-live-chat-bridge.js';
+
+const BOT = 'hopehubai' as const;
+const CONFIG_KEYS = [
+  'telegramGroupHelpGroupChatId',
+  'telegramGroupHelpRulesMessage',
+  'telegramGroupHelpSupportMessage',
+  'telegramGroupHelpBannedWords',
+  'telegramGroupHelpLinkPolicy',
+  'telegramGroupHelpAntiFloodAction',
+  'telegramGroupHelpAntiFloodLimit',
+  'telegramGroupHelpWarnLimit',
+  'telegramGroupHelpWarnAction',
+  'telegramGroupHelpForwardPolicy',
+  'telegramGroupHelpMediaPolicy',
+  'telegramGroupHelpMaxMessageLength'
+] as const;
+
+async function config() {
+  const stored = await getSiteConfigMap(CONFIG_KEYS);
+  return { ...GROUP_HELP_CONFIG_DEFAULTS, ...stored };
+}
+
+function floodThreshold(value: string) {
+  const [limit, seconds] = value.trim().split(/\s+/).map(Number);
+  return {
+    limit: Number.isFinite(limit) ? Math.max(2, limit) : 6,
+    seconds: Number.isFinite(seconds) ? Math.max(2, seconds) : 10
+  };
+}
+
+function bannedPhrases(value: string) {
+  return value
+    .split(/[\n,]+/)
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function containsLink(text: string) {
+  return /(?:https?:\/\/|www\.|t\.me\/|telegram\.me\/|\b[a-z0-9-]+\.(?:com|in|org|net|io)\b)/i.test(
+    text
+  );
+}
+
+function hasMedia(message: CommunityTelegramMessage) {
+  return Boolean(
+    message.photo?.length ||
+    message.video ||
+    message.animation ||
+    message.document ||
+    message.audio ||
+    message.voice ||
+    message.sticker
+  );
+}
+
+function isForward(message: CommunityTelegramMessage) {
+  return Boolean(message.forward_origin || message.forward_from || message.forward_from_chat);
+}
+
+async function deleteMessage(chatId: string, messageId: number) {
+  await callCommunityTelegramApi(BOT, 'deleteMessage', {
+    chat_id: chatId,
+    message_id: messageId
+  });
+}
+
+async function applyMemberAction(chatId: string, userId: number, action: string) {
+  if (action === 'ban' || action === 'kick') {
+    await callCommunityTelegramApi(BOT, 'banChatMember', {
+      chat_id: chatId,
+      user_id: userId,
+      revoke_messages: false
+    });
+    if (action === 'kick') {
+      await callCommunityTelegramApi(BOT, 'unbanChatMember', {
+        chat_id: chatId,
+        user_id: userId,
+        only_if_banned: true
+      });
+    }
+  } else if (action === 'mute') {
+    await callCommunityTelegramApi(BOT, 'restrictChatMember', {
+      chat_id: chatId,
+      user_id: userId,
+      permissions: { can_send_messages: false },
+      until_date: Math.floor(Date.now() / 1000) + 60 * 60
+    });
+  }
+}
+
+async function moderate(
+  message: CommunityTelegramMessage,
+  reason: string,
+  action: string,
+  warnLimit: number,
+  warnAction: string
+) {
+  const chatId = String(message.chat.id);
+  if (action === 'off' || !message.from) return false;
+  await deleteMessage(chatId, message.message_id).catch(() => null);
+  if (action === 'delete') return true;
+  const warnings = await addTelegramGroupWarning({
+    chatId,
+    telegramUserId: String(message.from.id),
+    reason
+  });
+  const finalAction = warnings >= warnLimit ? warnAction : action;
+  if (['mute', 'kick', 'ban'].includes(finalAction)) {
+    await applyMemberAction(chatId, message.from.id, finalAction).catch(() => null);
+  }
+  await sendCommunityMessage(
+    BOT,
+    chatId,
+    warnings >= warnLimit
+      ? `Community safety action applied after ${warnings} warnings.`
+      : `Please follow the community rules. Warning ${warnings}/${warnLimit}.`,
+    { reply_to_message_id: message.message_id, message_thread_id: message.message_thread_id }
+  ).catch(() => null);
+  return true;
+}
+
+async function handleCommand(message: CommunityTelegramMessage, values: Record<string, string>) {
+  const command = (message.text || '').trim().split(/\s+/)[0].split('@')[0].toLowerCase();
+  const chatId = String(message.chat.id);
+  if (command === '/rules') {
+    await sendCommunityMessage(BOT, chatId, values.telegramGroupHelpRulesMessage, {
+      message_thread_id: message.message_thread_id
+    });
+    return true;
+  }
+  if (command === '/support') {
+    await sendCommunityMessage(BOT, chatId, values.telegramGroupHelpSupportMessage, {
+      message_thread_id: message.message_thread_id
+    });
+    return true;
+  }
+  if (command === '/warnings' && message.from) {
+    const count = await telegramGroupWarningCount(chatId, String(message.from.id));
+    await sendCommunityMessage(
+      BOT,
+      chatId,
+      `You currently have ${count} warning${count === 1 ? '' : 's'}.`,
+      {
+        reply_to_message_id: message.message_id,
+        message_thread_id: message.message_thread_id
+      }
+    );
+    return true;
+  }
+  if (command === '/help') {
+    await sendCommunityMessage(
+      BOT,
+      chatId,
+      'Use /rules for community rules, /support for private support, /report while replying to a message, and /warnings to review your warnings.',
+      { message_thread_id: message.message_thread_id }
+    );
+    return true;
+  }
+  if (command === '/report') {
+    await sendCommunityMessage(
+      BOT,
+      chatId,
+      message.reply_to_message
+        ? 'Thank you. This message has been flagged for administrator review.'
+        : 'Reply to the message you want to report, then send /report.',
+      { reply_to_message_id: message.message_id, message_thread_id: message.message_thread_id }
+    );
+    return true;
+  }
+  return false;
+}
+
+export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) {
+  if (update.message_reaction) {
+    await recordTelegramCommunityReaction(update);
+    return;
+  }
+  if (update.poll || update.poll_answer) {
+    await recordTelegramCampaignPollUpdate(update);
+    return;
+  }
+  const callback = update.callback_query;
+  if (callback?.message && callback.data) {
+    if (await handleTelegramCommunityEventCallback(update)) {
+      await answerCommunityCallback(BOT, callback.id, 'You’re on the list 💙');
+      return;
+    }
+    await answerCommunityCallback(BOT, callback.id);
+    return;
+  }
+  if (await welcomeTelegramCommunityMembers(update)) return;
+  const message = update.message;
+  if (!message || message.from?.is_bot) return;
+  const chatId = String(message.chat.id);
+  const values = await config();
+  if (values.telegramGroupHelpGroupChatId && values.telegramGroupHelpGroupChatId !== chatId) return;
+  if (message.chat.type === 'private') {
+    await sendCommunityMessage(BOT, chatId, values.telegramGroupHelpSupportMessage);
+    return;
+  }
+  if (message.text?.startsWith('/') && (await handleCommand(message, values))) return;
+  if (!message.from) return;
+
+  const warnLimit = Math.max(1, Number(values.telegramGroupHelpWarnLimit || 3));
+  const warnAction = values.telegramGroupHelpWarnAction || 'mute';
+  const text = `${message.text || ''}\n${message.caption || ''}`.trim();
+  const maxLength = Math.max(100, Number(values.telegramGroupHelpMaxMessageLength || 4000));
+  if (text.length > maxLength) {
+    await moderate(message, 'Message too long', 'warn', warnLimit, warnAction);
+    return;
+  }
+  if (
+    bannedPhrases(values.telegramGroupHelpBannedWords).some((item) =>
+      text.toLowerCase().includes(item)
+    )
+  ) {
+    await moderate(message, 'Blocked phrase', 'warn', warnLimit, warnAction);
+    return;
+  }
+  if (containsLink(text) && values.telegramGroupHelpLinkPolicy !== 'allow') {
+    await moderate(
+      message,
+      'Unapproved link',
+      values.telegramGroupHelpLinkPolicy,
+      warnLimit,
+      warnAction
+    );
+    return;
+  }
+  if (isForward(message) && values.telegramGroupHelpForwardPolicy !== 'allow') {
+    await moderate(
+      message,
+      'Forwarded message',
+      values.telegramGroupHelpForwardPolicy,
+      warnLimit,
+      warnAction
+    );
+    return;
+  }
+  if (hasMedia(message) && ['delete', 'warn'].includes(values.telegramGroupHelpMediaPolicy)) {
+    await moderate(
+      message,
+      'Media policy',
+      values.telegramGroupHelpMediaPolicy,
+      warnLimit,
+      warnAction
+    );
+    return;
+  }
+
+  const threshold = floodThreshold(values.telegramGroupHelpAntiFloodLimit || '6 10');
+  const flood = await checkTelegramGroupFlood({
+    chatId,
+    telegramUserId: String(message.from.id),
+    limit: threshold.limit,
+    windowSeconds: threshold.seconds
+  });
+  if (flood.exceeded) {
+    await moderate(
+      message,
+      'Rapid messages',
+      values.telegramGroupHelpAntiFloodAction || 'mute',
+      warnLimit,
+      warnAction
+    );
+    return;
+  }
+  await ingestTelegramLiveChatMessage(message);
+}

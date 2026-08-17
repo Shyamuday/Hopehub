@@ -1,5 +1,34 @@
 export type GroupHelpConfigFieldType = 'text' | 'textarea' | 'number' | 'select';
 
+export const HOPEHUB_COMMUNITY_WELCOME_MESSAGE = `Hi {mention} 👋 {id}
+
+💙 Welcome to HopeHub!
+
+India's Trusted Emotional Support & Peer Support Community.
+
+HopeHub is a safe and supportive space where you can express yourself freely, connect with compassionate people, and take small steps toward healing and personal growth.
+
+💬 Vent without fear of judgment
+🤝 Connect with kind & supportive people
+🎙️ Join daily voice chats & support discussions
+🫂 Receive peer support & emotional guidance
+❤️ Find support for stress, anxiety, depression, breakups & loneliness
+🧠 Access counselling, mental health resources & wellness tools
+🌱 Learn, heal & grow—one step at a time
+
+Please remember:
+✅ Be kind & respectful – Follow the group rules.
+✅ Respect everyone's privacy.
+✅ No bullying, hate, spam or unwanted DMs.
+
+💙 Every conversation matters. Every person matters. You matter.
+
+[📢 Channel](https://t.me/HopeHubGlobal) [🌐 Website](http://hopehub.in/)
+[🤖 HopeHub Bot](https://t.me/Hopehubbot) [📜 HH Rules](https://t.me/HHrules)`;
+
+export const HOPEHUB_COMMUNITY_WELCOME_MEDIA_URL =
+  'https://hopehub-public-assets-924479393196.s3.us-east-1.amazonaws.com/telegram/welcome/hopehub-community-welcome.mp4';
+
 export type GroupHelpConfigField = {
   key: string;
   label: string;
@@ -315,6 +344,16 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
     defaultValue: 'Hopehubaibot'
   },
   {
+    key: 'telegramGroupModerationRuntime',
+    label: 'Active moderation bot',
+    description: 'HopeHubAI owns welcomes, safety rules, moderation, polls, and scheduled posts.',
+    section: 'connection',
+    type: 'select',
+    maxLength: 30,
+    options: ['HopeHubAI', 'Rose'],
+    defaultValue: 'HopeHubAI'
+  },
+  {
     key: 'telegramGroupHelpGroupChatId',
     label: 'Telegram group chat ID',
     description:
@@ -329,7 +368,7 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
     key: 'telegramLiveChatBridgeEnabled',
     label: 'Website live-chat bridge',
     description:
-      'Mirror the configured Telegram group into the signed-in Hope Hub live chat using the Rules bot.',
+      'Mirror the configured Telegram group into the signed-in Hope Hub live chat using HopeHubAI.',
     section: 'connection',
     type: 'select',
     maxLength: 20,
@@ -363,8 +402,7 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
     section: 'onboarding',
     type: 'textarea',
     maxLength: 1200,
-    defaultValue:
-      'Welcome to Hope Hub 💙 You can participate at your own pace. Please protect your personal details and be kind to everyone.'
+    defaultValue: HOPEHUB_COMMUNITY_WELCOME_MESSAGE
   },
   {
     key: 'telegramCommunitySupportUrl',
@@ -412,18 +450,26 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
     section: 'messages',
     type: 'textarea',
     maxLength: 4000,
-    defaultValue:
-      'Welcome to Hope Hub. This is a safe, respectful space for emotional support. Please read the rules, protect privacy, and avoid sharing emergency situations here.'
+    defaultValue: HOPEHUB_COMMUNITY_WELCOME_MESSAGE
   },
   {
     key: 'telegramGroupHelpWelcomeImageUrl',
-    label: 'Welcome image URL',
-    description: 'Optional public S3/image URL attached to the welcome message or command.',
+    label: 'Welcome media URL',
+    description: 'Optional public image, GIF, or MP4 shown before the welcome message.',
     section: 'messages',
     type: 'text',
     maxLength: 1000,
     placeholder: 'https://...',
-    defaultValue: ''
+    defaultValue: HOPEHUB_COMMUNITY_WELCOME_MEDIA_URL
+  },
+  {
+    key: 'telegramRoseBotStatus',
+    label: 'Rose handover status',
+    description: 'Shows whether the legacy Rose bot was removed after HopeHubAI took over.',
+    section: 'connection',
+    type: 'text',
+    maxLength: 500,
+    defaultValue: 'Handover not checked yet.'
   },
   {
     key: 'telegramGroupHelpRulesMessage',
@@ -561,7 +607,7 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
     type: 'textarea',
     maxLength: 4000,
     defaultValue:
-      'GroupHelp controls the bot runtime. Do not set a HopeHub API webhook for @Hopehubaibot.'
+      'HopeHubAI runs from the Hope Hub API. Keep it as a group admin with delete, restrict, ban, and pin permissions. Rose should remain removed to avoid duplicate moderation.'
   },
   {
     key: 'telegramGroupHelpWelcomeCommandTemplate',

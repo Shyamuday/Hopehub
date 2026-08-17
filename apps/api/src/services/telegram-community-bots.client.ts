@@ -52,6 +52,27 @@ const COMMUNITY_BOTS: Record<
       'message_reaction',
       'my_chat_member'
     ]
+  },
+  hopehubai: {
+    name: 'Hope Hub AI Community Bot',
+    tokenEnv: 'TELEGRAM_HOPEHUBBOT_TOKEN',
+    commands: [
+      { command: 'rules', description: 'Community rules' },
+      { command: 'support', description: 'Private Hope Hub support' },
+      { command: 'report', description: 'Report a message to admins' },
+      { command: 'warnings', description: 'Check your warnings' },
+      { command: 'help', description: 'Community bot help' }
+    ],
+    allowedUpdates: [
+      'message',
+      'edited_message',
+      'callback_query',
+      'poll',
+      'poll_answer',
+      'message_reaction',
+      'chat_member',
+      'my_chat_member'
+    ]
   }
 };
 

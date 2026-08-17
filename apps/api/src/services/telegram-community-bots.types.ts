@@ -1,4 +1,4 @@
-export type CommunityBotSlug = 'contact' | 'confession' | 'rules';
+export type CommunityBotSlug = 'contact' | 'confession' | 'rules' | 'hopehubai';
 
 export type CommunityTelegramUser = {
   id: number;
@@ -12,12 +12,23 @@ export type CommunityTelegramMessage = {
   message_id: number;
   date?: number;
   text?: string;
+  caption?: string;
   chat: { id: number | string; type?: string };
   from?: CommunityTelegramUser;
   message_thread_id?: number;
   new_chat_members?: CommunityTelegramUser[];
   left_chat_member?: CommunityTelegramUser;
   reply_to_message?: { message_id: number };
+  forward_origin?: unknown;
+  forward_from?: CommunityTelegramUser;
+  forward_from_chat?: { id: number | string };
+  photo?: unknown[];
+  video?: unknown;
+  animation?: unknown;
+  document?: unknown;
+  audio?: unknown;
+  voice?: unknown;
+  sticker?: unknown;
 };
 
 export type CommunityTelegramUpdate = {
