@@ -8,6 +8,13 @@ export type CommunityTelegramUser = {
   username?: string;
 };
 
+export type CommunityTelegramFile = {
+  file_id?: string;
+  file_unique_id?: string;
+  file_size?: number;
+  [key: string]: unknown;
+};
+
 export type CommunityTelegramMessage = {
   message_id: number;
   date?: number;
@@ -22,14 +29,14 @@ export type CommunityTelegramMessage = {
   forward_origin?: unknown;
   forward_from?: CommunityTelegramUser;
   forward_from_chat?: { id: number | string };
-  photo?: unknown[];
-  video?: unknown;
-  video_note?: unknown;
-  animation?: unknown;
-  document?: unknown;
-  audio?: unknown;
-  voice?: unknown;
-  sticker?: unknown;
+  photo?: CommunityTelegramFile[];
+  video?: CommunityTelegramFile;
+  video_note?: CommunityTelegramFile;
+  animation?: CommunityTelegramFile;
+  document?: CommunityTelegramFile;
+  audio?: CommunityTelegramFile;
+  voice?: CommunityTelegramFile;
+  sticker?: CommunityTelegramFile;
   contact?: unknown;
   location?: unknown;
 };

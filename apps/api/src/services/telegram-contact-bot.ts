@@ -22,6 +22,7 @@ import { getSiteConfigValue } from './site-config.service.js';
 
 const slug = 'contact' as const;
 const SUPPORT_GROUP_CONFIG_KEY = 'telegramContactSupportGroupId';
+const MAX_CONTACT_ATTACHMENT_BYTES = 20 * 1024 * 1024;
 
 async function supportGroupId() {
   const saved = (await getSiteConfigValue(SUPPORT_GROUP_CONFIG_KEY)).trim();
@@ -117,6 +118,20 @@ function contactMediaKind(message: NonNullable<CommunityTelegramUpdate['message'
   return null;
 }
 
+function contactMediaSize(message: NonNullable<CommunityTelegramUpdate['message']>) {
+  const photoSize = Math.max(0, ...(message.photo || []).map((item) => item.file_size || 0));
+  return Math.max(
+    photoSize,
+    message.video?.file_size || 0,
+    message.video_note?.file_size || 0,
+    message.animation?.file_size || 0,
+    message.document?.file_size || 0,
+    message.audio?.file_size || 0,
+    message.voice?.file_size || 0,
+    message.sticker?.file_size || 0
+  );
+}
+
 const categoryLabels: Record<string, string> = {
   cat_suggestion: '💡 Suggestion',
   cat_complaint: '🚨 Complaint',
@@ -184,7 +199,7 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
       await sendCommunityMessage(
         slug,
         chatId,
-        `${categoryLabels[data] || 'Message'}\n\n✍️ *Type your message or attach a photo, video, document, audio, voice note, GIF, sticker, contact, or location.*\n\nAdd a caption if helpful.\n\n_Use /cancel to go back._`,
+        `${categoryLabels[data] || 'Message'}\n\n✍️ *Type your message or attach a photo, video, document, audio, voice note, GIF, sticker, contact, or location.*\n\nAttachments can be up to 20 MB. Add a caption if helpful.\n\n_Use /cancel to go back._`,
         { parse_mode: 'Markdown', reply_markup: cancelKeyboard }
       );
       return;
@@ -406,6 +421,14 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
       slug,
       chatId,
       'Please send text, a photo, video, document, audio, voice note, GIF, sticker, contact, or location.'
+    );
+    return;
+  }
+  if (contactMediaSize(message) > MAX_CONTACT_ATTACHMENT_BYTES) {
+    await sendCommunityMessage(
+      slug,
+      chatId,
+      'That attachment is larger than 20 MB. Please compress it or send a smaller file.'
     );
     return;
   }
