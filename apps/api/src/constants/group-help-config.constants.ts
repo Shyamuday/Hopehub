@@ -21,10 +21,7 @@ Please remember:
 ✅ Respect everyone's privacy.
 ✅ No bullying, hate, spam or unwanted DMs.
 
-💙 Every conversation matters. Every person matters. You matter.
-
-[📢 Channel](https://t.me/HopeHubGlobal) [🌐 Website](http://hopehub.in/)
-[🤖 HopeHub Bot](https://t.me/Hopehubbot) [📜 HH Rules](https://t.me/HHrules)`;
+💙 Every conversation matters. Every person matters. You matter.`;
 
 export const HOPEHUB_COMMUNITY_WELCOME_MEDIA_URL =
   'https://hopehub-public-assets-924479393196.s3.us-east-1.amazonaws.com/telegram/welcome/hopehub-community-welcome.mp4';
