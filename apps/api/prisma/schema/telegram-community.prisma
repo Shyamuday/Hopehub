@@ -46,3 +46,161 @@ model TelegramWebhookReceipt {
   @@index([status, updatedAt])
   @@index([createdAt])
 }
+
+model TelegramCampaign {
+  id               String                   @id @default(cuid())
+  name             String
+  bot              String                   @default("rules")
+  chatId           String
+  timezone         String                   @default("Asia/Kolkata")
+  intervalMinutes  Int
+  repeat           Boolean                  @default(true)
+  isActive         Boolean                  @default(false)
+  currentItemIndex Int                      @default(0)
+  nextRunAt        DateTime?
+  lastRunAt        DateTime?
+  createdById      String?
+  items            TelegramCampaignItem[]
+  deliveries       TelegramCampaignDelivery[]
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+
+  @@index([isActive, nextRunAt])
+  @@index([chatId])
+}
+
+model TelegramCampaignItem {
+  id                 String                     @id @default(cuid())
+  campaignId         String
+  campaign           TelegramCampaign           @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  sortOrder          Int
+  kind               String
+  text               String?                    @db.Text
+  imageUrl           String?
+  pollQuestion       String?
+  pollOptions        Json?
+  pollAnonymous      Boolean                    @default(true)
+  pollMultiple       Boolean                    @default(false)
+  pollQuiz           Boolean                    @default(false)
+  correctOptionIds   Json?
+  pollExplanation    String?                    @db.Text
+  closeAfterMinutes  Int?
+  messageThreadId    Int?
+  followUpOptionIds  Json?
+  followUpMessage    String?                    @db.Text
+  deliveries         TelegramCampaignDelivery[]
+  createdAt          DateTime                   @default(now())
+  updatedAt          DateTime                   @updatedAt
+
+  @@unique([campaignId, sortOrder])
+  @@index([campaignId])
+}
+
+model TelegramCampaignDelivery {
+  id                String                 @id @default(cuid())
+  campaignId        String
+  campaign          TelegramCampaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  itemId            String?
+  item              TelegramCampaignItem?  @relation(fields: [itemId], references: [id], onDelete: SetNull)
+  telegramMessageId Int?
+  telegramPollId    String?                @unique
+  status            String
+  error             String?
+  pollSnapshot      Json?
+  totalVoterCount   Int                    @default(0)
+  closesAt          DateTime?
+  sentAt            DateTime?
+  votes             TelegramPollVote[]
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  @@index([campaignId, createdAt])
+  @@index([status, closesAt])
+}
+
+model TelegramPollVote {
+  id                 String                    @id @default(cuid())
+  deliveryId         String
+  delivery           TelegramCampaignDelivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  telegramUserId     String
+  username           String?
+  firstName          String?
+  lastName           String?
+  optionIds          Json
+  followUpSentAt     DateTime?
+  followUpError      String?
+  votedAt            DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+
+  @@unique([deliveryId, telegramUserId])
+  @@index([deliveryId])
+}
+
+model TelegramCommunityEvent {
+  id                String                       @id @default(cuid())
+  title             String
+  description       String?                      @db.Text
+  chatId            String
+  joinUrl           String
+  startsAt          DateTime
+  reminderMinutes   Int                          @default(30)
+  status            String                       @default("SCHEDULED")
+  telegramMessageId Int?
+  announcedAt       DateTime?
+  reminderSentAt    DateTime?
+  createdById       String?
+  rsvps             TelegramCommunityEventRsvp[]
+  createdAt         DateTime                     @default(now())
+  updatedAt         DateTime                     @updatedAt
+
+  @@index([status, startsAt])
+  @@index([chatId])
+}
+
+model TelegramCommunityEventRsvp {
+  id             String                 @id @default(cuid())
+  eventId        String
+  event          TelegramCommunityEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  telegramUserId String
+  username       String?
+  firstName      String?
+  lastName       String?
+  status         String                 @default("GOING")
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+
+  @@unique([eventId, telegramUserId])
+  @@index([eventId, status])
+}
+
+model TelegramCommunityReaction {
+  id             String   @id @default(cuid())
+  chatId         String
+  messageId      Int
+  telegramUserId String
+  username       String?
+  reactions      Json
+  reactedAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([chatId, messageId, telegramUserId])
+  @@index([chatId, reactedAt])
+  @@index([messageId])
+}
+
+model TelegramCommunityMember {
+  id             String    @id @default(cuid())
+  chatId         String
+  telegramUserId String
+  username       String?
+  firstName      String?
+  lastName       String?
+  joinedAt       DateTime  @default(now())
+  welcomeSentAt  DateTime?
+  leftAt         DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([chatId, telegramUserId])
+  @@index([chatId, joinedAt])
+}

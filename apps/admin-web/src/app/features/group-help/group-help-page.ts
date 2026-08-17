@@ -33,6 +33,34 @@ type CommandItem = {
   applyMode: 'TELEGRAM_ADMIN_CONFIRMATION' | 'DIRECT_PIN';
 };
 
+type CampaignItemDraft = {
+  kind: 'TEXT' | 'POLL' | 'SUMMARY';
+  text: string;
+  imageUrl: string;
+  pollQuestion: string;
+  pollOptionsText: string;
+  pollAnonymous: boolean;
+  pollMultiple: boolean;
+  closeAfterMinutes: number | null;
+  messageThreadId: number | null;
+  followUpOptionIdsText: string;
+  followUpMessage: string;
+};
+
+const emptyCampaignItem = (kind: 'TEXT' | 'POLL' | 'SUMMARY'): CampaignItemDraft => ({
+  kind,
+  text: '',
+  imageUrl: '',
+  pollQuestion: '',
+  pollOptionsText: '',
+  pollAnonymous: true,
+  pollMultiple: false,
+  closeAfterMinutes: null,
+  messageThreadId: null,
+  followUpOptionIdsText: '',
+  followUpMessage: '',
+});
+
 const IMAGE_UPLOAD_LIMIT_BYTES = 5 * 1024 * 1024;
 
 const SECTION_LABELS: Record<GroupHelpConfigEntry['section'], string> = {
@@ -80,6 +108,29 @@ export class GroupHelpPage {
     }>
   >([]);
   readonly actionStatuses = signal<Record<string, 'applied' | 'confirmation'>>({});
+  readonly campaigns = signal<any[]>([]);
+  readonly campaignBotConfigured = signal(false);
+  readonly campaignSaving = signal(false);
+  readonly campaignBusyId = signal('');
+  readonly campaignResults = signal<any[]>([]);
+  readonly resultsCampaignId = signal('');
+  readonly editingCampaignId = signal('');
+  readonly campaignName = signal('');
+  readonly campaignIntervalMinutes = signal(1440);
+  readonly campaignTimezone = signal('Asia/Kolkata');
+  readonly campaignRepeat = signal(true);
+  readonly campaignActive = signal(false);
+  readonly campaignItems = signal<CampaignItemDraft[]>([emptyCampaignItem('TEXT')]);
+  readonly engagement = signal<any>(null);
+  readonly communityEvents = signal<any[]>([]);
+  readonly pendingConfessions = signal<any[]>([]);
+  readonly eventSaving = signal(false);
+  readonly editingEventId = signal('');
+  readonly eventTitle = signal('');
+  readonly eventDescription = signal('');
+  readonly eventJoinUrl = signal('https://t.me/hopehubindia');
+  readonly eventStartsAt = signal('');
+  readonly eventReminderMinutes = signal(30);
   readonly connectionDetails = signal<{
     bot?: string;
     group?: string;
@@ -157,10 +208,250 @@ export class GroupHelpPage {
       }
       this.actionStatuses.set(latestStatuses);
       this.localValues.set(Object.fromEntries(res.config.map((entry) => [entry.key, entry.value])));
+      await this.loadCampaigns();
     } catch {
       this.error.set('Could not load Group Help config.');
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  async loadCampaigns() {
+    const [campaignResponse, eventResponse, engagementResponse] = await Promise.all([
+      this.api.getTelegramCampaigns(),
+      this.api.getTelegramCommunityEvents(),
+      this.api.getTelegramCommunityEngagement(),
+    ]);
+    this.campaigns.set(campaignResponse.campaigns || []);
+    this.campaignBotConfigured.set(campaignResponse.botConfigured);
+    this.communityEvents.set(eventResponse.events || []);
+    this.engagement.set(engagementResponse);
+    try {
+      const confessionResponse = await this.api.getTelegramPendingConfessions();
+      this.pendingConfessions.set(confessionResponse.submissions || []);
+    } catch {
+      this.pendingConfessions.set([]);
+    }
+  }
+
+  addCampaignItem(kind: 'TEXT' | 'POLL' | 'SUMMARY') {
+    this.campaignItems.update((items) => [...items, emptyCampaignItem(kind)]);
+  }
+
+  updateCampaignItem(index: number, patch: Partial<CampaignItemDraft>) {
+    this.campaignItems.update((items) =>
+      items.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)),
+    );
+  }
+
+  removeCampaignItem(index: number) {
+    this.campaignItems.update((items) => items.filter((_item, itemIndex) => itemIndex !== index));
+  }
+
+  campaignPayload() {
+    return {
+      name: this.campaignName().trim(),
+      timezone: this.campaignTimezone(),
+      intervalMinutes: Number(this.campaignIntervalMinutes()),
+      repeat: this.campaignRepeat(),
+      isActive: this.campaignActive(),
+      items: this.campaignItems().map((item) => ({
+        kind: item.kind,
+        text: item.kind === 'TEXT' || item.kind === 'SUMMARY' ? item.text.trim() : undefined,
+        imageUrl: item.kind === 'TEXT' && item.imageUrl.trim() ? item.imageUrl.trim() : undefined,
+        pollQuestion: item.kind === 'POLL' ? item.pollQuestion.trim() : undefined,
+        pollOptions:
+          item.kind === 'POLL'
+            ? item.pollOptionsText
+                .split('\n')
+                .map((option) => option.trim())
+                .filter(Boolean)
+            : undefined,
+        pollAnonymous: item.pollAnonymous,
+        pollMultiple: item.pollMultiple,
+        pollQuiz: false,
+        closeAfterMinutes: item.closeAfterMinutes || undefined,
+        messageThreadId: item.messageThreadId || undefined,
+        followUpOptionIds:
+          item.kind === 'POLL'
+            ? item.followUpOptionIdsText
+                .split(',')
+                .map((value) => Number(value.trim()) - 1)
+                .filter((value) => Number.isInteger(value) && value >= 0)
+            : undefined,
+        followUpMessage:
+          item.kind === 'POLL' && item.followUpMessage.trim()
+            ? item.followUpMessage.trim()
+            : undefined,
+      })),
+    };
+  }
+
+  resetCampaignForm() {
+    this.editingCampaignId.set('');
+    this.campaignName.set('');
+    this.campaignIntervalMinutes.set(1440);
+    this.campaignTimezone.set('Asia/Kolkata');
+    this.campaignRepeat.set(true);
+    this.campaignActive.set(false);
+    this.campaignItems.set([emptyCampaignItem('TEXT')]);
+  }
+
+  editCampaign(campaign: any) {
+    this.editingCampaignId.set(campaign.id);
+    this.campaignName.set(campaign.name);
+    this.campaignIntervalMinutes.set(campaign.intervalMinutes);
+    this.campaignTimezone.set(campaign.timezone || 'Asia/Kolkata');
+    this.campaignRepeat.set(campaign.repeat);
+    this.campaignActive.set(campaign.isActive);
+    this.campaignItems.set(
+      (campaign.items || []).map((item: any) => ({
+        kind: item.kind,
+        text: item.text || '',
+        imageUrl: item.imageUrl || '',
+        pollQuestion: item.pollQuestion || '',
+        pollOptionsText: Array.isArray(item.pollOptions) ? item.pollOptions.join('\n') : '',
+        pollAnonymous: item.pollAnonymous,
+        pollMultiple: item.pollMultiple,
+        closeAfterMinutes: item.closeAfterMinutes,
+        messageThreadId: item.messageThreadId,
+        followUpOptionIdsText: Array.isArray(item.followUpOptionIds)
+          ? item.followUpOptionIds.map((value: number) => value + 1).join(', ')
+          : '',
+        followUpMessage: item.followUpMessage || '',
+      })),
+    );
+    document.querySelector('.campaign-editor')?.scrollIntoView({ behavior: 'smooth' });
+  }
+
+  async saveCampaign() {
+    if (!this.campaignName().trim() || !this.campaignItems().length) {
+      this.error.set('Add a campaign name and at least one message or poll.');
+      return;
+    }
+    this.campaignSaving.set(true);
+    this.error.set('');
+    this.message.set('');
+    try {
+      const id = this.editingCampaignId();
+      if (id) await this.api.updateTelegramCampaign(id, this.campaignPayload());
+      else await this.api.createTelegramCampaign(this.campaignPayload());
+      await this.loadCampaigns();
+      this.resetCampaignForm();
+      this.message.set(id ? 'Campaign updated.' : 'Campaign created.');
+    } catch (error: any) {
+      this.error.set(error?.error?.message || 'Could not save campaign.');
+    } finally {
+      this.campaignSaving.set(false);
+    }
+  }
+
+  async toggleCampaign(campaign: any) {
+    this.campaignBusyId.set(campaign.id);
+    try {
+      await this.api.setTelegramCampaignStatus(campaign.id, !campaign.isActive);
+      await this.loadCampaigns();
+      this.message.set(campaign.isActive ? 'Campaign paused.' : 'Campaign activated.');
+    } catch (error: any) {
+      this.error.set(error?.error?.message || 'Could not change campaign status.');
+    } finally {
+      this.campaignBusyId.set('');
+    }
+  }
+
+  async deleteCampaign(campaign: any) {
+    if (!window.confirm(`Delete “${campaign.name}” and its stored results?`)) return;
+    this.campaignBusyId.set(campaign.id);
+    try {
+      await this.api.deleteTelegramCampaign(campaign.id);
+      await this.loadCampaigns();
+      if (this.editingCampaignId() === campaign.id) this.resetCampaignForm();
+      this.message.set('Campaign deleted.');
+    } catch (error: any) {
+      this.error.set(error?.error?.message || 'Could not delete campaign.');
+    } finally {
+      this.campaignBusyId.set('');
+    }
+  }
+
+  async showCampaignResults(campaign: any) {
+    this.campaignBusyId.set(campaign.id);
+    try {
+      const response = await this.api.getTelegramCampaignResults(campaign.id);
+      this.resultsCampaignId.set(campaign.id);
+      this.campaignResults.set(response.results || []);
+    } catch (error: any) {
+      this.error.set(error?.error?.message || 'Could not load poll results.');
+    } finally {
+      this.campaignBusyId.set('');
+    }
+  }
+
+  resetEventForm() {
+    this.editingEventId.set('');
+    this.eventTitle.set('');
+    this.eventDescription.set('');
+    this.eventJoinUrl.set('https://t.me/hopehubindia');
+    this.eventStartsAt.set('');
+    this.eventReminderMinutes.set(30);
+  }
+
+  editCommunityEvent(event: any) {
+    this.editingEventId.set(event.id);
+    this.eventTitle.set(event.title);
+    this.eventDescription.set(event.description || '');
+    this.eventJoinUrl.set(event.joinUrl);
+    const date = new Date(event.startsAt);
+    this.eventStartsAt.set(
+      new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16),
+    );
+    this.eventReminderMinutes.set(event.reminderMinutes);
+  }
+
+  async saveCommunityEvent() {
+    if (!this.eventTitle().trim() || !this.eventStartsAt() || !this.eventJoinUrl().trim()) {
+      this.error.set('Add the event title, time and join link.');
+      return;
+    }
+    this.eventSaving.set(true);
+    this.error.set('');
+    try {
+      const payload = {
+        title: this.eventTitle().trim(),
+        description: this.eventDescription().trim() || undefined,
+        joinUrl: this.eventJoinUrl().trim(),
+        startsAt: new Date(this.eventStartsAt()).toISOString(),
+        reminderMinutes: Number(this.eventReminderMinutes()),
+      };
+      const id = this.editingEventId();
+      if (id) await this.api.updateTelegramCommunityEvent(id, payload);
+      else await this.api.createTelegramCommunityEvent(payload);
+      this.resetEventForm();
+      await this.loadCampaigns();
+      this.message.set(id ? 'Voice circle updated.' : 'Voice circle announced.');
+    } catch (error: any) {
+      this.error.set(error?.error?.message || 'Could not save voice circle.');
+    } finally {
+      this.eventSaving.set(false);
+    }
+  }
+
+  async deleteCommunityEvent(event: any) {
+    if (!window.confirm(`Delete “${event.title}”?`)) return;
+    await this.api.deleteTelegramCommunityEvent(event.id);
+    await this.loadCampaigns();
+  }
+
+  async reviewConfession(submission: any, action: 'APPROVE' | 'REJECT') {
+    this.campaignBusyId.set(submission.reference);
+    try {
+      await this.api.reviewTelegramConfession(submission.reference, action);
+      await this.loadCampaigns();
+      this.message.set(action === 'APPROVE' ? 'Anonymous post published.' : 'Submission rejected.');
+    } catch (error: any) {
+      this.error.set(error?.error?.message || 'Could not review submission.');
+    } finally {
+      this.campaignBusyId.set('');
     }
   }
 

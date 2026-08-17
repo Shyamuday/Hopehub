@@ -821,6 +821,47 @@ export class AdminApi {
       ...(args as Parameters<AdminOpsApi['sendTelegramGroupHelpMessage']>),
     );
   }
+  getTelegramCampaigns(...args: Parameters<AdminOpsApi['getTelegramCampaigns']>) {
+    return this.ops.getTelegramCampaigns(...args);
+  }
+  createTelegramCampaign(...args: Parameters<AdminOpsApi['createTelegramCampaign']>) {
+    return this.ops.createTelegramCampaign(...args);
+  }
+  updateTelegramCampaign(...args: Parameters<AdminOpsApi['updateTelegramCampaign']>) {
+    return this.ops.updateTelegramCampaign(...args);
+  }
+  setTelegramCampaignStatus(...args: Parameters<AdminOpsApi['setTelegramCampaignStatus']>) {
+    return this.ops.setTelegramCampaignStatus(...args);
+  }
+  deleteTelegramCampaign(...args: Parameters<AdminOpsApi['deleteTelegramCampaign']>) {
+    return this.ops.deleteTelegramCampaign(...args);
+  }
+  getTelegramCampaignResults(...args: Parameters<AdminOpsApi['getTelegramCampaignResults']>) {
+    return this.ops.getTelegramCampaignResults(...args);
+  }
+  getTelegramCommunityEvents(...args: Parameters<AdminOpsApi['getTelegramCommunityEvents']>) {
+    return this.ops.getTelegramCommunityEvents(...args);
+  }
+  createTelegramCommunityEvent(...args: Parameters<AdminOpsApi['createTelegramCommunityEvent']>) {
+    return this.ops.createTelegramCommunityEvent(...args);
+  }
+  updateTelegramCommunityEvent(...args: Parameters<AdminOpsApi['updateTelegramCommunityEvent']>) {
+    return this.ops.updateTelegramCommunityEvent(...args);
+  }
+  deleteTelegramCommunityEvent(...args: Parameters<AdminOpsApi['deleteTelegramCommunityEvent']>) {
+    return this.ops.deleteTelegramCommunityEvent(...args);
+  }
+  getTelegramPendingConfessions(...args: Parameters<AdminOpsApi['getTelegramPendingConfessions']>) {
+    return this.ops.getTelegramPendingConfessions(...args);
+  }
+  reviewTelegramConfession(...args: Parameters<AdminOpsApi['reviewTelegramConfession']>) {
+    return this.ops.reviewTelegramConfession(...args);
+  }
+  getTelegramCommunityEngagement(
+    ...args: Parameters<AdminOpsApi['getTelegramCommunityEngagement']>
+  ) {
+    return this.ops.getTelegramCommunityEngagement(...args);
+  }
   updateConsultationStatus(...args: Parameters<AdminOpsApi['updateConsultationStatus']>) {
     return this.ops.updateConsultationStatus(
       ...(args as Parameters<AdminOpsApi['updateConsultationStatus']>),

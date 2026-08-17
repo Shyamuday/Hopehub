@@ -28,6 +28,18 @@ export const API_PATHS = {
     TELEGRAM_GROUP_HELP_SEND: '/admin/telegram-bots/group-help/send',
     TELEGRAM_GROUP_HELP_MEDIA: '/admin/telegram-bots/group-help/media',
     TELEGRAM_GROUP_HELP_CLEAR_MENU: '/admin/telegram-bots/group-help/clear-menu',
+    TELEGRAM_GROUP_HELP_CAMPAIGNS: '/admin/telegram-bots/group-help/campaigns',
+    TELEGRAM_GROUP_HELP_CAMPAIGN: (id: string) => `/admin/telegram-bots/group-help/campaigns/${id}`,
+    TELEGRAM_GROUP_HELP_CAMPAIGN_STATUS: (id: string) =>
+      `/admin/telegram-bots/group-help/campaigns/${id}/status`,
+    TELEGRAM_GROUP_HELP_CAMPAIGN_RESULTS: (id: string) =>
+      `/admin/telegram-bots/group-help/campaigns/${id}/results`,
+    TELEGRAM_GROUP_HELP_EVENTS: '/admin/telegram-bots/group-help/events',
+    TELEGRAM_GROUP_HELP_EVENT: (id: string) => `/admin/telegram-bots/group-help/events/${id}`,
+    TELEGRAM_GROUP_HELP_CONFESSIONS: '/admin/telegram-bots/group-help/confessions',
+    TELEGRAM_GROUP_HELP_CONFESSION_REVIEW: (reference: string) =>
+      `/admin/telegram-bots/group-help/confessions/${reference}/review`,
+    TELEGRAM_GROUP_HELP_ENGAGEMENT: '/admin/telegram-bots/group-help/engagement',
     CALL_HEALTH: '/admin/call-health',
     CONSULTATION_STATUS: (id: string) => `/admin/consultations/${id}/status`,
     SAFETY_FLAGS: '/admin/safety-flags',

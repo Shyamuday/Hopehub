@@ -1,5 +1,6 @@
 import {
   answerCommunityCallback,
+  callCommunityTelegramApi,
   editCommunityReplyMarkup,
   sendCommunityMessage
 } from './telegram-community-bots.client.js';
@@ -26,6 +27,37 @@ const isCommand = (text: string, command: string) =>
 
 const confessionNumber = (serial: bigint) =>
   Number(serial) + Number.parseInt(process.env.TELEGRAM_CONFESSION_START_NUMBER || '1000', 10);
+
+export async function confessionDestinationLabel(target: string) {
+  const fallback =
+    process.env.TELEGRAM_CONFESSION_CHANNEL_NAME?.trim() ||
+    (target.startsWith('@') ? target : 'Hope Hub Anonymous Confessions');
+  try {
+    const chat = await callCommunityTelegramApi<{
+      title?: string;
+      username?: string;
+      first_name?: string;
+    }>(slug, 'getChat', { chat_id: target });
+    return chat.title || (chat.username ? `@${chat.username}` : chat.first_name) || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+export function publishedConfessionText(input: {
+  text: string;
+  destinationName: string;
+  number?: number;
+}) {
+  return [
+    input.number ? `🕊 Anonymous Confession #${input.number}` : '🕊 Anonymous Confession',
+    '',
+    input.text,
+    '',
+    '━━━━━━━━━━━━━━',
+    `💙 ${input.destinationName}`
+  ].join('\n');
+}
 
 const mainKeyboard: TelegramKeyboard = {
   inline_keyboard: [
@@ -130,9 +162,8 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
       await sendCommunityMessage(
         slug,
         approvalTarget,
-        `${confession.category === 'SAFETY_REVIEW' ? '🚨 *POSSIBLE URGENT SAFETY REVIEW*\n\n' : ''}🔔 *NEW ANONYMOUS CONFESSION*\n\n🆔 Confession #${confessionNumber(confession.serial)}\n━━━━━━━━━━━━━━\n\n${confession.text}\n\n━━━━━━━━━━━━━━`,
+        `${confession.category === 'SAFETY_REVIEW' ? '🚨 POSSIBLE URGENT SAFETY REVIEW\n\n' : ''}🔔 NEW ANONYMOUS CONFESSION\n\n🆔 Confession #${confessionNumber(confession.serial)}\n👤 Admin-only sender: ${confession.firstName || 'Telegram user'}${confession.username ? ` (@${confession.username.replace(/^@/, '')})` : ''}\n🔢 Telegram ID: ${confession.userChatId}\n━━━━━━━━━━━━━━\n\n${confession.text}\n\n━━━━━━━━━━━━━━\nSender details above are only for safety and moderation. They will never be published.`,
         {
-          parse_mode: 'Markdown',
           reply_markup: {
             inline_keyboard: [
               [
@@ -166,11 +197,15 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
       if (approved) {
         const target = channelId();
         if (!target) throw new Error('TELEGRAM_CONFESSION_CHANNEL_ID is not configured.');
+        const destinationName = await confessionDestinationLabel(target);
         await sendCommunityMessage(
           slug,
           target,
-          `🕊 *Anonymous Confession #${confessionNumber(confession.serial)}*\n\n${confession.text}\n\n━━━━━━━━━━━━━━\n💙 *HopeHub Anonymous Confessions*\n_t.me/Hopehubconfessionbot_`,
-          { parse_mode: 'Markdown' }
+          publishedConfessionText({
+            text: confession.text,
+            number: confessionNumber(confession.serial),
+            destinationName
+          })
         );
       }
       await updateCommunitySubmission(confession.reference, {
@@ -187,14 +222,14 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
         ]
       });
       try {
+        const destinationName = approved ? await confessionDestinationLabel(channelId()) : null;
         await sendCommunityMessage(
           slug,
           confession.userChatId,
           approved
-            ? `💙 *Your confession has been approved and published anonymously.*`
+            ? `💙 Your confession has been approved and published anonymously in ${destinationName}.`
             : `Your confession wasn't approved for publication at this time.`,
           {
-            parse_mode: 'Markdown',
             reply_markup: mainKeyboard
           }
         );
@@ -274,6 +309,8 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
     reference: id,
     bot: slug,
     userChatId: stateKey,
+    firstName: message.from?.first_name || 'Telegram user',
+    username: message.from?.username || null,
     category: needsSafetyReview ? 'SAFETY_REVIEW' : null,
     text,
     status: 'draft'

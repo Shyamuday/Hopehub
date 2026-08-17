@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { Role, TelegramBotKind } from '@prisma/client';
+import { Prisma, Role, TelegramBotKind } from '@prisma/client';
 import { z } from 'zod';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
@@ -44,6 +44,19 @@ import {
   clearTelegramBotControlsCache,
   getTelegramBotControls
 } from '../../services/telegram-bot-controls.js';
+import {
+  callCommunityTelegramApi,
+  sendCommunityMessage
+} from '../../services/telegram-community-bots.client.js';
+import {
+  confessionDestinationLabel,
+  publishedConfessionText
+} from '../../services/telegram-confession-bot.js';
+import {
+  announceTelegramCommunityEvent,
+  deleteTelegramCommunityEvent,
+  refreshTelegramCommunityEventAnnouncement
+} from '../../services/telegram-community-campaigns.js';
 
 const setupSchema = z.object({
   dropPendingUpdates: z.boolean().optional(),
@@ -81,6 +94,77 @@ const groupHelpSendSchema = z.object({
 const groupHelpApplySchema = z.object({
   actionId: z.string().trim().min(1).max(80)
 });
+
+const campaignItemSchema = z
+  .object({
+    kind: z.enum(['TEXT', 'POLL', 'SUMMARY']),
+    text: z.string().trim().max(4096).optional(),
+    imageUrl: z.preprocess(
+      (value) => (typeof value === 'string' && !value.trim() ? undefined : value),
+      z.string().trim().url().optional()
+    ),
+    pollQuestion: z.string().trim().max(300).optional(),
+    pollOptions: z.array(z.string().trim().min(1).max(100)).min(2).max(12).optional(),
+    pollAnonymous: z.boolean().default(true),
+    pollMultiple: z.boolean().default(false),
+    pollQuiz: z.boolean().default(false),
+    correctOptionIds: z.array(z.number().int().min(0)).max(12).optional(),
+    pollExplanation: z.string().trim().max(200).optional(),
+    closeAfterMinutes: z.number().int().min(1).max(43_800).optional(),
+    messageThreadId: z.number().int().positive().optional(),
+    followUpOptionIds: z.array(z.number().int().min(0).max(11)).max(12).optional(),
+    followUpMessage: z.string().trim().max(1200).optional()
+  })
+  .superRefine((item, context) => {
+    if (['TEXT', 'SUMMARY'].includes(item.kind) && !item.text) {
+      context.addIssue({ code: 'custom', path: ['text'], message: 'Message text is required.' });
+    }
+    if (item.kind === 'POLL' && (!item.pollQuestion || !item.pollOptions?.length)) {
+      context.addIssue({
+        code: 'custom',
+        path: ['pollQuestion'],
+        message: 'Poll question and options are required.'
+      });
+    }
+    if (item.pollQuiz && !item.correctOptionIds?.length) {
+      context.addIssue({
+        code: 'custom',
+        path: ['correctOptionIds'],
+        message: 'Choose at least one correct quiz answer.'
+      });
+    }
+    if (item.followUpOptionIds?.length && item.pollAnonymous) {
+      context.addIssue({
+        code: 'custom',
+        path: ['pollAnonymous'],
+        message: 'Private follow-up requires a non-anonymous poll.'
+      });
+    }
+  });
+
+const campaignSaveSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  chatId: z.string().trim().max(80).optional(),
+  timezone: z.string().trim().min(1).max(80).default('Asia/Kolkata'),
+  intervalMinutes: z.number().int().min(5).max(43_800),
+  repeat: z.boolean().default(true),
+  isActive: z.boolean().default(false),
+  startsAt: z.coerce.date().optional(),
+  items: z.array(campaignItemSchema).min(1).max(50)
+});
+
+const campaignToggleSchema = z.object({ isActive: z.boolean() });
+
+const communityEventSchema = z.object({
+  title: z.string().trim().min(2).max(160),
+  description: z.string().trim().max(1200).optional(),
+  joinUrl: z.string().trim().url(),
+  startsAt: z.coerce.date(),
+  reminderMinutes: z.number().int().min(5).max(10_080).default(30),
+  chatId: z.string().trim().max(80).optional()
+});
+
+const confessionReviewSchema = z.object({ action: z.enum(['APPROVE', 'REJECT']) });
 
 const GROUP_HELP_IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 
@@ -208,6 +292,29 @@ async function sendGroupHelpPost(input: { message: string; imageUrl?: string; pi
       })
     : null;
   return { chatId, sent, pinned };
+}
+
+function campaignItemData(
+  item: z.infer<typeof campaignItemSchema>,
+  sortOrder: number
+): Prisma.TelegramCampaignItemCreateWithoutCampaignInput {
+  return {
+    sortOrder,
+    kind: item.kind,
+    text: item.text,
+    imageUrl: item.imageUrl,
+    pollQuestion: item.pollQuestion,
+    pollOptions: item.pollOptions as Prisma.InputJsonValue | undefined,
+    pollAnonymous: item.pollAnonymous,
+    pollMultiple: item.pollMultiple,
+    pollQuiz: item.pollQuiz,
+    correctOptionIds: item.correctOptionIds as Prisma.InputJsonValue | undefined,
+    pollExplanation: item.pollExplanation,
+    closeAfterMinutes: item.closeAfterMinutes,
+    messageThreadId: item.messageThreadId,
+    followUpOptionIds: item.followUpOptionIds as Prisma.InputJsonValue | undefined,
+    followUpMessage: item.followUpMessage
+  };
 }
 
 export function registerAdminTelegramBotRoutes(router: Router) {
@@ -722,6 +829,494 @@ export function registerAdminTelegramBotRoutes(router: Router) {
       });
 
       res.json({ ok: true, message: sent, pinned });
+    })
+  );
+
+  router.get(
+    '/admin/telegram-bots/group-help/campaigns',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR, Role.MARKETING),
+    asyncRoute(async (_req, res) => {
+      const campaigns = await prisma.telegramCampaign.findMany({
+        include: {
+          items: { orderBy: { sortOrder: 'asc' } },
+          deliveries: {
+            orderBy: { createdAt: 'desc' },
+            take: 8,
+            include: { _count: { select: { votes: true } } }
+          }
+        },
+        orderBy: { updatedAt: 'desc' }
+      });
+      const rulesBot = communityBotStatus().find((bot) => bot.slug === 'rules');
+      res.json({ campaigns, botConfigured: Boolean(rulesBot?.configured) });
+    })
+  );
+
+  router.post(
+    '/admin/telegram-bots/group-help/campaigns',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR, Role.MARKETING),
+    asyncRoute(async (req, res) => {
+      const parsed = campaignSaveSchema.safeParse(req.body ?? {});
+      if (!parsed.success) {
+        return res.status(400).json({
+          message: parsed.error.issues[0]?.message || 'Invalid Telegram campaign.'
+        });
+      }
+      const values = await groupHelpConfigMap();
+      const chatId = parsed.data.chatId || values.telegramGroupHelpGroupChatId?.trim();
+      if (!chatId) return res.status(400).json({ message: 'Telegram group chat ID is required.' });
+      const campaign = await prisma.telegramCampaign.create({
+        data: {
+          name: parsed.data.name,
+          bot: 'rules',
+          chatId,
+          timezone: parsed.data.timezone,
+          intervalMinutes: parsed.data.intervalMinutes,
+          repeat: parsed.data.repeat,
+          isActive: parsed.data.isActive,
+          nextRunAt: parsed.data.isActive ? parsed.data.startsAt || new Date() : null,
+          createdById: req.user!.id,
+          items: {
+            create: parsed.data.items.map((item, index) =>
+              campaignItemData(
+                {
+                  ...item,
+                  messageThreadId:
+                    item.messageThreadId ||
+                    Number(values.telegramCommunityDefaultTopicId) ||
+                    undefined
+                },
+                index
+              )
+            )
+          }
+        },
+        include: { items: { orderBy: { sortOrder: 'asc' } } }
+      });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'telegram_campaign.create',
+        targetType: 'telegram_campaign',
+        targetId: campaign.id,
+        summary: `Created Telegram campaign “${campaign.name}”.`,
+        metadata: { chatId, itemCount: campaign.items.length, isActive: campaign.isActive }
+      });
+      res.status(201).json({ campaign });
+    })
+  );
+
+  router.put(
+    '/admin/telegram-bots/group-help/campaigns/:id',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR, Role.MARKETING),
+    asyncRoute(async (req, res) => {
+      const id = routeParam(req, 'id');
+      const parsed = campaignSaveSchema.safeParse(req.body ?? {});
+      if (!parsed.success) {
+        return res.status(400).json({
+          message: parsed.error.issues[0]?.message || 'Invalid Telegram campaign.'
+        });
+      }
+      const existing = await prisma.telegramCampaign.findUnique({ where: { id } });
+      if (!existing) return res.status(404).json({ message: 'Campaign not found.' });
+      const values = await groupHelpConfigMap();
+      const chatId = parsed.data.chatId || values.telegramGroupHelpGroupChatId?.trim();
+      if (!chatId) return res.status(400).json({ message: 'Telegram group chat ID is required.' });
+      const campaign = await prisma.$transaction(async (tx) => {
+        await tx.telegramCampaignItem.deleteMany({ where: { campaignId: id } });
+        return tx.telegramCampaign.update({
+          where: { id },
+          data: {
+            name: parsed.data.name,
+            chatId,
+            timezone: parsed.data.timezone,
+            intervalMinutes: parsed.data.intervalMinutes,
+            repeat: parsed.data.repeat,
+            isActive: parsed.data.isActive,
+            currentItemIndex: 0,
+            nextRunAt: parsed.data.isActive
+              ? parsed.data.startsAt || existing.nextRunAt || new Date()
+              : null,
+            items: {
+              create: parsed.data.items.map((item, index) =>
+                campaignItemData(
+                  {
+                    ...item,
+                    messageThreadId:
+                      item.messageThreadId ||
+                      Number(values.telegramCommunityDefaultTopicId) ||
+                      undefined
+                  },
+                  index
+                )
+              )
+            }
+          },
+          include: { items: { orderBy: { sortOrder: 'asc' } } }
+        });
+      });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'telegram_campaign.update',
+        targetType: 'telegram_campaign',
+        targetId: campaign.id,
+        summary: `Updated Telegram campaign “${campaign.name}”.`
+      });
+      res.json({ campaign });
+    })
+  );
+
+  router.patch(
+    '/admin/telegram-bots/group-help/campaigns/:id/status',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR, Role.MARKETING),
+    asyncRoute(async (req, res) => {
+      const id = routeParam(req, 'id');
+      const parsed = campaignToggleSchema.safeParse(req.body ?? {});
+      if (!parsed.success) return res.status(400).json({ message: 'Choose active or paused.' });
+      const campaign = await prisma.telegramCampaign.update({
+        where: { id },
+        data: {
+          isActive: parsed.data.isActive,
+          nextRunAt: parsed.data.isActive ? new Date() : null
+        }
+      });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: parsed.data.isActive ? 'telegram_campaign.activate' : 'telegram_campaign.pause',
+        targetType: 'telegram_campaign',
+        targetId: campaign.id,
+        summary: `${parsed.data.isActive ? 'Activated' : 'Paused'} Telegram campaign “${campaign.name}”.`
+      });
+      res.json({ campaign });
+    })
+  );
+
+  router.delete(
+    '/admin/telegram-bots/group-help/campaigns/:id',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR, Role.MARKETING),
+    asyncRoute(async (req, res) => {
+      const id = routeParam(req, 'id');
+      const existing = await prisma.telegramCampaign.findUnique({ where: { id } });
+      if (!existing) return res.status(404).json({ message: 'Campaign not found.' });
+      await prisma.telegramCampaign.delete({ where: { id } });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'telegram_campaign.delete',
+        targetType: 'telegram_campaign',
+        targetId: id,
+        summary: `Deleted Telegram campaign “${existing.name}”.`
+      });
+      res.json({ ok: true });
+    })
+  );
+
+  router.get(
+    '/admin/telegram-bots/group-help/campaigns/:id/results',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (req, res) => {
+      const id = routeParam(req, 'id');
+      const deliveries = await prisma.telegramCampaignDelivery.findMany({
+        where: { campaignId: id, telegramPollId: { not: null } },
+        include: { item: true, votes: { orderBy: { votedAt: 'desc' } } },
+        orderBy: { createdAt: 'desc' }
+      });
+      res.json({
+        results: deliveries.map((delivery) => {
+          const snapshot =
+            delivery.pollSnapshot && typeof delivery.pollSnapshot === 'object'
+              ? (delivery.pollSnapshot as Record<string, unknown>)
+              : {};
+          const snapshotOptions = Array.isArray(snapshot.options)
+            ? snapshot.options.map((option) =>
+                typeof option === 'object' && option && 'text' in option
+                  ? String(option.text)
+                  : String(option)
+              )
+            : [];
+          const options = Array.isArray(delivery.item?.pollOptions)
+            ? delivery.item.pollOptions.map(String)
+            : snapshotOptions;
+          const counts = options.map(
+            (_option, optionId) =>
+              delivery.votes.filter(
+                (vote) => Array.isArray(vote.optionIds) && vote.optionIds.includes(optionId)
+              ).length
+          );
+          return {
+            id: delivery.id,
+            question: delivery.item?.pollQuestion || String(snapshot.question || ''),
+            anonymous: delivery.item?.pollAnonymous ?? Boolean(snapshot.is_anonymous),
+            options: options.map((text, index) => ({ text, votes: counts[index] })),
+            totalVoters: delivery.totalVoterCount,
+            status: delivery.status,
+            sentAt: delivery.sentAt,
+            voters:
+              (delivery.item?.pollAnonymous ?? Boolean(snapshot.is_anonymous)) ? [] : delivery.votes
+          };
+        })
+      });
+    })
+  );
+
+  router.get(
+    '/admin/telegram-bots/group-help/events',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR, Role.MARKETING),
+    asyncRoute(async (_req, res) => {
+      const events = await prisma.telegramCommunityEvent.findMany({
+        include: { rsvps: { where: { status: 'GOING' }, orderBy: { createdAt: 'desc' } } },
+        orderBy: { startsAt: 'desc' },
+        take: 100
+      });
+      res.json({ events });
+    })
+  );
+
+  router.post(
+    '/admin/telegram-bots/group-help/events',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR, Role.MARKETING),
+    asyncRoute(async (req, res) => {
+      const parsed = communityEventSchema.safeParse(req.body ?? {});
+      if (!parsed.success) {
+        return res
+          .status(400)
+          .json({ message: parsed.error.issues[0]?.message || 'Invalid event.' });
+      }
+      if (parsed.data.startsAt <= new Date()) {
+        return res.status(400).json({ message: 'Choose a future event time.' });
+      }
+      const values = await groupHelpConfigMap();
+      const chatId = parsed.data.chatId || values.telegramGroupHelpGroupChatId?.trim();
+      if (!chatId) return res.status(400).json({ message: 'Telegram group chat ID is required.' });
+      const event = await prisma.telegramCommunityEvent.create({
+        data: { ...parsed.data, chatId, createdById: req.user!.id }
+      });
+      await announceTelegramCommunityEvent(event.id);
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'telegram_community_event.create',
+        targetType: 'telegram_community_event',
+        targetId: event.id,
+        summary: `Created Telegram event “${event.title}”.`
+      });
+      res.status(201).json({ event });
+    })
+  );
+
+  router.put(
+    '/admin/telegram-bots/group-help/events/:id',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR, Role.MARKETING),
+    asyncRoute(async (req, res) => {
+      const id = routeParam(req, 'id');
+      const parsed = communityEventSchema.safeParse(req.body ?? {});
+      if (!parsed.success) {
+        return res
+          .status(400)
+          .json({ message: parsed.error.issues[0]?.message || 'Invalid event.' });
+      }
+      const values = await groupHelpConfigMap();
+      const chatId = parsed.data.chatId || values.telegramGroupHelpGroupChatId?.trim();
+      if (!chatId) return res.status(400).json({ message: 'Telegram group chat ID is required.' });
+      const event = await prisma.telegramCommunityEvent.update({
+        where: { id },
+        data: {
+          ...parsed.data,
+          chatId,
+          reminderSentAt: null,
+          status: 'SCHEDULED'
+        }
+      });
+      await refreshTelegramCommunityEventAnnouncement(event.id);
+      res.json({ event });
+    })
+  );
+
+  router.delete(
+    '/admin/telegram-bots/group-help/events/:id',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR, Role.MARKETING),
+    asyncRoute(async (req, res) => {
+      const id = routeParam(req, 'id');
+      const deleted = await deleteTelegramCommunityEvent(id);
+      if (!deleted) return res.status(404).json({ message: 'Event not found.' });
+      res.json({ ok: true });
+    })
+  );
+
+  router.get(
+    '/admin/telegram-bots/group-help/confessions',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (_req, res) => {
+      const submissions = await prisma.telegramCommunitySubmission.findMany({
+        where: { bot: 'confession', status: 'pending' },
+        select: {
+          id: true,
+          reference: true,
+          serial: true,
+          category: true,
+          text: true,
+          status: true,
+          userChatId: true,
+          firstName: true,
+          username: true,
+          createdAt: true
+        },
+        orderBy: { createdAt: 'asc' },
+        take: 100
+      });
+      res.json({
+        submissions: submissions.map((item) => ({ ...item, serial: item.serial.toString() }))
+      });
+    })
+  );
+
+  router.post(
+    '/admin/telegram-bots/group-help/confessions/:reference/review',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (req, res) => {
+      const reference = routeParam(req, 'reference');
+      const parsed = confessionReviewSchema.safeParse(req.body ?? {});
+      if (!parsed.success) return res.status(400).json({ message: 'Choose approve or reject.' });
+      const submission = await prisma.telegramCommunitySubmission.findUnique({
+        where: { reference }
+      });
+      if (!submission || submission.bot !== 'confession' || submission.status !== 'pending') {
+        return res.status(404).json({ message: 'Pending confession not found.' });
+      }
+      const approved = parsed.data.action === 'APPROVE';
+      const destinationNames: string[] = [];
+      if (approved) {
+        const values = await groupHelpConfigMap();
+        if (
+          values.telegramCommunityConfessionsInGroup !== 'Disabled' &&
+          values.telegramGroupHelpGroupChatId?.trim()
+        ) {
+          let groupName = 'Hope Hub Community';
+          try {
+            const group = await callCommunityTelegramApi<{ title?: string; username?: string }>(
+              'rules',
+              'getChat',
+              { chat_id: values.telegramGroupHelpGroupChatId.trim() }
+            );
+            groupName = group.title || (group.username ? `@${group.username}` : groupName);
+          } catch {
+            /* Keep the configured fallback display name. */
+          }
+          await sendCommunityMessage(
+            'rules',
+            values.telegramGroupHelpGroupChatId.trim(),
+            publishedConfessionText({ text: submission.text, destinationName: groupName }),
+            {
+              message_thread_id: Number(values.telegramCommunityDefaultTopicId) || undefined
+            }
+          );
+          destinationNames.push(groupName);
+        }
+        const confessionChannel = process.env.TELEGRAM_CONFESSION_CHANNEL_ID?.trim();
+        if (confessionChannel) {
+          const channelName = await confessionDestinationLabel(confessionChannel);
+          await sendCommunityMessage(
+            'confession',
+            confessionChannel,
+            publishedConfessionText({ text: submission.text, destinationName: channelName })
+          );
+          destinationNames.push(channelName);
+        }
+      }
+      const updated = await prisma.telegramCommunitySubmission.update({
+        where: { reference },
+        data: { status: approved ? 'approved' : 'rejected' }
+      });
+      try {
+        await sendCommunityMessage(
+          'confession',
+          submission.userChatId,
+          approved
+            ? `💙 Your anonymous submission was approved${destinationNames.length ? ` and published in ${destinationNames.join(' and ')}` : ''}.`
+            : 'Your submission was not approved for publication at this time.'
+        );
+      } catch {
+        /* The member may have blocked the bot. */
+      }
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: approved ? 'telegram_confession.approve' : 'telegram_confession.reject',
+        targetType: 'telegram_community_submission',
+        targetId: submission.id,
+        summary: `${approved ? 'Approved' : 'Rejected'} an anonymous Telegram submission.`
+      });
+      res.json({
+        submission: {
+          id: updated.id,
+          reference: updated.reference,
+          serial: updated.serial.toString(),
+          category: updated.category,
+          text: updated.text,
+          status: updated.status,
+          userChatId: updated.userChatId,
+          firstName: updated.firstName,
+          username: updated.username,
+          createdAt: updated.createdAt
+        }
+      });
+    })
+  );
+
+  router.get(
+    '/admin/telegram-bots/group-help/engagement',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR, Role.MARKETING),
+    asyncRoute(async (_req, res) => {
+      const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const [
+        activeCampaigns,
+        posts,
+        pollVotes,
+        reactions,
+        newMembers,
+        rsvps,
+        pendingConfessions,
+        failedFollowUps
+      ] = await Promise.all([
+        prisma.telegramCampaign.count({ where: { isActive: true } }),
+        prisma.telegramCampaignDelivery.count({
+          where: { status: { in: ['SENT', 'CLOSED'] }, sentAt: { gte: since } }
+        }),
+        prisma.telegramPollVote.count({ where: { votedAt: { gte: since } } }),
+        prisma.telegramCommunityReaction.count({ where: { reactedAt: { gte: since } } }),
+        prisma.telegramCommunityMember.count({ where: { joinedAt: { gte: since } } }),
+        prisma.telegramCommunityEventRsvp.count({ where: { createdAt: { gte: since } } }),
+        prisma.telegramCommunitySubmission.count({
+          where: { bot: 'confession', status: 'pending' }
+        }),
+        prisma.telegramPollVote.count({ where: { followUpError: { not: null } } })
+      ]);
+      res.json({
+        periodDays: 7,
+        activeCampaigns,
+        posts,
+        pollVotes,
+        reactions,
+        newMembers,
+        rsvps,
+        pendingConfessions,
+        failedFollowUps
+      });
     })
   );
 

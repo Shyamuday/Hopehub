@@ -2,6 +2,12 @@ import { answerCommunityCallback, sendCommunityMessage } from './telegram-commun
 import type { CommunityTelegramUpdate, TelegramKeyboard } from './telegram-community-bots.types.js';
 import { ingestTelegramLiveChatMessage } from './telegram-live-chat-bridge.js';
 import { getTelegramBotControls } from './telegram-bot-controls.js';
+import {
+  handleTelegramCommunityEventCallback,
+  recordTelegramCampaignPollUpdate,
+  recordTelegramCommunityReaction,
+  welcomeTelegramCommunityMembers
+} from './telegram-community-campaigns.js';
 
 const slug = 'rules' as const;
 const mainMenu: TelegramKeyboard = {
@@ -58,14 +64,27 @@ async function showSection(chatId: string | number, section: string) {
 }
 
 export async function handleRulesBotUpdate(update: CommunityTelegramUpdate) {
+  if (update.message_reaction) {
+    await recordTelegramCommunityReaction(update);
+    return;
+  }
+  if (update.poll || update.poll_answer) {
+    await recordTelegramCampaignPollUpdate(update);
+    return;
+  }
   const callback = update.callback_query;
   if (callback?.message && callback.data) {
+    if (await handleTelegramCommunityEventCallback(update)) {
+      await answerCommunityCallback(slug, callback.id, 'You’re on the list 💙');
+      return;
+    }
     await answerCommunityCallback(slug, callback.id);
     if (callback.data === 'menu') await showMenu(callback.message.chat.id);
     else await showSection(callback.message.chat.id, callback.data);
     return;
   }
   const message = update.message;
+  if (await welcomeTelegramCommunityMembers(update)) return;
   if (message && message.chat.type !== 'private') {
     await ingestTelegramLiveChatMessage(message);
     return;

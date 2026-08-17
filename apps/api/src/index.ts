@@ -88,6 +88,11 @@ import {
   consultationReminderSweepIntervalMs,
   runConsultationReminderSchedulers
 } from './services/consultation-reminders.js';
+import {
+  runTelegramCampaignScheduler,
+  telegramCampaignSweepEnabled,
+  telegramCampaignSweepIntervalMs
+} from './services/telegram-community-campaigns.js';
 
 // ── Schedulers ─────────────────────────────────────────────────────────────────
 import {
@@ -382,6 +387,13 @@ httpServer.listen(port, () => {
       `[scheduler] Telegram reminder sweep enabled (interval: ${telegramReminderSweepIntervalMs}ms)`
     );
   }
+  if (!telegramCampaignSweepEnabled) {
+    console.log('[scheduler] Telegram community campaigns disabled');
+  } else {
+    console.log(
+      `[scheduler] Telegram community campaigns enabled (interval: ${telegramCampaignSweepIntervalMs}ms)`
+    );
+  }
   if (!consultationReminderSweepEnabled) {
     console.log('[scheduler] Consultation reminder sweep disabled');
   } else {
@@ -395,6 +407,9 @@ httpServer.listen(port, () => {
   );
   void runTelegramReminderSchedulers().catch((e) =>
     console.error('[scheduler] Initial Telegram reminder scheduler run failed', e)
+  );
+  void runTelegramCampaignScheduler().catch((e) =>
+    console.error('[scheduler] Initial Telegram campaign run failed', e)
   );
   void runConsultationReminderSchedulers().catch((e) =>
     console.error('[scheduler] Initial consultation reminder scheduler run failed', e)
@@ -419,6 +434,13 @@ httpServer.listen(port, () => {
     );
   }, telegramReminderSweepIntervalMs);
   telegramReminderTimer.unref();
+
+  const telegramCampaignTimer = setInterval(() => {
+    void runTelegramCampaignScheduler().catch((e) =>
+      console.error('[scheduler] Telegram campaign run failed', e)
+    );
+  }, telegramCampaignSweepIntervalMs);
+  telegramCampaignTimer.unref();
 
   const consultationReminderTimer = setInterval(() => {
     void runConsultationReminderSchedulers().catch((e) =>

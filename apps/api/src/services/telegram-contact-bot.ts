@@ -15,7 +15,10 @@ import type { CommunityTelegramUpdate, TelegramKeyboard } from './telegram-commu
 import { controlNumber, getTelegramBotControls } from './telegram-bot-controls.js';
 
 const slug = 'contact' as const;
-const supportGroupId = () => process.env.TELEGRAM_CONTACT_SUPPORT_GROUP_ID?.trim() || '';
+const supportGroupId = () =>
+  process.env.TELEGRAM_CONTACT_SUPPORT_GROUP_ID?.trim() ||
+  process.env.TELEGRAM_CONTACT_ADMIN_CHAT_ID?.trim() ||
+  '';
 
 type ContactState = { state: 'writing'; category: string } | { state: 'preview'; ticketId: string };
 
@@ -124,19 +127,36 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
         return;
       }
       const groupId = supportGroupId();
-      if (!groupId) throw new Error('TELEGRAM_CONTACT_SUPPORT_GROUP_ID is not configured.');
-      await clearCommunityState(slug, stateKey);
-      const sent = await sendCommunityMessage(
-        slug,
-        groupId,
-        `📬 *New Message — ${categoryLabels[ticket.category || ''] || ticket.category}*\n\n🆔 ${ticket.reference}\n👤 From: ${ticket.firstName || 'Telegram user'}${ticket.username ? ` (${ticket.username})` : ''}\n🕐 ${ticket.createdAt.toLocaleString()}\n━━━━━━━━━━━━━━\n\n${ticket.text}\n\n━━━━━━━━━━━━━━\n_Reply to this message in the group to respond to the user._`,
-        { parse_mode: 'Markdown' }
-      );
+      if (!groupId) {
+        await sendCommunityMessage(
+          slug,
+          chatId,
+          'We could not send your message because the support inbox is unavailable. Your draft is safe—please try again shortly.'
+        );
+        return;
+      }
+      let sent: { message_id: number };
+      try {
+        sent = await sendCommunityMessage(
+          slug,
+          groupId,
+          `📬 New Message — ${categoryLabels[ticket.category || ''] || ticket.category}\n\n🆔 ${ticket.reference}\n👤 From: ${ticket.firstName || 'Telegram user'}${ticket.username ? ` (${ticket.username})` : ''}\nTelegram ID: ${ticket.userChatId}\n🕐 ${ticket.createdAt.toLocaleString()}\n━━━━━━━━━━━━━━\n\n${ticket.text}\n\n━━━━━━━━━━━━━━\nReply to this message in the group to respond to the user.`
+        );
+      } catch (error) {
+        console.error('[telegram-contact] Could not forward submitted ticket.', error);
+        await sendCommunityMessage(
+          slug,
+          chatId,
+          'Your message could not reach the Hope Hub team right now. Your draft is still here—tap Send Message to retry.'
+        );
+        return;
+      }
       await updateCommunitySubmission(ticketId, {
         status: 'open',
         groupChatId: keyOf(groupId),
         groupMessageId: sent.message_id
       });
+      await clearCommunityState(slug, stateKey);
       await sendCommunityMessage(
         slug,
         chatId,
@@ -178,8 +198,8 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
       await sendCommunityMessage(
         slug,
         ticket.userChatId,
-        `💙 *Response from HopeHub Team*\n\n📂 Re: ${categoryLabels[ticket.category || ''] || ticket.category} (${ticket.reference})\n\n━━━━━━━━━━━━━━\n\n${text}\n\n━━━━━━━━━━━━━━\n\n_Use a category below if you need a follow-up._`,
-        { parse_mode: 'Markdown', reply_markup: mainKeyboard }
+        `💙 Response from HopeHub Team\n\n📂 Re: ${categoryLabels[ticket.category || ''] || ticket.category} (${ticket.reference})\n\n━━━━━━━━━━━━━━\n\n${text}\n\n━━━━━━━━━━━━━━\n\nUse a category below if you need a follow-up.`,
+        { reply_markup: mainKeyboard }
       );
       await updateCommunitySubmission(ticket.reference, { status: 'replied' });
       await sendCommunityMessage(
@@ -275,9 +295,8 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
   await sendCommunityMessage(
     slug,
     chatId,
-    `📋 *Preview your message*\n\n📂 Category: ${categoryLabels[state.category]}\n━━━━━━━━━━━━━━\n\n${text}\n\n━━━━━━━━━━━━━━\n\nReady to send?`,
+    `📋 Preview your message\n\n📂 Category: ${categoryLabels[state.category]}\n━━━━━━━━━━━━━━\n\n${text}\n\n━━━━━━━━━━━━━━\n\nReady to send?`,
     {
-      parse_mode: 'Markdown',
       reply_markup: {
         inline_keyboard: [
           [{ text: '✅ Send Message', callback_data: `confirm_${ticketId}` }],

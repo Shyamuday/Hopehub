@@ -44,7 +44,14 @@ const COMMUNITY_BOTS: Record<
       { command: 'helpline', description: 'Mental health helplines' },
       { command: 'help', description: 'Rules bot help' }
     ],
-    allowedUpdates: ['message', 'callback_query']
+    allowedUpdates: [
+      'message',
+      'callback_query',
+      'poll',
+      'poll_answer',
+      'message_reaction',
+      'my_chat_member'
+    ]
   }
 };
 
@@ -92,6 +99,7 @@ export function sendCommunityMessage(
     parse_mode?: 'Markdown';
     reply_markup?: TelegramKeyboard;
     reply_to_message_id?: number;
+    message_thread_id?: number;
   } = {}
 ) {
   const replyMarkup = options.reply_markup

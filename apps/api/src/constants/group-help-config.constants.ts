@@ -347,6 +347,56 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
     defaultValue: 'telegram-community'
   },
   {
+    key: 'telegramCommunityWelcomeEnabled',
+    label: 'Welcome new group members',
+    description: 'Let the Community bot greet new members with privacy and support links.',
+    section: 'onboarding',
+    type: 'select',
+    maxLength: 20,
+    options: ['Enabled', 'Disabled'],
+    defaultValue: 'Enabled'
+  },
+  {
+    key: 'telegramCommunityWelcomeText',
+    label: 'Group welcome message',
+    description: 'Short message posted when a new member joins the Telegram group.',
+    section: 'onboarding',
+    type: 'textarea',
+    maxLength: 1200,
+    defaultValue:
+      'Welcome to Hope Hub 💙 You can participate at your own pace. Please protect your personal details and be kind to everyone.'
+  },
+  {
+    key: 'telegramCommunitySupportUrl',
+    label: 'Private support link',
+    description: 'Link used by check-in follow-ups and member onboarding.',
+    section: 'onboarding',
+    type: 'text',
+    maxLength: 500,
+    placeholder: 'https://hopehub.in/#live-connect',
+    defaultValue: 'https://hopehub.in/#live-connect'
+  },
+  {
+    key: 'telegramCommunityDefaultTopicId',
+    label: 'Default discussion topic ID',
+    description: 'Optional Telegram forum topic for scheduled prompts and community posts.',
+    section: 'content',
+    type: 'number',
+    maxLength: 12,
+    placeholder: 'Leave empty for the main group',
+    defaultValue: ''
+  },
+  {
+    key: 'telegramCommunityConfessionsInGroup',
+    label: 'Publish approved confessions in group',
+    description: 'Allow admin-approved anonymous confessions to appear in the community group.',
+    section: 'content',
+    type: 'select',
+    maxLength: 20,
+    options: ['Enabled', 'Disabled'],
+    defaultValue: 'Enabled'
+  },
+  {
     key: 'telegramGroupHelpGroupTitle',
     label: 'Group title',
     description: 'Friendly name shown in admin for this Group Help managed community.',

@@ -368,6 +368,114 @@ export class AdminOpsApi extends AdminApiBase {
     );
   }
 
+  getTelegramCampaigns() {
+    return firstValueFrom(
+      this.http.get<{ campaigns: any[]; botConfigured: boolean }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_CAMPAIGNS}`,
+      ),
+    );
+  }
+
+  createTelegramCampaign(payload: any) {
+    return firstValueFrom(
+      this.http.post<{ campaign: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_CAMPAIGNS}`,
+        payload,
+      ),
+    );
+  }
+
+  updateTelegramCampaign(id: string, payload: any) {
+    return firstValueFrom(
+      this.http.put<{ campaign: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_CAMPAIGN(id)}`,
+        payload,
+      ),
+    );
+  }
+
+  setTelegramCampaignStatus(id: string, isActive: boolean) {
+    return firstValueFrom(
+      this.http.patch<{ campaign: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_CAMPAIGN_STATUS(id)}`,
+        { isActive },
+      ),
+    );
+  }
+
+  deleteTelegramCampaign(id: string) {
+    return firstValueFrom(
+      this.http.delete<{ ok: boolean }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_CAMPAIGN(id)}`,
+      ),
+    );
+  }
+
+  getTelegramCampaignResults(id: string) {
+    return firstValueFrom(
+      this.http.get<{ results: any[] }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_CAMPAIGN_RESULTS(id)}`,
+      ),
+    );
+  }
+
+  getTelegramCommunityEvents() {
+    return firstValueFrom(
+      this.http.get<{ events: any[] }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_EVENTS}`,
+      ),
+    );
+  }
+
+  createTelegramCommunityEvent(payload: any) {
+    return firstValueFrom(
+      this.http.post<{ event: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_EVENTS}`,
+        payload,
+      ),
+    );
+  }
+
+  updateTelegramCommunityEvent(id: string, payload: any) {
+    return firstValueFrom(
+      this.http.put<{ event: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_EVENT(id)}`,
+        payload,
+      ),
+    );
+  }
+
+  deleteTelegramCommunityEvent(id: string) {
+    return firstValueFrom(
+      this.http.delete<{ ok: boolean }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_EVENT(id)}`,
+      ),
+    );
+  }
+
+  getTelegramPendingConfessions() {
+    return firstValueFrom(
+      this.http.get<{ submissions: any[] }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_CONFESSIONS}`,
+      ),
+    );
+  }
+
+  reviewTelegramConfession(reference: string, action: 'APPROVE' | 'REJECT') {
+    return firstValueFrom(
+      this.http.post<{ submission: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_CONFESSION_REVIEW(reference)}`,
+        { action },
+      ),
+    );
+  }
+
+  getTelegramCommunityEngagement() {
+    return firstValueFrom(
+      this.http.get<any>(`${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_ENGAGEMENT}`),
+    );
+  }
+
   updateConsultationStatus(
     consultationId: string,
     status: string,
