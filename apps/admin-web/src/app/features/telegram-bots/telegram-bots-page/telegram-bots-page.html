@@ -233,33 +233,47 @@
       <div class="drawer-step__intro">
         <h3>Telegram connection</h3>
         <p>
-          Defaults are recommended. Only use an override when the public API address has changed.
+          Content changes do not require reconnecting bots. Refresh only after changing Telegram or
+          API connection settings.
         </p>
       </div>
-      <label class="drawer-field">
-        <strong>Connection address override</strong>
-        <small>Optional. Leave empty to keep the saved value.</small>
-        <input
-          type="url"
-          [ngModel]="publicApiUrl()"
-          (ngModelChange)="publicApiUrl.set($event)"
-          placeholder="https://api.hopehub.in"
-        />
-        @if (configurationNextDisabled()) {
-          <em>Enter a complete http:// or https:// URL.</em>
-        }
-      </label>
       <label class="drawer-check">
         <input
           type="checkbox"
-          [ngModel]="dropPendingUpdates()"
-          (ngModelChange)="dropPendingUpdates.set($event)"
+          [ngModel]="refreshConnections()"
+          (ngModelChange)="setRefreshConnections($event)"
         />
         <span>
-          <strong>Ignore old queued messages</strong>
-          <small>Turn this on only when older waiting messages should be skipped.</small>
+          <strong>Refresh Telegram connections</strong>
+          <small>Reapply webhooks and command menus after saving.</small>
         </span>
       </label>
+      @if (refreshConnections()) {
+        <label class="drawer-field">
+          <strong>Connection address override</strong>
+          <small>Optional. Leave empty to use the normal HopeHub API address.</small>
+          <input
+            type="url"
+            [ngModel]="publicApiUrl()"
+            (ngModelChange)="publicApiUrl.set($event)"
+            placeholder="https://api.hopehub.in"
+          />
+          @if (configurationNextDisabled()) {
+            <em>Enter a complete http:// or https:// URL.</em>
+          }
+        </label>
+        <label class="drawer-check">
+          <input
+            type="checkbox"
+            [ngModel]="dropPendingUpdates()"
+            (ngModelChange)="dropPendingUpdates.set($event)"
+          />
+          <span>
+            <strong>Ignore old queued messages</strong>
+            <small>Turn this on only when older waiting messages should be skipped.</small>
+          </span>
+        </label>
+      }
     </section>
   } @else if (activeControlGroup(); as group) {
     <section class="drawer-step">
@@ -268,7 +282,78 @@
         <p>Changes are kept as a draft until the final review step.</p>
       </div>
       @for (control of group.controls; track control.key) {
-        @if (control.type === 'boolean') {
+        @if (isLinkListControl(control.key)) {
+          <section class="drawer-field link-editor">
+            <div class="link-editor__heading">
+              <span>
+                <strong>{{ control.label }}</strong>
+                <small>{{ control.description }}</small>
+              </span>
+              <button
+                type="button"
+                class="link-editor__add"
+                [disabled]="configuredLinks(control.key).length >= 8"
+                (click)="addConfiguredLink(control.key)"
+              >
+                Add button
+              </button>
+            </div>
+            @if (!configuredLinks(control.key).length) {
+              <p class="link-editor__empty">No public buttons will be shown.</p>
+            }
+            @for (
+              link of configuredLinks(control.key);
+              track $index;
+              let linkIndex = $index
+            ) {
+              <article class="link-editor__row">
+                <label>
+                  <span>Button text</span>
+                  <input
+                    type="text"
+                    [ngModel]="link.label"
+                    (ngModelChange)="
+                      updateConfiguredLink(control.key, linkIndex, 'label', $event)
+                    "
+                  />
+                </label>
+                <label>
+                  <span>Destination</span>
+                  <input
+                    type="url"
+                    placeholder="https://"
+                    [ngModel]="link.url"
+                    (ngModelChange)="updateConfiguredLink(control.key, linkIndex, 'url', $event)"
+                  />
+                </label>
+                <label>
+                  <span>Colour</span>
+                  <select
+                    [ngModel]="link.style"
+                    (ngModelChange)="
+                      updateConfiguredLink(control.key, linkIndex, 'style', $event)
+                    "
+                  >
+                    <option value="primary">Blue</option>
+                    <option value="success">Green</option>
+                    <option value="danger">Red</option>
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  class="link-editor__remove"
+                  aria-label="Remove button"
+                  (click)="removeConfiguredLink(control.key, linkIndex)"
+                >
+                  Remove
+                </button>
+                @if (!isConfiguredLinkValid(link)) {
+                  <em class="link-editor__error">Add button text and a complete HTTPS link.</em>
+                }
+              </article>
+            }
+          </section>
+        } @else if (control.type === 'boolean') {
           <label class="drawer-check">
             <input
               type="checkbox"
@@ -321,7 +406,7 @@
     <section class="drawer-step">
       <div class="drawer-step__intro">
         <h3>Ready to apply</h3>
-        <p>This saves the controls, Telegram commands, and bot connections.</p>
+        <p>This saves the editable content and behavior shown above.</p>
       </div>
       <div class="review-list">
         <article>
@@ -331,15 +416,23 @@
           <span>Setting groups</span><strong>{{ controlGroups().length }}</strong>
         </article>
         <article>
-          <span>Protection controls</span><strong>{{ controls().length }}</strong>
+          <span>Editable settings</span><strong>{{ controls().length }}</strong>
+        </article>
+        <article>
+          <span>Changed settings</span><strong>{{ changedControlCount() }}</strong>
         </article>
         <article>
           <span>Pending updates</span>
           <strong>{{ dropPendingUpdates() ? 'Will be dropped' : 'Will be kept' }}</strong>
         </article>
+        <article>
+          <span>Telegram connections</span>
+          <strong>{{ refreshConnections() ? 'Will be refreshed' : 'No change' }}</strong>
+        </article>
       </div>
       <p class="review-note">
-        Bot tokens remain on the server and are never displayed or saved by this form.
+        Bot tokens remain on the server and are never displayed here. Saving content does not
+        interrupt active bot connections.
       </p>
     </section>
   }

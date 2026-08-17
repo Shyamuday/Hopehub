@@ -30,6 +30,7 @@ export class TelegramBotsPage implements OnInit {
   error = signal('');
   toast = signal('');
   dropPendingUpdates = signal(false);
+  refreshConnections = signal(false);
   publicApiUrl = signal('');
   configurationOpen = signal(false);
   configurationStep = signal(0);
@@ -37,7 +38,13 @@ export class TelegramBotsPage implements OnInit {
     controls: Record<string, string>;
     publicApiUrl: string;
     dropPendingUpdates: boolean;
+    refreshConnections: boolean;
   } | null = null;
+  private readonly linkListControlKeys = new Set([
+    'telegramConfessionMenuLinks',
+    'telegramContactMenuLinks',
+    'telegramRulesMenuLinks',
+  ]);
 
   linkedSessions = computed(() => this.sessions().filter((session) => session.linkedUserId).length);
   unlinkedSessions = computed(() => this.sessions().length - this.linkedSessions());
@@ -73,9 +80,18 @@ export class TelegramBotsPage implements OnInit {
     return 'Review the changes before saving them.';
   });
   configurationBusy = computed(() => this.saving() === 'configuration');
-  configurationNextDisabled = computed(
-    () => this.configurationStep() === 0 && !this.isPublicApiUrlValid(),
-  );
+  configurationNextDisabled = computed(() => {
+    if (this.configurationStep() === 0)
+      return this.refreshConnections() && !this.isPublicApiUrlValid();
+    const group = this.activeControlGroup();
+    return Boolean(
+      group?.controls.some(
+        (control) =>
+          this.isLinkListControl(control.key) &&
+          this.configuredLinks(control.key).some((link) => !this.isConfiguredLinkValid(link)),
+      ),
+    );
+  });
 
   ngOnInit(): void {
     void this.load();
@@ -131,6 +147,7 @@ export class TelegramBotsPage implements OnInit {
       controls: { ...this.controlValues() },
       publicApiUrl: this.publicApiUrl(),
       dropPendingUpdates: this.dropPendingUpdates(),
+      refreshConnections: this.refreshConnections(),
     };
     this.configurationStep.set(0);
     this.configurationOpen.set(true);
@@ -142,6 +159,7 @@ export class TelegramBotsPage implements OnInit {
       this.controlValues.set({ ...this.configurationSnapshot.controls });
       this.publicApiUrl.set(this.configurationSnapshot.publicApiUrl);
       this.dropPendingUpdates.set(this.configurationSnapshot.dropPendingUpdates);
+      this.refreshConnections.set(this.configurationSnapshot.refreshConnections);
     }
     this.configurationSnapshot = null;
     this.configurationOpen.set(false);
@@ -169,12 +187,19 @@ export class TelegramBotsPage implements OnInit {
           value: this.controlValue(control.key),
         })),
       );
-      await this.api.setupAllTelegramBots(this.setupPayload());
+      const refreshConnections = this.refreshConnections() || this.dropPendingUpdates();
+      if (refreshConnections) await this.api.setupAllTelegramBots(this.setupPayload());
       this.applyControls(controlsResponse.controls);
       this.configurationSnapshot = null;
       this.configurationOpen.set(false);
       this.configurationStep.set(0);
-      this.showToast('Bot configuration applied successfully.');
+      this.refreshConnections.set(false);
+      this.dropPendingUpdates.set(false);
+      this.showToast(
+        refreshConnections
+          ? 'Bot settings saved and connections refreshed.'
+          : 'Bot settings saved.',
+      );
       await this.load();
     } catch (e: any) {
       this.showToast(e?.error?.message || 'Could not apply bot configuration.');
@@ -206,23 +231,75 @@ export class TelegramBotsPage implements OnInit {
     this.controlValues.update((current) => ({ ...current, [key]: String(value) }));
   }
 
-  async saveControlGroup(group: { name: string; controls: any[] }) {
-    const savingKey = `controls:${group.name}`;
-    this.saving.set(savingKey);
+  setRefreshConnections(value: boolean) {
+    this.refreshConnections.set(value);
+    if (!value) this.dropPendingUpdates.set(false);
+  }
+
+  isLinkListControl(key: string) {
+    return this.linkListControlKeys.has(key);
+  }
+
+  configuredLinks(key: string) {
+    const value = this.controlValue(key);
+    if (!value.trim()) return [];
+    return value.split(/\r?\n/).map((line) => {
+      const [label = '', url = '', style = 'primary'] = line.split('|').map((part) => part.trim());
+      return { label, url, style };
+    });
+  }
+
+  addConfiguredLink(key: string) {
+    const links = this.configuredLinks(key);
+    if (links.length >= 8) return;
+    this.writeConfiguredLinks(key, [...links, { label: '', url: '', style: 'primary' }]);
+  }
+
+  updateConfiguredLink(
+    key: string,
+    index: number,
+    field: 'label' | 'url' | 'style',
+    value: string,
+  ) {
+    const links = this.configuredLinks(key);
+    if (!links[index]) return;
+    links[index] = { ...links[index], [field]: value };
+    this.writeConfiguredLinks(key, links);
+  }
+
+  removeConfiguredLink(key: string, index: number) {
+    this.writeConfiguredLinks(
+      key,
+      this.configuredLinks(key).filter((_, linkIndex) => linkIndex !== index),
+    );
+  }
+
+  isConfiguredLinkValid(link: { label: string; url: string; style: string }) {
+    if (!link.label.trim() || !['primary', 'success', 'danger'].includes(link.style)) return false;
     try {
-      const response = await this.api.saveTelegramBotControls(
-        group.controls.map((control) => ({
-          key: control.key,
-          value: this.controlValue(control.key),
-        })),
-      );
-      this.applyControls(response.controls);
-      this.showToast(`${group.name} settings saved.`);
-    } catch (e: any) {
-      this.showToast(e?.error?.message || `Could not save ${group.name.toLowerCase()} settings.`);
-    } finally {
-      this.saving.set('');
+      return new URL(link.url).protocol === 'https:';
+    } catch {
+      return false;
     }
+  }
+
+  changedControlCount() {
+    if (!this.configurationSnapshot) return 0;
+    return this.controls().filter(
+      (control) =>
+        this.controlValue(control.key) !==
+        (this.configurationSnapshot?.controls[control.key] ?? ''),
+    ).length;
+  }
+
+  private writeConfiguredLinks(
+    key: string,
+    links: Array<{ label: string; url: string; style: string }>,
+  ) {
+    this.setControlValue(
+      key,
+      links.map((link) => `${link.label} | ${link.url} | ${link.style}`).join('\n'),
+    );
   }
 
   webhookUrl(bot: any) {
