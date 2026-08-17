@@ -71,8 +71,30 @@ TELEGRAM_HOPEHUBBOT_TOKEN_VALUE="$(sudo cat /etc/hopehub-telegram-hopehubbot-tok
 TELEGRAM_WEBHOOK_SECRET_VALUE="$(sudo cat /etc/hopehub-telegram-webhook-secret 2>/dev/null || echo "${TELEGRAM_WEBHOOK_SECRET:-}")"
 TELEGRAM_SETUP_SECRET_VALUE="$(sudo cat /etc/hopehub-telegram-setup-secret 2>/dev/null || echo "${TELEGRAM_SETUP_SECRET:-}")"
 TELEGRAM_CONTACT_BOT_TOKEN_VALUE="$(sudo cat /etc/hopehub-contact-bot-token 2>/dev/null || echo "${TELEGRAM_CONTACT_BOT_TOKEN:-}")"
-TELEGRAM_CONTACT_ADMIN_CHAT_ID_VALUE="$(sudo cat /etc/hopehub-contact-admin-chat-id 2>/dev/null || echo "${TELEGRAM_CONTACT_ADMIN_CHAT_ID:-}")"
-TELEGRAM_CONTACT_SUPPORT_GROUP_ID_VALUE="$(sudo cat /etc/hopehub-contact-support-group-id 2>/dev/null || echo "${TELEGRAM_CONTACT_SUPPORT_GROUP_ID:-}")"
+LEGACY_CONTACT_ENV="$APP_DIR/apps/contact-bot/.env"
+legacy_contact_value() {
+  local key="$1"
+  if [ ! -f "$LEGACY_CONTACT_ENV" ]; then
+    return 0
+  fi
+  sed -n "s/^${key}=//p" "$LEGACY_CONTACT_ENV" | tail -n 1 | tr -d '\r' | sed -e 's/^"//' -e 's/"$//' -e "s/^'//" -e "s/'$//"
+}
+LEGACY_CONTACT_ADMIN_CHAT_ID="$(legacy_contact_value ADMIN_CHAT_ID)"
+LEGACY_CONTACT_SUPPORT_GROUP_ID="$(legacy_contact_value SUPPORT_GROUP_ID)"
+TELEGRAM_CONTACT_ADMIN_CHAT_ID_VALUE="$(sudo cat /etc/hopehub-contact-admin-chat-id 2>/dev/null || echo "${TELEGRAM_CONTACT_ADMIN_CHAT_ID:-${LEGACY_CONTACT_ADMIN_CHAT_ID}}")"
+TELEGRAM_CONTACT_SUPPORT_GROUP_ID_VALUE="$(sudo cat /etc/hopehub-contact-support-group-id 2>/dev/null || echo "${TELEGRAM_CONTACT_SUPPORT_GROUP_ID:-${LEGACY_CONTACT_SUPPORT_GROUP_ID}}")"
+
+if [ -n "$TELEGRAM_CONTACT_ADMIN_CHAT_ID_VALUE" ] && [ ! -f /etc/hopehub-contact-admin-chat-id ]; then
+  printf '%s\n' "$TELEGRAM_CONTACT_ADMIN_CHAT_ID_VALUE" | sudo tee /etc/hopehub-contact-admin-chat-id >/dev/null
+  sudo chmod 600 /etc/hopehub-contact-admin-chat-id
+fi
+if [ -n "$TELEGRAM_CONTACT_SUPPORT_GROUP_ID_VALUE" ] && [ ! -f /etc/hopehub-contact-support-group-id ]; then
+  printf '%s\n' "$TELEGRAM_CONTACT_SUPPORT_GROUP_ID_VALUE" | sudo tee /etc/hopehub-contact-support-group-id >/dev/null
+  sudo chmod 600 /etc/hopehub-contact-support-group-id
+fi
+if [ -n "$TELEGRAM_CONTACT_BOT_TOKEN_VALUE" ] && [ -z "$TELEGRAM_CONTACT_SUPPORT_GROUP_ID_VALUE" ]; then
+  echo "WARNING: Contact bot is configured, but its private support group ID is missing."
+fi
 TELEGRAM_CONFESSION_BOT_TOKEN_VALUE="$(sudo cat /etc/hopehub-confession-bot-token 2>/dev/null || echo "${TELEGRAM_CONFESSION_BOT_TOKEN:-}")"
 TELEGRAM_CONFESSION_ADMIN_CHAT_ID_VALUE="$(sudo cat /etc/hopehub-confession-admin-chat-id 2>/dev/null || echo "${TELEGRAM_CONFESSION_ADMIN_CHAT_ID:-}")"
 TELEGRAM_CONFESSION_CHANNEL_ID_VALUE="$(sudo cat /etc/hopehub-confession-channel-id 2>/dev/null || echo "${TELEGRAM_CONFESSION_CHANNEL_ID:-}")"

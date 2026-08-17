@@ -18,6 +18,8 @@ const slug = 'contact' as const;
 const supportGroupId = () =>
   process.env.TELEGRAM_CONTACT_SUPPORT_GROUP_ID?.trim() ||
   process.env.TELEGRAM_CONTACT_ADMIN_CHAT_ID?.trim() ||
+  process.env.SUPPORT_GROUP_ID?.trim() ||
+  process.env.ADMIN_CHAT_ID?.trim() ||
   '';
 
 type ContactState = { state: 'writing'; category: string } | { state: 'preview'; ticketId: string };
