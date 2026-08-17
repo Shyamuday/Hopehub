@@ -37,8 +37,12 @@ const CONFIG_KEYS = [
   'telegramGroupHelpWarnAction',
   'telegramGroupHelpForwardPolicy',
   'telegramGroupHelpMediaPolicy',
-  'telegramGroupHelpMaxMessageLength'
+  'telegramGroupHelpMaxMessageLength',
+  'telegramGroupHelpAdminWhitelist'
 ] as const;
+
+const adminStatusCache = new Map<string, { isAdmin: boolean; expiresAt: number }>();
+const ADMIN_STATUS_TTL_MS = 5 * 60 * 1000;
 
 async function config() {
   const stored = await getSiteConfigMap(CONFIG_KEYS);
@@ -58,6 +62,37 @@ function bannedPhrases(value: string) {
     .split(/[\n,]+/)
     .map((item) => item.trim().toLowerCase())
     .filter(Boolean);
+}
+
+export function telegramAdminWhitelist(value: string) {
+  return new Set(
+    value
+      .split(/[\n,]+/)
+      .map((item) => item.trim().toLowerCase())
+      .filter(Boolean)
+  );
+}
+
+async function isModerationExempt(message: CommunityTelegramMessage, whitelistValue: string) {
+  if (!message.from) return true;
+  const whitelist = telegramAdminWhitelist(whitelistValue);
+  const userId = String(message.from.id);
+  const username = message.from.username?.trim().toLowerCase();
+  if (whitelist.has(userId) || (username && whitelist.has(`@${username}`))) return true;
+
+  const chatId = String(message.chat.id);
+  const cacheKey = `${chatId}:${userId}`;
+  const cached = adminStatusCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return cached.isAdmin;
+  const membership = await callCommunityTelegramApi<{ status?: string }>(BOT, 'getChatMember', {
+    chat_id: chatId,
+    user_id: message.from.id
+  }).catch(() => undefined);
+  // A temporary Telegram lookup failure must never cause an administrator's post to be removed.
+  if (!membership) return true;
+  const isAdmin = ['creator', 'administrator'].includes(membership?.status || '');
+  adminStatusCache.set(cacheKey, { isAdmin, expiresAt: Date.now() + ADMIN_STATUS_TTL_MS });
+  return isAdmin;
 }
 
 function containsLink(text: string) {
@@ -271,6 +306,10 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
   }
   if (message.text?.startsWith('/') && (await handleCommand(message, values))) return;
   if (!message.from) return;
+  if (await isModerationExempt(message, values.telegramGroupHelpAdminWhitelist || '')) {
+    await ingestTelegramLiveChatMessage(message);
+    return;
+  }
 
   const warnLimit = Math.max(1, Number(values.telegramGroupHelpWarnLimit || 3));
   const warnAction = values.telegramGroupHelpWarnAction || 'mute';

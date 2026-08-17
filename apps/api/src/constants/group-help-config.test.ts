@@ -29,6 +29,11 @@ test('HopeHubAI has a safe default test group separate from production', () => {
   );
 });
 
+test('HopeHubAI exposes an optional moderation bypass list for trusted people', () => {
+  assert.equal(GROUP_HELP_CONFIG_KEYS.includes('telegramGroupHelpAdminWhitelist'), true);
+  assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramGroupHelpAdminWhitelist, '');
+});
+
 test('Group Help capability map covers the main management areas', () => {
   assert.equal(GROUP_HELP_CAPABILITY_GROUPS.length >= 5, true);
   assert.equal(

@@ -635,6 +635,17 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
       'HopeHubAI runs from the Hope Hub API. Keep it as a group admin with delete, restrict, ban, and pin permissions. Rose should remain removed to avoid duplicate moderation.'
   },
   {
+    key: 'telegramGroupHelpAdminWhitelist',
+    label: 'Moderation bypass list',
+    description:
+      'Optional Telegram user IDs or @usernames, one per line. Group owners and administrators are always bypassed automatically.',
+    section: 'people',
+    type: 'textarea',
+    maxLength: 4000,
+    placeholder: '7217536617\n@trustedmoderator',
+    defaultValue: ''
+  },
+  {
     key: 'telegramGroupHelpWelcomeCommandTemplate',
     label: 'Welcome command template',
     description: 'Command copied into Telegram. Use {message} and optional {imageUrl}.',
