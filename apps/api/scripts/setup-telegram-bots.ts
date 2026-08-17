@@ -18,20 +18,6 @@ if (!publicApiUrl) {
 
 const dropPendingUpdates = process.argv.includes('--drop-pending');
 
-for (const status of communityBotStatus()) {
-  if (!status.configured) {
-    console.log(`[telegram] ${status.kind} skipped (${status.tokenEnv} missing)`);
-    continue;
-  }
-  await setupCommunityBot({
-    slug: status.slug,
-    publicApiUrl,
-    webhookSecret: telegramWebhookSecret(),
-    dropPendingUpdates
-  });
-  console.log(`[telegram] ${status.kind} webhook configured`);
-}
-
 for (const status of telegramBotStatus()) {
   if (!status.configured) {
     console.log(`[telegram] ${status.kind} skipped (${status.tokenEnv} missing)`);
@@ -45,6 +31,22 @@ for (const status of telegramBotStatus()) {
   await setTelegramWebhook({
     kind: status.kind as TelegramBotKind,
     publicApiUrl,
+    dropPendingUpdates
+  });
+  console.log(`[telegram] ${status.kind} webhook configured`);
+}
+
+// Configure community bots last. This keeps the community route authoritative
+// during a bot handover and avoids a reused legacy account token overwriting it.
+for (const status of communityBotStatus()) {
+  if (!status.configured) {
+    console.log(`[telegram] ${status.kind} skipped (${status.tokenEnv} missing)`);
+    continue;
+  }
+  await setupCommunityBot({
+    slug: status.slug,
+    publicApiUrl,
+    webhookSecret: telegramWebhookSecret(),
     dropPendingUpdates
   });
   console.log(`[telegram] ${status.kind} webhook configured`);
