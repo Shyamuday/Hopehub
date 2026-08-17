@@ -22,7 +22,8 @@ export const SOCKET_EVENTS = {
   CALL_RING_ACK: 'call:ring-ack',
   CALL_SYNC: 'call:sync',
   CALL_STATE: 'call:state',
-  CALL_HEARTBEAT: 'call:heartbeat'
+  CALL_HEARTBEAT: 'call:heartbeat',
+  CALL_DIAGNOSTIC: 'call:diagnostic'
 } as const;
 
 export const SOCKET_ROOM_PREFIXES = {

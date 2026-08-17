@@ -83,7 +83,8 @@ function safeCallMetadata(metadata: unknown): Record<string, unknown> {
     'localCandidateType',
     'remoteCandidateType',
     'transportProtocol',
-    'networkType'
+    'networkType',
+    'diagnosticReason'
   ];
   const numberKeys = ['attempt', 'currentRoundTripTime', 'bytesSent', 'bytesReceived'];
   for (const key of stringKeys) {
@@ -95,6 +96,9 @@ function safeCallMetadata(metadata: unknown): Record<string, unknown> {
   if (source['iceRestart'] === true) safe['iceRestart'] = true;
   if (source['usedTurnRelay'] === true) safe['usedTurnRelay'] = true;
   if (source['privacyRelay'] === true) safe['privacyRelay'] = true;
+  if (source['lowDataMode'] === true) safe['lowDataMode'] = true;
+  if (source['backgroundBlurEnabled'] === true) safe['backgroundBlurEnabled'] = true;
+  if (source['userReportedIssue'] === true) safe['userReportedIssue'] = true;
   const quality = callQualitySnapshot(source).qualitySummary;
   if (quality) safe['qualitySummary'] = quality;
   return safe;
@@ -257,12 +261,13 @@ async function recordCallSignal(
   event: string,
   payload: CallSignalPayload
 ): Promise<{ relay: boolean; reason?: string }> {
-  const access = await validateCallSignalAccess(fromUserId, payload);
-  if (!access.allowed) return { relay: false, reason: access.reason || 'call_not_allowed' };
   if (!payload.callId || payload.callId.length > 100) {
     return { relay: false, reason: 'invalid_call_id' };
   }
 
+  // Socket.IO delivers events in order, but the database access check below is asynchronous.
+  // Claim the sequence synchronously so a later ICE candidate cannot overtake the offer and
+  // make the valid offer look stale.
   if (typeof payload.sequence === 'number') {
     const sequenceKey = `${payload.callId}:${fromUserId}`;
     const previous = lastSignalSequences.get(sequenceKey) ?? 0;
@@ -270,6 +275,41 @@ async function recordCallSignal(
       return { relay: false, reason: 'stale_call_signal' };
     }
     lastSignalSequences.set(sequenceKey, payload.sequence);
+  }
+
+  const access = await validateCallSignalAccess(fromUserId, payload);
+  if (!access.allowed) return { relay: false, reason: access.reason || 'call_not_allowed' };
+
+  if (event === SOCKET_EVENTS.CALL_DIAGNOSTIC) {
+    const sessions = await prisma.consultationCallSession.findMany({
+      where: {
+        consultationId: payload.consultationId,
+        OR: [
+          { initiatedByUserId: fromUserId, targetUserId: payload.targetUserId },
+          { initiatedByUserId: payload.targetUserId, targetUserId: fromUserId }
+        ]
+      },
+      orderBy: { startedAt: 'desc' },
+      take: 5
+    });
+    const session = sessions.find(
+      (item) =>
+        String(((item.metadata as Record<string, unknown> | null) || {})['callId'] || '') ===
+        payload.callId
+    );
+    if (!session) return { relay: false, reason: 'call_not_found' };
+    await prisma.consultationCallSession.update({
+      where: { id: session.id },
+      data: {
+        metadata: {
+          ...((session.metadata as Record<string, unknown> | null) || {}),
+          ...safeCallMetadata(payload.metadata),
+          diagnosticReportedAt: new Date().toISOString(),
+          diagnosticReportedByUserId: fromUserId
+        }
+      }
+    });
+    return { relay: true };
   }
 
   if (event === SOCKET_EVENTS.CALL_RING || event === SOCKET_EVENTS.CALL_OFFER) {
@@ -526,7 +566,8 @@ export function registerOnlineDoctorSockets(io: SocketIoServer, socket: Socket, 
     { event: SOCKET_EVENTS.CALL_REJECT, relay: SOCKET_EVENTS.CALL_REJECT },
     { event: SOCKET_EVENTS.CALL_RING, relay: SOCKET_EVENTS.CALL_RING },
     { event: SOCKET_EVENTS.CALL_RING_ACK, relay: SOCKET_EVENTS.CALL_RING_ACK },
-    { event: SOCKET_EVENTS.CALL_HEARTBEAT, relay: SOCKET_EVENTS.CALL_HEARTBEAT }
+    { event: SOCKET_EVENTS.CALL_HEARTBEAT, relay: SOCKET_EVENTS.CALL_HEARTBEAT },
+    { event: SOCKET_EVENTS.CALL_DIAGNOSTIC, relay: SOCKET_EVENTS.CALL_DIAGNOSTIC }
   ];
 
   for (const { event, relay } of callEvents) {
@@ -559,7 +600,7 @@ export function registerOnlineDoctorSockets(io: SocketIoServer, socket: Socket, 
             void markConsultationInProgressFromCall(io, userId, payload);
           }
           const sender =
-            event === SOCKET_EVENTS.CALL_RING
+            event === SOCKET_EVENTS.CALL_RING || event === SOCKET_EVENTS.CALL_OFFER
               ? await prisma.user.findUnique({
                   where: { id: userId },
                   select: { name: true, profileImageUrl: true, role: true }

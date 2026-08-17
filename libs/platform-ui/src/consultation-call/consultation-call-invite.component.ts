@@ -29,6 +29,14 @@ export class ConsultationCallInviteComponent implements OnDestroy {
   readonly minimized = signal(false);
   readonly elapsedSeconds = signal(0);
   readonly settingsOpen = signal(false);
+  readonly speakerPickerOpen = signal(false);
+  readonly moreOpen = signal(false);
+  readonly fullscreen = signal(false);
+  readonly pictureInPicture = signal(false);
+  readonly controlsHidden = signal(false);
+  readonly previewOffset = signal({ x: 0, y: 0 });
+  readonly surfaceSwipeY = signal(0);
+  readonly actionMessage = signal('');
   readonly settingsMessage = signal('');
 
   private remoteAudioElement: HTMLAudioElement | null = null;
@@ -36,6 +44,22 @@ export class ConsultationCallInviteComponent implements OnDestroy {
   private localVideoElement: HTMLVideoElement | null = null;
   private connectedAt = 0;
   private durationTimer: ReturnType<typeof setInterval> | null = null;
+  private controlsTimer: ReturnType<typeof setTimeout> | null = null;
+  private actionMessageTimer: ReturnType<typeof setTimeout> | null = null;
+  private surfaceSwipe: { pointerId: number; startY: number } | null = null;
+  private previewDrag: {
+    pointerId: number;
+    startX: number;
+    startY: number;
+    originX: number;
+    originY: number;
+  } | null = null;
+  private readonly handleFullscreenChange = () =>
+    this.fullscreen.set(Boolean(document.fullscreenElement));
+  private readonly handleEnterPictureInPicture = () => this.pictureInPicture.set(true);
+  private readonly handleLeavePictureInPicture = () => this.pictureInPicture.set(false);
+
+  @ViewChild('callSurface') private callSurfaceRef?: ElementRef<HTMLElement>;
 
   @ViewChild('remoteAudio')
   set remoteAudioRef(ref: ElementRef<HTMLAudioElement> | undefined) {
@@ -45,7 +69,23 @@ export class ConsultationCallInviteComponent implements OnDestroy {
 
   @ViewChild('remoteVideo')
   set remoteVideoRef(ref: ElementRef<HTMLVideoElement> | undefined) {
+    this.remoteVideoElement?.removeEventListener(
+      'enterpictureinpicture',
+      this.handleEnterPictureInPicture
+    );
+    this.remoteVideoElement?.removeEventListener(
+      'leavepictureinpicture',
+      this.handleLeavePictureInPicture
+    );
     this.remoteVideoElement = ref?.nativeElement ?? null;
+    this.remoteVideoElement?.addEventListener(
+      'enterpictureinpicture',
+      this.handleEnterPictureInPicture
+    );
+    this.remoteVideoElement?.addEventListener(
+      'leavepictureinpicture',
+      this.handleLeavePictureInPicture
+    );
     this.attachStreams();
   }
 
@@ -56,22 +96,49 @@ export class ConsultationCallInviteComponent implements OnDestroy {
   }
 
   constructor() {
+    if (typeof document !== 'undefined') {
+      document.addEventListener('fullscreenchange', this.handleFullscreenChange);
+    }
     effect(() => {
       const state = this.call.state();
       this.call.localStream();
       this.call.remoteStream();
+      this.call.selectedAudioOutputId();
       this.attachStreams();
       if (state === 'ringing' && this.call.incomingCall()) {
         this.minimized.set(false);
         this.settingsOpen.set(false);
+        this.speakerPickerOpen.set(false);
+        this.moreOpen.set(false);
       }
-      if (state === 'connected') this.startDuration();
-      else if (state === 'ended' || state === 'idle') this.stopDuration(true);
+      if (state === 'connected') {
+        this.startDuration();
+        this.scheduleControlsHide();
+      } else if (state === 'ended' || state === 'idle') {
+        this.stopDuration(true);
+        this.speakerPickerOpen.set(false);
+        this.moreOpen.set(false);
+        this.controlsHidden.set(false);
+        this.previewOffset.set({ x: 0, y: 0 });
+      }
     });
   }
 
   ngOnDestroy() {
     this.stopDuration(false);
+    this.clearControlsTimer();
+    if (this.actionMessageTimer) clearTimeout(this.actionMessageTimer);
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('fullscreenchange', this.handleFullscreenChange);
+    }
+    this.remoteVideoElement?.removeEventListener(
+      'enterpictureinpicture',
+      this.handleEnterPictureInPicture
+    );
+    this.remoteVideoElement?.removeEventListener(
+      'leavepictureinpicture',
+      this.handleLeavePictureInPicture
+    );
   }
 
   visible() {
@@ -113,6 +180,10 @@ export class ConsultationCallInviteComponent implements OnDestroy {
     if (role === 'DOCTOR') return 'Hope Hub expert';
     if (role === 'PATIENT') return 'Hope Hub member';
     return 'Private participant';
+  }
+
+  isVerifiedExpert() {
+    return this.call.participant().role?.toUpperCase() === 'DOCTOR';
   }
 
   durationLabel() {
@@ -161,16 +232,199 @@ export class ConsultationCallInviteComponent implements OnDestroy {
   }
 
   toggleMic() {
-    this.call.setMicEnabled(!this.call.micEnabled());
+    const enabled = !this.call.micEnabled();
+    this.call.setMicEnabled(enabled);
+    this.showActionFeedback(enabled ? 'Microphone on' : 'Microphone muted');
   }
 
   toggleCamera() {
-    this.call.setCameraEnabled(!this.call.cameraEnabled());
+    const enabled = !this.call.cameraEnabled();
+    this.call.setCameraEnabled(enabled);
+    this.showActionFeedback(enabled ? 'Camera on' : 'Camera off');
+  }
+
+  toggleMinimized() {
+    this.minimized.update((value) => !value);
+    this.surfaceSwipeY.set(0);
   }
 
   async openSettings() {
     await this.call.refreshMediaDevices();
+    this.speakerPickerOpen.set(false);
+    this.moreOpen.set(false);
     this.settingsOpen.set(true);
+    this.scheduleControlsHide();
+  }
+
+  async openSpeakerPicker() {
+    await this.call.refreshMediaDevices();
+    if (!this.supportsSpeakerSelection()) {
+      this.settingsMessage.set('Sound uses the speaker selected in your device settings.');
+      await this.openSettings();
+      return;
+    }
+    this.settingsOpen.set(false);
+    this.moreOpen.set(false);
+    this.speakerPickerOpen.set(true);
+    this.scheduleControlsHide();
+    this.lightHaptic();
+  }
+
+  async toggleMore() {
+    if (!this.moreOpen()) await this.call.refreshMediaDevices();
+    this.settingsOpen.set(false);
+    this.speakerPickerOpen.set(false);
+    this.moreOpen.update((open) => !open);
+    this.scheduleControlsHide();
+  }
+
+  async flipCamera() {
+    if (this.busy()) return;
+    this.busy.set(true);
+    try {
+      const switched = await this.call.cycleVideoInput();
+      this.settingsMessage.set(
+        switched ? 'Camera switched.' : 'Only one camera is available on this device.'
+      );
+      if (switched) this.moreOpen.set(false);
+      if (switched) this.showActionFeedback('Camera switched');
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  async toggleFullscreen() {
+    if (typeof document === 'undefined') return;
+    if (document.fullscreenElement) {
+      await document.exitFullscreen().catch(() => undefined);
+      return;
+    }
+    await this.callSurfaceRef?.nativeElement.requestFullscreen().catch(() => undefined);
+    this.moreOpen.set(false);
+  }
+
+  pictureInPictureSupported() {
+    return Boolean(
+      this.remoteVideoElement &&
+      typeof document !== 'undefined' &&
+      document.pictureInPictureEnabled &&
+      'requestPictureInPicture' in this.remoteVideoElement
+    );
+  }
+
+  async togglePictureInPicture() {
+    if (!this.remoteVideoElement || typeof document === 'undefined') return;
+    try {
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+        this.pictureInPicture.set(false);
+      } else if (this.pictureInPictureSupported()) {
+        await this.remoteVideoElement.requestPictureInPicture();
+        this.pictureInPicture.set(true);
+        this.moreOpen.set(false);
+        this.showActionFeedback('Mini video opened');
+      }
+    } catch {
+      this.settingsMessage.set('Picture-in-picture is unavailable in this browser.');
+    }
+  }
+
+  async toggleBackgroundBlur() {
+    const enabled = !this.call.backgroundBlurEnabled();
+    const applied = await this.call.setBackgroundBlur(enabled);
+    this.settingsMessage.set(
+      applied
+        ? enabled
+          ? 'Background blur is on.'
+          : 'Background blur is off.'
+        : 'Background blur is not supported by this browser or camera.'
+    );
+    if (applied) this.moreOpen.set(false);
+    if (applied) this.showActionFeedback(enabled ? 'Background blurred' : 'Background visible');
+  }
+
+  async toggleLowDataMode() {
+    const enabled = !this.call.lowDataMode();
+    await this.call.setLowDataMode(enabled);
+    this.showActionFeedback(enabled ? 'Data saver on' : 'Best video quality on');
+  }
+
+  async callBack() {
+    if (this.busy()) return;
+    this.busy.set(true);
+    try {
+      await this.call.callBack(this.iceServers);
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  async reportProblem() {
+    await this.call.reportLastCallProblem();
+  }
+
+  showControls() {
+    this.controlsHidden.set(false);
+    this.scheduleControlsHide();
+  }
+
+  onPreviewPointerDown(event: PointerEvent) {
+    if (event.button !== 0) return;
+    const origin = this.previewOffset();
+    this.previewDrag = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      originX: origin.x,
+      originY: origin.y
+    };
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+    this.showControls();
+  }
+
+  onPreviewPointerMove(event: PointerEvent) {
+    const drag = this.previewDrag;
+    const element = event.currentTarget as HTMLElement;
+    const stage = element.parentElement;
+    if (!drag || drag.pointerId !== event.pointerId || !stage) return;
+    const inset = 14;
+    const defaultLeft = stage.clientWidth - element.offsetWidth - inset;
+    const nextX = drag.originX + event.clientX - drag.startX;
+    const nextY = drag.originY + event.clientY - drag.startY;
+    this.previewOffset.set({
+      x: Math.min(0, Math.max(-defaultLeft, nextX)),
+      y: Math.min(stage.clientHeight - element.offsetHeight - inset, Math.max(-inset, nextY))
+    });
+  }
+
+  onPreviewPointerUp(event: PointerEvent) {
+    if (this.previewDrag?.pointerId !== event.pointerId) return;
+    this.previewDrag = null;
+    (event.currentTarget as HTMLElement).releasePointerCapture(event.pointerId);
+  }
+
+  async chooseAudioOutput(deviceId: string) {
+    this.call.selectAudioOutput(deviceId);
+    await this.applyAudioOutput(this.remoteAudioElement);
+    await this.applyAudioOutput(this.remoteVideoElement);
+    this.speakerPickerOpen.set(false);
+    this.showActionFeedback('Speaker changed');
+    this.scheduleControlsHide();
+  }
+
+  supportsSpeakerSelection() {
+    return typeof HTMLMediaElement !== 'undefined' && 'setSinkId' in HTMLMediaElement.prototype;
+  }
+
+  selectedSpeakerLabel() {
+    const selectedId = this.call.selectedAudioOutputId();
+    const index = this.call.audioOutputs().findIndex((device) => device.deviceId === selectedId);
+    if (index < 0) return 'System speaker';
+    return this.deviceLabel(this.call.audioOutputs()[index], index, 'Speaker');
+  }
+
+  speakerOutputs() {
+    return this.call.audioOutputs().filter((device) => device.deviceId !== 'default');
   }
 
   async changeAudioInput(event: Event) {
@@ -203,6 +457,8 @@ export class ConsultationCallInviteComponent implements OnDestroy {
     this.busy.set(true);
     try {
       await this.call.switchCurrentCallMode(mode, this.iceServers);
+      this.moreOpen.set(false);
+      this.showActionFeedback(mode === 'video' ? 'Video on' : 'Voice only');
     } finally {
       this.busy.set(false);
     }
@@ -222,7 +478,33 @@ export class ConsultationCallInviteComponent implements OnDestroy {
     const consultationId =
       this.call.activeConsultationId() || this.call.pendingOffer()?.consultationId || '';
     const recoveryId = this.call.recoverableCall()?.consultationId || '';
-    if (consultationId || recoveryId) this.opened.emit(consultationId || recoveryId);
+    if (consultationId || recoveryId) {
+      this.moreOpen.set(false);
+      this.opened.emit(consultationId || recoveryId);
+    }
+  }
+
+  onSurfaceSwipeStart(event: PointerEvent) {
+    if (event.button !== 0 || this.call.incomingCall()) return;
+    this.surfaceSwipe = { pointerId: event.pointerId, startY: event.clientY };
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+  }
+
+  onSurfaceSwipeMove(event: PointerEvent) {
+    if (!this.surfaceSwipe || this.surfaceSwipe.pointerId !== event.pointerId) return;
+    this.surfaceSwipeY.set(Math.min(120, Math.max(0, event.clientY - this.surfaceSwipe.startY)));
+  }
+
+  onSurfaceSwipeEnd(event: PointerEvent) {
+    if (!this.surfaceSwipe || this.surfaceSwipe.pointerId !== event.pointerId) return;
+    const shouldMinimize = this.surfaceSwipeY() >= 64;
+    this.surfaceSwipe = null;
+    this.surfaceSwipeY.set(0);
+    if (shouldMinimize) {
+      this.minimized.set(true);
+      this.lightHaptic();
+    }
+    (event.currentTarget as HTMLElement).releasePointerCapture(event.pointerId);
   }
 
   private attachStreams() {
@@ -251,7 +533,7 @@ export class ConsultationCallInviteComponent implements OnDestroy {
           setSinkId?: (sinkId: string) => Promise<void>;
         })
       | null;
-    if (!output || !deviceId || !output.setSinkId) return;
+    if (!output?.setSinkId) return;
     await output.setSinkId(deviceId).catch(() => undefined);
   }
 
@@ -274,5 +556,36 @@ export class ConsultationCallInviteComponent implements OnDestroy {
       this.connectedAt = 0;
       this.elapsedSeconds.set(0);
     }
+  }
+
+  private scheduleControlsHide() {
+    this.clearControlsTimer();
+    if (
+      this.call.state() !== 'connected' ||
+      this.call.callMode() !== 'video' ||
+      this.settingsOpen() ||
+      this.speakerPickerOpen() ||
+      this.moreOpen()
+    ) {
+      this.controlsHidden.set(false);
+      return;
+    }
+    this.controlsTimer = setTimeout(() => this.controlsHidden.set(true), 3_500);
+  }
+
+  private clearControlsTimer() {
+    if (this.controlsTimer) clearTimeout(this.controlsTimer);
+    this.controlsTimer = null;
+  }
+
+  private showActionFeedback(message: string) {
+    this.actionMessage.set(message);
+    this.lightHaptic();
+    if (this.actionMessageTimer) clearTimeout(this.actionMessageTimer);
+    this.actionMessageTimer = setTimeout(() => this.actionMessage.set(''), 1_500);
+  }
+
+  private lightHaptic() {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) navigator.vibrate(12);
   }
 }

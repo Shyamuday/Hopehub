@@ -32,5 +32,6 @@ export const CALL_SOCKET_EVENTS = {
   RING_ACK: 'call:ring-ack',
   SYNC: 'call:sync',
   STATE: 'call:state',
-  HEARTBEAT: 'call:heartbeat'
+  HEARTBEAT: 'call:heartbeat',
+  DIAGNOSTIC: 'call:diagnostic'
 } as const;
