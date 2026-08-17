@@ -7,7 +7,7 @@ import {
 } from './telegram-bots.config.js';
 import { apiUrl, webUrl } from './telegram-bots.ui.js';
 import type { SendMessagePayload } from './telegram-bots.types.js';
-import { colorizeTelegramKeyboard } from './telegram-button-styles.js';
+import { colorizeTelegramKeyboard, colorizeTelegramPayload } from './telegram-button-styles.js';
 
 export function telegramWebhookSecret() {
   return process.env.TELEGRAM_WEBHOOK_SECRET || '';
@@ -28,7 +28,7 @@ async function callTelegramApi<T>(kind: TelegramBotKind, method: string, payload
   const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(colorizeTelegramPayload(payload))
   });
   const body = (await response.json()) as { ok?: boolean; description?: string; result?: T };
   if (!response.ok || !body.ok) {

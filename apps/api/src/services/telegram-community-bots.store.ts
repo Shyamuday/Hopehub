@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../db.js';
 import type { CommunityBotSlug } from './telegram-community-bots.types.js';
+import type { CommunitySubmissionBotSlug } from '../constants/telegram-community-bot.constants.js';
 import { controlNumber, getTelegramBotControls } from './telegram-bot-controls.js';
 
 const STATE_TTL_MS = 24 * 60 * 60 * 1000;
@@ -13,7 +14,7 @@ export type CommunityState<T = Record<string, unknown>> = {
 
 export type CommunitySubmissionInput = {
   reference: string;
-  bot: 'contact' | 'confession';
+  bot: CommunitySubmissionBotSlug;
   userChatId: string;
   firstName?: string | null;
   username?: string | null;
@@ -213,7 +214,7 @@ export async function telegramGroupWarningCount(chatId: string, telegramUserId: 
 }
 
 export async function communitySubmissionLimitReached(input: {
-  bot: 'contact' | 'confession';
+  bot: CommunitySubmissionBotSlug;
   userChatId: string;
   limit: number;
 }) {
@@ -257,7 +258,7 @@ export function deleteDraftCommunitySubmission(reference: string, userChatId: st
   });
 }
 
-export function latestCommunitySubmission(bot: 'contact' | 'confession', userChatId: string) {
+export function latestCommunitySubmission(bot: CommunitySubmissionBotSlug, userChatId: string) {
   return prisma.telegramCommunitySubmission.findFirst({
     where: { bot, userChatId },
     orderBy: { createdAt: 'desc' }
@@ -265,7 +266,7 @@ export function latestCommunitySubmission(bot: 'contact' | 'confession', userCha
 }
 
 export function submissionForGroupMessage(
-  bot: 'contact' | 'confession',
+  bot: CommunitySubmissionBotSlug,
   groupChatId: string,
   groupMessageId: number
 ) {

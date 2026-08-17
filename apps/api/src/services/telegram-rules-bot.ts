@@ -7,8 +7,9 @@ import {
   recordTelegramCampaignPollUpdate,
   recordTelegramCommunityReaction
 } from './telegram-community-campaigns.js';
+import { COMMUNITY_BOT_SLUGS } from '../constants/telegram-community-bot.constants.js';
 
-const slug = 'rules' as const;
+const slug = COMMUNITY_BOT_SLUGS.RULES;
 function mainMenu(controls: TelegramBotControls): TelegramKeyboard {
   const linkButtons = configuredUrlButtons(controls.telegramRulesMenuLinks, 8);
   const linkRows: TelegramKeyboard['inline_keyboard'] = [];

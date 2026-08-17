@@ -1,5 +1,9 @@
 import type { CommunityBotSlug, TelegramKeyboard } from './telegram-community-bots.types.js';
-import { colorizeTelegramKeyboard } from './telegram-button-styles.js';
+import { colorizeTelegramKeyboard, colorizeTelegramPayload } from './telegram-button-styles.js';
+import {
+  COMMUNITY_BOT_SLUGS,
+  TELEGRAM_BOT_DISPLAY_NAMES
+} from '../constants/telegram-community-bot.constants.js';
 
 const COMMUNITY_BOTS: Record<
   CommunityBotSlug,
@@ -10,8 +14,8 @@ const COMMUNITY_BOTS: Record<
     allowedUpdates: string[];
   }
 > = {
-  contact: {
-    name: 'Hope Hub Contact Bot',
+  [COMMUNITY_BOT_SLUGS.CONTACT]: {
+    name: TELEGRAM_BOT_DISPLAY_NAMES.CONTACT,
     tokenEnv: 'TELEGRAM_CONTACT_BOT_TOKEN',
     commands: [
       { command: 'start', description: 'Contact Hope Hub' },
@@ -22,8 +26,8 @@ const COMMUNITY_BOTS: Record<
     ],
     allowedUpdates: ['message', 'callback_query', 'my_chat_member']
   },
-  confession: {
-    name: 'Hope Hub Confession Bot',
+  [COMMUNITY_BOT_SLUGS.CONFESSION]: {
+    name: TELEGRAM_BOT_DISPLAY_NAMES.CONFESSION,
     tokenEnv: 'TELEGRAM_CONFESSION_BOT_TOKEN',
     commands: [
       { command: 'start', description: 'Send an anonymous confession' },
@@ -32,8 +36,8 @@ const COMMUNITY_BOTS: Record<
     ],
     allowedUpdates: ['message', 'callback_query', 'my_chat_member', 'chat_member', 'channel_post']
   },
-  rules: {
-    name: 'Hope Hub Rules Bot',
+  [COMMUNITY_BOT_SLUGS.RULES]: {
+    name: TELEGRAM_BOT_DISPLAY_NAMES.RULES,
     tokenEnv: 'TELEGRAM_RULES_BOT_TOKEN',
     commands: [
       { command: 'start', description: 'Open rules menu' },
@@ -54,8 +58,8 @@ const COMMUNITY_BOTS: Record<
       'my_chat_member'
     ]
   },
-  hopehubai: {
-    name: 'Hope Hub AI Community Bot',
+  [COMMUNITY_BOT_SLUGS.GROUP_HELP]: {
+    name: TELEGRAM_BOT_DISPLAY_NAMES.GROUP_HELP,
     tokenEnv: 'TELEGRAM_HOPEHUBBOT_TOKEN',
     commands: [
       { command: 'rules', description: 'Community rules' },
@@ -107,7 +111,7 @@ export async function callCommunityTelegramApi<T>(
   const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(colorizeTelegramPayload(payload))
   });
   const body = (await response.json()) as { ok?: boolean; description?: string; result?: T };
   if (!response.ok || !body.ok) throw new Error(body.description || `Telegram ${method} failed.`);

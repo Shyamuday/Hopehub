@@ -1,5 +1,5 @@
 import type { TelegramBotKind } from '@prisma/client';
-import { botKindBySlug, botSlugByKind } from './telegram-bots.config.js';
+import { botKindBySlug, botNameByKind } from './telegram-bots.config.js';
 import type { TelegramBotSlug } from './telegram-bots.types.js';
 import { adminUrl, doctorUrl, webUrl } from './telegram-bots.ui.js';
 import { escapeHtml } from './telegram-bots.helpers.js';
@@ -149,7 +149,7 @@ export function startGuideText(kind: TelegramBotKind, session: MenuSession) {
 
   if (kind === 'USER') {
     return [
-      '<b>Hope Hub Web Bot</b>',
+      `<b>${botNameByKind[kind]}</b>`,
       linkedLine,
       '',
       '<b>Purpose</b>',
@@ -178,7 +178,7 @@ export function startGuideText(kind: TelegramBotKind, session: MenuSession) {
 
   if (kind === 'DOCTOR') {
     return [
-      '<b>Hope Hub Care Team Bot</b>',
+      `<b>${botNameByKind[kind]}</b>`,
       linkedLine,
       '',
       '<b>Purpose</b>',
@@ -194,7 +194,7 @@ export function startGuideText(kind: TelegramBotKind, session: MenuSession) {
   }
 
   return [
-    '<b>Hope Hub Ops Bot</b>',
+    `<b>${botNameByKind[kind]}</b>`,
     linkedLine,
     '',
     '<b>Purpose</b>',

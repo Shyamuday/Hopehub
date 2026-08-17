@@ -22,8 +22,9 @@ import {
   type TelegramBotControls
 } from './telegram-bot-controls.js';
 import { configuredUrlButtons } from './telegram-keyboard-config.js';
+import { COMMUNITY_BOT_SLUGS } from '../constants/telegram-community-bot.constants.js';
 
-const slug = 'confession' as const;
+const slug = COMMUNITY_BOT_SLUGS.CONFESSION;
 const keyOf = (value: string | number) => String(value);
 const isCommand = (text: string, command: string) =>
   new RegExp(`^/${command}(?:@[A-Za-z0-9_]+)?(?:\\s|$)`, 'i').test(text.trim());

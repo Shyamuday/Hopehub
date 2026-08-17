@@ -1,3 +1,5 @@
+import { TELEGRAM_BOT_URLS, TELEGRAM_BOT_USERNAMES } from './telegram-community-bot.constants.js';
+
 export type TelegramBotControlType = 'boolean' | 'number' | 'text' | 'textarea';
 
 export type TelegramBotControlMeta = {
@@ -39,8 +41,7 @@ export const TELEGRAM_BOT_CONTROL_DEFAULTS = {
   telegramContactWelcomeText:
     '👋 Welcome to Hope Hub Support. Choose a category and our team will respond as soon as possible.',
   telegramContactSupportGroupId: '',
-  telegramContactMenuLinks:
-    '🩷 Confession Bot | https://t.me/Hopehubconfessionbot | danger\n💙 HopeHub | https://hopehub.in | primary',
+  telegramContactMenuLinks: `🩷 Confession Bot | ${TELEGRAM_BOT_URLS.CONFESSION} | danger\n💙 HopeHub | https://hopehub.in | primary`,
   telegramContactUnavailableMessage:
     'We could not send your message because the support inbox is unavailable. Your draft is safe—please try again shortly.',
   telegramRulesWelcomeText:
@@ -51,15 +52,12 @@ export const TELEGRAM_BOT_CONTROL_DEFAULTS = {
     '📋 *HopeHub Community Rules*\n\n*1. Be kind and respectful.* No hate, discrimination, bullying, or harassment.\n\n*2. No unsolicited professional advice.* Share experience, but do not diagnose or prescribe.\n\n*3. Keep it anonymous.* Do not request or share identifying information.\n\n*4. No promotion or spam* without admin approval.\n\n*5. Media and links require approval.*\n\n*6. No DMs without consent.*\n\n*7. Handle sensitive topics with care* and recommend professional or emergency help where appropriate.\n\n*8. Report violations; do not argue.*\n\n*9. Seek approval before sharing resources.*\n\n*10. Respect admin decisions.*',
   telegramRulesDisclaimerText:
     '⚠️ *HopeHub Disclaimer*\n\nHopeHub is a wellbeing support community, not a medical, psychiatric, legal, or emergency service. Community content is not diagnosis or treatment. Always consult a qualified professional for medical concerns and contact emergency services in a crisis.\n\nHopeHub cannot guarantee confidentiality in group chats and does not moderate private conversations between members. External resources are independent of HopeHub.',
-  telegramRulesPrivacyText:
-    '🔒 *Privacy Guide — Stay Safe on Telegram*\n\nSet your phone number and calls to “My Contacts” or “Nobody”; restrict who can add you to groups; review active sessions; enable two-step verification and a passcode; and avoid sharing personal details.\n\nBlock unwanted private messages and report concerns through @Contacthopehubbot.',
-  telegramRulesReportText:
-    '🚨 *How to Report a Rule Violation*\n\nSend @Contacthopehubbot a screenshot, message link, and short description. Wait for admins to investigate. Do not confront the person, publish accusations, or privately message admins.',
+  telegramRulesPrivacyText: `🔒 *Privacy Guide — Stay Safe on Telegram*\n\nSet your phone number and calls to “My Contacts” or “Nobody”; restrict who can add you to groups; review active sessions; enable two-step verification and a passcode; and avoid sharing personal details.\n\nBlock unwanted private messages and report concerns through ${TELEGRAM_BOT_USERNAMES.CONTACT}.`,
+  telegramRulesReportText: `🚨 *How to Report a Rule Violation*\n\nSend ${TELEGRAM_BOT_USERNAMES.CONTACT} a screenshot, message link, and short description. Wait for admins to investigate. Do not confront the person, publish accusations, or privately message admins.`,
   telegramRulesHelplineText:
     '📞 *Mental Health Helplines*\n\nIf you are in immediate danger, contact local emergency services.\n\n*India:*\n• iCall: 9152987821\n• Vandrevala Foundation: 1860-2662-345\n• NIMHANS: 080-46110007\n\n*International:*\n• Samaritans (UK): 116 123\n• Lifeline (Australia): 13 11 14\n• Find local crisis support: https://www.iasp.info/resources/Crisis_Centres/\n\nThese services are independent of HopeHub.',
-  telegramRulesMenuLinks:
-    '🩷 Confession Bot | https://t.me/Hopehubconfessionbot | danger\n📬 Contact Us | https://t.me/Contacthopehubbot | success\n💙 HopeHub Website | https://hopehub.in | primary',
-  telegramCampaignContactUrl: 'https://t.me/Contacthopehubbot'
+  telegramRulesMenuLinks: `🩷 Confession Bot | ${TELEGRAM_BOT_URLS.CONFESSION} | danger\n📬 Contact Us | ${TELEGRAM_BOT_URLS.CONTACT} | success\n💙 HopeHub Website | https://hopehub.in | primary`,
+  telegramCampaignContactUrl: TELEGRAM_BOT_URLS.CONTACT
 } as const;
 
 export type TelegramBotControlKey = keyof typeof TELEGRAM_BOT_CONTROL_DEFAULTS;

@@ -25,8 +25,9 @@ import {
 } from './telegram-bot-controls.js';
 import { configuredUrlButtons } from './telegram-keyboard-config.js';
 import { getSiteConfigValue } from './site-config.service.js';
+import { COMMUNITY_BOT_SLUGS } from '../constants/telegram-community-bot.constants.js';
 
-const slug = 'contact' as const;
+const slug = COMMUNITY_BOT_SLUGS.CONTACT;
 const SUPPORT_GROUP_CONFIG_KEY = 'telegramContactSupportGroupId';
 const MAX_CONTACT_ATTACHMENT_BYTES = 20 * 1024 * 1024;
 

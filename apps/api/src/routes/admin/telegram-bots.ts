@@ -61,6 +61,7 @@ import {
   retryTelegramCampaignDelivery
 } from '../../services/telegram-community-campaigns.js';
 import {
+  COMMUNITY_BOT_SLUGS,
   GROUP_HELP_BOT_DISPLAY_NAME,
   GROUP_HELP_BOT_SLUG
 } from '../../constants/telegram-community-bot.constants.js';
@@ -1102,7 +1103,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
       const campaign = await prisma.telegramCampaign.create({
         data: {
           name: parsed.data.name,
-          bot: 'rules',
+          bot: COMMUNITY_BOT_SLUGS.RULES,
           chatId,
           timezone: parsed.data.timezone,
           intervalMinutes: parsed.data.intervalMinutes,
@@ -1411,7 +1412,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
     allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (_req, res) => {
       const submissions = await prisma.telegramCommunitySubmission.findMany({
-        where: { bot: 'confession', status: 'pending' },
+        where: { bot: COMMUNITY_BOT_SLUGS.CONFESSION, status: 'pending' },
         select: {
           id: true,
           reference: true,
@@ -1444,7 +1445,11 @@ export function registerAdminTelegramBotRoutes(router: Router) {
       const submission = await prisma.telegramCommunitySubmission.findUnique({
         where: { reference }
       });
-      if (!submission || submission.bot !== 'confession' || submission.status !== 'pending') {
+      if (
+        !submission ||
+        submission.bot !== COMMUNITY_BOT_SLUGS.CONFESSION ||
+        submission.status !== 'pending'
+      ) {
         return res.status(404).json({ message: 'Pending confession not found.' });
       }
       const approved = parsed.data.action === 'APPROVE';
@@ -1458,7 +1463,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
           let groupName = 'Hope Hub Community';
           try {
             const group = await callCommunityTelegramApi<{ title?: string; username?: string }>(
-              'rules',
+              COMMUNITY_BOT_SLUGS.RULES,
               'getChat',
               { chat_id: values.telegramGroupHelpGroupChatId.trim() }
             );
@@ -1467,7 +1472,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
             /* Keep the configured fallback display name. */
           }
           await sendCommunityMessage(
-            'rules',
+            COMMUNITY_BOT_SLUGS.RULES,
             values.telegramGroupHelpGroupChatId.trim(),
             publishedConfessionText({ text: submission.text, destinationName: groupName }),
             {
@@ -1480,7 +1485,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         if (confessionChannel) {
           const channelName = await confessionDestinationLabel(confessionChannel);
           await sendCommunityMessage(
-            'confession',
+            COMMUNITY_BOT_SLUGS.CONFESSION,
             confessionChannel,
             publishedConfessionText({ text: submission.text, destinationName: channelName })
           );
@@ -1493,7 +1498,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
       });
       try {
         await sendCommunityMessage(
-          'confession',
+          COMMUNITY_BOT_SLUGS.CONFESSION,
           submission.userChatId,
           approved
             ? `💙 Your anonymous submission was approved${destinationNames.length ? ` and published in ${destinationNames.join(' and ')}` : ''}.`
@@ -1552,7 +1557,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         prisma.telegramCommunityMember.count({ where: { joinedAt: { gte: since } } }),
         prisma.telegramCommunityEventRsvp.count({ where: { createdAt: { gte: since } } }),
         prisma.telegramCommunitySubmission.count({
-          where: { bot: 'confession', status: 'pending' }
+          where: { bot: COMMUNITY_BOT_SLUGS.CONFESSION, status: 'pending' }
         }),
         prisma.telegramPollVote.count({ where: { followUpError: { not: null } } })
       ]);

@@ -1,3 +1,5 @@
+import { TELEGRAM_BOT_USERNAMES } from './telegram-community-bot.constants.js';
+
 const quotes = [
   'You do not need to solve everything today.',
   'Rest is part of moving forward, not a step away from it.',
@@ -382,16 +384,16 @@ const conversationStarters = [
 ];
 
 const anonymousSharingReminders = [
-  '🩷 You can share anonymously\n\nIf something feels easier to say without your name, send it to @Hopehubconfessionbot. Every submission is reviewed before publication.',
-  '🩷 A private way to share\n\nSome thoughts need a little distance. You can use @Hopehubconfessionbot and choose what feels safe to share.',
-  '🩷 Your story, your pace\n\nAnonymous sharing is available through @Hopehubconfessionbot. Please avoid personal details that could identify you or someone else.',
-  '🩷 No pressure to speak publicly\n\nIf public chat feels too much, @Hopehubconfessionbot offers a reviewed anonymous sharing option.',
-  '🩷 A gentle reminder\n\nYou can keep your name out of a story. Send an anonymous reflection to @Hopehubconfessionbot when you are ready.',
-  '🩷 Share safely\n\nAnonymous posts are reviewed first. Use @Hopehubconfessionbot and protect your own and others’ privacy.',
-  '🩷 Quiet sharing is welcome\n\nYou do not have to explain everything in the group. @Hopehubconfessionbot is there for anonymous reflections.',
-  '🩷 If you need words without an audience\n\nTry @Hopehubconfessionbot. Share only what feels right, and leave out identifying details.',
-  '🩷 There is room for your voice\n\nAnonymous sharing through @Hopehubconfessionbot is optional, reviewed, and on your terms.',
-  '🩷 You can be heard without being named\n\nUse @Hopehubconfessionbot for a private submission that is reviewed before anything is posted.'
+  `🩷 You can share anonymously\n\nIf something feels easier to say without your name, send it to ${TELEGRAM_BOT_USERNAMES.CONFESSION}. Every submission is reviewed before publication.`,
+  `🩷 A private way to share\n\nSome thoughts need a little distance. You can use ${TELEGRAM_BOT_USERNAMES.CONFESSION} and choose what feels safe to share.`,
+  `🩷 Your story, your pace\n\nAnonymous sharing is available through ${TELEGRAM_BOT_USERNAMES.CONFESSION}. Please avoid personal details that could identify you or someone else.`,
+  `🩷 No pressure to speak publicly\n\nIf public chat feels too much, ${TELEGRAM_BOT_USERNAMES.CONFESSION} offers a reviewed anonymous sharing option.`,
+  `🩷 A gentle reminder\n\nYou can keep your name out of a story. Send an anonymous reflection to ${TELEGRAM_BOT_USERNAMES.CONFESSION} when you are ready.`,
+  `🩷 Share safely\n\nAnonymous posts are reviewed first. Use ${TELEGRAM_BOT_USERNAMES.CONFESSION} and protect your own and others’ privacy.`,
+  `🩷 Quiet sharing is welcome\n\nYou do not have to explain everything in the group. ${TELEGRAM_BOT_USERNAMES.CONFESSION} is there for anonymous reflections.`,
+  `🩷 If you need words without an audience\n\nTry ${TELEGRAM_BOT_USERNAMES.CONFESSION}. Share only what feels right, and leave out identifying details.`,
+  `🩷 There is room for your voice\n\nAnonymous sharing through ${TELEGRAM_BOT_USERNAMES.CONFESSION} is optional, reviewed, and on your terms.`,
+  `🩷 You can be heard without being named\n\nUse ${TELEGRAM_BOT_USERNAMES.CONFESSION} for a private submission that is reviewed before anything is posted.`
 ];
 
 const privateSupportReminders = [

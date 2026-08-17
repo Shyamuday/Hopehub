@@ -1,4 +1,6 @@
-export type CommunityBotSlug = 'contact' | 'confession' | 'rules' | 'hopehubai';
+import type { CommunityBotSlug as CommunityBotSlugValue } from '../constants/telegram-community-bot.constants.js';
+
+export type CommunityBotSlug = CommunityBotSlugValue;
 
 export type CommunityTelegramUser = {
   id: number;

@@ -10,6 +10,7 @@ import { configuredUrlKeyboard } from './telegram-keyboard-config.js';
 import { colorizeTelegramKeyboard } from './telegram-button-styles.js';
 import { getSiteConfigMap } from './site-config.service.js';
 import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
+import { TELEGRAM_BOT_URLS } from '../constants/telegram-community-bot.constants.js';
 
 const CAMPAIGN_BOT = GROUP_HELP_BOT_SLUG;
 const MAX_DELIVERIES_PER_SWEEP = 20;
@@ -95,7 +96,7 @@ async function communityConfig() {
     welcomeMediaUrl: values.telegramGroupHelpWelcomeImageUrl?.trim() || '',
     welcomeKeyboard: configuredUrlKeyboard(values.telegramGroupHelpWelcomeButtons || ''),
     supportUrl: values.telegramCommunitySupportUrl || 'https://hopehub.in/#live-connect',
-    contactUrl: values.telegramCampaignContactUrl || 'https://t.me/Contacthopehubbot'
+    contactUrl: values.telegramCampaignContactUrl || TELEGRAM_BOT_URLS.CONTACT
   };
 }
 

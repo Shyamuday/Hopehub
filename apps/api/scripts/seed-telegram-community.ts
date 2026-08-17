@@ -12,7 +12,11 @@ import {
   TELEGRAM_BOT_CONTROL_META
 } from '../src/constants/telegram-bot-controls.constants.js';
 import { TELEGRAM_COMMUNITY_ENGAGEMENT_ITEMS } from '../src/constants/telegram-community-content.constants.js';
-import { GROUP_HELP_BOT_SLUG } from '../src/constants/telegram-community-bot.constants.js';
+import {
+  GROUP_HELP_BOT_SLUG,
+  TELEGRAM_BOT_USERNAMES
+} from '../src/constants/telegram-community-bot.constants.js';
+import { colorizeTelegramPayload } from '../src/services/telegram-button-styles.js';
 
 const GROUP_USERNAME = (process.env.TELEGRAM_COMMUNITY_GROUP_USERNAME || '@hopehubindia').replace(
   /^([^@])/,
@@ -43,7 +47,7 @@ async function telegramApi<T>(token: string, method: string, payload: unknown) {
   const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(colorizeTelegramPayload(payload))
   });
   const body = (await response.json()) as TelegramApiResponse<T>;
   if (!response.ok || !body.ok) throw new Error(body.description || `Telegram ${method} failed.`);
@@ -238,7 +242,7 @@ const campaigns = (chatId: string) =>
         },
         {
           kind: 'MESSAGE',
-          text: '🕊️ Want to share without your name? Send an anonymous confession through @Hopehubconfessionbot. Every post is reviewed before publication.'
+          text: `🕊️ Want to share without your name? Send an anonymous confession through ${TELEGRAM_BOT_USERNAMES.CONFESSION}. Every post is reviewed before publication.`
         }
       ]
     },

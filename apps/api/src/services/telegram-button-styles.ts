@@ -37,3 +37,27 @@ export function colorizeTelegramKeyboard<
     )
   } as TKeyboard;
 }
+
+/**
+ * Applies the same button styling at the Telegram transport boundary. This
+ * keeps raw API calls, scheduled campaigns, previews and normal bot replies
+ * visually consistent without each caller needing to remember the helper.
+ */
+export function colorizeTelegramPayload<T>(payload: T): T {
+  if (!payload || typeof payload !== 'object') return payload;
+  const candidate = payload as T & { reply_markup?: unknown };
+  const replyMarkup = candidate.reply_markup;
+  if (
+    !replyMarkup ||
+    typeof replyMarkup !== 'object' ||
+    !Array.isArray((replyMarkup as { inline_keyboard?: unknown }).inline_keyboard)
+  ) {
+    return payload;
+  }
+  return {
+    ...candidate,
+    reply_markup: colorizeTelegramKeyboard(
+      replyMarkup as { inline_keyboard: StyleableTelegramButton[][] }
+    )
+  } as T;
+}

@@ -1,3 +1,5 @@
+import { TELEGRAM_BOT_URLS } from './telegram-community-bot.constants.js';
+
 export type GroupHelpConfigFieldType = 'text' | 'textarea' | 'number' | 'select';
 
 export const LEGACY_HOPEHUB_COMMUNITY_WELCOME_MESSAGE = `Hi {mention} 👋 {id}
@@ -38,10 +40,10 @@ export const HOPEHUB_COMMUNITY_WELCOME_MEDIA_URL =
 
 export const HOPEHUB_COMMUNITY_WELCOME_BUTTONS = `📢 Channel | https://t.me/HopeHubGlobal | primary
 🌐 Website | https://hopehub.in/ | success
-🤖 HopeHub Bot | https://t.me/Hopehubbot | primary
-📜 HH Rules | https://t.me/HHrules | danger
+🤖 HopeHub Bot | ${TELEGRAM_BOT_URLS.HOPE_HUB} | primary
+📜 HH Rules | ${TELEGRAM_BOT_URLS.RULES} | danger
 💚 Get private support | https://hopehub.in/#live-connect | success
-🩷 Share anonymously | https://t.me/Hopehubconfessionbot | danger`;
+🩷 Share anonymously | ${TELEGRAM_BOT_URLS.CONFESSION} | danger`;
 
 export type GroupHelpConfigField = {
   key: string;
