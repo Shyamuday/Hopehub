@@ -26,6 +26,10 @@ export {
 } from './multi-select/multi-select.component';
 export { ProfileAvatarUploadComponent } from './profile-avatar-upload/profile-avatar-upload.component';
 export { ProfileAvatarDisplayComponent } from './profile-avatar-display/profile-avatar-display.component';
+export {
+  FormDropdownComponent,
+  type FormDropdownOption
+} from './form-dropdown/form-dropdown.component';
 export { buildDetailRows } from './detail-rows/detail-rows.util';
 export type { DetailRow, DetailFieldDef } from './detail-rows/detail-rows.types';
 export {

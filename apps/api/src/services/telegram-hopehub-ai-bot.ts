@@ -9,6 +9,7 @@ import {
 import {
   addTelegramGroupWarning,
   checkTelegramGroupFlood,
+  scheduleCommunityMessageCleanup,
   telegramGroupWarningCount
 } from './telegram-community-bots.store.js';
 import type {
@@ -40,6 +41,7 @@ const CONFIG_KEYS = [
   'telegramGroupHelpWarnAction',
   'telegramGroupHelpForwardPolicy',
   'telegramGroupHelpMediaPolicy',
+  'telegramGroupHelpAutoDeleteSeconds',
   'telegramGroupHelpMaxMessageLength',
   'telegramGroupHelpAdminWhitelist'
 ] as const;
@@ -127,6 +129,26 @@ async function deleteMessage(chatId: string, messageId: number) {
   });
 }
 
+async function sendTemporaryMessage(
+  chatId: string,
+  text: string,
+  values: Record<string, string>,
+  options: Parameters<typeof sendCommunityMessage>[3] = {}
+) {
+  const sent = await sendCommunityMessage(BOT, chatId, text, options);
+  const delaySeconds = Math.max(0, Number(values.telegramGroupHelpAutoDeleteSeconds || 300));
+  if (delaySeconds > 0) {
+    await scheduleCommunityMessageCleanup({
+      bot: BOT,
+      chatId,
+      messageId: sent.message_id,
+      kind: 'transient',
+      deleteAfter: new Date(Date.now() + delaySeconds * 1000)
+    });
+  }
+  return sent;
+}
+
 async function applyMemberAction(chatId: string, userId: number, action: string) {
   if (action === 'ban' || action === 'kick') {
     await callCommunityTelegramApi(BOT, 'banChatMember', {
@@ -199,10 +221,10 @@ async function handleCommand(message: CommunityTelegramMessage, values: Record<s
   }
   if (command === '/warnings' && message.from) {
     const count = await telegramGroupWarningCount(chatId, String(message.from.id));
-    await sendCommunityMessage(
-      BOT,
+    await sendTemporaryMessage(
       chatId,
       `You currently have ${count} warning${count === 1 ? '' : 's'}.`,
+      values,
       {
         reply_to_message_id: message.message_id,
         message_thread_id: message.message_thread_id
@@ -211,21 +233,21 @@ async function handleCommand(message: CommunityTelegramMessage, values: Record<s
     return true;
   }
   if (command === '/help') {
-    await sendCommunityMessage(
-      BOT,
+    await sendTemporaryMessage(
       chatId,
       'Use /rules for community rules, /support for private support, /report while replying to a message, and /warnings to review your warnings.',
+      values,
       { message_thread_id: message.message_thread_id }
     );
     return true;
   }
   if (command === '/report') {
-    await sendCommunityMessage(
-      BOT,
+    await sendTemporaryMessage(
       chatId,
       message.reply_to_message
         ? 'Thank you. This message has been flagged for administrator review.'
         : 'Reply to the message you want to report, then send /report.',
+      values,
       { reply_to_message_id: message.message_id, message_thread_id: message.message_thread_id }
     );
     return true;

@@ -11,6 +11,7 @@ import { colorizeTelegramKeyboard } from './telegram-button-styles.js';
 import { getSiteConfigMap } from './site-config.service.js';
 import {
   cleanupCommunityBotData,
+  runScheduledCommunityMessageCleanup,
   scheduleCommunityMessageCleanup
 } from './telegram-community-bots.store.js';
 import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
@@ -71,7 +72,9 @@ function nextSchedule(now: Date, intervalMinutes: number) {
 
 const COMMUNITY_CONFIG_KEYS = [
   'telegramCommunityWelcomeEnabled',
-  'telegramCommunityWelcomeDeleteHours',
+  'telegramGroupHelpAutoDeleteSeconds',
+  'telegramGroupHelpWelcomeCleanup',
+  'telegramGroupHelpJoinLeaveMessages',
   'telegramGroupHelpWelcomeMessage',
   'telegramGroupHelpWelcomeImageUrl',
   'telegramGroupHelpWelcomeButtons',
@@ -95,7 +98,9 @@ async function communityConfig() {
   const values = await getSiteConfigMap(COMMUNITY_CONFIG_KEYS);
   return {
     welcomeEnabled: values.telegramCommunityWelcomeEnabled !== 'Disabled',
-    welcomeDeleteHours: boundedNumber(values.telegramCommunityWelcomeDeleteHours, 24, 0, 168),
+    autoDeleteSeconds: boundedNumber(values.telegramGroupHelpAutoDeleteSeconds, 300, 0, 604_800),
+    cleanJoinNotice: values.telegramGroupHelpWelcomeCleanup !== 'off',
+    joinLeaveMessages: values.telegramGroupHelpJoinLeaveMessages || 'join only',
     welcomeText:
       values.telegramGroupHelpWelcomeMessage ||
       'Welcome to Hope Hub 💙 Participate at your own pace and protect your personal details.',
@@ -164,7 +169,7 @@ async function smartSchedulePolicy() {
     enabled: values.telegramCommunitySmartScheduleEnabled !== 'Disabled',
     startMinute: timeMinutes(values.telegramCommunityScheduleStart, 9 * 60),
     endMinute: timeMinutes(values.telegramCommunityScheduleEnd, 22 * 60),
-    maxPosts: boundedNumber(values.telegramCommunityMaxPostsPerDay, 8, 1, 30),
+    maxPosts: boundedNumber(values.telegramCommunityMaxPostsPerDay, 14, 1, 30),
     maxEngagementPosts: boundedNumber(values.telegramCommunityEngagementPostsPerDay, 3, 0, 20),
     maxPromotionPosts: boundedNumber(values.telegramCommunityPromotionPostsPerDay, 6, 0, 20),
     activePauseMinutes: boundedNumber(values.telegramCommunityActiveChatPauseMinutes, 30, 0, 1440),
@@ -508,7 +513,8 @@ async function closeExpiredPolls(now: Date) {
 }
 
 export async function runTelegramCampaignScheduler(now = new Date()) {
-  await runCommunityDataCleanupHourly(now);
+  await runScheduledCommunityMessageCleanup(now);
+  await runCommunityDataRetentionCleanupHourly(now);
   if (!telegramCampaignSweepEnabled) return;
   await runTelegramCommunityEventScheduler(now);
   await closeExpiredPolls(now);
@@ -530,7 +536,7 @@ export async function runTelegramCampaignScheduler(now = new Date()) {
 
 let lastCommunityDataCleanupAt = 0;
 
-async function runCommunityDataCleanupHourly(now: Date) {
+async function runCommunityDataRetentionCleanupHourly(now: Date) {
   if (now.getTime() - lastCommunityDataCleanupAt < 60 * 60 * 1000) return;
   lastCommunityDataCleanupAt = now.getTime();
   await cleanupCommunityBotData();
@@ -682,46 +688,46 @@ export async function welcomeTelegramCommunityMembers(update: CommunityTelegramU
       })
     )
   );
-  if (!config.welcomeEnabled) return true;
-  if (config.welcomeMediaUrl) {
-    const media = await callCommunityTelegramApi<{ message_id: number }>(
-      CAMPAIGN_BOT,
-      'sendAnimation',
-      {
-        chat_id: chat.id,
-        animation: config.welcomeMediaUrl,
-        message_thread_id: message?.message_thread_id
-      }
-    ).catch((error) => {
-      console.error('[telegram-community] Could not send welcome animation.', error);
-      return null;
-    });
-    if (media && config.welcomeDeleteHours > 0) {
-      await scheduleCommunityMessageCleanup({
-        bot: CAMPAIGN_BOT,
-        chatId: chat.id,
-        messageId: media.message_id,
-        kind: 'welcome',
-        deleteAfter: new Date(Date.now() + config.welcomeDeleteHours * 60 * 60 * 1000)
-      });
-    }
+  if (message?.new_chat_members?.length && config.cleanJoinNotice) {
+    await callCommunityTelegramApi(CAMPAIGN_BOT, 'deleteMessage', {
+      chat_id: chat.id,
+      message_id: message.message_id
+    }).catch(() => null);
   }
+  if (!config.welcomeEnabled || config.joinLeaveMessages === 'off') return true;
   for (const member of members) {
     const welcomeText = config.welcomeText
       .replaceAll('{mention}', memberMention(member))
       .replaceAll('{id}', String(member.id));
-    const sent = await sendCommunityMessage(CAMPAIGN_BOT, chat.id, welcomeText, {
-      parse_mode: 'Markdown',
-      message_thread_id: message?.message_thread_id,
-      reply_markup: config.welcomeKeyboard
-    });
-    if (config.welcomeDeleteHours > 0) {
+    const sent =
+      config.welcomeMediaUrl && welcomeText.length <= 1024
+        ? await callCommunityTelegramApi<{ message_id: number }>(CAMPAIGN_BOT, 'sendAnimation', {
+            chat_id: chat.id,
+            animation: config.welcomeMediaUrl,
+            caption: welcomeText,
+            parse_mode: 'Markdown',
+            message_thread_id: message?.message_thread_id,
+            reply_markup: config.welcomeKeyboard
+          }).catch(async (error) => {
+            console.error('[telegram-community] Could not send welcome animation.', error);
+            return sendCommunityMessage(CAMPAIGN_BOT, chat.id, welcomeText, {
+              parse_mode: 'Markdown',
+              message_thread_id: message?.message_thread_id,
+              reply_markup: config.welcomeKeyboard
+            });
+          })
+        : await sendCommunityMessage(CAMPAIGN_BOT, chat.id, welcomeText, {
+            parse_mode: 'Markdown',
+            message_thread_id: message?.message_thread_id,
+            reply_markup: config.welcomeKeyboard
+          });
+    if (config.autoDeleteSeconds > 0) {
       await scheduleCommunityMessageCleanup({
         bot: CAMPAIGN_BOT,
         chatId: chat.id,
         messageId: sent.message_id,
         kind: 'welcome',
-        deleteAfter: new Date(Date.now() + config.welcomeDeleteHours * 60 * 60 * 1000)
+        deleteAfter: new Date(Date.now() + config.autoDeleteSeconds * 1000)
       });
     }
   }

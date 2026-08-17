@@ -163,18 +163,11 @@
             </label>
             <label>
               Post next item every
-              <select
-                [value]="campaignIntervalMinutes()"
-                (change)="campaignIntervalMinutes.set(+$any($event.target).value)"
-              >
-                <option [value]="30">30 minutes</option>
-                <option [value]="60">1 hour</option>
-                <option [value]="180">3 hours</option>
-                <option [value]="360">6 hours</option>
-                <option [value]="720">12 hours</option>
-                <option [value]="1440">1 day</option>
-                <option [value]="10080">1 week</option>
-              </select>
+              <app-form-dropdown
+                [options]="campaignIntervalOptions"
+                [ngModel]="campaignIntervalValue()"
+                (ngModelChange)="campaignIntervalMinutes.set(+$event)"
+              ></app-form-dropdown>
             </label>
           </div>
 
@@ -605,15 +598,11 @@
           </label>
           <label>
             Reminder
-            <select
-              [value]="eventReminderMinutes()"
-              (change)="eventReminderMinutes.set(+$any($event.target).value)"
-            >
-              <option [value]="15">15 minutes before</option>
-              <option [value]="30">30 minutes before</option>
-              <option [value]="60">1 hour before</option>
-              <option [value]="1440">1 day before</option>
-            </select>
+            <app-form-dropdown
+              [options]="eventReminderOptions"
+              [ngModel]="eventReminderValue()"
+              (ngModelChange)="eventReminderMinutes.set(+$event)"
+            ></app-form-dropdown>
           </label>
           <button type="submit" class="primary" [disabled]="eventSaving()">
             {{ eventSaving() ? 'Saving…' : editingEventId() ? 'Update event' : 'Announce event' }}
@@ -710,6 +699,34 @@
       </section>
     }
 
+    <section class="settings-essentials panel" [class.workspace-hidden]="activeWorkspaceSection() !== 'settings'">
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">Quick setup</p>
+          <h2>Community essentials</h2>
+          <p>Choose the safe operating mode for each essential. No commands or manual values needed.</p>
+        </div>
+        <button type="button" class="primary" (click)="saveEssentials()" [disabled]="savingEssentials()">
+          {{ savingEssentials() ? 'Saving…' : 'Save essentials' }}
+        </button>
+      </div>
+      <div class="settings-essentials__grid">
+        @for (entry of essentialSettings(); track entry.key) {
+          <label class="config-field">
+            <span>
+              <strong>{{ entry.label }}</strong>
+              <small>{{ entry.description }}</small>
+            </span>
+            <app-form-dropdown
+              [options]="dropdownOptions(entry)"
+              [ngModel]="value(entry.key)"
+              (ngModelChange)="update(entry.key, $event)"
+            ></app-form-dropdown>
+          </label>
+        }
+      </div>
+    </section>
+
     <section class="config-grid" [class.workspace-hidden]="activeWorkspaceSection() !== 'settings'">
       @for (section of sectionOrder; track section) {
         <details
@@ -737,14 +754,11 @@
                     (input)="update(entry.key, $any($event.target).value)"
                   ></textarea>
                 } @else if (entry.type === 'select') {
-                  <select
-                    [value]="value(entry.key)"
-                    (change)="update(entry.key, $any($event.target).value)"
-                  >
-                    @for (option of entry.options || []; track option) {
-                      <option [value]="option">{{ option }}</option>
-                    }
-                  </select>
+                  <app-form-dropdown
+                    [options]="dropdownOptions(entry)"
+                    [ngModel]="value(entry.key)"
+                    (ngModelChange)="update(entry.key, $event)"
+                  ></app-form-dropdown>
                 } @else {
                   <input
                     [type]="entry.type === 'number' ? 'number' : 'text'"
@@ -888,14 +902,11 @@
       <div class="moderator-form">
         <label>
           Action
-          <select
-            [value]="moderatorAction()"
-            (change)="moderatorAction.set($any($event.target).value)"
-          >
-            @for (action of moderatorActions; track action.value) {
-              <option [value]="action.value">{{ action.label }}</option>
-            }
-          </select>
+          <app-form-dropdown
+            [options]="moderatorActionOptions()"
+            [ngModel]="moderatorAction()"
+            (ngModelChange)="moderatorAction.set($event)"
+          ></app-form-dropdown>
         </label>
         <label>
           Target user
@@ -982,14 +993,11 @@
       <div class="direct-form">
         <label>
           Message
-          <select
-            [value]="selectedDirectMessageKey()"
-            (change)="selectedDirectMessageKey.set($any($event.target).value)"
-          >
-            @for (option of messageOptions(); track option.key) {
-              <option [value]="option.key">{{ option.label }}</option>
-            }
-          </select>
+          <app-form-dropdown
+            [options]="directMessageOptions()"
+            [ngModel]="selectedDirectMessageKey()"
+            (ngModelChange)="selectedDirectMessageKey.set($event)"
+          ></app-form-dropdown>
         </label>
         @if (imageUrlForMessageKey(selectedDirectMessageKey())) {
           <div class="direct-image-preview">

@@ -1,0 +1,15 @@
+:host { display: block; min-width: 0; }
+.form-dropdown { position: relative; min-width: 0; width: 100%; }
+.form-dropdown__button { display: flex; min-height: 2.75rem; width: 100%; min-width: 0; align-items: center; justify-content: space-between; gap: .75rem; border: 1px solid var(--hope-field-border, #cbd5e1); border-radius: var(--hope-radius-sm, .6rem); background: #fff; color: #0f172a; padding: .75rem .9rem; text-align: left; transition: border-color 160ms ease, box-shadow 160ms ease; }
+.form-dropdown__button:focus-visible { border-color: var(--hope-field-focus-border, #2563eb); box-shadow: var(--hope-field-focus-ring, 0 0 0 3px rgb(37 99 235 / .15)); outline: none; }
+.form-dropdown--invalid .form-dropdown__button { border-color: #ef4444; }
+.form-dropdown__button:disabled { cursor: not-allowed; opacity: .65; }
+.form-dropdown__label { min-width: 0; flex: 1; overflow-wrap: anywhere; line-height: 1.35; }
+.form-dropdown__label--placeholder { color: #64748b; }
+.form-dropdown__icon { width: 1rem; height: 1rem; flex: 0 0 auto; color: #475569; transition: transform 160ms ease; }
+.form-dropdown--open .form-dropdown__icon { transform: rotate(180deg); }
+.form-dropdown__panel { position: absolute; z-index: 40; top: calc(100% + .35rem); right: 0; left: 0; overflow-y: auto; overscroll-behavior: contain; border: 1px solid var(--hope-field-border, #cbd5e1); border-radius: var(--hope-radius-sm, .6rem); background: #fff; box-shadow: 0 16px 32px rgb(15 23 42 / .14); padding: .35rem; }
+.form-dropdown__option { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: .75rem; border: 0; border-radius: var(--hope-radius-sm, .6rem); background: transparent; color: #1c2d37; padding: .65rem .7rem; text-align: left; overflow-wrap: anywhere; line-height: 1.35; }
+.form-dropdown__option:hover, .form-dropdown__option:focus-visible { background: #f4f7f9; outline: none; }
+.form-dropdown__option--selected { background: var(--hope-selected-bg, #e0f2fe); color: var(--hope-selected-text, #075985); font-weight: var(--hope-font-weight-label, 600); box-shadow: inset 0 0 0 1px var(--hope-selected-border-muted, #bae6fd); }
+.form-dropdown__option--selected::after { content: '✓'; display: grid; width: 1.25rem; height: 1.25rem; flex: 0 0 auto; place-items: center; border-radius: 999px; background: var(--hope-selected-check-bg, #0284c7); color: var(--hope-selected-check-text, #fff); font-size: .75rem; font-weight: var(--hope-font-weight-title, 700); }

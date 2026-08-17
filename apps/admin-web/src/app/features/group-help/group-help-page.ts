@@ -1,5 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { FormDropdownComponent, type FormDropdownOption } from '@hopehub/platform-ui';
 import { AdminApi } from '../../core/services/admin-api';
 
 type GroupHelpConfigEntry = {
@@ -94,7 +96,7 @@ const SECTION_LABELS: Record<GroupHelpConfigEntry['section'], string> = {
 
 @Component({
   selector: 'app-group-help-page',
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule, FormDropdownComponent],
   templateUrl: './group-help-page.html',
   styleUrl: './group-help-page.scss',
 })
@@ -150,6 +152,15 @@ export class GroupHelpPage {
   readonly editingCampaignId = signal('');
   readonly campaignName = signal('');
   readonly campaignIntervalMinutes = signal(1440);
+  readonly campaignIntervalOptions: FormDropdownOption[] = [
+    { value: '30', label: '30 minutes' },
+    { value: '60', label: '1 hour' },
+    { value: '180', label: '3 hours' },
+    { value: '360', label: '6 hours' },
+    { value: '720', label: '12 hours' },
+    { value: '1440', label: '1 day' },
+    { value: '10080', label: '1 week' },
+  ];
   readonly campaignTimezone = signal('Asia/Kolkata');
   readonly campaignRepeat = signal(true);
   readonly campaignActive = signal(false);
@@ -164,6 +175,12 @@ export class GroupHelpPage {
   readonly eventJoinUrl = signal('https://t.me/hopehubindia');
   readonly eventStartsAt = signal('');
   readonly eventReminderMinutes = signal(30);
+  readonly eventReminderOptions: FormDropdownOption[] = [
+    { value: '15', label: '15 minutes before' },
+    { value: '30', label: '30 minutes before' },
+    { value: '60', label: '1 hour before' },
+    { value: '1440', label: '1 day before' },
+  ];
   readonly connectionDetails = signal<{
     bot?: string;
     group?: string;
@@ -210,6 +227,22 @@ export class GroupHelpPage {
     'commands',
   ];
   readonly sectionLabels = SECTION_LABELS;
+  readonly essentialDropdownKeys = new Set([
+    'telegramLiveChatBridgeEnabled',
+    'telegramCommunityWelcomeEnabled',
+    'telegramCommunitySmartScheduleEnabled',
+    'telegramCommunityConfessionsInGroup',
+    'telegramGroupHelpCaptchaMode',
+    'telegramGroupHelpWelcomeCleanup',
+    'telegramGroupHelpJoinProtection',
+    'telegramGroupHelpAntiFloodAction',
+    'telegramGroupHelpAntiSpamAction',
+    'telegramGroupHelpAntiPornAction',
+    'telegramGroupHelpChannelSenderPolicy',
+    'telegramGroupHelpReportsMode',
+    'telegramGroupHelpStatisticsMode',
+  ]);
+  readonly savingEssentials = signal(false);
 
   messageCommands: CommandItem[] = [];
   moderationCommands: CommandItem[] = [];
@@ -569,12 +602,38 @@ export class GroupHelpPage {
     return this.config().filter((entry) => entry.section === section);
   }
 
+  essentialSettings() {
+    return this.config().filter(
+      (entry) => entry.type === 'select' && this.essentialDropdownKeys.has(entry.key),
+    );
+  }
+
+  dropdownOptions(entry: GroupHelpConfigEntry): FormDropdownOption[] {
+    return (entry.options || []).map((option) => ({ value: option, label: option }));
+  }
+
+  campaignIntervalValue() {
+    return String(this.campaignIntervalMinutes());
+  }
+
+  eventReminderValue() {
+    return String(this.eventReminderMinutes());
+  }
+
   messageOptions() {
     return this.messageCommands.map((item) => ({
       key: item.valueKey,
       label: item.title,
       imageUrlKey: item.imageUrlKey,
     }));
+  }
+
+  moderatorActionOptions(): FormDropdownOption[] {
+    return this.moderatorActions.map((action) => ({ value: action.value, label: action.label }));
+  }
+
+  directMessageOptions(): FormDropdownOption[] {
+    return this.messageOptions().map((option) => ({ value: option.key, label: option.label }));
   }
 
   value(key: string) {
@@ -608,6 +667,31 @@ export class GroupHelpPage {
       return false;
     } finally {
       this.saving.set(false);
+    }
+  }
+
+  async saveEssentials() {
+    this.savingEssentials.set(true);
+    this.error.set('');
+    this.message.set('');
+    try {
+      const entries = this.essentialSettings().map((entry) => ({
+        key: entry.key,
+        value: this.value(entry.key),
+      }));
+      const res = await this.api.saveTelegramGroupHelpConfig(entries);
+      this.config.set(res.config as GroupHelpConfigEntry[]);
+      this.localValues.update((current) => ({
+        ...current,
+        ...Object.fromEntries(
+          (res.config as GroupHelpConfigEntry[]).map((entry) => [entry.key, entry.value]),
+        ),
+      }));
+      this.message.set('Community essentials saved.');
+    } catch {
+      this.error.set('Could not save community essentials.');
+    } finally {
+      this.savingEssentials.set(false);
     }
   }
 
