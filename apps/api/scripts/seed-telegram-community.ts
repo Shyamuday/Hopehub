@@ -3,9 +3,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../src/db.js';
 import {
   GROUP_HELP_CONFIG_FIELDS,
-  GROUP_HELP_CONFIG_DEFAULTS,
-  HOPEHUB_COMMUNITY_WELCOME_MEDIA_URL,
-  HOPEHUB_COMMUNITY_WELCOME_MESSAGE
+  GROUP_HELP_CONFIG_DEFAULTS
 } from '../src/constants/group-help-config.constants.js';
 import {
   TELEGRAM_BOT_CONTROL_DEFAULTS,
@@ -203,20 +201,17 @@ const campaigns = (chatId: string) =>
   ].map((campaign) => ({ ...campaign, chatId }));
 
 async function seedSiteConfig(chatId: string) {
-  const forcedValues: Record<string, string> = {
+  const seedDefaults: Record<string, string> = {
+    ...GROUP_HELP_CONFIG_DEFAULTS,
     telegramGroupHelpGroupChatId: chatId,
-    telegramGroupModerationRuntime: 'HopeHubAI',
-    telegramCommunityWelcomeEnabled: 'Enabled',
-    telegramCommunityWelcomeText: HOPEHUB_COMMUNITY_WELCOME_MESSAGE,
-    telegramGroupHelpWelcomeMessage: HOPEHUB_COMMUNITY_WELCOME_MESSAGE,
-    telegramGroupHelpWelcomeImageUrl: HOPEHUB_COMMUNITY_WELCOME_MEDIA_URL
+    telegramGroupModerationRuntime: 'HopeHubAI'
   };
   for (const field of GROUP_HELP_CONFIG_FIELDS) {
-    const value = forcedValues[field.key] ?? GROUP_HELP_CONFIG_DEFAULTS[field.key] ?? '';
+    const value = seedDefaults[field.key] ?? '';
     await prisma.siteConfig.upsert({
       where: { key: field.key },
       create: { key: field.key, value, label: field.label },
-      update: field.key in forcedValues ? { value, label: field.label } : {}
+      update: { label: field.label }
     });
   }
 

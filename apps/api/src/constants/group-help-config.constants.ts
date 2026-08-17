@@ -26,6 +26,13 @@ Please remember:
 export const HOPEHUB_COMMUNITY_WELCOME_MEDIA_URL =
   'https://hopehub-public-assets-924479393196.s3.us-east-1.amazonaws.com/telegram/welcome/hopehub-community-welcome.mp4';
 
+export const HOPEHUB_COMMUNITY_WELCOME_BUTTONS = `📢 Channel | https://t.me/HopeHubGlobal | primary
+🌐 Website | https://hopehub.in/ | success
+🤖 HopeHub Bot | https://t.me/Hopehubbot | primary
+📜 HH Rules | https://t.me/HHrules | danger
+💚 Get private support | https://hopehub.in/#live-connect | success
+🩷 Share anonymously | https://t.me/Hopehubconfessionbot | danger`;
+
 export type GroupHelpConfigField = {
   key: string;
   label: string;
@@ -393,15 +400,6 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
     defaultValue: 'Enabled'
   },
   {
-    key: 'telegramCommunityWelcomeText',
-    label: 'Group welcome message',
-    description: 'Short message posted when a new member joins the Telegram group.',
-    section: 'onboarding',
-    type: 'textarea',
-    maxLength: 1200,
-    defaultValue: HOPEHUB_COMMUNITY_WELCOME_MESSAGE
-  },
-  {
     key: 'telegramCommunitySupportUrl',
     label: 'Private support link',
     description: 'Link used by check-in follow-ups and member onboarding.',
@@ -458,6 +456,17 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
     maxLength: 1000,
     placeholder: 'https://...',
     defaultValue: HOPEHUB_COMMUNITY_WELCOME_MEDIA_URL
+  },
+  {
+    key: 'telegramGroupHelpWelcomeButtons',
+    label: 'Welcome buttons',
+    description:
+      'One button per line: Label | https://link | primary, success, or danger. Buttons appear two per row.',
+    section: 'messages',
+    type: 'textarea',
+    maxLength: 4000,
+    placeholder: 'Button label | https://example.com | primary',
+    defaultValue: HOPEHUB_COMMUNITY_WELCOME_BUTTONS
   },
   {
     key: 'telegramRoseBotStatus',

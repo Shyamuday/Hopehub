@@ -5,7 +5,7 @@ import {
   editCommunityReplyMarkup,
   sendCommunityMessage
 } from './telegram-community-bots.client.js';
-import type { CommunityTelegramUpdate } from './telegram-community-bots.types.js';
+import type { CommunityTelegramUpdate, TelegramKeyboard } from './telegram-community-bots.types.js';
 import { getSiteConfigMap } from './site-config.service.js';
 
 const CAMPAIGN_BOT = 'hopehubai' as const;
@@ -41,19 +41,41 @@ function nextSchedule(now: Date, intervalMinutes: number) {
 
 const COMMUNITY_CONFIG_KEYS = [
   'telegramCommunityWelcomeEnabled',
-  'telegramCommunityWelcomeText',
+  'telegramGroupHelpWelcomeMessage',
   'telegramGroupHelpWelcomeImageUrl',
+  'telegramGroupHelpWelcomeButtons',
   'telegramCommunitySupportUrl'
 ] as const;
+
+function welcomeKeyboard(value: string): TelegramKeyboard | undefined {
+  const buttons = value
+    .split(/\r?\n/)
+    .map((line) => line.split('|').map((part) => part.trim()))
+    .filter(([label, url]) => Boolean(label) && /^https:\/\//i.test(url || ''))
+    .slice(0, 8)
+    .map(([text, url, requestedStyle]) => ({
+      text,
+      url,
+      style: (['primary', 'success', 'danger'].includes(requestedStyle)
+        ? requestedStyle
+        : 'primary') as 'primary' | 'success' | 'danger'
+    }));
+  const inline_keyboard: TelegramKeyboard['inline_keyboard'] = [];
+  for (let index = 0; index < buttons.length; index += 2) {
+    inline_keyboard.push(buttons.slice(index, index + 2));
+  }
+  return inline_keyboard.length ? { inline_keyboard } : undefined;
+}
 
 async function communityConfig() {
   const values = await getSiteConfigMap(COMMUNITY_CONFIG_KEYS);
   return {
     welcomeEnabled: values.telegramCommunityWelcomeEnabled !== 'Disabled',
     welcomeText:
-      values.telegramCommunityWelcomeText ||
+      values.telegramGroupHelpWelcomeMessage ||
       'Welcome to Hope Hub 💙 Participate at your own pace and protect your personal details.',
     welcomeMediaUrl: values.telegramGroupHelpWelcomeImageUrl?.trim() || '',
+    welcomeKeyboard: welcomeKeyboard(values.telegramGroupHelpWelcomeButtons || ''),
     supportUrl: values.telegramCommunitySupportUrl || 'https://hopehub.in/#live-connect'
   };
 }
@@ -391,46 +413,7 @@ export async function welcomeTelegramCommunityMembers(update: CommunityTelegramU
     await sendCommunityMessage(CAMPAIGN_BOT, message.chat.id, welcomeText, {
       parse_mode: 'Markdown',
       message_thread_id: message.message_thread_id,
-      reply_markup: {
-        inline_keyboard: [
-          [
-            {
-              text: '📢 Channel',
-              url: 'https://t.me/HopeHubGlobal',
-              style: 'primary'
-            },
-            {
-              text: '🌐 Website',
-              url: 'https://hopehub.in/',
-              style: 'success'
-            }
-          ],
-          [
-            {
-              text: '🤖 HopeHub Bot',
-              url: 'https://t.me/Hopehubbot',
-              style: 'primary'
-            },
-            {
-              text: '📜 HH Rules',
-              url: 'https://t.me/HHrules',
-              style: 'danger'
-            }
-          ],
-          [
-            {
-              text: '💚 Get private support',
-              url: 'https://hopehub.in/#live-connect',
-              style: 'success'
-            },
-            {
-              text: '🩷 Share anonymously',
-              url: 'https://t.me/Hopehubconfessionbot',
-              style: 'danger'
-            }
-          ]
-        ]
-      }
+      reply_markup: config.welcomeKeyboard
     });
   }
   await prisma.telegramCommunityMember.updateMany({
