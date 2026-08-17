@@ -21,6 +21,7 @@ import {
 export type AppliedCheckoutRule = {
   ruleId: string;
   code: string;
+  promoCode?: string | null;
   name: string;
   amountInPaise: number;
   valueType: RewardValueType;
@@ -269,6 +270,7 @@ export async function resolveGuestConsultationCheckout(input: {
     appliedRules.push({
       ruleId: rule.id,
       code: rule.code,
+      promoCode: rule.promoCode,
       name: rule.name,
       amountInPaise: amount,
       valueType: rule.valueType
@@ -366,6 +368,7 @@ export async function resolveConsultationCheckout(
     appliedRules.push({
       ruleId: rule.id,
       code: rule.code,
+      promoCode: rule.promoCode,
       name: rule.name,
       amountInPaise: amount,
       valueType: rule.valueType
@@ -393,6 +396,46 @@ export async function resolveConsultationCheckout(
     maxWalletRedeemInPaise,
     appliedRules
   };
+}
+
+/**
+ * A submitted promo must never silently become a full-price checkout. The quote
+ * endpoint and the final booking endpoint both calculate pricing independently,
+ * so this guard makes the final calculation authoritative and fail-safe.
+ */
+export function assertRequestedPromoApplied(
+  promoCode: string | null | undefined,
+  quote: ConsultationCheckoutQuote
+) {
+  const requestedPromo = String(promoCode || '')
+    .trim()
+    .toUpperCase();
+  if (!requestedPromo) return;
+
+  const applied =
+    quote.referralFreeCallCouponCode?.trim().toUpperCase() === requestedPromo ||
+    quote.appliedRules.some(
+      (rule) =>
+        String(rule.promoCode || '')
+          .trim()
+          .toUpperCase() === requestedPromo
+    );
+
+  if (!applied) {
+    const error = new Error(
+      'This coupon could not be applied to the selected session. No payment was started.'
+    ) as Error & { statusCode?: number };
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (requestedPromo === 'FIRSTCHAT' && quote.payableInPaise !== 0) {
+    const error = new Error(
+      'FIRSTCHAT must make this listener session free. No payment was started.'
+    ) as Error & { statusCode?: number };
+    error.statusCode = 409;
+    throw error;
+  }
 }
 
 export async function recordCheckoutRedemptions(

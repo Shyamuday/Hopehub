@@ -24,6 +24,7 @@
     "verify:doctor-earnings": "tsx scripts/verify-doctor-earnings.ts",
     "verify:finance-period": "tsx scripts/verify-finance-period.ts",
     "telegram:setup": "tsx scripts/setup-telegram-bots.ts",
+    "telegram:seed": "tsx scripts/seed-telegram-community.ts",
     "push:vapid:generate": "web-push generate-vapid-keys",
     "assets:migrate:s3": "tsx scripts/migrate-local-assets-to-s3.ts"
   },

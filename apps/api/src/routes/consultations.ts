@@ -18,7 +18,10 @@ import {
 import { emitConsultationAssigned } from '../services/consultation-realtime.js';
 import { ensureBillingPlans } from './catalog.js';
 import { resolveDiseaseConsultationFee } from '../services/consultation-pricing.js';
-import { resolveConsultationCheckout } from '../services/checkout-pricing.js';
+import {
+  assertRequestedPromoApplied,
+  resolveConsultationCheckout
+} from '../services/checkout-pricing.js';
 import { PRODUCT_EVENTS, trackProductEvent } from '../services/product-analytics.js';
 import { applyConsultationCancellationEffects } from '../services/consultation-cancellation.js';
 import { notifyConsultationBooked } from '../services/consultation-reminders.js';
@@ -139,6 +142,14 @@ export function createConsultationsRouter(io: SocketIoServer) {
         promoCode: body.promoCode,
         walletRedeemInPaise: body.walletRedeemInPaise
       });
+      try {
+        assertRequestedPromoApplied(body.promoCode, checkout);
+      } catch (error) {
+        const statusCode = (error as Error & { statusCode?: number }).statusCode ?? 400;
+        return res.status(statusCode).json({
+          message: error instanceof Error ? error.message : 'Coupon could not be applied.'
+        });
+      }
       const consultation = await prisma.consultation.create({
         data: {
           patientId: req.user!.id,

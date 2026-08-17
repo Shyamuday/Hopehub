@@ -21,7 +21,10 @@ import {
   routeParam
 } from '../utils/helpers.js';
 import { ensureBillingPlans } from './catalog.js';
-import { resolveConsultationCheckout } from '../services/checkout-pricing.js';
+import {
+  assertRequestedPromoApplied,
+  resolveConsultationCheckout
+} from '../services/checkout-pricing.js';
 import {
   HOPE_HUB_EVENTS,
   PRODUCT_EVENTS,
@@ -3217,6 +3220,14 @@ hopeHubRouter.post(
       providerId: provider.id,
       careTeamTypes: sessionProviderRoles
     });
+    try {
+      assertRequestedPromoApplied(body.promoCode, checkout);
+    } catch (error) {
+      const statusCode = (error as Error & { statusCode?: number }).statusCode ?? 400;
+      return res.status(statusCode).json({
+        message: error instanceof Error ? error.message : 'Coupon could not be applied.'
+      });
+    }
     const finalPayableInPaise = checkout.payableInPaise;
     const isFreeOrWalletPaid = finalPayableInPaise <= 0;
     const isFreeByPricing = amountInPaise <= 0;
@@ -3848,6 +3859,14 @@ hopeHubRouter.post(
       providerId: requestedProvider?.id || body.providerId || null,
       careTeamTypes: sessionProviderRoles
     });
+    try {
+      assertRequestedPromoApplied(body.promoCode, checkout);
+    } catch (error) {
+      const statusCode = (error as Error & { statusCode?: number }).statusCode ?? 400;
+      return res.status(statusCode).json({
+        message: error instanceof Error ? error.message : 'Coupon could not be applied.'
+      });
+    }
     const chargeGrossInPaise = checkout.grossAmountInPaise;
     const finalPayableInPaise = checkout.payableInPaise;
     const isFreeByPricing = amountInPaise <= 0;
