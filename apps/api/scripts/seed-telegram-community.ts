@@ -91,13 +91,22 @@ function nextAt(hour: number, minute = 0, dayOffset = 0) {
   return new Date(targetIndia.getTime() - indiaOffsetMs);
 }
 
-function nextSundayAt(hour: number) {
+function nextWeekdayAt(weekday: number, hour: number, minute = 0) {
   const now = new Date();
   const indiaOffsetMs = 5.5 * 60 * 60 * 1000;
   const indiaNow = new Date(now.getTime() + indiaOffsetMs);
-  let daysUntilSunday = (7 - indiaNow.getUTCDay()) % 7;
-  if (daysUntilSunday === 0 && indiaNow.getUTCHours() >= hour) daysUntilSunday = 7;
-  return nextAt(hour, 0, daysUntilSunday);
+  let daysUntilTarget = (weekday - indiaNow.getUTCDay() + 7) % 7;
+  if (
+    daysUntilTarget === 0 &&
+    (indiaNow.getUTCHours() > hour ||
+      (indiaNow.getUTCHours() === hour && indiaNow.getUTCMinutes() >= minute))
+  )
+    daysUntilTarget = 7;
+  return nextAt(hour, minute, daysUntilTarget);
+}
+
+function nextSundayAt(hour: number) {
+  return nextWeekdayAt(0, hour);
 }
 
 const campaigns = (chatId: string) =>
@@ -197,6 +206,138 @@ const campaigns = (chatId: string) =>
         {
           kind: 'SUMMARY',
           text: '💙 Our Hope Hub community this week'
+        }
+      ]
+    },
+    {
+      id: 'seed_telegram_weekly_needs_pulse',
+      name: 'Weekly community needs pulse',
+      intervalMinutes: 10080,
+      nextRunAt: nextWeekdayAt(3, 19),
+      items: [
+        {
+          kind: 'POLL',
+          pollQuestion: 'What would support you most this week? Choose any that fit.',
+          pollOptions: [
+            'Someone to listen',
+            'Better sleep and rest',
+            'Calmer thoughts',
+            'Motivation and routine',
+            'A gentle group conversation'
+          ],
+          pollAnonymous: true,
+          pollMultiple: true,
+          pollQuiz: false,
+          closeAfterMinutes: 1440
+        },
+        {
+          kind: 'POLL',
+          pollQuestion: 'Which community activity would you join this week?',
+          pollOptions: [
+            'A guided check-in',
+            'Open voice circle',
+            'Quiet listening space',
+            'A practical wellbeing discussion'
+          ],
+          pollAnonymous: true,
+          pollMultiple: true,
+          pollQuiz: false,
+          closeAfterMinutes: 1440
+        },
+        {
+          kind: 'POLL',
+          pollQuestion: 'When would a Hope Hub group activity suit you best?',
+          pollOptions: ['Morning', 'Afternoon', 'Evening', 'Late evening'],
+          pollAnonymous: true,
+          pollMultiple: true,
+          pollQuiz: false,
+          closeAfterMinutes: 1440
+        }
+      ]
+    },
+    {
+      id: 'seed_telegram_weekend_reflection',
+      name: 'Weekend community reflection',
+      intervalMinutes: 10080,
+      nextRunAt: nextWeekdayAt(6, 11),
+      items: [
+        {
+          kind: 'MESSAGE',
+          text: '🌿 Weekend reflection\n\nWhat is one thing you want to leave behind from this week, and one feeling you want to carry forward? Share only what feels safe.'
+        },
+        {
+          kind: 'POLL',
+          pollQuestion: 'How would you like to care for yourself this weekend?',
+          pollOptions: [
+            'Rest without guilt',
+            'Talk to someone I trust',
+            'Spend time outside',
+            'Complete one small task',
+            'Join a supportive conversation'
+          ],
+          pollAnonymous: true,
+          pollMultiple: true,
+          pollQuiz: false,
+          closeAfterMinutes: 1440
+        },
+        {
+          kind: 'MESSAGE',
+          text: '💛 A gentle reminder\n\nProgress can be quiet. Resting, asking for help, setting a boundary, or beginning again all count.'
+        }
+      ]
+    },
+    {
+      id: 'seed_telegram_support_skills',
+      name: 'Support skills and safer conversations',
+      intervalMinutes: 4320,
+      nextRunAt: nextAt(16),
+      items: [
+        {
+          kind: 'POLL',
+          pollQuestion: 'A friend says, “I feel overwhelmed.” What is the best first response?',
+          pollOptions: [
+            'Tell them what they should do',
+            'Ask if they want listening or suggestions',
+            'Explain why the problem is not serious'
+          ],
+          pollAnonymous: true,
+          pollMultiple: false,
+          pollQuiz: true,
+          correctOptionIds: [1],
+          pollExplanation:
+            'Asking what kind of support they want respects their needs and reduces pressure.',
+          closeAfterMinutes: 1440
+        },
+        {
+          kind: 'POLL',
+          pollQuestion: 'Which sentence shows a healthy boundary?',
+          pollOptions: [
+            'I must always be available',
+            'I care about you, and I need to rest now',
+            'Your feelings are not my problem'
+          ],
+          pollAnonymous: true,
+          pollMultiple: false,
+          pollQuiz: true,
+          correctOptionIds: [1],
+          pollExplanation: 'A clear and kind boundary protects both people without rejecting care.',
+          closeAfterMinutes: 1440
+        },
+        {
+          kind: 'POLL',
+          pollQuestion: 'What helps make a peer-support group safer?',
+          pollOptions: [
+            'Keeping personal stories private',
+            'Giving diagnoses to other members',
+            'Pressuring people to share details'
+          ],
+          pollAnonymous: true,
+          pollMultiple: false,
+          pollQuiz: true,
+          correctOptionIds: [0],
+          pollExplanation:
+            'Privacy, consent, and listening without diagnosis support a safer space.',
+          closeAfterMinutes: 1440
         }
       ]
     }
