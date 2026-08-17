@@ -47,6 +47,16 @@ type CampaignItemDraft = {
   followUpMessage: string;
 };
 
+type GroupHelpWorkspaceSection =
+  | 'overview'
+  | 'campaigns'
+  | 'events'
+  | 'confessions'
+  | 'announcements'
+  | 'moderation'
+  | 'settings'
+  | 'activity';
+
 const emptyCampaignItem = (kind: 'TEXT' | 'POLL' | 'SUMMARY'): CampaignItemDraft => ({
   kind,
   text: '',
@@ -81,6 +91,21 @@ const SECTION_LABELS: Record<GroupHelpConfigEntry['section'], string> = {
   styleUrl: './group-help-page.scss',
 })
 export class GroupHelpPage {
+  readonly activeWorkspaceSection = signal<GroupHelpWorkspaceSection>('overview');
+  readonly workspaceSections: ReadonlyArray<{
+    id: GroupHelpWorkspaceSection;
+    label: string;
+    description: string;
+  }> = [
+    { id: 'overview', label: 'Overview', description: 'Status and recent activity' },
+    { id: 'campaigns', label: 'Posts & polls', description: 'Scheduled community content' },
+    { id: 'events', label: 'Events', description: 'Voice circles and reminders' },
+    { id: 'confessions', label: 'Review', description: 'Anonymous submissions' },
+    { id: 'announcements', label: 'Announcements', description: 'Messages and pinned posts' },
+    { id: 'moderation', label: 'Moderation', description: 'Member actions' },
+    { id: 'settings', label: 'Bot settings', description: 'Messages, rules and behaviour' },
+    { id: 'activity', label: 'History', description: 'Configuration activity' },
+  ];
   readonly config = signal<GroupHelpConfigEntry[]>([]);
   readonly localValues = signal<Record<string, string>>({});
   readonly tokenConfigured = signal(false);
@@ -183,6 +208,26 @@ export class GroupHelpPage {
 
   constructor(private readonly api: AdminApi) {
     void this.load();
+  }
+
+  openWorkspaceSection(section: GroupHelpWorkspaceSection) {
+    this.activeWorkspaceSection.set(section);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  workspaceBadge(section: GroupHelpWorkspaceSection) {
+    if (section === 'confessions') return this.pendingConfessions().length;
+    if (section === 'campaigns')
+      return this.campaigns().filter((campaign) => campaign.isActive).length;
+    if (section === 'events') {
+      return this.communityEvents().filter((event) => event.status === 'SCHEDULED').length;
+    }
+    return 0;
+  }
+
+  startCampaign() {
+    this.resetCampaignForm();
+    this.openWorkspaceSection('campaigns');
   }
 
   async load() {
@@ -298,6 +343,7 @@ export class GroupHelpPage {
   }
 
   editCampaign(campaign: any) {
+    this.activeWorkspaceSection.set('campaigns');
     this.editingCampaignId.set(campaign.id);
     this.campaignName.set(campaign.name);
     this.campaignIntervalMinutes.set(campaign.intervalMinutes);
@@ -397,6 +443,7 @@ export class GroupHelpPage {
   }
 
   editCommunityEvent(event: any) {
+    this.activeWorkspaceSection.set('events');
     this.editingEventId.set(event.id);
     this.eventTitle.set(event.title);
     this.eventDescription.set(event.description || '');

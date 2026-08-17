@@ -2,758 +2,980 @@
   <div>
     <p class="eyebrow">Telegram community</p>
     <h1>Telegram Community Control</h1>
-    <p>
-      Manage community posts, polls, events, anonymous reviews, onboarding and moderation from
-      one place.
-    </p>
-  </div>
-  <div class="status-card" [class.status-card--ready]="tokenConfigured()">
-    <span>{{ tokenConfigured() ? 'Announcements ready' : 'Commands ready to copy' }}</span>
-    <strong>{{ value('telegramGroupHelpBotUsername') || 'Hopehubaibot' }}</strong>
-    <small>
-      {{
-        tokenConfigured()
-          ? 'The bot can send and pin announcements.'
-          : 'Connect the bot to send announcements directly.'
-      }}
-    </small>
-    <button type="button" (click)="testConnection()" [disabled]="testing()">
-      {{ testing() ? 'Testing…' : 'Test bot and group' }}
-    </button>
-    <button type="button" (click)="clearWebsiteMenu()" [disabled]="clearingMenu()">
-      {{ clearingMenu() ? 'Clearing…' : 'Clear old website menu' }}
-    </button>
+    <p>Choose one area, complete the action, and move to the next when needed.</p>
   </div>
 </section>
 
-<section class="notice-panel">
-  <strong>Important safety line</strong>
-  <p>
-    HopeHubAI continues to manage group moderation. The Community bot handles scheduled posts,
-    polls, events, onboarding and engagement records.
-  </p>
-</section>
-
-@if (connectionDetails().bot) {
-  <section class="connection-summary" aria-label="Group Help connection status">
-    <div><small>Bot</small><strong>{{ connectionDetails().bot }}</strong></div>
-    <div><small>Group</small><strong>{{ connectionDetails().group || 'Group not reachable' }}</strong></div>
-    <div><small>Managed by</small><strong>{{ connectionDetails().runtime }}</strong></div>
-    <div class="permission-summary">
-      <small>Detected permissions</small>
-      <strong>{{ connectionDetails().permissions?.join(', ') || 'No admin permissions detected' }}</strong>
-    </div>
-  </section>
+@if (message()) {
+  <div class="success workspace-feedback">{{ message() }}</div>
+}
+@if (error()) {
+  <div class="error workspace-feedback">{{ error() }}</div>
 }
 
 @if (loading()) {
   <p class="loading-text">Loading Group Help settings…</p>
 }
 
-<section class="panel campaign-panel">
-  <div class="panel-head">
-    <div>
-      <p class="eyebrow">Community automation</p>
-      <h2>Scheduled posts and polls</h2>
-      <p>Add messages in order. Hope Hub posts the next item automatically at your interval.</p>
+<div class="group-help-workspace">
+  <nav class="workspace-nav" aria-label="Telegram Community sections">
+    <div class="workspace-nav__title">
+      <strong>Workspace</strong>
+      <small>Choose a section</small>
     </div>
-    <span class="action-status" [class.action-status--pending]="!campaignBotConfigured()">
-      {{ campaignBotConfigured() ? 'Community bot ready' : 'Community bot token needed' }}
-    </span>
-  </div>
-
-  @if (engagement(); as stats) {
-    <div class="engagement-grid" aria-label="Community activity in the last seven days">
-      <div><strong>{{ stats.posts }}</strong><span>Posts</span></div>
-      <div><strong>{{ stats.pollVotes }}</strong><span>Poll answers</span></div>
-      <div><strong>{{ stats.reactions }}</strong><span>Reactions</span></div>
-      <div><strong>{{ stats.newMembers }}</strong><span>New members</span></div>
-      <div><strong>{{ stats.rsvps }}</strong><span>Event RSVPs</span></div>
-      <div><strong>{{ stats.pendingConfessions }}</strong><span>Awaiting review</span></div>
-      <div><strong>{{ stats.failedFollowUps }}</strong><span>Follow-ups blocked</span></div>
-    </div>
-  }
-
-  <div class="campaign-layout">
-    <form class="campaign-editor" (submit)="$event.preventDefault(); saveCampaign()">
-      <div class="campaign-editor__head">
-        <h3>{{ editingCampaignId() ? 'Edit campaign' : 'New campaign' }}</h3>
-        @if (editingCampaignId()) {
-          <button type="button" (click)="resetCampaignForm()">Cancel edit</button>
+    @for (section of workspaceSections; track section.id) {
+      <button
+        type="button"
+        class="workspace-nav__item"
+        [class.workspace-nav__item--active]="activeWorkspaceSection() === section.id"
+        [attr.aria-current]="activeWorkspaceSection() === section.id ? 'page' : null"
+        (click)="openWorkspaceSection(section.id)"
+      >
+        <span>
+          <strong>{{ section.label }}</strong>
+          <small>{{ section.description }}</small>
+        </span>
+        @if (workspaceBadge(section.id)) {
+          <b>{{ workspaceBadge(section.id) }}</b>
         }
+      </button>
+    }
+  </nav>
+
+  <main class="workspace-main">
+    <section
+      class="notice-panel"
+      [class.workspace-hidden]="activeWorkspaceSection() !== 'overview'"
+    >
+      <strong>Important safety line</strong>
+      <p>
+        HopeHubAI continues to manage group moderation. The Community bot handles scheduled posts,
+        polls, events, onboarding and engagement records.
+      </p>
+    </section>
+
+    @if (connectionDetails().bot) {
+      <section
+        class="connection-summary"
+        aria-label="Group Help connection status"
+        [class.workspace-hidden]="activeWorkspaceSection() !== 'overview'"
+      >
+        <div>
+          <small>Bot</small><strong>{{ connectionDetails().bot }}</strong>
+        </div>
+        <div>
+          <small>Group</small
+          ><strong>{{ connectionDetails().group || 'Group not reachable' }}</strong>
+        </div>
+        <div>
+          <small>Managed by</small><strong>{{ connectionDetails().runtime }}</strong>
+        </div>
+        <div class="permission-summary">
+          <small>Detected permissions</small>
+          <strong>{{
+            connectionDetails().permissions?.join(', ') || 'No admin permissions detected'
+          }}</strong>
+        </div>
+      </section>
+    }
+
+    <section
+      class="panel overview-panel"
+      [class.workspace-hidden]="activeWorkspaceSection() !== 'overview'"
+    >
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">Last seven days</p>
+          <h2>Community activity</h2>
+          <p>See what needs attention before opening a work area.</p>
+        </div>
+      </div>
+      @if (engagement(); as stats) {
+        <div class="engagement-grid" aria-label="Community activity in the last seven days">
+          <div>
+            <strong>{{ stats.posts }}</strong
+            ><span>Posts</span>
+          </div>
+          <div>
+            <strong>{{ stats.pollVotes }}</strong
+            ><span>Poll answers</span>
+          </div>
+          <div>
+            <strong>{{ stats.reactions }}</strong
+            ><span>Reactions</span>
+          </div>
+          <div>
+            <strong>{{ stats.newMembers }}</strong
+            ><span>New members</span>
+          </div>
+          <div>
+            <strong>{{ stats.rsvps }}</strong
+            ><span>Event RSVPs</span>
+          </div>
+          <div>
+            <strong>{{ stats.pendingConfessions }}</strong
+            ><span>Awaiting review</span>
+          </div>
+          <div>
+            <strong>{{ stats.failedFollowUps }}</strong
+            ><span>Follow-ups blocked</span>
+          </div>
+        </div>
+      } @else {
+        <p>No community activity has been recorded yet.</p>
+      }
+    </section>
+
+    <section
+      class="panel campaign-panel"
+      [class.workspace-hidden]="activeWorkspaceSection() !== 'campaigns'"
+    >
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">Community automation</p>
+          <h2>Scheduled posts and polls</h2>
+          <p>Add messages in order. Hope Hub posts the next item automatically at your interval.</p>
+        </div>
+        <span class="action-status" [class.action-status--pending]="!campaignBotConfigured()">
+          {{ campaignBotConfigured() ? 'Community bot ready' : 'Community bot token needed' }}
+        </span>
       </div>
 
-      <div class="campaign-basics">
-        <label>
-          Campaign name
-          <input
-            type="text"
-            maxlength="120"
-            placeholder="Daily community check-in"
-            [value]="campaignName()"
-            (input)="campaignName.set($any($event.target).value)"
-          />
-        </label>
-        <label>
-          Post next item every
-          <select
-            [value]="campaignIntervalMinutes()"
-            (change)="campaignIntervalMinutes.set(+$any($event.target).value)"
-          >
-            <option [value]="30">30 minutes</option>
-            <option [value]="60">1 hour</option>
-            <option [value]="180">3 hours</option>
-            <option [value]="360">6 hours</option>
-            <option [value]="720">12 hours</option>
-            <option [value]="1440">1 day</option>
-            <option [value]="10080">1 week</option>
-          </select>
-        </label>
-      </div>
-
-      <div class="campaign-items">
-        @for (item of campaignItems(); track $index; let itemIndex = $index) {
-          <article class="campaign-item">
-            <div class="campaign-item__head">
-              <strong>
-                {{ itemIndex + 1 }}.
-                {{ item.kind === 'POLL' ? 'Poll' : item.kind === 'SUMMARY' ? 'Weekly summary' : 'Message' }}
-              </strong>
-              @if (campaignItems().length > 1) {
-                <button type="button" class="danger-text" (click)="removeCampaignItem(itemIndex)">
-                  Remove
-                </button>
-              }
-            </div>
-
-            @if (item.kind === 'TEXT') {
-              <label>
-                Message
-                <textarea
-                  rows="4"
-                  maxlength="4096"
-                  placeholder="Write the group message"
-                  [value]="item.text"
-                  (input)="updateCampaignItem(itemIndex, { text: $any($event.target).value })"
-                ></textarea>
-              </label>
-              <label>
-                Image URL <small>Optional</small>
-                <input
-                  type="url"
-                  placeholder="https://..."
-                  [value]="item.imageUrl"
-                  (input)="updateCampaignItem(itemIndex, { imageUrl: $any($event.target).value })"
-                />
-              </label>
-            } @else if (item.kind === 'SUMMARY') {
-              <label>
-                Summary heading
-                <input
-                  type="text"
-                  maxlength="300"
-                  placeholder="💙 Hope Hub community week"
-                  [value]="item.text"
-                  (input)="updateCampaignItem(itemIndex, { text: $any($event.target).value })"
-                />
-              </label>
-              <p class="privacy-note">
-                Weekly post, poll, reaction and upcoming-circle totals are added automatically.
-              </p>
-            } @else {
-              <label>
-                Question
-                <input
-                  type="text"
-                  maxlength="300"
-                  placeholder="How are you feeling today?"
-                  [value]="item.pollQuestion"
-                  (input)="updateCampaignItem(itemIndex, { pollQuestion: $any($event.target).value })"
-                />
-              </label>
-              <label>
-                Answer options <small>One option per line</small>
-                <textarea
-                  rows="4"
-                  placeholder="Calm&#10;A little heavy&#10;I need support"
-                  [value]="item.pollOptionsText"
-                  (input)="updateCampaignItem(itemIndex, { pollOptionsText: $any($event.target).value })"
-                ></textarea>
-              </label>
-              <div class="campaign-checks">
-                <label class="check-row">
-                  <input
-                    type="checkbox"
-                    [checked]="item.pollAnonymous"
-                    (change)="updateCampaignItem(itemIndex, { pollAnonymous: $any($event.target).checked })"
-                  />
-                  Anonymous voting
-                </label>
-                <label class="check-row">
-                  <input
-                    type="checkbox"
-                    [checked]="item.pollMultiple"
-                    (change)="updateCampaignItem(itemIndex, { pollMultiple: $any($event.target).checked })"
-                  />
-                  Allow multiple answers
-                </label>
-              </div>
-              <label>
-                Close after minutes <small>Optional</small>
-                <input
-                  type="number"
-                  min="1"
-                  max="43800"
-                  placeholder="Leave open"
-                  [value]="item.closeAfterMinutes || ''"
-                  (input)="updateCampaignItem(itemIndex, { closeAfterMinutes: +$any($event.target).value || null })"
-                />
-              </label>
-              <p class="privacy-note">
-                Anonymous polls store totals only. Turn anonymity off when authorized admins need
-                individual responses.
-              </p>
-              <label>
-                Private follow-up answer numbers <small>Optional, for example 3, 4</small>
-                <input
-                  type="text"
-                  placeholder="3, 4"
-                  [value]="item.followUpOptionIdsText"
-                  (input)="updateCampaignItem(itemIndex, { followUpOptionIdsText: $any($event.target).value })"
-                />
-              </label>
-              <label>
-                Private follow-up message <small>Only sent for the selected answers</small>
-                <textarea
-                  rows="3"
-                  maxlength="1200"
-                  placeholder="You do not have to carry this alone. Would you like private support?"
-                  [value]="item.followUpMessage"
-                  (input)="updateCampaignItem(itemIndex, { followUpMessage: $any($event.target).value })"
-                ></textarea>
-              </label>
-              @if (item.followUpOptionIdsText && item.pollAnonymous) {
-                <p class="field-warning">Turn off anonymous voting to send a private follow-up.</p>
-              }
+      <div class="campaign-layout">
+        <form class="campaign-editor" (submit)="$event.preventDefault(); saveCampaign()">
+          <div class="campaign-editor__head">
+            <h3>{{ editingCampaignId() ? 'Edit campaign' : 'New campaign' }}</h3>
+            @if (editingCampaignId()) {
+              <button type="button" (click)="resetCampaignForm()">Cancel edit</button>
             }
+          </div>
+
+          <div class="campaign-basics">
             <label>
-              Telegram topic ID <small>Optional</small>
+              Campaign name
               <input
-                type="number"
-                min="1"
-                placeholder="Main group"
-                [value]="item.messageThreadId || ''"
-                (input)="updateCampaignItem(itemIndex, { messageThreadId: +$any($event.target).value || null })"
+                type="text"
+                maxlength="120"
+                placeholder="Daily community check-in"
+                [value]="campaignName()"
+                (input)="campaignName.set($any($event.target).value)"
               />
             </label>
+            <label>
+              Post next item every
+              <select
+                [value]="campaignIntervalMinutes()"
+                (change)="campaignIntervalMinutes.set(+$any($event.target).value)"
+              >
+                <option [value]="30">30 minutes</option>
+                <option [value]="60">1 hour</option>
+                <option [value]="180">3 hours</option>
+                <option [value]="360">6 hours</option>
+                <option [value]="720">12 hours</option>
+                <option [value]="1440">1 day</option>
+                <option [value]="10080">1 week</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="campaign-items">
+            @for (item of campaignItems(); track $index; let itemIndex = $index) {
+              <article class="campaign-item">
+                <div class="campaign-item__head">
+                  <strong>
+                    {{ itemIndex + 1 }}.
+                    {{
+                      item.kind === 'POLL'
+                        ? 'Poll'
+                        : item.kind === 'SUMMARY'
+                          ? 'Weekly summary'
+                          : 'Message'
+                    }}
+                  </strong>
+                  @if (campaignItems().length > 1) {
+                    <button
+                      type="button"
+                      class="danger-text"
+                      (click)="removeCampaignItem(itemIndex)"
+                    >
+                      Remove
+                    </button>
+                  }
+                </div>
+
+                @if (item.kind === 'TEXT') {
+                  <label>
+                    Message
+                    <textarea
+                      rows="4"
+                      maxlength="4096"
+                      placeholder="Write the group message"
+                      [value]="item.text"
+                      (input)="updateCampaignItem(itemIndex, { text: $any($event.target).value })"
+                    ></textarea>
+                  </label>
+                  <label>
+                    Image URL <small>Optional</small>
+                    <input
+                      type="url"
+                      placeholder="https://..."
+                      [value]="item.imageUrl"
+                      (input)="
+                        updateCampaignItem(itemIndex, { imageUrl: $any($event.target).value })
+                      "
+                    />
+                  </label>
+                } @else if (item.kind === 'SUMMARY') {
+                  <label>
+                    Summary heading
+                    <input
+                      type="text"
+                      maxlength="300"
+                      placeholder="💙 Hope Hub community week"
+                      [value]="item.text"
+                      (input)="updateCampaignItem(itemIndex, { text: $any($event.target).value })"
+                    />
+                  </label>
+                  <p class="privacy-note">
+                    Weekly post, poll, reaction and upcoming-circle totals are added automatically.
+                  </p>
+                } @else {
+                  <label>
+                    Question
+                    <input
+                      type="text"
+                      maxlength="300"
+                      placeholder="How are you feeling today?"
+                      [value]="item.pollQuestion"
+                      (input)="
+                        updateCampaignItem(itemIndex, { pollQuestion: $any($event.target).value })
+                      "
+                    />
+                  </label>
+                  <label>
+                    Answer options <small>One option per line</small>
+                    <textarea
+                      rows="4"
+                      placeholder="Calm&#10;A little heavy&#10;I need support"
+                      [value]="item.pollOptionsText"
+                      (input)="
+                        updateCampaignItem(itemIndex, {
+                          pollOptionsText: $any($event.target).value,
+                        })
+                      "
+                    ></textarea>
+                  </label>
+                  <div class="campaign-checks">
+                    <label class="check-row">
+                      <input
+                        type="checkbox"
+                        [checked]="item.pollAnonymous"
+                        (change)="
+                          updateCampaignItem(itemIndex, {
+                            pollAnonymous: $any($event.target).checked,
+                          })
+                        "
+                      />
+                      Anonymous voting
+                    </label>
+                    <label class="check-row">
+                      <input
+                        type="checkbox"
+                        [checked]="item.pollMultiple"
+                        (change)="
+                          updateCampaignItem(itemIndex, {
+                            pollMultiple: $any($event.target).checked,
+                          })
+                        "
+                      />
+                      Allow multiple answers
+                    </label>
+                  </div>
+                  <label>
+                    Close after minutes <small>Optional</small>
+                    <input
+                      type="number"
+                      min="1"
+                      max="43800"
+                      placeholder="Leave open"
+                      [value]="item.closeAfterMinutes || ''"
+                      (input)="
+                        updateCampaignItem(itemIndex, {
+                          closeAfterMinutes: +$any($event.target).value || null,
+                        })
+                      "
+                    />
+                  </label>
+                  <p class="privacy-note">
+                    Anonymous polls store totals only. Turn anonymity off when authorized admins
+                    need individual responses.
+                  </p>
+                  <label>
+                    Private follow-up answer numbers <small>Optional, for example 3, 4</small>
+                    <input
+                      type="text"
+                      placeholder="3, 4"
+                      [value]="item.followUpOptionIdsText"
+                      (input)="
+                        updateCampaignItem(itemIndex, {
+                          followUpOptionIdsText: $any($event.target).value,
+                        })
+                      "
+                    />
+                  </label>
+                  <label>
+                    Private follow-up message <small>Only sent for the selected answers</small>
+                    <textarea
+                      rows="3"
+                      maxlength="1200"
+                      placeholder="You do not have to carry this alone. Would you like private support?"
+                      [value]="item.followUpMessage"
+                      (input)="
+                        updateCampaignItem(itemIndex, {
+                          followUpMessage: $any($event.target).value,
+                        })
+                      "
+                    ></textarea>
+                  </label>
+                  @if (item.followUpOptionIdsText && item.pollAnonymous) {
+                    <p class="field-warning">
+                      Turn off anonymous voting to send a private follow-up.
+                    </p>
+                  }
+                }
+                <label>
+                  Telegram topic ID <small>Optional</small>
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="Main group"
+                    [value]="item.messageThreadId || ''"
+                    (input)="
+                      updateCampaignItem(itemIndex, {
+                        messageThreadId: +$any($event.target).value || null,
+                      })
+                    "
+                  />
+                </label>
+              </article>
+            }
+          </div>
+
+          <div class="campaign-add-actions">
+            <button type="button" (click)="addCampaignItem('TEXT')">+ Add message</button>
+            <button type="button" (click)="addCampaignItem('POLL')">+ Add poll</button>
+            <button type="button" (click)="addCampaignItem('SUMMARY')">+ Add weekly summary</button>
+          </div>
+
+          <div class="campaign-checks">
+            <label class="check-row">
+              <input
+                type="checkbox"
+                [checked]="campaignRepeat()"
+                (change)="campaignRepeat.set($any($event.target).checked)"
+              />
+              Repeat the sequence
+            </label>
+            <label class="check-row">
+              <input
+                type="checkbox"
+                [checked]="campaignActive()"
+                (change)="campaignActive.set($any($event.target).checked)"
+              />
+              Start after saving
+            </label>
+          </div>
+
+          <button type="submit" class="primary" [disabled]="campaignSaving()">
+            {{
+              campaignSaving()
+                ? 'Saving…'
+                : editingCampaignId()
+                  ? 'Update campaign'
+                  : 'Save campaign'
+            }}
+          </button>
+        </form>
+
+        <div class="campaign-list">
+          <h3>Campaigns</h3>
+          @if (!campaigns().length) {
+            <p class="campaign-empty">No campaigns yet.</p>
+          }
+          @for (campaign of campaigns(); track campaign.id) {
+            <article class="campaign-card">
+              <div>
+                <span class="campaign-state" [class.campaign-state--active]="campaign.isActive">
+                  {{ campaign.isActive ? 'Active' : 'Paused' }}
+                </span>
+                <h4>{{ campaign.name }}</h4>
+                <p>
+                  {{ campaign.items.length }} items · every {{ campaign.intervalMinutes }} minutes
+                </p>
+                <small>
+                  Next:
+                  {{ campaign.nextRunAt ? (campaign.nextRunAt | date: 'medium') : 'Not scheduled' }}
+                </small>
+              </div>
+              <div class="campaign-card__actions">
+                <button type="button" (click)="editCampaign(campaign)">Edit</button>
+                <button
+                  type="button"
+                  (click)="toggleCampaign(campaign)"
+                  [disabled]="campaignBusyId() === campaign.id"
+                >
+                  {{ campaign.isActive ? 'Pause' : 'Start' }}
+                </button>
+                <button type="button" (click)="showCampaignResults(campaign)">Results</button>
+                <button type="button" class="danger-text" (click)="deleteCampaign(campaign)">
+                  Delete
+                </button>
+              </div>
+
+              @if (resultsCampaignId() === campaign.id) {
+                <div class="poll-results">
+                  @if (!campaignResults().length) {
+                    <p>No polls have been posted from this campaign yet.</p>
+                  }
+                  @for (result of campaignResults(); track result.id) {
+                    <article>
+                      <strong>{{ result.question }}</strong>
+                      <small
+                        >{{ result.totalVoters }} voters · {{ result.status | lowercase }}</small
+                      >
+                      @for (option of result.options; track option.text) {
+                        <div class="poll-result-row">
+                          <span>{{ option.text }}</span
+                          ><b>{{ option.votes }}</b>
+                        </div>
+                      }
+                    </article>
+                  }
+                </div>
+              }
+            </article>
+          }
+        </div>
+      </div>
+    </section>
+
+    <section
+      class="panel events-panel"
+      [class.workspace-hidden]="activeWorkspaceSection() !== 'events'"
+    >
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">Live community</p>
+          <h2>Voice circles and events</h2>
+          <p>Announce an event, collect RSVPs and remind the group automatically.</p>
+        </div>
+      </div>
+      <div class="event-layout">
+        <form class="event-form" (submit)="$event.preventDefault(); saveCommunityEvent()">
+          <div class="campaign-editor__head">
+            <h3>{{ editingEventId() ? 'Edit event' : 'New event' }}</h3>
+            @if (editingEventId()) {
+              <button type="button" (click)="resetEventForm()">Cancel</button>
+            }
+          </div>
+          <label>
+            Event title
+            <input
+              type="text"
+              maxlength="160"
+              placeholder="Daily 9 PM voice circle"
+              [value]="eventTitle()"
+              (input)="eventTitle.set($any($event.target).value)"
+            />
+          </label>
+          <label>
+            Short description
+            <textarea
+              rows="3"
+              maxlength="1200"
+              [value]="eventDescription()"
+              (input)="eventDescription.set($any($event.target).value)"
+            ></textarea>
+          </label>
+          <label>
+            Date and time
+            <input
+              type="datetime-local"
+              [value]="eventStartsAt()"
+              (input)="eventStartsAt.set($any($event.target).value)"
+            />
+          </label>
+          <label>
+            Join link
+            <input
+              type="url"
+              [value]="eventJoinUrl()"
+              (input)="eventJoinUrl.set($any($event.target).value)"
+            />
+          </label>
+          <label>
+            Reminder
+            <select
+              [value]="eventReminderMinutes()"
+              (change)="eventReminderMinutes.set(+$any($event.target).value)"
+            >
+              <option [value]="15">15 minutes before</option>
+              <option [value]="30">30 minutes before</option>
+              <option [value]="60">1 hour before</option>
+              <option [value]="1440">1 day before</option>
+            </select>
+          </label>
+          <button type="submit" class="primary" [disabled]="eventSaving()">
+            {{ eventSaving() ? 'Saving…' : editingEventId() ? 'Update event' : 'Announce event' }}
+          </button>
+        </form>
+        <div class="event-list">
+          @if (!communityEvents().length) {
+            <p>No voice circles scheduled.</p>
+          }
+          @for (event of communityEvents(); track event.id) {
+            <article class="event-card">
+              <div>
+                <span
+                  class="campaign-state"
+                  [class.campaign-state--active]="event.status === 'SCHEDULED'"
+                >
+                  {{ event.status | lowercase }}
+                </span>
+                <h3>{{ event.title }}</h3>
+                <p>{{ event.startsAt | date: 'medium' }} · {{ event.rsvps.length }} joining</p>
+              </div>
+              <div class="campaign-card__actions">
+                <button type="button" (click)="editCommunityEvent(event)">Edit</button>
+                <a [href]="event.joinUrl" target="_blank" rel="noopener noreferrer">Open link</a>
+                <button type="button" class="danger-text" (click)="deleteCommunityEvent(event)">
+                  Delete
+                </button>
+              </div>
+            </article>
+          }
+        </div>
+      </div>
+    </section>
+
+    @if (pendingConfessions().length) {
+      <section
+        class="panel confession-review-panel"
+        [class.workspace-hidden]="activeWorkspaceSection() !== 'confessions'"
+      >
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Private review</p>
+            <h2>Anonymous posts awaiting approval</h2>
+            <p>Identity remains hidden. Review the content before publishing it to the group.</p>
+          </div>
+        </div>
+        <div class="confession-review-list">
+          @for (submission of pendingConfessions(); track submission.id) {
+            <article>
+              <p>{{ submission.text }}</p>
+              <div class="confession-sender">
+                <strong>Admin-only sender</strong>
+                <span>
+                  {{ submission.firstName || 'Telegram user' }}
+                  @if (submission.username) {
+                    · {{ '@' + submission.username.replace('@', '') }}
+                  }
+                  · ID {{ submission.userChatId }}
+                </span>
+              </div>
+              <small>{{ submission.createdAt | date: 'medium' }}</small>
+              <div class="campaign-card__actions">
+                <button
+                  type="button"
+                  class="primary"
+                  [disabled]="campaignBusyId() === submission.reference"
+                  (click)="reviewConfession(submission, 'APPROVE')"
+                >
+                  Approve and publish
+                </button>
+                <button
+                  type="button"
+                  class="danger-text"
+                  [disabled]="campaignBusyId() === submission.reference"
+                  (click)="reviewConfession(submission, 'REJECT')"
+                >
+                  Reject
+                </button>
+              </div>
+            </article>
+          }
+        </div>
+      </section>
+    }
+
+    @if (!pendingConfessions().length) {
+      <section
+        class="panel empty-review-panel"
+        [class.workspace-hidden]="activeWorkspaceSection() !== 'confessions'"
+      >
+        <p class="eyebrow">Private review</p>
+        <h2>No posts waiting</h2>
+        <p>New anonymous submissions will appear here for approval.</p>
+      </section>
+    }
+
+    <section class="config-grid" [class.workspace-hidden]="activeWorkspaceSection() !== 'settings'">
+      @for (section of sectionOrder; track section) {
+        <details
+          class="panel config-section"
+          [open]="section === 'connection' || section === 'messages'"
+        >
+          <summary>
+            <span>{{ sectionLabels[section] }}</span>
+            <small>{{ fieldsFor(section).length }} settings</small>
+          </summary>
+          <div class="field-list">
+            @for (entry of fieldsFor(section); track entry.key) {
+              <label class="config-field">
+                <span>
+                  <strong>{{ entry.label }}</strong>
+                  <small>{{ entry.description }}</small>
+                </span>
+
+                @if (entry.type === 'textarea') {
+                  <textarea
+                    rows="5"
+                    [value]="value(entry.key)"
+                    [attr.maxlength]="entry.maxLength"
+                    [placeholder]="entry.placeholder || ''"
+                    (input)="update(entry.key, $any($event.target).value)"
+                  ></textarea>
+                } @else if (entry.type === 'select') {
+                  <select
+                    [value]="value(entry.key)"
+                    (change)="update(entry.key, $any($event.target).value)"
+                  >
+                    @for (option of entry.options || []; track option) {
+                      <option [value]="option">{{ option }}</option>
+                    }
+                  </select>
+                } @else {
+                  <input
+                    [type]="entry.type === 'number' ? 'number' : 'text'"
+                    [value]="value(entry.key)"
+                    [attr.maxlength]="entry.maxLength"
+                    [placeholder]="entry.placeholder || ''"
+                    (input)="update(entry.key, $any($event.target).value)"
+                  />
+                }
+              </label>
+            }
+          </div>
+        </details>
+      }
+    </section>
+
+    <section
+      class="panel command-panel"
+      [class.workspace-hidden]="activeWorkspaceSection() !== 'announcements'"
+    >
+      <div class="panel-head">
+        <div>
+          <h2>Generated GroupHelp commands</h2>
+          <p>
+            Copy these into the GroupHelp bot/group. If your clone uses different syntax, edit the
+            command templates above once.
+          </p>
+        </div>
+        <button type="button" class="primary" (click)="saveAll()" [disabled]="saving()">
+          {{ saving() ? 'Saving…' : 'Save all config' }}
+        </button>
+      </div>
+
+      <div class="command-grid">
+        @for (item of messageCommands; track item.id) {
+          <article class="command-card">
+            <div class="command-title">
+              <h3>{{ item.title }}</h3>
+              @if (actionStatuses()[item.id]) {
+                <span
+                  class="action-status"
+                  [class.action-status--pending]="actionStatuses()[item.id] === 'confirmation'"
+                >
+                  {{ actionStatuses()[item.id] === 'applied' ? 'Applied' : 'Confirm in Telegram' }}
+                </span>
+              }
+            </div>
+            <p>{{ item.helper }}</p>
+            @if (item.imageUrlKey) {
+              <div class="image-tools">
+                <div>
+                  <strong>Image</strong>
+                  <small>Upload to public S3 and attach the URL to this message.</small>
+                </div>
+                @if (value(item.imageUrlKey)) {
+                  <img [src]="value(item.imageUrlKey)" [alt]="item.title + ' image preview'" />
+                  <input
+                    type="url"
+                    [value]="value(item.imageUrlKey)"
+                    (input)="update(item.imageUrlKey, $any($event.target).value)"
+                    placeholder="https://..."
+                  />
+                } @else {
+                  <p class="empty-image">No image selected.</p>
+                }
+                <label class="upload-button">
+                  <input type="file" accept="image/*" (change)="uploadImage($event, item)" />
+                  {{ uploadingImage() === item.id ? 'Uploading…' : 'Upload image' }}
+                </label>
+              </div>
+            }
+            <pre>{{ commandFor(item) }}</pre>
+            <div class="command-actions">
+              <button type="button" (click)="copy(commandFor(item), item.title)">
+                {{ copied() === item.title ? 'Copied' : 'Copy command' }}
+              </button>
+              <button
+                type="button"
+                class="primary"
+                (click)="apply(item)"
+                [disabled]="applying() === item.id || saving()"
+              >
+                {{
+                  applying() === item.id
+                    ? 'Applying…'
+                    : item.applyMode === 'DIRECT_PIN'
+                      ? 'Apply now'
+                      : 'Apply in Telegram'
+                }}
+              </button>
+            </div>
+          </article>
+        }
+
+        @for (item of moderationCommands; track item.id) {
+          <article class="command-card">
+            <div class="command-title">
+              <h3>{{ item.title }}</h3>
+              @if (actionStatuses()[item.id]) {
+                <span
+                  class="action-status"
+                  [class.action-status--pending]="actionStatuses()[item.id] === 'confirmation'"
+                >
+                  {{ actionStatuses()[item.id] === 'applied' ? 'Applied' : 'Confirm in Telegram' }}
+                </span>
+              }
+            </div>
+            <p>{{ item.helper }}</p>
+            <pre>{{ commandFor(item) }}</pre>
+            <div class="command-actions">
+              <button type="button" (click)="copy(commandFor(item), item.title)">
+                {{ copied() === item.title ? 'Copied' : 'Copy command' }}
+              </button>
+              <button
+                type="button"
+                class="primary"
+                (click)="apply(item)"
+                [disabled]="applying() === item.id || saving()"
+              >
+                {{ applying() === item.id ? 'Applying…' : 'Apply in Telegram' }}
+              </button>
+            </div>
           </article>
         }
       </div>
+    </section>
 
-      <div class="campaign-add-actions">
-        <button type="button" (click)="addCampaignItem('TEXT')">+ Add message</button>
-        <button type="button" (click)="addCampaignItem('POLL')">+ Add poll</button>
-        <button type="button" (click)="addCampaignItem('SUMMARY')">+ Add weekly summary</button>
+    <section
+      class="panel moderator-panel"
+      [class.workspace-hidden]="activeWorkspaceSection() !== 'moderation'"
+    >
+      <div class="panel-head">
+        <div>
+          <h2>Moderator tools</h2>
+          <p>
+            Prepare a Group Help command, then verify and send it from an authorized Telegram
+            account.
+          </p>
+        </div>
       </div>
-
-      <div class="campaign-checks">
-        <label class="check-row">
-          <input
-            type="checkbox"
-            [checked]="campaignRepeat()"
-            (change)="campaignRepeat.set($any($event.target).checked)"
-          />
-          Repeat the sequence
-        </label>
-        <label class="check-row">
-          <input
-            type="checkbox"
-            [checked]="campaignActive()"
-            (change)="campaignActive.set($any($event.target).checked)"
-          />
-          Start after saving
-        </label>
-      </div>
-
-      <button type="submit" class="primary" [disabled]="campaignSaving()">
-        {{ campaignSaving() ? 'Saving…' : editingCampaignId() ? 'Update campaign' : 'Save campaign' }}
-      </button>
-    </form>
-
-    <div class="campaign-list">
-      <h3>Campaigns</h3>
-      @if (!campaigns().length) {
-        <p class="campaign-empty">No campaigns yet.</p>
-      }
-      @for (campaign of campaigns(); track campaign.id) {
-        <article class="campaign-card">
-          <div>
-            <span class="campaign-state" [class.campaign-state--active]="campaign.isActive">
-              {{ campaign.isActive ? 'Active' : 'Paused' }}
-            </span>
-            <h4>{{ campaign.name }}</h4>
-            <p>
-              {{ campaign.items.length }} items · every {{ campaign.intervalMinutes }} minutes
-            </p>
-            <small>
-              Next: {{ campaign.nextRunAt ? (campaign.nextRunAt | date: 'medium') : 'Not scheduled' }}
-            </small>
-          </div>
-          <div class="campaign-card__actions">
-            <button type="button" (click)="editCampaign(campaign)">Edit</button>
-            <button
-              type="button"
-              (click)="toggleCampaign(campaign)"
-              [disabled]="campaignBusyId() === campaign.id"
-            >
-              {{ campaign.isActive ? 'Pause' : 'Start' }}
-            </button>
-            <button type="button" (click)="showCampaignResults(campaign)">Results</button>
-            <button type="button" class="danger-text" (click)="deleteCampaign(campaign)">
-              Delete
-            </button>
-          </div>
-
-          @if (resultsCampaignId() === campaign.id) {
-            <div class="poll-results">
-              @if (!campaignResults().length) {
-                <p>No polls have been posted from this campaign yet.</p>
-              }
-              @for (result of campaignResults(); track result.id) {
-                <article>
-                  <strong>{{ result.question }}</strong>
-                  <small>{{ result.totalVoters }} voters · {{ result.status | lowercase }}</small>
-                  @for (option of result.options; track option.text) {
-                    <div class="poll-result-row">
-                      <span>{{ option.text }}</span><b>{{ option.votes }}</b>
-                    </div>
-                  }
-                </article>
-              }
-            </div>
-          }
-        </article>
-      }
-    </div>
-  </div>
-</section>
-
-<section class="panel events-panel">
-  <div class="panel-head">
-    <div>
-      <p class="eyebrow">Live community</p>
-      <h2>Voice circles and events</h2>
-      <p>Announce an event, collect RSVPs and remind the group automatically.</p>
-    </div>
-  </div>
-  <div class="event-layout">
-    <form class="event-form" (submit)="$event.preventDefault(); saveCommunityEvent()">
-      <div class="campaign-editor__head">
-        <h3>{{ editingEventId() ? 'Edit event' : 'New event' }}</h3>
-        @if (editingEventId()) {
-          <button type="button" (click)="resetEventForm()">Cancel</button>
-        }
-      </div>
-      <label>
-        Event title
-        <input
-          type="text"
-          maxlength="160"
-          placeholder="Daily 9 PM voice circle"
-          [value]="eventTitle()"
-          (input)="eventTitle.set($any($event.target).value)"
-        />
-      </label>
-      <label>
-        Short description
-        <textarea
-          rows="3"
-          maxlength="1200"
-          [value]="eventDescription()"
-          (input)="eventDescription.set($any($event.target).value)"
-        ></textarea>
-      </label>
-      <label>
-        Date and time
-        <input
-          type="datetime-local"
-          [value]="eventStartsAt()"
-          (input)="eventStartsAt.set($any($event.target).value)"
-        />
-      </label>
-      <label>
-        Join link
-        <input
-          type="url"
-          [value]="eventJoinUrl()"
-          (input)="eventJoinUrl.set($any($event.target).value)"
-        />
-      </label>
-      <label>
-        Reminder
-        <select
-          [value]="eventReminderMinutes()"
-          (change)="eventReminderMinutes.set(+$any($event.target).value)"
-        >
-          <option [value]="15">15 minutes before</option>
-          <option [value]="30">30 minutes before</option>
-          <option [value]="60">1 hour before</option>
-          <option [value]="1440">1 day before</option>
-        </select>
-      </label>
-      <button type="submit" class="primary" [disabled]="eventSaving()">
-        {{ eventSaving() ? 'Saving…' : editingEventId() ? 'Update event' : 'Announce event' }}
-      </button>
-    </form>
-    <div class="event-list">
-      @if (!communityEvents().length) {
-        <p>No voice circles scheduled.</p>
-      }
-      @for (event of communityEvents(); track event.id) {
-        <article class="event-card">
-          <div>
-            <span class="campaign-state" [class.campaign-state--active]="event.status === 'SCHEDULED'">
-              {{ event.status | lowercase }}
-            </span>
-            <h3>{{ event.title }}</h3>
-            <p>{{ event.startsAt | date: 'medium' }} · {{ event.rsvps.length }} joining</p>
-          </div>
-          <div class="campaign-card__actions">
-            <button type="button" (click)="editCommunityEvent(event)">Edit</button>
-            <a [href]="event.joinUrl" target="_blank" rel="noopener noreferrer">Open link</a>
-            <button type="button" class="danger-text" (click)="deleteCommunityEvent(event)">
-              Delete
-            </button>
-          </div>
-        </article>
-      }
-    </div>
-  </div>
-</section>
-
-@if (pendingConfessions().length) {
-  <section class="panel confession-review-panel">
-    <div class="panel-head">
-      <div>
-        <p class="eyebrow">Private review</p>
-        <h2>Anonymous posts awaiting approval</h2>
-        <p>Identity remains hidden. Review the content before publishing it to the group.</p>
-      </div>
-    </div>
-    <div class="confession-review-list">
-      @for (submission of pendingConfessions(); track submission.id) {
-        <article>
-          <p>{{ submission.text }}</p>
-          <div class="confession-sender">
-            <strong>Admin-only sender</strong>
-            <span>
-              {{ submission.firstName || 'Telegram user' }}
-              @if (submission.username) { · {{ '@' + submission.username.replace('@', '') }} }
-              · ID {{ submission.userChatId }}
-            </span>
-          </div>
-          <small>{{ submission.createdAt | date: 'medium' }}</small>
-          <div class="campaign-card__actions">
-            <button
-              type="button"
-              class="primary"
-              [disabled]="campaignBusyId() === submission.reference"
-              (click)="reviewConfession(submission, 'APPROVE')"
-            >
-              Approve and publish
-            </button>
-            <button
-              type="button"
-              class="danger-text"
-              [disabled]="campaignBusyId() === submission.reference"
-              (click)="reviewConfession(submission, 'REJECT')"
-            >
-              Reject
-            </button>
-          </div>
-        </article>
-      }
-    </div>
-  </section>
-}
-
-<section class="config-grid">
-  @for (section of sectionOrder; track section) {
-    <details class="panel config-section" [open]="section === 'connection' || section === 'messages'">
-      <summary>
-        <span>{{ sectionLabels[section] }}</span>
-        <small>{{ fieldsFor(section).length }} settings</small>
-      </summary>
-      <div class="field-list">
-        @for (entry of fieldsFor(section); track entry.key) {
-          <label class="config-field">
-            <span>
-              <strong>{{ entry.label }}</strong>
-              <small>{{ entry.description }}</small>
-            </span>
-
-            @if (entry.type === 'textarea') {
-              <textarea
-                rows="5"
-                [value]="value(entry.key)"
-                [attr.maxlength]="entry.maxLength"
-                [placeholder]="entry.placeholder || ''"
-                (input)="update(entry.key, $any($event.target).value)"
-              ></textarea>
-            } @else if (entry.type === 'select') {
-              <select
-                [value]="value(entry.key)"
-                (change)="update(entry.key, $any($event.target).value)"
-              >
-                @for (option of entry.options || []; track option) {
-                  <option [value]="option">{{ option }}</option>
-                }
-              </select>
-            } @else {
-              <input
-                [type]="entry.type === 'number' ? 'number' : 'text'"
-                [value]="value(entry.key)"
-                [attr.maxlength]="entry.maxLength"
-                [placeholder]="entry.placeholder || ''"
-                (input)="update(entry.key, $any($event.target).value)"
-              />
+      <div class="moderator-form">
+        <label>
+          Action
+          <select
+            [value]="moderatorAction()"
+            (change)="moderatorAction.set($any($event.target).value)"
+          >
+            @for (action of moderatorActions; track action.value) {
+              <option [value]="action.value">{{ action.label }}</option>
             }
-          </label>
+          </select>
+        </label>
+        <label>
+          Target user
+          <input
+            type="text"
+            [value]="moderatorTarget()"
+            (input)="moderatorTarget.set($any($event.target).value)"
+            placeholder="@username or numeric Telegram ID"
+          />
+        </label>
+        <label>
+          Reason or note
+          <input
+            type="text"
+            [value]="moderatorReason()"
+            (input)="moderatorReason.set($any($event.target).value)"
+            placeholder="Optional"
+          />
+        </label>
+      </div>
+      <pre>{{ moderatorCommand() || 'Choose an action and enter its required target.' }}</pre>
+      <button type="button" class="primary" (click)="prepareModeratorCommand()">
+        Copy and open Telegram
+      </button>
+    </section>
+
+    <section
+      class="panel capability-panel"
+      [class.workspace-hidden]="activeWorkspaceSection() !== 'settings'"
+    >
+      <div class="panel-head">
+        <div>
+          <h2>Complete Group Help settings map</h2>
+          <p>
+            Use <strong>/settings</strong> from a Telegram group admin account for options managed
+            by GroupHelp itself. The controls above cover the Hope Hub values maintained by this
+            panel.
+          </p>
+        </div>
+      </div>
+      <div class="capability-grid">
+        @for (group of capabilityGroups(); track group.title) {
+          <article class="capability-card">
+            <h3>{{ group.title }}</h3>
+            <ul>
+              @for (option of group.options; track option) {
+                <li>{{ option }}</li>
+              }
+            </ul>
+          </article>
         }
       </div>
+    </section>
+
+    <details
+      class="panel activity-panel"
+      [class.workspace-hidden]="activeWorkspaceSection() !== 'activity'"
+      [open]="activeWorkspaceSection() === 'activity'"
+    >
+      <summary>Recent configuration activity</summary>
+      @if (!actionHistory().length) {
+        <p>No Group Help configuration actions recorded yet.</p>
+      } @else {
+        <div class="activity-list">
+          @for (entry of actionHistory(); track entry.id) {
+            <article>
+              <strong>{{ entry.summary || entry.targetId }}</strong>
+              <small>{{ entry.createdAt | date: 'medium' }}</small>
+            </article>
+          }
+        </div>
+      }
     </details>
-  }
-</section>
 
-<section class="panel command-panel">
-  <div class="panel-head">
-    <div>
-      <h2>Generated GroupHelp commands</h2>
-      <p>Copy these into the GroupHelp bot/group. If your clone uses different syntax, edit the command templates above once.</p>
-    </div>
-    <button type="button" class="primary" (click)="saveAll()" [disabled]="saving()">
-      {{ saving() ? 'Saving…' : 'Save all config' }}
-    </button>
-  </div>
-
-  <div class="command-grid">
-    @for (item of messageCommands; track item.id) {
-      <article class="command-card">
-        <div class="command-title">
-          <h3>{{ item.title }}</h3>
-          @if (actionStatuses()[item.id]) {
-            <span class="action-status" [class.action-status--pending]="actionStatuses()[item.id] === 'confirmation'">
-              {{ actionStatuses()[item.id] === 'applied' ? 'Applied' : 'Confirm in Telegram' }}
-            </span>
-          }
-        </div>
-        <p>{{ item.helper }}</p>
-        @if (item.imageUrlKey) {
-          <div class="image-tools">
-            <div>
-              <strong>Image</strong>
-              <small>Upload to public S3 and attach the URL to this message.</small>
-            </div>
-            @if (value(item.imageUrlKey)) {
-              <img [src]="value(item.imageUrlKey)" [alt]="item.title + ' image preview'" />
-              <input
-                type="url"
-                [value]="value(item.imageUrlKey)"
-                (input)="update(item.imageUrlKey, $any($event.target).value)"
-                placeholder="https://..."
-              />
-            } @else {
-              <p class="empty-image">No image selected.</p>
+    <section
+      class="panel direct-panel"
+      [class.workspace-hidden]="activeWorkspaceSection() !== 'announcements'"
+    >
+      <h2>Direct announcement</h2>
+      <p>
+        This sends a normal Telegram message to the configured group. It does not change GroupHelp
+        internal settings.
+      </p>
+      <div class="direct-form">
+        <label>
+          Message
+          <select
+            [value]="selectedDirectMessageKey()"
+            (change)="selectedDirectMessageKey.set($any($event.target).value)"
+          >
+            @for (option of messageOptions(); track option.key) {
+              <option [value]="option.key">{{ option.label }}</option>
             }
-            <label class="upload-button">
-              <input type="file" accept="image/*" (change)="uploadImage($event, item)" />
-              {{ uploadingImage() === item.id ? 'Uploading…' : 'Upload image' }}
-            </label>
+          </select>
+        </label>
+        @if (imageUrlForMessageKey(selectedDirectMessageKey())) {
+          <div class="direct-image-preview">
+            <span>Image will be sent as Telegram photo</span>
+            <img
+              [src]="imageUrlForMessageKey(selectedDirectMessageKey())"
+              alt="Selected Group Help message image preview"
+            />
           </div>
         }
-        <pre>{{ commandFor(item) }}</pre>
-        <div class="command-actions">
-          <button type="button" (click)="copy(commandFor(item), item.title)">
-            {{ copied() === item.title ? 'Copied' : 'Copy command' }}
-          </button>
-          <button
-            type="button"
-            class="primary"
-            (click)="apply(item)"
-            [disabled]="applying() === item.id || saving()"
-          >
-            {{
-              applying() === item.id
-                ? 'Applying…'
-                : item.applyMode === 'DIRECT_PIN'
-                  ? 'Apply now'
-                  : 'Apply in Telegram'
-            }}
-          </button>
-        </div>
-      </article>
-    }
-
-    @for (item of moderationCommands; track item.id) {
-      <article class="command-card">
-        <div class="command-title">
-          <h3>{{ item.title }}</h3>
-          @if (actionStatuses()[item.id]) {
-            <span class="action-status" [class.action-status--pending]="actionStatuses()[item.id] === 'confirmation'">
-              {{ actionStatuses()[item.id] === 'applied' ? 'Applied' : 'Confirm in Telegram' }}
-            </span>
-          }
-        </div>
-        <p>{{ item.helper }}</p>
-        <pre>{{ commandFor(item) }}</pre>
-        <div class="command-actions">
-          <button type="button" (click)="copy(commandFor(item), item.title)">
-            {{ copied() === item.title ? 'Copied' : 'Copy command' }}
-          </button>
-          <button
-            type="button"
-            class="primary"
-            (click)="apply(item)"
-            [disabled]="applying() === item.id || saving()"
-          >
-            {{ applying() === item.id ? 'Applying…' : 'Apply in Telegram' }}
-          </button>
-        </div>
-      </article>
-    }
-  </div>
-</section>
-
-<section class="panel moderator-panel">
-  <div class="panel-head">
-    <div>
-      <h2>Moderator tools</h2>
-      <p>Prepare a Group Help command, then verify and send it from an authorized Telegram account.</p>
-    </div>
-  </div>
-  <div class="moderator-form">
-    <label>
-      Action
-      <select [value]="moderatorAction()" (change)="moderatorAction.set($any($event.target).value)">
-        @for (action of moderatorActions; track action.value) {
-          <option [value]="action.value">{{ action.label }}</option>
-        }
-      </select>
-    </label>
-    <label>
-      Target user
-      <input
-        type="text"
-        [value]="moderatorTarget()"
-        (input)="moderatorTarget.set($any($event.target).value)"
-        placeholder="@username or numeric Telegram ID"
-      />
-    </label>
-    <label>
-      Reason or note
-      <input
-        type="text"
-        [value]="moderatorReason()"
-        (input)="moderatorReason.set($any($event.target).value)"
-        placeholder="Optional"
-      />
-    </label>
-  </div>
-  <pre>{{ moderatorCommand() || 'Choose an action and enter its required target.' }}</pre>
-  <button type="button" class="primary" (click)="prepareModeratorCommand()">
-    Copy and open Telegram
-  </button>
-</section>
-
-<section class="panel capability-panel">
-  <div class="panel-head">
-    <div>
-      <h2>Complete Group Help settings map</h2>
-      <p>
-        Use <strong>/settings</strong> from a Telegram group admin account for options managed by
-        GroupHelp itself. The controls above cover the Hope Hub values maintained by this panel.
-      </p>
-    </div>
-  </div>
-  <div class="capability-grid">
-    @for (group of capabilityGroups(); track group.title) {
-      <article class="capability-card">
-        <h3>{{ group.title }}</h3>
-        <ul>
-          @for (option of group.options; track option) {
-            <li>{{ option }}</li>
-          }
-        </ul>
-      </article>
-    }
-  </div>
-</section>
-
-<details class="panel activity-panel">
-  <summary>Recent configuration activity</summary>
-  @if (!actionHistory().length) {
-    <p>No Group Help configuration actions recorded yet.</p>
-  } @else {
-    <div class="activity-list">
-      @for (entry of actionHistory(); track entry.id) {
-        <article>
-          <strong>{{ entry.summary || entry.targetId }}</strong>
-          <small>{{ entry.createdAt | date: 'medium' }}</small>
-        </article>
-      }
-    </div>
-  }
-</details>
-
-<section class="panel direct-panel">
-  <h2>Direct announcement</h2>
-  <p>
-    This sends a normal Telegram message to the configured group. It does not change GroupHelp
-    internal settings.
-  </p>
-  <div class="direct-form">
-    <label>
-      Message
-      <select
-        [value]="selectedDirectMessageKey()"
-        (change)="selectedDirectMessageKey.set($any($event.target).value)"
-      >
-        @for (option of messageOptions(); track option.key) {
-          <option [value]="option.key">{{ option.label }}</option>
-        }
-      </select>
-    </label>
-    @if (imageUrlForMessageKey(selectedDirectMessageKey())) {
-      <div class="direct-image-preview">
-        <span>Image will be sent as Telegram photo</span>
-        <img
-          [src]="imageUrlForMessageKey(selectedDirectMessageKey())"
-          alt="Selected Group Help message image preview"
-        />
+        <label class="check-row">
+          <input
+            type="checkbox"
+            [checked]="pinDirectMessage()"
+            (change)="pinDirectMessage.set($any($event.target).checked)"
+          />
+          Pin after sending
+        </label>
+        <button type="button" class="primary" (click)="sendDirect()" [disabled]="sending()">
+          {{ sending() ? 'Sending…' : 'Send to group' }}
+        </button>
       </div>
-    }
-    <label class="check-row">
-      <input
-        type="checkbox"
-        [checked]="pinDirectMessage()"
-        (change)="pinDirectMessage.set($any($event.target).checked)"
-      />
-      Pin after sending
-    </label>
-    <button type="button" class="primary" (click)="sendDirect()" [disabled]="sending()">
-      {{ sending() ? 'Sending…' : 'Send to group' }}
-    </button>
-  </div>
-</section>
+    </section>
+  </main>
 
-@if (message()) {
-  <p class="success">{{ message() }}</p>
-  @if (telegramApplyUrl()) {
-    <a class="telegram-confirm-link" [href]="telegramApplyUrl()" target="_blank" rel="noopener noreferrer">
-      Open Group Help to confirm
-    </a>
-  }
-}
-@if (error()) {
-  <p class="error">{{ error() }}</p>
-}
+  <aside class="workspace-actions" aria-label="Telegram Community actions">
+    <section class="status-card" [class.status-card--ready]="tokenConfigured()">
+      <span>{{ tokenConfigured() ? 'Community connected' : 'Connection needed' }}</span>
+      <strong>{{ value('telegramGroupHelpBotUsername') || 'Hopehubaibot' }}</strong>
+      <small>
+        {{
+          tokenConfigured()
+            ? 'Ready to send posts, polls and announcements.'
+            : 'Connect the bot before sending directly.'
+        }}
+      </small>
+      <button type="button" (click)="testConnection()" [disabled]="testing()">
+        {{ testing() ? 'Checking…' : 'Check connection' }}
+      </button>
+    </section>
+
+    <section class="panel quick-actions">
+      <div>
+        <p class="eyebrow">Quick actions</p>
+        <h2>What do you need?</h2>
+      </div>
+      <button type="button" class="primary" (click)="startCampaign()">New campaign</button>
+      <button type="button" (click)="openWorkspaceSection('announcements')">
+        Send announcement
+      </button>
+      <button type="button" (click)="openWorkspaceSection('events')">Create event</button>
+      @if (pendingConfessions().length) {
+        <button type="button" class="review-action" (click)="openWorkspaceSection('confessions')">
+          Review {{ pendingConfessions().length }} submission{{
+            pendingConfessions().length === 1 ? '' : 's'
+          }}
+        </button>
+      }
+      <button type="button" (click)="openWorkspaceSection('settings')">Open bot settings</button>
+    </section>
+
+    <section class="panel maintenance-actions">
+      <strong>Bot maintenance</strong>
+      <button type="button" (click)="clearWebsiteMenu()" [disabled]="clearingMenu()">
+        {{ clearingMenu() ? 'Clearing…' : 'Clear old website menu' }}
+      </button>
+      @if (telegramApplyUrl()) {
+        <a
+          class="telegram-confirm-link"
+          [href]="telegramApplyUrl()"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Open Telegram to confirm
+        </a>
+      }
+    </section>
+  </aside>
+</div>
