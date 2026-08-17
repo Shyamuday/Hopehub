@@ -10,7 +10,7 @@ export const DOCTOR_SORT_FIELDS = ['name', 'createdAt', 'status'] as const;
 export type DoctorSortField = (typeof DOCTOR_SORT_FIELDS)[number];
 
 export const DOCTORS_LIST_DEFAULTS = {
-  SORT_BY: 'name' as DoctorSortField,
-  SORT_DIRECTION: SORT_DIRECTIONS.ASC,
+  SORT_BY: 'createdAt' as DoctorSortField,
+  SORT_DIRECTION: SORT_DIRECTIONS.DESC,
   STATUS_FILTER: FILTER_ALL as DoctorStatusFilter,
 } as const;

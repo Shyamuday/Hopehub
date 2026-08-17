@@ -506,17 +506,17 @@
 <section class="panel">
   <div class="panel-header">
     <div>
-      <h2>{{ providerSingularTitle() }} setup review</h2>
-      <p class="panel-hint">Open only when an account needs setup or visibility attention.</p>
+      <h2>Inactive {{ providerSingularLabel() }} accounts</h2>
+      <p class="panel-hint">Review accounts that an admin has deactivated or not yet activated.</p>
     </div>
     <button type="button" class="btn-secondary" (click)="showSetupReview.set(!showSetupReview())">
-      {{ showSetupReview() ? 'Close review' : 'Open review queue' }}
+      {{ showSetupReview() ? 'Close inactive accounts' : 'Open inactive accounts' }}
     </button>
   </div>
   @if (showSetupReview()) {
     <p class="panel-hint">
-      Provider accounts can log in immediately. Use this area only to review setup readiness,
-      website visibility, and accounts that need attention.
+      New self-registrations are active and appear in the registration list below. This queue is
+      only for inactive accounts.
     </p>
 
     @if (loading()) {
@@ -525,7 +525,7 @@
 
     <fieldset class="toolbar" [disabled]="loading()">
       <input
-        [placeholder]="'Search setup review ' + providerPluralLabel() + '...'"
+        [placeholder]="'Search inactive ' + providerPluralLabel() + '...'"
         [formField]="pendingFilterForm.searchTerm"
         (change)="onPendingFilterChange()"
       />
@@ -630,7 +630,7 @@
             </div>
           </article>
         } @empty {
-          <p class="empty-state">No {{ providerSingularLabel() }} accounts need setup review.</p>
+          <p class="empty-state">No inactive {{ providerSingularLabel() }} accounts.</p>
         }
       </div>
     }
@@ -652,7 +652,12 @@
 
 <section class="provider-master-detail">
   <aside class="panel provider-list-panel">
-    <h2>All {{ providerPluralLabel() }}</h2>
+    <div class="registration-list-heading">
+      <div>
+        <h2>{{ providerTitleLabel() }} registrations</h2>
+        <p>New registrations appear here automatically, newest first.</p>
+      </div>
+    </div>
     <div class="toolbar">
       <input
         [placeholder]="'Search ' + providerPluralLabel() + '...'"
@@ -707,6 +712,12 @@
               </button>
             </div>
             <p>{{ doctor.email }} | {{ doctor.mobile || 'No mobile' }}</p>
+            <div class="registration-meta">
+              <span>{{ registrationTimeLabel(doctor.createdAt) }}</span>
+              @if (isNewRegistration(doctor.createdAt)) {
+                <strong>New</strong>
+              }
+            </div>
             <small
               >{{
                 workspaceKey() === 'hope-hub'

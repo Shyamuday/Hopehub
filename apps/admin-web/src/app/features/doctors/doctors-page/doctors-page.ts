@@ -857,6 +857,22 @@ export class DoctorsPage {
     return this.pendingDoctors();
   }
 
+  registrationTimeLabel(createdAt?: string): string {
+    if (!createdAt) return 'Registration time unavailable';
+    const date = new Date(createdAt);
+    if (Number.isNaN(date.getTime())) return 'Registration time unavailable';
+    return `Registered ${new Intl.DateTimeFormat('en-IN', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(date)}`;
+  }
+
+  isNewRegistration(createdAt?: string): boolean {
+    if (!createdAt) return false;
+    const timestamp = new Date(createdAt).getTime();
+    return Number.isFinite(timestamp) && Date.now() - timestamp <= 7 * 24 * 60 * 60 * 1000;
+  }
+
   supportPathForDoctor(doctor: Doctor) {
     const types = this.providerRoleCodes(doctor);
     return (
