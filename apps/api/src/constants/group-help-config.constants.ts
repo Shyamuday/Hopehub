@@ -439,6 +439,83 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
     defaultValue: ''
   },
   {
+    key: 'telegramCommunitySmartScheduleEnabled',
+    label: 'Smart community schedule',
+    description:
+      'Post rotating community content only during active hours and pause when members are already talking.',
+    section: 'content',
+    type: 'select',
+    maxLength: 20,
+    options: ['Enabled', 'Disabled'],
+    defaultValue: 'Enabled'
+  },
+  {
+    key: 'telegramCommunityScheduleStart',
+    label: 'Community posts start',
+    description: 'Earliest local group time for automated community posts, in HH:MM format.',
+    section: 'content',
+    type: 'text',
+    maxLength: 5,
+    placeholder: '09:00',
+    defaultValue: '09:00'
+  },
+  {
+    key: 'telegramCommunityScheduleEnd',
+    label: 'Community posts end',
+    description: 'Latest local group time for automated community posts, in HH:MM format.',
+    section: 'content',
+    type: 'text',
+    maxLength: 5,
+    placeholder: '22:00',
+    defaultValue: '22:00'
+  },
+  {
+    key: 'telegramCommunityMaxPostsPerDay',
+    label: 'Maximum automated posts per day',
+    description: 'Safety limit across check-ins, polls, reminders, and rotating engagement posts.',
+    section: 'content',
+    type: 'number',
+    maxLength: 2,
+    defaultValue: '8'
+  },
+  {
+    key: 'telegramCommunityEngagementPostsPerDay',
+    label: 'Rotating engagement posts per day',
+    description:
+      'Maximum quotes, prompts, exercises, and polls posted from the engagement pool each day.',
+    section: 'content',
+    type: 'number',
+    maxLength: 2,
+    defaultValue: '3'
+  },
+  {
+    key: 'telegramCommunityActiveChatPauseMinutes',
+    label: 'Pause when members are chatting',
+    description: 'Wait this many minutes after a genuine member message before posting automation.',
+    section: 'content',
+    type: 'number',
+    maxLength: 4,
+    defaultValue: '30'
+  },
+  {
+    key: 'telegramCommunityMinimumPostGapMinutes',
+    label: 'Minimum automated post gap',
+    description: 'Minimum quiet time between any two automated community posts.',
+    section: 'content',
+    type: 'number',
+    maxLength: 4,
+    defaultValue: '45'
+  },
+  {
+    key: 'telegramCommunityContentRepeatDays',
+    label: 'Do not repeat content for',
+    description: 'Number of days before the same rotating engagement item may appear again.',
+    section: 'content',
+    type: 'number',
+    maxLength: 3,
+    defaultValue: '30'
+  },
+  {
     key: 'telegramCommunityConfessionsInGroup',
     label: 'Publish approved confessions in group',
     description: 'Allow admin-approved anonymous confessions to appear in the community group.',

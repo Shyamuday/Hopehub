@@ -11,6 +11,7 @@ import {
   TELEGRAM_BOT_CONTROL_DEFAULTS,
   TELEGRAM_BOT_CONTROL_META
 } from '../src/constants/telegram-bot-controls.constants.js';
+import { TELEGRAM_COMMUNITY_ENGAGEMENT_ITEMS } from '../src/constants/telegram-community-content.constants.js';
 
 const GROUP_USERNAME = (process.env.TELEGRAM_COMMUNITY_GROUP_USERNAME || '@hopehubindia').replace(
   /^([^@])/,
@@ -111,6 +112,13 @@ function nextSundayAt(hour: number) {
 
 const campaigns = (chatId: string) =>
   [
+    {
+      id: 'seed_telegram_hourly_engagement',
+      name: 'Smart rotating community engagement',
+      intervalMinutes: 180,
+      nextRunAt: nextAt(11),
+      items: TELEGRAM_COMMUNITY_ENGAGEMENT_ITEMS
+    },
     {
       id: 'seed_telegram_daily_checkin',
       name: 'Daily community check-in',

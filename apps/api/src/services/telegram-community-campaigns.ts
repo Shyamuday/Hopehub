@@ -11,6 +11,7 @@ import { getSiteConfigMap } from './site-config.service.js';
 
 const CAMPAIGN_BOT = 'hopehubai' as const;
 const MAX_DELIVERIES_PER_SWEEP = 20;
+const ENGAGEMENT_CAMPAIGN_ID = 'seed_telegram_hourly_engagement';
 
 export const telegramCampaignSweepEnabled =
   (process.env.TELEGRAM_CAMPAIGN_SWEEP_ENABLED || 'true').toLowerCase() !== 'false';
@@ -49,6 +50,17 @@ const COMMUNITY_CONFIG_KEYS = [
   'telegramCampaignContactUrl'
 ] as const;
 
+const SMART_SCHEDULE_CONFIG_KEYS = [
+  'telegramCommunitySmartScheduleEnabled',
+  'telegramCommunityScheduleStart',
+  'telegramCommunityScheduleEnd',
+  'telegramCommunityMaxPostsPerDay',
+  'telegramCommunityEngagementPostsPerDay',
+  'telegramCommunityActiveChatPauseMinutes',
+  'telegramCommunityMinimumPostGapMinutes',
+  'telegramCommunityContentRepeatDays'
+] as const;
+
 async function communityConfig() {
   const values = await getSiteConfigMap(COMMUNITY_CONFIG_KEYS);
   return {
@@ -71,6 +83,80 @@ function memberMention(member: { id: number; username?: string; first_name?: str
   if (member.username) return `@${escapeTelegramMarkdown(member.username)}`;
   const name = escapeTelegramMarkdown(member.first_name?.trim() || 'there');
   return `[${name}](tg://user?id=${member.id})`;
+}
+
+function boundedNumber(value: string | undefined, fallback: number, min: number, max: number) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? Math.min(max, Math.max(min, parsed)) : fallback;
+}
+
+function timeMinutes(value: string | undefined, fallback: number) {
+  const match = /^(\d{1,2}):(\d{2})$/.exec(value?.trim() || '');
+  if (!match) return fallback;
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  return hour <= 23 && minute <= 59 ? hour * 60 + minute : fallback;
+}
+
+function indiaDayStart(now: Date) {
+  const offsetMs = 330 * 60_000;
+  const india = new Date(now.getTime() + offsetMs);
+  return new Date(
+    Date.UTC(india.getUTCFullYear(), india.getUTCMonth(), india.getUTCDate()) - offsetMs
+  );
+}
+
+function indiaMinuteOfDay(now: Date) {
+  const india = new Date(now.getTime() + 330 * 60_000);
+  return india.getUTCHours() * 60 + india.getUTCMinutes();
+}
+
+function nextIndiaScheduleStart(now: Date, startMinute: number, tomorrow = false) {
+  const offsetMs = 330 * 60_000;
+  const india = new Date(now.getTime() + offsetMs);
+  const target = new Date(
+    Date.UTC(
+      india.getUTCFullYear(),
+      india.getUTCMonth(),
+      india.getUTCDate() + (tomorrow ? 1 : 0),
+      Math.floor(startMinute / 60),
+      startMinute % 60
+    ) - offsetMs
+  );
+  if (target <= now) target.setUTCDate(target.getUTCDate() + 1);
+  return target;
+}
+
+async function smartSchedulePolicy() {
+  const values = await getSiteConfigMap(SMART_SCHEDULE_CONFIG_KEYS);
+  return {
+    enabled: values.telegramCommunitySmartScheduleEnabled !== 'Disabled',
+    startMinute: timeMinutes(values.telegramCommunityScheduleStart, 9 * 60),
+    endMinute: timeMinutes(values.telegramCommunityScheduleEnd, 22 * 60),
+    maxPosts: boundedNumber(values.telegramCommunityMaxPostsPerDay, 8, 1, 30),
+    maxEngagementPosts: boundedNumber(values.telegramCommunityEngagementPostsPerDay, 3, 0, 20),
+    activePauseMinutes: boundedNumber(values.telegramCommunityActiveChatPauseMinutes, 30, 0, 1440),
+    minimumGapMinutes: boundedNumber(values.telegramCommunityMinimumPostGapMinutes, 45, 0, 1440),
+    repeatDays: boundedNumber(values.telegramCommunityContentRepeatDays, 30, 1, 365)
+  };
+}
+
+export async function recordTelegramCommunityActivity(chatId: string, at = new Date()) {
+  await prisma.telegramCommunityState.upsert({
+    where: { bot_chatId: { bot: 'hopehubai-activity', chatId } },
+    create: {
+      bot: 'hopehubai-activity',
+      chatId,
+      state: 'MEMBER_MESSAGE',
+      payload: { lastMessageAt: at.toISOString() },
+      expiresAt: new Date(at.getTime() + 366 * 24 * 60 * 60_000)
+    },
+    update: {
+      state: 'MEMBER_MESSAGE',
+      payload: { lastMessageAt: at.toISOString() },
+      expiresAt: new Date(at.getTime() + 366 * 24 * 60 * 60_000)
+    }
+  });
 }
 
 async function weeklySummary(chatId: string, intro?: string | null) {
@@ -100,32 +186,136 @@ async function weeklySummary(chatId: string, intro?: string | null) {
 }
 
 async function claimNextCampaign(now: Date) {
-  const candidate = await prisma.telegramCampaign.findFirst({
+  const candidates = await prisma.telegramCampaign.findMany({
     where: { isActive: true, nextRunAt: { lte: now }, items: { some: {} } },
     include: { items: { orderBy: { sortOrder: 'asc' } } },
-    orderBy: { nextRunAt: 'asc' }
+    orderBy: { nextRunAt: 'asc' },
+    take: MAX_DELIVERIES_PER_SWEEP
   });
-  if (!candidate || !candidate.nextRunAt || !candidate.items.length) return null;
+  if (!candidates.length) return null;
 
-  const currentIndex = Math.min(candidate.currentItemIndex, candidate.items.length - 1);
-  const isLast = currentIndex >= candidate.items.length - 1;
-  const shouldContinue = candidate.repeat || !isLast;
-  const claimed = await prisma.telegramCampaign.updateMany({
-    where: {
-      id: candidate.id,
-      isActive: true,
-      nextRunAt: candidate.nextRunAt,
-      currentItemIndex: candidate.currentItemIndex
-    },
-    data: {
-      currentItemIndex: isLast ? 0 : currentIndex + 1,
-      lastRunAt: now,
-      isActive: shouldContinue,
-      nextRunAt: shouldContinue ? nextSchedule(now, candidate.intervalMinutes) : null
+  const policy = await smartSchedulePolicy();
+  for (const candidate of candidates) {
+    if (!candidate.nextRunAt || !candidate.items.length) continue;
+    let selectedIndex = Math.min(candidate.currentItemIndex, candidate.items.length - 1);
+
+    if (policy.enabled) {
+      const minute = indiaMinuteOfDay(now);
+      const inActiveHours =
+        policy.startMinute <= policy.endMinute
+          ? minute >= policy.startMinute && minute < policy.endMinute
+          : minute >= policy.startMinute || minute < policy.endMinute;
+      const dayStart = indiaDayStart(now);
+      const [dailyPosts, engagementPosts, lastDelivery, activity] = await Promise.all([
+        prisma.telegramCampaignDelivery.count({
+          where: {
+            campaign: { chatId: candidate.chatId },
+            status: { in: ['SENT', 'CLOSED'] },
+            sentAt: { gte: dayStart }
+          }
+        }),
+        prisma.telegramCampaignDelivery.count({
+          where: {
+            campaignId: ENGAGEMENT_CAMPAIGN_ID,
+            status: { in: ['SENT', 'CLOSED'] },
+            sentAt: { gte: dayStart }
+          }
+        }),
+        prisma.telegramCampaignDelivery.findFirst({
+          where: {
+            campaign: { chatId: candidate.chatId },
+            status: { in: ['SENT', 'CLOSED'] },
+            sentAt: { not: null }
+          },
+          select: { sentAt: true },
+          orderBy: { sentAt: 'desc' }
+        }),
+        prisma.telegramCommunityState.findUnique({
+          where: { bot_chatId: { bot: 'hopehubai-activity', chatId: candidate.chatId } },
+          select: { updatedAt: true }
+        })
+      ]);
+
+      const activeUntil = activity
+        ? new Date(activity.updatedAt.getTime() + policy.activePauseMinutes * 60_000)
+        : null;
+      const gapUntil = lastDelivery?.sentAt
+        ? new Date(lastDelivery.sentAt.getTime() + policy.minimumGapMinutes * 60_000)
+        : null;
+      const shouldDefer =
+        !inActiveHours ||
+        dailyPosts >= policy.maxPosts ||
+        (candidate.id === ENGAGEMENT_CAMPAIGN_ID && engagementPosts >= policy.maxEngagementPosts) ||
+        Boolean(activeUntil && activeUntil > now) ||
+        Boolean(gapUntil && gapUntil > now);
+      if (shouldDefer) {
+        const quotaReached =
+          dailyPosts >= policy.maxPosts ||
+          (candidate.id === ENGAGEMENT_CAMPAIGN_ID && engagementPosts >= policy.maxEngagementPosts);
+        const nextCheck =
+          !inActiveHours || quotaReached
+            ? nextIndiaScheduleStart(now, policy.startMinute, quotaReached)
+            : new Date(
+                Math.max(
+                  now.getTime() + 15 * 60_000,
+                  activeUntil?.getTime() || 0,
+                  gapUntil?.getTime() || 0
+                )
+              );
+        await prisma.telegramCampaign.updateMany({
+          where: { id: candidate.id, nextRunAt: candidate.nextRunAt },
+          data: { nextRunAt: nextCheck }
+        });
+        continue;
+      }
+
+      if (candidate.id === ENGAGEMENT_CAMPAIGN_ID) {
+        const repeatCutoff = new Date(now.getTime() - policy.repeatDays * 24 * 60 * 60_000);
+        const recent = await prisma.telegramCampaignDelivery.findMany({
+          where: {
+            campaignId: candidate.id,
+            itemId: { not: null },
+            status: { in: ['SENT', 'CLOSED'] },
+            sentAt: { gte: repeatCutoff }
+          },
+          select: { itemId: true }
+        });
+        const recentIds = new Set(recent.map((delivery) => delivery.itemId));
+        const eligibleOffset = Array.from(
+          { length: candidate.items.length },
+          (_, offset) => (selectedIndex + offset) % candidate.items.length
+        ).find((index) => !recentIds.has(candidate.items[index].id));
+        if (eligibleOffset == null) {
+          await prisma.telegramCampaign.updateMany({
+            where: { id: candidate.id, nextRunAt: candidate.nextRunAt },
+            data: { nextRunAt: new Date(now.getTime() + 12 * 60 * 60_000) }
+          });
+          continue;
+        }
+        selectedIndex = eligibleOffset;
+      }
     }
-  });
-  if (!claimed.count) return null;
-  return { campaign: candidate, item: candidate.items[currentIndex] };
+
+    const isLast = selectedIndex >= candidate.items.length - 1;
+    const shouldContinue = candidate.repeat || !isLast;
+    const claimed = await prisma.telegramCampaign.updateMany({
+      where: {
+        id: candidate.id,
+        isActive: true,
+        nextRunAt: candidate.nextRunAt,
+        currentItemIndex: candidate.currentItemIndex
+      },
+      data: {
+        currentItemIndex: isLast ? 0 : selectedIndex + 1,
+        lastRunAt: now,
+        isActive: shouldContinue,
+        nextRunAt: shouldContinue ? nextSchedule(now, candidate.intervalMinutes) : null
+      }
+    });
+    if (!claimed.count) continue;
+    return { campaign: candidate, item: candidate.items[selectedIndex] };
+  }
+  return null;
 }
 
 async function deliverClaimedCampaign(

@@ -17,6 +17,7 @@ import type {
 } from './telegram-community-bots.types.js';
 import {
   handleTelegramCommunityEventCallback,
+  recordTelegramCommunityActivity,
   recordTelegramCampaignPollUpdate,
   recordTelegramCommunityReaction,
   welcomeTelegramCommunityMembers
@@ -307,6 +308,10 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
   if (message.text?.startsWith('/') && (await handleCommand(message, values))) return;
   if (!message.from) return;
   if (await isModerationExempt(message, values.telegramGroupHelpAdminWhitelist || '')) {
+    await recordTelegramCommunityActivity(
+      chatId,
+      message.date ? new Date(message.date * 1000) : undefined
+    );
     await ingestTelegramLiveChatMessage(message);
     return;
   }
@@ -375,5 +380,9 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
     );
     return;
   }
+  await recordTelegramCommunityActivity(
+    chatId,
+    message.date ? new Date(message.date * 1000) : undefined
+  );
   await ingestTelegramLiveChatMessage(message);
 }
