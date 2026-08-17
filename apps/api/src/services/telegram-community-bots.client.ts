@@ -62,6 +62,7 @@ const COMMUNITY_BOTS: Record<
       { command: 'support', description: 'Private Hope Hub support' },
       { command: 'report', description: 'Report a message to admins' },
       { command: 'warnings', description: 'Check your warnings' },
+      { command: 'settestgroup', description: 'Register this group for bot testing (admins)' },
       { command: 'help', description: 'Community bot help' }
     ],
     allowedUpdates: [

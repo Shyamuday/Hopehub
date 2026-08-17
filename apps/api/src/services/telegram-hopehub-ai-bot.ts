@@ -1,4 +1,5 @@
 import { GROUP_HELP_CONFIG_DEFAULTS } from '../constants/group-help-config.constants.js';
+import { prisma } from '../db.js';
 import { getSiteConfigMap } from './site-config.service.js';
 import {
   answerCommunityCallback,
@@ -25,6 +26,7 @@ import { ingestTelegramLiveChatMessage } from './telegram-live-chat-bridge.js';
 const BOT = 'hopehubai' as const;
 const CONFIG_KEYS = [
   'telegramGroupHelpGroupChatId',
+  'telegramGroupHelpTestGroupChatId',
   'telegramGroupHelpRulesMessage',
   'telegramGroupHelpSupportMessage',
   'telegramGroupHelpBannedWords',
@@ -193,6 +195,39 @@ async function handleCommand(message: CommunityTelegramMessage, values: Record<s
   return false;
 }
 
+async function registerTestGroup(message: CommunityTelegramMessage) {
+  if (!message.from || !['group', 'supergroup'].includes(message.chat.type || '')) return false;
+  const command = (message.text || '').trim().split(/\s+/)[0].split('@')[0].toLowerCase();
+  if (command !== '/settestgroup') return false;
+  const member = await callCommunityTelegramApi<{ status?: string }>(BOT, 'getChatMember', {
+    chat_id: message.chat.id,
+    user_id: message.from.id
+  }).catch(() => null);
+  if (!member || !['creator', 'administrator'].includes(member.status || '')) {
+    await sendCommunityMessage(
+      BOT,
+      message.chat.id,
+      'Only a group administrator can register this test group.'
+    );
+    return true;
+  }
+  await prisma.siteConfig.upsert({
+    where: { key: 'telegramGroupHelpTestGroupChatId' },
+    create: {
+      key: 'telegramGroupHelpTestGroupChatId',
+      value: String(message.chat.id),
+      label: 'Test Telegram group ID'
+    },
+    update: { value: String(message.chat.id), label: 'Test Telegram group ID' }
+  });
+  await sendCommunityMessage(
+    BOT,
+    message.chat.id,
+    `✅ ${message.chat.title || 'This group'} is now the HopeHub bot test group. Admin previews and test messages will arrive here.`
+  );
+  return true;
+}
+
 export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) {
   if (update.message_reaction) {
     await recordTelegramCommunityReaction(update);
@@ -211,12 +246,25 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
     await answerCommunityCallback(BOT, callback.id);
     return;
   }
-  if (await welcomeTelegramCommunityMembers(update)) return;
   const message = update.message;
   if (!message || message.from?.is_bot) return;
+  if (await registerTestGroup(message)) return;
   const chatId = String(message.chat.id);
   const values = await config();
-  if (values.telegramGroupHelpGroupChatId && values.telegramGroupHelpGroupChatId !== chatId) return;
+  const allowedGroups = [
+    values.telegramGroupHelpGroupChatId,
+    values.telegramGroupHelpTestGroupChatId
+  ]
+    .filter(Boolean)
+    .map((value) => value.toLowerCase());
+  const chatUsername = message.chat.username ? `@${message.chat.username.toLowerCase()}` : '';
+  if (
+    allowedGroups.length &&
+    !allowedGroups.includes(chatId.toLowerCase()) &&
+    (!chatUsername || !allowedGroups.includes(chatUsername))
+  )
+    return;
+  if (await welcomeTelegramCommunityMembers(update)) return;
   if (message.chat.type === 'private') {
     await sendCommunityMessage(BOT, chatId, values.telegramGroupHelpSupportMessage);
     return;

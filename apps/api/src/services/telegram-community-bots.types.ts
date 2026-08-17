@@ -20,7 +20,7 @@ export type CommunityTelegramMessage = {
   date?: number;
   text?: string;
   caption?: string;
-  chat: { id: number | string; type?: string };
+  chat: { id: number | string; type?: string; title?: string; username?: string };
   from?: CommunityTelegramUser;
   message_thread_id?: number;
   new_chat_members?: CommunityTelegramUser[];

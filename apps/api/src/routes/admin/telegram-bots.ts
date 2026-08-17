@@ -49,6 +49,7 @@ import {
   callCommunityTelegramApi,
   sendCommunityMessage
 } from '../../services/telegram-community-bots.client.js';
+import { configuredUrlKeyboard } from '../../services/telegram-keyboard-config.js';
 import {
   confessionDestinationLabel,
   publishedConfessionText
@@ -56,7 +57,8 @@ import {
 import {
   announceTelegramCommunityEvent,
   deleteTelegramCommunityEvent,
-  refreshTelegramCommunityEventAnnouncement
+  refreshTelegramCommunityEventAnnouncement,
+  retryTelegramCampaignDelivery
 } from '../../services/telegram-community-campaigns.js';
 
 const setupSchema = z.object({
@@ -80,6 +82,13 @@ const botControlsSaveSchema = z.object({
   entries: z
     .array(z.object({ key: z.string(), value: z.string() }))
     .min(1)
+    .max(TELEGRAM_BOT_CONTROL_KEYS.length)
+});
+
+const botControlsPreviewSchema = z.object({
+  group: z.enum(['Shared links', 'Confession bot', 'Contact bot', 'Rules bot']),
+  entries: z
+    .array(z.object({ key: z.string(), value: z.string() }))
     .max(TELEGRAM_BOT_CONTROL_KEYS.length)
 });
 
@@ -464,7 +473,13 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         targetType: 'telegram_bots',
         targetId: 'controls',
         summary: `Updated ${updates.length} Telegram bot control(s).`,
-        metadata: { keys: updates.map((item) => item.key) }
+        metadata: {
+          changes: updates.map((item) => ({
+            key: item.key,
+            before: current[item.key],
+            after: item.value
+          }))
+        }
       });
 
       const values = await getTelegramBotControls();
@@ -475,6 +490,133 @@ export function registerAdminTelegramBotRoutes(router: Router) {
           value: values[key]
         }))
       });
+    })
+  );
+
+  router.post(
+    '/admin/telegram-bots/controls/preview',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const parsed = botControlsPreviewSchema.safeParse(req.body ?? {});
+      if (!parsed.success) return res.status(400).json({ message: 'Invalid preview payload.' });
+      const invalidKey = parsed.data.entries.find(
+        (entry) => !TELEGRAM_BOT_CONTROL_KEYS.includes(entry.key as any)
+      );
+      if (invalidKey)
+        return res.status(400).json({ message: `Unknown bot control: ${invalidKey.key}` });
+      const [stored, groupConfig] = await Promise.all([
+        getTelegramBotControls(),
+        groupHelpConfigMap()
+      ]);
+      const controls = {
+        ...stored,
+        ...Object.fromEntries(parsed.data.entries.map((entry) => [entry.key, entry.value.trim()]))
+      };
+      const testGroupId = groupConfig.telegramGroupHelpTestGroupChatId?.trim();
+      if (!testGroupId) {
+        return res.status(400).json({
+          message:
+            'Test group is not configured. Send /settestgroup in the Telegram test group first.'
+        });
+      }
+      const preview =
+        parsed.data.group === 'Confession bot'
+          ? {
+              text: `🧪 CONFESSION BOT PREVIEW\n\n${controls.telegramConfessionWelcomeText}`,
+              keyboard: configuredUrlKeyboard(controls.telegramConfessionMenuLinks)
+            }
+          : parsed.data.group === 'Contact bot'
+            ? {
+                text: `🧪 CONTACT BOT PREVIEW\n\n${controls.telegramContactWelcomeText}`,
+                keyboard: configuredUrlKeyboard(controls.telegramContactMenuLinks)
+              }
+            : parsed.data.group === 'Rules bot'
+              ? {
+                  text: `🧪 RULES BOT PREVIEW\n\n${controls.telegramRulesWelcomeText}\n\n${controls.telegramRulesAboutText}`.slice(
+                    0,
+                    4096
+                  ),
+                  keyboard: configuredUrlKeyboard(controls.telegramRulesMenuLinks)
+                }
+              : {
+                  text: `🧪 SHARED LINK PREVIEW\n\nCampaign contact: ${controls.telegramCampaignContactUrl}`,
+                  keyboard: configuredUrlKeyboard(
+                    `Contact Hope Hub | ${controls.telegramCampaignContactUrl} | success`
+                  )
+                };
+      const message = await sendCommunityMessage('hopehubai', testGroupId, preview.text, {
+        reply_markup: preview.keyboard
+      });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'telegram_bots.preview_send',
+        targetType: 'telegram_bots',
+        targetId: parsed.data.group,
+        summary: `Sent ${parsed.data.group} preview to the Telegram test group.`
+      });
+      res.json({ ok: true, messageId: message.message_id, testGroupId });
+    })
+  );
+
+  router.get(
+    '/admin/telegram-bots/controls/history',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (_req, res) => {
+      const history = await prisma.auditLog.findMany({
+        where: { action: 'telegram_bots.controls_update', targetType: 'telegram_bots' },
+        select: { id: true, summary: true, metadata: true, createdAt: true, actorId: true },
+        orderBy: { createdAt: 'desc' },
+        take: 30
+      });
+      res.json({ history });
+    })
+  );
+
+  router.post(
+    '/admin/telegram-bots/controls/history/:id/restore',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const entry = await prisma.auditLog.findUnique({ where: { id: routeParam(req, 'id') } });
+      if (!entry || entry.action !== 'telegram_bots.controls_update')
+        return res.status(404).json({ message: 'Configuration version not found.' });
+      const metadata = entry.metadata as {
+        changes?: Array<{ key?: string; before?: string }>;
+      } | null;
+      const changes = (metadata?.changes || []).filter(
+        (change): change is { key: (typeof TELEGRAM_BOT_CONTROL_KEYS)[number]; before: string } =>
+          typeof change.key === 'string' &&
+          TELEGRAM_BOT_CONTROL_KEYS.includes(change.key as any) &&
+          typeof change.before === 'string'
+      );
+      if (!changes.length)
+        return res.status(400).json({ message: 'This older entry cannot be restored.' });
+      await prisma.$transaction(
+        changes.map((change) =>
+          prisma.siteConfig.upsert({
+            where: { key: change.key },
+            create: {
+              key: change.key,
+              value: change.before,
+              label: TELEGRAM_BOT_CONTROL_META[change.key].label
+            },
+            update: { value: change.before }
+          })
+        )
+      );
+      clearTelegramBotControlsCache();
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'telegram_bots.controls_restore',
+        targetType: 'telegram_bots',
+        targetId: entry.id,
+        summary: `Restored ${changes.length} Telegram bot setting(s).`
+      });
+      res.json({ ok: true, restored: changes.length });
     })
   );
 
@@ -490,7 +632,9 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         communitySubmissionCounts,
         webhookInfos,
         communityWebhookInfos,
-        groupHelpWebhookInfo
+        groupHelpWebhookInfo,
+        failedDeliveries,
+        overdueCampaigns
       ] = await Promise.all([
         prisma.telegramBotSession.findMany({
           select: {
@@ -552,7 +696,14 @@ export function registerAdminTelegramBotRoutes(router: Router) {
             async (bot) => [bot.slug, await safeCommunityWebhookInfo(bot.slug)] as const
           )
         ),
-        safeGroupHelpWebhookInfo()
+        safeGroupHelpWebhookInfo(),
+        prisma.telegramCampaignDelivery.count({ where: { status: 'FAILED' } }),
+        prisma.telegramCampaign.count({
+          where: {
+            isActive: true,
+            nextRunAt: { lt: new Date(Date.now() - 5 * 60_000) }
+          }
+        })
       ]);
 
       const webhookInfoByKind = Object.fromEntries(webhookInfos);
@@ -608,6 +759,11 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         webhook: groupHelpWebhookInfo,
         summary: { totalSessions: 0, linkedSessions: 0, activeLinkedSessions: 0 }
       };
+      const healthCutoff = Date.now() - 24 * 60 * 60 * 1000;
+      const recentFailedWebhookUpdates = webhookReceipts.filter(
+        (receipt) =>
+          receipt.status === 'FAILED' && new Date(receipt.updatedAt).getTime() >= healthCutoff
+      ).length;
 
       res.json({
         bots: [...accountBots, ...communityBots, groupHelpBot],
@@ -618,7 +774,14 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         events: events.map((event) => ({
           ...event,
           updateId: event.updateId?.toString() ?? null
-        }))
+        })),
+        health: {
+          failedWebhookUpdates: recentFailedWebhookUpdates,
+          failedDeliveries,
+          overdueCampaigns,
+          needsAttention:
+            failedDeliveries > 0 || overdueCampaigns > 0 || recentFailedWebhookUpdates > 0
+        }
       });
     })
   );
@@ -896,8 +1059,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         },
         orderBy: { updatedAt: 'desc' }
       });
-      const rulesBot = communityBotStatus().find((bot) => bot.slug === 'rules');
-      res.json({ campaigns, botConfigured: Boolean(rulesBot?.configured) });
+      res.json({ campaigns, botConfigured: Boolean(groupHelpBotStatus().configured) });
     })
   );
 
@@ -953,6 +1115,24 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         metadata: { chatId, itemCount: campaign.items.length, isActive: campaign.isActive }
       });
       res.status(201).json({ campaign });
+    })
+  );
+
+  router.post(
+    '/admin/telegram-bots/group-help/deliveries/:id/retry',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR, Role.MARKETING),
+    asyncRoute(async (req, res) => {
+      const delivery = await retryTelegramCampaignDelivery(routeParam(req, 'id'));
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'telegram_campaign.delivery_retry',
+        targetType: 'telegram_campaign_delivery',
+        targetId: delivery!.id,
+        summary: `Retried Telegram campaign delivery: ${delivery!.status}.`
+      });
+      res.json({ delivery });
     })
   );
 

@@ -15,6 +15,9 @@ export const TELEGRAM_BOT_CONTROL_DEFAULTS = {
   telegramRateLimitPerMinute: '15',
   telegramRateLimitBlockMinutes: '5',
   telegramCommunityStateTtlHours: '24',
+  telegramSubmissionRetentionDays: '180',
+  telegramEngagementRetentionDays: '90',
+  telegramDeliveryRetentionDays: '180',
   telegramConfessionDailyLimit: '5',
   telegramContactDailyLimit: '10',
   telegramConfessionMinCharacters: '5',
@@ -94,6 +97,33 @@ export const TELEGRAM_BOT_CONTROL_META: Record<TelegramBotControlKey, TelegramBo
     type: 'number',
     min: 1,
     max: 168,
+    maxLength: 3
+  },
+  telegramSubmissionRetentionDays: {
+    label: 'Ticket and confession retention',
+    description: 'Days to retain completed contact tickets and confession records.',
+    group: 'Protection',
+    type: 'number',
+    min: 30,
+    max: 730,
+    maxLength: 3
+  },
+  telegramEngagementRetentionDays: {
+    label: 'Engagement-data retention',
+    description: 'Days to retain poll votes, reactions, and departed-member records.',
+    group: 'Protection',
+    type: 'number',
+    min: 30,
+    max: 730,
+    maxLength: 3
+  },
+  telegramDeliveryRetentionDays: {
+    label: 'Campaign-delivery retention',
+    description: 'Days to retain sent, closed, and failed campaign-delivery diagnostics.',
+    group: 'Protection',
+    type: 'number',
+    min: 30,
+    max: 730,
     maxLength: 3
   },
   telegramConfessionDailyLimit: {

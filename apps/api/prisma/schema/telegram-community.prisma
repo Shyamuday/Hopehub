@@ -106,6 +106,8 @@ model TelegramCampaignDelivery {
   telegramPollId    String?                @unique
   status            String
   error             String?
+  attempts          Int                    @default(0)
+  nextRetryAt       DateTime?
   pollSnapshot      Json?
   totalVoterCount   Int                    @default(0)
   closesAt          DateTime?
@@ -116,6 +118,7 @@ model TelegramCampaignDelivery {
 
   @@index([campaignId, createdAt])
   @@index([status, closesAt])
+  @@index([status, nextRetryAt])
 }
 
 model TelegramPollVote {

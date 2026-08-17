@@ -432,6 +432,24 @@
                 </button>
               </div>
 
+              @for (delivery of campaign.deliveries; track delivery.id) {
+                @if (delivery.status === 'FAILED') {
+                  <div class="delivery-failure" role="alert">
+                    <span>
+                      <strong>Message not delivered</strong>
+                      <small>{{ delivery.error || 'Telegram did not accept this message.' }}</small>
+                    </span>
+                    <button
+                      type="button"
+                      [disabled]="campaignBusyId() === delivery.id"
+                      (click)="retryCampaignDelivery(delivery)"
+                    >
+                      {{ campaignBusyId() === delivery.id ? 'Retrying…' : 'Retry now' }}
+                    </button>
+                  </div>
+                }
+              }
+
               @if (resultsCampaignId() === campaign.id) {
                 <div class="poll-results">
                   @if (!campaignResults().length) {

@@ -137,6 +137,20 @@ async function deliverClaimedCampaign(
     data: { campaignId: campaign.id, itemId: item.id, status: 'SENDING' }
   });
 
+  await performCampaignDelivery({ deliveryId: delivery.id, campaign, item, now });
+}
+
+async function performCampaignDelivery(input: {
+  deliveryId: string;
+  campaign: NonNullable<Awaited<ReturnType<typeof claimNextCampaign>>>['campaign'];
+  item: NonNullable<Awaited<ReturnType<typeof claimNextCampaign>>>['item'];
+  now: Date;
+}) {
+  const { deliveryId, campaign, item, now } = input;
+  await prisma.telegramCampaignDelivery.update({
+    where: { id: deliveryId },
+    data: { attempts: { increment: 1 }, nextRetryAt: null }
+  });
   try {
     let sent: SentTelegramMessage;
     if (item.kind === 'POLL') {
@@ -184,7 +198,7 @@ async function deliverClaimedCampaign(
     }
 
     await prisma.telegramCampaignDelivery.update({
-      where: { id: delivery.id },
+      where: { id: deliveryId },
       data: {
         status: 'SENT',
         telegramMessageId: sent.message_id,
@@ -194,18 +208,41 @@ async function deliverClaimedCampaign(
         closesAt: item.closeAfterMinutes
           ? new Date(now.getTime() + item.closeAfterMinutes * 60_000)
           : null,
-        sentAt: now
+        sentAt: now,
+        nextRetryAt: null
       }
     });
   } catch (error) {
     await prisma.telegramCampaignDelivery.update({
-      where: { id: delivery.id },
+      where: { id: deliveryId },
       data: {
         status: 'FAILED',
-        error: String(error instanceof Error ? error.message : error).slice(0, 1000)
+        error: String(error instanceof Error ? error.message : error).slice(0, 1000),
+        nextRetryAt: new Date(now.getTime() + 5 * 60_000)
       }
     });
   }
+}
+
+export async function retryTelegramCampaignDelivery(deliveryId: string, now = new Date()) {
+  const delivery = await prisma.telegramCampaignDelivery.findUnique({
+    where: { id: deliveryId },
+    include: { campaign: { include: { items: { orderBy: { sortOrder: 'asc' } } } }, item: true }
+  });
+  if (!delivery || !delivery.item) throw new Error('Failed Telegram delivery not found.');
+  if (delivery.status !== 'FAILED') throw new Error('Only failed deliveries can be retried.');
+  const claimed = await prisma.telegramCampaignDelivery.updateMany({
+    where: { id: delivery.id, status: 'FAILED' },
+    data: { status: 'SENDING', error: null }
+  });
+  if (!claimed.count) throw new Error('This delivery is already being retried.');
+  await performCampaignDelivery({
+    deliveryId: delivery.id,
+    campaign: delivery.campaign,
+    item: delivery.item,
+    now
+  });
+  return prisma.telegramCampaignDelivery.findUnique({ where: { id: delivery.id } });
 }
 
 async function closeExpiredPolls(now: Date) {
@@ -238,6 +275,15 @@ export async function runTelegramCampaignScheduler(now = new Date()) {
   if (!telegramCampaignSweepEnabled) return;
   await runTelegramCommunityEventScheduler(now);
   await closeExpiredPolls(now);
+  const retries = await prisma.telegramCampaignDelivery.findMany({
+    where: { status: 'FAILED', attempts: { lt: 3 }, nextRetryAt: { lte: now } },
+    select: { id: true },
+    orderBy: { nextRetryAt: 'asc' },
+    take: 5
+  });
+  await Promise.allSettled(
+    retries.map((delivery) => retryTelegramCampaignDelivery(delivery.id, now))
+  );
   for (let index = 0; index < MAX_DELIVERIES_PER_SWEEP; index += 1) {
     const claimed = await claimNextCampaign(now);
     if (!claimed) break;

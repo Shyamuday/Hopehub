@@ -23,6 +23,8 @@ export class TelegramBotsPage implements OnInit {
   bots = signal<any[]>([]);
   sessions = signal<any[]>([]);
   events = signal<any[]>([]);
+  health = signal<any>(null);
+  configurationHistory = signal<any[]>([]);
   controls = signal<any[]>([]);
   controlValues = signal<Record<string, string>>({});
   loading = signal(true);
@@ -101,14 +103,17 @@ export class TelegramBotsPage implements OnInit {
     this.loading.set(true);
     this.error.set('');
     try {
-      const [response, controlsResponse] = await Promise.all([
+      const [response, controlsResponse, historyResponse] = await Promise.all([
         this.api.getTelegramBots(),
         this.api.getTelegramBotControls(),
+        this.api.getTelegramBotControlHistory(),
       ]);
       this.bots.set(response.bots);
       this.sessions.set(response.sessions);
       this.events.set(response.events);
+      this.health.set(response.health || null);
       this.applyControls(controlsResponse.controls);
+      this.configurationHistory.set(historyResponse.history || []);
     } catch (e: any) {
       this.error.set(e?.error?.message || 'Could not load Telegram bot status.');
     } finally {
@@ -290,6 +295,42 @@ export class TelegramBotsPage implements OnInit {
         this.controlValue(control.key) !==
         (this.configurationSnapshot?.controls[control.key] ?? ''),
     ).length;
+  }
+
+  canPreviewGroup(name: string) {
+    return ['Shared links', 'Confession bot', 'Contact bot', 'Rules bot'].includes(name);
+  }
+
+  async previewControlGroup(group: { name: string; controls: any[] }) {
+    this.saving.set(`preview:${group.name}`);
+    try {
+      await this.api.previewTelegramBotControls(
+        group.name,
+        group.controls.map((control) => ({
+          key: control.key,
+          value: this.controlValue(control.key),
+        })),
+      );
+      this.showToast(`Preview sent to the Telegram test group.`);
+    } catch (e: any) {
+      this.showToast(e?.error?.message || 'Could not send the preview.');
+    } finally {
+      this.saving.set('');
+    }
+  }
+
+  async restoreConfiguration(id: string) {
+    this.saving.set(`restore:${id}`);
+    try {
+      const result = await this.api.restoreTelegramBotControls(id);
+      this.showToast(`Restored ${result.restored} setting(s).`);
+      await this.load();
+      this.configurationOpen.set(false);
+    } catch (e: any) {
+      this.showToast(e?.error?.message || 'Could not restore this configuration.');
+    } finally {
+      this.saving.set('');
+    }
   }
 
   private writeConfiguredLinks(

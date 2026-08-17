@@ -196,9 +196,17 @@ export class AdminOpsApi extends AdminApiBase {
 
   getTelegramBots() {
     return firstValueFrom(
-      this.http.get<{ bots: any[]; sessions: any[]; events: any[] }>(
-        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_BOTS}`,
-      ),
+      this.http.get<{
+        bots: any[];
+        sessions: any[];
+        events: any[];
+        health?: {
+          failedWebhookUpdates: number;
+          failedDeliveries: number;
+          overdueCampaigns: number;
+          needsAttention: boolean;
+        };
+      }>(`${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_BOTS}`),
     );
   }
 
@@ -213,6 +221,32 @@ export class AdminOpsApi extends AdminApiBase {
       this.http.patch<{ controls: any[] }>(
         `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_BOT_CONTROLS}`,
         { entries },
+      ),
+    );
+  }
+
+  previewTelegramBotControls(group: string, entries: Array<{ key: string; value: string }>) {
+    return firstValueFrom(
+      this.http.post<{ ok: boolean; messageId: number }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_BOT_CONTROLS_PREVIEW}`,
+        { group, entries },
+      ),
+    );
+  }
+
+  getTelegramBotControlHistory() {
+    return firstValueFrom(
+      this.http.get<{ history: any[] }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_BOT_CONTROLS_HISTORY}`,
+      ),
+    );
+  }
+
+  restoreTelegramBotControls(id: string) {
+    return firstValueFrom(
+      this.http.post<{ ok: boolean; restored: number }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_BOT_CONTROLS_RESTORE(id)}`,
+        {},
       ),
     );
   }
@@ -415,6 +449,15 @@ export class AdminOpsApi extends AdminApiBase {
     return firstValueFrom(
       this.http.get<{ results: any[] }>(
         `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_CAMPAIGN_RESULTS(id)}`,
+      ),
+    );
+  }
+
+  retryTelegramCampaignDelivery(id: string) {
+    return firstValueFrom(
+      this.http.post<{ delivery: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_DELIVERY_RETRY(id)}`,
+        {},
       ),
     );
   }

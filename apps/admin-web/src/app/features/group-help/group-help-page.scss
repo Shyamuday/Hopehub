@@ -450,6 +450,36 @@ button:disabled {
   gap: 0.65rem;
 }
 
+.delivery-failure {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid #fecaca;
+  border-radius: 0.75rem;
+  background: #fff7f7;
+  color: #991b1b;
+}
+
+.delivery-failure span,
+.delivery-failure small {
+  display: block;
+}
+
+.delivery-failure small {
+  margin-top: 0.2rem;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .delivery-failure {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
 .campaign-editor__head,
 .campaign-item__head {
   justify-content: space-between;

@@ -777,6 +777,21 @@ export class AdminApi {
       ...(args as Parameters<AdminOpsApi['saveTelegramBotControls']>),
     );
   }
+  previewTelegramBotControls(...args: Parameters<AdminOpsApi['previewTelegramBotControls']>) {
+    return this.ops.previewTelegramBotControls(
+      ...(args as Parameters<AdminOpsApi['previewTelegramBotControls']>),
+    );
+  }
+  getTelegramBotControlHistory(...args: Parameters<AdminOpsApi['getTelegramBotControlHistory']>) {
+    return this.ops.getTelegramBotControlHistory(
+      ...(args as Parameters<AdminOpsApi['getTelegramBotControlHistory']>),
+    );
+  }
+  restoreTelegramBotControls(...args: Parameters<AdminOpsApi['restoreTelegramBotControls']>) {
+    return this.ops.restoreTelegramBotControls(
+      ...(args as Parameters<AdminOpsApi['restoreTelegramBotControls']>),
+    );
+  }
   setupTelegramBot(...args: Parameters<AdminOpsApi['setupTelegramBot']>) {
     return this.ops.setupTelegramBot(...(args as Parameters<AdminOpsApi['setupTelegramBot']>));
   }
@@ -838,6 +853,9 @@ export class AdminApi {
   }
   getTelegramCampaignResults(...args: Parameters<AdminOpsApi['getTelegramCampaignResults']>) {
     return this.ops.getTelegramCampaignResults(...args);
+  }
+  retryTelegramCampaignDelivery(...args: Parameters<AdminOpsApi['retryTelegramCampaignDelivery']>) {
+    return this.ops.retryTelegramCampaignDelivery(...args);
   }
   getTelegramCommunityEvents(...args: Parameters<AdminOpsApi['getTelegramCommunityEvents']>) {
     return this.ops.getTelegramCommunityEvents(...args);

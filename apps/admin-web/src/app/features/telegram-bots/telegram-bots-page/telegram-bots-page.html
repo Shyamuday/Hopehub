@@ -23,6 +23,19 @@
   } @else if (error()) {
     <p class="error">{{ error() }}</p>
   } @else {
+    @if (health()?.needsAttention) {
+      <section class="health-alert" role="alert">
+        <div>
+          <strong>Some Telegram activity needs attention</strong>
+          <p>
+            {{ health().failedWebhookUpdates }} update failures ·
+            {{ health().failedDeliveries }} undelivered messages ·
+            {{ health().overdueCampaigns }} delayed campaigns
+          </p>
+        </div>
+        <a href="/group-help">Review activity</a>
+      </section>
+    }
     <section class="bot-grid">
       @for (bot of bots(); track bot.kind) {
         <article class="bot-card">
@@ -210,6 +223,17 @@
         </div>
       }
     </section>
+
+    <details class="recovery-guide">
+      <summary>Bot recovery and token replacement</summary>
+      <ol>
+        <li>Replace a compromised token in BotFather, then update only the server secret.</li>
+        <li>Use Configure bots → Refresh connections to reconnect Telegram.</li>
+        <li>Send a preview to the test group before changing the main group.</li>
+        <li>Keep pending updates unless the old token was abused or the queue is invalid.</li>
+      </ol>
+      <p>Tokens stay outside the database and are never shown in this panel.</p>
+    </details>
   }
 </div>
 
@@ -301,20 +325,14 @@
             @if (!configuredLinks(control.key).length) {
               <p class="link-editor__empty">No public buttons will be shown.</p>
             }
-            @for (
-              link of configuredLinks(control.key);
-              track $index;
-              let linkIndex = $index
-            ) {
+            @for (link of configuredLinks(control.key); track $index; let linkIndex = $index) {
               <article class="link-editor__row">
                 <label>
                   <span>Button text</span>
                   <input
                     type="text"
                     [ngModel]="link.label"
-                    (ngModelChange)="
-                      updateConfiguredLink(control.key, linkIndex, 'label', $event)
-                    "
+                    (ngModelChange)="updateConfiguredLink(control.key, linkIndex, 'label', $event)"
                   />
                 </label>
                 <label>
@@ -330,9 +348,7 @@
                   <span>Colour</span>
                   <select
                     [ngModel]="link.style"
-                    (ngModelChange)="
-                      updateConfiguredLink(control.key, linkIndex, 'style', $event)
-                    "
+                    (ngModelChange)="updateConfiguredLink(control.key, linkIndex, 'style', $event)"
                   >
                     <option value="primary">Blue</option>
                     <option value="success">Green</option>
@@ -401,6 +417,18 @@
           </label>
         }
       }
+      @if (canPreviewGroup(group.name)) {
+        <button
+          type="button"
+          class="preview-button"
+          [disabled]="configurationNextDisabled() || saving() === 'preview:' + group.name"
+          (click)="previewControlGroup(group)"
+        >
+          {{
+            saving() === 'preview:' + group.name ? 'Sending preview…' : 'Send preview to test group'
+          }}
+        </button>
+      }
     </section>
   } @else {
     <section class="drawer-step">
@@ -434,6 +462,26 @@
         Bot tokens remain on the server and are never displayed here. Saving content does not
         interrupt active bot connections.
       </p>
+      @if (configurationHistory().length) {
+        <section class="history-list">
+          <h3>Recent saved versions</h3>
+          @for (entry of configurationHistory().slice(0, 5); track entry.id) {
+            <article>
+              <span>
+                <strong>{{ entry.summary }}</strong>
+                <small>{{ entry.createdAt | date: 'medium' }}</small>
+              </span>
+              <button
+                type="button"
+                [disabled]="saving() === 'restore:' + entry.id"
+                (click)="restoreConfiguration(entry.id)"
+              >
+                {{ saving() === 'restore:' + entry.id ? 'Restoring…' : 'Restore' }}
+              </button>
+            </article>
+          }
+        </section>
+      }
     </section>
   }
 </app-admin-form-drawer>

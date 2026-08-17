@@ -367,7 +367,7 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
   },
   {
     key: 'telegramGroupHelpGroupChatId',
-    label: 'Telegram group chat ID',
+    label: 'Main Telegram group ID',
     description:
       'Numeric Telegram group/supergroup chat ID used only for direct announcements and pinning.',
     section: 'connection',
@@ -375,6 +375,17 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
     maxLength: 80,
     placeholder: '-1001234567890',
     defaultValue: ''
+  },
+  {
+    key: 'telegramGroupHelpTestGroupChatId',
+    label: 'Test Telegram group ID',
+    description:
+      'Test group handle or numeric ID used for previews before publishing to the main group.',
+    section: 'connection',
+    type: 'text',
+    maxLength: 80,
+    placeholder: '@hopehubtalks or -1001234567890',
+    defaultValue: '@hopehubtalks'
   },
   {
     key: 'telegramLiveChatBridgeEnabled',

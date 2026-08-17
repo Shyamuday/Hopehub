@@ -3,6 +3,7 @@ import test from 'node:test';
 import {
   GROUP_HELP_ACTIONS,
   GROUP_HELP_CAPABILITY_GROUPS,
+  GROUP_HELP_CONFIG_DEFAULTS,
   GROUP_HELP_CONFIG_KEYS
 } from './group-help-config.constants.js';
 
@@ -18,6 +19,14 @@ test('every Group Help action is backed by stored configuration fields', () => {
       assert.equal(keys.has(action.imageUrlKey), true, `${action.id} image key is missing`);
     }
   }
+});
+
+test('HopeHubAI has a safe default test group separate from production', () => {
+  assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramGroupHelpTestGroupChatId, '@hopehubtalks');
+  assert.notEqual(
+    GROUP_HELP_CONFIG_DEFAULTS.telegramGroupHelpTestGroupChatId,
+    GROUP_HELP_CONFIG_DEFAULTS.telegramGroupHelpGroupChatId
+  );
 });
 
 test('Group Help capability map covers the main management areas', () => {

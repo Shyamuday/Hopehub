@@ -433,6 +433,24 @@ export class GroupHelpPage {
     }
   }
 
+  async retryCampaignDelivery(delivery: any) {
+    this.campaignBusyId.set(delivery.id);
+    this.error.set('');
+    try {
+      const response = await this.api.retryTelegramCampaignDelivery(delivery.id);
+      await this.loadCampaigns();
+      this.message.set(
+        response.delivery?.status === 'SENT'
+          ? 'Message delivered successfully.'
+          : 'Retry attempted. Telegram is still unavailable.',
+      );
+    } catch (error: any) {
+      this.error.set(error?.error?.message || 'Could not retry this message.');
+    } finally {
+      this.campaignBusyId.set('');
+    }
+  }
+
   resetEventForm() {
     this.editingEventId.set('');
     this.eventTitle.set('');

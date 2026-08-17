@@ -313,8 +313,35 @@ export function failCommunityWebhookUpdate(bot: string, updateId: number, error:
 export async function cleanupCommunityBotData() {
   const now = new Date();
   const receiptCutoff = new Date(Date.now() - RECEIPT_TTL_MS);
+  const controls = await getTelegramBotControls();
+  const submissionCutoff = new Date(
+    Date.now() - controlNumber(controls.telegramSubmissionRetentionDays, 180) * 86_400_000
+  );
+  const engagementCutoff = new Date(
+    Date.now() - controlNumber(controls.telegramEngagementRetentionDays, 90) * 86_400_000
+  );
+  const deliveryCutoff = new Date(
+    Date.now() - controlNumber(controls.telegramDeliveryRetentionDays, 180) * 86_400_000
+  );
   await prisma.$transaction([
     prisma.telegramCommunityState.deleteMany({ where: { expiresAt: { lte: now } } }),
-    prisma.telegramWebhookReceipt.deleteMany({ where: { createdAt: { lt: receiptCutoff } } })
+    prisma.telegramWebhookReceipt.deleteMany({ where: { createdAt: { lt: receiptCutoff } } }),
+    prisma.telegramCommunitySubmission.deleteMany({
+      where: {
+        updatedAt: { lt: submissionCutoff },
+        status: { in: ['approved', 'rejected', 'replied', 'closed'] }
+      }
+    }),
+    prisma.telegramCommunityReaction.deleteMany({ where: { reactedAt: { lt: engagementCutoff } } }),
+    prisma.telegramPollVote.deleteMany({ where: { votedAt: { lt: engagementCutoff } } }),
+    prisma.telegramCommunityMember.deleteMany({
+      where: { leftAt: { not: null, lt: engagementCutoff } }
+    }),
+    prisma.telegramCampaignDelivery.deleteMany({
+      where: {
+        createdAt: { lt: deliveryCutoff },
+        status: { in: ['SENT', 'CLOSED', 'FAILED'] }
+      }
+    })
   ]);
 }
