@@ -41,6 +41,9 @@ type CampaignItemDraft = {
   pollOptionsText: string;
   pollAnonymous: boolean;
   pollMultiple: boolean;
+  pollQuiz: boolean;
+  correctOptionId: number | null;
+  pollExplanation: string;
   closeAfterMinutes: number | null;
   messageThreadId: number | null;
   followUpOptionIdsText: string;
@@ -65,6 +68,9 @@ const emptyCampaignItem = (kind: 'TEXT' | 'POLL' | 'SUMMARY'): CampaignItemDraft
   pollOptionsText: '',
   pollAnonymous: true,
   pollMultiple: false,
+  pollQuiz: false,
+  correctOptionId: null,
+  pollExplanation: '',
   closeAfterMinutes: null,
   messageThreadId: null,
   followUpOptionIdsText: '',
@@ -289,6 +295,10 @@ export class GroupHelpPage {
     );
   }
 
+  pollOptionCount(optionsText: string) {
+    return optionsText.split(/\r?\n/).filter((option) => option.trim()).length || 1;
+  }
+
   removeCampaignItem(index: number) {
     this.campaignItems.update((items) => items.filter((_item, itemIndex) => itemIndex !== index));
   }
@@ -314,7 +324,15 @@ export class GroupHelpPage {
             : undefined,
         pollAnonymous: item.pollAnonymous,
         pollMultiple: item.pollMultiple,
-        pollQuiz: false,
+        pollQuiz: item.pollQuiz,
+        correctOptionIds:
+          item.kind === 'POLL' && item.pollQuiz && item.correctOptionId != null
+            ? [item.correctOptionId - 1]
+            : undefined,
+        pollExplanation:
+          item.kind === 'POLL' && item.pollQuiz && item.pollExplanation.trim()
+            ? item.pollExplanation.trim()
+            : undefined,
         closeAfterMinutes: item.closeAfterMinutes || undefined,
         messageThreadId: item.messageThreadId || undefined,
         followUpOptionIds:
@@ -359,6 +377,9 @@ export class GroupHelpPage {
         pollOptionsText: Array.isArray(item.pollOptions) ? item.pollOptions.join('\n') : '',
         pollAnonymous: item.pollAnonymous,
         pollMultiple: item.pollMultiple,
+        pollQuiz: item.pollQuiz,
+        correctOptionId: Array.isArray(item.correctOptionIds) ? item.correctOptionIds[0] + 1 : null,
+        pollExplanation: item.pollExplanation || '',
         closeAfterMinutes: item.closeAfterMinutes,
         messageThreadId: item.messageThreadId,
         followUpOptionIdsText: Array.isArray(item.followUpOptionIds)

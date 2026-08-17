@@ -180,7 +180,26 @@
 
           <div class="campaign-items">
             @for (item of campaignItems(); track $index; let itemIndex = $index) {
-              <article class="campaign-item">
+              <details class="campaign-item" [open]="itemIndex < 3">
+                <summary class="campaign-item__head">
+                  <strong>
+                    {{ itemIndex + 1 }}.
+                    {{
+                      item.kind === 'POLL'
+                        ? item.pollQuiz
+                          ? 'Wellbeing quiz'
+                          : 'Poll'
+                        : item.kind === 'SUMMARY'
+                          ? 'Weekly summary'
+                          : 'Message'
+                    }}
+                  </strong>
+                  <span>{{
+                    item.kind === 'POLL'
+                      ? item.pollQuestion || 'Untitled poll'
+                      : item.text || 'Untitled message'
+                  }}</span>
+                </summary>
                 <div class="campaign-item__head">
                   <strong>
                     {{ itemIndex + 1 }}.
@@ -290,7 +309,50 @@
                       />
                       Allow multiple answers
                     </label>
+                    <label class="check-row">
+                      <input
+                        type="checkbox"
+                        [checked]="item.pollQuiz"
+                        (change)="
+                          updateCampaignItem(itemIndex, {
+                            pollQuiz: $any($event.target).checked,
+                            pollMultiple: $any($event.target).checked ? false : item.pollMultiple,
+                          })
+                        "
+                      />
+                      This is a wellbeing quiz
+                    </label>
                   </div>
+                  @if (item.pollQuiz) {
+                    <label>
+                      Correct answer number <small>For example: 2</small>
+                      <input
+                        type="number"
+                        min="1"
+                        [max]="pollOptionCount(item.pollOptionsText)"
+                        [value]="item.correctOptionId || ''"
+                        (input)="
+                          updateCampaignItem(itemIndex, {
+                            correctOptionId: +$any($event.target).value || null,
+                          })
+                        "
+                      />
+                    </label>
+                    <label>
+                      Explanation after answering
+                      <textarea
+                        rows="3"
+                        maxlength="200"
+                        placeholder="Explain the helpful answer in simple words."
+                        [value]="item.pollExplanation"
+                        (input)="
+                          updateCampaignItem(itemIndex, {
+                            pollExplanation: $any($event.target).value,
+                          })
+                        "
+                      ></textarea>
+                    </label>
+                  }
                   <label>
                     Close after minutes <small>Optional</small>
                     <input
@@ -357,7 +419,7 @@
                     "
                   />
                 </label>
-              </article>
+              </details>
             }
           </div>
 

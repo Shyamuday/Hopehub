@@ -361,7 +361,7 @@ async function performCampaignDelivery(input: {
         type: item.pollQuiz ? 'quiz' : 'regular',
         allows_multiple_answers: item.pollMultiple,
         ...(item.pollQuiz && correctOptionIds.length
-          ? { correct_option_ids: correctOptionIds }
+          ? { correct_option_id: correctOptionIds[0] }
           : {}),
         ...(item.pollExplanation ? { explanation: item.pollExplanation } : {}),
         ...(item.closeAfterMinutes

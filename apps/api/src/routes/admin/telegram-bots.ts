@@ -153,7 +153,7 @@ const campaignItemSchema = z
     pollAnonymous: z.boolean().default(true),
     pollMultiple: z.boolean().default(false),
     pollQuiz: z.boolean().default(false),
-    correctOptionIds: z.array(z.number().int().min(0)).max(12).optional(),
+    correctOptionIds: z.array(z.number().int().min(0)).max(1).optional(),
     pollExplanation: z.string().trim().max(200).optional(),
     closeAfterMinutes: z.number().int().min(1).max(43_800).optional(),
     messageThreadId: z.number().int().positive().optional(),
@@ -178,6 +178,13 @@ const campaignItemSchema = z
         message: 'Choose at least one correct quiz answer.'
       });
     }
+    if (item.pollQuiz && item.pollMultiple) {
+      context.addIssue({
+        code: 'custom',
+        path: ['pollMultiple'],
+        message: 'A Telegram quiz can have one correct answer only.'
+      });
+    }
     if (item.followUpOptionIds?.length && item.pollAnonymous) {
       context.addIssue({
         code: 'custom',
@@ -195,7 +202,7 @@ const campaignSaveSchema = z.object({
   repeat: z.boolean().default(true),
   isActive: z.boolean().default(false),
   startsAt: z.coerce.date().optional(),
-  items: z.array(campaignItemSchema).min(1).max(50)
+  items: z.array(campaignItemSchema).min(1).max(250)
 });
 
 const campaignToggleSchema = z.object({ isActive: z.boolean() });

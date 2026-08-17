@@ -408,6 +408,48 @@ async function seedSiteConfig(chatId: string) {
 
 async function seedCampaigns(chatId: string) {
   for (const campaign of campaigns(chatId)) {
+    const existing = await prisma.telegramCampaign.findUnique({
+      where: { id: campaign.id },
+      select: { id: true, _count: { select: { items: true } } }
+    });
+    const shouldRefreshEngagementLibrary =
+      campaign.id === 'seed_telegram_hourly_engagement' &&
+      existing?._count.items !== TELEGRAM_COMMUNITY_ENGAGEMENT_ITEMS.length;
+    if (existing && shouldRefreshEngagementLibrary) {
+      await prisma.$transaction(async (tx) => {
+        await tx.telegramCampaignItem.deleteMany({ where: { campaignId: campaign.id } });
+        await tx.telegramCampaign.update({
+          where: { id: campaign.id },
+          data: {
+            chatId,
+            bot: 'hopehubai',
+            name: campaign.name,
+            intervalMinutes: campaign.intervalMinutes,
+            currentItemIndex: 0,
+            items: {
+              create: campaign.items.map((item, sortOrder) => ({
+                sortOrder,
+                kind: item.kind,
+                text: 'text' in item ? item.text : undefined,
+                pollQuestion: 'pollQuestion' in item ? item.pollQuestion : undefined,
+                pollOptions:
+                  'pollOptions' in item ? (item.pollOptions as Prisma.InputJsonValue) : undefined,
+                pollAnonymous: 'pollAnonymous' in item ? item.pollAnonymous : true,
+                pollMultiple: 'pollMultiple' in item ? item.pollMultiple : false,
+                pollQuiz: 'pollQuiz' in item ? item.pollQuiz : false,
+                correctOptionIds:
+                  'correctOptionIds' in item
+                    ? (item.correctOptionIds as Prisma.InputJsonValue)
+                    : undefined,
+                pollExplanation: 'pollExplanation' in item ? item.pollExplanation : undefined,
+                closeAfterMinutes: 'closeAfterMinutes' in item ? item.closeAfterMinutes : undefined
+              }))
+            }
+          }
+        });
+      });
+      continue;
+    }
     await prisma.telegramCampaign.upsert({
       where: { id: campaign.id },
       update: { chatId, bot: 'hopehubai' },
