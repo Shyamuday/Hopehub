@@ -35,12 +35,49 @@ async function supportGroupId() {
   );
 }
 
+async function saveSupportGroup(chat: { id: string | number; title?: string }) {
+  await prisma.siteConfig.upsert({
+    where: { key: SUPPORT_GROUP_CONFIG_KEY },
+    create: {
+      key: SUPPORT_GROUP_CONFIG_KEY,
+      value: keyOf(chat.id),
+      label: 'Telegram contact support group ID'
+    },
+    update: { value: keyOf(chat.id), label: 'Telegram contact support group ID' }
+  });
+}
+
+async function autoLinkPromotedSupportGroup(update: CommunityTelegramUpdate) {
+  const membership = update.my_chat_member;
+  if (!membership || !['group', 'supergroup'].includes(membership.chat.type || '')) return false;
+  if (membership.new_chat_member.status !== 'administrator') return false;
+  if (await supportGroupId()) return false;
+  await saveSupportGroup(membership.chat);
+  await sendCommunityMessage(
+    slug,
+    membership.chat.id,
+    `✅ ${membership.chat.title || 'This private group'} is now the Hope Hub contact support inbox. New contact requests will arrive here; reply directly to a ticket to answer the user.`
+  );
+  return true;
+}
+
 async function linkSupportGroup(message: NonNullable<CommunityTelegramUpdate['message']>) {
   if (!message.from || !['group', 'supergroup'].includes(message.chat.type || '')) return false;
-  const membership = await callCommunityTelegramApi<{ status?: string }>(slug, 'getChatMember', {
-    chat_id: message.chat.id,
-    user_id: message.from.id
-  }).catch(() => null);
+  let membership: { status?: string } | null = null;
+  try {
+    membership = await callCommunityTelegramApi<{ status?: string }>(slug, 'getChatMember', {
+      chat_id: message.chat.id,
+      user_id: message.from.id
+    });
+  } catch (error) {
+    console.error('[telegram-contact] Could not verify support-group administrator.', error);
+    await sendCommunityMessage(
+      slug,
+      message.chat.id,
+      'I could not verify the group administrator. Make the Contact Bot an admin, then send /setsupport again.'
+    );
+    return true;
+  }
   if (!membership || !['creator', 'administrator'].includes(membership.status || '')) {
     await sendCommunityMessage(
       slug,
@@ -49,15 +86,7 @@ async function linkSupportGroup(message: NonNullable<CommunityTelegramUpdate['me
     );
     return true;
   }
-  await prisma.siteConfig.upsert({
-    where: { key: SUPPORT_GROUP_CONFIG_KEY },
-    create: {
-      key: SUPPORT_GROUP_CONFIG_KEY,
-      value: keyOf(message.chat.id),
-      label: 'Telegram contact support group ID'
-    },
-    update: { value: keyOf(message.chat.id), label: 'Telegram contact support group ID' }
-  });
+  await saveSupportGroup(message.chat);
   await sendCommunityMessage(
     slug,
     message.chat.id,
@@ -111,6 +140,7 @@ async function showStart(chatId: string | number) {
 }
 
 export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
+  if (await autoLinkPromotedSupportGroup(update)) return;
   const callback = update.callback_query;
   if (callback?.message && callback.data) {
     const chatId = callback.message.chat.id;
