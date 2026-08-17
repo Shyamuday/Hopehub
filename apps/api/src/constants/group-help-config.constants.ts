@@ -424,6 +424,27 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
     defaultValue: 'Enabled'
   },
   {
+    key: 'telegramCommunityWelcomeDeleteHours',
+    label: 'Welcome-message cleanup',
+    description: 'Hours to keep a welcome message before the bot deletes it. Use 0 to keep it.',
+    section: 'onboarding',
+    type: 'number',
+    maxLength: 4,
+    placeholder: '24',
+    defaultValue: '24'
+  },
+  {
+    key: 'telegramCommunityTransientMessageDeleteMinutes',
+    label: 'Short bot-reply cleanup',
+    description:
+      'Minutes to keep temporary confirmations, warnings, and help replies. Use 0 to keep them.',
+    section: 'onboarding',
+    type: 'number',
+    maxLength: 4,
+    placeholder: '30',
+    defaultValue: '30'
+  },
+  {
     key: 'telegramCommunitySupportUrl',
     label: 'Private support link',
     description: 'Link used by check-in follow-ups and member onboarding.',

@@ -208,3 +208,18 @@ model TelegramCommunityMember {
   @@unique([chatId, telegramUserId])
   @@index([chatId, joinedAt])
 }
+
+model TelegramCommunityMessageCleanup {
+  id          String   @id @default(cuid())
+  bot         String
+  chatId      String
+  messageId   Int
+  kind        String
+  deleteAfter DateTime
+  attempts    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([bot, chatId, messageId])
+  @@index([deleteAfter])
+}

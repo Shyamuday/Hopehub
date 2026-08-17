@@ -3,6 +3,7 @@ import { prisma } from '../db.js';
 import type { CommunityBotSlug } from './telegram-community-bots.types.js';
 import type { CommunitySubmissionBotSlug } from '../constants/telegram-community-bot.constants.js';
 import { controlNumber, getTelegramBotControls } from './telegram-bot-controls.js';
+import { callCommunityTelegramApi } from './telegram-community-bots.client.js';
 
 const STATE_TTL_MS = 24 * 60 * 60 * 1000;
 const RECEIPT_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -343,6 +344,66 @@ export async function cleanupCommunityBotData() {
         createdAt: { lt: deliveryCutoff },
         status: { in: ['SENT', 'CLOSED', 'FAILED'] }
       }
+    }),
+    prisma.telegramCommunityMessageCleanup.deleteMany({
+      where: {
+        createdAt: { lt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+        attempts: { gte: 3 }
+      }
     })
   ]);
+  await runScheduledCommunityMessageCleanup(now);
+}
+
+export async function scheduleCommunityMessageCleanup(input: {
+  bot: CommunityBotSlug;
+  chatId: string | number;
+  messageId: number;
+  kind: 'welcome' | 'transient';
+  deleteAfter: Date;
+}) {
+  return prisma.telegramCommunityMessageCleanup.upsert({
+    where: {
+      bot_chatId_messageId: {
+        bot: input.bot,
+        chatId: String(input.chatId),
+        messageId: input.messageId
+      }
+    },
+    create: {
+      bot: input.bot,
+      chatId: String(input.chatId),
+      messageId: input.messageId,
+      kind: input.kind,
+      deleteAfter: input.deleteAfter
+    },
+    update: { deleteAfter: input.deleteAfter, kind: input.kind, attempts: 0 }
+  });
+}
+
+export async function runScheduledCommunityMessageCleanup(now = new Date()) {
+  const due = await prisma.telegramCommunityMessageCleanup.findMany({
+    where: { deleteAfter: { lte: now } },
+    orderBy: { deleteAfter: 'asc' },
+    take: 100
+  });
+  for (const item of due) {
+    try {
+      await callCommunityTelegramApi(item.bot as CommunityBotSlug, 'deleteMessage', {
+        chat_id: item.chatId,
+        message_id: item.messageId
+      });
+      await prisma.telegramCommunityMessageCleanup.delete({ where: { id: item.id } });
+    } catch {
+      const attempts = item.attempts + 1;
+      if (attempts >= 3) {
+        await prisma.telegramCommunityMessageCleanup.delete({ where: { id: item.id } });
+      } else {
+        await prisma.telegramCommunityMessageCleanup.update({
+          where: { id: item.id },
+          data: { attempts, deleteAfter: new Date(now.getTime() + attempts * 60 * 60 * 1000) }
+        });
+      }
+    }
+  }
 }

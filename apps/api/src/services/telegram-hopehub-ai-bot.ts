@@ -20,6 +20,7 @@ import {
   recordTelegramCommunityActivity,
   recordTelegramCampaignPollUpdate,
   recordTelegramCommunityReaction,
+  recordTelegramCommunityDeparture,
   welcomeTelegramCommunityMembers
 } from './telegram-community-campaigns.js';
 import { ingestTelegramLiveChatMessage } from './telegram-live-chat-bridge.js';
@@ -304,6 +305,7 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
     (!chatUsername || !allowedGroups.includes(chatUsername))
   )
     return;
+  if (await recordTelegramCommunityDeparture(update)) return;
   if (await welcomeTelegramCommunityMembers(update)) return;
   if (!message) return;
   if (message.chat.type === 'private') {

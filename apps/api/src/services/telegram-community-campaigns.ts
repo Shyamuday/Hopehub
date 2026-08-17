@@ -9,6 +9,10 @@ import type { CommunityTelegramUpdate } from './telegram-community-bots.types.js
 import { configuredUrlKeyboard } from './telegram-keyboard-config.js';
 import { colorizeTelegramKeyboard } from './telegram-button-styles.js';
 import { getSiteConfigMap } from './site-config.service.js';
+import {
+  cleanupCommunityBotData,
+  scheduleCommunityMessageCleanup
+} from './telegram-community-bots.store.js';
 import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
 import { TELEGRAM_BOT_URLS } from '../constants/telegram-community-bot.constants.js';
 
@@ -67,6 +71,7 @@ function nextSchedule(now: Date, intervalMinutes: number) {
 
 const COMMUNITY_CONFIG_KEYS = [
   'telegramCommunityWelcomeEnabled',
+  'telegramCommunityWelcomeDeleteHours',
   'telegramGroupHelpWelcomeMessage',
   'telegramGroupHelpWelcomeImageUrl',
   'telegramGroupHelpWelcomeButtons',
@@ -90,6 +95,7 @@ async function communityConfig() {
   const values = await getSiteConfigMap(COMMUNITY_CONFIG_KEYS);
   return {
     welcomeEnabled: values.telegramCommunityWelcomeEnabled !== 'Disabled',
+    welcomeDeleteHours: boundedNumber(values.telegramCommunityWelcomeDeleteHours, 24, 0, 168),
     welcomeText:
       values.telegramGroupHelpWelcomeMessage ||
       'Welcome to Hope Hub 💙 Participate at your own pace and protect your personal details.',
@@ -502,6 +508,7 @@ async function closeExpiredPolls(now: Date) {
 }
 
 export async function runTelegramCampaignScheduler(now = new Date()) {
+  await runCommunityDataCleanupHourly(now);
   if (!telegramCampaignSweepEnabled) return;
   await runTelegramCommunityEventScheduler(now);
   await closeExpiredPolls(now);
@@ -519,6 +526,14 @@ export async function runTelegramCampaignScheduler(now = new Date()) {
     if (!claimed) break;
     await deliverClaimedCampaign(claimed, now);
   }
+}
+
+let lastCommunityDataCleanupAt = 0;
+
+async function runCommunityDataCleanupHourly(now: Date) {
+  if (now.getTime() - lastCommunityDataCleanupAt < 60 * 60 * 1000) return;
+  lastCommunityDataCleanupAt = now.getTime();
+  await cleanupCommunityBotData();
 }
 
 export async function recordTelegramCampaignPollUpdate(update: CommunityTelegramUpdate) {
@@ -669,23 +684,46 @@ export async function welcomeTelegramCommunityMembers(update: CommunityTelegramU
   );
   if (!config.welcomeEnabled) return true;
   if (config.welcomeMediaUrl) {
-    await callCommunityTelegramApi(CAMPAIGN_BOT, 'sendAnimation', {
-      chat_id: chat.id,
-      animation: config.welcomeMediaUrl,
-      message_thread_id: message?.message_thread_id
-    }).catch((error) => {
+    const media = await callCommunityTelegramApi<{ message_id: number }>(
+      CAMPAIGN_BOT,
+      'sendAnimation',
+      {
+        chat_id: chat.id,
+        animation: config.welcomeMediaUrl,
+        message_thread_id: message?.message_thread_id
+      }
+    ).catch((error) => {
       console.error('[telegram-community] Could not send welcome animation.', error);
+      return null;
     });
+    if (media && config.welcomeDeleteHours > 0) {
+      await scheduleCommunityMessageCleanup({
+        bot: CAMPAIGN_BOT,
+        chatId: chat.id,
+        messageId: media.message_id,
+        kind: 'welcome',
+        deleteAfter: new Date(Date.now() + config.welcomeDeleteHours * 60 * 60 * 1000)
+      });
+    }
   }
   for (const member of members) {
     const welcomeText = config.welcomeText
       .replaceAll('{mention}', memberMention(member))
       .replaceAll('{id}', String(member.id));
-    await sendCommunityMessage(CAMPAIGN_BOT, chat.id, welcomeText, {
+    const sent = await sendCommunityMessage(CAMPAIGN_BOT, chat.id, welcomeText, {
       parse_mode: 'Markdown',
       message_thread_id: message?.message_thread_id,
       reply_markup: config.welcomeKeyboard
     });
+    if (config.welcomeDeleteHours > 0) {
+      await scheduleCommunityMessageCleanup({
+        bot: CAMPAIGN_BOT,
+        chatId: chat.id,
+        messageId: sent.message_id,
+        kind: 'welcome',
+        deleteAfter: new Date(Date.now() + config.welcomeDeleteHours * 60 * 60 * 1000)
+      });
+    }
   }
   await prisma.telegramCommunityMember.updateMany({
     where: {
@@ -693,6 +731,26 @@ export async function welcomeTelegramCommunityMembers(update: CommunityTelegramU
       telegramUserId: { in: members.map((member) => String(member.id)) }
     },
     data: { welcomeSentAt: new Date() }
+  });
+  return true;
+}
+
+export async function recordTelegramCommunityDeparture(update: CommunityTelegramUpdate) {
+  const message = update.message;
+  const membership = update.chat_member;
+  const memberFromMessage = message?.left_chat_member;
+  const memberFromMembership =
+    membership &&
+    ['member', 'administrator', 'restricted'].includes(membership.old_chat_member.status) &&
+    ['left', 'kicked'].includes(membership.new_chat_member.status)
+      ? membership.new_chat_member.user
+      : undefined;
+  const member = memberFromMessage || memberFromMembership;
+  const chat = message?.chat || membership?.chat;
+  if (!member || member.is_bot || !chat) return false;
+  await prisma.telegramCommunityMember.updateMany({
+    where: { chatId: String(chat.id), telegramUserId: String(member.id) },
+    data: { leftAt: new Date() }
   });
   return true;
 }
