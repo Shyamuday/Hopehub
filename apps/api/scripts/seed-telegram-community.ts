@@ -12,6 +12,7 @@ import {
   TELEGRAM_BOT_CONTROL_META
 } from '../src/constants/telegram-bot-controls.constants.js';
 import { TELEGRAM_COMMUNITY_ENGAGEMENT_ITEMS } from '../src/constants/telegram-community-content.constants.js';
+import { GROUP_HELP_BOT_SLUG } from '../src/constants/telegram-community-bot.constants.js';
 
 const GROUP_USERNAME = (process.env.TELEGRAM_COMMUNITY_GROUP_USERNAME || '@hopehubindia').replace(
   /^([^@])/,
@@ -127,7 +128,7 @@ const campaigns = (chatId: string) =>
       items: [
         {
           kind: 'MESSAGE',
-          text: '💙 A Hope Hub community post for today\n\nTake a moment to read, react, or share when it feels meaningful:\nhttps://t.me/hopehubindia/8941'
+          text: '💙 Could you help someone find a kind place today?\n\nIf Hope Hub has felt helpful to you, please invite five friends and add @hopehubindia to your bio if that feels right.\n\nYou never know who may be quietly going through a hard time. A small share can help someone find a place to talk, be heard, and feel less alone.\n\nThank you for helping this space grow with care.'
         },
         {
           kind: 'MESSAGE',
@@ -147,7 +148,7 @@ const campaigns = (chatId: string) =>
         },
         {
           kind: 'MESSAGE',
-          text: '💙 A Hope Hub community post for today\n\nTake a moment to read, react, or share when it feels meaningful:\nhttps://t.me/hopehubindia/8941'
+          text: '💙 Could you help someone find a kind place today?\n\nIf Hope Hub has felt helpful to you, please invite five friends and add @hopehubindia to your bio if that feels right.\n\nYou never know who may be quietly going through a hard time. A small share can help someone find a place to talk, be heard, and feel less alone.\n\nThank you for helping this space grow with care.'
         },
         {
           kind: 'MESSAGE',
@@ -464,7 +465,7 @@ async function seedCampaigns(chatId: string) {
       where: { id: campaign.id },
       select: {
         id: true,
-        items: { select: { buttons: true }, orderBy: { sortOrder: 'asc' } },
+        items: { select: { buttons: true, text: true }, orderBy: { sortOrder: 'asc' } },
         _count: { select: { items: true } }
       }
     });
@@ -481,9 +482,15 @@ async function seedCampaigns(chatId: string) {
           (storedItem, index) => 'buttons' in campaign.items[index] && !storedItem.buttons
         )
       );
+    const promotionNeedsCopyMigration =
+      campaign.id === 'seed_telegram_daily_discovery' &&
+      Boolean(
+        existing?.items.some((storedItem) => storedItem.text?.includes('t.me/hopehubindia/8941'))
+      );
     const shouldRefreshLibrary =
       (expectedItemCount != null && existing?._count.items !== expectedItemCount) ||
-      promotionNeedsButtonMigration;
+      promotionNeedsButtonMigration ||
+      promotionNeedsCopyMigration;
     if (existing && shouldRefreshLibrary) {
       await prisma.$transaction(async (tx) => {
         await tx.telegramCampaignItem.deleteMany({ where: { campaignId: campaign.id } });
@@ -491,7 +498,7 @@ async function seedCampaigns(chatId: string) {
           where: { id: campaign.id },
           data: {
             chatId,
-            bot: 'hopehubai',
+            bot: GROUP_HELP_BOT_SLUG,
             name: campaign.name,
             intervalMinutes: campaign.intervalMinutes,
             currentItemIndex: 0,
@@ -522,11 +529,11 @@ async function seedCampaigns(chatId: string) {
     }
     await prisma.telegramCampaign.upsert({
       where: { id: campaign.id },
-      update: { chatId, bot: 'hopehubai' },
+      update: { chatId, bot: GROUP_HELP_BOT_SLUG },
       create: {
         id: campaign.id,
         name: campaign.name,
-        bot: 'hopehubai',
+        bot: GROUP_HELP_BOT_SLUG,
         chatId,
         timezone: 'Asia/Kolkata',
         intervalMinutes: campaign.intervalMinutes,

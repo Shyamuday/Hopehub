@@ -3,6 +3,7 @@ import { getSiteConfigMap } from './site-config.service.js';
 import { emitHopeHubLiveGroupMessage } from './hope-hub-live-groups-realtime.js';
 import { sendCommunityMessage } from './telegram-community-bots.client.js';
 import type { CommunityTelegramMessage } from './telegram-community-bots.types.js';
+import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
 
 const BRIDGE_CONFIG_KEYS = [
   'telegramGroupHelpGroupChatId',
@@ -100,7 +101,7 @@ export async function mirrorHopeHubLiveChatMessageToTelegram(input: {
 
   try {
     const sent = await sendCommunityMessage(
-      'hopehubai',
+      GROUP_HELP_BOT_SLUG,
       config.telegramChatId,
       `💬 Hope Hub member\n\n${input.body.trim().slice(0, 3900)}`
     );

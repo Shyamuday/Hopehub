@@ -37,6 +37,7 @@ type CampaignItemDraft = {
   kind: 'TEXT' | 'POLL' | 'SUMMARY';
   text: string;
   imageUrl: string;
+  buttonsText: string;
   pollQuestion: string;
   pollOptionsText: string;
   pollAnonymous: boolean;
@@ -64,6 +65,7 @@ const emptyCampaignItem = (kind: 'TEXT' | 'POLL' | 'SUMMARY'): CampaignItemDraft
   kind,
   text: '',
   imageUrl: '',
+  buttonsText: '',
   pollQuestion: '',
   pollOptionsText: '',
   pollAnonymous: true,
@@ -314,6 +316,21 @@ export class GroupHelpPage {
         kind: item.kind,
         text: item.kind === 'TEXT' || item.kind === 'SUMMARY' ? item.text.trim() : undefined,
         imageUrl: item.kind === 'TEXT' && item.imageUrl.trim() ? item.imageUrl.trim() : undefined,
+        buttons:
+          item.kind === 'TEXT'
+            ? item.buttonsText
+                .split(/\r?\n/)
+                .map((line) => line.split('|').map((part) => part.trim()))
+                .filter(([text, url]) => Boolean(text) && /^https:\/\//i.test(url || ''))
+                .slice(0, 8)
+                .map(([text, url, style]) => ({
+                  text,
+                  url,
+                  ...(style === 'success' || style === 'danger' || style === 'primary'
+                    ? { style }
+                    : {}),
+                }))
+            : undefined,
         pollQuestion: item.kind === 'POLL' ? item.pollQuestion.trim() : undefined,
         pollOptions:
           item.kind === 'POLL'
@@ -373,6 +390,13 @@ export class GroupHelpPage {
         kind: item.kind,
         text: item.text || '',
         imageUrl: item.imageUrl || '',
+        buttonsText: Array.isArray(item.buttons)
+          ? item.buttons
+              .map((button: { text?: string; url?: string; style?: string }) =>
+                [button.text, button.url, button.style || 'primary'].filter(Boolean).join(' | '),
+              )
+              .join('\n')
+          : '',
         pollQuestion: item.pollQuestion || '',
         pollOptionsText: Array.isArray(item.pollOptions) ? item.pollOptions.join('\n') : '',
         pollAnonymous: item.pollAnonymous,

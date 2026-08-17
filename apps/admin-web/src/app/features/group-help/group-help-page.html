@@ -244,6 +244,16 @@
                       "
                     />
                   </label>
+                  <label>
+                    Action buttons <small>Optional · one button per line</small>
+                    <textarea
+                      rows="3"
+                      maxlength="1600"
+                      placeholder="Explore Hope Hub | https://hopehub.in/ | primary"
+                      [value]="item.buttonsText"
+                      (input)="updateCampaignItem(itemIndex, { buttonsText: $any($event.target).value })"
+                    ></textarea>
+                  </label>
                 } @else if (item.kind === 'SUMMARY') {
                   <label>
                     Summary heading

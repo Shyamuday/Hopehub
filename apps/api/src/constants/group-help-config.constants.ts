@@ -27,9 +27,11 @@ export const HOPEHUB_COMMUNITY_WELCOME_MESSAGE = `Hi {mention} 👋 {id}
 
 💙 Welcome to HopeHub!
 
-A safe space to talk, listen, and feel supported—at your own pace.
+We are really glad you found your way here. You do not need to explain everything or say the perfect thing. Hope Hub is a growing emotional-support community for people across India, and this is a gentle space where you can take a breath, be yourself, and feel a little less alone.
 
-💙 Every conversation matters. You matter.`;
+Take your time. You can listen quietly, join in when you feel ready, or share what is on your mind in your own words. Please be kind—everyone here may be carrying something unseen.
+
+💙 You matter here.`;
 
 export const HOPEHUB_COMMUNITY_WELCOME_MEDIA_URL =
   'https://hopehub-public-assets-924479393196.s3.us-east-1.amazonaws.com/telegram/welcome/hopehub-community-welcome.mp4';

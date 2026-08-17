@@ -9,8 +9,9 @@ import type { CommunityTelegramUpdate } from './telegram-community-bots.types.js
 import { configuredUrlKeyboard } from './telegram-keyboard-config.js';
 import { colorizeTelegramKeyboard } from './telegram-button-styles.js';
 import { getSiteConfigMap } from './site-config.service.js';
+import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
 
-const CAMPAIGN_BOT = 'hopehubai' as const;
+const CAMPAIGN_BOT = GROUP_HELP_BOT_SLUG;
 const MAX_DELIVERIES_PER_SWEEP = 20;
 const ENGAGEMENT_CAMPAIGN_ID = 'seed_telegram_hourly_engagement';
 const PROMOTION_CAMPAIGN_ID = 'seed_telegram_daily_discovery';

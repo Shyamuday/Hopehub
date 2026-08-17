@@ -23,8 +23,9 @@ import {
   welcomeTelegramCommunityMembers
 } from './telegram-community-campaigns.js';
 import { ingestTelegramLiveChatMessage } from './telegram-live-chat-bridge.js';
+import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
 
-const BOT = 'hopehubai' as const;
+const BOT = GROUP_HELP_BOT_SLUG;
 const CONFIG_KEYS = [
   'telegramGroupHelpGroupChatId',
   'telegramGroupHelpTestGroupChatId',

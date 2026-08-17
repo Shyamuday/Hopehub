@@ -60,6 +60,10 @@ import {
   refreshTelegramCommunityEventAnnouncement,
   retryTelegramCampaignDelivery
 } from '../../services/telegram-community-campaigns.js';
+import {
+  GROUP_HELP_BOT_DISPLAY_NAME,
+  GROUP_HELP_BOT_SLUG
+} from '../../constants/telegram-community-bot.constants.js';
 
 const setupSchema = z.object({
   dropPendingUpdates: z.boolean().optional(),
@@ -563,7 +567,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
                     `Contact Hope Hub | ${controls.telegramCampaignContactUrl} | success`
                   )
                 };
-      const message = await sendCommunityMessage('hopehubai', testGroupId, preview.text, {
+      const message = await sendCommunityMessage(GROUP_HELP_BOT_SLUG, testGroupId, preview.text, {
         reply_markup: preview.keyboard
       });
       await writeAuditLog({
@@ -960,14 +964,14 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         action: 'telegram_group_help.action_apply',
         targetType: 'telegram_group_help',
         targetId: action.id,
-        summary: `Applied HopeHubAI setting: ${action.title}.`,
+        summary: `Applied ${GROUP_HELP_BOT_DISPLAY_NAME} setting: ${action.title}.`,
         metadata: { mode: 'DATABASE_CONFIG' }
       });
       return res.json({
         ok: true,
         mode: 'APPLIED',
         action,
-        message: `${action.title} is active in HopeHubAI.`
+        message: `${action.title} is active in ${GROUP_HELP_BOT_DISPLAY_NAME}.`
       });
     })
   );
