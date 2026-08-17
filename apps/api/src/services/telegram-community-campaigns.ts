@@ -390,7 +390,35 @@ export async function welcomeTelegramCommunityMembers(update: CommunityTelegramU
       .replaceAll('{id}', String(member.id));
     await sendCommunityMessage(CAMPAIGN_BOT, message.chat.id, welcomeText, {
       parse_mode: 'Markdown',
-      message_thread_id: message.message_thread_id
+      message_thread_id: message.message_thread_id,
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: '📢 Channel',
+              url: 'https://t.me/HopeHubGlobal',
+              style: 'primary'
+            },
+            {
+              text: '🌐 Website',
+              url: 'https://hopehub.in/',
+              style: 'success'
+            }
+          ],
+          [
+            {
+              text: '🤖 HopeHub Bot',
+              url: 'https://t.me/Hopehubbot',
+              style: 'primary'
+            },
+            {
+              text: '📜 HH Rules',
+              url: 'https://t.me/HHrules',
+              style: 'danger'
+            }
+          ]
+        ]
+      }
     });
   }
   await prisma.telegramCommunityMember.updateMany({
