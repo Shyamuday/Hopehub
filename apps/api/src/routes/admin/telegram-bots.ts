@@ -83,6 +83,41 @@ const botControlsSaveSchema = z.object({
     .max(TELEGRAM_BOT_CONTROL_KEYS.length)
 });
 
+const OPTIONAL_BOT_TEXT_CONTROLS = new Set([
+  'telegramConfessionMenuLinks',
+  'telegramContactMenuLinks',
+  'telegramRulesMenuLinks'
+]);
+
+const BOT_LINK_LIST_CONTROLS = new Set([
+  'telegramConfessionMenuLinks',
+  'telegramContactMenuLinks',
+  'telegramRulesMenuLinks'
+]);
+
+const TELEGRAM_CHAT_ID_CONTROLS = new Set([
+  'telegramConfessionAdminChatId',
+  'telegramConfessionApprovalGroupId',
+  'telegramConfessionChannelId',
+  'telegramContactSupportGroupId'
+]);
+
+function validBotLinkList(value: string) {
+  if (!value) return true;
+  const lines = value.split(/\r?\n/).filter((line) => line.trim());
+  return (
+    lines.length <= 8 &&
+    lines.every((line) => {
+      const [label, url, style = 'primary'] = line.split('|').map((part) => part.trim());
+      return (
+        Boolean(label) &&
+        /^https:\/\//i.test(url || '') &&
+        ['primary', 'success', 'danger'].includes(style)
+      );
+    })
+  );
+}
+
 const groupHelpSendSchema = z.object({
   message: z.string().trim().min(1).max(4096),
   imageUrl: z.preprocess(
@@ -359,10 +394,27 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         if (meta.type === 'boolean' && !['true', 'false'].includes(value)) {
           return res.status(400).json({ message: `${meta.label} must be enabled or disabled.` });
         }
-        if (meta.type === 'textarea' && value.length < 5) {
+        if (meta.type === 'textarea' && value.length < 5 && !OPTIONAL_BOT_TEXT_CONTROLS.has(key)) {
           return res
             .status(400)
             .json({ message: `${meta.label} must contain at least 5 characters.` });
+        }
+        if (BOT_LINK_LIST_CONTROLS.has(key) && !validBotLinkList(value)) {
+          return res.status(400).json({
+            message: `${meta.label} must use “Label | https://link | primary, success, or danger”, with one button per line.`
+          });
+        }
+        if (key === 'telegramCampaignContactUrl' && value && !/^https:\/\//i.test(value)) {
+          return res.status(400).json({ message: `${meta.label} must be an HTTPS link.` });
+        }
+        if (
+          TELEGRAM_CHAT_ID_CONTROLS.has(key) &&
+          value &&
+          !/^(?:-?\d+|@[A-Za-z][A-Za-z0-9_]{4,31})$/.test(value)
+        ) {
+          return res.status(400).json({
+            message: `${meta.label} must be a numeric Telegram chat ID or an @username.`
+          });
         }
         if (meta.type === 'number') {
           if (!/^\d+$/.test(value)) {

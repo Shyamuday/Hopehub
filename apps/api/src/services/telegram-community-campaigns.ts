@@ -5,7 +5,8 @@ import {
   editCommunityReplyMarkup,
   sendCommunityMessage
 } from './telegram-community-bots.client.js';
-import type { CommunityTelegramUpdate, TelegramKeyboard } from './telegram-community-bots.types.js';
+import type { CommunityTelegramUpdate } from './telegram-community-bots.types.js';
+import { configuredUrlKeyboard } from './telegram-keyboard-config.js';
 import { getSiteConfigMap } from './site-config.service.js';
 
 const CAMPAIGN_BOT = 'hopehubai' as const;
@@ -44,28 +45,9 @@ const COMMUNITY_CONFIG_KEYS = [
   'telegramGroupHelpWelcomeMessage',
   'telegramGroupHelpWelcomeImageUrl',
   'telegramGroupHelpWelcomeButtons',
-  'telegramCommunitySupportUrl'
+  'telegramCommunitySupportUrl',
+  'telegramCampaignContactUrl'
 ] as const;
-
-function welcomeKeyboard(value: string): TelegramKeyboard | undefined {
-  const buttons = value
-    .split(/\r?\n/)
-    .map((line) => line.split('|').map((part) => part.trim()))
-    .filter(([label, url]) => Boolean(label) && /^https:\/\//i.test(url || ''))
-    .slice(0, 8)
-    .map(([text, url, requestedStyle]) => ({
-      text,
-      url,
-      style: (['primary', 'success', 'danger'].includes(requestedStyle)
-        ? requestedStyle
-        : 'primary') as 'primary' | 'success' | 'danger'
-    }));
-  const inline_keyboard: TelegramKeyboard['inline_keyboard'] = [];
-  for (let index = 0; index < buttons.length; index += 2) {
-    inline_keyboard.push(buttons.slice(index, index + 2));
-  }
-  return inline_keyboard.length ? { inline_keyboard } : undefined;
-}
 
 async function communityConfig() {
   const values = await getSiteConfigMap(COMMUNITY_CONFIG_KEYS);
@@ -75,8 +57,9 @@ async function communityConfig() {
       values.telegramGroupHelpWelcomeMessage ||
       'Welcome to Hope Hub 💙 Participate at your own pace and protect your personal details.',
     welcomeMediaUrl: values.telegramGroupHelpWelcomeImageUrl?.trim() || '',
-    welcomeKeyboard: welcomeKeyboard(values.telegramGroupHelpWelcomeButtons || ''),
-    supportUrl: values.telegramCommunitySupportUrl || 'https://hopehub.in/#live-connect'
+    welcomeKeyboard: configuredUrlKeyboard(values.telegramGroupHelpWelcomeButtons || ''),
+    supportUrl: values.telegramCommunitySupportUrl || 'https://hopehub.in/#live-connect',
+    contactUrl: values.telegramCampaignContactUrl || 'https://t.me/Contacthopehubbot'
   };
 }
 
@@ -316,7 +299,7 @@ export async function recordTelegramCampaignPollUpdate(update: CommunityTelegram
       reply_markup: {
         inline_keyboard: [
           [{ text: 'Talk to a caring listener', url: config.supportUrl }],
-          [{ text: 'Contact Hope Hub', url: 'https://t.me/Contacthopehubbot' }]
+          [{ text: 'Contact Hope Hub', url: config.contactUrl }]
         ]
       }
     });

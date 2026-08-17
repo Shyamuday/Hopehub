@@ -42,7 +42,7 @@ export class TelegramBotsPage implements OnInit {
   linkedSessions = computed(() => this.sessions().filter((session) => session.linkedUserId).length);
   unlinkedSessions = computed(() => this.sessions().length - this.linkedSessions());
   controlGroups = computed(() =>
-    ['Protection', 'Confession bot', 'Contact bot', 'Rules bot']
+    ['Protection', 'Shared links', 'Confession bot', 'Contact bot', 'Rules bot']
       .map((name) => ({
         name,
         controls: this.controls().filter((control) => control.group === name),

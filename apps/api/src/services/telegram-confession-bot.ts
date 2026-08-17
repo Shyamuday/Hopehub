@@ -15,23 +15,46 @@ import {
   updateCommunitySubmission
 } from './telegram-community-bots.store.js';
 import type { CommunityTelegramUpdate, TelegramKeyboard } from './telegram-community-bots.types.js';
-import { controlBoolean, controlNumber, getTelegramBotControls } from './telegram-bot-controls.js';
+import {
+  controlBoolean,
+  controlNumber,
+  getTelegramBotControls,
+  type TelegramBotControls
+} from './telegram-bot-controls.js';
+import { configuredUrlButtons } from './telegram-keyboard-config.js';
 
 const slug = 'confession' as const;
-const adminChatId = () => process.env.TELEGRAM_CONFESSION_ADMIN_CHAT_ID?.trim() || '';
-const channelId = () => process.env.TELEGRAM_CONFESSION_CHANNEL_ID?.trim() || '';
-const approvalGroupId = () => process.env.TELEGRAM_CONFESSION_APPROVAL_GROUP_ID?.trim() || '';
 const keyOf = (value: string | number) => String(value);
 const isCommand = (text: string, command: string) =>
   new RegExp(`^/${command}(?:@[A-Za-z0-9_]+)?(?:\\s|$)`, 'i').test(text.trim());
 
-const confessionNumber = (serial: bigint) =>
-  Number(serial) + Number.parseInt(process.env.TELEGRAM_CONFESSION_START_NUMBER || '1000', 10);
+function confessionRouting(controls: TelegramBotControls) {
+  return {
+    adminChatId:
+      controls.telegramConfessionAdminChatId.trim() ||
+      process.env.TELEGRAM_CONFESSION_ADMIN_CHAT_ID?.trim() ||
+      '',
+    approvalGroupId:
+      controls.telegramConfessionApprovalGroupId.trim() ||
+      process.env.TELEGRAM_CONFESSION_APPROVAL_GROUP_ID?.trim() ||
+      '',
+    channelId:
+      controls.telegramConfessionChannelId.trim() ||
+      process.env.TELEGRAM_CONFESSION_CHANNEL_ID?.trim() ||
+      '',
+    channelName:
+      controls.telegramConfessionChannelName.trim() ||
+      process.env.TELEGRAM_CONFESSION_CHANNEL_NAME?.trim() ||
+      'Hope Hub Anonymous Confessions',
+    startNumber: controlNumber(controls.telegramConfessionStartNumber, 1000)
+  };
+}
 
-export async function confessionDestinationLabel(target: string) {
+const confessionNumber = (serial: bigint, startNumber: number) => Number(serial) + startNumber;
+
+export async function confessionDestinationLabel(target: string, configuredName?: string) {
   const fallback =
-    process.env.TELEGRAM_CONFESSION_CHANNEL_NAME?.trim() ||
-    (target.startsWith('@') ? target : 'Hope Hub Anonymous Confessions');
+    configuredName || (target.startsWith('@') ? target : 'Hope Hub Anonymous Confessions');
   try {
     const chat = await callCommunityTelegramApi<{
       title?: string;
@@ -59,15 +82,19 @@ export function publishedConfessionText(input: {
   ].join('\n');
 }
 
-const mainKeyboard: TelegramKeyboard = {
-  inline_keyboard: [
-    [{ text: '🩷 Send Confession', callback_data: 'send_confession' }],
-    [
-      { text: '💙 HopeHub', url: 'https://hopehub.in' },
-      { text: '🆘 Get Help', url: 'https://hopehub.in/contact' }
+function mainKeyboard(controls: TelegramBotControls): TelegramKeyboard {
+  const linkButtons = configuredUrlButtons(controls.telegramConfessionMenuLinks, 6);
+  const linkRows: TelegramKeyboard['inline_keyboard'] = [];
+  for (let index = 0; index < linkButtons.length; index += 2) {
+    linkRows.push(linkButtons.slice(index, index + 2));
+  }
+  return {
+    inline_keyboard: [
+      [{ text: '🩷 Send Confession', callback_data: 'send_confession' }],
+      ...linkRows
     ]
-  ]
-};
+  };
+}
 const cancelKeyboard: TelegramKeyboard = {
   inline_keyboard: [[{ text: '🚫 Cancel', callback_data: 'cancel_confession' }]]
 };
@@ -79,18 +106,21 @@ async function showStart(chatId: string | number) {
     slug,
     chatId,
     `${controls.telegramConfessionWelcomeText}\n\n🔒 Your Telegram name, username, and profile are not published.\n\n⚠️ This bot is not emergency support.\n\nTap Send Confession when you are ready.`,
-    { reply_markup: mainKeyboard }
+    { reply_markup: mainKeyboard(controls) }
   );
 }
 
 const POSSIBLE_IMMEDIATE_RISK =
   /\b(suicid(?:e|al)|kill myself|end my life|self[- ]?harm|hurt myself|overdose|cannot stay safe|can't stay safe)\b/i;
 
-function isAdmin(chatId: string | number) {
-  return keyOf(chatId) === adminChatId() || keyOf(chatId) === approvalGroupId();
+function isAdmin(chatId: string | number, controls: TelegramBotControls) {
+  const routing = confessionRouting(controls);
+  return keyOf(chatId) === routing.adminChatId || keyOf(chatId) === routing.approvalGroupId;
 }
 
 export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate) {
+  const controls = await getTelegramBotControls();
+  const routing = confessionRouting(controls);
   const callback = update.callback_query;
   if (callback?.message && callback.data) {
     const chatId = callback.message.chat.id;
@@ -116,7 +146,7 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
       }
       await clearCommunityState(slug, stateKey);
       await sendCommunityMessage(slug, chatId, `❌ Confession cancelled. Nothing was submitted.`, {
-        reply_markup: mainKeyboard
+        reply_markup: mainKeyboard(controls)
       });
       return;
     }
@@ -132,11 +162,10 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
           slug,
           chatId,
           '⚠️ This confession expired. Please start again.',
-          { reply_markup: mainKeyboard }
+          { reply_markup: mainKeyboard(controls) }
         );
         return;
       }
-      const controls = await getTelegramBotControls();
       const dailyLimit = controlNumber(controls.telegramConfessionDailyLimit, 5);
       if (
         await communitySubmissionLimitReached({
@@ -151,18 +180,18 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
           slug,
           chatId,
           `You have reached today’s confession limit (${dailyLimit}). Please try again after 24 hours.`,
-          { reply_markup: mainKeyboard }
+          { reply_markup: mainKeyboard(controls) }
         );
         return;
       }
-      const approvalTarget = approvalGroupId() || adminChatId();
+      const approvalTarget = routing.approvalGroupId || routing.adminChatId;
       if (!approvalTarget) throw new Error('TELEGRAM_CONFESSION_ADMIN_CHAT_ID is not configured.');
       await updateCommunitySubmission(confession.reference, { status: 'pending' });
       await clearCommunityState(slug, stateKey);
       await sendCommunityMessage(
         slug,
         approvalTarget,
-        `${confession.category === 'SAFETY_REVIEW' ? '🚨 POSSIBLE URGENT SAFETY REVIEW\n\n' : ''}🔔 NEW ANONYMOUS CONFESSION\n\n🆔 Confession #${confessionNumber(confession.serial)}\n👤 Admin-only sender: ${confession.firstName || 'Telegram user'}${confession.username ? ` (@${confession.username.replace(/^@/, '')})` : ''}\n🔢 Telegram ID: ${confession.userChatId}\n━━━━━━━━━━━━━━\n\n${confession.text}\n\n━━━━━━━━━━━━━━\nSender details above are only for safety and moderation. They will never be published.`,
+        `${confession.category === 'SAFETY_REVIEW' ? '🚨 POSSIBLE URGENT SAFETY REVIEW\n\n' : ''}🔔 NEW ANONYMOUS CONFESSION\n\n🆔 Confession #${confessionNumber(confession.serial, routing.startNumber)}\n👤 Admin-only sender: ${confession.firstName || 'Telegram user'}${confession.username ? ` (@${confession.username.replace(/^@/, '')})` : ''}\n🔢 Telegram ID: ${confession.userChatId}\n━━━━━━━━━━━━━━\n\n${confession.text}\n\n━━━━━━━━━━━━━━\nSender details above are only for safety and moderation. They will never be published.`,
         {
           reply_markup: {
             inline_keyboard: [
@@ -180,13 +209,13 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
         `💙 *Your confession has been received.*\n\nIt will be reviewed and published anonymously if approved.`,
         {
           parse_mode: 'Markdown',
-          reply_markup: mainKeyboard
+          reply_markup: mainKeyboard(controls)
         }
       );
       return;
     }
     if (data.startsWith('approve_') || data.startsWith('reject_')) {
-      if (!isAdmin(chatId)) return;
+      if (!isAdmin(chatId, controls)) return;
       const approved = data.startsWith('approve_');
       const id = data.slice(approved ? 'approve_'.length : 'reject_'.length);
       const confession = await findCommunitySubmission(id);
@@ -195,15 +224,15 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
         return;
       }
       if (approved) {
-        const target = channelId();
+        const target = routing.channelId;
         if (!target) throw new Error('TELEGRAM_CONFESSION_CHANNEL_ID is not configured.');
-        const destinationName = await confessionDestinationLabel(target);
+        const destinationName = await confessionDestinationLabel(target, routing.channelName);
         await sendCommunityMessage(
           slug,
           target,
           publishedConfessionText({
             text: confession.text,
-            number: confessionNumber(confession.serial),
+            number: confessionNumber(confession.serial, routing.startNumber),
             destinationName
           })
         );
@@ -222,7 +251,9 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
         ]
       });
       try {
-        const destinationName = approved ? await confessionDestinationLabel(channelId()) : null;
+        const destinationName = approved
+          ? await confessionDestinationLabel(routing.channelId, routing.channelName)
+          : null;
         await sendCommunityMessage(
           slug,
           confession.userChatId,
@@ -230,7 +261,7 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
             ? `💙 Your confession has been approved and published anonymously in ${destinationName}.`
             : `Your confession wasn't approved for publication at this time.`,
           {
-            reply_markup: mainKeyboard
+            reply_markup: mainKeyboard(controls)
           }
         );
       } catch {
@@ -257,7 +288,7 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
   if (isCommand(text, 'cancel')) {
     await clearCommunityState(slug, stateKey);
     await sendCommunityMessage(slug, chatId, '❌ Confession cancelled.', {
-      reply_markup: mainKeyboard
+      reply_markup: mainKeyboard(controls)
     });
     return;
   }
@@ -266,7 +297,7 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
       slug,
       chatId,
       `*HopeHub Confession Bot — Help*\n\n/start — Welcome\n/cancel — Cancel current confession\n/help — Help`,
-      { parse_mode: 'Markdown', reply_markup: mainKeyboard }
+      { parse_mode: 'Markdown', reply_markup: mainKeyboard(controls) }
     );
     return;
   }
@@ -277,11 +308,10 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
       slug,
       chatId,
       '💙 Tap *Send Confession* below to share anonymously.',
-      { parse_mode: 'Markdown', reply_markup: mainKeyboard }
+      { parse_mode: 'Markdown', reply_markup: mainKeyboard(controls) }
     );
     return;
   }
-  const controls = await getTelegramBotControls();
   const minCharacters = controlNumber(controls.telegramConfessionMinCharacters, 5);
   const maxCharacters = controlNumber(controls.telegramConfessionMaxCharacters, 4000);
   if (text.length < minCharacters || text.length > maxCharacters) {
@@ -298,11 +328,7 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
     controlBoolean(controls.telegramConfessionSafetyScreeningEnabled) &&
     POSSIBLE_IMMEDIATE_RISK.test(text);
   if (needsSafetyReview) {
-    await sendCommunityMessage(
-      slug,
-      chatId,
-      'Your message may describe immediate danger. This bot cannot provide emergency help. If you may act now or cannot stay safe, contact local emergency services or a trusted person who can stay with you. Your confession can still be reviewed anonymously below.'
-    );
+    await sendCommunityMessage(slug, chatId, controls.telegramConfessionSafetyMessage);
   }
   const id = `CONF-${Date.now().toString(36).toUpperCase()}`;
   await createCommunitySubmission({

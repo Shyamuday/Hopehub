@@ -3,7 +3,9 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../src/db.js';
 import {
   GROUP_HELP_CONFIG_FIELDS,
-  GROUP_HELP_CONFIG_DEFAULTS
+  GROUP_HELP_CONFIG_DEFAULTS,
+  HOPEHUB_COMMUNITY_WELCOME_MESSAGE,
+  LEGACY_HOPEHUB_COMMUNITY_WELCOME_MESSAGE
 } from '../src/constants/group-help-config.constants.js';
 import {
   TELEGRAM_BOT_CONTROL_DEFAULTS,
@@ -215,7 +217,34 @@ async function seedSiteConfig(chatId: string) {
     });
   }
 
-  for (const [key, value] of Object.entries(TELEGRAM_BOT_CONTROL_DEFAULTS)) {
+  await prisma.siteConfig.updateMany({
+    where: {
+      key: 'telegramGroupHelpWelcomeMessage',
+      value: LEGACY_HOPEHUB_COMMUNITY_WELCOME_MESSAGE
+    },
+    data: { value: HOPEHUB_COMMUNITY_WELCOME_MESSAGE }
+  });
+
+  const botControlSeedDefaults: Record<string, string> = {
+    ...TELEGRAM_BOT_CONTROL_DEFAULTS,
+    telegramContactSupportGroupId:
+      process.env.TELEGRAM_CONTACT_SUPPORT_GROUP_ID?.trim() ||
+      process.env.TELEGRAM_CONTACT_ADMIN_CHAT_ID?.trim() ||
+      process.env.SUPPORT_GROUP_ID?.trim() ||
+      process.env.ADMIN_CHAT_ID?.trim() ||
+      '',
+    telegramConfessionAdminChatId: process.env.TELEGRAM_CONFESSION_ADMIN_CHAT_ID?.trim() || '',
+    telegramConfessionApprovalGroupId:
+      process.env.TELEGRAM_CONFESSION_APPROVAL_GROUP_ID?.trim() || '',
+    telegramConfessionChannelId: process.env.TELEGRAM_CONFESSION_CHANNEL_ID?.trim() || '',
+    telegramConfessionChannelName:
+      process.env.TELEGRAM_CONFESSION_CHANNEL_NAME?.trim() ||
+      TELEGRAM_BOT_CONTROL_DEFAULTS.telegramConfessionChannelName,
+    telegramConfessionStartNumber:
+      process.env.TELEGRAM_CONFESSION_START_NUMBER?.trim() ||
+      TELEGRAM_BOT_CONTROL_DEFAULTS.telegramConfessionStartNumber
+  };
+  for (const [key, value] of Object.entries(botControlSeedDefaults)) {
     await prisma.siteConfig.upsert({
       where: { key },
       create: {

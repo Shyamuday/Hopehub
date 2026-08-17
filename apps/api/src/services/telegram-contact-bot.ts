@@ -17,7 +17,13 @@ import {
   updateCommunitySubmission
 } from './telegram-community-bots.store.js';
 import type { CommunityTelegramUpdate, TelegramKeyboard } from './telegram-community-bots.types.js';
-import { controlNumber, getTelegramBotControls } from './telegram-bot-controls.js';
+import {
+  clearTelegramBotControlsCache,
+  controlNumber,
+  getTelegramBotControls,
+  type TelegramBotControls
+} from './telegram-bot-controls.js';
+import { configuredUrlButtons } from './telegram-keyboard-config.js';
 import { getSiteConfigValue } from './site-config.service.js';
 
 const slug = 'contact' as const;
@@ -46,6 +52,7 @@ async function saveSupportGroup(chat: { id: string | number; title?: string }) {
     },
     update: { value: keyOf(chat.id), label: 'Telegram contact support group ID' }
   });
+  clearTelegramBotControlsCache();
 }
 
 async function autoLinkPromotedSupportGroup(update: CommunityTelegramUpdate) {
@@ -139,23 +146,27 @@ const categoryLabels: Record<string, string> = {
   cat_partnership: '🤝 Partnership / Collaboration',
   cat_bug: '🐛 Bug Report'
 };
-const mainKeyboard: TelegramKeyboard = {
-  inline_keyboard: [
-    [
-      { text: '💡 Suggestion', callback_data: 'cat_suggestion' },
-      { text: '🚨 Complaint', callback_data: 'cat_complaint' }
-    ],
-    [
-      { text: '🙋 General Enquiry', callback_data: 'cat_enquiry' },
-      { text: '🐛 Report a Bug', callback_data: 'cat_bug' }
-    ],
-    [{ text: '🤝 Partnership', callback_data: 'cat_partnership' }],
-    [
-      { text: '🩷 Confession Bot', url: 'https://t.me/Hopehubconfessionbot' },
-      { text: '💙 HopeHub', url: 'https://hopehub.in' }
+function mainKeyboard(controls: TelegramBotControls): TelegramKeyboard {
+  const linkButtons = configuredUrlButtons(controls.telegramContactMenuLinks, 6);
+  const linkRows: TelegramKeyboard['inline_keyboard'] = [];
+  for (let index = 0; index < linkButtons.length; index += 2) {
+    linkRows.push(linkButtons.slice(index, index + 2));
+  }
+  return {
+    inline_keyboard: [
+      [
+        { text: '💡 Suggestion', callback_data: 'cat_suggestion' },
+        { text: '🚨 Complaint', callback_data: 'cat_complaint' }
+      ],
+      [
+        { text: '🙋 General Enquiry', callback_data: 'cat_enquiry' },
+        { text: '🐛 Report a Bug', callback_data: 'cat_bug' }
+      ],
+      [{ text: '🤝 Partnership', callback_data: 'cat_partnership' }],
+      ...linkRows
     ]
-  ]
-};
+  };
+}
 const cancelKeyboard: TelegramKeyboard = {
   inline_keyboard: [[{ text: '🚫 Cancel', callback_data: 'cancel' }]]
 };
@@ -170,12 +181,13 @@ async function showStart(chatId: string | number) {
     slug,
     chatId,
     `${controls.telegramContactWelcomeText}\n\nChoose what you would like to contact us about.`,
-    { reply_markup: mainKeyboard }
+    { reply_markup: mainKeyboard(controls) }
   );
 }
 
 export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
   if (await autoLinkPromotedSupportGroup(update)) return;
+  const controls = await getTelegramBotControls();
   const callback = update.callback_query;
   if (callback?.message && callback.data) {
     const chatId = callback.message.chat.id;
@@ -189,7 +201,7 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
         chatId,
         '🚫 Cancelled. Tap a category below to start again.',
         {
-          reply_markup: mainKeyboard
+          reply_markup: mainKeyboard(controls)
         }
       );
       return;
@@ -214,11 +226,10 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
         ticket.status !== 'draft'
       ) {
         await sendCommunityMessage(slug, chatId, '⚠️ Message expired. Please start again.', {
-          reply_markup: mainKeyboard
+          reply_markup: mainKeyboard(controls)
         });
         return;
       }
-      const controls = await getTelegramBotControls();
       const dailyLimit = controlNumber(controls.telegramContactDailyLimit, 10);
       if (
         await communitySubmissionLimitReached({
@@ -233,17 +244,13 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
           slug,
           chatId,
           `You have reached today’s contact limit (${dailyLimit}). Please try again after 24 hours.`,
-          { reply_markup: mainKeyboard }
+          { reply_markup: mainKeyboard(controls) }
         );
         return;
       }
       const groupId = await supportGroupId();
       if (!groupId) {
-        await sendCommunityMessage(
-          slug,
-          chatId,
-          'We could not send your message because the support inbox is unavailable. Your draft is safe—please try again shortly.'
-        );
+        await sendCommunityMessage(slug, chatId, controls.telegramContactUnavailableMessage);
         return;
       }
       let sent: { message_id: number };
@@ -292,7 +299,7 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
         slug,
         chatId,
         `✅ *Message sent successfully!*\n\n🆔 Reference: *${ticket.reference}*\n\nOur team will get back to you as soon as possible. 💙\n\nUse /status to check anytime.`,
-        { parse_mode: 'Markdown', reply_markup: mainKeyboard }
+        { parse_mode: 'Markdown', reply_markup: mainKeyboard(controls) }
       );
       return;
     }
@@ -305,7 +312,7 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
         chatId,
         '🚫 Message cancelled. Tap a category to start again.',
         {
-          reply_markup: mainKeyboard
+          reply_markup: mainKeyboard(controls)
         }
       );
     }
@@ -335,7 +342,7 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
           slug,
           ticket.userChatId,
           `💙 Response from HopeHub Team\n\n📂 Re: ${categoryLabels[ticket.category || ''] || ticket.category} (${ticket.reference})\n\nThe team sent a ${mediaKind.toLowerCase()}.`,
-          { reply_markup: mainKeyboard }
+          { reply_markup: mainKeyboard(controls) }
         );
         await callCommunityTelegramApi(slug, 'copyMessage', {
           chat_id: ticket.userChatId,
@@ -347,7 +354,7 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
           slug,
           ticket.userChatId,
           `💙 Response from HopeHub Team\n\n📂 Re: ${categoryLabels[ticket.category || ''] || ticket.category} (${ticket.reference})\n\n━━━━━━━━━━━━━━\n\n${text}\n\n━━━━━━━━━━━━━━\n\nUse a category below if you need a follow-up.`,
-          { reply_markup: mainKeyboard }
+          { reply_markup: mainKeyboard(controls) }
         );
       }
       await updateCommunitySubmission(ticket.reference, { status: 'replied' });
@@ -380,7 +387,7 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
       `*HopeHub Contact Bot — Help*\n\n/start — Main menu\n/cancel — Cancel current message\n/status — Check your last message`,
       {
         parse_mode: 'Markdown',
-        reply_markup: mainKeyboard
+        reply_markup: mainKeyboard(controls)
       }
     );
     return;
@@ -388,7 +395,7 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
   if (message.text && isCommand(text, 'cancel')) {
     await clearCommunityState(slug, stateKey);
     await sendCommunityMessage(slug, chatId, '🚫 Cancelled. Tap a category to start again.', {
-      reply_markup: mainKeyboard
+      reply_markup: mainKeyboard(controls)
     });
     return;
   }
@@ -400,7 +407,7 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
       latest
         ? `*Your latest message*\n\n🆔 ${latest.reference}\n📂 ${categoryLabels[latest.category || ''] || latest.category}\nStatus: ${latest.status}\n\n_${latest.text.slice(0, 100)}${latest.text.length > 100 ? '…' : ''}_`
         : `You haven't submitted any messages yet.`,
-      { parse_mode: 'Markdown', reply_markup: mainKeyboard }
+      { parse_mode: 'Markdown', reply_markup: mainKeyboard(controls) }
     );
     return;
   }
@@ -412,7 +419,7 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
       : null;
   if (!state) {
     await sendCommunityMessage(slug, chatId, '💙 Tap a category below to send us a message.', {
-      reply_markup: mainKeyboard
+      reply_markup: mainKeyboard(controls)
     });
     return;
   }
@@ -432,7 +439,6 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
     );
     return;
   }
-  const controls = await getTelegramBotControls();
   const minCharacters = controlNumber(controls.telegramContactMinCharacters, 5);
   const maxCharacters = controlNumber(controls.telegramContactMaxCharacters, 4000);
   if ((!mediaKind && text.length < minCharacters) || text.length > maxCharacters) {

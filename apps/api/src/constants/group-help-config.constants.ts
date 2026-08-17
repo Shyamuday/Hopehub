@@ -1,6 +1,6 @@
 export type GroupHelpConfigFieldType = 'text' | 'textarea' | 'number' | 'select';
 
-export const HOPEHUB_COMMUNITY_WELCOME_MESSAGE = `Hi {mention} 👋 {id}
+export const LEGACY_HOPEHUB_COMMUNITY_WELCOME_MESSAGE = `Hi {mention} 👋 {id}
 
 💙 Welcome to HopeHub!
 
@@ -22,6 +22,14 @@ Please remember:
 ✅ No bullying, hate, spam or unwanted DMs.
 
 💙 Every conversation matters. Every person matters. You matter.`;
+
+export const HOPEHUB_COMMUNITY_WELCOME_MESSAGE = `Hi {mention} 👋 {id}
+
+💙 Welcome to HopeHub!
+
+A safe space to talk, listen, and feel supported—at your own pace.
+
+💙 Every conversation matters. You matter.`;
 
 export const HOPEHUB_COMMUNITY_WELCOME_MEDIA_URL =
   'https://hopehub-public-assets-924479393196.s3.us-east-1.amazonaws.com/telegram/welcome/hopehub-community-welcome.mp4';

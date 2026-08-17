@@ -292,6 +292,17 @@
               (ngModelChange)="setControlValue(control.key, $event)"
             />
           </label>
+        } @else if (control.type === 'text') {
+          <label class="drawer-field">
+            <strong>{{ control.label }}</strong>
+            <small>{{ control.description }}</small>
+            <input
+              type="text"
+              [maxlength]="control.maxLength"
+              [ngModel]="controlValue(control.key)"
+              (ngModelChange)="setControlValue(control.key, $event)"
+            />
+          </label>
         } @else {
           <label class="drawer-field">
             <strong>{{ control.label }}</strong>
