@@ -476,7 +476,7 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
     section: 'content',
     type: 'number',
     maxLength: 2,
-    defaultValue: '8'
+    defaultValue: '14'
   },
   {
     key: 'telegramCommunityEngagementPostsPerDay',
@@ -487,6 +487,16 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
     type: 'number',
     maxLength: 2,
     defaultValue: '3'
+  },
+  {
+    key: 'telegramCommunityPromotionPostsPerDay',
+    label: 'Daily community-link posts',
+    description:
+      'Maximum campaign posts that share the community post, earning registration, and Hope Hub website.',
+    section: 'content',
+    type: 'number',
+    maxLength: 2,
+    defaultValue: '6'
   },
   {
     key: 'telegramCommunityActiveChatPauseMinutes',

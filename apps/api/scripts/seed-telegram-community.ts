@@ -120,6 +120,38 @@ const campaigns = (chatId: string) =>
       items: TELEGRAM_COMMUNITY_ENGAGEMENT_ITEMS
     },
     {
+      id: 'seed_telegram_daily_discovery',
+      name: 'Daily Hope Hub discovery links',
+      intervalMinutes: 120,
+      nextRunAt: nextAt(9),
+      items: [
+        {
+          kind: 'MESSAGE',
+          text: '💙 A Hope Hub community post for today\n\nTake a moment to read, react, or share when it feels meaningful:\nhttps://t.me/hopehubindia/8941'
+        },
+        {
+          kind: 'MESSAGE',
+          text: '✨ Earn with Hope Hub\n\nWant to explore ways to earn while contributing to a kinder community? Register here:\nhttps://earn.hopehub.in/'
+        },
+        {
+          kind: 'MESSAGE',
+          text: '🌐 Explore Hope Hub\n\nFind private support, caring listeners, self-checks, care options, community spaces, and wellbeing tools:\nhttps://hopehub.in/'
+        },
+        {
+          kind: 'MESSAGE',
+          text: '💙 A Hope Hub community post for today\n\nTake a moment to read, react, or share when it feels meaningful:\nhttps://t.me/hopehubindia/8941'
+        },
+        {
+          kind: 'MESSAGE',
+          text: '✨ Earn with Hope Hub\n\nWant to explore ways to earn while contributing to a kinder community? Register here:\nhttps://earn.hopehub.in/'
+        },
+        {
+          kind: 'MESSAGE',
+          text: '🌐 Explore Hope Hub\n\nFind private support, caring listeners, self-checks, care options, community spaces, and wellbeing tools:\nhttps://hopehub.in/'
+        }
+      ]
+    },
+    {
       id: 'seed_telegram_daily_checkin',
       name: 'Daily community check-in',
       intervalMinutes: 1440,
@@ -373,6 +405,10 @@ async function seedSiteConfig(chatId: string) {
     },
     data: { value: HOPEHUB_COMMUNITY_WELCOME_MESSAGE }
   });
+  await prisma.siteConfig.updateMany({
+    where: { key: 'telegramCommunityMaxPostsPerDay', value: '8' },
+    data: { value: '14' }
+  });
 
   const botControlSeedDefaults: Record<string, string> = {
     ...TELEGRAM_BOT_CONTROL_DEFAULTS,
@@ -412,10 +448,15 @@ async function seedCampaigns(chatId: string) {
       where: { id: campaign.id },
       select: { id: true, _count: { select: { items: true } } }
     });
-    const shouldRefreshEngagementLibrary =
-      campaign.id === 'seed_telegram_hourly_engagement' &&
-      existing?._count.items !== TELEGRAM_COMMUNITY_ENGAGEMENT_ITEMS.length;
-    if (existing && shouldRefreshEngagementLibrary) {
+    const expectedItemCount =
+      campaign.id === 'seed_telegram_hourly_engagement'
+        ? TELEGRAM_COMMUNITY_ENGAGEMENT_ITEMS.length
+        : campaign.id === 'seed_telegram_daily_discovery'
+          ? 6
+          : null;
+    const shouldRefreshLibrary =
+      expectedItemCount != null && existing?._count.items !== expectedItemCount;
+    if (existing && shouldRefreshLibrary) {
       await prisma.$transaction(async (tx) => {
         await tx.telegramCampaignItem.deleteMany({ where: { campaignId: campaign.id } });
         await tx.telegramCampaign.update({

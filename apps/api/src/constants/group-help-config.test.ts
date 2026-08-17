@@ -38,8 +38,9 @@ test('community automation has conservative engagement defaults', () => {
   assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramCommunitySmartScheduleEnabled, 'Enabled');
   assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramCommunityScheduleStart, '09:00');
   assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramCommunityScheduleEnd, '22:00');
-  assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramCommunityMaxPostsPerDay, '8');
+  assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramCommunityMaxPostsPerDay, '14');
   assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramCommunityEngagementPostsPerDay, '3');
+  assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramCommunityPromotionPostsPerDay, '6');
   assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramCommunityContentRepeatDays, '30');
 });
 

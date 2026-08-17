@@ -12,6 +12,7 @@ import { getSiteConfigMap } from './site-config.service.js';
 const CAMPAIGN_BOT = 'hopehubai' as const;
 const MAX_DELIVERIES_PER_SWEEP = 20;
 const ENGAGEMENT_CAMPAIGN_ID = 'seed_telegram_hourly_engagement';
+const PROMOTION_CAMPAIGN_ID = 'seed_telegram_daily_discovery';
 
 export const telegramCampaignSweepEnabled =
   (process.env.TELEGRAM_CAMPAIGN_SWEEP_ENABLED || 'true').toLowerCase() !== 'false';
@@ -56,6 +57,7 @@ const SMART_SCHEDULE_CONFIG_KEYS = [
   'telegramCommunityScheduleEnd',
   'telegramCommunityMaxPostsPerDay',
   'telegramCommunityEngagementPostsPerDay',
+  'telegramCommunityPromotionPostsPerDay',
   'telegramCommunityActiveChatPauseMinutes',
   'telegramCommunityMinimumPostGapMinutes',
   'telegramCommunityContentRepeatDays'
@@ -135,6 +137,7 @@ async function smartSchedulePolicy() {
     endMinute: timeMinutes(values.telegramCommunityScheduleEnd, 22 * 60),
     maxPosts: boundedNumber(values.telegramCommunityMaxPostsPerDay, 8, 1, 30),
     maxEngagementPosts: boundedNumber(values.telegramCommunityEngagementPostsPerDay, 3, 0, 20),
+    maxPromotionPosts: boundedNumber(values.telegramCommunityPromotionPostsPerDay, 6, 0, 20),
     activePauseMinutes: boundedNumber(values.telegramCommunityActiveChatPauseMinutes, 30, 0, 1440),
     minimumGapMinutes: boundedNumber(values.telegramCommunityMinimumPostGapMinutes, 45, 0, 1440),
     repeatDays: boundedNumber(values.telegramCommunityContentRepeatDays, 30, 1, 365)
@@ -206,35 +209,43 @@ async function claimNextCampaign(now: Date) {
           ? minute >= policy.startMinute && minute < policy.endMinute
           : minute >= policy.startMinute || minute < policy.endMinute;
       const dayStart = indiaDayStart(now);
-      const [dailyPosts, engagementPosts, lastDelivery, activity] = await Promise.all([
-        prisma.telegramCampaignDelivery.count({
-          where: {
-            campaign: { chatId: candidate.chatId },
-            status: { in: ['SENT', 'CLOSED'] },
-            sentAt: { gte: dayStart }
-          }
-        }),
-        prisma.telegramCampaignDelivery.count({
-          where: {
-            campaignId: ENGAGEMENT_CAMPAIGN_ID,
-            status: { in: ['SENT', 'CLOSED'] },
-            sentAt: { gte: dayStart }
-          }
-        }),
-        prisma.telegramCampaignDelivery.findFirst({
-          where: {
-            campaign: { chatId: candidate.chatId },
-            status: { in: ['SENT', 'CLOSED'] },
-            sentAt: { not: null }
-          },
-          select: { sentAt: true },
-          orderBy: { sentAt: 'desc' }
-        }),
-        prisma.telegramCommunityState.findUnique({
-          where: { bot_chatId: { bot: 'hopehubai-activity', chatId: candidate.chatId } },
-          select: { updatedAt: true }
-        })
-      ]);
+      const [dailyPosts, engagementPosts, promotionPosts, lastDelivery, activity] =
+        await Promise.all([
+          prisma.telegramCampaignDelivery.count({
+            where: {
+              campaign: { chatId: candidate.chatId },
+              status: { in: ['SENT', 'CLOSED'] },
+              sentAt: { gte: dayStart }
+            }
+          }),
+          prisma.telegramCampaignDelivery.count({
+            where: {
+              campaignId: PROMOTION_CAMPAIGN_ID,
+              status: { in: ['SENT', 'CLOSED'] },
+              sentAt: { gte: dayStart }
+            }
+          }),
+          prisma.telegramCampaignDelivery.count({
+            where: {
+              campaignId: ENGAGEMENT_CAMPAIGN_ID,
+              status: { in: ['SENT', 'CLOSED'] },
+              sentAt: { gte: dayStart }
+            }
+          }),
+          prisma.telegramCampaignDelivery.findFirst({
+            where: {
+              campaign: { chatId: candidate.chatId },
+              status: { in: ['SENT', 'CLOSED'] },
+              sentAt: { not: null }
+            },
+            select: { sentAt: true },
+            orderBy: { sentAt: 'desc' }
+          }),
+          prisma.telegramCommunityState.findUnique({
+            where: { bot_chatId: { bot: 'hopehubai-activity', chatId: candidate.chatId } },
+            select: { updatedAt: true }
+          })
+        ]);
 
       const activeUntil = activity
         ? new Date(activity.updatedAt.getTime() + policy.activePauseMinutes * 60_000)
@@ -246,12 +257,15 @@ async function claimNextCampaign(now: Date) {
         !inActiveHours ||
         dailyPosts >= policy.maxPosts ||
         (candidate.id === ENGAGEMENT_CAMPAIGN_ID && engagementPosts >= policy.maxEngagementPosts) ||
+        (candidate.id === PROMOTION_CAMPAIGN_ID && promotionPosts >= policy.maxPromotionPosts) ||
         Boolean(activeUntil && activeUntil > now) ||
         Boolean(gapUntil && gapUntil > now);
       if (shouldDefer) {
         const quotaReached =
           dailyPosts >= policy.maxPosts ||
-          (candidate.id === ENGAGEMENT_CAMPAIGN_ID && engagementPosts >= policy.maxEngagementPosts);
+          (candidate.id === ENGAGEMENT_CAMPAIGN_ID &&
+            engagementPosts >= policy.maxEngagementPosts) ||
+          (candidate.id === PROMOTION_CAMPAIGN_ID && promotionPosts >= policy.maxPromotionPosts);
         const nextCheck =
           !inActiveHours || quotaReached
             ? nextIndiaScheduleStart(now, policy.startMinute, quotaReached)
