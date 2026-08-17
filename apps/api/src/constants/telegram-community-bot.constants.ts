@@ -32,7 +32,7 @@ export const TELEGRAM_BOT_USERNAMES = {
   CONFESSION: '@Hopehubconfessionbot',
   RULES: '@HHrules',
   GROUP_HELP: '@Hopehubaibot',
-  HOPE_HUB: '@Hopehubbot'
+  WEB: '@Hopehubwebbot'
 } as const;
 
 export const TELEGRAM_BOT_URLS = Object.fromEntries(

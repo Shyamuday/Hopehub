@@ -40,7 +40,7 @@ export const HOPEHUB_COMMUNITY_WELCOME_MEDIA_URL =
 
 export const HOPEHUB_COMMUNITY_WELCOME_BUTTONS = `📢 Channel | https://t.me/HopeHubGlobal | primary
 🌐 Website | https://hopehub.in/ | success
-🤖 HopeHub Bot | ${TELEGRAM_BOT_URLS.HOPE_HUB} | primary
+🤖 HopeHub Web Bot | ${TELEGRAM_BOT_URLS.WEB} | primary
 📜 HH Rules | ${TELEGRAM_BOT_URLS.RULES} | danger
 💚 Get private support | https://hopehub.in/#live-connect | success
 🩷 Share anonymously | ${TELEGRAM_BOT_URLS.CONFESSION} | danger`;
