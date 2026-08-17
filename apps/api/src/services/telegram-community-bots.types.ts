@@ -24,11 +24,14 @@ export type CommunityTelegramMessage = {
   forward_from_chat?: { id: number | string };
   photo?: unknown[];
   video?: unknown;
+  video_note?: unknown;
   animation?: unknown;
   document?: unknown;
   audio?: unknown;
   voice?: unknown;
   sticker?: unknown;
+  contact?: unknown;
+  location?: unknown;
 };
 
 export type CommunityTelegramUpdate = {

@@ -97,6 +97,26 @@ async function linkSupportGroup(message: NonNullable<CommunityTelegramUpdate['me
 
 type ContactState = { state: 'writing'; category: string } | { state: 'preview'; ticketId: string };
 
+type ContactPreviewState = {
+  ticketId?: string;
+  mediaMessageId?: number;
+  mediaKind?: string;
+};
+
+function contactMediaKind(message: NonNullable<CommunityTelegramUpdate['message']>) {
+  if (message.photo?.length) return 'Photo';
+  if (message.video) return 'Video';
+  if (message.video_note) return 'Video note';
+  if (message.animation) return 'GIF';
+  if (message.document) return 'Document';
+  if (message.audio) return 'Audio';
+  if (message.voice) return 'Voice note';
+  if (message.sticker) return 'Sticker';
+  if (message.contact) return 'Contact';
+  if (message.location) return 'Location';
+  return null;
+}
+
 const categoryLabels: Record<string, string> = {
   cat_suggestion: '💡 Suggestion',
   cat_complaint: '🚨 Complaint',
@@ -164,7 +184,7 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
       await sendCommunityMessage(
         slug,
         chatId,
-        `${categoryLabels[data] || 'Message'}\n\n✍️ *Please type your message below.*\n\nBe as detailed as possible.\n\n_Use /cancel to go back._`,
+        `${categoryLabels[data] || 'Message'}\n\n✍️ *Type your message or attach a photo, video, document, audio, voice note, GIF, sticker, contact, or location.*\n\nAdd a caption if helpful.\n\n_Use /cancel to go back._`,
         { parse_mode: 'Markdown', reply_markup: cancelKeyboard }
       );
       return;
@@ -212,12 +232,32 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
         return;
       }
       let sent: { message_id: number };
+      let replyTargetMessageId: number;
+      const preview = await getCommunityState<ContactPreviewState>(slug, stateKey);
+      const mediaMessageId =
+        preview?.state === 'preview' && preview.payload?.ticketId === ticketId
+          ? preview.payload.mediaMessageId
+          : undefined;
       try {
         sent = await sendCommunityMessage(
           slug,
           groupId,
           `📬 New Message — ${categoryLabels[ticket.category || ''] || ticket.category}\n\n🆔 ${ticket.reference}\n👤 From: ${ticket.firstName || 'Telegram user'}${ticket.username ? ` (${ticket.username})` : ''}\nTelegram ID: ${ticket.userChatId}\n🕐 ${ticket.createdAt.toLocaleString()}\n━━━━━━━━━━━━━━\n\n${ticket.text}\n\n━━━━━━━━━━━━━━\nReply to this message in the group to respond to the user.`
         );
+        replyTargetMessageId = sent.message_id;
+        if (mediaMessageId) {
+          const copied = await callCommunityTelegramApi<{ message_id: number }>(
+            slug,
+            'copyMessage',
+            {
+              chat_id: groupId,
+              from_chat_id: ticket.userChatId,
+              message_id: mediaMessageId,
+              reply_to_message_id: sent.message_id
+            }
+          );
+          replyTargetMessageId = copied.message_id;
+        }
       } catch (error) {
         console.error('[telegram-contact] Could not forward submitted ticket.', error);
         await sendCommunityMessage(
@@ -230,7 +270,7 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
       await updateCommunitySubmission(ticketId, {
         status: 'open',
         groupChatId: keyOf(groupId),
-        groupMessageId: sent.message_id
+        groupMessageId: replyTargetMessageId
       });
       await clearCommunityState(slug, stateKey);
       await sendCommunityMessage(
@@ -258,12 +298,13 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
   }
 
   const message = update.message;
-  if (!message?.text) return;
+  if (!message) return;
   const chatId = message.chat.id;
-  const text = message.text.trim();
+  const text = (message.text || message.caption || '').trim();
+  const mediaKind = contactMediaKind(message);
   const stateKey = keyOf(chatId);
 
-  if (isCommand(text, 'setsupport') && (await linkSupportGroup(message))) return;
+  if (message.text && isCommand(text, 'setsupport') && (await linkSupportGroup(message))) return;
 
   const groupId = await supportGroupId();
   if (keyOf(chatId) === groupId && message.reply_to_message) {
@@ -272,14 +313,28 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
       stateKey,
       message.reply_to_message.message_id
     );
-    if (!ticket || !text || text.startsWith('/')) return;
+    if (!ticket || (!text && !mediaKind) || message.text?.startsWith('/')) return;
     try {
-      await sendCommunityMessage(
-        slug,
-        ticket.userChatId,
-        `💙 Response from HopeHub Team\n\n📂 Re: ${categoryLabels[ticket.category || ''] || ticket.category} (${ticket.reference})\n\n━━━━━━━━━━━━━━\n\n${text}\n\n━━━━━━━━━━━━━━\n\nUse a category below if you need a follow-up.`,
-        { reply_markup: mainKeyboard }
-      );
+      if (mediaKind) {
+        await sendCommunityMessage(
+          slug,
+          ticket.userChatId,
+          `💙 Response from HopeHub Team\n\n📂 Re: ${categoryLabels[ticket.category || ''] || ticket.category} (${ticket.reference})\n\nThe team sent a ${mediaKind.toLowerCase()}.`,
+          { reply_markup: mainKeyboard }
+        );
+        await callCommunityTelegramApi(slug, 'copyMessage', {
+          chat_id: ticket.userChatId,
+          from_chat_id: chatId,
+          message_id: message.message_id
+        });
+      } else {
+        await sendCommunityMessage(
+          slug,
+          ticket.userChatId,
+          `💙 Response from HopeHub Team\n\n📂 Re: ${categoryLabels[ticket.category || ''] || ticket.category} (${ticket.reference})\n\n━━━━━━━━━━━━━━\n\n${text}\n\n━━━━━━━━━━━━━━\n\nUse a category below if you need a follow-up.`,
+          { reply_markup: mainKeyboard }
+        );
+      }
       await updateCommunitySubmission(ticket.reference, { status: 'replied' });
       await sendCommunityMessage(
         slug,
@@ -302,8 +357,8 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
     return;
   }
   if (message.chat.type !== 'private') return;
-  if (isCommand(text, 'start')) return showStart(chatId);
-  if (isCommand(text, 'help')) {
+  if (message.text && isCommand(text, 'start')) return showStart(chatId);
+  if (message.text && isCommand(text, 'help')) {
     await sendCommunityMessage(
       slug,
       chatId,
@@ -315,14 +370,14 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
     );
     return;
   }
-  if (isCommand(text, 'cancel')) {
+  if (message.text && isCommand(text, 'cancel')) {
     await clearCommunityState(slug, stateKey);
     await sendCommunityMessage(slug, chatId, '🚫 Cancelled. Tap a category to start again.', {
       reply_markup: mainKeyboard
     });
     return;
   }
-  if (isCommand(text, 'status')) {
+  if (message.text && isCommand(text, 'status')) {
     const latest = await latestCommunitySubmission(slug, stateKey);
     await sendCommunityMessage(
       slug,
@@ -334,7 +389,7 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
     );
     return;
   }
-  if (text.startsWith('/')) return;
+  if (message.text?.startsWith('/')) return;
   const storedState = await getCommunityState<{ category?: string }>(slug, stateKey);
   const state: ContactState | null =
     storedState?.state === 'writing' && storedState.payload?.category
@@ -346,20 +401,29 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
     });
     return;
   }
-  const controls = await getTelegramBotControls();
-  const minCharacters = controlNumber(controls.telegramContactMinCharacters, 5);
-  const maxCharacters = controlNumber(controls.telegramContactMaxCharacters, 4000);
-  if (text.length < minCharacters || text.length > maxCharacters) {
+  if (!text && !mediaKind) {
     await sendCommunityMessage(
       slug,
       chatId,
-      text.length < minCharacters
+      'Please send text, a photo, video, document, audio, voice note, GIF, sticker, contact, or location.'
+    );
+    return;
+  }
+  const controls = await getTelegramBotControls();
+  const minCharacters = controlNumber(controls.telegramContactMinCharacters, 5);
+  const maxCharacters = controlNumber(controls.telegramContactMaxCharacters, 4000);
+  if ((!mediaKind && text.length < minCharacters) || text.length > maxCharacters) {
+    await sendCommunityMessage(
+      slug,
+      chatId,
+      !mediaKind && text.length < minCharacters
         ? `Please write at least ${minCharacters} characters so we can help properly. 💙`
         : `Please keep your message under ${maxCharacters.toLocaleString()} characters.`
     );
     return;
   }
   const ticketId = `TKT-${Date.now().toString(36).toUpperCase()}`;
+  const ticketText = text || `[${mediaKind} attachment]`;
   await createCommunitySubmission({
     reference: ticketId,
     bot: slug,
@@ -367,14 +431,18 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
     firstName: message.from?.first_name || 'Telegram user',
     username: message.from?.username ? `@${message.from.username}` : null,
     category: state.category,
-    text,
+    text: ticketText,
     status: 'draft'
   });
-  await setCommunityState(slug, stateKey, 'preview', { ticketId });
+  await setCommunityState(slug, stateKey, 'preview', {
+    ticketId,
+    mediaMessageId: mediaKind ? message.message_id : undefined,
+    mediaKind: mediaKind || undefined
+  });
   await sendCommunityMessage(
     slug,
     chatId,
-    `📋 Preview your message\n\n📂 Category: ${categoryLabels[state.category]}\n━━━━━━━━━━━━━━\n\n${text}\n\n━━━━━━━━━━━━━━\n\nReady to send?`,
+    `📋 Preview your message\n\n📂 Category: ${categoryLabels[state.category]}${mediaKind ? `\n📎 Attachment: ${mediaKind}` : ''}\n━━━━━━━━━━━━━━\n\n${ticketText}\n\n━━━━━━━━━━━━━━\n\nReady to send?`,
     {
       reply_markup: {
         inline_keyboard: [
