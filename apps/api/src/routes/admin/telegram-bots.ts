@@ -148,6 +148,16 @@ const campaignItemSchema = z
       (value) => (typeof value === 'string' && !value.trim() ? undefined : value),
       z.string().trim().url().optional()
     ),
+    buttons: z
+      .array(
+        z.object({
+          text: z.string().trim().min(1).max(64),
+          url: z.string().trim().url(),
+          style: z.enum(['primary', 'success', 'danger']).optional()
+        })
+      )
+      .max(8)
+      .optional(),
     pollQuestion: z.string().trim().max(300).optional(),
     pollOptions: z.array(z.string().trim().min(1).max(100)).min(2).max(12).optional(),
     pollAnonymous: z.boolean().default(true),
@@ -353,6 +363,7 @@ function campaignItemData(
     kind: item.kind,
     text: item.text,
     imageUrl: item.imageUrl,
+    buttons: item.buttons as Prisma.InputJsonValue | undefined,
     pollQuestion: item.pollQuestion,
     pollOptions: item.pollOptions as Prisma.InputJsonValue | undefined,
     pollAnonymous: item.pollAnonymous,

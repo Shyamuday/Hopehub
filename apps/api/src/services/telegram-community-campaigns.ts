@@ -7,6 +7,7 @@ import {
 } from './telegram-community-bots.client.js';
 import type { CommunityTelegramUpdate } from './telegram-community-bots.types.js';
 import { configuredUrlKeyboard } from './telegram-keyboard-config.js';
+import { colorizeTelegramKeyboard } from './telegram-button-styles.js';
 import { getSiteConfigMap } from './site-config.service.js';
 
 const CAMPAIGN_BOT = 'hopehubai' as const;
@@ -33,6 +34,26 @@ type SentTelegramMessage = {
     [key: string]: unknown;
   };
 };
+
+type CampaignButton = {
+  text: string;
+  url: string;
+  style?: 'primary' | 'success' | 'danger';
+};
+
+function campaignItemKeyboard(buttons: unknown) {
+  if (!Array.isArray(buttons)) return undefined;
+  const validButtons = buttons.filter(
+    (button): button is CampaignButton =>
+      Boolean(button) &&
+      typeof button === 'object' &&
+      typeof (button as CampaignButton).text === 'string' &&
+      typeof (button as CampaignButton).url === 'string' &&
+      /^https:\/\//i.test((button as CampaignButton).url)
+  );
+  if (!validButtons.length) return undefined;
+  return colorizeTelegramKeyboard({ inline_keyboard: validButtons.map((button) => [button]) });
+}
 
 function jsonArray(value: Prisma.JsonValue | null | undefined): unknown[] {
   return Array.isArray(value) ? value : [];
@@ -397,6 +418,9 @@ async function performCampaignDelivery(input: {
         chat_id: campaign.chatId,
         text,
         disable_web_page_preview: true,
+        ...(campaignItemKeyboard(item.buttons)
+          ? { reply_markup: campaignItemKeyboard(item.buttons) }
+          : {}),
         ...(item.messageThreadId ? { message_thread_id: item.messageThreadId } : {})
       });
     }

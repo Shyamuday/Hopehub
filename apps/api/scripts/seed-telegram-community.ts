@@ -131,11 +131,19 @@ const campaigns = (chatId: string) =>
         },
         {
           kind: 'MESSAGE',
-          text: '✨ Earn with Hope Hub\n\nWant to explore ways to earn while contributing to a kinder community? Register here:\nhttps://earn.hopehub.in/'
+          text: '✨ Earn with Hope Hub\n\nWant to explore ways to earn while contributing to a kinder community?',
+          buttons: [
+            {
+              text: 'Start earning with Hope Hub',
+              url: 'https://earn.hopehub.in/',
+              style: 'success'
+            }
+          ]
         },
         {
           kind: 'MESSAGE',
-          text: '🌐 Explore Hope Hub\n\nFind private support, caring listeners, self-checks, care options, community spaces, and wellbeing tools:\nhttps://hopehub.in/'
+          text: '🌐 Explore Hope Hub\n\nFind private support, caring listeners, self-checks, care options, community spaces, and wellbeing tools.',
+          buttons: [{ text: 'Explore Hope Hub', url: 'https://hopehub.in/', style: 'primary' }]
         },
         {
           kind: 'MESSAGE',
@@ -143,11 +151,19 @@ const campaigns = (chatId: string) =>
         },
         {
           kind: 'MESSAGE',
-          text: '✨ Earn with Hope Hub\n\nWant to explore ways to earn while contributing to a kinder community? Register here:\nhttps://earn.hopehub.in/'
+          text: '✨ Earn with Hope Hub\n\nWant to explore ways to earn while contributing to a kinder community?',
+          buttons: [
+            {
+              text: 'Start earning with Hope Hub',
+              url: 'https://earn.hopehub.in/',
+              style: 'success'
+            }
+          ]
         },
         {
           kind: 'MESSAGE',
-          text: '🌐 Explore Hope Hub\n\nFind private support, caring listeners, self-checks, care options, community spaces, and wellbeing tools:\nhttps://hopehub.in/'
+          text: '🌐 Explore Hope Hub\n\nFind private support, caring listeners, self-checks, care options, community spaces, and wellbeing tools.',
+          buttons: [{ text: 'Explore Hope Hub', url: 'https://hopehub.in/', style: 'primary' }]
         }
       ]
     },
@@ -446,7 +462,11 @@ async function seedCampaigns(chatId: string) {
   for (const campaign of campaigns(chatId)) {
     const existing = await prisma.telegramCampaign.findUnique({
       where: { id: campaign.id },
-      select: { id: true, _count: { select: { items: true } } }
+      select: {
+        id: true,
+        items: { select: { buttons: true }, orderBy: { sortOrder: 'asc' } },
+        _count: { select: { items: true } }
+      }
     });
     const expectedItemCount =
       campaign.id === 'seed_telegram_hourly_engagement'
@@ -454,8 +474,16 @@ async function seedCampaigns(chatId: string) {
         : campaign.id === 'seed_telegram_daily_discovery'
           ? 6
           : null;
+    const promotionNeedsButtonMigration =
+      campaign.id === 'seed_telegram_daily_discovery' &&
+      Boolean(
+        existing?.items.some(
+          (storedItem, index) => 'buttons' in campaign.items[index] && !storedItem.buttons
+        )
+      );
     const shouldRefreshLibrary =
-      expectedItemCount != null && existing?._count.items !== expectedItemCount;
+      (expectedItemCount != null && existing?._count.items !== expectedItemCount) ||
+      promotionNeedsButtonMigration;
     if (existing && shouldRefreshLibrary) {
       await prisma.$transaction(async (tx) => {
         await tx.telegramCampaignItem.deleteMany({ where: { campaignId: campaign.id } });
@@ -472,6 +500,7 @@ async function seedCampaigns(chatId: string) {
                 sortOrder,
                 kind: item.kind,
                 text: 'text' in item ? item.text : undefined,
+                buttons: 'buttons' in item ? (item.buttons as Prisma.InputJsonValue) : undefined,
                 pollQuestion: 'pollQuestion' in item ? item.pollQuestion : undefined,
                 pollOptions:
                   'pollOptions' in item ? (item.pollOptions as Prisma.InputJsonValue) : undefined,
@@ -509,6 +538,7 @@ async function seedCampaigns(chatId: string) {
             sortOrder,
             kind: item.kind,
             text: 'text' in item ? item.text : undefined,
+            buttons: 'buttons' in item ? (item.buttons as Prisma.InputJsonValue) : undefined,
             pollQuestion: 'pollQuestion' in item ? item.pollQuestion : undefined,
             pollOptions:
               'pollOptions' in item ? (item.pollOptions as Prisma.InputJsonValue) : undefined,
@@ -531,6 +561,59 @@ async function seedCampaigns(chatId: string) {
       }
     });
   }
+}
+
+async function sendPromotionPreviewToTestGroup() {
+  const previewVersion = 'daily-discovery-buttons-v1';
+  const priorPreview = await prisma.siteConfig.findUnique({
+    where: { key: 'telegramCampaignPromotionPreviewVersion' },
+    select: { value: true }
+  });
+  if (priorPreview?.value === previewVersion) return;
+
+  const [testGroupConfig, token] = await Promise.all([
+    prisma.siteConfig.findUnique({
+      where: { key: 'telegramGroupHelpTestGroupChatId' },
+      select: { value: true }
+    }),
+    Promise.resolve(process.env.TELEGRAM_HOPEHUBBOT_TOKEN?.trim())
+  ]);
+  const testGroupChatId = testGroupConfig?.value?.trim();
+  if (!testGroupChatId || !token) {
+    console.warn(
+      '[telegram-seed] Promotion preview skipped: test group or HopeHubAI token is missing.'
+    );
+    return;
+  }
+
+  const discoveryCampaign = campaigns('preview').find(
+    (campaign) => campaign.id === 'seed_telegram_daily_discovery'
+  );
+  if (!discoveryCampaign) return;
+
+  for (const item of discoveryCampaign.items.slice(0, 3)) {
+    const buttons = 'buttons' in item && Array.isArray(item.buttons) ? item.buttons : [];
+    await telegramApi(token, 'sendMessage', {
+      chat_id: testGroupChatId,
+      text: `🧪 Scheduled post preview\n\n${'text' in item ? item.text : ''}`,
+      disable_web_page_preview: true,
+      ...(buttons.length
+        ? { reply_markup: { inline_keyboard: buttons.map((button) => [button]) } }
+        : {})
+    });
+  }
+  await prisma.siteConfig.upsert({
+    where: { key: 'telegramCampaignPromotionPreviewVersion' },
+    create: {
+      key: 'telegramCampaignPromotionPreviewVersion',
+      value: previewVersion,
+      label: 'Daily discovery campaign preview version'
+    },
+    update: { value: previewVersion }
+  });
+  console.log(
+    `[telegram-seed] Sent the three daily discovery post previews to ${testGroupChatId}.`
+  );
 }
 
 async function recordRoseStatus(value: string) {
@@ -594,6 +677,7 @@ try {
   const chatId = await resolveGroupChatId();
   await seedSiteConfig(chatId);
   await seedCampaigns(chatId);
+  await sendPromotionPreviewToTestGroup();
   await retireRoseBot(chatId);
   console.log(
     `[telegram-seed] Configured ${GROUP_USERNAME} (${chatId}) with ${campaigns(chatId).length} active campaigns.`
