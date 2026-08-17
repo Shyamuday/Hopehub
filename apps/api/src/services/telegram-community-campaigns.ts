@@ -416,6 +416,18 @@ export async function welcomeTelegramCommunityMembers(update: CommunityTelegramU
               url: 'https://t.me/HHrules',
               style: 'danger'
             }
+          ],
+          [
+            {
+              text: '💚 Get private support',
+              url: 'https://hopehub.in/#live-connect',
+              style: 'success'
+            },
+            {
+              text: '🩷 Share anonymously',
+              url: 'https://t.me/Hopehubconfessionbot',
+              style: 'danger'
+            }
           ]
         ]
       }
