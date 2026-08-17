@@ -284,9 +284,12 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
     return;
   }
   const message = update.message;
-  if (!message || message.from?.is_bot) return;
-  if (await registerTestGroup(message)) return;
-  const chatId = String(message.chat.id);
+  const membership = update.chat_member;
+  const chat = message?.chat || membership?.chat;
+  if (!chat) return;
+  if (message && message.from?.is_bot) return;
+  if (message && (await registerTestGroup(message))) return;
+  const chatId = String(chat.id);
   const values = await config();
   const allowedGroups = [
     values.telegramGroupHelpGroupChatId,
@@ -294,7 +297,7 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
   ]
     .filter(Boolean)
     .map((value) => value.toLowerCase());
-  const chatUsername = message.chat.username ? `@${message.chat.username.toLowerCase()}` : '';
+  const chatUsername = chat.username ? `@${chat.username.toLowerCase()}` : '';
   if (
     allowedGroups.length &&
     !allowedGroups.includes(chatId.toLowerCase()) &&
@@ -302,6 +305,7 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
   )
     return;
   if (await welcomeTelegramCommunityMembers(update)) return;
+  if (!message) return;
   if (message.chat.type === 'private') {
     await sendCommunityMessage(BOT, chatId, values.telegramGroupHelpSupportMessage);
     return;

@@ -625,21 +625,33 @@ export async function recordTelegramCommunityReaction(update: CommunityTelegramU
 
 export async function welcomeTelegramCommunityMembers(update: CommunityTelegramUpdate) {
   const message = update.message;
-  if (!message?.new_chat_members?.length) return false;
-  const members = message.new_chat_members.filter((member) => !member.is_bot);
+  const membership = update.chat_member;
+  const joinedFromMessage = message?.new_chat_members || [];
+  const joinedFromMembership =
+    membership &&
+    ['left', 'kicked'].includes(membership.old_chat_member.status) &&
+    ['member', 'administrator', 'restricted'].includes(membership.new_chat_member.status)
+      ? [membership.new_chat_member.user]
+      : [];
+  if (!joinedFromMessage.length && !joinedFromMembership.length) return false;
+  const members = [...joinedFromMessage, ...joinedFromMembership].filter(
+    (member) => !member.is_bot
+  );
   if (!members.length) return true;
+  const chat = message?.chat || membership?.chat;
+  if (!chat) return false;
   const config = await communityConfig();
   await prisma.$transaction(
     members.map((member) =>
       prisma.telegramCommunityMember.upsert({
         where: {
           chatId_telegramUserId: {
-            chatId: String(message.chat.id),
+            chatId: String(chat.id),
             telegramUserId: String(member.id)
           }
         },
         create: {
-          chatId: String(message.chat.id),
+          chatId: String(chat.id),
           telegramUserId: String(member.id),
           username: member.username,
           firstName: member.first_name,
@@ -658,9 +670,9 @@ export async function welcomeTelegramCommunityMembers(update: CommunityTelegramU
   if (!config.welcomeEnabled) return true;
   if (config.welcomeMediaUrl) {
     await callCommunityTelegramApi(CAMPAIGN_BOT, 'sendAnimation', {
-      chat_id: message.chat.id,
+      chat_id: chat.id,
       animation: config.welcomeMediaUrl,
-      message_thread_id: message.message_thread_id
+      message_thread_id: message?.message_thread_id
     }).catch((error) => {
       console.error('[telegram-community] Could not send welcome animation.', error);
     });
@@ -669,15 +681,15 @@ export async function welcomeTelegramCommunityMembers(update: CommunityTelegramU
     const welcomeText = config.welcomeText
       .replaceAll('{mention}', memberMention(member))
       .replaceAll('{id}', String(member.id));
-    await sendCommunityMessage(CAMPAIGN_BOT, message.chat.id, welcomeText, {
+    await sendCommunityMessage(CAMPAIGN_BOT, chat.id, welcomeText, {
       parse_mode: 'Markdown',
-      message_thread_id: message.message_thread_id,
+      message_thread_id: message?.message_thread_id,
       reply_markup: config.welcomeKeyboard
     });
   }
   await prisma.telegramCommunityMember.updateMany({
     where: {
-      chatId: String(message.chat.id),
+      chatId: String(chat.id),
       telegramUserId: { in: members.map((member) => String(member.id)) }
     },
     data: { welcomeSentAt: new Date() }

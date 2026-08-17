@@ -53,6 +53,13 @@ export type CommunityTelegramUpdate = {
     old_chat_member: { status: string; user: CommunityTelegramUser };
     new_chat_member: { status: string; user: CommunityTelegramUser };
   };
+  chat_member?: {
+    chat: { id: number | string; type?: string; title?: string; username?: string };
+    from: CommunityTelegramUser;
+    date: number;
+    old_chat_member: { status: string; user: CommunityTelegramUser; is_member?: boolean };
+    new_chat_member: { status: string; user: CommunityTelegramUser; is_member?: boolean };
+  };
   poll?: {
     id: string;
     question: string;
