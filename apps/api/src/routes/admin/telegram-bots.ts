@@ -52,6 +52,7 @@ import {
 import { configuredUrlKeyboard } from '../../services/telegram-keyboard-config.js';
 import { publishApprovedConfession } from '../../services/telegram-confession-bot.js';
 import {
+  applyTelegramCommunityAnnouncementPin,
   announceTelegramCommunityEvent,
   deleteTelegramCommunityEvent,
   refreshTelegramCommunityEventAnnouncement,
@@ -429,14 +430,13 @@ async function sendGroupHelpPost(input: { message: string; imageUrl?: string; pi
         text: input.message,
         disable_web_page_preview: true
       });
-  const pinned = input.pin
-    ? await callGroupHelpTelegramApi('pinChatMessage', {
-        chat_id: chatId,
-        message_id: sent.message_id,
-        disable_notification: true
-      })
-    : null;
-  return { chatId, sent, pinned };
+  await applyTelegramCommunityAnnouncementPin({
+    chatId,
+    messageId: sent.message_id,
+    kind: 'announcement',
+    force: input.pin === true
+  });
+  return { chatId, sent, pinned: input.pin === true };
 }
 
 function campaignItemData(

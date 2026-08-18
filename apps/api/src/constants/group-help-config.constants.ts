@@ -1010,6 +1010,36 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
     defaultValue: '300'
   },
   {
+    key: 'telegramCommunityAnnouncementPinMode',
+    label: 'Automatic announcement pins',
+    description:
+      'Choose which automated announcements may be pinned. Member and welcome messages are never pinned.',
+    section: 'content',
+    type: 'select',
+    options: ['off', 'events only', 'all announcements'],
+    maxLength: 40,
+    defaultValue: 'off'
+  },
+  {
+    key: 'telegramCommunityAnnouncementPinMinutes',
+    label: 'Automatic unpin after',
+    description: 'Minutes to keep an automatic announcement pinned. Use 0 until it is replaced.',
+    section: 'content',
+    type: 'number',
+    maxLength: 8,
+    defaultValue: '60'
+  },
+  {
+    key: 'telegramCommunityAnnouncementReplacePin',
+    label: 'Replace previous automatic pin',
+    description: 'Unpin the prior automated announcement before pinning the next one.',
+    section: 'content',
+    type: 'select',
+    options: ['yes', 'no'],
+    maxLength: 8,
+    defaultValue: 'yes'
+  },
+  {
     key: 'telegramGroupHelpMaxMessageLength',
     label: 'Maximum message length',
     description: 'Desired maximum characters per member message; use 0 for no limit.',

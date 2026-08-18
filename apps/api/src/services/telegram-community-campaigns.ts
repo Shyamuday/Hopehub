@@ -96,7 +96,10 @@ const COMMUNITY_CONFIG_KEYS = [
   'telegramGroupHelpJoinProtection',
   'telegramGroupHelpLogChannelId',
   'telegramCommunitySupportUrl',
-  'telegramCampaignContactUrl'
+  'telegramCampaignContactUrl',
+  'telegramCommunityAnnouncementPinMode',
+  'telegramCommunityAnnouncementPinMinutes',
+  'telegramCommunityAnnouncementReplacePin'
 ] as const;
 
 const SMART_SCHEDULE_CONFIG_KEYS = [
@@ -127,8 +130,103 @@ async function communityConfig() {
     joinProtection: values.telegramGroupHelpJoinProtection || 'off',
     logChannelId: values.telegramGroupHelpLogChannelId?.trim() || '',
     supportUrl: values.telegramCommunitySupportUrl || 'https://hopehub.in/#live-connect',
-    contactUrl: values.telegramCampaignContactUrl || TELEGRAM_BOT_URLS.CONTACT
+    contactUrl: values.telegramCampaignContactUrl || TELEGRAM_BOT_URLS.CONTACT,
+    announcementPinMode: values.telegramCommunityAnnouncementPinMode || 'off',
+    announcementPinMinutes: boundedNumber(
+      values.telegramCommunityAnnouncementPinMinutes,
+      60,
+      0,
+      43_200
+    ),
+    announcementReplacePin: values.telegramCommunityAnnouncementReplacePin !== 'no'
   };
+}
+
+const ANNOUNCEMENT_PIN_STATE = 'community-announcement-pin';
+
+async function manageAnnouncementPin(
+  config: Awaited<ReturnType<typeof communityConfig>>,
+  chatId: string,
+  messageId: number,
+  kind: 'event' | 'campaign' | 'announcement',
+  force = false
+) {
+  const shouldPin =
+    force ||
+    config.announcementPinMode === 'all announcements' ||
+    // Retain compatibility with settings saved before this option was renamed.
+    config.announcementPinMode === 'all scheduled announcements' ||
+    (config.announcementPinMode === 'events only' && kind === 'event');
+  if (!shouldPin) return;
+  const previous = await prisma.telegramCommunityState.findUnique({
+    where: { bot_chatId: { bot: ANNOUNCEMENT_PIN_STATE, chatId } }
+  });
+  const previousId = Number((previous?.payload as { messageId?: unknown } | null)?.messageId || 0);
+  if (config.announcementReplacePin && previousId && previousId !== messageId) {
+    await callCommunityTelegramApi(CAMPAIGN_BOT, 'unpinChatMessage', {
+      chat_id: chatId,
+      message_id: previousId
+    }).catch(() => null);
+  }
+  await callCommunityTelegramApi(CAMPAIGN_BOT, 'pinChatMessage', {
+    chat_id: chatId,
+    message_id: messageId,
+    disable_notification: true
+  });
+  const expiresAt =
+    config.announcementPinMinutes > 0
+      ? new Date(Date.now() + config.announcementPinMinutes * 60_000)
+      : new Date('9999-12-31T00:00:00.000Z');
+  await prisma.telegramCommunityState.upsert({
+    where: { bot_chatId: { bot: ANNOUNCEMENT_PIN_STATE, chatId } },
+    create: {
+      bot: ANNOUNCEMENT_PIN_STATE,
+      chatId,
+      state: 'pinned',
+      payload: { messageId },
+      expiresAt
+    },
+    update: { state: 'pinned', payload: { messageId }, expiresAt }
+  });
+}
+
+/**
+ * Applies the shared announcement pin policy to messages sent outside the
+ * campaign scheduler, such as an admin's one-off announcement.  Campaign
+ * posts include polls, quotes and posts inside a Telegram topic automatically.
+ */
+export async function applyTelegramCommunityAnnouncementPin(input: {
+  chatId: string;
+  messageId: number;
+  kind?: 'event' | 'campaign' | 'announcement';
+  force?: boolean;
+}) {
+  await manageAnnouncementPin(
+    await communityConfig(),
+    input.chatId,
+    input.messageId,
+    input.kind || 'announcement',
+    input.force === true
+  );
+}
+
+async function unpinExpiredAnnouncements(now: Date) {
+  const pins = await prisma.telegramCommunityState.findMany({
+    where: { bot: ANNOUNCEMENT_PIN_STATE, expiresAt: { lte: now } }
+  });
+  await Promise.allSettled(
+    pins.map(async (pin) => {
+      const messageId = Number((pin.payload as { messageId?: unknown } | null)?.messageId || 0);
+      if (messageId)
+        await callCommunityTelegramApi(CAMPAIGN_BOT, 'unpinChatMessage', {
+          chat_id: pin.chatId,
+          message_id: messageId
+        });
+      await prisma.telegramCommunityState.delete({
+        where: { bot_chatId: { bot: pin.bot, chatId: pin.chatId } }
+      });
+    })
+  );
 }
 
 async function logCommunityActivity(
@@ -486,6 +584,7 @@ async function performCampaignDelivery(input: {
       }
     });
     const config = await communityConfig();
+    await manageAnnouncementPin(config, campaign.chatId, sent.message_id, 'campaign');
     await logCommunityActivity(config, 'Scheduled community post delivered', [
       `Group: ${campaign.chatId}`,
       `Content type: ${item.kind}`,
@@ -578,6 +677,7 @@ async function restoreExpiredCommunityLockdowns(now: Date) {
 
 export async function runTelegramCampaignScheduler(now = new Date()) {
   await runScheduledCommunityMessageCleanup(now);
+  await unpinExpiredAnnouncements(now);
   await runCommunityDataRetentionCleanupHourly(now);
   await restoreExpiredCommunityLockdowns(now);
   if (!telegramCampaignSweepEnabled) return;
@@ -1031,6 +1131,7 @@ export async function announceTelegramCommunityEvent(eventId: string) {
       reply_markup: keyboard
     }
   );
+  await manageAnnouncementPin(await communityConfig(), event.chatId, sent.message_id, 'event');
   return prisma.telegramCommunityEvent.update({
     where: { id: event.id },
     data: { telegramMessageId: sent.message_id, announcedAt: new Date() }
