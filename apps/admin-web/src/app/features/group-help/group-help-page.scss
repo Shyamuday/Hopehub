@@ -231,6 +231,60 @@ textarea {
   gap: 0.55rem;
 }
 
+.role-manager {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.moderation-queue {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.moderation-queue h3 {
+  margin-bottom: 0.25rem;
+}
+
+.case-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+
+.role-manager h3 {
+  margin-bottom: 0.25rem;
+}
+
+.role-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.role-list article {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.role-list span {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.role-list small {
+  color: var(--color-text-secondary);
+}
+
 .capability-grid {
   display: grid;
   gap: 0.75rem;

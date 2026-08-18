@@ -334,6 +334,57 @@ export class AdminOpsApi extends AdminApiBase {
     );
   }
 
+  getTelegramGroupHelpRoles(chatId?: string) {
+    return firstValueFrom(
+      this.http.get<{ chatId: string; assignments: any[] }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_ROLES}`,
+        { params: chatId ? { chatId } : {} },
+      ),
+    );
+  }
+
+  assignTelegramGroupHelpRole(payload: {
+    chatId?: string;
+    telegramUserId: string;
+    role: 'HELPER' | 'MODERATOR';
+  }) {
+    return firstValueFrom(
+      this.http.post<{ assignment: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_ROLES}`,
+        payload,
+      ),
+    );
+  }
+
+  revokeTelegramGroupHelpRole(id: string) {
+    return firstValueFrom(
+      this.http.delete<{ ok: boolean }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_ROLE(id)}`,
+      ),
+    );
+  }
+
+  getTelegramGroupHelpModerationCases(chatId?: string) {
+    return firstValueFrom(
+      this.http.get<{ chatId: string; cases: any[] }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_MODERATION_CASES}`,
+        { params: chatId ? { chatId } : {} },
+      ),
+    );
+  }
+
+  resolveTelegramGroupHelpModerationCase(
+    id: string,
+    action: 'NO_ACTION' | 'DELETE' | 'MUTE' | 'KICK' | 'BAN',
+  ) {
+    return firstValueFrom(
+      this.http.post<{ moderationCase: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_MODERATION_CASE_RESOLVE(id)}`,
+        { action },
+      ),
+    );
+  }
+
   testTelegramGroupHelpConnection() {
     return firstValueFrom(
       this.http.post<{

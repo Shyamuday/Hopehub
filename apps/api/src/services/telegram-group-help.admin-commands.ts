@@ -1,0 +1,87 @@
+import { prisma } from '../db.js';
+import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
+import {
+  callCommunityTelegramApi,
+  sendCommunityMessage
+} from './telegram-community-bots.client.js';
+import {
+  endTelegramCommunityLockdown,
+  startTelegramCommunityLockdown
+} from './telegram-community-group-policy.js';
+import { sendTemporaryGroupHelpMessage } from './telegram-group-help.actions.js';
+import { isModerationExempt } from './telegram-group-help.permissions.js';
+import type { CommunityTelegramMessage } from './telegram-community-bots.types.js';
+
+function settingsKeyboard() {
+  return {
+    inline_keyboard: [
+      [
+        { text: '💬 Messages', callback_data: 'hh_settings_messages' },
+        { text: '🛡 Safety', callback_data: 'hh_settings_safety' }
+      ],
+      [
+        { text: '🔧 Operations', callback_data: 'hh_settings_operations' },
+        { text: '❓ Help', callback_data: 'hh_settings_help' }
+      ]
+    ]
+  };
+}
+
+export async function handleGroupHelpAdminCommand(
+  message: CommunityTelegramMessage,
+  values: Record<string, string>
+) {
+  const command = (message.text || '').trim().split(/\s+/)[0].split('@')[0].toLowerCase();
+  if (!['/settings', '/lockdown', '/unlock'].includes(command)) return false;
+  if (
+    !message.from ||
+    !(await isModerationExempt(message, values.telegramGroupHelpAdminWhitelist || ''))
+  )
+    return true;
+  const chatId = String(message.chat.id);
+  const parts = (message.text || '').trim().split(/\s+/);
+  if (command === '/settings') {
+    await sendCommunityMessage(
+      GROUP_HELP_BOT_SLUG,
+      chatId,
+      '⚙️ *Hope Hub group settings*\n\nChoose what you want to review.',
+      {
+        parse_mode: 'Markdown',
+        reply_markup: settingsKeyboard()
+      }
+    );
+    return true;
+  }
+  if (command === '/lockdown') {
+    const minutes = Math.max(1, Math.min(720, Number(parts[1]) || 30));
+    const chat = await callCommunityTelegramApi<{ permissions?: Record<string, boolean> }>(
+      GROUP_HELP_BOT_SLUG,
+      'getChat',
+      { chat_id: chatId }
+    );
+    await callCommunityTelegramApi(GROUP_HELP_BOT_SLUG, 'setChatPermissions', {
+      chat_id: chatId,
+      permissions: { can_send_messages: false }
+    });
+    await startTelegramCommunityLockdown({
+      chatId,
+      minutes,
+      originalPermissions: chat.permissions || { can_send_messages: true }
+    });
+    await sendTemporaryGroupHelpMessage(chatId, `🔒 Chat locked for ${minutes} minutes.`, values);
+    return true;
+  }
+  const policy = await prisma.telegramCommunityGroupPolicy.findUnique({ where: { chatId } });
+  const saved =
+    policy && typeof policy.settings === 'object' && !Array.isArray(policy.settings)
+      ? (policy.settings as Record<string, unknown>).__lockdownPermissions
+      : null;
+  const permissions = typeof saved === 'string' ? JSON.parse(saved) : { can_send_messages: true };
+  await callCommunityTelegramApi(GROUP_HELP_BOT_SLUG, 'setChatPermissions', {
+    chat_id: chatId,
+    permissions
+  });
+  await endTelegramCommunityLockdown(chatId).catch(() => null);
+  await sendTemporaryGroupHelpMessage(chatId, '🔓 Chat unlocked.', values);
+  return true;
+}

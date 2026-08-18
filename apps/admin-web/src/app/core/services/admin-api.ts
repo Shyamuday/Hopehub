@@ -815,6 +815,35 @@ export class AdminApi {
       ...(args as Parameters<AdminOpsApi['saveTelegramGroupHelpConfig']>),
     );
   }
+  getTelegramGroupHelpRoles(...args: Parameters<AdminOpsApi['getTelegramGroupHelpRoles']>) {
+    return this.ops.getTelegramGroupHelpRoles(
+      ...(args as Parameters<AdminOpsApi['getTelegramGroupHelpRoles']>),
+    );
+  }
+  assignTelegramGroupHelpRole(...args: Parameters<AdminOpsApi['assignTelegramGroupHelpRole']>) {
+    return this.ops.assignTelegramGroupHelpRole(
+      ...(args as Parameters<AdminOpsApi['assignTelegramGroupHelpRole']>),
+    );
+  }
+  revokeTelegramGroupHelpRole(...args: Parameters<AdminOpsApi['revokeTelegramGroupHelpRole']>) {
+    return this.ops.revokeTelegramGroupHelpRole(
+      ...(args as Parameters<AdminOpsApi['revokeTelegramGroupHelpRole']>),
+    );
+  }
+  getTelegramGroupHelpModerationCases(
+    ...args: Parameters<AdminOpsApi['getTelegramGroupHelpModerationCases']>
+  ) {
+    return this.ops.getTelegramGroupHelpModerationCases(
+      ...(args as Parameters<AdminOpsApi['getTelegramGroupHelpModerationCases']>),
+    );
+  }
+  resolveTelegramGroupHelpModerationCase(
+    ...args: Parameters<AdminOpsApi['resolveTelegramGroupHelpModerationCase']>
+  ) {
+    return this.ops.resolveTelegramGroupHelpModerationCase(
+      ...(args as Parameters<AdminOpsApi['resolveTelegramGroupHelpModerationCase']>),
+    );
+  }
   testTelegramGroupHelpConnection(
     ...args: Parameters<AdminOpsApi['testTelegramGroupHelpConnection']>
   ) {

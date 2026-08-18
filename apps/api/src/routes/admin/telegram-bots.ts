@@ -80,6 +80,16 @@ const groupHelpSaveSchema = z.object({
     .max(GROUP_HELP_CONFIG_KEYS.length)
 });
 
+const groupHelpRoleSchema = z.object({
+  chatId: z.string().trim().min(1).max(80).optional(),
+  telegramUserId: z.string().trim().regex(/^\d+$/, 'Use a numeric Telegram user ID.').max(32),
+  role: z.enum(['HELPER', 'MODERATOR'])
+});
+
+const groupHelpModerationResolutionSchema = z.object({
+  action: z.enum(['NO_ACTION', 'DELETE', 'MUTE', 'KICK', 'BAN'])
+});
+
 const botControlsSaveSchema = z.object({
   entries: z
     .array(z.object({ key: z.string(), value: z.string() }))
@@ -302,6 +312,75 @@ async function groupHelpConfigMap() {
     values.telegramGroupHelpBotUsername = 'Hopehubbot';
   }
   return values;
+}
+
+async function groupHelpConnectionHealth(values: Record<string, string>) {
+  try {
+    const bot = await callCommunityTelegramApi<{
+      id: number;
+      username?: string;
+      first_name?: string;
+    }>(GROUP_HELP_BOT_SLUG, 'getMe', {});
+    const groups = await Promise.all(
+      [
+        ['main', values.telegramGroupHelpGroupChatId],
+        ['test', values.telegramGroupHelpTestGroupChatId],
+        ['log', values.telegramGroupHelpLogChannelId],
+        ['staff', values.telegramGroupHelpStaffGroupId]
+      ].map(async ([kind, chatId]) => {
+        const id = chatId?.trim();
+        if (!id) return { kind, configured: false };
+        try {
+          const [chat, memberCount, membership] = await Promise.all([
+            callCommunityTelegramApi<{ title?: string; username?: string; type?: string }>(
+              GROUP_HELP_BOT_SLUG,
+              'getChat',
+              { chat_id: id }
+            ),
+            callCommunityTelegramApi<number>(GROUP_HELP_BOT_SLUG, 'getChatMemberCount', {
+              chat_id: id
+            }),
+            callCommunityTelegramApi<Record<string, unknown>>(
+              GROUP_HELP_BOT_SLUG,
+              'getChatMember',
+              {
+                chat_id: id,
+                user_id: bot.id
+              }
+            )
+          ]);
+          return {
+            kind,
+            configured: true,
+            reachable: true,
+            chatId: id,
+            title: chat.title || chat.username || id,
+            type: chat.type || null,
+            memberCount,
+            membership
+          };
+        } catch (error) {
+          return {
+            kind,
+            configured: true,
+            reachable: false,
+            chatId: id,
+            error: error instanceof Error ? error.message : 'Telegram group check failed.'
+          };
+        }
+      })
+    );
+    return {
+      bot: { id: bot.id, username: bot.username || null, name: bot.first_name || null },
+      groups
+    };
+  } catch (error) {
+    return {
+      bot: null,
+      groups: [],
+      error: error instanceof Error ? error.message : 'Telegram bot check failed.'
+    };
+  }
 }
 
 function renderGroupHelpCommand(
@@ -831,6 +910,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
           take: 10
         })
       ]);
+      const connectionHealth = await groupHelpConnectionHealth(values);
       res.json({
         tokenConfigured: Boolean(groupHelpBotToken()),
         actions: GROUP_HELP_ACTIONS,
@@ -842,13 +922,199 @@ export function registerAdminTelegramBotRoutes(router: Router) {
           logGroupConnected: Boolean(values.telegramGroupHelpLogChannelId?.trim()),
           staffGroupConnected: Boolean(values.telegramGroupHelpStaffGroupId?.trim()),
           openModerationCases: openCases,
-          policies: groupPolicies
+          policies: groupPolicies,
+          connectionHealth
         },
         config: GROUP_HELP_CONFIG_KEYS.map((key) => ({
           ...GROUP_HELP_CONFIG_META[key],
           value: values[key] ?? GROUP_HELP_CONFIG_DEFAULTS[key] ?? ''
         }))
       });
+    })
+  );
+
+  router.get(
+    '/admin/telegram-bots/group-help/roles',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (req, res) => {
+      const values = await groupHelpConfigMap();
+      const chatId = String(req.query.chatId || values.telegramGroupHelpGroupChatId || '').trim();
+      if (!chatId)
+        return res.status(400).json({ message: 'Choose a configured Telegram group first.' });
+      const assignments = await prisma.telegramCommunityRoleAssignment.findMany({
+        where: { chatId },
+        orderBy: [{ role: 'asc' }, { updatedAt: 'desc' }]
+      });
+      res.json({ chatId, assignments });
+    })
+  );
+
+  router.post(
+    '/admin/telegram-bots/group-help/roles',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (req, res) => {
+      const parsed = groupHelpRoleSchema.safeParse(req.body ?? {});
+      if (!parsed.success)
+        return res.status(400).json({ message: 'Enter a numeric Telegram user ID and role.' });
+      const values = await groupHelpConfigMap();
+      const chatId = parsed.data.chatId || values.telegramGroupHelpGroupChatId?.trim();
+      if (!chatId)
+        return res.status(400).json({ message: 'Choose a configured Telegram group first.' });
+      const assignment = await prisma.telegramCommunityRoleAssignment.upsert({
+        where: {
+          chatId_telegramUserId_role: {
+            chatId,
+            telegramUserId: parsed.data.telegramUserId,
+            role: parsed.data.role
+          }
+        },
+        create: {
+          chatId,
+          telegramUserId: parsed.data.telegramUserId,
+          role: parsed.data.role,
+          assignedById: req.user!.id
+        },
+        update: { assignedById: req.user!.id }
+      });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'telegram_group_help.role_assign',
+        targetType: 'telegram_group_help_role',
+        targetId: assignment.id,
+        summary: `Assigned ${assignment.role.toLowerCase()} role to Telegram user ${assignment.telegramUserId}.`,
+        metadata: { chatId, telegramUserId: assignment.telegramUserId, role: assignment.role }
+      });
+      res.status(201).json({ assignment });
+    })
+  );
+
+  router.delete(
+    '/admin/telegram-bots/group-help/roles/:id',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (req, res) => {
+      const assignmentId = routeParam(req, 'id');
+      const assignment = await prisma.telegramCommunityRoleAssignment.findUnique({
+        where: { id: assignmentId }
+      });
+      if (!assignment) return res.status(404).json({ message: 'Role assignment was not found.' });
+      await prisma.telegramCommunityRoleAssignment.delete({ where: { id: assignment.id } });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'telegram_group_help.role_revoke',
+        targetType: 'telegram_group_help_role',
+        targetId: assignment.id,
+        summary: `Removed ${assignment.role.toLowerCase()} role from Telegram user ${assignment.telegramUserId}.`,
+        metadata: {
+          chatId: assignment.chatId,
+          telegramUserId: assignment.telegramUserId,
+          role: assignment.role
+        }
+      });
+      res.json({ ok: true });
+    })
+  );
+
+  router.get(
+    '/admin/telegram-bots/group-help/moderation-cases',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (req, res) => {
+      const values = await groupHelpConfigMap();
+      const chatId = String(req.query.chatId || values.telegramGroupHelpGroupChatId || '').trim();
+      if (!chatId)
+        return res.status(400).json({ message: 'Choose a configured Telegram group first.' });
+      const cases = await prisma.telegramCommunityModerationCase.findMany({
+        where: { chatId },
+        orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
+        take: 100
+      });
+      res.json({ chatId, cases });
+    })
+  );
+
+  router.post(
+    '/admin/telegram-bots/group-help/moderation-cases/:id/resolve',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (req, res) => {
+      const parsed = groupHelpModerationResolutionSchema.safeParse(req.body ?? {});
+      if (!parsed.success)
+        return res.status(400).json({ message: 'Choose a valid moderation action.' });
+      const caseId = routeParam(req, 'id');
+      const moderationCase = await prisma.telegramCommunityModerationCase.findUnique({
+        where: { id: caseId }
+      });
+      if (!moderationCase)
+        return res.status(404).json({ message: 'Moderation case was not found.' });
+      if (moderationCase.status !== 'OPEN') {
+        return res.status(409).json({ message: 'This moderation case has already been resolved.' });
+      }
+      const targetUserId = moderationCase.targetUserId ? Number(moderationCase.targetUserId) : NaN;
+      if (
+        !['NO_ACTION', 'DELETE'].includes(parsed.data.action) &&
+        !Number.isSafeInteger(targetUserId)
+      ) {
+        return res
+          .status(400)
+          .json({ message: 'This report has no Telegram member available for that action.' });
+      }
+      if (parsed.data.action === 'DELETE' && !moderationCase.reportedMessageId) {
+        return res.status(400).json({ message: 'This report has no message available to remove.' });
+      }
+      if (parsed.data.action === 'DELETE' && moderationCase.reportedMessageId) {
+        await callCommunityTelegramApi(GROUP_HELP_BOT_SLUG, 'deleteMessage', {
+          chat_id: moderationCase.chatId,
+          message_id: moderationCase.reportedMessageId
+        });
+      } else if (parsed.data.action === 'MUTE') {
+        await callCommunityTelegramApi(GROUP_HELP_BOT_SLUG, 'restrictChatMember', {
+          chat_id: moderationCase.chatId,
+          user_id: targetUserId,
+          permissions: { can_send_messages: false },
+          until_date: Math.floor(Date.now() / 1000) + 60 * 60
+        });
+      } else if (parsed.data.action === 'BAN' || parsed.data.action === 'KICK') {
+        await callCommunityTelegramApi(GROUP_HELP_BOT_SLUG, 'banChatMember', {
+          chat_id: moderationCase.chatId,
+          user_id: targetUserId,
+          revoke_messages: false
+        });
+        if (parsed.data.action === 'KICK') {
+          await callCommunityTelegramApi(GROUP_HELP_BOT_SLUG, 'unbanChatMember', {
+            chat_id: moderationCase.chatId,
+            user_id: targetUserId,
+            only_if_banned: true
+          });
+        }
+      }
+      const resolved = await prisma.telegramCommunityModerationCase.update({
+        where: { id: moderationCase.id },
+        data: {
+          status: 'RESOLVED',
+          action: parsed.data.action,
+          resolvedByUserId: req.user!.id,
+          resolvedAt: new Date()
+        }
+      });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'telegram_group_help.moderation_case_resolve',
+        targetType: 'telegram_moderation_case',
+        targetId: resolved.id,
+        summary: `Resolved a Telegram report with ${parsed.data.action.toLowerCase().replace('_', ' ')}.`,
+        metadata: {
+          chatId: resolved.chatId,
+          targetUserId: resolved.targetUserId,
+          action: parsed.data.action
+        }
+      });
+      res.json({ moderationCase: resolved });
     })
   );
 

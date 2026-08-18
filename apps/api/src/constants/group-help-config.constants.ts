@@ -580,6 +580,16 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
     defaultValue: HOPEHUB_COMMUNITY_WELCOME_BUTTONS
   },
   {
+    key: 'telegramGroupHelpGoodbyeMessage',
+    label: 'Goodbye message',
+    description: 'Optional short farewell when a member leaves. Use {mention} or {id} if helpful.',
+    section: 'messages',
+    type: 'textarea',
+    maxLength: 1000,
+    defaultValue:
+      'Take gentle care, {mention}. You are welcome back whenever you need a calm space. 💙'
+  },
+  {
     key: 'telegramRoseBotStatus',
     label: 'Rose handover status',
     description: 'Shows whether the legacy Rose bot was removed after the Hope Hub bot took over.',
@@ -1017,6 +1027,16 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
     type: 'textarea',
     maxLength: 4000,
     defaultValue: ''
+  },
+  {
+    key: 'telegramGroupHelpCommandPermissions',
+    label: 'Staff command permissions',
+    description: 'One command per line: /command = HELPER or MODERATOR. Telegram admins always retain access.',
+    section: 'people',
+    type: 'textarea',
+    maxLength: 2000,
+    placeholder: '/warn = HELPER\n/mute = MODERATOR',
+    defaultValue: '/warn = HELPER\n/delete = HELPER\n/mute = MODERATOR\n/unmute = MODERATOR\n/ban = MODERATOR\n/unban = MODERATOR\n/kick = MODERATOR\n/info = HELPER\n/member = HELPER\n/warnings = HELPER\n/clearwarnings = MODERATOR\n/stats = MODERATOR\n/staff = HELPER'
   },
   {
     key: 'telegramGroupHelpLanguage',

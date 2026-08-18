@@ -16,6 +16,11 @@ import {
 } from './telegram-community-bots.store.js';
 import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
 import { TELEGRAM_BOT_URLS } from '../constants/telegram-community-bot.constants.js';
+import {
+  endTelegramCommunityLockdown,
+  expiredTelegramCommunityLockdowns,
+  savedLockdownPermissions
+} from './telegram-community-group-policy.js';
 
 const CAMPAIGN_BOT = GROUP_HELP_BOT_SLUG;
 const MAX_DELIVERIES_PER_SWEEP = 20;
@@ -78,6 +83,8 @@ const COMMUNITY_CONFIG_KEYS = [
   'telegramGroupHelpWelcomeMessage',
   'telegramGroupHelpWelcomeImageUrl',
   'telegramGroupHelpWelcomeButtons',
+  'telegramGroupHelpGoodbyeMessage',
+  'telegramGroupHelpJoinProtection',
   'telegramCommunitySupportUrl',
   'telegramCampaignContactUrl'
 ] as const;
@@ -106,6 +113,8 @@ async function communityConfig() {
       'Welcome to Hope Hub 💙 Participate at your own pace and protect your personal details.',
     welcomeMediaUrl: values.telegramGroupHelpWelcomeImageUrl?.trim() || '',
     welcomeKeyboard: configuredUrlKeyboard(values.telegramGroupHelpWelcomeButtons || ''),
+    goodbyeText: values.telegramGroupHelpGoodbyeMessage?.trim() || '',
+    joinProtection: values.telegramGroupHelpJoinProtection || 'off',
     supportUrl: values.telegramCommunitySupportUrl || 'https://hopehub.in/#live-connect',
     contactUrl: values.telegramCampaignContactUrl || TELEGRAM_BOT_URLS.CONTACT
   };
@@ -512,9 +521,25 @@ async function closeExpiredPolls(now: Date) {
   );
 }
 
+async function restoreExpiredCommunityLockdowns(now: Date) {
+  const lockouts = await expiredTelegramCommunityLockdowns(now);
+  await Promise.allSettled(
+    lockouts.map(async (lockout) => {
+      const permissions = savedLockdownPermissions(lockout.settings) || { can_send_messages: true };
+      await callCommunityTelegramApi(CAMPAIGN_BOT, 'setChatPermissions', {
+        chat_id: lockout.chatId,
+        permissions
+      });
+      await endTelegramCommunityLockdown(lockout.chatId);
+      await sendCommunityMessage(CAMPAIGN_BOT, lockout.chatId, '🔓 Chat unlocked automatically.');
+    })
+  );
+}
+
 export async function runTelegramCampaignScheduler(now = new Date()) {
   await runScheduledCommunityMessageCleanup(now);
   await runCommunityDataRetentionCleanupHourly(now);
+  await restoreExpiredCommunityLockdowns(now);
   if (!telegramCampaignSweepEnabled) return;
   await runTelegramCommunityEventScheduler(now);
   await closeExpiredPolls(now);
@@ -696,9 +721,56 @@ export async function welcomeTelegramCommunityMembers(update: CommunityTelegramU
   }
   if (!config.welcomeEnabled || config.joinLeaveMessages === 'off') return true;
   for (const member of members) {
+    let needsVerification = ['captcha', 'strict'].includes(config.joinProtection);
+    if (needsVerification) {
+      const restricted = await callCommunityTelegramApi(CAMPAIGN_BOT, 'restrictChatMember', {
+        chat_id: chat.id,
+        user_id: member.id,
+        permissions: { can_send_messages: false }
+      })
+        .then(() => true)
+        .catch((error) => {
+          console.error(
+            '[telegram-community] Could not restrict a new member for join verification.',
+            error
+          );
+          return false;
+        });
+      needsVerification = restricted;
+      if (restricted) {
+        await prisma.telegramCommunityState.upsert({
+          where: {
+            bot_chatId: {
+              bot: `group-join-verification:${chat.id}`,
+              chatId: String(member.id)
+            }
+          },
+          create: {
+            bot: `group-join-verification:${chat.id}`,
+            chatId: String(member.id),
+            state: 'awaiting-verification',
+            payload: { groupChatId: String(chat.id) },
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+          },
+          update: {
+            state: 'awaiting-verification',
+            payload: { groupChatId: String(chat.id) },
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+          }
+        });
+      }
+    }
     const welcomeText = config.welcomeText
       .replaceAll('{mention}', memberMention(member))
       .replaceAll('{id}', String(member.id));
+    const welcomeKeyboard = needsVerification
+      ? {
+          inline_keyboard: [
+            [{ text: '✅ I’m here', callback_data: `hh_join_verify:${chat.id}:${member.id}` }],
+            ...(config.welcomeKeyboard?.inline_keyboard || [])
+          ]
+        }
+      : config.welcomeKeyboard;
     const sent =
       config.welcomeMediaUrl && welcomeText.length <= 1024
         ? await callCommunityTelegramApi<{ message_id: number }>(CAMPAIGN_BOT, 'sendAnimation', {
@@ -707,19 +779,19 @@ export async function welcomeTelegramCommunityMembers(update: CommunityTelegramU
             caption: welcomeText,
             parse_mode: 'Markdown',
             message_thread_id: message?.message_thread_id,
-            reply_markup: config.welcomeKeyboard
+            reply_markup: welcomeKeyboard
           }).catch(async (error) => {
             console.error('[telegram-community] Could not send welcome animation.', error);
             return sendCommunityMessage(CAMPAIGN_BOT, chat.id, welcomeText, {
               parse_mode: 'Markdown',
               message_thread_id: message?.message_thread_id,
-              reply_markup: config.welcomeKeyboard
+              reply_markup: welcomeKeyboard
             });
           })
         : await sendCommunityMessage(CAMPAIGN_BOT, chat.id, welcomeText, {
             parse_mode: 'Markdown',
             message_thread_id: message?.message_thread_id,
-            reply_markup: config.welcomeKeyboard
+            reply_markup: welcomeKeyboard
           });
     if (config.autoDeleteSeconds > 0) {
       await scheduleCommunityMessageCleanup({
@@ -757,6 +829,62 @@ export async function recordTelegramCommunityDeparture(update: CommunityTelegram
   await prisma.telegramCommunityMember.updateMany({
     where: { chatId: String(chat.id), telegramUserId: String(member.id) },
     data: { leftAt: new Date() }
+  });
+  const config = await communityConfig();
+  if (config.joinLeaveMessages === 'join and leave' && config.goodbyeText) {
+    const goodbye = config.goodbyeText
+      .replaceAll('{mention}', memberMention(member))
+      .replaceAll('{id}', String(member.id));
+    const sent = await sendCommunityMessage(CAMPAIGN_BOT, chat.id, goodbye, {
+      parse_mode: 'Markdown',
+      message_thread_id: message?.message_thread_id
+    }).catch(() => null);
+    if (sent && config.autoDeleteSeconds > 0) {
+      await scheduleCommunityMessageCleanup({
+        bot: CAMPAIGN_BOT,
+        chatId: chat.id,
+        messageId: sent.message_id,
+        kind: 'goodbye',
+        deleteAfter: new Date(Date.now() + config.autoDeleteSeconds * 1000)
+      });
+    }
+  }
+  return true;
+}
+
+export async function handleTelegramCommunityJoinVerificationCallback(
+  update: CommunityTelegramUpdate
+) {
+  const callback = update.callback_query;
+  const data = callback?.data;
+  if (!callback || !data?.startsWith('hh_join_verify:')) return false;
+  const [, chatId, userId] = data.split(':');
+  if (
+    !chatId ||
+    !userId ||
+    String(callback.from.id) !== userId ||
+    String(callback.message?.chat.id) !== chatId
+  ) {
+    return false;
+  }
+  const state = await prisma.telegramCommunityState.findUnique({
+    where: { bot_chatId: { bot: `group-join-verification:${chatId}`, chatId: userId } }
+  });
+  if (!state || state.expiresAt <= new Date()) return false;
+  const chat = await callCommunityTelegramApi<{ permissions?: Record<string, boolean> }>(
+    CAMPAIGN_BOT,
+    'getChat',
+    {
+      chat_id: chatId
+    }
+  );
+  await callCommunityTelegramApi(CAMPAIGN_BOT, 'restrictChatMember', {
+    chat_id: chatId,
+    user_id: Number(userId),
+    permissions: chat.permissions || { can_send_messages: true }
+  });
+  await prisma.telegramCommunityState.delete({
+    where: { bot_chatId: { bot: `group-join-verification:${chatId}`, chatId: userId } }
   });
   return true;
 }

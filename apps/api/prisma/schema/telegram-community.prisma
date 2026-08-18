@@ -255,3 +255,16 @@ model TelegramCommunityModerationCase {
   @@index([chatId, status, createdAt])
   @@index([targetUserId, createdAt])
 }
+
+model TelegramCommunityRoleAssignment {
+  id              String   @id @default(cuid())
+  chatId          String
+  telegramUserId  String
+  role            String
+  assignedById    String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([chatId, telegramUserId, role])
+  @@index([chatId, telegramUserId])
+}

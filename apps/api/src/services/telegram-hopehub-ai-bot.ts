@@ -1,23 +1,17 @@
-import { GROUP_HELP_CONFIG_DEFAULTS } from '../constants/group-help-config.constants.js';
 import { prisma } from '../db.js';
-import { getSiteConfigMap } from './site-config.service.js';
 import {
-  answerCommunityCallback,
   callCommunityTelegramApi,
   sendCommunityMessage
 } from './telegram-community-bots.client.js';
 import {
-  addTelegramGroupWarning,
   checkTelegramGroupFlood,
-  scheduleCommunityMessageCleanup,
-  telegramGroupWarningCount
+  checkTelegramGroupRepeatedSpam
 } from './telegram-community-bots.store.js';
 import type {
   CommunityTelegramMessage,
   CommunityTelegramUpdate
 } from './telegram-community-bots.types.js';
 import {
-  handleTelegramCommunityEventCallback,
   recordTelegramCommunityActivity,
   recordTelegramCampaignPollUpdate,
   recordTelegramCommunityReaction,
@@ -25,412 +19,40 @@ import {
   welcomeTelegramCommunityMembers
 } from './telegram-community-campaigns.js';
 import { ingestTelegramLiveChatMessage } from './telegram-live-chat-bridge.js';
+import {
+  endTelegramCommunityLockdown,
+  startTelegramCommunityLockdown
+} from './telegram-community-group-policy.js';
 import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
+import {
+  bannedPhrases,
+  containsLink,
+  customReply,
+  floodThreshold,
+  groupHelpConfig as config,
+  hasMedia,
+  isForward,
+  isWithinQuietHours,
+  mediaKinds
+} from './telegram-group-help.config.js';
+import { isModerationExempt } from './telegram-group-help.permissions.js';
+import {
+  deleteGroupHelpMessage as deleteMessage,
+  sendModerationLog,
+  sendTemporaryGroupHelpMessage as sendTemporaryMessage
+} from './telegram-group-help.actions.js';
+import { moderateGroupHelpMessage as moderate } from './telegram-group-help.moderation.js';
+import {
+  registerGroupHelpLogGroup as registerLogGroup,
+  registerGroupHelpTestGroup as registerTestGroup
+} from './telegram-group-help.registration.js';
+import { handleGroupHelpCallback } from './telegram-group-help.callbacks.js';
+import { handleGroupHelpCommand } from './telegram-group-help.commands.js';
 
 const BOT = GROUP_HELP_BOT_SLUG;
-const CONFIG_KEYS = [
-  'telegramGroupHelpGroupChatId',
-  'telegramGroupHelpTestGroupChatId',
-  'telegramGroupHelpRulesMessage',
-  'telegramGroupHelpSupportMessage',
-  'telegramGroupHelpBannedWords',
-  'telegramGroupHelpLinkPolicy',
-  'telegramGroupHelpAntiFloodAction',
-  'telegramGroupHelpAntiFloodLimit',
-  'telegramGroupHelpWarnLimit',
-  'telegramGroupHelpWarnAction',
-  'telegramGroupHelpForwardPolicy',
-  'telegramGroupHelpMediaPolicy',
-  'telegramGroupHelpAllowedMedia',
-  'telegramGroupHelpChannelSenderPolicy',
-  'telegramGroupHelpQuotePolicy',
-  'telegramGroupHelpAntiSpamAction',
-  'telegramGroupHelpAutoDeleteSeconds',
-  'telegramGroupHelpMaxMessageLength',
-  'telegramGroupHelpAdminWhitelist',
-  'telegramGroupHelpReportsMode',
-  'telegramGroupHelpStaffGroupId',
-  'telegramGroupHelpLogChannelId',
-  'telegramGroupHelpCustomReplies',
-  'telegramGroupHelpNightMode',
-  'telegramGroupHelpNightStart',
-  'telegramGroupHelpNightEnd'
-] as const;
-
-const adminStatusCache = new Map<string, { isAdmin: boolean; expiresAt: number }>();
-const ADMIN_STATUS_TTL_MS = 5 * 60 * 1000;
-
-async function config() {
-  const stored = await getSiteConfigMap(CONFIG_KEYS);
-  return { ...GROUP_HELP_CONFIG_DEFAULTS, ...stored };
-}
-
-function floodThreshold(value: string) {
-  const [limit, seconds] = value.trim().split(/\s+/).map(Number);
-  return {
-    limit: Number.isFinite(limit) ? Math.max(2, limit) : 6,
-    seconds: Number.isFinite(seconds) ? Math.max(2, seconds) : 10
-  };
-}
-
-function bannedPhrases(value: string) {
-  return value
-    .split(/[\n,]+/)
-    .map((item) => item.trim().toLowerCase())
-    .filter(Boolean);
-}
-
-export function telegramAdminWhitelist(value: string) {
-  return new Set(
-    value
-      .split(/[\n,]+/)
-      .map((item) => item.trim().toLowerCase())
-      .filter(Boolean)
-  );
-}
-
-async function isModerationExempt(message: CommunityTelegramMessage, whitelistValue: string) {
-  if (!message.from) return true;
-  const whitelist = telegramAdminWhitelist(whitelistValue);
-  const userId = String(message.from.id);
-  const username = message.from.username?.trim().toLowerCase();
-  if (whitelist.has(userId) || (username && whitelist.has(`@${username}`))) return true;
-
-  const chatId = String(message.chat.id);
-  const cacheKey = `${chatId}:${userId}`;
-  const cached = adminStatusCache.get(cacheKey);
-  if (cached && cached.expiresAt > Date.now()) return cached.isAdmin;
-  const membership = await callCommunityTelegramApi<{ status?: string }>(BOT, 'getChatMember', {
-    chat_id: chatId,
-    user_id: message.from.id
-  }).catch(() => undefined);
-  // A temporary Telegram lookup failure must never cause an administrator's post to be removed.
-  if (!membership) return true;
-  const isAdmin = ['creator', 'administrator'].includes(membership?.status || '');
-  adminStatusCache.set(cacheKey, { isAdmin, expiresAt: Date.now() + ADMIN_STATUS_TTL_MS });
-  return isAdmin;
-}
-
-function containsLink(text: string) {
-  return /(?:https?:\/\/|www\.|t\.me\/|telegram\.me\/|\b[a-z0-9-]+\.(?:com|in|org|net|io)\b)/i.test(
-    text
-  );
-}
-
-function hasMedia(message: CommunityTelegramMessage) {
-  return Boolean(
-    message.photo?.length ||
-    message.video ||
-    message.animation ||
-    message.document ||
-    message.audio ||
-    message.voice ||
-    message.sticker
-  );
-}
-
-function mediaKinds(message: CommunityTelegramMessage) {
-  return [
-    message.photo?.length ? 'photo' : '',
-    message.video ? 'video' : '',
-    message.audio ? 'audio' : '',
-    message.voice ? 'voice' : '',
-    message.animation ? 'gif' : '',
-    message.sticker ? 'sticker' : '',
-    message.document ? 'document' : ''
-  ].filter(Boolean);
-}
-
-function isWithinQuietHours(values: Record<string, string>) {
-  const mode = values.telegramGroupHelpNightMode || 'off';
-  if (mode === 'off') return false;
-  const toMinutes = (value: string) => {
-    const [hours, minutes] = value.split(':').map(Number);
-    return Number.isFinite(hours) && Number.isFinite(minutes) ? hours * 60 + minutes : null;
-  };
-  const start = toMinutes(values.telegramGroupHelpNightStart || '22:00');
-  const end = toMinutes(values.telegramGroupHelpNightEnd || '07:00');
-  if (start === null || end === null) return false;
-  const indiaTime = new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'Asia/Kolkata',
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23'
-  }).formatToParts(new Date());
-  const current =
-    Number(indiaTime.find((part) => part.type === 'hour')?.value || 0) * 60 +
-    Number(indiaTime.find((part) => part.type === 'minute')?.value || 0);
-  return start <= end ? current >= start && current < end : current >= start || current < end;
-}
-
-function customReply(text: string, definitions: string) {
-  const normalized = text.trim().toLowerCase();
-  for (const line of definitions.split(/\r?\n/)) {
-    const [trigger, ...response] = line.split('=>');
-    if (trigger?.trim().toLowerCase() === normalized && response.join('=>').trim()) {
-      return response.join('=>').trim();
-    }
-  }
-  return '';
-}
-
-async function sendModerationLog(
-  values: Record<string, string>,
-  message: CommunityTelegramMessage,
-  reason: string,
-  action: string
-) {
-  const destination =
-    values.telegramGroupHelpLogChannelId?.trim() || values.telegramGroupHelpStaffGroupId?.trim();
-  if (!destination || !message.from) return;
-  await sendCommunityMessage(
-    BOT,
-    destination,
-    `🛡 Moderation action\n\nReason: ${reason}\nAction: ${action}\nMember: ${message.from.first_name || 'Telegram member'} (${message.from.id})\nGroup: ${message.chat.title || message.chat.id}\nMessage: ${(message.text || message.caption || '[media]').slice(0, 800)}`
-  ).catch(() => null);
-}
-
-function isForward(message: CommunityTelegramMessage) {
-  return Boolean(message.forward_origin || message.forward_from || message.forward_from_chat);
-}
-
-async function deleteMessage(chatId: string, messageId: number) {
-  await callCommunityTelegramApi(BOT, 'deleteMessage', {
-    chat_id: chatId,
-    message_id: messageId
-  });
-}
-
-async function sendTemporaryMessage(
-  chatId: string,
-  text: string,
-  values: Record<string, string>,
-  options: Parameters<typeof sendCommunityMessage>[3] = {}
-) {
-  const sent = await sendCommunityMessage(BOT, chatId, text, options);
-  const delaySeconds = Math.max(0, Number(values.telegramGroupHelpAutoDeleteSeconds || 300));
-  if (delaySeconds > 0) {
-    await scheduleCommunityMessageCleanup({
-      bot: BOT,
-      chatId,
-      messageId: sent.message_id,
-      kind: 'transient',
-      deleteAfter: new Date(Date.now() + delaySeconds * 1000)
-    });
-  }
-  return sent;
-}
-
-async function applyMemberAction(chatId: string, userId: number, action: string) {
-  if (action === 'ban' || action === 'kick') {
-    await callCommunityTelegramApi(BOT, 'banChatMember', {
-      chat_id: chatId,
-      user_id: userId,
-      revoke_messages: false
-    });
-    if (action === 'kick') {
-      await callCommunityTelegramApi(BOT, 'unbanChatMember', {
-        chat_id: chatId,
-        user_id: userId,
-        only_if_banned: true
-      });
-    }
-  } else if (action === 'mute') {
-    await callCommunityTelegramApi(BOT, 'restrictChatMember', {
-      chat_id: chatId,
-      user_id: userId,
-      permissions: { can_send_messages: false },
-      until_date: Math.floor(Date.now() / 1000) + 60 * 60
-    });
-  }
-}
-
-async function moderate(
-  message: CommunityTelegramMessage,
-  reason: string,
-  action: string,
-  warnLimit: number,
-  warnAction: string
-) {
-  const chatId = String(message.chat.id);
-  const values = await config();
-  if (action === 'off' || !message.from) return false;
-  await deleteMessage(chatId, message.message_id).catch(() => null);
-  if (action === 'delete') return true;
-  const warnings = await addTelegramGroupWarning({
-    chatId,
-    telegramUserId: String(message.from.id),
-    reason
-  });
-  const finalAction = warnings >= warnLimit ? warnAction : action;
-  if (['mute', 'kick', 'ban'].includes(finalAction)) {
-    await applyMemberAction(chatId, message.from.id, finalAction).catch(() => null);
-  }
-  await sendModerationLog(values, message, reason, finalAction);
-  await sendCommunityMessage(
-    BOT,
-    chatId,
-    warnings >= warnLimit
-      ? `Community safety action applied after ${warnings} warnings.`
-      : `Please follow the community rules. Warning ${warnings}/${warnLimit}.`,
-    { reply_to_message_id: message.message_id, message_thread_id: message.message_thread_id }
-  ).catch(() => null);
-  return true;
-}
 
 async function handleCommand(message: CommunityTelegramMessage, values: Record<string, string>) {
-  const command = (message.text || '').trim().split(/\s+/)[0].split('@')[0].toLowerCase();
-  const chatId = String(message.chat.id);
-  if (command === '/start') {
-    await sendTemporaryMessage(
-      chatId,
-      'Welcome to Hope Hub. Use /rules for community rules, /support for private support, or /help to see what I can do.',
-      values
-    );
-    return true;
-  }
-  if (command === '/rules') {
-    await sendCommunityMessage(BOT, chatId, values.telegramGroupHelpRulesMessage, {
-      message_thread_id: message.message_thread_id
-    });
-    return true;
-  }
-  if (command === '/support') {
-    await sendCommunityMessage(BOT, chatId, values.telegramGroupHelpSupportMessage, {
-      message_thread_id: message.message_thread_id
-    });
-    return true;
-  }
-  if (command === '/warnings' && message.from) {
-    const count = await telegramGroupWarningCount(chatId, String(message.from.id));
-    await sendTemporaryMessage(
-      chatId,
-      `You currently have ${count} warning${count === 1 ? '' : 's'}.`,
-      values,
-      {
-        reply_to_message_id: message.message_id,
-        message_thread_id: message.message_thread_id
-      }
-    );
-    return true;
-  }
-  if (command === '/help') {
-    await sendTemporaryMessage(
-      chatId,
-      'Use /rules for community rules, /support for private support, /report while replying to a message, and /warnings to review your warnings.',
-      values,
-      { message_thread_id: message.message_thread_id }
-    );
-    return true;
-  }
-  if (command === '/report') {
-    const reportsMode = values.telegramGroupHelpReportsMode || 'admins';
-    const destination =
-      reportsMode === 'staff group'
-        ? values.telegramGroupHelpStaffGroupId?.trim()
-        : values.telegramGroupHelpLogChannelId?.trim() ||
-          values.telegramGroupHelpStaffGroupId?.trim();
-    if (message.reply_to_message && reportsMode !== 'off' && message.from) {
-      const reported = message.reply_to_message;
-      const reportCase = await prisma.telegramCommunityModerationCase.create({
-        data: {
-          chatId,
-          sourceMessageId: message.message_id,
-          reportedMessageId: reported.message_id,
-          reporterUserId: String(message.from.id),
-          targetUserId: reported.from ? String(reported.from.id) : null,
-          reason: 'Member report',
-          evidence: (reported.text || reported.caption || '[media]').slice(0, 4000)
-        }
-      });
-      if (destination) {
-        await sendCommunityMessage(
-          BOT,
-          destination,
-          `🚩 Report #${reportCase.id.slice(-6)}\n\nReporter: ${message.from.first_name || 'Telegram member'} (${message.from.id})\nReported member: ${reported.from?.first_name || 'Unknown'}${reported.from ? ` (${reported.from.id})` : ''}\nGroup: ${message.chat.title || chatId}\nMessage: ${(reported.text || reported.caption || '[media]').slice(0, 800)}`
-        ).catch(() => null);
-      }
-    }
-    await sendTemporaryMessage(
-      chatId,
-      message.reply_to_message
-        ? 'Thank you. This message has been flagged for administrator review.'
-        : 'Reply to the message you want to report, then send /report.',
-      values,
-      { reply_to_message_id: message.message_id, message_thread_id: message.message_thread_id }
-    );
-    return true;
-  }
-  return false;
-}
-
-async function registerTestGroup(message: CommunityTelegramMessage) {
-  if (!message.from || !['group', 'supergroup'].includes(message.chat.type || '')) return false;
-  const command = (message.text || '').trim().split(/\s+/)[0].split('@')[0].toLowerCase();
-  if (command !== '/settestgroup') return false;
-  const member = await callCommunityTelegramApi<{ status?: string }>(BOT, 'getChatMember', {
-    chat_id: message.chat.id,
-    user_id: message.from.id
-  }).catch(() => null);
-  if (!member || !['creator', 'administrator'].includes(member.status || '')) {
-    await sendCommunityMessage(
-      BOT,
-      message.chat.id,
-      'Only a group administrator can register this test group.'
-    );
-    return true;
-  }
-  await prisma.siteConfig.upsert({
-    where: { key: 'telegramGroupHelpTestGroupChatId' },
-    create: {
-      key: 'telegramGroupHelpTestGroupChatId',
-      value: String(message.chat.id),
-      label: 'Test Telegram group ID'
-    },
-    update: { value: String(message.chat.id), label: 'Test Telegram group ID' }
-  });
-  await sendCommunityMessage(
-    BOT,
-    message.chat.id,
-    `✅ ${message.chat.title || 'This group'} is now the HopeHub bot test group. Admin previews and test messages will arrive here.`
-  );
-  return true;
-}
-
-async function registerLogGroup(message: CommunityTelegramMessage) {
-  if (!message.from || !['group', 'supergroup'].includes(message.chat.type || '')) return false;
-  const command = (message.text || '').trim().split(/\s+/)[0].split('@')[0].toLowerCase();
-  if (command !== '/setlog') return false;
-  const member = await callCommunityTelegramApi<{ status?: string }>(BOT, 'getChatMember', {
-    chat_id: message.chat.id,
-    user_id: message.from.id
-  }).catch(() => null);
-  if (!member || !['creator', 'administrator'].includes(member.status || '')) {
-    await sendCommunityMessage(
-      BOT,
-      message.chat.id,
-      'Only a group administrator can set the moderation log group.'
-    );
-    return true;
-  }
-  await prisma.siteConfig.upsert({
-    where: { key: 'telegramGroupHelpLogChannelId' },
-    create: {
-      key: 'telegramGroupHelpLogChannelId',
-      value: String(message.chat.id),
-      label: 'Telegram Group Help moderation log group ID'
-    },
-    update: {
-      value: String(message.chat.id),
-      label: 'Telegram Group Help moderation log group ID'
-    }
-  });
-  await sendCommunityMessage(
-    BOT,
-    message.chat.id,
-    `✅ ${message.chat.title || 'This private group'} is now the Hope Hub moderation log. Reports and moderation actions will appear here.`
-  );
-  return true;
+  return handleGroupHelpCommand(message, values);
 }
 
 export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) {
@@ -442,15 +64,7 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
     await recordTelegramCampaignPollUpdate(update);
     return;
   }
-  const callback = update.callback_query;
-  if (callback?.message && callback.data) {
-    if (await handleTelegramCommunityEventCallback(update)) {
-      await answerCommunityCallback(BOT, callback.id, 'You’re on the list 💙');
-      return;
-    }
-    await answerCommunityCallback(BOT, callback.id);
-    return;
-  }
+  if (await handleGroupHelpCallback(update)) return;
   const message = update.message;
   const membership = update.chat_member;
   const chat = message?.chat || membership?.chat;
@@ -459,7 +73,7 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
   if (message && (await registerTestGroup(message))) return;
   if (message && (await registerLogGroup(message))) return;
   const chatId = String(chat.id);
-  const values = await config();
+  const values = await config(chatId);
   if (message?.chat.type === 'private') {
     if (message.text?.startsWith('/') && (await handleCommand(message, values))) return;
     await sendCommunityMessage(BOT, chatId, values.telegramGroupHelpSupportMessage);
@@ -564,6 +178,19 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
   ) {
     await moderate(message, 'Media type is not allowed', 'delete', warnLimit, warnAction);
     return;
+  }
+
+  const antiSpamAction = values.telegramGroupHelpAntiSpamAction || 'off';
+  if (antiSpamAction !== 'off' && text.length >= 8) {
+    const repeated = await checkTelegramGroupRepeatedSpam({
+      chatId,
+      telegramUserId: String(message.from.id),
+      text
+    });
+    if (repeated.repeated) {
+      await moderate(message, 'Repeated message spam', antiSpamAction, warnLimit, warnAction);
+      return;
+    }
   }
 
   const threshold = floodThreshold(values.telegramGroupHelpAntiFloodLimit || '6 10');

@@ -190,6 +190,16 @@ export class GroupHelpPage {
   readonly moderatorAction = signal('warn');
   readonly moderatorTarget = signal('');
   readonly moderatorReason = signal('');
+  readonly roleAssignments = signal<any[]>([]);
+  readonly roleTelegramUserId = signal('');
+  readonly roleToAssign = signal<'HELPER' | 'MODERATOR'>('HELPER');
+  readonly roleSaving = signal(false);
+  readonly moderationCases = signal<any[]>([]);
+  readonly caseSavingId = signal('');
+  readonly roleOptions: FormDropdownOption[] = [
+    { value: 'HELPER', label: 'Helper — warnings and message removal' },
+    { value: 'MODERATOR', label: 'Moderator — member actions and helper tools' },
+  ];
   readonly moderatorActions = [
     { value: 'warn', label: 'Warn member', needsTarget: true },
     { value: 'mute', label: 'Mute member', needsTarget: true },
@@ -294,11 +304,85 @@ export class GroupHelpPage {
       }
       this.actionStatuses.set(latestStatuses);
       this.localValues.set(Object.fromEntries(res.config.map((entry) => [entry.key, entry.value])));
-      await this.loadCampaigns();
+      await Promise.all([this.loadCampaigns(), this.loadRoles(), this.loadModerationCases()]);
     } catch {
       this.error.set('Could not load Group Help config.');
     } finally {
       this.loading.set(false);
+    }
+  }
+
+  async loadRoles() {
+    try {
+      const response = await this.api.getTelegramGroupHelpRoles();
+      this.roleAssignments.set(response.assignments || []);
+    } catch {
+      this.roleAssignments.set([]);
+    }
+  }
+
+  async loadModerationCases() {
+    try {
+      const response = await this.api.getTelegramGroupHelpModerationCases();
+      this.moderationCases.set(response.cases || []);
+    } catch {
+      this.moderationCases.set([]);
+    }
+  }
+
+  async resolveModerationCase(
+    moderationCase: any,
+    action: 'NO_ACTION' | 'DELETE' | 'MUTE' | 'KICK' | 'BAN',
+  ) {
+    this.caseSavingId.set(moderationCase.id);
+    this.error.set('');
+    try {
+      await this.api.resolveTelegramGroupHelpModerationCase(moderationCase.id, action);
+      this.message.set(
+        action === 'NO_ACTION' ? 'Report closed without an action.' : 'Moderation action applied.',
+      );
+      await this.loadModerationCases();
+    } catch (error: any) {
+      this.error.set(error?.error?.message || 'Could not resolve this report.');
+    } finally {
+      this.caseSavingId.set('');
+    }
+  }
+
+  async assignRole() {
+    const telegramUserId = this.roleTelegramUserId().trim();
+    if (!/^\d+$/.test(telegramUserId)) {
+      this.error.set('Enter the member’s numeric Telegram user ID.');
+      return;
+    }
+    this.roleSaving.set(true);
+    this.error.set('');
+    try {
+      await this.api.assignTelegramGroupHelpRole({
+        telegramUserId,
+        role: this.roleToAssign(),
+      });
+      this.roleTelegramUserId.set('');
+      this.message.set('Role assigned. The member can use it immediately in the group.');
+      await this.loadRoles();
+    } catch (error: any) {
+      this.error.set(error?.error?.message || 'Could not assign this role.');
+    } finally {
+      this.roleSaving.set(false);
+    }
+  }
+
+  async revokeRole(id: string) {
+    this.roleSaving.set(true);
+    this.error.set('');
+    try {
+      await this.api.revokeTelegramGroupHelpRole(id);
+      this.message.set('Role removed.');
+      await this.loadRoles();
+    } catch (error: any) {
+      this.error.set(error?.error?.message || 'Could not remove this role.');
+    } finally {
+      this.roleSaving.set(false);
     }
   }
 

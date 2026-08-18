@@ -172,6 +172,43 @@ export async function checkTelegramGroupFlood(input: {
   });
 }
 
+export async function checkTelegramGroupRepeatedSpam(input: {
+  chatId: string;
+  telegramUserId: string;
+  text: string;
+}) {
+  const now = new Date();
+  const bot = `group-spam:${input.chatId}`;
+  const chatId = input.telegramUserId;
+  const normalizedText = input.text.trim().replace(/\s+/g, ' ').toLowerCase();
+  const expiresAt = new Date(now.getTime() + 5 * 60 * 1000);
+  return prisma.$transaction(async (tx) => {
+    const current = await tx.telegramCommunityState.findUnique({
+      where: { bot_chatId: { bot, chatId } },
+      select: { payload: true, expiresAt: true }
+    });
+    const payload = (current?.payload || {}) as { text?: string; count?: number };
+    const matches =
+      current?.expiresAt && current.expiresAt > now && payload.text === normalizedText;
+    const count = matches ? Number(payload.count || 0) + 1 : 1;
+    await tx.telegramCommunityState.upsert({
+      where: { bot_chatId: { bot, chatId } },
+      create: {
+        bot,
+        chatId,
+        state: 'group-spam',
+        payload: { text: normalizedText, count },
+        expiresAt
+      },
+      update: {
+        payload: { text: normalizedText, count },
+        expiresAt
+      }
+    });
+    return { repeated: count >= 3, count };
+  });
+}
+
 export async function addTelegramGroupWarning(input: {
   chatId: string;
   telegramUserId: string;
@@ -212,6 +249,15 @@ export async function telegramGroupWarningCount(chatId: string, telegramUserId: 
     select: { payload: true }
   });
   return Number((row?.payload as { count?: number } | null)?.count || 0);
+}
+
+export async function clearTelegramGroupWarnings(chatId: string, telegramUserId: string) {
+  return prisma.telegramCommunityState.deleteMany({
+    where: {
+      bot: `group-warnings:${chatId}`,
+      chatId: telegramUserId
+    }
+  });
 }
 
 export async function communitySubmissionLimitReached(input: {
@@ -359,7 +405,7 @@ export async function scheduleCommunityMessageCleanup(input: {
   bot: CommunityBotSlug;
   chatId: string | number;
   messageId: number;
-  kind: 'welcome' | 'transient';
+  kind: 'welcome' | 'goodbye' | 'transient';
   deleteAfter: Date;
 }) {
   return prisma.telegramCommunityMessageCleanup.upsert({

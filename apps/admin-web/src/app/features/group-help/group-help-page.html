@@ -931,6 +931,85 @@
       <button type="button" class="primary" (click)="prepareModeratorCommand()">
         Copy and open Telegram
       </button>
+
+      <div class="role-manager">
+        <div>
+          <h3>Community roles</h3>
+          <p>Roles apply only in the main Hope Hub group. Telegram admins can still manage everything.</p>
+        </div>
+        <div class="moderator-form">
+          <label>
+            Telegram user ID
+            <input
+              type="text"
+              inputmode="numeric"
+              [value]="roleTelegramUserId()"
+              (input)="roleTelegramUserId.set($any($event.target).value)"
+              placeholder="Example: 7217536617"
+            />
+          </label>
+          <label>
+            Role
+            <app-form-dropdown
+              [options]="roleOptions"
+              [ngModel]="roleToAssign()"
+              (ngModelChange)="roleToAssign.set($event === 'MODERATOR' ? 'MODERATOR' : 'HELPER')"
+            ></app-form-dropdown>
+          </label>
+          <button type="button" class="primary" [disabled]="roleSaving()" (click)="assignRole()">
+            {{ roleSaving() ? 'Saving…' : 'Assign role' }}
+          </button>
+        </div>
+        @if (roleAssignments().length) {
+          <div class="role-list">
+            @for (assignment of roleAssignments(); track assignment.id) {
+              <article>
+                <span>
+                  <strong>{{ assignment.role === 'MODERATOR' ? 'Moderator' : 'Helper' }}</strong>
+                  <small>Telegram ID {{ assignment.telegramUserId }}</small>
+                </span>
+                <button type="button" class="danger-text" [disabled]="roleSaving()" (click)="revokeRole(assignment.id)">
+                  Remove
+                </button>
+              </article>
+            }
+          </div>
+        } @else {
+          <p class="muted">No custom roles yet.</p>
+        }
+      </div>
+
+      <div class="moderation-queue">
+        <div>
+          <h3>Reported messages</h3>
+          <p>Choose one final action. Every decision is recorded in the admin audit trail.</p>
+        </div>
+        @if (moderationCases().length) {
+          <div class="role-list">
+            @for (moderationCase of moderationCases(); track moderationCase.id) {
+              <article>
+                <span>
+                  <strong>{{ moderationCase.status === 'OPEN' ? 'Needs review' : 'Resolved' }}</strong>
+                  <small>{{ moderationCase.evidence || 'No message preview available.' }}</small>
+                  <small>Member {{ moderationCase.targetUserId || 'unknown' }} · {{ moderationCase.createdAt | date: 'medium' }}</small>
+                </span>
+                @if (moderationCase.status === 'OPEN') {
+                  <div class="case-actions">
+                    <button type="button" class="btn-ghost" [disabled]="caseSavingId() === moderationCase.id" (click)="resolveModerationCase(moderationCase, 'NO_ACTION')">Close</button>
+                    <button type="button" class="btn-ghost" [disabled]="caseSavingId() === moderationCase.id" (click)="resolveModerationCase(moderationCase, 'DELETE')">Remove</button>
+                    <button type="button" class="btn-sec" [disabled]="caseSavingId() === moderationCase.id" (click)="resolveModerationCase(moderationCase, 'MUTE')">Mute</button>
+                    <button type="button" class="danger-text" [disabled]="caseSavingId() === moderationCase.id" (click)="resolveModerationCase(moderationCase, 'BAN')">Ban</button>
+                  </div>
+                } @else {
+                  <small>{{ moderationCase.action?.replace('_', ' ') || 'Closed' }}</small>
+                }
+              </article>
+            }
+          </div>
+        } @else {
+          <p class="muted">No member reports are waiting for review.</p>
+        }
+      </div>
     </section>
 
     <section
