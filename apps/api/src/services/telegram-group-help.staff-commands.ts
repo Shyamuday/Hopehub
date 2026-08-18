@@ -6,6 +6,7 @@ import type { CommunityTelegramMessage } from './telegram-community-bots.types.j
 import {
   applyGroupHelpMemberAction,
   deleteGroupHelpMessage,
+  sendGroupHelpActivityLog,
   sendModerationLog,
   sendTemporaryGroupHelpMessage
 } from './telegram-group-help.actions.js';
@@ -126,5 +127,11 @@ export async function handleGroupHelpStaffCommand(
       values
     );
   }
+  await sendGroupHelpActivityLog(values, 'Community role updated', [
+    `Group: ${message.chat.title || chatId}`,
+    `Member: ${target.first_name || 'Telegram member'} (${target.id})`,
+    `Role: ${commandName.startsWith('un') ? 'removed' : 'assigned'} ${role.toLowerCase()}`,
+    `By: ${message.from.first_name || 'Administrator'} (${message.from.id})`
+  ]);
   return true;
 }

@@ -14,6 +14,7 @@ import {
   runScheduledCommunityMessageCleanup,
   scheduleCommunityMessageCleanup
 } from './telegram-community-bots.store.js';
+import { sendGroupHelpActivityLog } from './telegram-group-help.actions.js';
 import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
 import { TELEGRAM_BOT_URLS } from '../constants/telegram-community-bot.constants.js';
 import {
@@ -85,6 +86,7 @@ const COMMUNITY_CONFIG_KEYS = [
   'telegramGroupHelpWelcomeButtons',
   'telegramGroupHelpGoodbyeMessage',
   'telegramGroupHelpJoinProtection',
+  'telegramGroupHelpLogChannelId',
   'telegramCommunitySupportUrl',
   'telegramCampaignContactUrl'
 ] as const;
@@ -115,9 +117,22 @@ async function communityConfig() {
     welcomeKeyboard: configuredUrlKeyboard(values.telegramGroupHelpWelcomeButtons || ''),
     goodbyeText: values.telegramGroupHelpGoodbyeMessage?.trim() || '',
     joinProtection: values.telegramGroupHelpJoinProtection || 'off',
+    logChannelId: values.telegramGroupHelpLogChannelId?.trim() || '',
     supportUrl: values.telegramCommunitySupportUrl || 'https://hopehub.in/#live-connect',
     contactUrl: values.telegramCampaignContactUrl || TELEGRAM_BOT_URLS.CONTACT
   };
+}
+
+async function logCommunityActivity(
+  config: Awaited<ReturnType<typeof communityConfig>>,
+  title: string,
+  details: Array<string | null | undefined> = []
+) {
+  await sendGroupHelpActivityLog(
+    { telegramGroupHelpLogChannelId: config.logChannelId },
+    title,
+    details
+  );
 }
 
 function escapeTelegramMarkdown(value: string) {
@@ -462,6 +477,12 @@ async function performCampaignDelivery(input: {
         nextRetryAt: null
       }
     });
+    const config = await communityConfig();
+    await logCommunityActivity(config, 'Scheduled community post delivered', [
+      `Group: ${campaign.chatId}`,
+      `Content type: ${item.kind}`,
+      `Delivery: ${deliveryId}`
+    ]);
   } catch (error) {
     await prisma.telegramCampaignDelivery.update({
       where: { id: deliveryId },
@@ -471,6 +492,13 @@ async function performCampaignDelivery(input: {
         nextRetryAt: new Date(now.getTime() + 5 * 60_000)
       }
     });
+    const config = await communityConfig();
+    await logCommunityActivity(config, 'Scheduled community post failed', [
+      `Group: ${campaign.chatId}`,
+      `Content type: ${item.kind}`,
+      `Delivery: ${deliveryId}`,
+      'It will retry automatically.'
+    ]);
   }
 }
 
@@ -532,6 +560,10 @@ async function restoreExpiredCommunityLockdowns(now: Date) {
       });
       await endTelegramCommunityLockdown(lockout.chatId);
       await sendCommunityMessage(CAMPAIGN_BOT, lockout.chatId, '🔓 Chat unlocked automatically.');
+      const config = await communityConfig();
+      await logCommunityActivity(config, 'Chat unlocked automatically', [
+        `Group: ${lockout.chatId}`
+      ]);
     })
   );
 }
@@ -802,6 +834,11 @@ export async function welcomeTelegramCommunityMembers(update: CommunityTelegramU
         deleteAfter: new Date(Date.now() + config.autoDeleteSeconds * 1000)
       });
     }
+    await logCommunityActivity(config, 'Member welcomed', [
+      `Group: ${chat.title || chat.id}`,
+      `Member: ${member.first_name || 'Telegram member'} (${member.id})`,
+      needsVerification ? 'Join verification: required' : 'Join verification: not required'
+    ]);
   }
   await prisma.telegramCommunityMember.updateMany({
     where: {
@@ -849,6 +886,10 @@ export async function recordTelegramCommunityDeparture(update: CommunityTelegram
       });
     }
   }
+  await logCommunityActivity(config, 'Member left the community', [
+    `Group: ${chat.title || chat.id}`,
+    `Member: ${member.first_name || 'Telegram member'} (${member.id})`
+  ]);
   return true;
 }
 
@@ -886,6 +927,11 @@ export async function handleTelegramCommunityJoinVerificationCallback(
   await prisma.telegramCommunityState.delete({
     where: { bot_chatId: { bot: `group-join-verification:${chatId}`, chatId: userId } }
   });
+  const config = await communityConfig();
+  await logCommunityActivity(config, 'Join verification completed', [
+    `Group: ${chatId}`,
+    `Member ID: ${userId}`
+  ]);
   return true;
 }
 

@@ -18,7 +18,23 @@ export async function sendModerationLog(
   await sendCommunityMessage(
     GROUP_HELP_BOT_SLUG,
     destination,
-    `🛡 Moderation action\n\nReason: ${reason}\nAction: ${action}\nMember: ${message.from.first_name || 'Telegram member'} (${message.from.id})\nGroup: ${message.chat.title || message.chat.id}\nMessage: ${(message.text || message.caption || '[media]').slice(0, 800)}`
+    `🛡 Moderation action\n\nReason: ${reason}\nAction: ${action}\nMember: ${message.from.first_name || 'Telegram member'} (${message.from.id})\nGroup: ${message.chat.title || message.chat.id}`
+  ).catch(() => null);
+}
+
+/** Records a privacy-safe operational event in the configured staff log channel. */
+export async function sendGroupHelpActivityLog(
+  values: Record<string, string>,
+  title: string,
+  details: Array<string | null | undefined> = []
+) {
+  const destination = values.telegramGroupHelpLogChannelId?.trim();
+  if (!destination) return;
+  const body = details.filter((detail): detail is string => Boolean(detail?.trim())).join('\n');
+  await sendCommunityMessage(
+    GROUP_HELP_BOT_SLUG,
+    destination,
+    ['📋 ' + title, body].filter(Boolean).join('\n\n')
   ).catch(() => null);
 }
 

@@ -8,7 +8,10 @@ import {
   endTelegramCommunityLockdown,
   startTelegramCommunityLockdown
 } from './telegram-community-group-policy.js';
-import { sendTemporaryGroupHelpMessage } from './telegram-group-help.actions.js';
+import {
+  sendGroupHelpActivityLog,
+  sendTemporaryGroupHelpMessage
+} from './telegram-group-help.actions.js';
 import { isModerationExempt } from './telegram-group-help.permissions.js';
 import type { CommunityTelegramMessage } from './telegram-community-bots.types.js';
 
@@ -69,6 +72,11 @@ export async function handleGroupHelpAdminCommand(
       originalPermissions: chat.permissions || { can_send_messages: true }
     });
     await sendTemporaryGroupHelpMessage(chatId, `🔒 Chat locked for ${minutes} minutes.`, values);
+    await sendGroupHelpActivityLog(values, 'Chat locked', [
+      `Group: ${message.chat.title || chatId}`,
+      `Duration: ${minutes} minutes`,
+      `By: ${message.from.first_name || 'Administrator'} (${message.from.id})`
+    ]);
     return true;
   }
   const policy = await prisma.telegramCommunityGroupPolicy.findUnique({ where: { chatId } });
@@ -83,5 +91,9 @@ export async function handleGroupHelpAdminCommand(
   });
   await endTelegramCommunityLockdown(chatId).catch(() => null);
   await sendTemporaryGroupHelpMessage(chatId, '🔓 Chat unlocked.', values);
+  await sendGroupHelpActivityLog(values, 'Chat unlocked', [
+    `Group: ${message.chat.title || chatId}`,
+    `By: ${message.from.first_name || 'Administrator'} (${message.from.id})`
+  ]);
   return true;
 }
