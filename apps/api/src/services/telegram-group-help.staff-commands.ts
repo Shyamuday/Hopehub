@@ -66,7 +66,12 @@ export async function handleGroupHelpStaffCommand(
         permissions: chat.permissions || { can_send_messages: true }
       });
     } else {
-      await applyGroupHelpMemberAction(chatId, target.id, commandName).catch(() => null);
+      await applyGroupHelpMemberAction(
+        chatId,
+        target.id,
+        commandName,
+        Number(values.telegramGroupHelpMuteMinutes || 60)
+      ).catch(() => null);
     }
     await sendModerationLog(
       values,

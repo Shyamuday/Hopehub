@@ -65,7 +65,12 @@ export async function sendTemporaryGroupHelpMessage(
   return sent;
 }
 
-export async function applyGroupHelpMemberAction(chatId: string, userId: number, action: string) {
+export async function applyGroupHelpMemberAction(
+  chatId: string,
+  userId: number,
+  action: string,
+  muteMinutes = 60
+) {
   if (action === 'ban' || action === 'kick') {
     await callCommunityTelegramApi(GROUP_HELP_BOT_SLUG, 'banChatMember', {
       chat_id: chatId,
@@ -84,7 +89,7 @@ export async function applyGroupHelpMemberAction(chatId: string, userId: number,
       chat_id: chatId,
       user_id: userId,
       permissions: { can_send_messages: false },
-      until_date: Math.floor(Date.now() / 1000) + 60 * 60
+      until_date: Math.floor(Date.now() / 1000) + Math.max(1, Math.min(10_080, muteMinutes)) * 60
     });
   } else if (action === 'unban') {
     await callCommunityTelegramApi(GROUP_HELP_BOT_SLUG, 'unbanChatMember', {

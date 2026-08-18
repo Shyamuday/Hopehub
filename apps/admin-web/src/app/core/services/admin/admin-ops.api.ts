@@ -375,7 +375,7 @@ export class AdminOpsApi extends AdminApiBase {
 
   resolveTelegramGroupHelpModerationCase(
     id: string,
-    action: 'NO_ACTION' | 'DELETE' | 'MUTE' | 'KICK' | 'BAN',
+    action: 'APPROVE' | 'NO_ACTION' | 'DELETE' | 'MUTE' | 'KICK' | 'BAN',
   ) {
     return firstValueFrom(
       this.http.post<{ moderationCase: any }>(

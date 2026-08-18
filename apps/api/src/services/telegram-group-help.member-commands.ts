@@ -12,6 +12,8 @@ import {
 } from './telegram-group-help.permissions.js';
 import { sendTemporaryGroupHelpMessage } from './telegram-group-help.actions.js';
 import { forgetGroupHelpMemberData } from './telegram-group-help.privacy.js';
+import { forgetAllGroupHelpMemberData } from './telegram-group-help.privacy.js';
+import { sendGroupHelpActivityLog } from './telegram-group-help.actions.js';
 
 export async function handleGroupHelpMemberCommand(
   message: CommunityTelegramMessage,
@@ -29,9 +31,10 @@ export async function handleGroupHelpMemberCommand(
   }
   if (command === '/forget' && message.from) {
     if (!['group', 'supergroup'].includes(message.chat.type || '')) {
+      await forgetAllGroupHelpMemberData(String(message.from.id));
       await sendTemporaryGroupHelpMessage(
         chatId,
-        'Open the Hope Hub group where you want your bot data removed, then send /forget there.',
+        'Your retained Hope Hub Group Help data has been removed from all communities. Telegram message history is managed by Telegram and each group’s administrators.',
         values
       );
       return true;
@@ -40,6 +43,19 @@ export async function handleGroupHelpMemberCommand(
     await sendTemporaryGroupHelpMessage(
       chatId,
       'Your Hope Hub bot data for this group has been removed. Telegram message history is managed by Telegram and the group administrators.',
+      values,
+      { reply_to_message_id: message.message_id, message_thread_id: message.message_thread_id }
+    );
+    return true;
+  }
+  if (command === '/admin' && message.from) {
+    await sendGroupHelpActivityLog(values, 'Member requested administrator support', [
+      `Group: ${message.chat.title || chatId}`,
+      `Member: ${message.from.first_name || 'Telegram member'} (${message.from.id})`
+    ]);
+    await sendTemporaryGroupHelpMessage(
+      chatId,
+      'An administrator has been alerted. If someone is at immediate risk, please contact local emergency services now.',
       values,
       { reply_to_message_id: message.message_id, message_thread_id: message.message_thread_id }
     );

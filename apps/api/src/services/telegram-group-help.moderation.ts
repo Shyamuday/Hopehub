@@ -28,7 +28,12 @@ export async function moderateGroupHelpMessage(
   });
   const finalAction = warnings >= warnLimit ? warnAction : action;
   if (['mute', 'kick', 'ban'].includes(finalAction)) {
-    await applyGroupHelpMemberAction(chatId, message.from.id, finalAction).catch(() => null);
+    await applyGroupHelpMemberAction(
+      chatId,
+      message.from.id,
+      finalAction,
+      Number(values.telegramGroupHelpMuteMinutes || 60)
+    ).catch(() => null);
   }
   await sendModerationLog(values, message, reason, finalAction);
   await sendCommunityMessage(

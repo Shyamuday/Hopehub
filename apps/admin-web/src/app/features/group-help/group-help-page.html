@@ -995,6 +995,9 @@
                 </span>
                 @if (moderationCase.status === 'OPEN') {
                   <div class="case-actions">
+                    @if (moderationCase.reason === 'FIRST_MESSAGE_REVIEW') {
+                      <button type="button" class="primary" [disabled]="caseSavingId() === moderationCase.id" (click)="resolveModerationCase(moderationCase, 'APPROVE')">Approve member</button>
+                    }
                     <button type="button" class="btn-ghost" [disabled]="caseSavingId() === moderationCase.id" (click)="resolveModerationCase(moderationCase, 'NO_ACTION')">Close</button>
                     <button type="button" class="btn-ghost" [disabled]="caseSavingId() === moderationCase.id" (click)="resolveModerationCase(moderationCase, 'DELETE')">Remove</button>
                     <button type="button" class="btn-sec" [disabled]="caseSavingId() === moderationCase.id" (click)="resolveModerationCase(moderationCase, 'MUTE')">Mute</button>

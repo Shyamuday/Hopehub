@@ -240,6 +240,7 @@ export class GroupHelpPage {
   readonly essentialDropdownKeys = new Set([
     'telegramLiveChatBridgeEnabled',
     'telegramCommunityWelcomeEnabled',
+    'telegramGroupHelpFirstMessageReview',
     'telegramCommunitySmartScheduleEnabled',
     'telegramCommunityConfessionsInGroup',
     'telegramGroupHelpCaptchaMode',
@@ -332,14 +333,18 @@ export class GroupHelpPage {
 
   async resolveModerationCase(
     moderationCase: any,
-    action: 'NO_ACTION' | 'DELETE' | 'MUTE' | 'KICK' | 'BAN',
+    action: 'APPROVE' | 'NO_ACTION' | 'DELETE' | 'MUTE' | 'KICK' | 'BAN',
   ) {
     this.caseSavingId.set(moderationCase.id);
     this.error.set('');
     try {
       await this.api.resolveTelegramGroupHelpModerationCase(moderationCase.id, action);
       this.message.set(
-        action === 'NO_ACTION' ? 'Report closed without an action.' : 'Moderation action applied.',
+        action === 'APPROVE'
+          ? 'Message review approved. The member will be trusted once the selected review count is reached.'
+          : action === 'NO_ACTION'
+            ? 'Report closed without an action.'
+            : 'Moderation action applied.',
       );
       await this.loadModerationCases();
     } catch (error: any) {

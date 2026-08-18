@@ -862,6 +862,17 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
     defaultValue: 'join only'
   },
   {
+    key: 'telegramGroupHelpFirstMessageReview',
+    label: 'Review new-member messages',
+    description:
+      'Choose how many early messages to review for a new member. Reviewed messages are removed and sent to the moderation queue. Approval trusts the next message; Telegram cannot restore the removed message automatically.',
+    section: 'onboarding',
+    type: 'select',
+    options: ['off', '1', '2', '3'],
+    maxLength: 10,
+    defaultValue: 'off'
+  },
+  {
     key: 'telegramGroupHelpNewMemberAction',
     label: 'Failed verification action',
     description: 'Preferred action when a new member fails verification.',
@@ -904,12 +915,23 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
   {
     key: 'telegramGroupHelpAntiPornAction',
     label: 'NSFW protection',
-    description: 'Desired action for explicit or unsafe media.',
+    description:
+      'Telegram does not provide reliable NSFW classification. Review queues media for staff; use the media policy to block media completely.',
     section: 'moderation',
     type: 'select',
-    options: ['off', 'delete', 'warn', 'mute', 'kick', 'ban'],
+    options: ['off', 'review'],
     maxLength: 10,
-    defaultValue: 'delete'
+    defaultValue: 'off'
+  },
+  {
+    key: 'telegramGroupHelpMuteMinutes',
+    label: 'Default temporary restriction',
+    description: 'How long an automatic or staff mute should last.',
+    section: 'moderation',
+    type: 'select',
+    options: ['15', '60', '240', '1440'],
+    maxLength: 10,
+    defaultValue: '60'
   },
   {
     key: 'telegramGroupHelpChannelSenderPolicy',

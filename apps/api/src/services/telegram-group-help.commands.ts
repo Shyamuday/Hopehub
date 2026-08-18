@@ -10,7 +10,7 @@ import { handleGroupHelpStaffCommand } from './telegram-group-help.staff-command
  * and administrator changes do not become one unsafe file again.
  */
 export const GROUP_HELP_COMMAND_CATALOG = {
-  member: ['/start', '/help', '/rules', '/support', '/warnings', '/forget'],
+  member: ['/start', '/help', '/rules', '/support', '/warnings', '/admin', '/forget'],
   staff: ['/info', '/member', '/staff', '/stats', '/clearwarnings'],
   moderation: ['/warn', '/delete', '/mute', '/unmute', '/ban', '/unban', '/kick'],
   roles: ['/helper', '/unhelper', '/moderator', '/unmoderator', '/mod', '/unmod'],

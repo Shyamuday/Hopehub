@@ -48,6 +48,7 @@ import {
 } from './telegram-group-help.registration.js';
 import { handleGroupHelpCallback } from './telegram-group-help.callbacks.js';
 import { handleGroupHelpCommand } from './telegram-group-help.commands.js';
+import { queueGroupHelpMessageReview } from './telegram-group-help.approval.js';
 
 const BOT = GROUP_HELP_BOT_SLUG;
 
@@ -114,6 +115,19 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
   const warnLimit = Math.max(1, Number(values.telegramGroupHelpWarnLimit || 3));
   const warnAction = values.telegramGroupHelpWarnAction || 'mute';
   const text = `${message.text || ''}\n${message.caption || ''}`.trim();
+  if (
+    values.telegramGroupHelpFirstMessageReview === 'on' &&
+    (await queueGroupHelpMessageReview(message, values, 'FIRST_MESSAGE_REVIEW'))
+  ) {
+    return;
+  }
+  if (
+    values.telegramGroupHelpAntiPornAction === 'review' &&
+    hasMedia(message) &&
+    (await queueGroupHelpMessageReview(message, values, 'MEDIA_REVIEW'))
+  ) {
+    return;
+  }
   const quietMode = values.telegramGroupHelpNightMode || 'off';
   if (
     isWithinQuietHours(values) &&

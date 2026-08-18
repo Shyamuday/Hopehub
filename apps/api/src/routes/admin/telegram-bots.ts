@@ -57,6 +57,8 @@ import {
   refreshTelegramCommunityEventAnnouncement,
   retryTelegramCampaignDelivery
 } from '../../services/telegram-community-campaigns.js';
+import { approveGroupHelpMemberFirstMessage } from '../../services/telegram-group-help.approval.js';
+import { sendGroupHelpActivityLog } from '../../services/telegram-group-help.actions.js';
 import {
   COMMUNITY_BOT_SLUGS,
   GROUP_HELP_BOT_DISPLAY_NAME,
@@ -87,7 +89,7 @@ const groupHelpRoleSchema = z.object({
 });
 
 const groupHelpModerationResolutionSchema = z.object({
-  action: z.enum(['NO_ACTION', 'DELETE', 'MUTE', 'KICK', 'BAN'])
+  action: z.enum(['APPROVE', 'NO_ACTION', 'DELETE', 'MUTE', 'KICK', 'BAN'])
 });
 
 const botControlsSaveSchema = z.object({
@@ -1056,7 +1058,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
       }
       const targetUserId = moderationCase.targetUserId ? Number(moderationCase.targetUserId) : NaN;
       if (
-        !['NO_ACTION', 'DELETE'].includes(parsed.data.action) &&
+        !['NO_ACTION', 'DELETE', 'APPROVE'].includes(parsed.data.action) &&
         !Number.isSafeInteger(targetUserId)
       ) {
         return res
@@ -1066,7 +1068,18 @@ export function registerAdminTelegramBotRoutes(router: Router) {
       if (parsed.data.action === 'DELETE' && !moderationCase.reportedMessageId) {
         return res.status(400).json({ message: 'This report has no message available to remove.' });
       }
-      if (parsed.data.action === 'DELETE' && moderationCase.reportedMessageId) {
+      const groupValues = await groupHelpConfigMap();
+      if (parsed.data.action === 'APPROVE') {
+        if (moderationCase.reason !== 'FIRST_MESSAGE_REVIEW' || !moderationCase.targetUserId) {
+          return res
+            .status(400)
+            .json({ message: 'Only a first-message review can approve a member.' });
+        }
+        await approveGroupHelpMemberFirstMessage(
+          moderationCase.chatId,
+          moderationCase.targetUserId
+        );
+      } else if (parsed.data.action === 'DELETE' && moderationCase.reportedMessageId) {
         await callCommunityTelegramApi(GROUP_HELP_BOT_SLUG, 'deleteMessage', {
           chat_id: moderationCase.chatId,
           message_id: moderationCase.reportedMessageId
@@ -1076,7 +1089,10 @@ export function registerAdminTelegramBotRoutes(router: Router) {
           chat_id: moderationCase.chatId,
           user_id: targetUserId,
           permissions: { can_send_messages: false },
-          until_date: Math.floor(Date.now() / 1000) + 60 * 60
+          until_date:
+            Math.floor(Date.now() / 1000) +
+            Math.max(1, Math.min(10_080, Number(groupValues.telegramGroupHelpMuteMinutes || 60))) *
+              60
         });
       } else if (parsed.data.action === 'BAN' || parsed.data.action === 'KICK') {
         await callCommunityTelegramApi(GROUP_HELP_BOT_SLUG, 'banChatMember', {
@@ -1101,6 +1117,12 @@ export function registerAdminTelegramBotRoutes(router: Router) {
           resolvedAt: new Date()
         }
       });
+      await sendGroupHelpActivityLog(groupValues, 'Staff review completed', [
+        `Group: ${resolved.chatId}`,
+        `Case: ${resolved.id.slice(-6)}`,
+        `Outcome: ${parsed.data.action}`,
+        resolved.targetUserId ? `Member ID: ${resolved.targetUserId}` : null
+      ]);
       await writeAuditLog({
         actorId: req.user!.id,
         actorRole: req.user!.role,

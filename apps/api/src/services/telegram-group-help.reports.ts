@@ -34,7 +34,7 @@ export async function handleGroupHelpReportCommand(
       await sendCommunityMessage(
         GROUP_HELP_BOT_SLUG,
         destination,
-        `🚩 Report #${reportCase.id.slice(-6)}\n\nReporter: ${message.from.first_name || 'Telegram member'} (${message.from.id})\nReported member: ${reported.from?.first_name || 'Unknown'}${reported.from ? ` (${reported.from.id})` : ''}\nGroup: ${message.chat.title || chatId}\nMessage: ${(reported.text || reported.caption || '[media]').slice(0, 800)}`
+        `🚩 Report #${reportCase.id.slice(-6)}\n\nReporter: ${message.from.first_name || 'Telegram member'} (${message.from.id})\nReported member: ${reported.from?.first_name || 'Unknown'}${reported.from ? ` (${reported.from.id})` : ''}\nGroup: ${message.chat.title || chatId}\n\nOpen Hope Hub Admin to review the protected message evidence and choose an action.`
       ).catch(() => null);
     }
   }
