@@ -9,22 +9,13 @@ import {
   sendCommunityMessage
 } from './telegram-community-bots.client.js';
 import { groupHelpConfig } from './telegram-group-help.config.js';
+import { telegramGroupWarningCount } from './telegram-community-bots.store.js';
+import {
+  groupHelpMainMenuKeyboard,
+  groupHelpSettingsHomeKeyboard
+} from './telegram-group-help.menu.js';
+import { handleGroupHelpBotSettingsCallback } from './telegram-group-help.bot-settings.js';
 import type { CommunityTelegramUpdate } from './telegram-community-bots.types.js';
-
-function settingsHomeKeyboard() {
-  return {
-    inline_keyboard: [
-      [
-        { text: '💬 Messages', callback_data: 'hh_settings_messages' },
-        { text: '🛡 Safety', callback_data: 'hh_settings_safety' }
-      ],
-      [
-        { text: '🔧 Operations', callback_data: 'hh_settings_operations' },
-        { text: '❓ Help', callback_data: 'hh_settings_help' }
-      ]
-    ]
-  };
-}
 
 export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
   const callback = update.callback_query;
@@ -41,11 +32,48 @@ export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
     await answerCommunityCallback(GROUP_HELP_BOT_SLUG, callback.id, 'You’re on the list 💙');
     return true;
   }
-  if (!callback.data.startsWith('hh_settings_')) {
+  if (await handleGroupHelpBotSettingsCallback(update)) return true;
+  const chatId = String(callback.message.chat.id);
+  if (callback.data === 'hh_menu_home') {
+    await sendCommunityMessage(GROUP_HELP_BOT_SLUG, chatId, 'Choose what you need.', {
+      reply_markup: groupHelpMainMenuKeyboard()
+    });
     await answerCommunityCallback(GROUP_HELP_BOT_SLUG, callback.id);
     return true;
   }
-  const chatId = String(callback.message.chat.id);
+  if (callback.data.startsWith('hh_menu_') && callback.data !== 'hh_menu_settings') {
+    const values = await groupHelpConfig(chatId);
+    const action = callback.data.slice('hh_menu_'.length);
+    const warningCount =
+      action === 'warnings' ? await telegramGroupWarningCount(chatId, String(callback.from.id)) : 0;
+    const text =
+      action === 'rules'
+        ? values.telegramGroupHelpRulesMessage
+        : action === 'support'
+          ? values.telegramGroupHelpSupportMessage
+          : action === 'warnings'
+            ? `You currently have ${warningCount} warning${warningCount === 1 ? '' : 's'}.`
+            : action === 'report'
+              ? 'To report a group message, reply to it and send /report followed by a short reason. For immediate danger, contact local emergency services now.'
+              : 'Use the menu for common actions. You can also send /help to see the complete command guide.';
+    await sendCommunityMessage(GROUP_HELP_BOT_SLUG, chatId, text, {
+      reply_markup: { inline_keyboard: [[{ text: 'Main menu', callback_data: 'hh_menu_home' }]] }
+    });
+    await answerCommunityCallback(GROUP_HELP_BOT_SLUG, callback.id);
+    return true;
+  }
+  if (!callback.data.startsWith('hh_settings_') && callback.data !== 'hh_menu_settings') {
+    await answerCommunityCallback(GROUP_HELP_BOT_SLUG, callback.id);
+    return true;
+  }
+  if (!['group', 'supergroup'].includes(callback.message.chat.type || '')) {
+    await answerCommunityCallback(
+      GROUP_HELP_BOT_SLUG,
+      callback.id,
+      'Open Admin settings from the community group.'
+    );
+    return true;
+  }
   const membership = await callCommunityTelegramApi<{ status?: string }>(
     GROUP_HELP_BOT_SLUG,
     'getChatMember',
@@ -63,7 +91,8 @@ export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
     return true;
   }
   const values = await groupHelpConfig(chatId);
-  const page = callback.data.slice('hh_settings_'.length);
+  const page =
+    callback.data === 'hh_menu_settings' ? 'home' : callback.data.slice('hh_settings_'.length);
   const isHome = page === 'home';
   const text = isHome
     ? '⚙️ *Hope Hub group settings*\n\nChoose what you want to review.'
@@ -77,7 +106,7 @@ export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
   await sendCommunityMessage(GROUP_HELP_BOT_SLUG, chatId, text, {
     parse_mode: 'Markdown',
     reply_markup: isHome
-      ? settingsHomeKeyboard()
+      ? groupHelpSettingsHomeKeyboard()
       : { inline_keyboard: [[{ text: '← Back to settings', callback_data: 'hh_settings_home' }]] }
   });
   await answerCommunityCallback(GROUP_HELP_BOT_SLUG, callback.id);

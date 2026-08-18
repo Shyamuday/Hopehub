@@ -15,6 +15,7 @@ import { sendTemporaryGroupHelpMessage } from './telegram-group-help.actions.js'
 import { forgetGroupHelpMemberData } from './telegram-group-help.privacy.js';
 import { forgetAllGroupHelpMemberData } from './telegram-group-help.privacy.js';
 import { sendGroupHelpActivityLog } from './telegram-group-help.actions.js';
+import { groupHelpMainMenuKeyboard } from './telegram-group-help.menu.js';
 
 export async function handleGroupHelpMemberCommand(
   message: CommunityTelegramMessage,
@@ -23,10 +24,11 @@ export async function handleGroupHelpMemberCommand(
   const command = (message.text || '').trim().split(/\s+/)[0].split('@')[0].toLowerCase();
   const chatId = String(message.chat.id);
   if (command === '/start') {
-    await sendTemporaryGroupHelpMessage(
+    await sendCommunityMessage(
+      GROUP_HELP_BOT_SLUG,
       chatId,
-      'Welcome to Hope Hub. Use /rules for community rules, /support for private support, or /help to see what I can do.',
-      values
+      'Welcome to Hope Hub 💙\n\nChoose what you need. You can still use commands whenever that feels easier.',
+      { reply_markup: groupHelpMainMenuKeyboard(), message_thread_id: message.message_thread_id }
     );
     return true;
   }

@@ -50,6 +50,7 @@ import {
 import { handleGroupHelpCallback } from './telegram-group-help.callbacks.js';
 import { handleGroupHelpCommand } from './telegram-group-help.commands.js';
 import { queueGroupHelpMessageReview } from './telegram-group-help.approval.js';
+import { handleGroupHelpBotSettingsInput } from './telegram-group-help.bot-settings.js';
 
 const BOT = GROUP_HELP_BOT_SLUG;
 
@@ -98,6 +99,7 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
   if (await welcomeTelegramCommunityMembers(update)) return;
   if (!message) return;
   if (message.text?.startsWith('/') && (await handleCommand(message, values))) return;
+  if (await handleGroupHelpBotSettingsInput(message)) return;
   if (message.sender_chat && values.telegramGroupHelpChannelSenderPolicy !== 'allow') {
     await deleteMessage(chatId, message.message_id).catch(() => null);
     await sendModerationLog(values, message, 'Message sent as a channel', 'delete');

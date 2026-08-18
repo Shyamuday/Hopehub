@@ -14,21 +14,7 @@ import {
 } from './telegram-group-help.actions.js';
 import { isModerationExempt } from './telegram-group-help.permissions.js';
 import type { CommunityTelegramMessage } from './telegram-community-bots.types.js';
-
-function settingsKeyboard() {
-  return {
-    inline_keyboard: [
-      [
-        { text: '💬 Messages', callback_data: 'hh_settings_messages' },
-        { text: '🛡 Safety', callback_data: 'hh_settings_safety' }
-      ],
-      [
-        { text: '🔧 Operations', callback_data: 'hh_settings_operations' },
-        { text: '❓ Help', callback_data: 'hh_settings_help' }
-      ]
-    ]
-  };
-}
+import { groupHelpSettingsHomeKeyboard } from './telegram-group-help.menu.js';
 
 export async function handleGroupHelpAdminCommand(
   message: CommunityTelegramMessage,
@@ -50,7 +36,7 @@ export async function handleGroupHelpAdminCommand(
       '⚙️ *Hope Hub group settings*\n\nChoose what you want to review.',
       {
         parse_mode: 'Markdown',
-        reply_markup: settingsKeyboard()
+        reply_markup: groupHelpSettingsHomeKeyboard()
       }
     );
     return true;
