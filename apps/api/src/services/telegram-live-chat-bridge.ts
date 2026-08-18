@@ -15,6 +15,34 @@ function bridgeEnabled(value: string | undefined) {
   return !['disabled', 'false', '0', 'off'].includes((value || '').trim().toLowerCase());
 }
 
+function cleanDisplayName(value: string | null | undefined, fallback = 'Hope Hub member') {
+  const cleaned = value
+    ?.replace(/[\r\n]+/g, ' ')
+    .trim()
+    .slice(0, 80);
+  return cleaned || fallback;
+}
+
+function telegramDisplayName(user?: CommunityTelegramMessage['from']) {
+  if (user?.username?.trim()) return `@${user.username.trim().replace(/^@+/, '').slice(0, 32)}`;
+  return cleanDisplayName(
+    [user?.first_name, user?.last_name].filter(Boolean).join(' '),
+    'Telegram member'
+  );
+}
+
+async function linkedTelegramDisplayName(userId: string, fallbackName: string) {
+  const session = await prisma.telegramBotSession.findFirst({
+    where: { linkedUserId: userId },
+    orderBy: { updatedAt: 'desc' },
+    select: { username: true }
+  });
+  if (session?.username?.trim()) {
+    return `@${session.username.trim().replace(/^@+/, '').slice(0, 32)}`;
+  }
+  return cleanDisplayName(fallbackName);
+}
+
 async function bridgeConfig() {
   const config = await getSiteConfigMap(BRIDGE_CONFIG_KEYS);
   return {
@@ -79,7 +107,7 @@ export async function ingestTelegramLiveChatMessage(message: CommunityTelegramMe
     data: {
       groupId: group.id,
       senderId: `telegram:${message.from?.id || 'unknown'}`,
-      senderName: 'Telegram member',
+      senderName: telegramDisplayName(message.from),
       senderRole: 'TELEGRAM_MEMBER',
       body: message.text.trim().slice(0, 2000),
       createdAt: message.date ? new Date(message.date * 1000) : undefined
@@ -92,6 +120,8 @@ export async function ingestTelegramLiveChatMessage(message: CommunityTelegramMe
 
 export async function mirrorHopeHubLiveChatMessageToTelegram(input: {
   groupSlug: string;
+  senderId: string;
+  senderName: string;
   body: string;
 }) {
   const config = await bridgeConfig();
@@ -100,10 +130,11 @@ export async function mirrorHopeHubLiveChatMessageToTelegram(input: {
   }
 
   try {
+    const senderName = await linkedTelegramDisplayName(input.senderId, input.senderName);
     const sent = await sendCommunityMessage(
       GROUP_HELP_BOT_SLUG,
       config.telegramChatId,
-      `💬 Hope Hub member\n\n${input.body.trim().slice(0, 3900)}`
+      `💬 ${senderName}\n\n${input.body.trim().slice(0, 3900)}`
     );
     return sent.message_id;
   } catch (error) {

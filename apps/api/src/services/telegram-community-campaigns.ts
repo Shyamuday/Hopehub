@@ -12,6 +12,7 @@ import type {
 import { configuredUrlKeyboard } from './telegram-keyboard-config.js';
 import { colorizeTelegramKeyboard } from './telegram-button-styles.js';
 import { getSiteConfigMap } from './site-config.service.js';
+import { syncGroupHelpConfigDefaults } from './telegram-group-help-defaults.js';
 import {
   cleanupCommunityBotData,
   runScheduledCommunityMessageCleanup,
@@ -84,6 +85,11 @@ function nextSchedule(now: Date, intervalMinutes: number) {
   return new Date(now.getTime() + Math.max(1, intervalMinutes) * 60_000);
 }
 
+function isWelcomeVideo(url: string) {
+  const filename = url.split('?')[0].toLowerCase();
+  return /\.(mp4|webm|mov|m4v)$/.test(filename);
+}
+
 const COMMUNITY_CONFIG_KEYS = [
   'telegramCommunityWelcomeEnabled',
   'telegramGroupHelpAutoDeleteSeconds',
@@ -115,6 +121,7 @@ const SMART_SCHEDULE_CONFIG_KEYS = [
 ] as const;
 
 async function communityConfig() {
+  await syncGroupHelpConfigDefaults();
   const values = await getSiteConfigMap(COMMUNITY_CONFIG_KEYS);
   return {
     welcomeEnabled: values.telegramCommunityWelcomeEnabled !== 'Disabled',
@@ -951,15 +958,21 @@ export async function welcomeTelegramCommunityMembers(update: CommunityTelegramU
       : config.welcomeKeyboard;
     const sent =
       config.welcomeMediaUrl && welcomeText.length <= 1024
-        ? await callCommunityTelegramApi<{ message_id: number }>(CAMPAIGN_BOT, 'sendAnimation', {
-            chat_id: chat.id,
-            animation: config.welcomeMediaUrl,
-            caption: welcomeText,
-            parse_mode: 'Markdown',
-            message_thread_id: message?.message_thread_id,
-            reply_markup: welcomeKeyboard
-          }).catch(async (error) => {
-            console.error('[telegram-community] Could not send welcome animation.', error);
+        ? await callCommunityTelegramApi<{ message_id: number }>(
+            CAMPAIGN_BOT,
+            isWelcomeVideo(config.welcomeMediaUrl) ? 'sendVideo' : 'sendAnimation',
+            {
+              chat_id: chat.id,
+              ...(isWelcomeVideo(config.welcomeMediaUrl)
+                ? { video: config.welcomeMediaUrl }
+                : { animation: config.welcomeMediaUrl }),
+              caption: welcomeText,
+              parse_mode: 'Markdown',
+              message_thread_id: message?.message_thread_id,
+              reply_markup: welcomeKeyboard
+            }
+          ).catch(async (error) => {
+            console.error('[telegram-community] Could not send welcome media.', error);
             return sendCommunityMessage(CAMPAIGN_BOT, chat.id, welcomeText, {
               parse_mode: 'Markdown',
               message_thread_id: message?.message_thread_id,

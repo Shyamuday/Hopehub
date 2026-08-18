@@ -25,8 +25,11 @@ export const DEFAULT_REWARD_RULES = [
     minPayableInPaise: 0,
     conditions: {
       targetPayableInPaise: 0,
-      showToConsumers: false,
-      featured: false
+      showToConsumers: true,
+      featured: true,
+      publicLabel: 'Welcome100 — your first connection is free',
+      publicDescription:
+        'Use this welcome coupon for a free Hope Hub chat, voice, or video session.'
     }
   },
   {
@@ -80,10 +83,8 @@ export const DEFAULT_REWARD_RULES = [
     conditions: {
       targetPayableInPaise: 100,
       providerCareTeamTypes: ['PEER_SUPPORT_VOLUNTEER', 'PSYCHOLOGY_STUDENT_VOLUNTEER'],
-      showToConsumers: true,
-      featured: true,
-      publicLabel: 'Talk to a listener for ₹1',
-      publicDescription: 'Apply this offer to an eligible listener session.'
+      showToConsumers: false,
+      featured: false
     }
   },
   {

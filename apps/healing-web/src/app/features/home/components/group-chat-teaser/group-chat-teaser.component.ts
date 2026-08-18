@@ -76,7 +76,7 @@ export class GroupChatTeaserComponent implements OnInit {
   );
   readonly primaryActionLabel = computed(() => {
     if (!this.isAuthenticated()) return 'Sign up free to chat';
-    return this.hasRealChat() ? 'Open support chat' : 'See live support';
+    return this.hasRealChat() ? 'Continue in chat' : 'See live support';
   });
 
   private openTimer: number | null = null;
@@ -172,7 +172,14 @@ export class GroupChatTeaserComponent implements OnInit {
     if (this.isAuthenticated()) {
       const group = this.activeGroup();
       if (group) {
-        void this.router.navigate([...CONSUMER_ROUTES.links.liveGroups, group.slug || group.id]);
+        // The floating chat is the conversation surface. Do not send someone
+        // who has just signed up to a second route that may be unavailable
+        // while the Telegram bridge is reconnecting.
+        this.isMinimized.set(false);
+        this.isOpen.set(true);
+        this.groupChatTeaser.clearUnread();
+        this.scrollToLatest();
+        this.focusComposer();
       } else {
         void this.router.navigate(CONSUMER_ROUTES.links.home, {
           fragment: CONSUMER_ROUTES.fragments.liveConnect,
@@ -396,6 +403,13 @@ export class GroupChatTeaserComponent implements OnInit {
     window.setTimeout(() => {
       const element = this.messageList?.nativeElement;
       if (element) element.scrollTop = element.scrollHeight;
+    });
+  }
+
+  private focusComposer(): void {
+    window.setTimeout(() => {
+      const input = document.querySelector<HTMLInputElement>('input[name="teaserReply"]');
+      input?.focus();
     });
   }
 }

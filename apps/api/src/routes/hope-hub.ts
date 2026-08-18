@@ -2213,6 +2213,8 @@ hopeHubRouter.post(
     emitHopeHubLiveGroupMessage(group.id, payload);
     await mirrorHopeHubLiveChatMessageToTelegram({
       groupSlug: group.slug,
+      senderId: message.senderId,
+      senderName: message.senderName,
       body: message.body
     });
     res.status(201).json({ message: payload });

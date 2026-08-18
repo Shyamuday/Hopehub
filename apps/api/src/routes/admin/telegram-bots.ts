@@ -37,6 +37,10 @@ import {
   GROUP_HELP_CONFIG_META
 } from '../../constants/group-help-config.constants.js';
 import {
+  markGroupHelpConfigOverrides,
+  syncGroupHelpConfigDefaults
+} from '../../services/telegram-group-help-defaults.js';
+import {
   TELEGRAM_BOT_CONTROL_DEFAULTS,
   TELEGRAM_BOT_CONTROL_KEYS,
   TELEGRAM_BOT_CONTROL_META
@@ -306,6 +310,7 @@ function linkedName(session: {
 }
 
 async function groupHelpConfigMap() {
+  await syncGroupHelpConfigDefaults();
   const rows = await prisma.siteConfig.findMany({
     where: { key: { in: GROUP_HELP_CONFIG_KEYS } }
   });
@@ -1203,6 +1208,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
           })
         )
       );
+      await markGroupHelpConfigOverrides(updates.map(({ key, value }) => ({ key, value })));
 
       await writeAuditLog({
         actorId: req.user!.id,
