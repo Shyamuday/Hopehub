@@ -1060,7 +1060,7 @@ async function runTelegramCommunityEventScheduler(now: Date) {
     where: {
       status: 'SCHEDULED',
       announcedAt: null,
-      startsAt: { gt: now, lte: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000) }
+      startsAt: { gt: now, lte: new Date(now.getTime() + 60 * 60 * 1000) }
     },
     take: 10
   });
