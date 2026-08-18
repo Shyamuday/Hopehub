@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, signal } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { FormDropdownComponent, type FormDropdownOption } from '@hopehub/platform-ui';
 import { AdminApi } from '../../core/services/admin-api';
+import { AppApplyButtonComponent } from '../../shared/ui/app-apply-button.component';
 
 type GroupHelpConfigEntry = {
   key: string;
@@ -96,7 +97,7 @@ const SECTION_LABELS: Record<GroupHelpConfigEntry['section'], string> = {
 
 @Component({
   selector: 'app-group-help-page',
-  imports: [CommonModule, FormsModule, FormDropdownComponent],
+  imports: [CommonModule, FormsModule, FormDropdownComponent, AppApplyButtonComponent],
   templateUrl: './group-help-page.html',
   styleUrl: './group-help-page.scss',
 })
@@ -118,9 +119,14 @@ export class GroupHelpPage {
   ];
   readonly config = signal<GroupHelpConfigEntry[]>([]);
   readonly localValues = signal<Record<string, string>>({});
+  readonly hasUnsavedConfigChanges = computed(() => {
+    const values = this.localValues();
+    return this.config().some((entry) => values[entry.key] !== entry.value);
+  });
   readonly tokenConfigured = signal(false);
   readonly loading = signal(false);
   readonly saving = signal(false);
+  readonly savingWelcome = signal(false);
   readonly sending = signal(false);
   readonly testing = signal(false);
   readonly clearingMenu = signal(false);
@@ -756,6 +762,41 @@ export class GroupHelpPage {
       return false;
     } finally {
       this.saving.set(false);
+    }
+  }
+
+  async saveWelcome() {
+    this.savingWelcome.set(true);
+    this.error.set('');
+    this.message.set('');
+    try {
+      const keys = [
+        'telegramGroupHelpWelcomeMessage',
+        'telegramGroupHelpWelcomeImageUrl',
+        'telegramGroupHelpWelcomeButtons',
+      ];
+      const res = await this.api.saveTelegramGroupHelpConfig(
+        keys.map((key) => ({ key, value: this.value(key) })),
+      );
+      this.localValues.update((current) => ({
+        ...current,
+        ...Object.fromEntries(
+          (res.config as GroupHelpConfigEntry[]).map((entry) => [entry.key, entry.value]),
+        ),
+      }));
+      this.config.update((entries) =>
+        entries.map((entry) => {
+          const saved = (res.config as GroupHelpConfigEntry[]).find(
+            (savedEntry) => savedEntry.key === entry.key,
+          );
+          return saved ? { ...entry, value: saved.value } : entry;
+        }),
+      );
+      this.message.set('Welcome saved. New members will receive this version from now on.');
+    } catch (error: any) {
+      this.error.set(error?.error?.message || 'Could not save the welcome message.');
+    } finally {
+      this.savingWelcome.set(false);
     }
   }
 

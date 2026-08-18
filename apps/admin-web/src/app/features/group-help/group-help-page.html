@@ -699,6 +699,20 @@
       </section>
     }
 
+    <section class="settings-savebar" [class.workspace-hidden]="activeWorkspaceSection() !== 'settings'">
+      <span>
+        <strong>{{ hasUnsavedConfigChanges() ? 'You have unsaved changes' : 'All settings are saved' }}</strong>
+        <small>{{ hasUnsavedConfigChanges() ? 'Save before leaving this screen.' : 'Changes take effect for future bot activity.' }}</small>
+      </span>
+      <app-apply-button
+        [loading]="saving()"
+        [disabled]="!hasUnsavedConfigChanges()"
+        label="Save changes"
+        pendingLabel="Saving changes…"
+        (click)="saveAll()"
+      ></app-apply-button>
+    </section>
+
     <section class="settings-essentials panel" [class.workspace-hidden]="activeWorkspaceSection() !== 'settings'">
       <div class="panel-head">
         <div>
@@ -771,6 +785,17 @@
               </label>
             }
           </div>
+          @if (section === 'messages') {
+            <div class="config-section__actions">
+              <app-apply-button
+                [loading]="savingWelcome()"
+                label="Save welcome changes"
+                pendingLabel="Saving welcome…"
+                (click)="saveWelcome()"
+              ></app-apply-button>
+              <small>Applies to new members only. Existing welcome messages are not changed.</small>
+            </div>
+          }
         </details>
       }
     </section>

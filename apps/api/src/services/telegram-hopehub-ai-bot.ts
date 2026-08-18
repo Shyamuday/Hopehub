@@ -33,6 +33,7 @@ import {
   hasMedia,
   isForward,
   isWithinQuietHours,
+  matchesBannedPhrase,
   mediaKinds
 } from './telegram-group-help.config.js';
 import { isModerationExempt } from './telegram-group-help.permissions.js';
@@ -141,11 +142,7 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
     await moderate(message, 'Message too long', 'warn', warnLimit, warnAction);
     return;
   }
-  if (
-    bannedPhrases(values.telegramGroupHelpBannedWords).some((item) =>
-      text.toLowerCase().includes(item)
-    )
-  ) {
+  if (matchesBannedPhrase(text, bannedPhrases(values.telegramGroupHelpBannedWords))) {
     await moderate(message, 'Blocked phrase', 'warn', warnLimit, warnAction);
     return;
   }

@@ -58,6 +58,17 @@ export function bannedPhrases(value: string) {
     .filter(Boolean);
 }
 
+export function matchesBannedPhrase(text: string, phrases: readonly string[]) {
+  const normalized = text.normalize('NFKC').toLocaleLowerCase();
+  return phrases.some((phrase) => {
+    const candidate = phrase.normalize('NFKC').toLocaleLowerCase().trim();
+    if (!candidate) return false;
+    const escaped = candidate.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Boundaries prevent a short word from matching inside an innocent larger word.
+    return new RegExp(`(^|[^\\p{L}\\p{N}])${escaped}(?=$|[^\\p{L}\\p{N}])`, 'iu').test(normalized);
+  });
+}
+
 export function containsLink(text: string) {
   return /(?:https?:\/\/|www\.|t\.me\/|telegram\.me\/|\b[a-z0-9-]+\.(?:com|in|org|net|io)\b)/i.test(
     text
