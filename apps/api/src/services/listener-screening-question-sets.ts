@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { randomInt } from 'node:crypto';
 
 export type ListenerScreeningQuestionOption = {
   id: string;
@@ -104,6 +105,21 @@ export function sanitizeListenerScreeningQuestions(raw: unknown): ListenerScreen
   return listenerScreeningQuestionsSchema.parse(raw);
 }
 
+/**
+ * Keeps option IDs stable for scoring while changing their display order on each
+ * screening load. This prevents a predictable correct-answer position.
+ */
+export function shuffledScreeningOptions<T extends ListenerScreeningQuestionOption>(
+  options: readonly T[]
+) {
+  const shuffled = [...options];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = randomInt(index + 1);
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+  return shuffled;
+}
+
 export function publicListenerScreeningQuestionSet(set: ListenerScreeningQuestionSetLike) {
   const questions = sanitizeListenerScreeningQuestions(set.questions);
   return {
@@ -115,7 +131,10 @@ export function publicListenerScreeningQuestionSet(set: ListenerScreeningQuestio
     isActive: set.isActive,
     publishedAt: set.publishedAt?.toISOString() ?? null,
     updatedAt: set.updatedAt.toISOString(),
-    questions: questions.map(({ correctOptionId: _correctOptionId, ...question }) => question)
+    questions: questions.map(({ correctOptionId: _correctOptionId, ...question }) => ({
+      ...question,
+      options: shuffledScreeningOptions(question.options)
+    }))
   };
 }
 
