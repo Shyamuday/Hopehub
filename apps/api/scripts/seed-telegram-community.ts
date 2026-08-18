@@ -247,18 +247,6 @@ const campaigns = (chatId: string) =>
       ]
     },
     {
-      id: 'seed_telegram_voice_circle',
-      name: 'Daily 9 PM voice circle',
-      intervalMinutes: 1440,
-      nextRunAt: nextAt(20, 45),
-      items: [
-        {
-          kind: 'MESSAGE',
-          text: '🎧 Hope Hub voice circle starts at 9 PM\n\nJoin quietly, listen first, or speak when comfortable. Open the group voice chat here: https://t.me/hopehubindia'
-        }
-      ]
-    },
-    {
       id: 'seed_telegram_weekly_summary',
       name: 'Weekly community summary',
       intervalMinutes: 10080,
@@ -464,6 +452,13 @@ async function seedSiteConfig(chatId: string) {
 }
 
 async function seedCampaigns(chatId: string) {
+  // Voice-circle notices are owned by TelegramCommunityEvent so that the
+  // announcement and the native scheduled VC can never be duplicated by an
+  // older recurring campaign.
+  await prisma.telegramCampaign.updateMany({
+    where: { id: 'seed_telegram_voice_circle' },
+    data: { isActive: false, repeat: false }
+  });
   for (const campaign of campaigns(chatId)) {
     const existing = await prisma.telegramCampaign.findUnique({
       where: { id: campaign.id },

@@ -30,6 +30,7 @@ const CAMPAIGN_BOT = GROUP_HELP_BOT_SLUG;
 const MAX_DELIVERIES_PER_SWEEP = 20;
 const ENGAGEMENT_CAMPAIGN_ID = 'seed_telegram_hourly_engagement';
 const PROMOTION_CAMPAIGN_ID = 'seed_telegram_daily_discovery';
+const VOICE_EVENT_ANNOUNCEMENT_LEAD_MS = 60 * 60 * 1000;
 
 export const telegramCampaignSweepEnabled =
   (process.env.TELEGRAM_CAMPAIGN_SWEEP_ENABLED || 'true').toLowerCase() !== 'false';
@@ -624,7 +625,13 @@ export async function handleTelegramCommunityVoiceChatEnded(message: CommunityTe
   if (next) {
     await prisma.telegramCommunityEvent.update({
       where: { id: next.id },
-      data: { announcementDueAt: new Date(now.getTime() + 15 * 60 * 1000) }
+      data: {
+        // Announce an upcoming circle one hour before it begins. If a call
+        // ended later than that, announce the next one immediately instead.
+        announcementDueAt: new Date(
+          Math.max(now.getTime(), next.startsAt.getTime() - VOICE_EVENT_ANNOUNCEMENT_LEAD_MS)
+        )
+      }
     });
   }
   return true;
@@ -974,12 +981,41 @@ export async function handleTelegramCommunityJoinVerificationCallback(
   return true;
 }
 
+async function telegramCommunityEventKeyboard(
+  event: { id: string; joinUrl: string },
+  rsvpCount: number
+) {
+  const config = await communityConfig();
+  return {
+    inline_keyboard: [
+      [{ text: `I’ll join (${rsvpCount})`, callback_data: `event:rsvp:${event.id}` }],
+      [
+        { text: 'Join voice circle', url: event.joinUrl },
+        { text: 'Talk privately (paid)', url: config.supportUrl }
+      ]
+    ]
+  };
+}
+
+async function telegramCommunityEventReminderKeyboard(event: { joinUrl: string }) {
+  const config = await communityConfig();
+  return {
+    inline_keyboard: [
+      [
+        { text: 'Join voice circle', url: event.joinUrl },
+        { text: 'Talk privately (paid)', url: config.supportUrl }
+      ]
+    ]
+  };
+}
+
 export async function announceTelegramCommunityEvent(eventId: string) {
   const event = await prisma.telegramCommunityEvent.findUnique({
     where: { id: eventId },
     include: { _count: { select: { rsvps: true } } }
   });
   if (!event || event.status !== 'SCHEDULED') return null;
+  const keyboard = await telegramCommunityEventKeyboard(event, event._count.rsvps);
   const sent = await sendCommunityMessage(
     CAMPAIGN_BOT,
     event.chatId,
@@ -992,12 +1028,7 @@ export async function announceTelegramCommunityEvent(eventId: string) {
       .filter(Boolean)
       .join('\n'),
     {
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: `I’ll join (${event._count.rsvps})`, callback_data: `event:rsvp:${event.id}` }],
-          [{ text: 'Open voice circle', url: event.joinUrl }]
-        ]
-      }
+      reply_markup: keyboard
     }
   );
   return prisma.telegramCommunityEvent.update({
@@ -1013,6 +1044,7 @@ export async function refreshTelegramCommunityEventAnnouncement(eventId: string)
   });
   if (!event) return null;
   if (!event.telegramMessageId) return announceTelegramCommunityEvent(event.id);
+  const keyboard = await telegramCommunityEventKeyboard(event, event._count.rsvps);
   await callCommunityTelegramApi(CAMPAIGN_BOT, 'editMessageText', {
     chat_id: event.chatId,
     message_id: event.telegramMessageId,
@@ -1024,17 +1056,7 @@ export async function refreshTelegramCommunityEventAnnouncement(eventId: string)
     ]
       .filter(Boolean)
       .join('\n'),
-    reply_markup: {
-      inline_keyboard: [
-        [
-          {
-            text: `I’ll join (${event._count.rsvps})`,
-            callback_data: `event:rsvp:${event.id}`
-          }
-        ],
-        [{ text: 'Open voice circle', url: event.joinUrl }]
-      ]
-    }
+    reply_markup: keyboard
   });
   return event;
 }
@@ -1075,16 +1097,12 @@ export async function handleTelegramCommunityEventCallback(update: CommunityTele
     where: { eventId, status: 'GOING' }
   });
   if (callback.message) {
+    const keyboard = await telegramCommunityEventKeyboard(event, total);
     await editCommunityReplyMarkup(
       CAMPAIGN_BOT,
       callback.message.chat.id,
       callback.message.message_id,
-      {
-        inline_keyboard: [
-          [{ text: `I’ll join (${total})`, callback_data: `event:rsvp:${event.id}` }],
-          [{ text: 'Open voice circle', url: event.joinUrl }]
-        ]
-      }
+      keyboard
     );
   }
   return true;
@@ -1113,7 +1131,7 @@ async function runTelegramCommunityEventScheduler(now: Date) {
       CAMPAIGN_BOT,
       event.chatId,
       `🎧 ${event.title} starts soon. ${event._count.rsvps} people plan to join.`,
-      { reply_markup: { inline_keyboard: [[{ text: 'Join now', url: event.joinUrl }]] } }
+      { reply_markup: await telegramCommunityEventReminderKeyboard(event) }
     );
     await prisma.telegramCommunityEvent.update({
       where: { id: event.id },

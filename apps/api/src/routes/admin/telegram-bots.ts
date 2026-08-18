@@ -1666,13 +1666,19 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         return date;
       };
       const events = await prisma.$transaction(
-        Array.from({ length: total }, (_, index) =>
-          prisma.telegramCommunityEvent.create({
-            data: { ...eventData, startsAt: startsAt(index), chatId, createdById: req.user!.id }
-          })
-        )
+        Array.from({ length: total }, (_, index) => {
+          const occurrenceStartsAt = startsAt(index);
+          return prisma.telegramCommunityEvent.create({
+            data: {
+              ...eventData,
+              startsAt: occurrenceStartsAt,
+              announcementDueAt: new Date(occurrenceStartsAt.getTime() - 60 * 60 * 1000),
+              chatId,
+              createdById: req.user!.id
+            }
+          });
+        })
       );
-      await announceTelegramCommunityEvent(events[0].id);
       await writeAuditLog({
         actorId: req.user!.id,
         actorRole: req.user!.role,
@@ -1707,10 +1713,11 @@ export function registerAdminTelegramBotRoutes(router: Router) {
           ...eventData,
           chatId,
           reminderSentAt: null,
+          announcementDueAt: new Date(eventData.startsAt.getTime() - 60 * 60 * 1000),
           status: 'SCHEDULED'
         }
       });
-      await refreshTelegramCommunityEventAnnouncement(event.id);
+      if (event.telegramMessageId) await refreshTelegramCommunityEventAnnouncement(event.id);
       res.json({ event });
     })
   );
