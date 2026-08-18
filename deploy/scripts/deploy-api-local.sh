@@ -184,6 +184,19 @@ chmod 600 .env
 npm install --no-audit --no-fund
 npm run prisma:generate
 npm run prisma:deploy
+
+# Telegram's native scheduled voice chats use a separate user-account session.
+# Keep that session isolated from the API process and only enable the timer once
+# an administrator has completed the one-time OTP login on this server.
+sudo install -m 644 deploy/systemd/hopehub-telegram-voice-scheduler.service /etc/systemd/system/hopehub-telegram-voice-scheduler.service
+sudo install -m 644 deploy/systemd/hopehub-telegram-voice-scheduler.timer /etc/systemd/system/hopehub-telegram-voice-scheduler.timer
+sudo systemctl daemon-reload
+if sudo test -s /etc/hopehub-telegram-user-session; then
+  sudo systemctl enable --now hopehub-telegram-voice-scheduler.timer
+else
+  sudo systemctl disable --now hopehub-telegram-voice-scheduler.timer >/dev/null 2>&1 || true
+  echo "Telegram native voice scheduler is awaiting its one-time user login."
+fi
 # Explicitly pass server-resolved production credentials to PM2. GitHub Actions
 # may expose older repository secrets in the runner environment, and PM2 keeps
 # inherited values ahead of dotenv unless they are replaced during restart.

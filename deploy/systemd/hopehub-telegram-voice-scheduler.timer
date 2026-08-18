@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Hope Hub Telegram native voice scheduler every minute
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=1min
+Persistent=true
+Unit=hopehub-telegram-voice-scheduler.service
+
+[Install]
+WantedBy=timers.target

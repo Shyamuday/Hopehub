@@ -1,0 +1,10 @@
+[Unit]
+Description=Hope Hub Telegram native voice scheduler
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/hopehub/apps/api
+ExecStart=/usr/bin/npm run telegram:voice:schedule

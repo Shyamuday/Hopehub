@@ -25,6 +25,8 @@
     "verify:finance-period": "tsx scripts/verify-finance-period.ts",
     "telegram:setup": "tsx scripts/setup-telegram-bots.ts",
     "telegram:seed": "tsx scripts/seed-telegram-community.ts",
+    "telegram:voice:login": "tsx scripts/login-telegram-voice-scheduler.ts",
+    "telegram:voice:schedule": "tsx scripts/run-telegram-voice-scheduler.ts",
     "push:vapid:generate": "web-push generate-vapid-keys",
     "assets:migrate:s3": "tsx scripts/migrate-local-assets-to-s3.ts"
   },
@@ -52,6 +54,7 @@
     "razorpay": "^2.9.6",
     "redis": "^4.7.1",
     "socket.io": "^4.8.1",
+    "teleproto": "^1.228.5",
     "web-push": "^3.6.7",
     "zod": "^4.2.1"
   },
