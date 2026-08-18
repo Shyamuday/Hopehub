@@ -73,6 +73,7 @@ type LiveConnectRoleGroup = '' | ConsumerSupportPath;
   styleUrl: './live-connect.component.scss',
 })
 export class LiveConnectComponent implements OnInit {
+  private static readonly DEFAULT_LIVE_COUPON = 'WELCOME100';
   readonly UX = CONSUMER_UX_COPY;
   readonly ROUTES = CONSUMER_ROUTES;
   private readonly bookingService = inject(BookingService);
@@ -97,7 +98,7 @@ export class LiveConnectComponent implements OnInit {
   readonly startingProviderId = signal('');
   readonly pendingProvider = signal<HopeHubProvider | null>(null);
   readonly pendingMode = signal<LiveConnectMode | null>(null);
-  readonly couponCode = signal('');
+  readonly couponCode = signal(LiveConnectComponent.DEFAULT_LIVE_COUPON);
   readonly appliedCouponCode = signal('');
   readonly couponQuote = signal<HopeHubCheckoutQuote | null>(null);
   readonly couponLoading = signal(false);
@@ -342,13 +343,14 @@ export class LiveConnectComponent implements OnInit {
     this.checkoutPhone.set(savedPhone);
     this.editingCheckoutPhone.set(!savedPhone);
     this.phoneError.set('');
-    if (this.featuredCoupon()?.code) this.updateLiveCoupon(this.featuredCoupon()!.code);
+    this.updateLiveCoupon(LiveConnectComponent.DEFAULT_LIVE_COUPON);
     const availableModes = this.providerModes(provider).filter((option) => option.enabled);
     const preferredMode = availableModes.some((option) => option.mode === this.mode())
       ? this.mode()
       : availableModes[0]?.mode || null;
     this.pendingProvider.set(provider);
     this.pendingMode.set(preferredMode);
+    queueMicrotask(() => void this.applyLiveCoupon());
   }
 
   cancelStart(): void {
@@ -368,7 +370,10 @@ export class LiveConnectComponent implements OnInit {
     ) {
       return;
     }
-    if (this.pendingMode() && this.pendingMode() !== mode) this.clearLiveCoupon();
+    if (this.pendingMode() && this.pendingMode() !== mode) {
+      this.clearLiveCoupon();
+      queueMicrotask(() => void this.applyLiveCoupon());
+    }
     this.pendingMode.set(mode);
   }
 
@@ -582,7 +587,7 @@ export class LiveConnectComponent implements OnInit {
   }
 
   clearLiveCoupon(): void {
-    this.couponCode.set('');
+    this.couponCode.set(LiveConnectComponent.DEFAULT_LIVE_COUPON);
     this.appliedCouponCode.set('');
     this.couponQuote.set(null);
     this.couponLoading.set(false);

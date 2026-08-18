@@ -10,6 +10,26 @@ import { prisma } from '../db.js';
 
 export const DEFAULT_REWARD_RULES = [
   {
+    code: 'WELCOME100_ALL_LIVE_SERVICES',
+    name: 'Welcome 100% live-service access',
+    description: 'Reusable 100% coupon for all Hope Hub live chat, voice, and video services.',
+    kind: RewardProgramKind.PROMO,
+    trigger: RewardTrigger.CONSULTATION_PAID,
+    beneficiary: RewardBeneficiary.PAYING_PATIENT,
+    valueType: RewardValueType.CHECKOUT_DISCOUNT_PERCENT,
+    valueAmount: 10_000,
+    appliesTo: RewardAppliesTo.CONSULTATION,
+    promoCode: 'WELCOME100',
+    priority: 1_000,
+    maxUsesPerPatient: null,
+    minPayableInPaise: 0,
+    conditions: {
+      targetPayableInPaise: 0,
+      showToConsumers: false,
+      featured: false
+    }
+  },
+  {
     code: 'REF_WELCOME_DISCOUNT',
     name: 'Referral welcome discount',
     description: 'Flat discount for a referred patient on their first paid consultation.',
