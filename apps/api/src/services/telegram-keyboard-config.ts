@@ -23,6 +23,24 @@ export function configuredUrlKeyboard(
   value: string,
   options: { maximum?: number; buttonsPerRow?: number } = {}
 ): TelegramKeyboard | undefined {
+  const hasExplicitRows = value.includes('&&');
+  if (hasExplicitRows) {
+    const maximum = options.maximum ?? 8;
+    const rows = value
+      .split(/\r?\n/)
+      .map((line) => configuredUrlButtons(line.split('&&').join('\n'), maximum).slice(0, 4))
+      .filter((row) => row.length);
+    const inline_keyboard: TelegramKeyboard['inline_keyboard'] = [];
+    let total = 0;
+    for (const row of rows) {
+      if (total >= maximum) break;
+      const available = maximum - total;
+      inline_keyboard.push(row.slice(0, available));
+      total += Math.min(row.length, available);
+    }
+    return inline_keyboard.length ? { inline_keyboard } : undefined;
+  }
+
   const buttons = configuredUrlButtons(value, options.maximum);
   if (!buttons.length) return undefined;
   const buttonsPerRow = Math.max(1, Math.min(options.buttonsPerRow || 2, 4));

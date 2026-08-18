@@ -65,7 +65,11 @@ function campaignItemKeyboard(buttons: unknown) {
       /^https:\/\//i.test((button as CampaignButton).url)
   );
   if (!validButtons.length) return undefined;
-  return colorizeTelegramKeyboard({ inline_keyboard: validButtons.map((button) => [button]) });
+  const inline_keyboard = [] as Array<typeof validButtons>;
+  for (let index = 0; index < validButtons.length; index += 2) {
+    inline_keyboard.push(validButtons.slice(index, index + 2));
+  }
+  return colorizeTelegramKeyboard({ inline_keyboard });
 }
 
 function jsonArray(value: Prisma.JsonValue | null | undefined): unknown[] {

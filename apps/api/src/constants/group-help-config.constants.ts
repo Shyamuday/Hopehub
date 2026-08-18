@@ -29,21 +29,28 @@ export const HOPEHUB_COMMUNITY_WELCOME_MESSAGE = `Hi {mention} 👋 {id}
 
 💙 Welcome to HopeHub!
 
-We are really glad you found your way here. You do not need to explain everything or say the perfect thing. Hope Hub is a growing emotional-support community for people across India, and this is a gentle space where you can take a breath, be yourself, and feel a little less alone.
+India's Trusted Emotional Support & Peer Support Community.
 
-Take your time. You can listen quietly, join in when you feel ready, or share what is on your mind in your own words. Please be kind—everyone here may be carrying something unseen.
+HopeHub is a safe and supportive space where you can express yourself freely, connect with compassionate people, and take small steps toward healing and personal growth.
 
-💙 You matter here.`;
+💬 Vent without fear of judgment
+🤝 Connect with kind & supportive people
+🎙️ Join daily voice chats & support discussions
+🫂 Receive peer support & emotional guidance
+❤️ Find support for stress, anxiety, depression, breakups & loneliness
+🧠 Access counselling, mental health resources & wellness tools
+🌱 Learn, heal & grow—one step at a time
 
-export const HOPEHUB_COMMUNITY_WELCOME_MEDIA_URL =
-  'https://hopehub-public-assets-924479393196.s3.us-east-1.amazonaws.com/telegram/welcome/hopehub-community-welcome.mp4';
+Please remember:
+✅ Be kind & respectful – Follow the group rules.
+✅ Respect everyone's privacy.
+✅ No bullying, hate, spam or unwanted DMs.
 
-export const HOPEHUB_COMMUNITY_WELCOME_BUTTONS = `📢 Channel | https://t.me/HopeHubGlobal | primary
-🌐 Website | https://hopehub.in/ | success
-🤖 HopeHub Web Bot | ${TELEGRAM_BOT_URLS.WEB} | primary
-📜 HH Rules | ${TELEGRAM_BOT_URLS.RULES} | danger
-💚 Get private support | https://hopehub.in/#live-connect | success
-🩷 Share anonymously | ${TELEGRAM_BOT_URLS.CONFESSION} | danger`;
+💙 Every conversation matters. Every person matters. You matter.`;
+
+export const HOPEHUB_COMMUNITY_WELCOME_MEDIA_URL = '';
+
+export const HOPEHUB_COMMUNITY_WELCOME_BUTTONS = `Support | https://hopehub.in/#live-connect | success && Confess | ${TELEGRAM_BOT_URLS.CONFESSION} | danger && Rules | ${TELEGRAM_BOT_URLS.RULES} | primary`;
 
 export type GroupHelpConfigField = {
   key: string;
@@ -572,7 +579,7 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
     key: 'telegramGroupHelpWelcomeButtons',
     label: 'Welcome buttons',
     description:
-      'One button per line: Label | https://link | primary, success, or danger. Buttons appear two per row.',
+      'Label | https://link | primary, success, or danger. Use && between buttons on the same row, then start a new line for the next row. Existing one-button-per-line entries remain two per row.',
     section: 'messages',
     type: 'textarea',
     maxLength: 4000,

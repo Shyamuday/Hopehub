@@ -8,7 +8,8 @@ import {
 import type { CommunityTelegramMessage } from './telegram-community-bots.types.js';
 import {
   assignedCommunityRole,
-  canUseGroupHelpCommand
+  canUseGroupHelpCommand,
+  isModerationExempt
 } from './telegram-group-help.permissions.js';
 import { sendTemporaryGroupHelpMessage } from './telegram-group-help.actions.js';
 import { forgetGroupHelpMemberData } from './telegram-group-help.privacy.js';
@@ -174,12 +175,27 @@ export async function handleGroupHelpMemberCommand(
     return true;
   }
   if (command === '/help') {
-    await sendTemporaryGroupHelpMessage(
-      chatId,
-      'Use /rules for community rules, /support for private support, /report while replying to a message, and /warnings to review warnings. Community staff can also use /staff and reply with moderation actions.',
-      values,
-      { message_thread_id: message.message_thread_id }
+    const canUseStaffTools = await canUseGroupHelpCommand(message, values, '/warn', 'HELPER');
+    const canUseAdminTools = await isModerationExempt(
+      message,
+      values.telegramGroupHelpAdminWhitelist || ''
     );
+    const helpSections = [
+      `💙 *Hope Hub bot help*\n\n*For every member*\n• /rules — read community rules\n• /support — find private Hope Hub support\n• /warnings — check your warning count\n• /report — reply to a message, then report it privately\n• /admin — ask the community team to review an urgent group concern\n• /forget — remove your retained Group Help data for this group\n• Send /forget in a private chat with the bot to remove your Group Help data across all communities.`,
+      canUseStaffTools
+        ? `*For Helpers and Moderators*\nReply to a member’s message, then use:\n• /warn reason — add a warning\n• /delete reason — remove the replied message\n• /mute reason — temporarily restrict the member\n• /unmute — restore their ability to send messages\n• /ban reason, /unban, /kick — manage membership\n• /info — view recorded member details\n• /clearwarnings — remove recorded warnings\n• /staff — view the community team\n• /stats — view the group snapshot`
+        : '',
+      canUseAdminTools
+        ? `*For Telegram administrators*\n• /settings — open the group settings menu\n• /lockdown 30 — pause member messages for a chosen number of minutes\n• /unlock — restore normal group access\n• /helper or /moderator — reply to a member to assign a community role\n• /unhelper or /unmoderator — remove that role\n• /settestgroup — register the current group as the bot test group\n• /setlog — register the current private channel/group as the activity log`
+        : '',
+      'Tip: use commands by themselves unless a reason is shown. Do not share private personal details in the group.'
+    ]
+      .filter(Boolean)
+      .join('\n\n');
+    await sendTemporaryGroupHelpMessage(chatId, helpSections, values, {
+      message_thread_id: message.message_thread_id,
+      parse_mode: 'Markdown'
+    });
     return true;
   }
   return false;
