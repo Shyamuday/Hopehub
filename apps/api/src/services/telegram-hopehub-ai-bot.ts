@@ -143,7 +143,8 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
     await moderate(message, 'Quiet hours', 'delete', warnLimit, warnAction);
     return;
   }
-  const maxLength = Math.max(100, Number(values.telegramGroupHelpMaxMessageLength || 4000));
+  const rawMaxLength = Number(values.telegramGroupHelpMaxMessageLength);
+  const maxLength = rawMaxLength > 0 ? Math.max(100, rawMaxLength) : 4000;
   if (text.length > maxLength) {
     await moderate(message, 'Message too long', 'warn', warnLimit, warnAction);
     return;
