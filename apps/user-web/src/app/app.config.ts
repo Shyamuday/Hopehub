@@ -11,7 +11,11 @@ import {
   withExperimentalPlatformNavigation,
 } from '@angular/router';
 import { provideServiceWorker } from '@angular/service-worker';
-import { CLINIC_API_BASE_URL, CLINIC_AUTH_TOKEN_KEY } from '@hopehub/clinic-api';
+import {
+  CLINIC_API_BASE_URL,
+  CLINIC_AUTH_TOKEN_KEY,
+  requestTimeoutInterceptor,
+} from '@hopehub/clinic-api';
 
 import { routes } from './app.routes';
 import { authInterceptor } from './auth/auth.interceptor';
@@ -29,7 +33,7 @@ export const appConfig: ApplicationConfig = {
       withExperimentalPlatformNavigation(),
       withExperimentalAutoCleanupInjectors(),
     ),
-    provideHttpClient(withXhr(), withInterceptors([authInterceptor])),
+    provideHttpClient(withXhr(), withInterceptors([authInterceptor, requestTimeoutInterceptor])),
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),
       registrationStrategy: 'registerWhenStable:30000',

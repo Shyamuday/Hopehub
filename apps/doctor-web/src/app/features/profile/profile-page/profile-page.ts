@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Component, effect, inject, OnDestroy, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { ActivatedRoute, Router } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, timeout } from 'rxjs';
 import { MultiSelectComponent, ProfileAvatarUploadComponent } from '@hopehub/platform-ui';
 import {
   PROVIDER_ROLE_CODES,
@@ -684,11 +684,21 @@ export class ProfilePage implements OnDestroy {
       this.error = `Complete this step first: ${missing.join(', ')}.`;
       return;
     }
-    await this.saveProfile();
-    if (this.error) return;
+    const saved = await this.saveProfile({ refreshProfile: false });
+    if (!saved) return;
     if (this.setupIsComplete()) {
       if (this.isListenerProfile() && !this.listenerScreeningPassed) {
-        await this.router.navigate(['/', ROUTE_PATHS.LISTENER_SCREENING]);
+        try {
+          // The route guard needs the newly saved listener role, but it does not need a
+          // second full profile-page reload before navigation.
+          await this.session.load(true);
+          const navigated = await this.router.navigate(['/', ROUTE_PATHS.LISTENER_SCREENING]);
+          if (!navigated) {
+            this.error = 'Could not open the screening test. Please try again.';
+          }
+        } catch (error: any) {
+          this.error = this.profileSaveErrorMessage(error);
+        }
         return;
       }
       await this.router.navigate(['/', ROUTE_PATHS.SLOTS], {
@@ -961,7 +971,11 @@ export class ProfilePage implements OnDestroy {
     }
   }
 
-  async saveProfile(step: ProfileSetupStepId = this.activeSetupStep()) {
+  async saveProfile(
+    options: { step?: ProfileSetupStepId; refreshProfile?: boolean } = {},
+  ): Promise<boolean> {
+    const step = options.step ?? this.activeSetupStep();
+    const refreshProfile = options.refreshProfile ?? true;
     const form = this.profileModel();
     this.message = '';
     this.error = '';
@@ -969,18 +983,22 @@ export class ProfilePage implements OnDestroy {
     if (this.autosaveTimer) clearTimeout(this.autosaveTimer);
     try {
       await firstValueFrom(
-        this.http.patch(
-          `${this.apiBase}${API_PATHS.DOCTOR.PROFILE}`,
-          this.profileStepPayload(step, form),
-        ),
+        this.http
+          .patch(`${this.apiBase}${API_PATHS.DOCTOR.PROFILE}`, this.profileStepPayload(step, form))
+          .pipe(timeout(15_000)),
       );
       this.onboardingDrafts.clear(form.email);
       this.autosaveStatus.set('saved');
-      await this.session.load(true);
-      await this.loadProfile();
+      this.lastServerPayload = JSON.stringify(this.profileStepPayload(step, form));
+      if (refreshProfile) {
+        await this.session.load(true);
+        await this.loadProfile();
+      }
       this.message = 'Profile updated successfully.';
+      return true;
     } catch (error: any) {
       this.error = this.profileSaveErrorMessage(error);
+      return false;
     } finally {
       this.saving = false;
     }
@@ -1038,10 +1056,9 @@ export class ProfilePage implements OnDestroy {
     this.autosaveStatus.set('saving');
     try {
       await firstValueFrom(
-        this.http.patch(
-          `${this.apiBase}${API_PATHS.DOCTOR.PROFILE}`,
-          JSON.parse(serializedPayload),
-        ),
+        this.http
+          .patch(`${this.apiBase}${API_PATHS.DOCTOR.PROFILE}`, JSON.parse(serializedPayload))
+          .pipe(timeout(15_000)),
       );
       this.lastServerPayload = serializedPayload;
       this.onboardingDrafts.clear(email);
@@ -1124,6 +1141,9 @@ export class ProfilePage implements OnDestroy {
   }
 
   private profileSaveErrorMessage(error: any) {
+    if (error?.name === 'TimeoutError') {
+      return 'This is taking longer than expected. Your details may have saved; please retry once before leaving this page.';
+    }
     const issues = error?.error?.issues;
     if (Array.isArray(issues) && issues.length) {
       const readableIssues = issues

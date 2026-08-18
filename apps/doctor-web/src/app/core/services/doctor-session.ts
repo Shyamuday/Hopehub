@@ -1,6 +1,6 @@
 import { Service, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, timeout } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { API_PATHS } from '../constants/api-paths.constants';
 import type { DoctorProfileSummary } from '../constants/doctor-types.constants';
@@ -29,15 +29,17 @@ export class DoctorSessionService {
     if (this.session && !force) return this.session;
 
     const response = await firstValueFrom(
-      this.http.get<{
-        profile: {
-          name: string;
-          email?: string | null;
-          mobile?: string | null;
-          profileImageUrl?: string | null;
-          doctorProfile?: DoctorProfileSummary | null;
-        };
-      }>(`${this.apiBase}${API_PATHS.DOCTOR.PROFILE}`),
+      this.http
+        .get<{
+          profile: {
+            name: string;
+            email?: string | null;
+            mobile?: string | null;
+            profileImageUrl?: string | null;
+            doctorProfile?: DoctorProfileSummary | null;
+          };
+        }>(`${this.apiBase}${API_PATHS.DOCTOR.PROFILE}`)
+        .pipe(timeout(15_000)),
     );
 
     this.session = {
@@ -69,9 +71,9 @@ export class DoctorSessionService {
 
   async readiness() {
     const response = await firstValueFrom(
-      this.http.get<{ readiness: ProviderReadiness }>(
-        `${this.apiBase}${API_PATHS.DOCTOR.READINESS}`,
-      ),
+      this.http
+        .get<{ readiness: ProviderReadiness }>(`${this.apiBase}${API_PATHS.DOCTOR.READINESS}`)
+        .pipe(timeout(15_000)),
     );
     return response.readiness;
   }

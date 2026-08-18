@@ -666,6 +666,11 @@ export function registerAuthDoctorRoutes(router: Router) {
       const userData: Record<string, unknown> = {};
       const doctorData: Record<string, unknown> = {};
       const mentalData: Record<string, unknown> = {};
+      // Prisma uses different nested relation inputs for an upsert's create and
+      // update branches. Keep the service rows separately so that `deleteMany`
+      // is never sent to the create branch (where it is invalid).
+      let servicesForMentalProfileCreate:
+        Prisma.CareTeamServiceUncheckedCreateWithoutMentalHealthProfileInput[] | null = null;
 
       if (body.step === 'identity') {
         if (body.name !== undefined) userData.name = body.name;
@@ -818,6 +823,7 @@ export function registerAuthDoctorRoutes(router: Router) {
             isActive: service.isActive ?? true,
             sortOrder: service.sortOrder ?? index
           }));
+          servicesForMentalProfileCreate = services;
           mentalData.services = {
             deleteMany: {},
             ...(services.length ? { create: services } : {})
@@ -831,6 +837,8 @@ export function registerAuthDoctorRoutes(router: Router) {
           .status(400)
           .json({ message: 'Support profile fields are not available for this provider role.' });
       }
+
+      const { services: _serviceUpdates, ...mentalDataForCreate } = mentalData;
 
       await prisma.user.update({
         where: { id: req.user!.id },
@@ -854,7 +862,10 @@ export function registerAuthDoctorRoutes(router: Router) {
                                 sessionTypes: [],
                                 ageGroups: [],
                                 concernsHandled: [],
-                                ...mentalData
+                                ...mentalDataForCreate,
+                                ...(servicesForMentalProfileCreate?.length
+                                  ? { services: { create: servicesForMentalProfileCreate } }
+                                  : {})
                               },
                               update: mentalData
                             }

@@ -10,7 +10,11 @@ import {
   withExperimentalPlatformNavigation,
   withInMemoryScrolling,
 } from '@angular/router';
-import { CLINIC_API_BASE_URL, CLINIC_AUTH_TOKEN_KEY } from '@hopehub/clinic-api';
+import {
+  CLINIC_API_BASE_URL,
+  CLINIC_AUTH_TOKEN_KEY,
+  requestTimeoutInterceptor,
+} from '@hopehub/clinic-api';
 
 import { routes } from './app.routes';
 import { AUTH_TOKEN_KEY } from './core/constants/auth.constants';
@@ -24,7 +28,10 @@ export const appConfig: ApplicationConfig = {
     { provide: CLINIC_AUTH_TOKEN_KEY, useValue: AUTH_TOKEN_KEY },
     provideBrowserGlobalErrorListeners(),
     provideZonelessChangeDetection(),
-    provideHttpClient(withXhr(), withInterceptors([authTokenInterceptor, authErrorInterceptor])),
+    provideHttpClient(
+      withXhr(),
+      withInterceptors([authTokenInterceptor, requestTimeoutInterceptor, authErrorInterceptor]),
+    ),
     provideRouter(
       routes,
       withInMemoryScrolling({ scrollPositionRestoration: 'enabled', anchorScrolling: 'enabled' }),

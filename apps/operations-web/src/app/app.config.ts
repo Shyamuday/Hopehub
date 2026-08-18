@@ -6,7 +6,11 @@ import {
 } from '@angular/router';
 import { provideHttpClient, withInterceptors, withXhr } from '@angular/common/http';
 import { provideAnimations } from '@angular/platform-browser/animations';
-import { CLINIC_API_BASE_URL, CLINIC_AUTH_TOKEN_KEY } from '@hopehub/clinic-api';
+import {
+  CLINIC_API_BASE_URL,
+  CLINIC_AUTH_TOKEN_KEY,
+  requestTimeoutInterceptor
+} from '@hopehub/clinic-api';
 import { routes } from './app.routes';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { AUTH_TOKEN_KEY } from './core/constants/auth.constants';
@@ -24,7 +28,7 @@ export const appConfig: ApplicationConfig = {
       withExperimentalPlatformNavigation(),
       withExperimentalAutoCleanupInjectors()
     ),
-    provideHttpClient(withXhr(), withInterceptors([authInterceptor])),
+    provideHttpClient(withXhr(), withInterceptors([authInterceptor, requestTimeoutInterceptor])),
     provideAnimations(),
     { provide: AdminAuth, useExisting: AdminAuthBridge }
   ]
