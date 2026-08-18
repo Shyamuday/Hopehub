@@ -74,19 +74,27 @@
             >
           </div>
         } @else {
-          <app-empty-state
-            icon="🎧"
-            [title]="unavailableTitle()"
-            [message]="message() || unavailableMessage()"
-            tone="soft"
-          >
-            <div empty-details>
-              <small>Good support is worth waiting a little for.</small>
+          <section class="live-booking-fallback" aria-labelledby="live-booking-fallback-title">
+            <div class="live-booking-fallback__icon" aria-hidden="true">🗓️</div>
+            <div class="live-booking-fallback__copy">
+              <span class="live-booking-fallback__eyebrow">Private support</span>
+              <h2 id="live-booking-fallback-title">{{ unavailableTitle() }}</h2>
+              <p>{{ message() || unavailableMessage() }}</p>
+              <ul>
+                <li>Choose a time that feels manageable for you.</li>
+                <li>Start with chat, voice, or video when your session begins.</li>
+                <li>Private, one-to-one support with the Hope Hub care team.</li>
+              </ul>
             </div>
-            <app-button type="button" variant="secondary" (click)="bookConsultation()">
-              See next available time
-            </app-button>
-          </app-empty-state>
+            <div class="live-booking-fallback__actions">
+              <app-button type="button" (click)="bookConsultation()">
+                Book a session
+              </app-button>
+              <app-button [routerLink]="ROUTES.links.careTeam" variant="secondary">
+                View support team
+              </app-button>
+            </div>
+          </section>
         }
 
         @if (message() && providers().length) {
