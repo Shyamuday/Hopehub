@@ -149,10 +149,11 @@
           id="mobile"
           [formField]="enrollForm.mobile"
           type="tel"
-          inputmode="tel"
+          inputmode="numeric"
           autocomplete="tel"
-          placeholder="Your mobile number"
+          placeholder="+91 98765 43210"
         />
+        <small>Indian mobile number, starting with 6–9.</small>
       } @else {
         <div class="signup-summary">
           <span>{{ enrollModel().name }}</span>
@@ -177,6 +178,7 @@
             {{ showEnrollPassword() ? 'Hide' : 'Show' }}
           </button>
         </div>
+        <small>Use at least 8 characters, with one letter and one number.</small>
 
         <label for="confirmPassword">Confirm password</label>
         <div class="password-input-wrap">

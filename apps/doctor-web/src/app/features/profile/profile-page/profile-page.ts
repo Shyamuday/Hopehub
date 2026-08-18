@@ -40,6 +40,11 @@ import {
 import { AppButtonComponent } from '../../../shared/ui/app-button.component';
 import { AppActionBarComponent } from '../../../shared/ui/app-action-bar.component';
 import { AppTagInputComponent } from '../../../shared/ui/app-tag-input.component';
+import {
+  indianMobileDisplay,
+  indianMobileE164,
+} from '../../../core/constants/indian-mobile.constants';
+import { isProviderDisplayName } from '../../../core/constants/provider-input-validation.constants';
 
 const LISTENER_SAFETY_ACKNOWLEDGEMENT_VERSION = 'listener-safety-v1-2026-08-07';
 const CARE_TEAM_TYPE_OPTIONS = PROVIDER_ROLE_CODES;
@@ -65,7 +70,7 @@ function emptyProfileModel() {
     name: '',
     email: '',
     gender: '',
-    mobile: '',
+    mobile: indianMobileDisplay(''),
     specialty: '',
     registrationNo: '',
     isAvailable: true,
@@ -516,8 +521,8 @@ export class ProfilePage implements OnDestroy {
     );
     const identityMissing = [
       !this.profileImageUrl ? 'profile photo' : '',
-      form.name.trim().length < 2 ? 'name' : '',
-      form.mobile.trim().length < 8 ? 'valid mobile number' : '',
+      !isProviderDisplayName(form.name) ? 'valid name' : '',
+      !indianMobileE164(form.mobile) ? 'valid 10-digit Indian mobile number' : '',
       !form.gender ? 'gender' : '',
       !form.specialty.trim() && !this.isPsychologist ? 'specialty/focus' : '',
     ].filter(Boolean);
@@ -555,8 +560,8 @@ export class ProfilePage implements OnDestroy {
         description: 'Add the essentials people need to recognise and trust you.',
         complete:
           Boolean(this.profileImageUrl) &&
-          form.name.trim().length >= 2 &&
-          form.mobile.trim().length >= 8 &&
+          isProviderDisplayName(form.name) &&
+          Boolean(indianMobileE164(form.mobile)) &&
           Boolean(form.gender) &&
           Boolean(form.specialty.trim() || this.isPsychologist),
         missing: identityMissing,
@@ -883,7 +888,7 @@ export class ProfilePage implements OnDestroy {
         name: profile.name || '',
         email: profile.email || '',
         gender: profile.gender || '',
-        mobile: profile.mobile || '',
+        mobile: indianMobileDisplay(profile.mobile),
         specialty: profile.doctorProfile?.specialty || '',
         registrationNo: profile.doctorProfile?.registrationNo || '',
         isAvailable: profile.doctorProfile?.isAvailable ?? true,
@@ -1078,7 +1083,7 @@ export class ProfilePage implements OnDestroy {
         step,
         name: form.name,
         gender: form.gender || null,
-        mobile: form.mobile,
+        mobile: indianMobileE164(form.mobile) || form.mobile,
         isAvailable: form.isAvailable,
         ...(this.canPrescribe ? { defaultMethodOptionId: form.defaultMethodOptionId || null } : {}),
       };

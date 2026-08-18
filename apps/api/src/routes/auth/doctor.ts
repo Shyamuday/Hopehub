@@ -50,6 +50,33 @@ import {
 
 const LISTENER_SAFETY_ACKNOWLEDGEMENT_VERSION = 'listener-safety-v1-2026-08-07';
 
+const indianMobileSchema = z
+  .string()
+  .trim()
+  .transform((value) => {
+    const digits = value.replace(/\D/g, '');
+    return digits.length === 12 && digits.startsWith('91')
+      ? `+91${digits.slice(2)}`
+      : `+91${digits}`;
+  })
+  .refine((value) => /^\+91[6-9]\d{9}$/.test(value), {
+    message: 'Enter a valid 10-digit Indian mobile number.'
+  });
+
+const providerDisplayNameSchema = z
+  .string()
+  .trim()
+  .min(2, 'Name must have at least 2 characters.')
+  .max(80, 'Name cannot exceed 80 characters.')
+  .regex(/[\p{L}]/u, 'Enter a valid name.');
+
+const providerPasswordSchema = z
+  .string()
+  .min(8, 'Password must have at least 8 characters.')
+  .max(128, 'Password is too long.')
+  .regex(/[A-Za-z]/, 'Password must include a letter.')
+  .regex(/\d/, 'Password must include a number.');
+
 function inferDoctorTypeFromSpecialty(specialty: string) {
   return /psycholog|counsell|counsel|therapist|mental/i.test(specialty)
     ? HomeopathicDoctorType.PSYCHOLOGIST
@@ -123,9 +150,9 @@ const mentalHealthProviderProfilePatchSchema = mentalHealthProviderProfileFields
 
 export const doctorProfileStepPatchSchema = z.object({
   step: z.enum(['identity', 'public', 'care', 'safety', 'services']),
-  name: z.string().trim().min(2).optional(),
+  name: providerDisplayNameSchema.optional(),
   gender: z.nativeEnum(PatientGender).optional().nullable(),
-  mobile: z.string().trim().min(8).optional().or(z.literal('')),
+  mobile: indianMobileSchema.optional().or(z.literal('')),
   specialty: z.string().trim().min(2).optional(),
   registrationNo: z.string().trim().optional().or(z.literal('')),
   isAvailable: z.boolean().optional(),
@@ -250,10 +277,10 @@ export function registerAuthDoctorRoutes(router: Router) {
     asyncRoute(async (req, res) => {
       const body = z
         .object({
-          name: z.string().min(2),
+          name: providerDisplayNameSchema,
           email: z.string().email(),
-          mobile: z.string().trim().min(8, 'Mobile number is required'),
-          password: z.string().min(8),
+          mobile: indianMobileSchema,
+          password: providerPasswordSchema,
           specialty: z.string().min(2).optional(),
           registrationNo: z.string().optional(),
           careTeamType: z.nativeEnum(CareTeamMemberType).optional(),
@@ -903,9 +930,9 @@ export function registerAuthDoctorRoutes(router: Router) {
     asyncRoute(async (req, res) => {
       const body = z
         .object({
-          name: z.string().min(2),
+          name: providerDisplayNameSchema,
           gender: z.nativeEnum(PatientGender).optional().nullable(),
-          mobile: z.string().min(8).optional().or(z.literal('')),
+          mobile: indianMobileSchema.optional().or(z.literal('')),
           specialty: z.string().min(2),
           registrationNo: z.string().optional().or(z.literal('')),
           isAvailable: z.boolean().optional().default(true),

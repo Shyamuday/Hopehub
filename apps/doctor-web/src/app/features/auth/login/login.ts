@@ -10,6 +10,14 @@ import { PH_PROVIDER_LANGUAGE } from '../../../core/constants/provider-language.
 import { Auth } from '../../../core/services/auth';
 import { DoctorSessionService } from '../../../core/services/doctor-session';
 import { AppButtonComponent } from '../../../shared/ui/app-button.component';
+import {
+  indianMobileDisplay,
+  indianMobileE164,
+} from '../../../core/constants/indian-mobile.constants';
+import {
+  isProviderDisplayName,
+  isStrongProviderPassword,
+} from '../../../core/constants/provider-input-validation.constants';
 
 @Component({
   selector: 'app-login',
@@ -43,7 +51,7 @@ export class Login {
 
   readonly enrollModel = signal({
     name: '',
-    mobile: '',
+    mobile: indianMobileDisplay(''),
     confirmPassword: '',
   });
   readonly enrollForm = form(this.enrollModel, (schema) => {
@@ -80,8 +88,9 @@ export class Login {
     return !!(
       !this.signInForm().invalid() &&
       !this.enrollForm().invalid() &&
-      enroll.mobile.trim().length >= 8 &&
-      password.length >= 8 &&
+      Boolean(indianMobileE164(enroll.mobile)) &&
+      isProviderDisplayName(enroll.name) &&
+      isStrongProviderPassword(password) &&
       password === enroll.confirmPassword
     );
   }
@@ -90,15 +99,17 @@ export class Login {
     const email = this.signInModel().email.trim();
     const { name, mobile } = this.enrollModel();
     return (
-      name.trim().length >= 2 &&
+      isProviderDisplayName(name) &&
       /^\S+@\S+\.\S+$/.test(email) &&
-      mobile.replace(/\D/g, '').length >= 8
+      Boolean(indianMobileE164(mobile))
     );
   }
 
   continueSignup(): void {
     if (!this.canContinueSignup()) {
-      this.error.set('Add your name, a valid email, and mobile number to continue.');
+      this.error.set(
+        'Add your name, a valid email, and a valid 10-digit Indian mobile number to continue.',
+      );
       return;
     }
     this.error.set('');
@@ -241,9 +252,19 @@ export class Login {
   }
 
   async enroll() {
-    if (!this.canSignup()) return;
+    if (!this.canSignup()) {
+      this.error.set(
+        'Use a real name and a password with at least 8 characters, including a letter and a number.',
+      );
+      return;
+    }
     const { email, password } = this.signInModel();
     const { name, mobile } = this.enrollModel();
+    const normalizedMobile = indianMobileE164(mobile);
+    if (!normalizedMobile) {
+      this.error.set('Enter a valid 10-digit Indian mobile number.');
+      return;
+    }
     this.error.set('');
     this.message.set('');
     this.submitting.set(true);
@@ -251,7 +272,7 @@ export class Login {
       const result = await this.auth.enrollDoctor({
         name,
         email,
-        mobile: mobile.trim(),
+        mobile: normalizedMobile,
         password,
         registrationNo: undefined,
       });

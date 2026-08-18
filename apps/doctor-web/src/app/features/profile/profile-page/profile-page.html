@@ -65,7 +65,14 @@
         <input id="email" name="email" [value]="profileModel().email" readonly />
 
         <label for="mobile">Mobile</label>
-        <input id="mobile" [formField]="profileForm.mobile" />
+        <input
+          id="mobile"
+          [formField]="profileForm.mobile"
+          type="tel"
+          inputmode="numeric"
+          autocomplete="tel"
+          placeholder="+91 98765 43210"
+        />
 
         <label for="gender">Gender</label>
         <select id="gender" [formField]="profileForm.gender">
