@@ -726,7 +726,7 @@ export async function handleTelegramCommunityVoiceChatEnded(message: CommunityTe
   const current = await prisma.telegramCommunityEvent.findFirst({
     where: {
       chatId,
-      status: 'SCHEDULED',
+      status: { in: ['SCHEDULED', 'IN_PROGRESS'] },
       startsAt: { lte: now, gte: new Date(now.getTime() - 4 * 60 * 60 * 1000) }
     },
     orderBy: { startsAt: 'desc' }
@@ -752,6 +752,28 @@ export async function handleTelegramCommunityVoiceChatEnded(message: CommunityTe
       }
     });
   }
+  return true;
+}
+
+/** Records that the scheduled Telegram voice chat was actually opened. */
+export async function handleTelegramCommunityVoiceChatStarted(message: CommunityTelegramMessage) {
+  if (!message.video_chat_started || !['group', 'supergroup'].includes(message.chat.type || '')) {
+    return false;
+  }
+  const now = new Date();
+  const current = await prisma.telegramCommunityEvent.findFirst({
+    where: {
+      chatId: String(message.chat.id),
+      status: 'SCHEDULED',
+      startsAt: { lte: now, gte: new Date(now.getTime() - 4 * 60 * 60 * 1000) }
+    },
+    orderBy: { startsAt: 'desc' }
+  });
+  if (!current) return false;
+  await prisma.telegramCommunityEvent.update({
+    where: { id: current.id },
+    data: { status: 'IN_PROGRESS' }
+  });
   return true;
 }
 
@@ -1184,14 +1206,31 @@ export async function refreshTelegramCommunityEventAnnouncement(eventId: string)
 export async function deleteTelegramCommunityEvent(eventId: string) {
   const event = await prisma.telegramCommunityEvent.findUnique({ where: { id: eventId } });
   if (!event) return false;
-  if (event.telegramMessageId) {
-    await callCommunityTelegramApi(CAMPAIGN_BOT, 'deleteMessage', {
+  await removeTelegramCommunityEventAnnouncement(event);
+  await prisma.telegramCommunityEvent.delete({ where: { id: event.id } });
+  return true;
+}
+
+/** Remove a stale event notice and its pin without deleting the event record. */
+export async function removeTelegramCommunityEventAnnouncement(event: {
+  chatId: string;
+  telegramMessageId: number | null;
+}) {
+  if (!event.telegramMessageId) return;
+  const pinKey = { bot_chatId: { bot: ANNOUNCEMENT_PIN_STATE, chatId: event.chatId } };
+  const pin = await prisma.telegramCommunityState.findUnique({ where: pinKey });
+  const pinnedMessageId = Number((pin?.payload as { messageId?: unknown } | null)?.messageId || 0);
+  if (pinnedMessageId === event.telegramMessageId) {
+    await callCommunityTelegramApi(CAMPAIGN_BOT, 'unpinChatMessage', {
       chat_id: event.chatId,
       message_id: event.telegramMessageId
     }).catch(() => null);
+    await prisma.telegramCommunityState.delete({ where: pinKey }).catch(() => null);
   }
-  await prisma.telegramCommunityEvent.delete({ where: { id: event.id } });
-  return true;
+  await callCommunityTelegramApi(CAMPAIGN_BOT, 'deleteMessage', {
+    chat_id: event.chatId,
+    message_id: event.telegramMessageId
+  }).catch(() => null);
 }
 
 export async function handleTelegramCommunityEventCallback(update: CommunityTelegramUpdate) {
