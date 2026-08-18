@@ -29,6 +29,7 @@ import { COMMUNITY_BOT_SLUGS } from '../constants/telegram-community-bot.constan
 
 const slug = COMMUNITY_BOT_SLUGS.CONTACT;
 const SUPPORT_GROUP_CONFIG_KEY = 'telegramContactSupportGroupId';
+const COMMUNITY_GROUP_CONFIG_KEY = 'telegramGroupHelpGroupChatId';
 const MAX_CONTACT_ATTACHMENT_BYTES = 20 * 1024 * 1024;
 
 async function supportGroupId() {
@@ -40,6 +41,147 @@ async function supportGroupId() {
     process.env.SUPPORT_GROUP_ID?.trim() ||
     process.env.ADMIN_CHAT_ID?.trim() ||
     ''
+  );
+}
+
+async function communityGroupId() {
+  return (await getSiteConfigValue(COMMUNITY_GROUP_CONFIG_KEY)).trim();
+}
+
+async function isSupportGroupAdmin(chatId: string | number, userId: number) {
+  const member = await callCommunityTelegramApi<{ status?: string }>(slug, 'getChatMember', {
+    chat_id: chatId,
+    user_id: userId
+  });
+  return ['creator', 'administrator'].includes(member.status || '');
+}
+
+type TicketAccessAction = 'ban' | 'kick' | 'mute' | 'unban' | 'unmute';
+
+async function applyCommunityMemberAccess(
+  userChatId: string,
+  action: TicketAccessAction,
+  muteMinutes = 60
+) {
+  const managedGroupId = await communityGroupId();
+  if (!managedGroupId) {
+    throw new Error('The Hope Hub community group is not connected in Group Help settings.');
+  }
+  const userId = Number(userChatId);
+  if (!Number.isSafeInteger(userId))
+    throw new Error('The ticket does not contain a valid Telegram member ID.');
+
+  if (action === 'ban' || action === 'kick') {
+    await callCommunityTelegramApi(COMMUNITY_BOT_SLUGS.GROUP_HELP, 'banChatMember', {
+      chat_id: managedGroupId,
+      user_id: userId,
+      revoke_messages: false
+    });
+    if (action === 'kick') {
+      await callCommunityTelegramApi(COMMUNITY_BOT_SLUGS.GROUP_HELP, 'unbanChatMember', {
+        chat_id: managedGroupId,
+        user_id: userId,
+        only_if_banned: true
+      });
+    }
+    return;
+  }
+  if (action === 'unban') {
+    await callCommunityTelegramApi(COMMUNITY_BOT_SLUGS.GROUP_HELP, 'unbanChatMember', {
+      chat_id: managedGroupId,
+      user_id: userId,
+      only_if_banned: true
+    });
+    return;
+  }
+
+  if (action === 'mute') {
+    await callCommunityTelegramApi(COMMUNITY_BOT_SLUGS.GROUP_HELP, 'restrictChatMember', {
+      chat_id: managedGroupId,
+      user_id: userId,
+      permissions: { can_send_messages: false },
+      until_date: Math.floor(Date.now() / 1000) + Math.max(1, Math.min(muteMinutes, 10_080)) * 60
+    });
+    return;
+  }
+
+  const community = await callCommunityTelegramApi<{ permissions?: Record<string, boolean> }>(
+    COMMUNITY_BOT_SLUGS.GROUP_HELP,
+    'getChat',
+    { chat_id: managedGroupId }
+  );
+  await callCommunityTelegramApi(COMMUNITY_BOT_SLUGS.GROUP_HELP, 'restrictChatMember', {
+    chat_id: managedGroupId,
+    user_id: userId,
+    permissions: community.permissions || {
+      can_send_messages: true,
+      can_send_audios: true,
+      can_send_documents: true,
+      can_send_photos: true,
+      can_send_videos: true,
+      can_send_video_notes: true,
+      can_send_voice_notes: true,
+      can_send_polls: true,
+      can_send_other_messages: true,
+      can_add_web_page_previews: true,
+      can_change_info: false,
+      can_invite_users: true,
+      can_pin_messages: false,
+      can_manage_topics: false
+    }
+  });
+}
+
+function ticketModerationKeyboard(ticket: {
+  category: string | null;
+  reference: string;
+}): TelegramKeyboard | undefined {
+  if (ticket.category !== 'cat_complaint') return undefined;
+  return {
+    inline_keyboard: [
+      [
+        { text: '🔓 Unban sender', callback_data: `member_unban_${ticket.reference}` },
+        { text: '🔊 Unmute sender', callback_data: `member_unmute_${ticket.reference}` }
+      ]
+    ]
+  };
+}
+
+async function applyTicketModerationAction(input: {
+  chatId: string | number;
+  actorId: number;
+  reference: string;
+  action: TicketAccessAction;
+  muteMinutes?: number;
+  replyToMessageId?: number;
+}) {
+  const groupId = await supportGroupId();
+  if (String(input.chatId) !== groupId) {
+    throw new Error('Use this action from the private Hope Hub support group.');
+  }
+  if (!(await isSupportGroupAdmin(input.chatId, input.actorId))) {
+    throw new Error('Only a support-group administrator can change a member’s access.');
+  }
+  const ticket = await findCommunitySubmission(input.reference);
+  if (!ticket || ticket.bot !== slug || String(ticket.groupChatId) !== groupId) {
+    throw new Error('That support ticket could not be found.');
+  }
+  await applyCommunityMemberAccess(ticket.userChatId, input.action, input.muteMinutes);
+  const verb =
+    input.action === 'unban'
+      ? 'unbanned'
+      : input.action === 'unmute'
+        ? 'unmuted'
+        : input.action === 'ban'
+          ? 'banned'
+          : input.action === 'kick'
+            ? 'removed'
+            : `muted for ${input.muteMinutes || 60} minutes`;
+  await sendCommunityMessage(
+    slug,
+    input.chatId,
+    `✅ The ticket sender has been ${verb} in the Hope Hub community.`,
+    input.replyToMessageId ? { reply_to_message_id: input.replyToMessageId } : {}
   );
 }
 
@@ -195,6 +337,28 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
     const stateKey = keyOf(chatId);
     const data = callback.data;
     await answerCommunityCallback(slug, callback.id);
+    const moderationMatch = /^member_(unban|unmute)_(.+)$/.exec(data);
+    if (moderationMatch) {
+      try {
+        await applyTicketModerationAction({
+          chatId,
+          actorId: callback.from.id,
+          reference: moderationMatch[2],
+          action: moderationMatch[1] as 'unban' | 'unmute',
+          replyToMessageId: callback.message.message_id
+        });
+      } catch (error) {
+        await sendCommunityMessage(
+          slug,
+          chatId,
+          error instanceof Error
+            ? `⚠️ ${error.message}`
+            : '⚠️ Could not change this member’s access.',
+          { reply_to_message_id: callback.message.message_id }
+        );
+      }
+      return;
+    }
     if (data === 'cancel') {
       await clearCommunityState(slug, stateKey);
       await sendCommunityMessage(
@@ -255,7 +419,6 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
         return;
       }
       let sent: { message_id: number };
-      let replyTargetMessageId: number;
       const preview = await getCommunityState<ContactPreviewState>(slug, stateKey);
       const mediaMessageId =
         preview?.state === 'preview' && preview.payload?.ticketId === ticketId
@@ -265,21 +428,16 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
         sent = await sendCommunityMessage(
           slug,
           groupId,
-          `📬 New Message — ${categoryLabels[ticket.category || ''] || ticket.category}\n\n🆔 ${ticket.reference}\n👤 From: ${ticket.firstName || 'Telegram user'}${ticket.username ? ` (${ticket.username})` : ''}\nTelegram ID: ${ticket.userChatId}\n🕐 ${ticket.createdAt.toLocaleString()}\n━━━━━━━━━━━━━━\n\n${ticket.text}\n\n━━━━━━━━━━━━━━\nReply to this message in the group to respond to the user.`
+          `📬 New Message — ${categoryLabels[ticket.category || ''] || ticket.category}\n\n🆔 ${ticket.reference}\n👤 From: ${ticket.firstName || 'Telegram user'}${ticket.username ? ` (${ticket.username})` : ''}\nTelegram ID: ${ticket.userChatId}\n🕐 ${ticket.createdAt.toLocaleString()}\n━━━━━━━━━━━━━━\n\n${ticket.text}\n\n━━━━━━━━━━━━━━\nReply to this message in the group to respond to the user.${ticket.category === 'cat_complaint' ? '\n\nFor an access complaint, use the buttons below or reply with /unban or /unmute. Support admins can also reply with /ban, /kick, or /mute 60.' : ''}`,
+          { reply_markup: ticketModerationKeyboard(ticket) }
         );
-        replyTargetMessageId = sent.message_id;
         if (mediaMessageId) {
-          const copied = await callCommunityTelegramApi<{ message_id: number }>(
-            slug,
-            'copyMessage',
-            {
-              chat_id: groupId,
-              from_chat_id: ticket.userChatId,
-              message_id: mediaMessageId,
-              reply_to_message_id: sent.message_id
-            }
-          );
-          replyTargetMessageId = copied.message_id;
+          await callCommunityTelegramApi<{ message_id: number }>(slug, 'copyMessage', {
+            chat_id: groupId,
+            from_chat_id: ticket.userChatId,
+            message_id: mediaMessageId,
+            reply_to_message_id: sent.message_id
+          });
         }
       } catch (error) {
         console.error('[telegram-contact] Could not forward submitted ticket.', error);
@@ -293,7 +451,7 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
       await updateCommunitySubmission(ticketId, {
         status: 'open',
         groupChatId: keyOf(groupId),
-        groupMessageId: replyTargetMessageId
+        groupMessageId: sent.message_id
       });
       await clearCommunityState(slug, stateKey);
       await sendCommunityMessage(
@@ -330,6 +488,37 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
   if (message.text && isCommand(text, 'setsupport') && (await linkSupportGroup(message))) return;
 
   const groupId = await supportGroupId();
+  const moderationCommand =
+    message.text &&
+    /^\/(ban|kick|mute|unban|unmute)(?:@[A-Za-z0-9_]+)?(?:\s+(\d{1,5}))?(?:\s|$)/i.exec(text);
+  if (keyOf(chatId) === groupId && message.reply_to_message && moderationCommand && message.from) {
+    const ticket = await submissionForGroupMessage(
+      slug,
+      stateKey,
+      message.reply_to_message.message_id
+    );
+    if (!ticket) return;
+    try {
+      await applyTicketModerationAction({
+        chatId,
+        actorId: message.from.id,
+        reference: ticket.reference,
+        action: moderationCommand[1].toLowerCase() as TicketAccessAction,
+        muteMinutes: moderationCommand[2] ? Number(moderationCommand[2]) : undefined,
+        replyToMessageId: message.message_id
+      });
+    } catch (error) {
+      await sendCommunityMessage(
+        slug,
+        chatId,
+        error instanceof Error
+          ? `⚠️ ${error.message}`
+          : '⚠️ Could not change this member’s access.',
+        { reply_to_message_id: message.message_id }
+      );
+    }
+    return;
+  }
   if (keyOf(chatId) === groupId && message.reply_to_message) {
     const ticket = await submissionForGroupMessage(
       slug,

@@ -22,7 +22,12 @@ const COMMUNITY_BOTS: Record<
       { command: 'status', description: 'Check your latest message' },
       { command: 'cancel', description: 'Cancel current message' },
       { command: 'help', description: 'Contact bot help' },
-      { command: 'setsupport', description: 'Connect a private support group (admins)' }
+      { command: 'setsupport', description: 'Connect a private support group (admins)' },
+      { command: 'ban', description: 'Ban a ticket sender (support admins)' },
+      { command: 'kick', description: 'Remove a ticket sender (support admins)' },
+      { command: 'mute', description: 'Mute a ticket sender (support admins)' },
+      { command: 'unban', description: 'Unban a ticket sender (support admins)' },
+      { command: 'unmute', description: 'Unmute a ticket sender (support admins)' }
     ],
     allowedUpdates: ['message', 'callback_query', 'my_chat_member']
   },
@@ -67,6 +72,7 @@ const COMMUNITY_BOTS: Record<
       { command: 'report', description: 'Report a message to admins' },
       { command: 'warnings', description: 'Check your warnings' },
       { command: 'settestgroup', description: 'Register this group for bot testing (admins)' },
+      { command: 'setlog', description: 'Use this private group for moderation logs (admins)' },
       { command: 'help', description: 'Community bot help' }
     ],
     allowedUpdates: [
@@ -189,6 +195,10 @@ export async function setupCommunityBot(input: {
 }) {
   const config = COMMUNITY_BOTS[input.slug];
   await callCommunityTelegramApi(input.slug, 'setMyCommands', { commands: config.commands });
+  // Community bots use their inline keyboards, not a stale global web-app menu button.
+  await callCommunityTelegramApi(input.slug, 'setChatMenuButton', {
+    menu_button: { type: 'default' }
+  });
   return callCommunityTelegramApi(input.slug, 'setWebhook', {
     url: `${input.publicApiUrl.replace(/\/$/, '')}/telegram/webhook/${input.slug}`,
     secret_token: input.webhookSecret || undefined,

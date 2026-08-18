@@ -33,6 +33,7 @@ export const TELEGRAM_BOT_CONTROL_DEFAULTS = {
   telegramConfessionApprovalGroupId: '',
   telegramConfessionChannelId: '',
   telegramConfessionChannelName: 'Hope Hub Anonymous Confessions',
+  telegramConfessionChannelUrl: '',
   telegramConfessionStartNumber: '1000',
   telegramConfessionMenuLinks:
     '💙 HopeHub | https://hopehub.in | primary\n🆘 Get Help | https://hopehub.in/contact | danger',
@@ -193,6 +194,14 @@ export const TELEGRAM_BOT_CONTROL_META: Record<TelegramBotControlKey, TelegramBo
     group: 'Confession bot',
     type: 'text',
     maxLength: 120
+  },
+  telegramConfessionChannelUrl: {
+    label: 'Public channel link',
+    description:
+      'Link used by the community-group button so members can read every approved confession.',
+    group: 'Confession bot',
+    type: 'text',
+    maxLength: 500
   },
   telegramConfessionStartNumber: {
     label: 'Starting confession number',

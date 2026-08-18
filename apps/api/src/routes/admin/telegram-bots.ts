@@ -50,10 +50,7 @@ import {
   sendCommunityMessage
 } from '../../services/telegram-community-bots.client.js';
 import { configuredUrlKeyboard } from '../../services/telegram-keyboard-config.js';
-import {
-  confessionDestinationLabel,
-  publishedConfessionText
-} from '../../services/telegram-confession-bot.js';
+import { publishApprovedConfession } from '../../services/telegram-confession-bot.js';
 import {
   announceTelegramCommunityEvent,
   deleteTelegramCommunityEvent,
@@ -814,7 +811,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
     authRequired,
     allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (_req, res) => {
-      const [values, actionHistory] = await Promise.all([
+      const [values, actionHistory, openCases, groupPolicies] = await Promise.all([
         groupHelpConfigMap(),
         prisma.auditLog.findMany({
           where: {
@@ -826,6 +823,12 @@ export function registerAdminTelegramBotRoutes(router: Router) {
           select: { id: true, action: true, targetId: true, summary: true, createdAt: true },
           orderBy: { createdAt: 'desc' },
           take: 50
+        }),
+        prisma.telegramCommunityModerationCase.count({ where: { status: 'OPEN' } }),
+        prisma.telegramCommunityGroupPolicy.findMany({
+          select: { chatId: true, lockdownUntil: true, updatedAt: true },
+          orderBy: { updatedAt: 'desc' },
+          take: 10
         })
       ]);
       res.json({
@@ -833,6 +836,14 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         actions: GROUP_HELP_ACTIONS,
         capabilityGroups: GROUP_HELP_CAPABILITY_GROUPS,
         actionHistory,
+        operationalHealth: {
+          mainGroupConnected: Boolean(values.telegramGroupHelpGroupChatId?.trim()),
+          testGroupConnected: Boolean(values.telegramGroupHelpTestGroupChatId?.trim()),
+          logGroupConnected: Boolean(values.telegramGroupHelpLogChannelId?.trim()),
+          staffGroupConnected: Boolean(values.telegramGroupHelpStaffGroupId?.trim()),
+          openModerationCases: openCases,
+          policies: groupPolicies
+        },
         config: GROUP_HELP_CONFIG_KEYS.map((key) => ({
           ...GROUP_HELP_CONFIG_META[key],
           value: values[key] ?? GROUP_HELP_CONFIG_DEFAULTS[key] ?? ''
@@ -1453,44 +1464,12 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         return res.status(404).json({ message: 'Pending confession not found.' });
       }
       const approved = parsed.data.action === 'APPROVE';
-      const destinationNames: string[] = [];
+      let destinationNames: string[] = [];
       if (approved) {
-        const values = await groupHelpConfigMap();
-        if (
-          values.telegramCommunityConfessionsInGroup !== 'Disabled' &&
-          values.telegramGroupHelpGroupChatId?.trim()
-        ) {
-          let groupName = 'Hope Hub Community';
-          try {
-            const group = await callCommunityTelegramApi<{ title?: string; username?: string }>(
-              COMMUNITY_BOT_SLUGS.RULES,
-              'getChat',
-              { chat_id: values.telegramGroupHelpGroupChatId.trim() }
-            );
-            groupName = group.title || (group.username ? `@${group.username}` : groupName);
-          } catch {
-            /* Keep the configured fallback display name. */
-          }
-          await sendCommunityMessage(
-            COMMUNITY_BOT_SLUGS.RULES,
-            values.telegramGroupHelpGroupChatId.trim(),
-            publishedConfessionText({ text: submission.text, destinationName: groupName }),
-            {
-              message_thread_id: Number(values.telegramCommunityDefaultTopicId) || undefined
-            }
-          );
-          destinationNames.push(groupName);
-        }
-        const confessionChannel = process.env.TELEGRAM_CONFESSION_CHANNEL_ID?.trim();
-        if (confessionChannel) {
-          const channelName = await confessionDestinationLabel(confessionChannel);
-          await sendCommunityMessage(
-            COMMUNITY_BOT_SLUGS.CONFESSION,
-            confessionChannel,
-            publishedConfessionText({ text: submission.text, destinationName: channelName })
-          );
-          destinationNames.push(channelName);
-        }
+        destinationNames = await publishApprovedConfession({
+          text: submission.text,
+          serial: submission.serial
+        });
       }
       const updated = await prisma.telegramCommunitySubmission.update({
         where: { reference },

@@ -22,7 +22,12 @@ import {
   type TelegramBotControls
 } from './telegram-bot-controls.js';
 import { configuredUrlButtons } from './telegram-keyboard-config.js';
-import { COMMUNITY_BOT_SLUGS } from '../constants/telegram-community-bot.constants.js';
+import {
+  COMMUNITY_BOT_SLUGS,
+  TELEGRAM_BOT_URLS
+} from '../constants/telegram-community-bot.constants.js';
+import { GROUP_HELP_CONFIG_DEFAULTS } from '../constants/group-help-config.constants.js';
+import { prisma } from '../db.js';
 
 const slug = COMMUNITY_BOT_SLUGS.CONFESSION;
 const keyOf = (value: string | number) => String(value);
@@ -47,6 +52,7 @@ function confessionRouting(controls: TelegramBotControls) {
       controls.telegramConfessionChannelName.trim() ||
       process.env.TELEGRAM_CONFESSION_CHANNEL_NAME?.trim() ||
       'Hope Hub Anonymous Confessions',
+    channelUrl: controls.telegramConfessionChannelUrl.trim(),
     startNumber: controlNumber(controls.telegramConfessionStartNumber, 1000)
   };
 }
@@ -68,6 +74,19 @@ export async function confessionDestinationLabel(target: string, configuredName?
   }
 }
 
+async function confessionChannelUrl(target: string, configuredUrl: string) {
+  if (/^https:\/\//i.test(configuredUrl)) return configuredUrl;
+  if (target.startsWith('@')) return `https://t.me/${target.slice(1)}`;
+  try {
+    const chat = await callCommunityTelegramApi<{ username?: string }>(slug, 'getChat', {
+      chat_id: target
+    });
+    return chat.username ? `https://t.me/${chat.username}` : '';
+  } catch {
+    return '';
+  }
+}
+
 export function publishedConfessionText(input: {
   text: string;
   destinationName: string;
@@ -81,6 +100,87 @@ export function publishedConfessionText(input: {
     '━━━━━━━━━━━━━━',
     `💙 ${input.destinationName}`
   ].join('\n');
+}
+
+export async function publishApprovedConfession(input: {
+  text: string;
+  serial: bigint;
+}): Promise<string[]> {
+  const controls = await getTelegramBotControls();
+  const routing = confessionRouting(controls);
+  if (!routing.channelId) throw new Error('A confession publishing channel is not configured.');
+
+  const number = confessionNumber(input.serial, routing.startNumber);
+  const channelName = await confessionDestinationLabel(routing.channelId, routing.channelName);
+  await sendCommunityMessage(
+    slug,
+    routing.channelId,
+    publishedConfessionText({ text: input.text, number, destinationName: channelName }),
+    {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            { text: '🌐 Hope Hub', url: 'https://hopehub.in' },
+            { text: '🩷 Write your confession', url: TELEGRAM_BOT_URLS.CONFESSION }
+          ]
+        ]
+      }
+    }
+  );
+
+  const destinations = [channelName];
+  const groupConfigRows = await prisma.siteConfig.findMany({
+    where: {
+      key: {
+        in: [
+          'telegramCommunityConfessionsInGroup',
+          'telegramGroupHelpGroupChatId',
+          'telegramCommunityDefaultTopicId'
+        ]
+      }
+    },
+    select: { key: true, value: true }
+  });
+  const groupConfig = {
+    ...GROUP_HELP_CONFIG_DEFAULTS,
+    ...Object.fromEntries(groupConfigRows.map((row) => [row.key, row.value]))
+  };
+  const groupChatId = groupConfig.telegramGroupHelpGroupChatId?.trim();
+  if (groupConfig.telegramCommunityConfessionsInGroup === 'Disabled' || !groupChatId) {
+    return destinations;
+  }
+
+  try {
+    const groupName = await confessionDestinationLabel(groupChatId, 'Hope Hub Community');
+    const channelUrl = await confessionChannelUrl(routing.channelId, routing.channelUrl);
+    await sendCommunityMessage(
+      COMMUNITY_BOT_SLUGS.GROUP_HELP,
+      groupChatId,
+      publishedConfessionText({ text: input.text, number, destinationName: groupName }),
+      {
+        message_thread_id: Number(groupConfig.telegramCommunityDefaultTopicId) || undefined,
+        reply_markup: channelUrl
+          ? {
+              inline_keyboard: [
+                [
+                  { text: '📖 Read all', url: channelUrl },
+                  { text: '🩷 Write yours', url: TELEGRAM_BOT_URLS.CONFESSION }
+                ]
+              ]
+            }
+          : {
+              inline_keyboard: [
+                [{ text: '🩷 Write your confession', url: TELEGRAM_BOT_URLS.CONFESSION }]
+              ]
+            }
+      }
+    );
+    destinations.push(groupName);
+  } catch (error) {
+    // A channel publication remains valid even if an optional group mirror is unavailable.
+    console.error('Could not mirror approved confession to the Hope Hub group.', error);
+  }
+  return destinations;
 }
 
 function mainKeyboard(controls: TelegramBotControls): TelegramKeyboard {
@@ -225,18 +325,7 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
         return;
       }
       if (approved) {
-        const target = routing.channelId;
-        if (!target) throw new Error('TELEGRAM_CONFESSION_CHANNEL_ID is not configured.');
-        const destinationName = await confessionDestinationLabel(target, routing.channelName);
-        await sendCommunityMessage(
-          slug,
-          target,
-          publishedConfessionText({
-            text: confession.text,
-            number: confessionNumber(confession.serial, routing.startNumber),
-            destinationName
-          })
-        );
+        await publishApprovedConfession({ text: confession.text, serial: confession.serial });
       }
       await updateCommunitySubmission(confession.reference, {
         status: approved ? 'approved' : 'rejected'
@@ -252,14 +341,11 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
         ]
       });
       try {
-        const destinationName = approved
-          ? await confessionDestinationLabel(routing.channelId, routing.channelName)
-          : null;
         await sendCommunityMessage(
           slug,
           confession.userChatId,
           approved
-            ? `💙 Your confession has been approved and published anonymously in ${destinationName}.`
+            ? '💙 Your confession has been approved and published anonymously.'
             : `Your confession wasn't approved for publication at this time.`,
           {
             reply_markup: mainKeyboard(controls)

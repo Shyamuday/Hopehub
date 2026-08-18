@@ -27,10 +27,16 @@ export type CommunityTelegramMessage = {
   message_thread_id?: number;
   new_chat_members?: CommunityTelegramUser[];
   left_chat_member?: CommunityTelegramUser;
-  reply_to_message?: { message_id: number };
+  reply_to_message?: {
+    message_id: number;
+    text?: string;
+    caption?: string;
+    from?: CommunityTelegramUser;
+  };
   forward_origin?: unknown;
   forward_from?: CommunityTelegramUser;
   forward_from_chat?: { id: number | string };
+  sender_chat?: { id: number | string; title?: string; username?: string };
   photo?: CommunityTelegramFile[];
   video?: CommunityTelegramFile;
   video_note?: CommunityTelegramFile;

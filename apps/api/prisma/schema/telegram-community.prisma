@@ -223,3 +223,35 @@ model TelegramCommunityMessageCleanup {
   @@unique([bot, chatId, messageId])
   @@index([deleteAfter])
 }
+
+model TelegramCommunityGroupPolicy {
+  id              String   @id @default(cuid())
+  chatId          String   @unique
+  settings        Json
+  lockdownUntil   DateTime?
+  lockdownReason  String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([lockdownUntil])
+}
+
+model TelegramCommunityModerationCase {
+  id                String   @id @default(cuid())
+  chatId            String
+  sourceMessageId   Int?
+  reportedMessageId Int?
+  reporterUserId    String?
+  targetUserId      String?
+  reason            String
+  evidence          String?  @db.Text
+  status            String   @default("OPEN")
+  action            String?
+  resolvedByUserId  String?
+  resolvedAt        DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([chatId, status, createdAt])
+  @@index([targetUserId, createdAt])
+}
