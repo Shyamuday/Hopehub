@@ -181,6 +181,21 @@ export class GroupHelpPage {
   readonly eventJoinUrl = signal('https://t.me/hopehubindia');
   readonly eventStartsAt = signal('');
   readonly eventReminderMinutes = signal(30);
+  readonly eventRecurrence = signal<'ONCE' | 'DAILY' | 'WEEKDAYS' | 'WEEKLY'>('ONCE');
+  readonly eventOccurrences = signal(7);
+  readonly eventRecurrenceOptions: FormDropdownOption[] = [
+    { value: 'ONCE', label: 'One voice circle' },
+    { value: 'DAILY', label: 'Every day' },
+    { value: 'WEEKDAYS', label: 'Weekdays only' },
+    { value: 'WEEKLY', label: 'Every week' },
+  ];
+  readonly eventOccurrencesOptions: FormDropdownOption[] = [
+    { value: '3', label: 'Create next 3 sessions' },
+    { value: '7', label: 'Create next 7 sessions' },
+    { value: '14', label: 'Create next 14 sessions' },
+    { value: '30', label: 'Create next 30 sessions' },
+    { value: '90', label: 'Create next 90 sessions' },
+  ];
   readonly eventReminderOptions: FormDropdownOption[] = [
     { value: '15', label: '15 minutes before' },
     { value: '30', label: '30 minutes before' },
@@ -631,6 +646,8 @@ export class GroupHelpPage {
     this.eventJoinUrl.set('https://t.me/hopehubindia');
     this.eventStartsAt.set('');
     this.eventReminderMinutes.set(30);
+    this.eventRecurrence.set('ONCE');
+    this.eventOccurrences.set(7);
   }
 
   editCommunityEvent(event: any) {
@@ -644,6 +661,7 @@ export class GroupHelpPage {
       new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16),
     );
     this.eventReminderMinutes.set(event.reminderMinutes);
+    this.eventRecurrence.set('ONCE');
   }
 
   async saveCommunityEvent() {
@@ -660,13 +678,21 @@ export class GroupHelpPage {
         joinUrl: this.eventJoinUrl().trim(),
         startsAt: new Date(this.eventStartsAt()).toISOString(),
         reminderMinutes: Number(this.eventReminderMinutes()),
+        recurrence: this.eventRecurrence(),
+        occurrences: Number(this.eventOccurrences()),
       };
       const id = this.editingEventId();
       if (id) await this.api.updateTelegramCommunityEvent(id, payload);
       else await this.api.createTelegramCommunityEvent(payload);
       this.resetEventForm();
       await this.loadCampaigns();
-      this.message.set(id ? 'Voice circle updated.' : 'Voice circle announced.');
+      this.message.set(
+        id
+          ? 'Voice circle updated.'
+          : this.eventRecurrence() === 'ONCE'
+            ? 'Voice circle announced.'
+            : 'Voice circle schedule created.',
+      );
     } catch (error: any) {
       this.error.set(error?.error?.message || 'Could not save voice circle.');
     } finally {

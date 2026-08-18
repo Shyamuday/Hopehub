@@ -237,7 +237,9 @@ const communityEventSchema = z.object({
   joinUrl: z.string().trim().url(),
   startsAt: z.coerce.date(),
   reminderMinutes: z.number().int().min(5).max(10_080).default(30),
-  chatId: z.string().trim().max(80).optional()
+  chatId: z.string().trim().max(80).optional(),
+  recurrence: z.enum(['ONCE', 'DAILY', 'WEEKDAYS', 'WEEKLY']).default('ONCE'),
+  occurrences: z.number().int().min(1).max(90).default(1)
 });
 
 const confessionReviewSchema = z.object({ action: z.enum(['APPROVE', 'REJECT']) });
@@ -1648,19 +1650,38 @@ export function registerAdminTelegramBotRoutes(router: Router) {
       const values = await groupHelpConfigMap();
       const chatId = parsed.data.chatId || values.telegramGroupHelpGroupChatId?.trim();
       if (!chatId) return res.status(400).json({ message: 'Telegram group chat ID is required.' });
-      const event = await prisma.telegramCommunityEvent.create({
-        data: { ...parsed.data, chatId, createdById: req.user!.id }
-      });
-      await announceTelegramCommunityEvent(event.id);
+      const { recurrence, occurrences, ...eventData } = parsed.data;
+      const total = recurrence === 'ONCE' ? 1 : occurrences;
+      const startsAt = (index: number) => {
+        const date = new Date(eventData.startsAt);
+        if (recurrence === 'DAILY') date.setDate(date.getDate() + index);
+        if (recurrence === 'WEEKLY') date.setDate(date.getDate() + index * 7);
+        if (recurrence === 'WEEKDAYS') {
+          let remaining = index;
+          while (remaining > 0) {
+            date.setDate(date.getDate() + 1);
+            if (![0, 6].includes(date.getDay())) remaining--;
+          }
+        }
+        return date;
+      };
+      const events = await prisma.$transaction(
+        Array.from({ length: total }, (_, index) =>
+          prisma.telegramCommunityEvent.create({
+            data: { ...eventData, startsAt: startsAt(index), chatId, createdById: req.user!.id }
+          })
+        )
+      );
+      await announceTelegramCommunityEvent(events[0].id);
       await writeAuditLog({
         actorId: req.user!.id,
         actorRole: req.user!.role,
         action: 'telegram_community_event.create',
         targetType: 'telegram_community_event',
-        targetId: event.id,
-        summary: `Created Telegram event “${event.title}”.`
+        targetId: events[0].id,
+        summary: `Created ${events.length} Telegram event${events.length === 1 ? '' : 's'} for “${events[0].title}”.`
       });
-      res.status(201).json({ event });
+      res.status(201).json({ event: events[0], events });
     })
   );
 
@@ -1679,10 +1700,11 @@ export function registerAdminTelegramBotRoutes(router: Router) {
       const values = await groupHelpConfigMap();
       const chatId = parsed.data.chatId || values.telegramGroupHelpGroupChatId?.trim();
       if (!chatId) return res.status(400).json({ message: 'Telegram group chat ID is required.' });
+      const { recurrence: _recurrence, occurrences: _occurrences, ...eventData } = parsed.data;
       const event = await prisma.telegramCommunityEvent.update({
         where: { id },
         data: {
-          ...parsed.data,
+          ...eventData,
           chatId,
           reminderSentAt: null,
           status: 'SCHEDULED'

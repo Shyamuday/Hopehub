@@ -1057,7 +1057,11 @@ export async function handleTelegramCommunityEventCallback(update: CommunityTele
 
 async function runTelegramCommunityEventScheduler(now: Date) {
   const unannounced = await prisma.telegramCommunityEvent.findMany({
-    where: { status: 'SCHEDULED', announcedAt: null, startsAt: { gt: now } },
+    where: {
+      status: 'SCHEDULED',
+      announcedAt: null,
+      startsAt: { gt: now, lte: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000) }
+    },
     take: 10
   });
   await Promise.allSettled(unannounced.map((event) => announceTelegramCommunityEvent(event.id)));

@@ -604,6 +604,26 @@
               (ngModelChange)="eventReminderMinutes.set(+$event)"
             ></app-form-dropdown>
           </label>
+          @if (!editingEventId()) {
+            <label>
+              Repeat
+              <app-form-dropdown
+                [options]="eventRecurrenceOptions"
+                [ngModel]="eventRecurrence()"
+                (ngModelChange)="eventRecurrence.set($any($event))"
+              ></app-form-dropdown>
+            </label>
+            @if (eventRecurrence() !== 'ONCE') {
+              <label>
+                Upcoming sessions
+                <app-form-dropdown
+                  [options]="eventOccurrencesOptions"
+                  [ngModel]="eventOccurrences() + ''"
+                  (ngModelChange)="eventOccurrences.set(+$event)"
+                ></app-form-dropdown>
+              </label>
+            }
+          }
           <button type="submit" class="primary" [disabled]="eventSaving()">
             {{ eventSaving() ? 'Saving…' : editingEventId() ? 'Update event' : 'Announce event' }}
           </button>
