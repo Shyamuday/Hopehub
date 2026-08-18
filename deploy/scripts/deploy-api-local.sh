@@ -188,8 +188,8 @@ npm run prisma:deploy
 # Telegram's native scheduled voice chats use a separate user-account session.
 # Keep that session isolated from the API process and only enable the timer once
 # an administrator has completed the one-time OTP login on this server.
-sudo install -m 644 deploy/systemd/hopehub-telegram-voice-scheduler.service /etc/systemd/system/hopehub-telegram-voice-scheduler.service
-sudo install -m 644 deploy/systemd/hopehub-telegram-voice-scheduler.timer /etc/systemd/system/hopehub-telegram-voice-scheduler.timer
+sudo install -m 644 "$APP_DIR/deploy/systemd/hopehub-telegram-voice-scheduler.service" /etc/systemd/system/hopehub-telegram-voice-scheduler.service
+sudo install -m 644 "$APP_DIR/deploy/systemd/hopehub-telegram-voice-scheduler.timer" /etc/systemd/system/hopehub-telegram-voice-scheduler.timer
 sudo systemctl daemon-reload
 if sudo test -s /etc/hopehub-telegram-user-session; then
   sudo systemctl enable --now hopehub-telegram-voice-scheduler.timer
