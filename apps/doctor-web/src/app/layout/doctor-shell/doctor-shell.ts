@@ -34,9 +34,13 @@ import {
 import {
   DoctorRealtimeService,
   type ConsultationAssignedPayload,
+  type ConsultationUpdatedPayload,
 } from '../../core/services/doctor-realtime.service';
 import { DoctorSessionService } from '../../core/services/doctor-session';
-import { OnlineDoctorService } from '../../core/services/online-doctor.service';
+import {
+  OnlineDoctorService,
+  type InstantConsultationSummary,
+} from '../../core/services/online-doctor.service';
 
 export type DoctorBottomNavItem = {
   id: string;
@@ -101,6 +105,8 @@ export class DoctorShell implements OnInit, OnDestroy {
   private readonly http = inject(HttpClient);
   private navSubscription?: { unsubscribe: () => void };
   private incomingCountdownTimer: ReturnType<typeof setInterval> | null = null;
+  private incomingRecoveryTimer: ReturnType<typeof setInterval> | null = null;
+  private incomingBrowserNotification: Notification | null = null;
 
   readonly bellConfig = {
     apiBase: environment.apiUrl,
@@ -153,23 +159,28 @@ export class DoctorShell implements OnInit, OnDestroy {
     this.refreshLastWorkspace();
     this.syncExpandedGroups(this.router.url);
 
-    this.realtime.connect((payload) => {
-      const label = payload.patientCode
-        ? `${payload.patientName ?? 'Patient'} (${payload.patientCode})`
-        : (payload.patientName ?? 'New patient');
-      this.assignmentNotice.set(`New case: ${label}`);
-      this.showAssignmentNotification(payload, label);
-      if (payload.consultationMode === 'INSTANT_ONLINE') {
-        this.incomingAssignmentError.set('');
-        this.incomingAssignment.set(payload);
-        this.startIncomingCountdown(payload);
-      } else {
-        void this.router.navigate(this.assignmentRoute(payload));
-      }
-      window.setTimeout(() => this.assignmentNotice.set(''), 5000);
-    });
+    this.realtime.connect(
+      (payload) => {
+        const label = payload.patientCode
+          ? `${payload.patientName ?? 'Patient'} (${payload.patientCode})`
+          : (payload.patientName ?? 'New patient');
+        this.assignmentNotice.set(`New case: ${label}`);
+        this.showAssignmentNotification(payload, label);
+        if (payload.consultationMode === 'INSTANT_ONLINE') {
+          this.incomingAssignmentError.set('');
+          this.incomingAssignment.set(payload);
+          this.startIncomingCountdown(payload);
+        } else {
+          void this.router.navigate(this.assignmentRoute(payload));
+        }
+        window.setTimeout(() => this.assignmentNotice.set(''), 5000);
+      },
+      undefined,
+      this.handleIncomingAssignmentUpdate,
+    );
     const callSocket = this.realtime.getSocket();
     if (callSocket) this.globalCall.bindSocket(callSocket);
+    this.startIncomingRecovery();
 
     this.syncFocusMode(this.router.url);
     this.currentUrl.set(this.router.url);
@@ -248,6 +259,8 @@ export class DoctorShell implements OnInit, OnDestroy {
       tag: `hopehub-assignment-${payload.consultationId}`,
       requireInteraction: true,
     });
+    this.incomingBrowserNotification?.close();
+    this.incomingBrowserNotification = notification;
     notification.onclick = () => {
       window.focus();
       notification.close();
@@ -292,6 +305,7 @@ export class DoctorShell implements OnInit, OnDestroy {
       this.clearIncomingAssignment();
       void this.router.navigate(this.assignmentRoute(assignment));
     } catch (error: any) {
+      void this.refreshIncomingAssignment();
       this.incomingAssignmentError.set(
         error?.error?.message || 'This request is no longer available. Check your live inbox.',
       );
@@ -318,10 +332,13 @@ export class DoctorShell implements OnInit, OnDestroy {
       this.assignmentNotice.set('Request returned for matching with another available provider.');
       window.setTimeout(() => this.assignmentNotice.set(''), 5000);
     } catch (error: any) {
-      if (automatic && error?.status === 409) {
+      if ([403, 404, 409].includes(error?.status)) {
         this.clearIncomingAssignment();
+        this.assignmentNotice.set('This request is no longer available.');
+        window.setTimeout(() => this.assignmentNotice.set(''), 5000);
         return;
       }
+      void this.refreshIncomingAssignment();
       this.incomingAssignmentError.set(
         error?.error?.message ||
           'Could not return this request. Open the session and check its status.',
@@ -356,10 +373,70 @@ export class DoctorShell implements OnInit, OnDestroy {
     this.incomingCountdownTimer = null;
   }
 
+  private startIncomingRecovery(): void {
+    if (this.incomingRecoveryTimer || typeof window === 'undefined') return;
+    this.incomingRecoveryTimer = setInterval(() => void this.refreshIncomingAssignment(), 20_000);
+  }
+
+  private stopIncomingRecovery(): void {
+    if (this.incomingRecoveryTimer) clearInterval(this.incomingRecoveryTimer);
+    this.incomingRecoveryTimer = null;
+  }
+
   private clearIncomingAssignment(): void {
     this.stopIncomingCountdown();
+    this.incomingBrowserNotification?.close();
+    this.incomingBrowserNotification = null;
     this.incomingAssignment.set(null);
     this.assignmentNotice.set('');
+  }
+
+  dismissUnavailableIncomingAssignment(): void {
+    this.clearIncomingAssignment();
+    this.incomingAssignmentError.set('');
+  }
+
+  private readonly handleIncomingAssignmentUpdate = (payload: ConsultationUpdatedPayload): void => {
+    const incoming = this.incomingAssignment();
+    if (!incoming || incoming.consultationId !== payload.consultationId) return;
+    if (payload.status === 'ASSIGNED') return;
+
+    this.clearIncomingAssignment();
+    this.incomingAssignmentError.set('');
+    this.assignmentNotice.set('This request is no longer available.');
+    window.setTimeout(() => this.assignmentNotice.set(''), 5000);
+  };
+
+  private async refreshIncomingAssignment(): Promise<void> {
+    try {
+      const response = await this.onlineDoctor.loadInstantConsultations();
+      const assigned = response.consultations.find((item) => item.status === 'ASSIGNED');
+      const current = this.incomingAssignment();
+      if (!assigned) {
+        if (current) this.clearIncomingAssignment();
+        return;
+      }
+      if (current?.consultationId === assigned.id) return;
+      this.incomingAssignment.set(this.assignmentFromInbox(assigned));
+      this.incomingAssignmentError.set('');
+      this.startIncomingCountdown(this.incomingAssignment()!);
+    } catch {
+      // Keep the current request visible until a later socket update or retry can verify it.
+    }
+  }
+
+  private assignmentFromInbox(
+    consultation: InstantConsultationSummary,
+  ): ConsultationAssignedPayload {
+    return {
+      consultationId: consultation.id,
+      patientCode: consultation.patient.patientCode,
+      patientName: consultation.patient.name,
+      diseaseName: consultation.disease?.name ?? null,
+      consultationMode: 'INSTANT_ONLINE',
+      sessionMode: consultation.sessionMode ?? undefined,
+      responseDeadlineAt: consultation.responseDeadlineAt ?? undefined,
+    };
   }
 
   private assignmentRoute(payload: {
@@ -374,6 +451,7 @@ export class DoctorShell implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.stopIncomingCountdown();
+    this.stopIncomingRecovery();
     this.realtime.disconnect();
     this.onlineDoctor.disconnectRealtime();
     this.navSubscription?.unsubscribe();
@@ -393,6 +471,7 @@ export class DoctorShell implements OnInit, OnDestroy {
     try {
       const response = await this.onlineDoctor.loadProfile();
       this.onlineDoctor.profile.set(response.profile);
+      await this.refreshIncomingAssignment();
       this.availabilityLoaded.set(true);
       if (['ONLINE', 'BUSY', 'ON_CALL'].includes(response.profile.liveStatus)) {
         this.onlineDoctor.connectRealtime();

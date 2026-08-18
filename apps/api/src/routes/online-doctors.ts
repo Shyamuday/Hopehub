@@ -14,6 +14,8 @@ import { providerPublicReadiness } from '../doctor-capabilities.js';
 import { providerAllowedSessionModes } from '../services/provider-taxonomy.service.js';
 import type { ProviderSessionMode } from '@hopehub/contracts';
 import { getPublicIceServers } from '../constants/rtc.constants.js';
+import { INSTANT_ASSIGNMENT_RESPONSE_TIMEOUT_MS } from '../constants/online-doctor.constants.js';
+import { SOCKET_EVENTS, SOCKET_ROOM_PREFIXES } from '../constants/socket.constants.js';
 import { prisma } from '../db.js';
 import {
   ensureDoctorOnlineSession,
@@ -395,7 +397,14 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
           status: c.status,
           patient: c.patient,
           disease: c.disease,
-          updatedAt: c.updatedAt
+          updatedAt: c.updatedAt,
+          sessionMode:
+            typeof (c.intakeAnswers as Record<string, unknown> | null)?.['sessionMode'] === 'string'
+              ? (c.intakeAnswers as Record<string, unknown>)['sessionMode']
+              : null,
+          responseDeadlineAt: new Date(
+            c.updatedAt.getTime() + INSTANT_ASSIGNMENT_RESPONSE_TIMEOUT_MS
+          ).toISOString()
         }))
       });
     })
@@ -434,6 +443,10 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
       if (consultation) {
         io.to(`user:${consultation.patientId}`).emit('consultation:updated', updatePayload);
       }
+      io.to(`${SOCKET_ROOM_PREFIXES.USER}${req.user!.id}`).emit(
+        SOCKET_EVENTS.CONSULTATION_UPDATED,
+        updatePayload
+      );
       res.json({ ok: true, status: ConsultationStatus.IN_PROGRESS });
     })
   );

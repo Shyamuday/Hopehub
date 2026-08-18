@@ -33,6 +33,16 @@ export type OnlineDoctorProfile = {
   wentLiveAt?: string | null;
 };
 
+export type InstantConsultationSummary = {
+  id: string;
+  status: string;
+  patient: { id: string; name: string; patientCode?: string | null };
+  disease: { id: string; name: string };
+  updatedAt: string;
+  sessionMode?: 'chat' | 'voice' | 'video' | null;
+  responseDeadlineAt?: string | null;
+};
+
 @Injectable({ providedIn: 'root' })
 export class OnlineDoctorService implements OnDestroy {
   private readonly http = inject(HttpClient);
@@ -185,13 +195,7 @@ export class OnlineDoctorService implements OnDestroy {
   loadInstantConsultations() {
     return firstValueFrom(
       this.http.get<{
-        consultations: Array<{
-          id: string;
-          status: string;
-          patient: { id: string; name: string; patientCode?: string | null };
-          disease: { id: string; name: string };
-          updatedAt: string;
-        }>;
+        consultations: InstantConsultationSummary[];
       }>(`${this.apiBase}${API_PATHS.DOCTOR.INSTANT_CONSULTATIONS}`),
     );
   }

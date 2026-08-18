@@ -674,6 +674,19 @@
   padding: 0.6rem;
 }
 
+.incoming-session-close {
+  background: #e2e8f0;
+  border: 0;
+  border-radius: 999px;
+  color: #334155;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  margin-top: -0.25rem;
+  padding: 0.6rem 1rem;
+  width: 100%;
+}
+
 .incoming-session-card small {
   color: #64748b;
   display: block;

@@ -506,6 +506,9 @@ export async function releaseInstantConsultationAssignment(input: {
     .to(`${SOCKET_ROOM_PREFIXES.USER}${consultation.patientId}`)
     .emit(SOCKET_EVENTS.CONSULTATION_UPDATED, updatePayload);
   input.io
+    .to(`${SOCKET_ROOM_PREFIXES.USER}${input.providerUserId}`)
+    .emit(SOCKET_EVENTS.CONSULTATION_UPDATED, updatePayload);
+  input.io
     .to(`${SOCKET_ROOM_PREFIXES.CONSULTATION}${consultation.id}`)
     .emit(SOCKET_EVENTS.CONSULTATION_UPDATED, updatePayload);
   return { released: true as const, code: 'RELEASED' as const };

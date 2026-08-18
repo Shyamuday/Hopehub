@@ -226,7 +226,7 @@ export function createConsultationsRouter(io: SocketIoServer) {
       const body = z.object({ reason: z.string().trim().max(1000).optional() }).parse(req.body);
       const consultation = await prisma.consultation.findUnique({
         where: { id: routeParam(req, 'id') },
-        select: { id: true, patientId: true, status: true }
+        select: { id: true, patientId: true, assignedDoctorId: true, status: true }
       });
       if (!consultation) return res.status(404).json({ message: 'Consultation not found.' });
       if (consultation.patientId !== req.user!.id) {
@@ -252,6 +252,16 @@ export function createConsultationsRouter(io: SocketIoServer) {
         include: includeConsultationRelations()
       });
       io.to(`user:${consultation.patientId}`).emit('consultation:updated', {
+        consultationId: consultation.id,
+        status: ConsultationStatus.CANCELLED
+      });
+      if (consultation.assignedDoctorId) {
+        io.to(`user:${consultation.assignedDoctorId}`).emit('consultation:updated', {
+          consultationId: consultation.id,
+          status: ConsultationStatus.CANCELLED
+        });
+      }
+      io.to(`consultation:${consultation.id}`).emit('consultation:updated', {
         consultationId: consultation.id,
         status: ConsultationStatus.CANCELLED
       });

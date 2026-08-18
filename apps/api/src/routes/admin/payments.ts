@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import type { Server as SocketIoServer } from 'socket.io';
 import { FollowUpEntitlementStatus, PaymentStatus, Prisma, Role } from '@prisma/client';
 import { z } from 'zod';
 import { authRequired, allowRoles } from '../../auth.js';
@@ -37,7 +38,7 @@ const followUpStatusSchema = z.object({
   notes: z.string().trim().max(1000).nullable().optional()
 });
 
-export function registerAdminPaymentRoutes(router: Router) {
+export function registerAdminPaymentRoutes(router: Router, io: SocketIoServer) {
   router.get(
     '/admin/payments',
     authRequired,
@@ -424,6 +425,27 @@ export function registerAdminPaymentRoutes(router: Router) {
           }
         }
       });
+
+      if (cancellationResult && enrichedPayment?.consultation) {
+        const update = {
+          consultationId: enrichedPayment.consultation.id,
+          status: enrichedPayment.consultation.status
+        };
+        io.to(`user:${enrichedPayment.consultation.patient.id}`).emit(
+          'consultation:updated',
+          update
+        );
+        if (enrichedPayment.consultation.assignedDoctor?.id) {
+          io.to(`user:${enrichedPayment.consultation.assignedDoctor.id}`).emit(
+            'consultation:updated',
+            update
+          );
+        }
+        io.to(`consultation:${enrichedPayment.consultation.id}`).emit(
+          'consultation:updated',
+          update
+        );
+      }
 
       res.status(201).json({
         refund: savedRefund,

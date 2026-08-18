@@ -379,6 +379,9 @@
       </button>
       @if (incomingAssignmentError()) {
         <p class="incoming-session-error" role="alert">{{ incomingAssignmentError() }}</p>
+        <button type="button" class="incoming-session-close" (click)="dismissUnavailableIncomingAssignment()">
+          Close
+        </button>
       }
       <small>Opening the room lets you respond by the modes enabled for this session.</small>
     </section>

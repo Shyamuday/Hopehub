@@ -742,6 +742,16 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
         consultationId: consultation.id,
         status: consultation.status
       });
+      if (consultation.assignedDoctorId) {
+        io.to(`user:${consultation.assignedDoctorId}`).emit('consultation:updated', {
+          consultationId: consultation.id,
+          status: consultation.status
+        });
+      }
+      io.to(`consultation:${consultation.id}`).emit('consultation:updated', {
+        consultationId: consultation.id,
+        status: consultation.status
+      });
 
       res.json({ consultation, message: 'Consultation status updated.' });
     })

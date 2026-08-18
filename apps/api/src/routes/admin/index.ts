@@ -55,7 +55,7 @@ export function createAdminRouter(io: SocketIoServer) {
   registerAdminAnalyticsRoutes(router);
   registerAdminAuditRoutes(router);
   registerAdminConsultationRoutes(router, io);
-  registerAdminPaymentRoutes(router);
+  registerAdminPaymentRoutes(router, io);
   registerAdminReportRoutes(router);
   registerAdminPatientLookupRoutes(router);
   registerAdminPurchaseOrderRoutes(router);
