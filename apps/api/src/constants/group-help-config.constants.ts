@@ -1031,12 +1031,14 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
   {
     key: 'telegramGroupHelpCommandPermissions',
     label: 'Staff command permissions',
-    description: 'One command per line: /command = HELPER or MODERATOR. Telegram admins always retain access.',
+    description:
+      'One command per line: /command = HELPER or MODERATOR. Telegram admins always retain access.',
     section: 'people',
     type: 'textarea',
     maxLength: 2000,
     placeholder: '/warn = HELPER\n/mute = MODERATOR',
-    defaultValue: '/warn = HELPER\n/delete = HELPER\n/mute = MODERATOR\n/unmute = MODERATOR\n/ban = MODERATOR\n/unban = MODERATOR\n/kick = MODERATOR\n/info = HELPER\n/member = HELPER\n/warnings = HELPER\n/clearwarnings = MODERATOR\n/stats = MODERATOR\n/staff = HELPER'
+    defaultValue:
+      '/warn = HELPER\n/delete = HELPER\n/mute = MODERATOR\n/unmute = MODERATOR\n/ban = MODERATOR\n/unban = MODERATOR\n/kick = MODERATOR\n/info = HELPER\n/member = HELPER\n/warnings = HELPER\n/clearwarnings = MODERATOR\n/stats = MODERATOR\n/staff = HELPER'
   },
   {
     key: 'telegramGroupHelpLanguage',
@@ -1047,6 +1049,16 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
     options: ['English', 'Hindi', 'Italian', 'Spanish', 'Portuguese', 'German', 'French'],
     maxLength: 30,
     defaultValue: 'English'
+  },
+  {
+    key: 'telegramGroupHelpTimezone',
+    label: 'Group time zone',
+    description: 'Used for quiet hours and time-based group rules.',
+    section: 'operations',
+    type: 'select',
+    options: ['Asia/Kolkata', 'UTC', 'Asia/Dubai', 'Europe/London', 'America/New_York'],
+    maxLength: 40,
+    defaultValue: 'Asia/Kolkata'
   },
   {
     key: 'telegramGroupHelpLogChannelId',

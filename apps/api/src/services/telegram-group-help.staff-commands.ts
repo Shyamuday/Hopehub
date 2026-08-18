@@ -9,7 +9,7 @@ import {
   sendModerationLog,
   sendTemporaryGroupHelpMessage
 } from './telegram-group-help.actions.js';
-import { canModerate, isModerationExempt } from './telegram-group-help.permissions.js';
+import { canUseGroupHelpCommand, isModerationExempt } from './telegram-group-help.permissions.js';
 
 export async function handleGroupHelpStaffCommand(
   message: CommunityTelegramMessage,
@@ -24,7 +24,7 @@ export async function handleGroupHelpStaffCommand(
     const requiredRole = ['mute', 'unmute', 'ban', 'unban', 'kick'].includes(commandName)
       ? 'MODERATOR'
       : 'HELPER';
-    if (!(await canModerate(message, values.telegramGroupHelpAdminWhitelist || '', requiredRole)))
+    if (!(await canUseGroupHelpCommand(message, values, `/${commandName}`, requiredRole)))
       return true;
     const targetMessage = message.reply_to_message;
     const target = targetMessage?.from;

@@ -6,7 +6,10 @@ import {
   telegramGroupWarningCount
 } from './telegram-community-bots.store.js';
 import type { CommunityTelegramMessage } from './telegram-community-bots.types.js';
-import { assignedCommunityRole, canModerate } from './telegram-group-help.permissions.js';
+import {
+  assignedCommunityRole,
+  canUseGroupHelpCommand
+} from './telegram-group-help.permissions.js';
 import { sendTemporaryGroupHelpMessage } from './telegram-group-help.actions.js';
 import { forgetGroupHelpMemberData } from './telegram-group-help.privacy.js';
 
@@ -60,7 +63,7 @@ export async function handleGroupHelpMemberCommand(
   if (command === '/warnings' && message.from) {
     const target =
       message.reply_to_message?.from &&
-      (await canModerate(message, values.telegramGroupHelpAdminWhitelist || '', 'HELPER'))
+      (await canUseGroupHelpCommand(message, values, '/warnings', 'HELPER'))
         ? message.reply_to_message.from
         : message.from;
     const count = await telegramGroupWarningCount(chatId, String(target.id));
@@ -73,8 +76,7 @@ export async function handleGroupHelpMemberCommand(
     return true;
   }
   if (command === '/info' || command === '/member') {
-    if (!(await canModerate(message, values.telegramGroupHelpAdminWhitelist || '', 'HELPER')))
-      return true;
+    if (!(await canUseGroupHelpCommand(message, values, command, 'HELPER'))) return true;
     const target = message.reply_to_message?.from;
     if (!target) {
       await sendTemporaryGroupHelpMessage(
@@ -100,7 +102,7 @@ export async function handleGroupHelpMemberCommand(
     return true;
   }
   if (command === '/clearwarnings') {
-    if (!(await canModerate(message, values.telegramGroupHelpAdminWhitelist || '', 'MODERATOR')))
+    if (!(await canUseGroupHelpCommand(message, values, '/clearwarnings', 'MODERATOR')))
       return true;
     const target = message.reply_to_message?.from;
     if (!target) {
@@ -120,8 +122,7 @@ export async function handleGroupHelpMemberCommand(
     return true;
   }
   if (command === '/stats') {
-    if (!(await canModerate(message, values.telegramGroupHelpAdminWhitelist || '', 'MODERATOR')))
-      return true;
+    if (!(await canUseGroupHelpCommand(message, values, '/stats', 'MODERATOR'))) return true;
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const [activeMembers, joinedThisWeek, openReports, staff] = await Promise.all([
       prisma.telegramCommunityMember.count({ where: { chatId, leftAt: null } }),
@@ -140,8 +141,7 @@ export async function handleGroupHelpMemberCommand(
     return true;
   }
   if (command === '/staff') {
-    if (!(await canModerate(message, values.telegramGroupHelpAdminWhitelist || '', 'HELPER')))
-      return true;
+    if (!(await canUseGroupHelpCommand(message, values, '/staff', 'HELPER'))) return true;
     const staff = await prisma.telegramCommunityRoleAssignment.findMany({
       where: { chatId },
       select: { telegramUserId: true, role: true },

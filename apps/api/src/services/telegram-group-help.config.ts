@@ -30,7 +30,8 @@ export const GROUP_HELP_CONFIG_KEYS = [
   'telegramGroupHelpCommandPermissions',
   'telegramGroupHelpNightMode',
   'telegramGroupHelpNightStart',
-  'telegramGroupHelpNightEnd'
+  'telegramGroupHelpNightEnd',
+  'telegramGroupHelpTimezone'
 ] as const;
 
 export async function groupHelpConfig(chatId?: string) {
@@ -98,12 +99,22 @@ export function isWithinQuietHours(values: Record<string, string>) {
   const start = toMinutes(values.telegramGroupHelpNightStart || '22:00');
   const end = toMinutes(values.telegramGroupHelpNightEnd || '07:00');
   if (start === null || end === null) return false;
-  const parts = new Intl.DateTimeFormat('en-GB', {
-    timeZone: 'Asia/Kolkata',
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23'
-  }).formatToParts(new Date());
+  let parts: Intl.DateTimeFormatPart[];
+  try {
+    parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: values.telegramGroupHelpTimezone || 'Asia/Kolkata',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23'
+    }).formatToParts(new Date());
+  } catch {
+    parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Asia/Kolkata',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23'
+    }).formatToParts(new Date());
+  }
   const current =
     Number(parts.find((part) => part.type === 'hour')?.value || 0) * 60 +
     Number(parts.find((part) => part.type === 'minute')?.value || 0);
