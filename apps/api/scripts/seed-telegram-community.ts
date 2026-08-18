@@ -22,6 +22,7 @@ const GROUP_USERNAME = (process.env.TELEGRAM_COMMUNITY_GROUP_USERNAME || '@hopeh
   /^([^@])/,
   '@$1'
 );
+const MANAGED_DEFAULT_PREFIX = 'system:telegram-group-help:default:';
 
 type TelegramGetChatResponse = {
   ok: boolean;
@@ -398,14 +399,7 @@ async function seedSiteConfig(chatId: string) {
     telegramGroupHelpGroupChatId: chatId,
     telegramGroupModerationRuntime: 'Hope Hub bot'
   };
-  for (const field of GROUP_HELP_CONFIG_FIELDS) {
-    const value = seedDefaults[field.key] ?? '';
-    await prisma.siteConfig.upsert({
-      where: { key: field.key },
-      create: { key: field.key, value, label: field.label },
-      update: { label: field.label }
-    });
-  }
+  await syncManagedGroupHelpDefaults(seedDefaults);
 
   await prisma.siteConfig.updateMany({
     where: {
@@ -438,17 +432,65 @@ async function seedSiteConfig(chatId: string) {
       process.env.TELEGRAM_CONFESSION_START_NUMBER?.trim() ||
       TELEGRAM_BOT_CONTROL_DEFAULTS.telegramConfessionStartNumber
   };
-  for (const [key, value] of Object.entries(botControlSeedDefaults)) {
-    await prisma.siteConfig.upsert({
-      where: { key },
-      create: {
-        key,
-        value,
-        label: TELEGRAM_BOT_CONTROL_META[key as keyof typeof TELEGRAM_BOT_CONTROL_META].label
-      },
-      update: {}
-    });
-  }
+  await syncManagedBotControlDefaults(botControlSeedDefaults);
+}
+
+/**
+ * Keeps built-in configuration current without overwriting an administrator's
+ * custom setting. A hidden snapshot records the last default the seed owned.
+ */
+async function syncManagedGroupHelpDefaults(defaults: Record<string, string>) {
+  const fields = GROUP_HELP_CONFIG_FIELDS.map((field) => ({
+    key: field.key,
+    label: field.label,
+    value: defaults[field.key] ?? ''
+  }));
+  await syncManagedDefaults(fields);
+}
+
+async function syncManagedBotControlDefaults(defaults: Record<string, string>) {
+  await syncManagedDefaults(
+    Object.entries(defaults).map(([key, value]) => ({
+      key,
+      value,
+      label: TELEGRAM_BOT_CONTROL_META[key as keyof typeof TELEGRAM_BOT_CONTROL_META].label
+    }))
+  );
+}
+
+async function syncManagedDefaults(fields: Array<{ key: string; label: string; value: string }>) {
+  const keys = fields.flatMap((field) => [field.key, `${MANAGED_DEFAULT_PREFIX}${field.key}`]);
+  const existing = await prisma.siteConfig.findMany({ where: { key: { in: keys } } });
+  const values = new Map(existing.map((item) => [item.key, item]));
+
+  await prisma.$transaction(
+    fields.flatMap((field) => {
+      const current = values.get(field.key);
+      const snapshot = values.get(`${MANAGED_DEFAULT_PREFIX}${field.key}`);
+      const shouldApplyDefault = !current || (snapshot != null && current.value === snapshot.value);
+      const configWrite = current
+        ? prisma.siteConfig.update({
+            where: { key: field.key },
+            data: {
+              label: field.label,
+              ...(shouldApplyDefault && current.value !== field.value ? { value: field.value } : {})
+            }
+          })
+        : prisma.siteConfig.create({
+            data: { key: field.key, value: field.value, label: field.label }
+          });
+      const snapshotWrite = prisma.siteConfig.upsert({
+        where: { key: `${MANAGED_DEFAULT_PREFIX}${field.key}` },
+        create: {
+          key: `${MANAGED_DEFAULT_PREFIX}${field.key}`,
+          value: field.value,
+          label: `Managed default snapshot for ${field.label}`
+        },
+        update: { value: field.value }
+      });
+      return [configWrite, snapshotWrite];
+    })
+  );
 }
 
 async function seedCampaigns(chatId: string) {
