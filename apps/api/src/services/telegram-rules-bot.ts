@@ -19,16 +19,16 @@ function mainMenu(controls: TelegramBotControls): TelegramKeyboard {
   return {
     inline_keyboard: [
       [
-        { text: '📖 About Us', callback_data: 'about' },
-        { text: '📋 Community Rules', callback_data: 'rules' }
+        { text: 'About us', callback_data: 'about' },
+        { text: 'Community rules', callback_data: 'rules' }
       ],
       [
-        { text: '⚠️ Disclaimer', callback_data: 'disclaimer' },
-        { text: '🔒 Privacy Guide', callback_data: 'privacy' }
+        { text: 'Disclaimer', callback_data: 'disclaimer' },
+        { text: 'Privacy guide', callback_data: 'privacy' }
       ],
       [
-        { text: '🚨 How to Report', callback_data: 'report' },
-        { text: '📞 Helplines', callback_data: 'helpline' }
+        { text: 'How to report', callback_data: 'report' },
+        { text: 'Helplines', callback_data: 'helpline' }
       ],
       ...linkRows
     ]

@@ -50,9 +50,8 @@ Please remember:
 
 export const HOPEHUB_COMMUNITY_WELCOME_MEDIA_URL = '';
 
-export const HOPEHUB_COMMUNITY_WELCOME_BUTTONS = `Support | https://hopehub.in/#live-connect | success && Confess | ${TELEGRAM_BOT_URLS.CONFESSION} | danger
-Channel | https://t.me/HopeHubGlobal | primary && Website | https://hopehub.in/ | success
-Web bot | ${TELEGRAM_BOT_URLS.WEB} | primary && Rules | ${TELEGRAM_BOT_URLS.RULES} | primary`;
+export const HOPEHUB_COMMUNITY_WELCOME_BUTTONS = `Support | https://hopehub.in/#live-connect | success && Confess | ${TELEGRAM_BOT_URLS.CONFESSION} | danger && Channel | https://t.me/HopeHubGlobal | primary
+Website | https://hopehub.in/ | success && Web bot | ${TELEGRAM_BOT_URLS.WEB} | primary && Rules | ${TELEGRAM_BOT_URLS.RULES} | primary`;
 
 export type GroupHelpConfigField = {
   key: string;
@@ -571,7 +570,7 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
     key: 'telegramGroupHelpWelcomeImageUrl',
     label: 'Welcome media URL',
     description:
-      'Optional public GIF or MP4/WebM shown with the welcome message. Use a direct public file URL.',
+      'Optional public image, GIF, or video shown with the welcome message. Use a direct public file URL.',
     section: 'messages',
     type: 'text',
     maxLength: 1000,

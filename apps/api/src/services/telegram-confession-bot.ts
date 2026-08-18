@@ -120,8 +120,8 @@ export async function publishApprovedConfession(input: {
       reply_markup: {
         inline_keyboard: [
           [
-            { text: '🌐 Hope Hub', url: 'https://hopehub.in' },
-            { text: '🩷 Write your confession', url: TELEGRAM_BOT_URLS.CONFESSION }
+            { text: 'Hope Hub', url: 'https://hopehub.in' },
+            { text: 'Write your confession', url: TELEGRAM_BOT_URLS.CONFESSION }
           ]
         ]
       }
@@ -163,14 +163,14 @@ export async function publishApprovedConfession(input: {
           ? {
               inline_keyboard: [
                 [
-                  { text: '📖 Read all', url: channelUrl },
-                  { text: '🩷 Write yours', url: TELEGRAM_BOT_URLS.CONFESSION }
+                  { text: 'Read all', url: channelUrl },
+                  { text: 'Write yours', url: TELEGRAM_BOT_URLS.CONFESSION }
                 ]
               ]
             }
           : {
               inline_keyboard: [
-                [{ text: '🩷 Write your confession', url: TELEGRAM_BOT_URLS.CONFESSION }]
+                [{ text: 'Write your confession', url: TELEGRAM_BOT_URLS.CONFESSION }]
               ]
             }
       }
@@ -190,14 +190,24 @@ function mainKeyboard(controls: TelegramBotControls): TelegramKeyboard {
     linkRows.push(linkButtons.slice(index, index + 2));
   }
   return {
+    inline_keyboard: [[{ text: 'Send confession', callback_data: 'send_confession' }], ...linkRows]
+  };
+}
+
+function postConfessionKeyboard(controls: TelegramBotControls): TelegramKeyboard {
+  const communityUrl = controls.telegramConfessionCommunityUrl.trim();
+  return {
     inline_keyboard: [
-      [{ text: '🩷 Send Confession', callback_data: 'send_confession' }],
-      ...linkRows
+      ...(/^https:\/\//i.test(communityUrl)
+        ? [[{ text: 'Back to Hope Hub group', url: communityUrl }]]
+        : []),
+      ...mainKeyboard(controls).inline_keyboard
     ]
   };
 }
+
 const cancelKeyboard: TelegramKeyboard = {
-  inline_keyboard: [[{ text: '🚫 Cancel', callback_data: 'cancel_confession' }]]
+  inline_keyboard: [[{ text: 'Cancel', callback_data: 'cancel_confession' }]]
 };
 
 async function showStart(chatId: string | number) {
@@ -297,8 +307,8 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
           reply_markup: {
             inline_keyboard: [
               [
-                { text: '✅ Approve & Publish', callback_data: `approve_${confession.reference}` },
-                { text: '❌ Reject', callback_data: `reject_${confession.reference}` }
+                { text: 'Approve & publish', callback_data: `approve_${confession.reference}` },
+                { text: 'Reject', callback_data: `reject_${confession.reference}` }
               ]
             ]
           }
@@ -310,7 +320,7 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
         `💙 *Your confession has been received.*\n\nIt will be reviewed and published anonymously if approved.`,
         {
           parse_mode: 'Markdown',
-          reply_markup: mainKeyboard(controls)
+          reply_markup: postConfessionKeyboard(controls)
         }
       );
       return;
@@ -334,7 +344,7 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
         inline_keyboard: [
           [
             {
-              text: approved ? '✅ Approved & Published' : '❌ Rejected',
+              text: approved ? 'Approved & published' : 'Rejected',
               callback_data: 'already_processed'
             }
           ]
@@ -348,7 +358,7 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
             ? '💙 Your confession has been approved and published anonymously.'
             : `Your confession wasn't approved for publication at this time.`,
           {
-            reply_markup: mainKeyboard(controls)
+            reply_markup: postConfessionKeyboard(controls)
           }
         );
       } catch {
@@ -437,8 +447,8 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
       parse_mode: 'Markdown',
       reply_markup: {
         inline_keyboard: [
-          [{ text: '✅ Submit Anonymously', callback_data: `submit_${id}` }],
-          [{ text: '🚫 Cancel', callback_data: `cancel_preview_${id}` }]
+          [{ text: 'Submit anonymously', callback_data: `submit_${id}` }],
+          [{ text: 'Cancel', callback_data: `cancel_preview_${id}` }]
         ]
       }
     }

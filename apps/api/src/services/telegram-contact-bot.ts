@@ -140,8 +140,8 @@ function ticketModerationKeyboard(ticket: {
   return {
     inline_keyboard: [
       [
-        { text: '🔓 Unban sender', callback_data: `member_unban_${ticket.reference}` },
-        { text: '🔊 Unmute sender', callback_data: `member_unmute_${ticket.reference}` }
+        { text: 'Unban sender', callback_data: `member_unban_${ticket.reference}` },
+        { text: 'Unmute sender', callback_data: `member_unmute_${ticket.reference}` }
       ]
     ]
   };
@@ -298,20 +298,20 @@ function mainKeyboard(controls: TelegramBotControls): TelegramKeyboard {
   return {
     inline_keyboard: [
       [
-        { text: '💡 Suggestion', callback_data: 'cat_suggestion' },
-        { text: '🚨 Complaint', callback_data: 'cat_complaint' }
+        { text: 'Suggestion', callback_data: 'cat_suggestion' },
+        { text: 'Complaint', callback_data: 'cat_complaint' }
       ],
       [
-        { text: '🙋 General Enquiry', callback_data: 'cat_enquiry' },
-        { text: '🐛 Report a Bug', callback_data: 'cat_bug' }
+        { text: 'General enquiry', callback_data: 'cat_enquiry' },
+        { text: 'Report a bug', callback_data: 'cat_bug' }
       ],
-      [{ text: '🤝 Partnership', callback_data: 'cat_partnership' }],
+      [{ text: 'Partnership', callback_data: 'cat_partnership' }],
       ...linkRows
     ]
   };
 }
 const cancelKeyboard: TelegramKeyboard = {
-  inline_keyboard: [[{ text: '🚫 Cancel', callback_data: 'cancel' }]]
+  inline_keyboard: [[{ text: 'Cancel', callback_data: 'cancel' }]]
 };
 const keyOf = (value: string | number) => String(value);
 const isCommand = (text: string, command: string) =>
@@ -665,8 +665,8 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
     {
       reply_markup: {
         inline_keyboard: [
-          [{ text: '✅ Send Message', callback_data: `confirm_${ticketId}` }],
-          [{ text: '🚫 Cancel', callback_data: `cancelsubmit_${ticketId}` }]
+          [{ text: 'Send message', callback_data: `confirm_${ticketId}` }],
+          [{ text: 'Cancel', callback_data: `cancelsubmit_${ticketId}` }]
         ]
       }
     }

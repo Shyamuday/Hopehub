@@ -12,6 +12,20 @@ const DANGER_ACTION =
 const SUCCESS_ACTION =
   /\b(send|submit|approve|confirm|complete|accept|online|book|join|create|apply|help|support|contact|helpline|save|publish|continue|suggestion|partnership)\b/i;
 
+// Button labels are intentionally plain text. Emoji-only or emoji-led labels
+// make inline keyboards look uneven between Telegram clients, especially when
+// a row contains links with labels of different lengths. Keep this at the
+// transport boundary so saved admin settings and scheduled content follow the
+// same rule as hard-coded bot buttons.
+const BUTTON_EMOJI = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}]|\u{FE0F}|\u{200D}/gu;
+
+export function plainTelegramButtonText(value: string): string {
+  return value
+    .replace(BUTTON_EMOJI, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
 function inferredButtonStyle(button: StyleableTelegramButton): TelegramButtonStyle {
   const action = `${button.callback_data || ''} ${button.text}`.replace(/[_:-]+/g, ' ');
   if (DANGER_ACTION.test(action)) return 'danger';
@@ -32,6 +46,7 @@ export function colorizeTelegramKeyboard<
     inline_keyboard: keyboard.inline_keyboard.map((row) =>
       row.map((button) => ({
         ...button,
+        text: plainTelegramButtonText(button.text) || 'Open',
         style: button.style || inferredButtonStyle(button)
       }))
     )

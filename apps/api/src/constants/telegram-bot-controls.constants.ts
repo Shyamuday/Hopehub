@@ -34,15 +34,16 @@ export const TELEGRAM_BOT_CONTROL_DEFAULTS = {
   telegramConfessionChannelId: '',
   telegramConfessionChannelName: 'Hope Hub Anonymous Confessions',
   telegramConfessionChannelUrl: '',
+  telegramConfessionCommunityUrl: 'https://t.me/hopehubindia',
   telegramConfessionStartNumber: '1000',
   telegramConfessionMenuLinks:
-    '💙 HopeHub | https://hopehub.in | primary\n🆘 Get Help | https://hopehub.in/contact | danger',
+    'Hope Hub | https://hopehub.in | primary\nGet help | https://hopehub.in/contact | danger',
   telegramConfessionSafetyMessage:
     'Your message may describe immediate danger. This bot cannot provide emergency help. If you may act now or cannot stay safe, contact local emergency services or a trusted person who can stay with you. Your confession can still be reviewed anonymously below.',
   telegramContactWelcomeText:
     '👋 Welcome to Hope Hub Support. Choose a category and our team will respond as soon as possible.',
   telegramContactSupportGroupId: '',
-  telegramContactMenuLinks: `🩷 Confession Bot | ${TELEGRAM_BOT_URLS.CONFESSION} | danger\n💙 HopeHub | https://hopehub.in | primary`,
+  telegramContactMenuLinks: `Confession bot | ${TELEGRAM_BOT_URLS.CONFESSION} | danger\nHope Hub | https://hopehub.in | primary`,
   telegramContactUnavailableMessage:
     'We could not send your message because the support inbox is unavailable. Your draft is safe—please try again shortly.',
   telegramRulesWelcomeText:
@@ -57,7 +58,7 @@ export const TELEGRAM_BOT_CONTROL_DEFAULTS = {
   telegramRulesReportText: `🚨 *How to Report a Rule Violation*\n\nSend ${TELEGRAM_BOT_USERNAMES.CONTACT} a screenshot, message link, and short description. Wait for admins to investigate. Do not confront the person, publish accusations, or privately message admins.`,
   telegramRulesHelplineText:
     '📞 *Mental Health Helplines*\n\nIf you are in immediate danger, contact local emergency services.\n\n*India:*\n• iCall: 9152987821\n• Vandrevala Foundation: 1860-2662-345\n• NIMHANS: 080-46110007\n\n*International:*\n• Samaritans (UK): 116 123\n• Lifeline (Australia): 13 11 14\n• Find local crisis support: https://www.iasp.info/resources/Crisis_Centres/\n\nThese services are independent of HopeHub.',
-  telegramRulesMenuLinks: `🩷 Confession Bot | ${TELEGRAM_BOT_URLS.CONFESSION} | danger\n📬 Contact Us | ${TELEGRAM_BOT_URLS.CONTACT} | success\n💙 HopeHub Website | https://hopehub.in | primary`,
+  telegramRulesMenuLinks: `Confession bot | ${TELEGRAM_BOT_URLS.CONFESSION} | danger\nContact us | ${TELEGRAM_BOT_URLS.CONTACT} | success\nHope Hub website | https://hopehub.in | primary`,
   telegramCampaignContactUrl: TELEGRAM_BOT_URLS.CONTACT
 } as const;
 
@@ -199,6 +200,14 @@ export const TELEGRAM_BOT_CONTROL_META: Record<TelegramBotControlKey, TelegramBo
     label: 'Public channel link',
     description:
       'Link used by the community-group button so members can read every approved confession.',
+    group: 'Confession bot',
+    type: 'text',
+    maxLength: 500
+  },
+  telegramConfessionCommunityUrl: {
+    label: 'Return-to-community link',
+    description:
+      'Shown after a confession is sent or approved so the member can return to Hope Hub.',
     group: 'Confession bot',
     type: 'text',
     maxLength: 500

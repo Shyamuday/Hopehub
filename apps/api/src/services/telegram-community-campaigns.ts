@@ -90,6 +90,17 @@ function isWelcomeVideo(url: string) {
   return /\.(mp4|webm|mov|m4v)$/.test(filename);
 }
 
+function welcomeMediaPayload(url: string) {
+  if (isWelcomeVideo(url)) {
+    return { method: 'sendVideo' as const, media: { video: url } };
+  }
+  const filename = url.split('?')[0].toLowerCase();
+  if (/\.(gif|webp)$/.test(filename)) {
+    return { method: 'sendAnimation' as const, media: { animation: url } };
+  }
+  return { method: 'sendPhoto' as const, media: { photo: url } };
+}
+
 const COMMUNITY_CONFIG_KEYS = [
   'telegramCommunityWelcomeEnabled',
   'telegramGroupHelpAutoDeleteSeconds',
@@ -956,22 +967,17 @@ export async function welcomeTelegramCommunityMembers(update: CommunityTelegramU
           ]
         }
       : config.welcomeKeyboard;
+    const media = config.welcomeMediaUrl ? welcomeMediaPayload(config.welcomeMediaUrl) : null;
     const sent =
-      config.welcomeMediaUrl && welcomeText.length <= 1024
-        ? await callCommunityTelegramApi<{ message_id: number }>(
-            CAMPAIGN_BOT,
-            isWelcomeVideo(config.welcomeMediaUrl) ? 'sendVideo' : 'sendAnimation',
-            {
-              chat_id: chat.id,
-              ...(isWelcomeVideo(config.welcomeMediaUrl)
-                ? { video: config.welcomeMediaUrl }
-                : { animation: config.welcomeMediaUrl }),
-              caption: welcomeText,
-              parse_mode: 'Markdown',
-              message_thread_id: message?.message_thread_id,
-              reply_markup: welcomeKeyboard
-            }
-          ).catch(async (error) => {
+      media && welcomeText.length <= 1024
+        ? await callCommunityTelegramApi<{ message_id: number }>(CAMPAIGN_BOT, media.method, {
+            chat_id: chat.id,
+            ...media.media,
+            caption: welcomeText,
+            parse_mode: 'Markdown',
+            message_thread_id: message?.message_thread_id,
+            reply_markup: welcomeKeyboard
+          }).catch(async (error) => {
             console.error('[telegram-community] Could not send welcome media.', error);
             return sendCommunityMessage(CAMPAIGN_BOT, chat.id, welcomeText, {
               parse_mode: 'Markdown',
