@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import crypto from 'node:crypto';
 import { z } from 'zod';
 import { SERVER_CONFIG } from '../constants/config.constants.js';
 import { asyncRoute, routeParam } from '../utils/helpers.js';
@@ -43,8 +44,12 @@ const setupSchema = z.object({
 
 function assertTelegramSecret(req: import('express').Request) {
   const expected = telegramWebhookSecret();
-  if (!expected) return true;
-  return req.header('x-telegram-bot-api-secret-token') === expected;
+  const received = req.header('x-telegram-bot-api-secret-token') || '';
+  // A webhook without a secret must never be accepted in production. This
+  // prevents anyone on the internet from fabricating bot updates if a deploy
+  // is missing its secret configuration.
+  if (!expected || !received || expected.length !== received.length) return false;
+  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(received));
 }
 
 function assertTelegramSetupSecret(req: import('express').Request) {

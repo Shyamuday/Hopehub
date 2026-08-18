@@ -117,13 +117,6 @@ export function allowRoles(...roles: Role[]) {
       return res.status(403).json({ message: AUTH_MESSAGES.FORBIDDEN });
     }
 
-    if (roles.includes(Role.ADMIN) && req.user.role === Role.HR) {
-      const path = req.originalUrl.split('?')[0] ?? '';
-      if (path.startsWith('/admin')) {
-        return next();
-      }
-    }
-
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({ message: AUTH_MESSAGES.FORBIDDEN });
     }

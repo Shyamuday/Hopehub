@@ -29,6 +29,18 @@ const defaultCorsOrigins = [
   'http://127.0.0.1:5800'
 ];
 
+const productionCorsOrigins = [
+  'https://hopehub.in',
+  'https://www.hopehub.in',
+  'https://admin.hopehub.in',
+  'https://earn.hopehub.in',
+  'https://ops.hopehub.in',
+  'https://support.hopehub.in'
+];
+
+const isProduction = process.env.NODE_ENV === 'production';
+const fallbackCorsOrigins = isProduction ? productionCorsOrigins : defaultCorsOrigins;
+
 export const CONTACT_IDENTITY = {
   EMAIL: 'contact@hopehub.in',
   EMAIL_FROM: 'contact@hopehub.in'
@@ -49,8 +61,8 @@ export const SERVER_CONFIG = {
   },
   CORS_ORIGINS:
     configuredOrigins.length > 0
-      ? Array.from(new Set([...configuredOrigins, ...defaultCorsOrigins]))
-      : defaultCorsOrigins,
+      ? Array.from(new Set([...configuredOrigins, ...fallbackCorsOrigins]))
+      : fallbackCorsOrigins,
   API_PUBLIC_URL: process.env.API_PUBLIC_URL || process.env.API_URL || 'http://localhost:4000',
   SMTP: {
     DEFAULT_PORT: 587,

@@ -121,8 +121,19 @@ import {
 
 const app = express();
 app.set('trust proxy', 1);
+app.disable('x-powered-by');
+app.use((_, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(self), microphone=(self), geolocation=()');
+  res.setHeader('Cross-Origin-Resource-Policy', 'same-site');
+  next();
+});
 const httpServer = createServer(app);
 const port = Number(process.env.PORT || SERVER_CONFIG.DEFAULT_PORT);
+const bindHost =
+  process.env.API_BIND_HOST || (process.env.NODE_ENV === 'production' ? '127.0.0.1' : undefined);
 
 const {
   WEB: webOrigin,
@@ -184,9 +195,17 @@ io.on('connection', (socket) => {
   if (storeStaffId) {
     void socket.join(`${SOCKET_ROOM_PREFIXES.STORE_STAFF}${storeStaffId}`);
   }
-  socket.on(SOCKET_EVENTS.SUBSCRIBE_CONSULTATION, (consultationId: unknown) => {
-    if (userId && typeof consultationId === 'string') {
-      void socket.join(`${SOCKET_ROOM_PREFIXES.CONSULTATION}${consultationId}`);
+  socket.on(SOCKET_EVENTS.SUBSCRIBE_CONSULTATION, async (consultationId: unknown) => {
+    if (!userId || typeof consultationId !== 'string') return;
+    const consultation = await prisma.consultation.findFirst({
+      where: {
+        id: consultationId,
+        OR: [{ patientId: userId }, { assignedDoctorId: userId }]
+      },
+      select: { id: true }
+    });
+    if (consultation) {
+      await socket.join(`${SOCKET_ROOM_PREFIXES.CONSULTATION}${consultation.id}`);
     }
   });
   socket.on(SOCKET_EVENTS.SUBSCRIBE_HOPE_HUB_GROUP, async (groupId: unknown) => {
@@ -360,8 +379,8 @@ app.use(
 
 // ── Startup ────────────────────────────────────────────────────────────────────
 
-httpServer.listen(port, () => {
-  console.log(`Clinic API running on http://localhost:${port}`);
+httpServer.listen(port, bindHost, () => {
+  console.log(`Clinic API running on http://${bindHost || '0.0.0.0'}:${port}`);
 
   if (!doseOverdueSweepEnabled) {
     console.log('[scheduler] Overdue dose sweep disabled');
