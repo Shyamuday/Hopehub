@@ -30,7 +30,12 @@ await client.start({
   phoneNumber: async () => phoneNumber,
   phoneCode: async () => prompt.question('Telegram OTP: '),
   password: async () => prompt.question('Telegram 2-step password (if enabled): '),
-  onError: (error) => console.error(error instanceof Error ? error.message : error)
+  onError: async (error) => {
+    console.error(error instanceof Error ? error.message : error);
+    // Authentication errors such as PHONE_NUMBER_INVALID are permanent until
+    // configuration changes. Stop instead of repeatedly requesting codes.
+    return true;
+  }
 });
 
 const account = await client.getMe();
