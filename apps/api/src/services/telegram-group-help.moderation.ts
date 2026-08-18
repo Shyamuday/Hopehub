@@ -19,6 +19,17 @@ export async function moderateGroupHelpMessage(
   const chatId = String(message.chat.id);
   const values = await groupHelpConfig(chatId);
   if (action === 'off' || !message.from) return false;
+
+  const text = `${message.text || message.caption || ''}`.trim();
+  const preview = text.length > 120 ? `${text.slice(0, 120)}…` : text;
+  console.log(
+    `[group-moderation] DELETE | reason="${reason}" action="${action}" ` +
+      `user=${message.from.id} (${message.from.first_name || 'unknown'}) ` +
+      `chat=${message.chat.id} (${message.chat.title || 'private'}) ` +
+      `msgId=${message.message_id} len=${text.length} ` +
+      `preview="${preview.replace(/\n/g, ' ')}"`
+  );
+
   await deleteGroupHelpMessage(chatId, message.message_id).catch(() => null);
   if (action === 'delete') return true;
   const warnings = await addTelegramGroupWarning({
