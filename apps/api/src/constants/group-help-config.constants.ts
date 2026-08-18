@@ -1044,11 +1044,12 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
   {
     key: 'telegramGroupHelpMaxMessageLength',
     label: 'Maximum message length',
-    description: 'Desired maximum characters per member message; use 0 for no limit.',
-    section: 'content',
+    description:
+      'Maximum characters per member message. Leave blank or 0 to use the default limit of 4000.',
+    section: 'moderation',
     type: 'number',
     maxLength: 8,
-    defaultValue: '0'
+    defaultValue: '4000'
   },
   {
     key: 'telegramGroupHelpReportsMode',
