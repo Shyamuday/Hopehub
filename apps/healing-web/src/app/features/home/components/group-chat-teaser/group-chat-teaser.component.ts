@@ -65,6 +65,7 @@ export class GroupChatTeaserComponent implements OnInit {
   readonly isAuthenticated = signal(false);
   readonly draft = signal('');
   readonly sending = signal(false);
+  readonly loadingGroup = signal(true);
   readonly activeGroup = signal<HopeHubLiveGroup | null>(null);
   readonly realMessages = signal<TeaserMessage[]>([]);
   readonly hasRealChat = computed(() => Boolean(this.activeGroup()));
@@ -79,6 +80,7 @@ export class GroupChatTeaserComponent implements OnInit {
   });
 
   private openTimer: number | null = null;
+  private refreshTimer: number | null = null;
   private socket: Socket | null = null;
   private subscribedGroupId = '';
   private readonly dismissedStorageKey = CONSUMER_STORAGE_KEYS.groupChatTeaserDismissed;
@@ -140,6 +142,7 @@ export class GroupChatTeaserComponent implements OnInit {
 
     this.destroyRef.onDestroy(() => {
       if (this.openTimer) window.clearTimeout(this.openTimer);
+      if (this.refreshTimer) window.clearInterval(this.refreshTimer);
       this.socket?.off?.(GROUP_MESSAGE_EVENT, this.handleIncomingMessage);
       this.realtime.unsubscribeLiveGroup(this.subscribedGroupId);
     });
@@ -147,6 +150,10 @@ export class GroupChatTeaserComponent implements OnInit {
 
   close(): void {
     this.isOpen.set(false);
+    if (this.refreshTimer) {
+      window.clearInterval(this.refreshTimer);
+      this.refreshTimer = null;
+    }
     this.markDismissed();
   }
 
@@ -222,6 +229,7 @@ export class GroupChatTeaserComponent implements OnInit {
       if (!this.authModalService.getCurrentModal() && !this.wasDismissed()) {
         this.isMinimized.set(false);
         this.isOpen.set(true);
+        this.startPreviewRefresh();
         this.groupChatTeaser.clearUnread();
         this.scrollToLatest();
       }
@@ -233,6 +241,11 @@ export class GroupChatTeaserComponent implements OnInit {
     this.isMinimized.set(false);
     this.isOpen.set(true);
     this.groupChatTeaser.clearUnread();
+    // Re-fetch on every open. This makes the floating button recover cleanly
+    // after a slow initial request and ensures a returning visitor sees the
+    // newest Telegram messages before the socket has connected.
+    this.loadRealGroupPreview();
+    this.startPreviewRefresh();
     this.scrollToLatest();
   }
 
@@ -289,6 +302,7 @@ export class GroupChatTeaserComponent implements OnInit {
   }
 
   private loadRealGroupPreview(): void {
+    this.loadingGroup.set(true);
     this.bookingService
       .liveGroups()
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -302,6 +316,7 @@ export class GroupChatTeaserComponent implements OnInit {
           if (!activeGroup) {
             this.activeGroup.set(null);
             this.realMessages.set([]);
+            this.loadingGroup.set(false);
             return;
           }
 
@@ -318,19 +333,29 @@ export class GroupChatTeaserComponent implements OnInit {
                 this.activeGroup.set(groupRes.group);
                 this.realMessages.set(realMessages);
                 this.bindRealtimeForActiveGroup();
+                this.loadingGroup.set(false);
                 this.scrollToLatest();
               },
               error: () => {
                 this.activeGroup.set(null);
                 this.realMessages.set([]);
+                this.loadingGroup.set(false);
               },
             });
         },
         error: () => {
           this.activeGroup.set(null);
           this.realMessages.set([]);
+          this.loadingGroup.set(false);
         },
       });
+  }
+
+  private startPreviewRefresh(): void {
+    if (this.refreshTimer) return;
+    this.refreshTimer = window.setInterval(() => {
+      if (this.isOpen() && !this.isMinimized()) this.loadRealGroupPreview();
+    }, 30_000);
   }
 
   private toTeaserMessage(message: HopeHubLiveGroupMessage, own = false): TeaserMessage {

@@ -47,8 +47,13 @@
           </article>
         } @empty {
           <div class="chat-teaser__empty">
-            <strong>No messages yet</strong>
-            <span>New Telegram and Hope Hub messages will appear here automatically.</span>
+            @if (loadingGroup()) {
+              <strong>Loading the community chat…</strong>
+              <span>Fetching the latest messages from Hope Hub.</span>
+            } @else {
+              <strong>No messages yet</strong>
+              <span>New Telegram and Hope Hub messages will appear here automatically.</span>
+            }
           </div>
         }
       </div>
