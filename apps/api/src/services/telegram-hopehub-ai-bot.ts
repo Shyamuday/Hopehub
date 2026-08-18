@@ -16,7 +16,8 @@ import {
   recordTelegramCampaignPollUpdate,
   recordTelegramCommunityReaction,
   recordTelegramCommunityDeparture,
-  welcomeTelegramCommunityMembers
+  welcomeTelegramCommunityMembers,
+  handleTelegramCommunityVoiceChatEnded
 } from './telegram-community-campaigns.js';
 import { ingestTelegramLiveChatMessage } from './telegram-live-chat-bridge.js';
 import {
@@ -98,6 +99,7 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
   if (await recordTelegramCommunityDeparture(update)) return;
   if (await welcomeTelegramCommunityMembers(update)) return;
   if (!message) return;
+  if (await handleTelegramCommunityVoiceChatEnded(message)) return;
   if (message.text?.startsWith('/') && (await handleCommand(message, values))) return;
   if (await handleGroupHelpBotSettingsInput(message)) return;
   if (message.sender_chat && values.telegramGroupHelpChannelSenderPolicy !== 'allow') {

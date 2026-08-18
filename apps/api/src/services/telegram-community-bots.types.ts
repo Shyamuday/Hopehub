@@ -45,6 +45,8 @@ export type CommunityTelegramMessage = {
   audio?: CommunityTelegramFile;
   voice?: CommunityTelegramFile;
   sticker?: CommunityTelegramFile;
+  video_chat_ended?: { duration: number };
+  video_chat_started?: Record<string, never>;
   contact?: unknown;
   location?: unknown;
 };

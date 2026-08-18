@@ -151,6 +151,7 @@ model TelegramCommunityEvent {
   status            String                       @default("SCHEDULED")
   telegramMessageId Int?
   announcedAt       DateTime?
+  announcementDueAt DateTime?
   reminderSentAt    DateTime?
   createdById       String?
   rsvps             TelegramCommunityEventRsvp[]
@@ -158,6 +159,7 @@ model TelegramCommunityEvent {
   updatedAt         DateTime                     @updatedAt
 
   @@index([status, startsAt])
+  @@index([status, announcementDueAt])
   @@index([chatId])
 }
 

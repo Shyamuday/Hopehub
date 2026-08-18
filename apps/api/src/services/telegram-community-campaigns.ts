@@ -5,7 +5,10 @@ import {
   editCommunityReplyMarkup,
   sendCommunityMessage
 } from './telegram-community-bots.client.js';
-import type { CommunityTelegramUpdate } from './telegram-community-bots.types.js';
+import type {
+  CommunityTelegramMessage,
+  CommunityTelegramUpdate
+} from './telegram-community-bots.types.js';
 import { configuredUrlKeyboard } from './telegram-keyboard-config.js';
 import { colorizeTelegramKeyboard } from './telegram-button-styles.js';
 import { getSiteConfigMap } from './site-config.service.js';
@@ -595,6 +598,38 @@ export async function runTelegramCampaignScheduler(now = new Date()) {
   }
 }
 
+export async function handleTelegramCommunityVoiceChatEnded(message: CommunityTelegramMessage) {
+  if (!message.video_chat_ended || !['group', 'supergroup'].includes(message.chat.type || '')) {
+    return false;
+  }
+  const chatId = String(message.chat.id);
+  const now = new Date();
+  const current = await prisma.telegramCommunityEvent.findFirst({
+    where: {
+      chatId,
+      status: 'SCHEDULED',
+      startsAt: { lte: now, gte: new Date(now.getTime() - 4 * 60 * 60 * 1000) }
+    },
+    orderBy: { startsAt: 'desc' }
+  });
+  if (!current) return false;
+  await prisma.telegramCommunityEvent.update({
+    where: { id: current.id },
+    data: { status: 'COMPLETED' }
+  });
+  const next = await prisma.telegramCommunityEvent.findFirst({
+    where: { chatId, status: 'SCHEDULED', startsAt: { gt: now }, announcedAt: null },
+    orderBy: { startsAt: 'asc' }
+  });
+  if (next) {
+    await prisma.telegramCommunityEvent.update({
+      where: { id: next.id },
+      data: { announcementDueAt: new Date(now.getTime() + 15 * 60 * 1000) }
+    });
+  }
+  return true;
+}
+
 let lastCommunityDataCleanupAt = 0;
 
 async function runCommunityDataRetentionCleanupHourly(now: Date) {
@@ -1060,7 +1095,7 @@ async function runTelegramCommunityEventScheduler(now: Date) {
     where: {
       status: 'SCHEDULED',
       announcedAt: null,
-      startsAt: { gt: now, lte: new Date(now.getTime() + 60 * 60 * 1000) }
+      announcementDueAt: { lte: now }
     },
     take: 10
   });
