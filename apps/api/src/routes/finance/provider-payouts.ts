@@ -1,11 +1,22 @@
 import { Router } from 'express';
-import { PaymentStatus, ProviderPayoutStatus, Role } from '@prisma/client';
+import {
+  PaymentStatus,
+  Prisma,
+  ProviderEarningModel,
+  ProviderPayoutStatus,
+  Role
+} from '@prisma/client';
 import { z } from 'zod';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
 import { asyncRoute, queryText, routeParam } from '../../utils/helpers.js';
 import { backfillProviderEarnings } from '../../services/provider-earnings.js';
 import { monthDateRange } from './shared.js';
+import {
+  computeProviderCompensation,
+  providerCompensationSelect,
+  serializeProviderCompensation
+} from '../../services/provider-compensation.js';
 
 function asRecord(value: unknown): Record<string, any> {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -35,7 +46,124 @@ const payoutStatusSchema = z.object({
   payoutNote: z.string().trim().max(1000).optional().nullable()
 });
 
+const compensationSchema = z.object({
+  model: z.nativeEnum(ProviderEarningModel),
+  providerPercent: z.number().int().min(0).max(100),
+  providerFixedInPaise: z.number().int().min(0).max(100_000_000),
+  platformPercent: z.number().int().min(0).max(100),
+  platformFixedInPaise: z.number().int().min(0).max(100_000_000),
+  minimumProviderInPaise: z.number().int().min(0).max(100_000_000).nullable(),
+  maximumPlatformInPaise: z.number().int().min(0).max(100_000_000).nullable()
+});
+
 export function registerFinanceProviderPayoutRoutes(router: Router) {
+  router.get(
+    '/admin/finance/provider-compensation',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const previewGrossInPaise = Math.max(
+        100,
+        Math.min(10_000_000, Number(queryText(req, 'previewGrossInPaise')) || 100_000)
+      );
+      const [doctors, audits] = await Promise.all([
+        prisma.doctor.findMany({
+          where: { user: { isActive: true } },
+          select: {
+            id: true,
+            providerDomain: true,
+            doctorType: true,
+            specialty: true,
+            designation: true,
+            compensationModel: true,
+            compensationUpdatedAt: true,
+            ...providerCompensationSelect,
+            user: { select: { id: true, name: true, email: true, mobile: true } }
+          },
+          orderBy: [{ user: { name: 'asc' } }]
+        }),
+        prisma.providerCompensationAudit.findMany({
+          orderBy: { createdAt: 'desc' },
+          take: 50
+        })
+      ]);
+      const actors = await prisma.user.findMany({
+        where: { id: { in: [...new Set(audits.map((audit) => audit.actorUserId))] } },
+        select: { id: true, name: true, email: true }
+      });
+      const actorById = new Map(actors.map((actor) => [actor.id, actor]));
+      const doctorNameById = new Map(doctors.map((doctor) => [doctor.id, doctor.user.name]));
+      res.json({
+        previewGrossInPaise,
+        providers: doctors.map((doctor) => ({
+          id: doctor.id,
+          user: doctor.user,
+          providerDomain: doctor.providerDomain,
+          doctorType: doctor.doctorType,
+          specialty: doctor.specialty,
+          designation: doctor.designation,
+          compensationModel: doctor.compensationModel,
+          compensationUpdatedAt: doctor.compensationUpdatedAt,
+          rule: serializeProviderCompensation(doctor),
+          preview: computeProviderCompensation(previewGrossInPaise, doctor)
+        })),
+        audits: audits.map((audit) => ({
+          ...audit,
+          providerName: doctorNameById.get(audit.doctorId) || 'Provider',
+          actor: actorById.get(audit.actorUserId) || null
+        }))
+      });
+    })
+  );
+
+  router.patch(
+    '/admin/finance/provider-compensation/:doctorId',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const body = compensationSchema.parse(req.body);
+      const doctorId = routeParam(req, 'doctorId');
+      const existing = await prisma.doctor.findUnique({
+        where: { id: doctorId },
+        select: { id: true, ...providerCompensationSelect }
+      });
+      if (!existing) return res.status(404).json({ message: 'Provider not found.' });
+      const before = serializeProviderCompensation(existing);
+      const doctor = await prisma.$transaction(async (tx) => {
+        const updated = await tx.doctor.update({
+          where: { id: doctorId },
+          data: {
+            providerEarningModel: body.model,
+            consultationSharePercent: body.providerPercent,
+            providerFixedEarningInPaise: body.providerFixedInPaise,
+            platformFeePercent: body.platformPercent,
+            platformFixedFeeInPaise: body.platformFixedInPaise,
+            minimumProviderEarningInPaise: body.minimumProviderInPaise,
+            maximumPlatformFeeInPaise: body.maximumPlatformInPaise,
+            compensationUpdatedAt: new Date(),
+            compensationUpdatedById: req.user!.id
+          },
+          select: { id: true, ...providerCompensationSelect }
+        });
+        await tx.providerCompensationAudit.create({
+          data: {
+            doctorId,
+            actorUserId: req.user!.id,
+            before: before as Prisma.InputJsonValue,
+            after: serializeProviderCompensation(updated) as Prisma.InputJsonValue
+          }
+        });
+        return updated;
+      });
+      const rule = serializeProviderCompensation(doctor);
+      res.json({
+        rule,
+        preview: computeProviderCompensation(100_000, doctor),
+        message: 'Provider income rule saved. It applies to future payment calculations.'
+      });
+    })
+  );
+
   router.get(
     '/admin/finance/provider-payouts',
     authRequired,

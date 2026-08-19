@@ -3,6 +3,7 @@ import { form, FormField } from '@angular/forms/signals';
 import { DatePipe } from '@angular/common';
 import { AdminApi } from '../../../core/services/admin-api';
 import { AdminWorkspaceService } from '../../../core/services/admin-workspace.service';
+import { AppApplyButtonComponent } from '../../../shared/ui/app-apply-button.component';
 import {
   EMPTY_EXPENSE_FORM,
   EXPENSE_CATEGORIES,
@@ -19,7 +20,7 @@ import {
 
 @Component({
   selector: 'app-finance-page',
-  imports: [FormField, DatePipe],
+  imports: [FormField, DatePipe, AppApplyButtonComponent],
   templateUrl: './finance-page.html',
   styleUrl: './finance-page.scss',
 })
@@ -60,6 +61,11 @@ export class FinancePage implements OnInit {
   outstanding = signal<any[]>([]);
   providerPayouts = signal<any[]>([]);
   providerPayoutSummary = signal<any>(null);
+  providerCompensation = signal<any[]>([]);
+  compensationAudits = signal<any[]>([]);
+  compensationDrafts = signal<Record<string, any>>({});
+  compensationSavingId = signal('');
+  compensationPreviewRupees = signal(1000);
   stores = signal<any[]>([]);
 
   expenseModal = signal(false);
@@ -84,6 +90,13 @@ export class FinancePage implements OnInit {
   readonly paiseToK = paiseToK;
 
   readonly tabs = FINANCE_TABS;
+  readonly compensationModels = [
+    { value: 'PROVIDER_PERCENTAGE', label: 'Provider receives a percentage' },
+    { value: 'FIXED_PROVIDER_AMOUNT', label: 'Provider receives a fixed amount' },
+    { value: 'PLATFORM_PERCENTAGE', label: 'Platform deducts a percentage' },
+    { value: 'FIXED_PLATFORM_FEE', label: 'Platform deducts a fixed fee' },
+    { value: 'HYBRID_PLATFORM_FEE', label: 'Platform percentage + fixed fee' },
+  ];
   readonly workspaceKey = this.workspace.selectedWorkspace;
   readonly providerTitleLabel = this.workspace.providerTitleLabel;
   readonly providerSingularLabel = this.workspace.providerSingularLabel;
@@ -179,6 +192,7 @@ export class FinancePage implements OnInit {
       this.api.getExpenses({ level: 'CLINIC' }),
       this.api.getExpenses({ level: 'STORE', storeId: storeFilter || undefined }),
       this.api.getProviderPayouts(payoutRange),
+      this.api.getProviderCompensation(this.compensationPreviewRupees() * 100),
     ])
       .then(
         ([
@@ -191,6 +205,7 @@ export class FinancePage implements OnInit {
           clinicExpenses,
           storeExpenses,
           providerPayouts,
+          providerCompensation,
         ]) => {
           this.summary.set(summary);
           this.branchPnl.set(branchData.branches ?? []);
@@ -203,6 +218,10 @@ export class FinancePage implements OnInit {
           this.storeExpenses.set(storeExpenses.expenses);
           this.providerPayouts.set(providerPayouts.earnings ?? []);
           this.providerPayoutSummary.set(providerPayouts.summary ?? null);
+          this.setProviderCompensation(
+            providerCompensation.providers ?? [],
+            providerCompensation.audits ?? [],
+          );
           this.loading.set(false);
         },
       )
@@ -248,11 +267,14 @@ export class FinancePage implements OnInit {
         .catch(() => {});
     }
     if (this.tab() === 'provider-payouts') {
-      this.api
-        .getProviderPayouts(this.selectedMonthRange())
-        .then((r) => {
-          this.providerPayouts.set(r.earnings ?? []);
-          this.providerPayoutSummary.set(r.summary ?? null);
+      Promise.all([
+        this.api.getProviderPayouts(this.selectedMonthRange()),
+        this.api.getProviderCompensation(this.compensationPreviewRupees() * 100),
+      ])
+        .then(([payouts, compensation]) => {
+          this.providerPayouts.set(payouts.earnings ?? []);
+          this.providerPayoutSummary.set(payouts.summary ?? null);
+          this.setProviderCompensation(compensation.providers ?? [], compensation.audits ?? []);
         })
         .catch(() => {});
     }
@@ -386,6 +408,119 @@ export class FinancePage implements OnInit {
         this.toast.set('Backfill failed');
         setTimeout(() => this.toast.set(''), 2500);
       });
+  }
+
+  private setProviderCompensation(providers: any[], audits: any[] = []): void {
+    this.providerCompensation.set(providers);
+    this.compensationAudits.set(audits);
+    this.compensationDrafts.set(
+      Object.fromEntries(providers.map((provider) => [provider.id, { ...provider.rule }])),
+    );
+  }
+
+  compensationDraft(providerId: string): any {
+    return this.compensationDrafts()[providerId] || {};
+  }
+
+  updateCompensationDraft(providerId: string, field: string, value: unknown): void {
+    this.compensationDrafts.update((drafts) => ({
+      ...drafts,
+      [providerId]: { ...(drafts[providerId] || {}), [field]: value },
+    }));
+  }
+
+  updateCompensationNumber(providerId: string, field: string, event: Event): void {
+    const value = Number((event.target as HTMLInputElement).value || 0);
+    this.updateCompensationDraft(providerId, field, Math.max(0, Math.round(value)));
+  }
+
+  updateCompensationMoney(providerId: string, field: string, event: Event, nullable = false): void {
+    const raw = (event.target as HTMLInputElement).value.trim();
+    this.updateCompensationDraft(
+      providerId,
+      field,
+      nullable && !raw ? null : Math.max(0, Math.round((Number(raw) || 0) * 100)),
+    );
+  }
+
+  compensationRupees(value: unknown): string | number {
+    return value == null ? '' : Number(value) / 100;
+  }
+
+  compensationPreview(rule: any) {
+    const gross = Math.max(0, Math.round(this.compensationPreviewRupees() * 100));
+    let provider = 0;
+    let platform = 0;
+    switch (rule.model) {
+      case 'FIXED_PROVIDER_AMOUNT':
+        provider = Math.min(gross, Number(rule.providerFixedInPaise || 0));
+        platform = gross - provider;
+        break;
+      case 'PLATFORM_PERCENTAGE':
+        platform = Math.round((gross * Number(rule.platformPercent || 0)) / 100);
+        provider = gross - platform;
+        break;
+      case 'FIXED_PLATFORM_FEE':
+        platform = Math.min(gross, Number(rule.platformFixedInPaise || 0));
+        provider = gross - platform;
+        break;
+      case 'HYBRID_PLATFORM_FEE':
+        platform = Math.min(
+          gross,
+          Math.round((gross * Number(rule.platformPercent || 0)) / 100) +
+            Number(rule.platformFixedInPaise || 0),
+        );
+        provider = gross - platform;
+        break;
+      default:
+        provider = Math.round((gross * Number(rule.providerPercent || 0)) / 100);
+        platform = gross - provider;
+    }
+    if (rule.maximumPlatformInPaise != null) {
+      platform = Math.min(platform, Number(rule.maximumPlatformInPaise));
+      provider = gross - platform;
+    }
+    if (rule.minimumProviderInPaise != null && gross > 0) {
+      provider = Math.min(gross, Math.max(provider, Number(rule.minimumProviderInPaise)));
+      platform = gross - provider;
+    }
+    return { gross, provider, platform };
+  }
+
+  saveProviderCompensation(provider: any): void {
+    const rule = this.compensationDraft(provider.id);
+    this.compensationSavingId.set(provider.id);
+    this.api
+      .updateProviderCompensation(provider.id, rule)
+      .then(() => {
+        this.toast.set(`Income rule saved for ${provider.user?.name || 'provider'}`);
+        this.loadTab();
+        setTimeout(() => this.toast.set(''), 2500);
+      })
+      .catch(() => {
+        this.toast.set('Could not save the income rule');
+        setTimeout(() => this.toast.set(''), 2500);
+      })
+      .finally(() => this.compensationSavingId.set(''));
+  }
+
+  earningModelLabel(row: any): string {
+    return (
+      this.compensationModels.find((model) => model.value === row.earningModel)?.label ||
+      row.earningModel ||
+      'Legacy percentage'
+    );
+  }
+
+  compensationModelLabel(modelValue: string): string {
+    return this.compensationModels.find((model) => model.value === modelValue)?.label || modelValue;
+  }
+
+  auditChangeLabel(audit: any): string {
+    const before = this.compensationModelLabel(audit.before?.model || '');
+    const after = this.compensationModelLabel(audit.after?.model || '');
+    if (before !== after) return `${before} → ${after}`;
+    return `${after} values updated`;
   }
 
   private selectedMonthRange() {

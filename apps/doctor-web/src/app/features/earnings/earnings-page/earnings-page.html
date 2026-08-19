@@ -231,6 +231,7 @@
                     <span>Refunded <b>₹{{ formatPaise(row.refundedAmountInPaise) }}</b></span>
                   }
                   <span>Platform fee <b>₹{{ formatPaise(row.platformFeeInPaise || 0) }}</b></span>
+                  <span>Income rule <b>{{ settlementLabel(row) }}</b></span>
                   @if (row.payoutReference) {
                     <span>Reference <b>{{ row.payoutReference }}</b></span>
                   }

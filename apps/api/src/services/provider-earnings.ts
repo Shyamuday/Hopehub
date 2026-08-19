@@ -1,22 +1,17 @@
 import { PaymentStatus, Prisma, ProviderPayoutStatus } from '@prisma/client';
 import { prisma } from '../db.js';
+import { doctorReceivesConsultationShare } from './doctor-compensation.js';
 import {
-  doctorReceivesConsultationShare,
-  resolveDoctorSharePercent
-} from './doctor-compensation.js';
+  compensationConfigFromSnapshot,
+  computeProviderCompensation,
+  providerCompensationSelect,
+  serializeProviderCompensation
+} from './provider-compensation.js';
 
 function asRecord(value: unknown): Record<string, any> {
   return value && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, any>)
     : {};
-}
-
-function computeShare(grossAmountInPaise: number, sharePercent: number) {
-  const providerEarningInPaise = Math.round((grossAmountInPaise * sharePercent) / 100);
-  return {
-    providerEarningInPaise,
-    platformFeeInPaise: Math.max(0, grossAmountInPaise - providerEarningInPaise)
-  };
 }
 
 export async function upsertProviderEarningForPayment(
@@ -40,10 +35,8 @@ export async function upsertProviderEarningForPayment(
 
   const doctor = await prisma.doctor.findUnique({
     where: { userId: payment.consultation.assignedDoctorId },
-    select: { compensationModel: true, consultationSharePercent: true }
+    select: { compensationModel: true, ...providerCompensationSelect }
   });
-  const sharePercent =
-    doctor && doctorReceivesConsultationShare(doctor) ? resolveDoctorSharePercent(doctor) : 0;
 
   const snapshot = asRecord(payment.consultation.pricingSnapshot);
   const lineItems = asRecord(payment.lineItems);
@@ -60,8 +53,6 @@ export async function upsertProviderEarningForPayment(
   );
   const isEarnable =
     payment.status === PaymentStatus.PAID || payment.status === PaymentStatus.PARTIALLY_REFUNDED;
-  const split = computeShare(isEarnable ? grossAmountInPaise : 0, sharePercent);
-
   const existing = await prisma.providerEarning.findUnique({
     where: { paymentId: payment.id },
     select: {
@@ -69,9 +60,27 @@ export async function upsertProviderEarningForPayment(
       paidAt: true,
       paidByUserId: true,
       payoutReference: true,
-      payoutNote: true
+      payoutNote: true,
+      compensationSnapshot: true
     }
   });
+  const compensationConfig = doctor
+    ? compensationConfigFromSnapshot(existing?.compensationSnapshot, doctor)
+    : null;
+  const compensationSnapshot = compensationConfig
+    ? serializeProviderCompensation(compensationConfig)
+    : null;
+  const split =
+    doctor && compensationConfig && doctorReceivesConsultationShare(doctor)
+      ? computeProviderCompensation(isEarnable ? grossAmountInPaise : 0, compensationConfig)
+      : {
+          providerEarningInPaise: 0,
+          platformFeeInPaise: isEarnable ? grossAmountInPaise : 0,
+          effectiveProviderPercent: 0,
+          earningModel: 'SALARIED',
+          configuredPercent: 0,
+          configuredFixedInPaise: 0
+        };
   const nextPayoutStatus = options?.forceHold
     ? ProviderPayoutStatus.HOLD
     : existing?.payoutStatus === ProviderPayoutStatus.PAID
@@ -88,7 +97,13 @@ export async function upsertProviderEarningForPayment(
       doctorUserId: payment.consultation.assignedDoctorId,
       patientId: payment.consultation.patientId,
       grossAmountInPaise,
-      providerSharePercent: sharePercent,
+      providerSharePercent: split.effectiveProviderPercent,
+      earningModel: split.earningModel,
+      configuredPercent: split.configuredPercent,
+      configuredFixedInPaise: split.configuredFixedInPaise,
+      compensationSnapshot: compensationSnapshot
+        ? (compensationSnapshot as Prisma.InputJsonValue)
+        : Prisma.JsonNull,
       providerEarningInPaise: split.providerEarningInPaise,
       platformFeeInPaise: split.platformFeeInPaise,
       paymentStatus: payment.status,
@@ -106,7 +121,15 @@ export async function upsertProviderEarningForPayment(
       doctorUserId: payment.consultation.assignedDoctorId,
       patientId: payment.consultation.patientId,
       grossAmountInPaise,
-      providerSharePercent: sharePercent,
+      providerSharePercent: split.effectiveProviderPercent,
+      earningModel: split.earningModel,
+      configuredPercent: split.configuredPercent,
+      configuredFixedInPaise: split.configuredFixedInPaise,
+      compensationSnapshot: existing?.compensationSnapshot
+        ? undefined
+        : compensationSnapshot
+          ? (compensationSnapshot as Prisma.InputJsonValue)
+          : Prisma.JsonNull,
       providerEarningInPaise: split.providerEarningInPaise,
       platformFeeInPaise: split.platformFeeInPaise,
       paymentStatus: payment.status,

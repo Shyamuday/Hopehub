@@ -233,6 +233,10 @@ model ProviderEarning {
   source                 String               @default("consultation")
   grossAmountInPaise     Int                  @default(0)
   providerSharePercent   Int                  @default(0)
+  earningModel           String               @default("PROVIDER_PERCENTAGE")
+  configuredPercent      Int                  @default(0)
+  configuredFixedInPaise Int                  @default(0)
+  compensationSnapshot   Json?
   providerEarningInPaise Int                  @default(0)
   platformFeeInPaise     Int                  @default(0)
   paymentStatus          PaymentStatus        @default(CREATED)
@@ -259,6 +263,18 @@ model ProviderEarning {
   @@index([paymentStatus])
   @@index([createdAt])
   @@index([paidAt])
+}
+
+model ProviderCompensationAudit {
+  id          String   @id @default(cuid())
+  doctorId    String
+  actorUserId String
+  before      Json
+  after       Json
+  createdAt   DateTime @default(now())
+
+  @@index([doctorId, createdAt])
+  @@index([actorUserId, createdAt])
 }
 
 model DonationPayment {

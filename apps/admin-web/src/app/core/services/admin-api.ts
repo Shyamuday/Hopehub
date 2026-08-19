@@ -715,6 +715,18 @@ export class AdminApi {
       ...(args as Parameters<AdminFinanceApi['backfillProviderPayouts']>),
     );
   }
+
+  getProviderCompensation(...args: Parameters<AdminFinanceApi['getProviderCompensation']>) {
+    return this.finance.getProviderCompensation(
+      ...(args as Parameters<AdminFinanceApi['getProviderCompensation']>),
+    );
+  }
+
+  updateProviderCompensation(...args: Parameters<AdminFinanceApi['updateProviderCompensation']>) {
+    return this.finance.updateProviderCompensation(
+      ...(args as Parameters<AdminFinanceApi['updateProviderCompensation']>),
+    );
+  }
   exportAccountantBundle(...args: Parameters<AdminFinanceApi['exportAccountantBundle']>) {
     return this.finance.exportAccountantBundle(
       ...(args as Parameters<AdminFinanceApi['exportAccountantBundle']>),

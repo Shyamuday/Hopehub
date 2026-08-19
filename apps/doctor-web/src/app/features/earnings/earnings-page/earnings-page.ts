@@ -122,4 +122,25 @@ export class EarningsPage implements OnInit {
     };
     return mode ? (labels[mode] ?? mode.replace(/_/g, ' ')) : '';
   }
+
+  settlementLabel(row: any): string {
+    const percent = Number(row.configuredPercent || 0);
+    const fixed = Number(row.configuredFixedInPaise || 0);
+    switch (row.earningModel) {
+      case 'FIXED_PROVIDER_AMOUNT':
+        return `Fixed provider amount ₹${formatPaise(fixed)}`;
+      case 'PLATFORM_PERCENTAGE':
+        return `Platform fee ${percent}%`;
+      case 'FIXED_PLATFORM_FEE':
+        return `Fixed platform fee ₹${formatPaise(fixed)}`;
+      case 'HYBRID_PLATFORM_FEE':
+        return `Platform fee ${percent}% + ₹${formatPaise(fixed)}`;
+      case 'PROVIDER_PERCENTAGE':
+        return `Provider share ${percent || row.providerSharePercent || 0}%`;
+      default:
+        return row.providerSharePercent != null
+          ? `Provider share ${row.providerSharePercent}%`
+          : 'Standard income rule';
+    }
+  }
 }

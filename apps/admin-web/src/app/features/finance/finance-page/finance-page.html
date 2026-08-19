@@ -439,6 +439,87 @@
       <div class="actions">
         <button class="btn-primary" type="button" (click)="backfillProviderPayouts()">Backfill old bookings</button>
       </div>
+      <section class="panel compensation-panel">
+        <div class="compensation-header">
+          <div>
+            <h3>Provider income rules</h3>
+            <p class="branch-note">
+              Configure how Hope Hub divides future paid sessions. Existing paid payout records keep their original calculation.
+            </p>
+          </div>
+          <label class="preview-amount">
+            Preview user payment
+            <span><b>₹</b><input type="number" min="1" [value]="compensationPreviewRupees()" (input)="compensationPreviewRupees.set(+$any($event.target).value || 0)" /></span>
+          </label>
+        </div>
+        @if (!providerCompensation().length) {
+          <p class="empty-state">No active providers are available for income configuration.</p>
+        } @else {
+          <div class="compensation-list">
+            @for (provider of providerCompensation(); track provider.id) {
+              <details class="compensation-card">
+                <summary>
+                  <span><strong>{{ provider.user?.name }}</strong><small>{{ provider.designation || provider.specialty }} · {{ provider.compensationModel }}</small></span>
+                  <span class="rule-summary">{{ compensationModelLabel(compensationDraft(provider.id).model) }}</span>
+                </summary>
+                <div class="compensation-body">
+                  <label class="field-wide">Income model
+                    <select [value]="compensationDraft(provider.id).model" (change)="updateCompensationDraft(provider.id, 'model', $any($event.target).value)">
+                      @for (model of compensationModels; track model.value) { <option [value]="model.value">{{ model.label }}</option> }
+                    </select>
+                  </label>
+
+                  @if (compensationDraft(provider.id).model === 'PROVIDER_PERCENTAGE') {
+                    <label>Provider share %<input type="number" min="0" max="100" [value]="compensationDraft(provider.id).providerPercent" (input)="updateCompensationNumber(provider.id, 'providerPercent', $event)" /></label>
+                  }
+                  @if (compensationDraft(provider.id).model === 'FIXED_PROVIDER_AMOUNT') {
+                    <label>Provider receives ₹<input type="number" min="0" [value]="compensationRupees(compensationDraft(provider.id).providerFixedInPaise)" (input)="updateCompensationMoney(provider.id, 'providerFixedInPaise', $event)" /></label>
+                  }
+                  @if (compensationDraft(provider.id).model === 'PLATFORM_PERCENTAGE' || compensationDraft(provider.id).model === 'HYBRID_PLATFORM_FEE') {
+                    <label>Platform fee %<input type="number" min="0" max="100" [value]="compensationDraft(provider.id).platformPercent" (input)="updateCompensationNumber(provider.id, 'platformPercent', $event)" /></label>
+                  }
+                  @if (compensationDraft(provider.id).model === 'FIXED_PLATFORM_FEE' || compensationDraft(provider.id).model === 'HYBRID_PLATFORM_FEE') {
+                    <label>Fixed platform fee ₹<input type="number" min="0" [value]="compensationRupees(compensationDraft(provider.id).platformFixedInPaise)" (input)="updateCompensationMoney(provider.id, 'platformFixedInPaise', $event)" /></label>
+                  }
+
+                  <label>Minimum provider earning ₹<input type="number" min="0" placeholder="No minimum" [value]="compensationRupees(compensationDraft(provider.id).minimumProviderInPaise)" (input)="updateCompensationMoney(provider.id, 'minimumProviderInPaise', $event, true)" /></label>
+                  <label>Maximum platform fee ₹<input type="number" min="0" placeholder="No maximum" [value]="compensationRupees(compensationDraft(provider.id).maximumPlatformInPaise)" (input)="updateCompensationMoney(provider.id, 'maximumPlatformInPaise', $event, true)" /></label>
+
+                  @if (compensationPreview(compensationDraft(provider.id)); as preview) {
+                    <div class="split-preview field-wide">
+                      <span><small>User pays</small><strong>{{ formatPaise(preview.gross) }}</strong></span>
+                      <span><small>Provider receives</small><strong>{{ formatPaise(preview.provider) }}</strong></span>
+                      <span><small>Hope Hub keeps</small><strong>{{ formatPaise(preview.platform) }}</strong></span>
+                    </div>
+                  }
+                  <div class="compensation-actions field-wide">
+                    <small>Changes apply to future payment calculations and are recorded in the audit history.</small>
+                    <app-apply-button
+                      label="Save income rule"
+                      pendingLabel="Saving…"
+                      [loading]="compensationSavingId() === provider.id"
+                      (click)="saveProviderCompensation(provider)"
+                    ></app-apply-button>
+                  </div>
+                </div>
+              </details>
+            }
+          </div>
+          @if (compensationAudits().length) {
+            <details class="compensation-audit">
+              <summary>Recent income-rule changes</summary>
+              <div class="audit-list">
+                @for (audit of compensationAudits().slice(0, 10); track audit.id) {
+                  <div>
+                    <span><strong>{{ audit.providerName }}</strong> · {{ audit.createdAt | date:'medium' }}</span>
+                    <small>{{ auditChangeLabel(audit) }} · Changed by {{ audit.actor?.name || audit.actor?.email || 'Administrator' }}</small>
+                  </div>
+                }
+              </div>
+            </details>
+          }
+        }
+      </section>
       <div class="panel">
         <h3>{{ providerTitleLabel() }} payout ledger</h3>
         <p class="branch-note">Shows {{ consumerSingularLabel() }} paid amount, platform fee, {{ providerSingularLabel() }} earning, and payout status for care/{{ providerSingularLabel() }} {{ sessionPluralLabel() }}.</p>
@@ -472,6 +553,7 @@
                     </td>
                     <td>
                       {{ providerPricingText(row) || 'Standard' }}
+                      <div class="branch-code">{{ earningModelLabel(row) }}</div>
                       @if (row.packageUsage) {
                         <div class="branch-code">Package session</div>
                       }

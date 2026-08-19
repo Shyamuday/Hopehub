@@ -188,6 +188,23 @@ export class AdminFinanceApi extends AdminApiBase {
     );
   }
 
+  getProviderCompensation(previewGrossInPaise = 100_000) {
+    return firstValueFrom(
+      this.http.get<any>(`${this.apiBase}${API_PATHS.ADMIN.FINANCE.PROVIDER_COMPENSATION}`, {
+        params: { previewGrossInPaise },
+      }),
+    );
+  }
+
+  updateProviderCompensation(doctorId: string, data: any) {
+    return firstValueFrom(
+      this.http.patch<any>(
+        `${this.apiBase}${API_PATHS.ADMIN.FINANCE.PROVIDER_COMPENSATION_BY_ID(doctorId)}`,
+        data,
+      ),
+    );
+  }
+
   async exportAccountantBundle(params: { month: string; storeId?: string }) {
     const query = new URLSearchParams({ month: params.month });
     if (params.storeId) query.set('storeId', params.storeId);

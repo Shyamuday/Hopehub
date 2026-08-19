@@ -562,7 +562,7 @@
                   <input [value]="service.description || ''" placeholder="Description" (input)="updateCareService($index, 'description', $any($event.target).value)" />
                   <small class="service-payout-preview">
                     Your estimated share: {{ servicePayoutPreview(service) }}
-                    ({{ consultationSharePercent }}%, before coupons, taxes, or refunds)
+                    ({{ providerIncomeRuleLabel() }}, before coupons, taxes, or refunds)
                   </small>
                   <label><input type="checkbox" [checked]="service.isActive !== false" (change)="updateCareService($index, 'isActive', $any($event.target).checked)" /> Active</label>
                   <button type="button" class="remove-service" (click)="removeCareService($index)">Remove service</button>

@@ -158,6 +158,12 @@ export class ProfilePage implements OnDestroy {
   specialtyFocusLabel = '';
   showOnWebsite = false;
   consultationSharePercent = 60;
+  providerEarningModel = 'PROVIDER_PERCENTAGE';
+  providerFixedEarningInPaise = 0;
+  platformFeePercent = 40;
+  platformFixedFeeInPaise = 0;
+  minimumProviderEarningInPaise: number | null = null;
+  maximumPlatformFeeInPaise: number | null = null;
   listenerScreeningPassed = false;
   canPrescribe = false;
   isPsychologist = false;
@@ -971,6 +977,23 @@ export class ProfilePage implements OnDestroy {
         0,
         Math.min(100, Number(profile.doctorProfile?.consultationSharePercent ?? 60)),
       );
+      this.providerEarningModel =
+        profile.doctorProfile?.providerEarningModel || 'PROVIDER_PERCENTAGE';
+      this.providerFixedEarningInPaise = Math.max(
+        0,
+        Number(profile.doctorProfile?.providerFixedEarningInPaise || 0),
+      );
+      this.platformFeePercent = Math.max(
+        0,
+        Math.min(100, Number(profile.doctorProfile?.platformFeePercent ?? 40)),
+      );
+      this.platformFixedFeeInPaise = Math.max(
+        0,
+        Number(profile.doctorProfile?.platformFixedFeeInPaise || 0),
+      );
+      this.minimumProviderEarningInPaise =
+        profile.doctorProfile?.minimumProviderEarningInPaise ?? null;
+      this.maximumPlatformFeeInPaise = profile.doctorProfile?.maximumPlatformFeeInPaise ?? null;
       this.listenerScreeningPassed = Boolean(mental?.listenerScreening?.passed);
       this.profileImageUrl =
         (profile as { profileImageUrl?: string | null }).profileImageUrl ?? null;
@@ -1418,10 +1441,56 @@ export class ProfilePage implements OnDestroy {
   }
 
   estimatedPayoutInPaise(amountInPaise: number | null | undefined): number {
-    return Math.max(
-      0,
-      Math.round((Number(amountInPaise || 0) * this.consultationSharePercent) / 100),
-    );
+    const gross = Math.max(0, Number(amountInPaise || 0));
+    let provider = 0;
+    let platform = 0;
+    switch (this.providerEarningModel) {
+      case 'FIXED_PROVIDER_AMOUNT':
+        provider = Math.min(gross, this.providerFixedEarningInPaise);
+        platform = gross - provider;
+        break;
+      case 'PLATFORM_PERCENTAGE':
+        platform = Math.round((gross * this.platformFeePercent) / 100);
+        provider = gross - platform;
+        break;
+      case 'FIXED_PLATFORM_FEE':
+        platform = Math.min(gross, this.platformFixedFeeInPaise);
+        provider = gross - platform;
+        break;
+      case 'HYBRID_PLATFORM_FEE':
+        platform = Math.min(
+          gross,
+          Math.round((gross * this.platformFeePercent) / 100) + this.platformFixedFeeInPaise,
+        );
+        provider = gross - platform;
+        break;
+      default:
+        provider = Math.round((gross * this.consultationSharePercent) / 100);
+        platform = gross - provider;
+    }
+    if (this.maximumPlatformFeeInPaise != null) {
+      platform = Math.min(platform, this.maximumPlatformFeeInPaise);
+      provider = gross - platform;
+    }
+    if (this.minimumProviderEarningInPaise != null && gross > 0) {
+      provider = Math.min(gross, Math.max(provider, this.minimumProviderEarningInPaise));
+    }
+    return Math.max(0, Math.round(provider));
+  }
+
+  providerIncomeRuleLabel(): string {
+    switch (this.providerEarningModel) {
+      case 'FIXED_PROVIDER_AMOUNT':
+        return `fixed ₹${this.rupees(this.providerFixedEarningInPaise)}`;
+      case 'PLATFORM_PERCENTAGE':
+        return `after ${this.platformFeePercent}% platform fee`;
+      case 'FIXED_PLATFORM_FEE':
+        return `after ₹${this.rupees(this.platformFixedFeeInPaise)} platform fee`;
+      case 'HYBRID_PLATFORM_FEE':
+        return `after ${this.platformFeePercent}% + ₹${this.rupees(this.platformFixedFeeInPaise)} platform fee`;
+      default:
+        return `${this.consultationSharePercent}% share`;
+    }
   }
 
   servicePayoutPreview(service: any): string {

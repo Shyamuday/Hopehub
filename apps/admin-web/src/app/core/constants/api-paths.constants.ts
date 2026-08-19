@@ -201,6 +201,9 @@ export const API_PATHS = {
       PROVIDER_PAYOUTS: '/admin/finance/provider-payouts',
       PROVIDER_PAYOUT: (id: string) => `/admin/finance/provider-payouts/${id}`,
       PROVIDER_PAYOUT_BACKFILL: '/admin/finance/provider-payouts/backfill',
+      PROVIDER_COMPENSATION: '/admin/finance/provider-compensation',
+      PROVIDER_COMPENSATION_BY_ID: (doctorId: string) =>
+        `/admin/finance/provider-compensation/${doctorId}`,
     },
   },
   CONSULTATIONS: '/consultations',

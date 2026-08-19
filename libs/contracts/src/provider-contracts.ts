@@ -229,6 +229,18 @@ export type ProviderProfileSummaryDto = {
   bio?: string | null;
   yearsOfExperience?: number | null;
   consultationSharePercent?: number | null;
+  providerEarningModel?:
+    | 'PROVIDER_PERCENTAGE'
+    | 'FIXED_PROVIDER_AMOUNT'
+    | 'PLATFORM_PERCENTAGE'
+    | 'FIXED_PLATFORM_FEE'
+    | 'HYBRID_PLATFORM_FEE'
+    | null;
+  providerFixedEarningInPaise?: number | null;
+  platformFeePercent?: number | null;
+  platformFixedFeeInPaise?: number | null;
+  minimumProviderEarningInPaise?: number | null;
+  maximumPlatformFeeInPaise?: number | null;
   focusAreas?: string[];
   mentalHealthProfile?: MentalHealthProviderProfileDto | null;
   providerClassification?: ProviderClassificationDto;

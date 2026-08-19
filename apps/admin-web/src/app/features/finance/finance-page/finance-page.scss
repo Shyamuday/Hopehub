@@ -39,6 +39,33 @@ th, td { padding: 0.65rem; border-bottom: 1px solid #f1f5f9; text-align: left; }
 .status-pill { display: inline-flex; align-items: center; border-radius: 999px; padding: 0.18rem 0.55rem; background: #fef3c7; color: #92400e; font-size: 0.78rem; font-weight: 700; }
 .status-pill.paid { background: #dcfce7; color: #166534; }
 .status-pill.hold { background: #fee2e2; color: #991b1b; }
+.compensation-panel { margin-bottom: 1rem; }
+.compensation-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.compensation-header h3 { margin: 0; }
+.preview-amount { display: grid; gap: 0.3rem; min-width: 170px; color: #475569; font-size: 0.8rem; font-weight: 700; }
+.preview-amount span { display: flex; align-items: center; gap: 0.35rem; border: 1px solid #cbd5e1; border-radius: 9px; padding-left: 0.7rem; background: #fff; }
+.preview-amount input { min-width: 0; width: 100%; border: 0; padding: 0.55rem 0.55rem 0.55rem 0; outline: 0; }
+.compensation-list { display: grid; gap: 0.7rem; }
+.compensation-card { border: 1px solid #dbe3ed; border-radius: 11px; background: #fbfdff; overflow: hidden; }
+.compensation-card summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; cursor: pointer; padding: 0.9rem 1rem; list-style: none; }
+.compensation-card summary::-webkit-details-marker { display: none; }
+.compensation-card summary span:first-child { display: grid; gap: 0.2rem; }
+.compensation-card summary small { color: #64748b; font-weight: 400; }
+.rule-summary { border-radius: 999px; padding: 0.25rem 0.6rem; background: #e6f4f1; color: #0f766e; font-size: 0.76rem; font-weight: 700; text-align: right; }
+.compensation-body { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem; padding: 1rem; border-top: 1px solid #e2e8f0; background: #fff; }
+.compensation-body label { display: grid; gap: 0.3rem; color: #475569; font-size: 0.82rem; font-weight: 700; }
+.compensation-body input, .compensation-body select { min-height: 42px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.55rem 0.65rem; background: #fff; font: inherit; }
+.field-wide { grid-column: 1 / -1; }
+.split-preview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; padding: 0.8rem; border-radius: 10px; background: #f1f7f6; }
+.split-preview span { display: grid; gap: 0.2rem; }
+.split-preview small { color: #64748b; }.split-preview strong { color: #0f5f58; }
+.compensation-actions { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.compensation-actions small { color: #64748b; }
+.compensation-audit { margin-top: 1rem; border-top: 1px solid #e2e8f0; padding-top: 0.8rem; }
+.compensation-audit summary { cursor: pointer; color: #0f766e; font-size: 0.86rem; font-weight: 700; }
+.audit-list { display: grid; gap: 0.5rem; margin-top: 0.75rem; }
+.audit-list div { display: flex; justify-content: space-between; gap: 1rem; border-radius: 8px; background: #f8fafc; padding: 0.6rem 0.75rem; font-size: 0.8rem; }
+.audit-list small { color: #64748b; }
 .modal-backdrop { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45); display: grid; place-items: center; z-index: 50; }
 .modal { background: #fff; border-radius: 12px; padding: 1.25rem; width: min(480px, 92vw); display: grid; gap: 0.65rem; }
 .modal label { display: grid; gap: 0.25rem; font-size: 0.9rem; }
@@ -53,5 +80,8 @@ th, td { padding: 0.65rem; border-bottom: 1px solid #f1f5f9; text-align: left; }
   .branch-filter { max-width: none; width: 100%; }
   .panel table { min-width: 36rem; }
   .cards { grid-template-columns: 1fr 1fr; }
+  .compensation-header, .compensation-actions { align-items: stretch; flex-direction: column; }
+  .compensation-body, .split-preview { grid-template-columns: 1fr; }
+  .field-wide { grid-column: auto; }
 }
 @media (max-width: 480px) { .cards { grid-template-columns: 1fr; } }

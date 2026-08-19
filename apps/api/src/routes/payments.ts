@@ -24,6 +24,10 @@ import {
   doctorReceivesConsultationShare,
   resolveDoctorSharePercent
 } from '../services/doctor-compensation.js';
+import {
+  providerCompensationSelect,
+  serializeProviderCompensation
+} from '../services/provider-compensation.js';
 import { buildDoctorEarningsReport } from '../services/doctor-earnings.js';
 import { upsertProviderEarningForPayment } from '../services/provider-earnings.js';
 import { settleConsultationPaymentRewards } from '../services/reward-settlement.js';
@@ -646,7 +650,7 @@ export function createPaymentsRouter(io: SocketIoServer) {
     asyncRoute(async (req, res) => {
       const doctor = await prisma.doctor.findUnique({
         where: { userId: req.user!.id },
-        select: { compensationModel: true, consultationSharePercent: true }
+        select: { compensationModel: true, ...providerCompensationSelect }
       });
       if (!doctor) return res.status(404).json({ message: 'Doctor profile not found.' });
 
@@ -699,6 +703,7 @@ export function createPaymentsRouter(io: SocketIoServer) {
 
       res.json({
         doctorSharePercent,
+        compensationRule: serializeProviderCompensation(doctor),
         month: range?.month ?? null,
         totals: {
           paidConsultations: earnings.consultation.paid.count,

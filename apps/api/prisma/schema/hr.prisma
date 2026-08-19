@@ -59,6 +59,14 @@ enum DoctorCompensationModel {
   HYBRID
 }
 
+enum ProviderEarningModel {
+  PROVIDER_PERCENTAGE
+  FIXED_PROVIDER_AMOUNT
+  PLATFORM_PERCENTAGE
+  FIXED_PLATFORM_FEE
+  HYBRID_PLATFORM_FEE
+}
+
 model Doctor {
   id             String                     @id @default(cuid())
   userId         String                     @unique
@@ -84,6 +92,14 @@ model Doctor {
   compensationModel        DoctorCompensationModel @default(HYBRID)
   /// Share of paid consultation revenue (percent). Defaults to 60 when unset in logic.
   consultationSharePercent Int                     @default(60)
+  providerEarningModel       ProviderEarningModel  @default(PROVIDER_PERCENTAGE)
+  providerFixedEarningInPaise Int                  @default(0)
+  platformFeePercent         Int                   @default(40)
+  platformFixedFeeInPaise    Int                   @default(0)
+  minimumProviderEarningInPaise Int?
+  maximumPlatformFeeInPaise  Int?
+  compensationUpdatedAt      DateTime?
+  compensationUpdatedById    String?
   workShift                WorkShift               @default(FULL_DAY)
   shiftStart               String?
   shiftEnd                 String?

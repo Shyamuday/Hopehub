@@ -27,6 +27,9 @@ export type DoctorEarningsLineItem = {
   serviceTitle?: string | null;
   platformFeeInPaise?: number | null;
   providerSharePercent?: number | null;
+  earningModel?: string | null;
+  configuredPercent?: number | null;
+  configuredFixedInPaise?: number | null;
   packageUsage?: unknown;
   billableMinutes?: number | null;
   consultationFeeInPaise: number;
@@ -108,14 +111,16 @@ function addToBucket(
   bucket: EarningsStatusBucket,
   consultationFeeInPaise: number,
   medicineFeeInPaise: number,
-  sharePercent: number
+  sharePercent: number,
+  earningOverrideInPaise?: number | null
 ) {
   const totalGrossInPaise = consultationFeeInPaise + medicineFeeInPaise;
   bucket.count += 1;
   bucket.consultationGrossInPaise += consultationFeeInPaise;
   bucket.medicineGrossInPaise += medicineFeeInPaise;
   bucket.totalGrossInPaise += totalGrossInPaise;
-  bucket.doctorEarningsInPaise += computeDoctorShareAmount(totalGrossInPaise, sharePercent);
+  bucket.doctorEarningsInPaise +=
+    earningOverrideInPaise ?? computeDoctorShareAmount(totalGrossInPaise, sharePercent);
 }
 
 function monthEndInclusive(monthEnd: Date): Date {
@@ -167,6 +172,9 @@ export async function buildDoctorEarningsReport(
           providerEarningInPaise: true,
           platformFeeInPaise: true,
           providerSharePercent: true,
+          earningModel: true,
+          configuredPercent: true,
+          configuredFixedInPaise: true,
           pricingMode: true,
           pricingRule: true,
           serviceTitle: true,
@@ -189,9 +197,21 @@ export async function buildDoctorEarningsReport(
         : 0;
 
     if (payment.status === PaymentStatus.PAID) {
-      addToBucket(paid, fees.consultationFeeInPaise, fees.medicineFeeInPaise, sharePercent);
+      addToBucket(
+        paid,
+        fees.consultationFeeInPaise,
+        fees.medicineFeeInPaise,
+        sharePercent,
+        payment.providerEarning?.providerEarningInPaise
+      );
     } else if (payment.status === PaymentStatus.CREATED) {
-      addToBucket(pending, fees.consultationFeeInPaise, fees.medicineFeeInPaise, sharePercent);
+      addToBucket(
+        pending,
+        fees.consultationFeeInPaise,
+        fees.medicineFeeInPaise,
+        sharePercent,
+        payment.providerEarning?.providerEarningInPaise
+      );
     } else {
       addToBucket(failed, fees.consultationFeeInPaise, fees.medicineFeeInPaise, sharePercent);
     }
@@ -221,6 +241,9 @@ export async function buildDoctorEarningsReport(
         null,
       platformFeeInPaise: payment.providerEarning?.platformFeeInPaise ?? null,
       providerSharePercent: payment.providerEarning?.providerSharePercent ?? null,
+      earningModel: payment.providerEarning?.earningModel ?? null,
+      configuredPercent: payment.providerEarning?.configuredPercent ?? null,
+      configuredFixedInPaise: payment.providerEarning?.configuredFixedInPaise ?? null,
       packageUsage: payment.providerEarning?.packageUsage || lineItemMeta?.packageUsage || null,
       billableMinutes:
         readPaise(lineItemMeta?.careTeamBillableMinutes) ??
