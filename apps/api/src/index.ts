@@ -6,6 +6,7 @@
  */
 import 'dotenv/config';
 import { createServer } from 'node:http';
+import { randomUUID } from 'node:crypto';
 import express from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
@@ -119,12 +120,26 @@ import {
   callMaintenanceIntervalMs,
   runCallSessionMaintenance
 } from './services/call-session-maintenance.js';
+import { getRuntimeReadiness } from './services/runtime-health.js';
 
 // ── App & HTTP server ──────────────────────────────────────────────────────────
 
 const app = express();
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
+app.get('/health/live', (_req, res) => {
+  res.status(200).json({ ok: true, service: 'clinic-api', timestamp: new Date().toISOString() });
+});
+app.get('/health/ready', async (_req, res) => {
+  const health = await getRuntimeReadiness();
+  res.status(health.ok ? 200 : 503).json(health);
+});
+app.use((_req, res, next) => {
+  const requestId = randomUUID();
+  res.locals.requestId = requestId;
+  res.setHeader('X-Request-Id', requestId);
+  next();
+});
 app.use((_, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
@@ -377,8 +392,12 @@ app.use(
     if (error instanceof z.ZodError) {
       return res.status(400).json({ message: 'Validation failed', issues: error.issues });
     }
-    console.error(error);
-    res.status(500).json({ message: 'Internal server error' });
+    const requestId = res.locals.requestId as string | undefined;
+    console.error('[api] Unhandled request error', { requestId, error });
+    res.status(500).json({
+      message: 'Something went wrong. Please try again.',
+      ...(requestId ? { requestId } : {})
+    });
   }
 );
 

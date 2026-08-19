@@ -193,6 +193,7 @@ chmod 600 .env
 npm install --no-audit --no-fund
 npm run prisma:generate
 npm run prisma:deploy
+npm run release:verify
 
 # Telegram's native scheduled voice chats use a separate user-account session.
 # Keep that session isolated from the API process and only enable the timer once
@@ -238,7 +239,7 @@ pm2 save
 
 echo "Waiting for API to be ready..."
 for i in $(seq 1 15); do
-  if curl -fsS http://127.0.0.1:4000/health > /dev/null 2>&1; then
+  if curl -fsS http://127.0.0.1:4000/health/ready > /dev/null 2>&1; then
     echo "API is up after ${i} attempt(s)"
     break
   fi

@@ -15,6 +15,7 @@
     "prisma:deploy": "prisma migrate deploy",
     "prisma:sync": "tsx prisma/sync-migrations.ts",
     "assessments:sync": "tsx scripts/sync-assessment-definitions.ts",
+    "release:verify": "tsx scripts/verify-release-readiness.ts",
     "healing-content:sync": "tsx scripts/sync-healing-content.ts",
     "db-backup:bucket:configure": "tsx scripts/configure-db-backup-bucket.ts",
     "prisma:verify": "tsx scripts/verify-migrations.ts",
