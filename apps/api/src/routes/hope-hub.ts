@@ -4133,7 +4133,7 @@ hopeHubRouter.post(
           promoCode: body.promoCode || '',
           serviceName: effectiveServiceName,
           offeringId: selectedOffering?.id || body.offeringId || null,
-          careTeamServiceId: selectedCareTeamService?.id || null,
+          careTeamServiceId: null,
           providerId: requestedProvider?.id || body.providerId || null,
           careTeamTypes: sessionProviderRoles
         });

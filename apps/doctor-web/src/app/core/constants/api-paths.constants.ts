@@ -6,6 +6,8 @@ export const API_PATHS = {
   DOCTOR: {
     WORKLIST: CROSS_APP_API_PATHS.DOCTOR.WORKLIST,
     PROFILE: '/doctor/profile',
+    SHARE_LINKS: '/doctor/share-links',
+    SHARE_LINK: (id: string) => `/doctor/share-links/${id}`,
     ONBOARDING_PATH: '/doctor/onboarding-path',
     READINESS: '/doctor/readiness',
     LISTENER_SCREENING: '/doctor/listener-screening',

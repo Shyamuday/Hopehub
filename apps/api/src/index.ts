@@ -67,6 +67,7 @@ import { psychologicalTestsRouter } from './routes/psychological-tests.js';
 import { assessmentDefinitionsRouter } from './routes/assessment-definitions.js';
 import { practicesRouter } from './routes/practices.js';
 import { lifestyleTipsRouter } from './routes/lifestyle-tips.js';
+import { providerShareLinksRouter } from './routes/provider-share-links.js';
 import { rtcRouter } from './routes/rtc.js';
 import { telegramBotsRouter } from './routes/telegram-bots.js';
 import { createRepertoryRouter } from './routes/repertory/index.js';
@@ -345,6 +346,7 @@ app.use(psychologicalTestsRouter);
 app.use(assessmentDefinitionsRouter);
 app.use(practicesRouter);
 app.use(lifestyleTipsRouter);
+app.use(providerShareLinksRouter);
 app.use(telegramBotsRouter);
 
 // ── Global error handler ───────────────────────────────────────────────────────

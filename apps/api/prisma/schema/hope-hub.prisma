@@ -193,6 +193,7 @@ model CareTeamService {
   roleDefinition      ProviderRoleDefinition      @relation(fields: [providerRoleCode], references: [code], onDelete: Restrict)
   availabilityRules   ProviderAvailabilityRule[]
   slots               DoctorSlot[]
+  shareLinks          ProviderShareLink[]
 
   @@index([mentalHealthProfileId, isActive, sortOrder])
   @@index([providerRole, isActive])

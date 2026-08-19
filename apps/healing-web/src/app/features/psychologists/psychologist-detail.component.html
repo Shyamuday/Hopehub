@@ -10,6 +10,20 @@
     @if (loading()) {
       <div class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">Loading profile...</div>
     } @else if (provider(); as p) {
+      @if (sharedIntent()) {
+        <section class="mb-5 rounded-lg border border-primary-200 bg-primary-50 p-5 shadow-sm">
+          <p class="text-xs font-bold uppercase tracking-wide text-primary-700">Shared by {{ p.name }}</p>
+          <h1 class="mt-1 text-xl font-semibold text-primary-950">
+            {{ sharedIntent() === 'talk' ? 'Talk privately when you are ready' : 'Book private support' }}
+          </h1>
+          @if (sharedService(p); as service) {
+            <p class="mt-2 text-sm text-primary-900">{{ service.title }} · {{ service.durationMinutes }} min · {{ servicePriceLabel(service) }}</p>
+          } @else {
+            <p class="mt-2 text-sm text-primary-900">You can review the profile first. Current availability and approved pricing are checked before confirmation.</p>
+          }
+          <app-button type="button" class="mt-4 block" (click)="sharedAction(p)">{{ sharedActionLabel(p) }}</app-button>
+        </section>
+      }
       <section class="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
         <div class="grid grid-cols-1 lg:grid-cols-[320px_1fr]">
           <div class="bg-primary-50 p-6">

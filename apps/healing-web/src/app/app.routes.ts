@@ -75,6 +75,22 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'p/:id',
+    loadComponent: () =>
+      import('./features/psychologists/psychologist-detail.component').then(
+        (m) => m.PsychologistDetailComponent,
+      ),
+    title: 'Care Team Profile - Hope Hub',
+  },
+  {
+    path: 's/:code',
+    loadComponent: () =>
+      import('./features/psychologists/provider-share-redirect.component').then(
+        (m) => m.ProviderShareRedirectComponent,
+      ),
+    title: 'Opening Hope Hub support',
+  },
+  {
     path: 'psychologists',
     loadComponent: () =>
       import('./features/psychologists/psychologists.component').then(

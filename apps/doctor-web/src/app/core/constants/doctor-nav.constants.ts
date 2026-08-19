@@ -48,6 +48,7 @@ export const DOCTOR_NAV_ICONS: Record<string, { icon: string; shortLabel: string
   Leaves: { icon: '🌴', shortLabel: 'Leave' },
   Earnings: { icon: '💰', shortLabel: 'Pay' },
   Feedback: { icon: '★', shortLabel: 'Reviews' },
+  'Share profile': { icon: '↗', shortLabel: 'Share' },
   Content: { icon: '📝', shortLabel: 'Content' },
   'Treatment pages': { icon: '📝', shortLabel: 'Pages' },
   'Blog articles': { icon: '✍️', shortLabel: 'Blog' },
@@ -131,6 +132,12 @@ function buildDoctorNav(
         enabled: true,
         defaultExpanded: true,
         children: [
+          {
+            id: 'share-profile',
+            label: 'Share profile',
+            path: `/${ROUTE_PATHS.SHARE}`,
+            enabled: true,
+          },
           {
             id: 'feedback',
             label: 'Client feedback',

@@ -189,6 +189,11 @@ export const routes: Routes = [
           ),
       },
       {
+        path: ROUTE_PATHS.SHARE,
+        loadComponent: () =>
+          import('./features/provider-share/provider-share-page').then((m) => m.ProviderSharePage),
+      },
+      {
         path: ROUTE_PATHS.SCAN,
         loadComponent: () =>
           import('./features/scan/patient-scan-launcher-page/patient-scan-launcher-page').then(

@@ -1,0 +1,21 @@
+model ProviderShareLink {
+  id                String    @id @default(cuid())
+  code              String    @unique
+  doctorId          String
+  careTeamServiceId String?
+  kind              String
+  mode              String?
+  label             String?
+  isActive          Boolean   @default(true)
+  expiresAt         DateTime?
+  clickCount        Int       @default(0)
+  lastOpenedAt      DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  doctor          Doctor           @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  careTeamService CareTeamService? @relation(fields: [careTeamServiceId], references: [id], onDelete: SetNull)
+
+  @@index([doctorId, isActive, createdAt])
+  @@index([careTeamServiceId])
+}

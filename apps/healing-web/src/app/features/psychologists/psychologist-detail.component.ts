@@ -56,8 +56,16 @@ export class PsychologistDetailComponent implements OnInit {
   readonly ROUTES = CONSUMER_ROUTES;
   readonly concernFlows =
     signal<Record<ConsumerConcernKey, ConsumerConcernFlow>>(CONSUMER_CONCERN_FLOWS);
+  readonly sharedIntent = signal<'book' | 'talk' | ''>('');
+  readonly sharedMode = signal<ConnectOptionMode>('chat');
+  readonly sharedServiceId = signal('');
 
   ngOnInit(): void {
+    const intent = this.route.snapshot.queryParamMap.get('intent');
+    this.sharedIntent.set(intent === 'book' || intent === 'talk' ? intent : '');
+    const mode = this.route.snapshot.queryParamMap.get('mode');
+    this.sharedMode.set(mode === 'voice' || mode === 'video' ? mode : 'chat');
+    this.sharedServiceId.set(this.route.snapshot.queryParamMap.get('service') || '');
     this.consumerFlowsService.state$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((state) => this.concernFlows.set(state.flows));
@@ -82,6 +90,30 @@ export class PsychologistDetailComponent implements OnInit {
         this.loading.set(false);
       },
     });
+  }
+
+  sharedService(provider: HopeHubProvider): CareTeamService | undefined {
+    return provider.services?.find((service) => service.id === this.sharedServiceId());
+  }
+
+  sharedAction(provider: HopeHubProvider): void {
+    const service = this.sharedService(provider);
+    if (this.sharedIntent() === 'talk') this.connect(provider, this.sharedMode(), service);
+    else this.book(provider, service);
+  }
+
+  sharedActionLabel(provider: HopeHubProvider): string {
+    if (this.sharedIntent() === 'talk') {
+      const labels: Record<ConnectOptionMode, string> = {
+        chat: 'Start private chat',
+        voice: 'Start voice call',
+        video: 'Start video call',
+      };
+      return labels[this.sharedMode()];
+    }
+    return this.sharedService(provider)
+      ? `Book ${this.sharedService(provider)!.title}`
+      : 'Book a session';
   }
 
   providerImageUrl(provider: HopeHubProvider): string | null {

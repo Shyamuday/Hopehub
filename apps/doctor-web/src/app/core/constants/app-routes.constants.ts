@@ -31,6 +31,8 @@ export const ROUTE_PATHS = {
 
   FEEDBACK: 'feedback',
 
+  SHARE: 'share',
+
   PATIENT_SCAN: 'scan/patient',
 
   SCAN: 'scan',

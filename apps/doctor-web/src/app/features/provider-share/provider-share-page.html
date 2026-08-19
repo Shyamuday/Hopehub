@@ -1,0 +1,64 @@
+<main class="share-page">
+  <header class="share-hero">
+    <div>
+      <p class="eyebrow">Your Hope Hub profile</p>
+      <h1>Share your profile and services</h1>
+      <p>Send one clear link. Hope Hub checks your current availability and always uses the latest approved price.</p>
+    </div>
+    @if (data(); as overview) {
+      <div class="metric"><strong>{{ overview.totalClicks }}</strong><span>custom-link opens</span></div>
+    }
+  </header>
+
+  @if (error()) { <p class="notice notice--error">{{ error() }}</p> }
+  @if (message()) { <p class="notice">{{ message() }}</p> }
+
+  @if (loading()) {
+    <section class="card">Loading your share options...</section>
+  } @else if (data(); as overview) {
+    @if (!overview.provider.isPublic) {
+      <p class="notice notice--warning">Your profile is not public yet. Complete approval before sharing these links.</p>
+    }
+
+    <section class="card">
+      <div class="section-title"><div><h2>Ready-to-share links</h2><p>Use the option that matches what you want the person to do.</p></div></div>
+      <div class="link-grid">
+        @for (item of permanentOptions; track item.key) {
+          <article class="link-card">
+            <h3>{{ item.title }}</h3><p>{{ item.note }}</p>
+            <code>{{ overview.permanentLinks[item.key] }}</code>
+            <div class="actions">
+              <app-button size="sm" (click)="copy(overview.permanentLinks[item.key])">Copy</app-button>
+              <app-button size="sm" variant="outline" (click)="share(overview.permanentLinks[item.key], item.title)">Share</app-button>
+            </div>
+          </article>
+        }
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-title"><div><h2>Create a focused link</h2><p>Useful for a specific service, campaign or conversation.</p></div></div>
+      <div class="form-grid">
+        <label>Action<select [(ngModel)]="kind"><option value="PROFILE">View profile</option><option value="BOOK">Book a session</option><option value="TALK">Talk now</option></select></label>
+        @if (kind === 'TALK') { <label>Mode<select [(ngModel)]="mode"><option value="chat">Chat</option><option value="voice">Voice</option><option value="video">Video</option></select></label> }
+        <label>Service<select [(ngModel)]="serviceId"><option value="">Any service</option>@for (service of overview.services; track service.id) { <option [value]="service.id">{{ service.title }} · {{ service.durationMinutes }} min</option> }</select></label>
+        <label>Private label<input [(ngModel)]="label" maxlength="80" placeholder="Example: Instagram bio" /></label>
+      </div>
+      <app-button [loading]="saving()" (click)="createLink()">Create share link</app-button>
+    </section>
+
+    @if (overview.links.length) {
+      <section class="card">
+        <div class="section-title"><div><h2>Your focused links</h2><p>Pause an old link without changing your public profile.</p></div></div>
+        <div class="saved-links">
+          @for (link of overview.links; track link.id) {
+            <article [class.saved-link--paused]="!link.isActive" class="saved-link">
+              <div><strong>{{ link.label || link.careTeamService?.title || link.kind }}</strong><p>{{ link.kind }}{{ link.mode ? ' · ' + link.mode : '' }} · {{ link.clickCount }} opens</p><code>{{ link.url }}</code></div>
+              <div class="actions"><app-button size="sm" [disabled]="!link.isActive" (click)="copy(link.url)">Copy</app-button><app-button size="sm" variant="outline" (click)="toggle(link)">{{ link.isActive ? 'Pause' : 'Restore' }}</app-button></div>
+            </article>
+          }
+        </div>
+      </section>
+    }
+  }
+</main>

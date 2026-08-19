@@ -48,74 +48,74 @@ model TelegramWebhookReceipt {
 }
 
 model TelegramCampaign {
-  id               String                   @id @default(cuid())
+  id               String                     @id @default(cuid())
   name             String
-  bot              String                   @default("rules")
+  bot              String                     @default("rules")
   chatId           String
-  timezone         String                   @default("Asia/Kolkata")
+  timezone         String                     @default("Asia/Kolkata")
   intervalMinutes  Int
-  repeat           Boolean                  @default(true)
-  isActive         Boolean                  @default(false)
-  currentItemIndex Int                      @default(0)
+  repeat           Boolean                    @default(true)
+  isActive         Boolean                    @default(false)
+  currentItemIndex Int                        @default(0)
   nextRunAt        DateTime?
   lastRunAt        DateTime?
   createdById      String?
   items            TelegramCampaignItem[]
   deliveries       TelegramCampaignDelivery[]
-  createdAt        DateTime                 @default(now())
-  updatedAt        DateTime                 @updatedAt
+  createdAt        DateTime                   @default(now())
+  updatedAt        DateTime                   @updatedAt
 
   @@index([isActive, nextRunAt])
   @@index([chatId])
 }
 
 model TelegramCampaignItem {
-  id                 String                     @id @default(cuid())
-  campaignId         String
-  campaign           TelegramCampaign           @relation(fields: [campaignId], references: [id], onDelete: Cascade)
-  sortOrder          Int
-  kind               String
-  text               String?                    @db.Text
-  imageUrl           String?
-  buttons            Json?
-  pollQuestion       String?
-  pollOptions        Json?
-  pollAnonymous      Boolean                    @default(true)
-  pollMultiple       Boolean                    @default(false)
-  pollQuiz           Boolean                    @default(false)
-  correctOptionIds   Json?
-  pollExplanation    String?                    @db.Text
-  closeAfterMinutes  Int?
-  messageThreadId    Int?
-  followUpOptionIds  Json?
-  followUpMessage    String?                    @db.Text
-  deliveries         TelegramCampaignDelivery[]
-  createdAt          DateTime                   @default(now())
-  updatedAt          DateTime                   @updatedAt
+  id                String                     @id @default(cuid())
+  campaignId        String
+  campaign          TelegramCampaign           @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  sortOrder         Int
+  kind              String
+  text              String?                    @db.Text
+  imageUrl          String?
+  buttons           Json?
+  pollQuestion      String?
+  pollOptions       Json?
+  pollAnonymous     Boolean                    @default(true)
+  pollMultiple      Boolean                    @default(false)
+  pollQuiz          Boolean                    @default(false)
+  correctOptionIds  Json?
+  pollExplanation   String?                    @db.Text
+  closeAfterMinutes Int?
+  messageThreadId   Int?
+  followUpOptionIds Json?
+  followUpMessage   String?                    @db.Text
+  deliveries        TelegramCampaignDelivery[]
+  createdAt         DateTime                   @default(now())
+  updatedAt         DateTime                   @updatedAt
 
   @@unique([campaignId, sortOrder])
   @@index([campaignId])
 }
 
 model TelegramCampaignDelivery {
-  id                String                 @id @default(cuid())
+  id                String                @id @default(cuid())
   campaignId        String
-  campaign          TelegramCampaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  campaign          TelegramCampaign      @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   itemId            String?
-  item              TelegramCampaignItem?  @relation(fields: [itemId], references: [id], onDelete: SetNull)
+  item              TelegramCampaignItem? @relation(fields: [itemId], references: [id], onDelete: SetNull)
   telegramMessageId Int?
-  telegramPollId    String?                @unique
+  telegramPollId    String?               @unique
   status            String
   error             String?
-  attempts          Int                    @default(0)
+  attempts          Int                   @default(0)
   nextRetryAt       DateTime?
   pollSnapshot      Json?
-  totalVoterCount   Int                    @default(0)
+  totalVoterCount   Int                   @default(0)
   closesAt          DateTime?
   sentAt            DateTime?
   votes             TelegramPollVote[]
-  createdAt         DateTime               @default(now())
-  updatedAt         DateTime               @updatedAt
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
 
   @@index([campaignId, createdAt])
   @@index([status, closesAt])
@@ -123,18 +123,18 @@ model TelegramCampaignDelivery {
 }
 
 model TelegramPollVote {
-  id                 String                    @id @default(cuid())
-  deliveryId         String
-  delivery           TelegramCampaignDelivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
-  telegramUserId     String
-  username           String?
-  firstName          String?
-  lastName           String?
-  optionIds          Json
-  followUpSentAt     DateTime?
-  followUpError      String?
-  votedAt            DateTime                  @default(now())
-  updatedAt          DateTime                  @updatedAt
+  id             String                   @id @default(cuid())
+  deliveryId     String
+  delivery       TelegramCampaignDelivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  telegramUserId String
+  username       String?
+  firstName      String?
+  lastName       String?
+  optionIds      Json
+  followUpSentAt DateTime?
+  followUpError  String?
+  votedAt        DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
 
   @@unique([deliveryId, telegramUserId])
   @@index([deliveryId])
@@ -227,47 +227,47 @@ model TelegramCommunityMessageCleanup {
 }
 
 model TelegramCommunityGroupPolicy {
-  id              String   @id @default(cuid())
-  chatId          String   @unique
-  settings        Json
-  lockdownUntil   DateTime?
-  lockdownReason  String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String    @id @default(cuid())
+  chatId         String    @unique
+  settings       Json
+  lockdownUntil  DateTime?
+  lockdownReason String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   @@index([lockdownUntil])
 }
 
 model TelegramCommunityModerationCase {
-  id                String   @id @default(cuid())
+  id                String    @id @default(cuid())
   chatId            String
   sourceMessageId   Int?
   reportedMessageId Int?
   reporterUserId    String?
   targetUserId      String?
   reason            String
-  evidence          String?  @db.Text
-  status            String   @default("OPEN")
+  evidence          String?   @db.Text
+  status            String    @default("OPEN")
   action            String?
   resolvedByUserId  String?
   resolvedAt        DateTime?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   @@index([chatId, status, createdAt])
   @@index([targetUserId, createdAt])
 }
 
 model TelegramCommunityRoleAssignment {
-  id              String   @id @default(cuid())
-  chatId          String
-  telegramUserId  String
-  role            String
-  customRoleId    String?
-  customRole      TelegramCommunityCustomRole? @relation(fields: [customRoleId], references: [id], onDelete: Cascade)
-  assignedById    String
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String                       @id @default(cuid())
+  chatId         String
+  telegramUserId String
+  role           String
+  customRoleId   String?
+  customRole     TelegramCommunityCustomRole? @relation(fields: [customRoleId], references: [id], onDelete: Cascade)
+  assignedById   String
+  createdAt      DateTime                     @default(now())
+  updatedAt      DateTime                     @updatedAt
 
   @@unique([chatId, telegramUserId, role])
   @@index([chatId, telegramUserId])
@@ -275,14 +275,14 @@ model TelegramCommunityRoleAssignment {
 }
 
 model TelegramCommunityCustomRole {
-  id          String                           @id @default(cuid())
+  id          String                            @id @default(cuid())
   chatId      String
   name        String
   permissions Json
   createdById String
   assignments TelegramCommunityRoleAssignment[]
-  createdAt   DateTime                         @default(now())
-  updatedAt   DateTime                         @updatedAt
+  createdAt   DateTime                          @default(now())
+  updatedAt   DateTime                          @updatedAt
 
   @@unique([chatId, name])
   @@index([chatId])

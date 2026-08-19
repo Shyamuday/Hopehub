@@ -115,6 +115,7 @@ model Doctor {
   onlineSession       DoctorOnlineSession?
   mentalHealthProfile MentalHealthProviderProfile?
   roleAssignments     ProviderRoleAssignment[]
+  shareLinks          ProviderShareLink[]
   salaryStructure     EmployeeSalary?
   createdAt           DateTime                     @default(now())
   updatedAt           DateTime                     @updatedAt
