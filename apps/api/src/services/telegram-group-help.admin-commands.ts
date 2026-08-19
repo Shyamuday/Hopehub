@@ -21,7 +21,27 @@ export async function handleGroupHelpAdminCommand(
   values: Record<string, string>
 ) {
   const command = (message.text || '').trim().split(/\s+/)[0].split('@')[0].toLowerCase();
-  if (!['/settings', '/lockdown', '/unlock', '/pin', '/unpin', '/pinned'].includes(command))
+  if (
+    ![
+      '/settings',
+      '/lockdown',
+      '/unlock',
+      '/pin',
+      '/unpin',
+      '/pinned',
+      '/unpinall',
+      '/promote',
+      '/demote',
+      '/admin',
+      '/unadmin',
+      '/title',
+      '/untitle',
+      '/welcome',
+      '/filter',
+      '/unfilter',
+      '/filters'
+    ].includes(command)
+  )
     return false;
   if (
     !message.from ||
@@ -80,6 +100,208 @@ export async function handleGroupHelpAdminCommand(
     );
     return true;
   }
+  if (command === '/unpinall') {
+    await callCommunityTelegramApi(GROUP_HELP_BOT_SLUG, 'unpinAllChatMessages', {
+      chat_id: chatId
+    });
+    await sendTemporaryGroupHelpMessage(chatId, '📌 All pinned messages unpinned.', values);
+    return true;
+  }
+
+  if (command === '/promote' || command === '/admin') {
+    const target = message.reply_to_message?.from;
+    if (!target) {
+      await sendTemporaryGroupHelpMessage(
+        chatId,
+        "Reply to a member's message, then use /admin.",
+        values
+      );
+      return true;
+    }
+    const title = parts.slice(1).join(' ').trim() || '';
+    await callCommunityTelegramApi(GROUP_HELP_BOT_SLUG, 'promoteChatMember', {
+      chat_id: chatId,
+      user_id: target.id,
+      can_manage_chat: true,
+      can_delete_messages: true,
+      can_restrict_members: true,
+      can_invite_users: true,
+      can_pin_messages: true,
+      can_manage_video_chats: true
+    });
+    if (title) {
+      await callCommunityTelegramApi(GROUP_HELP_BOT_SLUG, 'setChatAdministratorCustomTitle', {
+        chat_id: chatId,
+        user_id: target.id,
+        custom_title: title.slice(0, 16)
+      }).catch(() => null);
+    }
+    await sendTemporaryGroupHelpMessage(
+      chatId,
+      `✅ ${target.first_name || 'Member'} promoted to admin.${title ? ` Title: ${title}` : ''}`,
+      values
+    );
+    await sendGroupHelpActivityLog(values, 'Member promoted to admin', [
+      `Group: ${message.chat.title || chatId}`,
+      `Member: ${target.first_name || 'Telegram member'} (${target.id})`,
+      `By: ${message.from.first_name || 'Administrator'} (${message.from.id})`
+    ]);
+    return true;
+  }
+
+  if (command === '/demote' || command === '/unadmin') {
+    const target = message.reply_to_message?.from;
+    if (!target) {
+      await sendTemporaryGroupHelpMessage(
+        chatId,
+        "Reply to a member's message, then use /unadmin.",
+        values
+      );
+      return true;
+    }
+    await callCommunityTelegramApi(GROUP_HELP_BOT_SLUG, 'promoteChatMember', {
+      chat_id: chatId,
+      user_id: target.id,
+      can_manage_chat: false,
+      can_delete_messages: false,
+      can_restrict_members: false,
+      can_invite_users: false,
+      can_pin_messages: false,
+      can_manage_video_chats: false
+    });
+    await sendTemporaryGroupHelpMessage(
+      chatId,
+      `✅ ${target.first_name || 'Member'} demoted from admin.`,
+      values
+    );
+    await sendGroupHelpActivityLog(values, 'Member demoted from admin', [
+      `Group: ${message.chat.title || chatId}`,
+      `Member: ${target.first_name || 'Telegram member'} (${target.id})`,
+      `By: ${message.from.first_name || 'Administrator'} (${message.from.id})`
+    ]);
+    return true;
+  }
+
+  if (command === '/title') {
+    const target = message.reply_to_message?.from;
+    const title = parts.slice(1).join(' ').trim();
+    if (!target || !title) {
+      await sendTemporaryGroupHelpMessage(
+        chatId,
+        'Reply to an admin and use /title <title text>.',
+        values
+      );
+      return true;
+    }
+    await callCommunityTelegramApi(GROUP_HELP_BOT_SLUG, 'setChatAdministratorCustomTitle', {
+      chat_id: chatId,
+      user_id: target.id,
+      custom_title: title.slice(0, 16)
+    });
+    await sendTemporaryGroupHelpMessage(
+      chatId,
+      `✅ Title set to "${title}" for ${target.first_name || 'admin'}.`,
+      values
+    );
+    return true;
+  }
+
+  if (command === '/untitle') {
+    const target = message.reply_to_message?.from;
+    if (!target) {
+      await sendTemporaryGroupHelpMessage(chatId, 'Reply to an admin, then use /untitle.', values);
+      return true;
+    }
+    await callCommunityTelegramApi(GROUP_HELP_BOT_SLUG, 'setChatAdministratorCustomTitle', {
+      chat_id: chatId,
+      user_id: target.id,
+      custom_title: ''
+    });
+    await sendTemporaryGroupHelpMessage(
+      chatId,
+      `✅ Title removed from ${target.first_name || 'admin'}.`,
+      values
+    );
+    return true;
+  }
+
+  if (command === '/welcome') {
+    const arg = parts[1]?.toLowerCase();
+    const { saveTelegramCommunityGroupPolicy, getTelegramCommunityGroupPolicy } =
+      await import('./telegram-community-group-policy.js');
+    const policy = await getTelegramCommunityGroupPolicy(chatId);
+    if (arg === 'off') {
+      await saveTelegramCommunityGroupPolicy(chatId, {
+        ...policy,
+        telegramCommunityWelcomeEnabled: 'Disabled'
+      });
+      await sendTemporaryGroupHelpMessage(chatId, '✅ Welcome messages disabled.', values);
+    } else if (arg === 'on') {
+      await saveTelegramCommunityGroupPolicy(chatId, {
+        ...policy,
+        telegramCommunityWelcomeEnabled: 'Enabled'
+      });
+      await sendTemporaryGroupHelpMessage(chatId, '✅ Welcome messages enabled.', values);
+    } else {
+      await sendTemporaryGroupHelpMessage(
+        chatId,
+        `Welcome messages are currently ${values.telegramCommunityWelcomeEnabled === 'Disabled' ? 'OFF' : 'ON'}.\nUse /welcome on or /welcome off to change.`,
+        values
+      );
+    }
+    return true;
+  }
+
+  if (command === '/filters') {
+    const { saveTelegramCommunityGroupPolicy, getTelegramCommunityGroupPolicy } =
+      await import('./telegram-community-group-policy.js');
+    const policy = await getTelegramCommunityGroupPolicy(chatId);
+    const banned = (values.telegramGroupHelpBannedWords || '')
+      .split(/[\n,]+/)
+      .map((w) => w.trim())
+      .filter(Boolean);
+    await sendTemporaryGroupHelpMessage(
+      chatId,
+      banned.length
+        ? `🚫 Active word filters (${banned.length}):\n\n${banned.map((w) => `• ${w}`).join('\n')}`
+        : 'No word filters are active.',
+      values
+    );
+    return true;
+  }
+
+  if (command === '/filter' || command === '/unfilter') {
+    const word = parts.slice(1).join(' ').trim();
+    if (!word) {
+      await sendTemporaryGroupHelpMessage(chatId, `Usage: ${command} <word or phrase>`, values);
+      return true;
+    }
+    const { saveTelegramCommunityGroupPolicy, getTelegramCommunityGroupPolicy } =
+      await import('./telegram-community-group-policy.js');
+    const policy = await getTelegramCommunityGroupPolicy(chatId);
+    const current = (values.telegramGroupHelpBannedWords || '')
+      .split(/[\n,]+/)
+      .map((w) => w.trim())
+      .filter(Boolean);
+    const normalized = word.toLowerCase();
+    const without = current.filter((w) => w.toLowerCase() !== normalized);
+    const updated = command === '/filter' ? [...without, word] : without;
+    await saveTelegramCommunityGroupPolicy(chatId, {
+      ...policy,
+      telegramGroupHelpBannedWords: updated.join('\n')
+    });
+    await sendTemporaryGroupHelpMessage(
+      chatId,
+      command === '/filter'
+        ? `✅ Added "${word}" to word filters.`
+        : without.length < current.length
+          ? `✅ Removed "${word}" from word filters.`
+          : `"${word}" was not in the filter list.`,
+      values
+    );
+    return true;
+  }
+
   if (command === '/lockdown') {
     const minutes = Math.max(1, Math.min(720, Number(parts[1]) || 30));
     const chat = await callCommunityTelegramApi<{ permissions?: Record<string, boolean> }>(

@@ -117,7 +117,8 @@ export async function handleGroupHelpMemberCommand(
     );
     return true;
   }
-  if (command === '/forget' && message.from) {
+  if (command === '/forget' || command === '/forgot') {
+    if (!message.from) return true;
     if (!['group', 'supergroup'].includes(message.chat.type || '')) {
       await forgetAllGroupHelpMemberData(String(message.from.id));
       await sendTemporaryGroupHelpMessage(
@@ -360,6 +361,49 @@ export async function handleGroupHelpMemberCommand(
     );
     return true;
   }
+  if (command === '/id') {
+    const target = message.reply_to_message?.from || message.from;
+    if (!target) return true;
+    const isStaff = await canUseGroupHelpCommand(message, values, '/id', 'HELPER');
+    const lines = [`Your Telegram ID: ${message.from?.id || 'unknown'}`];
+    if (
+      isStaff &&
+      message.reply_to_message?.from &&
+      message.reply_to_message.from.id !== message.from?.id
+    ) {
+      const replied = message.reply_to_message.from;
+      lines.push(`Replied member ID: ${replied.id}`);
+      if (replied.username) lines.push(`Username: @${replied.username}`);
+    }
+    lines.push(`This group ID: ${chatId}`);
+    await deliverStaffResult(lines.join('\n'));
+    return true;
+  }
+
+  if (command === '/adminlist') {
+    if (!(await canUseGroupHelpCommand(message, values, '/adminlist', 'HELPER'))) return true;
+    const admins = await callCommunityTelegramApi<
+      Array<{
+        status?: string;
+        user?: { id: number; first_name?: string; username?: string; is_bot?: boolean };
+        custom_title?: string;
+      }>
+    >(GROUP_HELP_BOT_SLUG, 'getChatAdministrators', { chat_id: chatId }).catch(() => []);
+    const lines = admins
+      .filter((admin) => !admin.user?.is_bot)
+      .map((admin) => {
+        const name = admin.user?.first_name || 'Admin';
+        const username = admin.user?.username ? ` (@${admin.user.username})` : '';
+        const title = admin.custom_title ? ` · ${admin.custom_title}` : '';
+        const owner = admin.status === 'creator' ? ' 👑' : '';
+        return `• ${name}${username}${title}${owner}`;
+      });
+    await deliverStaffResult(
+      lines.length ? `👮 Group admins\n\n${lines.join('\n')}` : 'No admins found.'
+    );
+    return true;
+  }
+
   if (command === '/stats') {
     if (!(await canUseGroupHelpCommand(message, values, '/stats', 'MODERATOR'))) return true;
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);

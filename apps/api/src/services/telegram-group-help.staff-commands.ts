@@ -23,15 +23,28 @@ export async function handleGroupHelpStaffCommand(
   const chatId = String(message.chat.id);
   const parts = (message.text || '').trim().split(/\s+/);
   const moderationCommand =
-    /^\/(warn|unwarn|delete|mute|unmute|ban|unban|kick|delwarn|delmute|delban)$/i.exec(command);
+    /^\/(warn|unwarn|delete|del|mute|unmute|ban|unban|kick|delwarn|delmute|delban|delkick|ro|unro)$/i.exec(
+      command
+    );
   if (moderationCommand) {
     const commandName = moderationCommand[1].toLowerCase();
-    const requiredRole = ['mute', 'unmute', 'ban', 'unban', 'kick', 'delmute', 'delban'].includes(
-      commandName
-    )
+    const canonicalName =
+      commandName === 'del' ? 'delete' : commandName === 'delkick' ? 'kick' : commandName;
+    const requiredRole = [
+      'mute',
+      'unmute',
+      'ban',
+      'unban',
+      'kick',
+      'delmute',
+      'delban',
+      'delkick',
+      'ro',
+      'unro'
+    ].includes(commandName)
       ? 'MODERATOR'
       : 'HELPER';
-    if (!(await canUseGroupHelpCommand(message, values, `/${commandName}`, requiredRole)))
+    if (!(await canUseGroupHelpCommand(message, values, `/${canonicalName}`, requiredRole)))
       return true;
     const targetMessage = message.reply_to_message;
     const target = targetMessage?.from;
@@ -43,9 +56,12 @@ export async function handleGroupHelpStaffCommand(
       );
       return true;
     }
-    const reason = parts.slice(1).join(' ').trim() || `Manual ${commandName} by community staff`;
-    const deleteFirst = ['delete', 'delwarn', 'delmute', 'delban'].includes(commandName);
-    const effectiveAction = commandName.replace(/^del/, '') || 'delete';
+    const reason = parts.slice(1).join(' ').trim() || `Manual ${canonicalName} by community staff`;
+    const deleteFirst = ['delete', 'del', 'delwarn', 'delmute', 'delban', 'delkick'].includes(
+      commandName
+    );
+    const effectiveAction =
+      canonicalName === 'delete' ? 'delete' : canonicalName.replace(/^del/, '') || 'delete';
     if (deleteFirst) {
       await deleteGroupHelpMessage(chatId, targetMessage.message_id).catch(() => null);
     }
@@ -75,7 +91,7 @@ export async function handleGroupHelpStaffCommand(
           values.telegramGroupHelpWarnAction || 'mute'
         ).catch(() => null);
       }
-    } else if (effectiveAction === 'unmute') {
+    } else if (effectiveAction === 'unmute' || effectiveAction === 'unro') {
       const chat = await callCommunityTelegramApi<{ permissions?: Record<string, boolean> }>(
         GROUP_HELP_BOT_SLUG,
         'getChat',
@@ -85,6 +101,14 @@ export async function handleGroupHelpStaffCommand(
         chat_id: chatId,
         user_id: target.id,
         permissions: chat.permissions || { can_send_messages: true }
+      });
+    } else if (effectiveAction === 'ro') {
+      // Read-only: restrict permanently (until_date=0) — no timer
+      await callCommunityTelegramApi(GROUP_HELP_BOT_SLUG, 'restrictChatMember', {
+        chat_id: chatId,
+        user_id: target.id,
+        until_date: 0,
+        permissions: { can_send_messages: false }
       });
     } else {
       await applyGroupHelpMemberAction(
@@ -113,7 +137,9 @@ export async function handleGroupHelpStaffCommand(
     );
     return true;
   }
-  const roleCommand = /^\/(helper|unhelper|moderator|unmoderator|mod|unmod)$/i.exec(command);
+  const roleCommand = /^\/(helper|unhelper|moderator|unmoderator|mod|unmod|free|unfree)$/i.exec(
+    command
+  );
   if (!roleCommand) return false;
   if (
     !message.from ||
@@ -132,7 +158,7 @@ export async function handleGroupHelpStaffCommand(
   const commandName = roleCommand[1].toLowerCase();
   const role = ['moderator', 'unmoderator', 'mod', 'unmod'].includes(commandName)
     ? 'MODERATOR'
-    : 'HELPER';
+    : 'HELPER'; // helper, unhelper, free, unfree all map to HELPER
   if (commandName.startsWith('un')) {
     await prisma.telegramCommunityRoleAssignment.deleteMany({
       where: { chatId, telegramUserId: String(target.id), role }
