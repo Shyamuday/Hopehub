@@ -103,6 +103,16 @@ export class AdminApi {
       ...(args as Parameters<AdminDoctorsApi['getPendingDoctorsPaged']>),
     );
   }
+  getPendingPricingApprovals(...args: Parameters<AdminDoctorsApi['getPendingPricingApprovals']>) {
+    return this.doctors.getPendingPricingApprovals(
+      ...(args as Parameters<AdminDoctorsApi['getPendingPricingApprovals']>),
+    );
+  }
+  reviewServicePricing(...args: Parameters<AdminDoctorsApi['reviewServicePricing']>) {
+    return this.doctors.reviewServicePricing(
+      ...(args as Parameters<AdminDoctorsApi['reviewServicePricing']>),
+    );
+  }
   approveDoctor(...args: Parameters<AdminDoctorsApi['approveDoctor']>) {
     return this.doctors.approveDoctor(...(args as Parameters<AdminDoctorsApi['approveDoctor']>));
   }
