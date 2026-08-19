@@ -192,6 +192,7 @@ chmod 600 .env
 
 npm install --no-audit --no-fund
 npm run prisma:generate
+npm run build
 npm run prisma:deploy
 npm run release:verify
 
@@ -234,7 +235,7 @@ TELEGRAM_CONFESSION_CHANNEL_ID="$TELEGRAM_CONFESSION_CHANNEL_ID_VALUE" \
 TELEGRAM_CONFESSION_APPROVAL_GROUP_ID="$TELEGRAM_CONFESSION_APPROVAL_GROUP_ID_VALUE" \
 TELEGRAM_CONFESSION_START_NUMBER="$TELEGRAM_CONFESSION_START_NUMBER_VALUE" \
 TELEGRAM_RULES_BOT_TOKEN="$TELEGRAM_RULES_BOT_TOKEN_VALUE" \
-pm2 restart hopehub-api --update-env
+pm2 startOrReload ecosystem.config.cjs --only hopehub-api --update-env
 pm2 save
 
 echo "Waiting for API to be ready..."
