@@ -297,7 +297,13 @@ export class AdminDoctorsApi extends AdminApiBase {
   getSiteConfig() {
     return firstValueFrom(
       this.http.get<{
-        config: Array<{ key: string; value: string; label: string; description: string }>;
+        config: Array<{
+          key: string;
+          value: string;
+          label: string;
+          description: string;
+          source: 'default' | 'custom';
+        }>;
       }>(`${this.apiBase}${API_PATHS.ADMIN.SITE_CONFIG}`),
     );
   }
@@ -305,6 +311,12 @@ export class AdminDoctorsApi extends AdminApiBase {
   setSiteConfig(key: string, value: string) {
     return firstValueFrom(
       this.http.patch(`${this.apiBase}${API_PATHS.ADMIN.SITE_CONFIG}/${key}`, { value }),
+    );
+  }
+
+  restoreSiteConfigDefault(key: string) {
+    return firstValueFrom(
+      this.http.post(`${this.apiBase}${API_PATHS.ADMIN.SITE_CONFIG}/${key}/restore-default`, {}),
     );
   }
 

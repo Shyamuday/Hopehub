@@ -151,6 +151,11 @@ export class AdminApi {
   setSiteConfig(...args: Parameters<AdminDoctorsApi['setSiteConfig']>) {
     return this.doctors.setSiteConfig(...(args as Parameters<AdminDoctorsApi['setSiteConfig']>));
   }
+  restoreSiteConfigDefault(...args: Parameters<AdminDoctorsApi['restoreSiteConfigDefault']>) {
+    return this.doctors.restoreSiteConfigDefault(
+      ...(args as Parameters<AdminDoctorsApi['restoreSiteConfigDefault']>),
+    );
+  }
   listCareTeamPricingTemplates(
     ...args: Parameters<AdminDoctorsApi['listCareTeamPricingTemplates']>
   ) {

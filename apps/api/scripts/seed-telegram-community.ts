@@ -17,6 +17,7 @@ import {
   TELEGRAM_BOT_USERNAMES
 } from '../src/constants/telegram-community-bot.constants.js';
 import { colorizeTelegramPayload } from '../src/services/telegram-button-styles.js';
+import { syncManagedSiteConfigDefaults } from '../src/services/site-config.service.js';
 
 const GROUP_USERNAME = (process.env.TELEGRAM_COMMUNITY_GROUP_USERNAME || '@hopehubindia').replace(
   /^([^@])/,
@@ -394,6 +395,7 @@ const campaigns = (chatId: string) =>
   ].map((campaign) => ({ ...campaign, chatId }));
 
 async function seedSiteConfig(chatId: string) {
+  await syncManagedSiteConfigDefaults();
   const seedDefaults: Record<string, string> = {
     ...GROUP_HELP_CONFIG_DEFAULTS,
     telegramGroupHelpGroupChatId: chatId,

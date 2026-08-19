@@ -9,6 +9,7 @@ import {
 } from '../../constants/site-config.constants.js';
 import { prisma } from '../../db.js';
 import { asyncRoute, routeParam, writeAuditLog } from '../../utils/helpers.js';
+import { MANAGED_SITE_CONFIG_DEFAULT_PREFIX } from '../../services/site-config.service.js';
 
 export function registerAdminSiteConfigRoutes(router: Router) {
   /** GET all known site config entries (fills in defaults for missing keys). */
@@ -17,14 +18,27 @@ export function registerAdminSiteConfigRoutes(router: Router) {
     authRequired,
     allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (_req, res) => {
-      const rows = await prisma.siteConfig.findMany({ where: { key: { in: SITE_CONFIG_KEYS } } });
+      const rows = await prisma.siteConfig.findMany({
+        where: {
+          key: {
+            in: SITE_CONFIG_KEYS.flatMap((key) => [
+              key,
+              `${MANAGED_SITE_CONFIG_DEFAULT_PREFIX}${key}`
+            ])
+          }
+        }
+      });
       const map = Object.fromEntries(rows.map((r) => [r.key, r.value]));
 
       const config = SITE_CONFIG_KEYS.map((key) => ({
         key,
         value: map[key] ?? SITE_CONFIG_DEFAULTS[key] ?? '',
         label: SITE_CONFIG_META[key].label,
-        description: SITE_CONFIG_META[key].description
+        description: SITE_CONFIG_META[key].description,
+        source:
+          map[key] == null || map[key] === map[`${MANAGED_SITE_CONFIG_DEFAULT_PREFIX}${key}`]
+            ? 'default'
+            : 'custom'
       }));
 
       res.json({ config });
@@ -61,6 +75,35 @@ export function registerAdminSiteConfigRoutes(router: Router) {
       });
 
       res.json({ config: row });
+    })
+  );
+
+  /** Restore one setting to the current built-in default. */
+  router.post(
+    '/admin/site-config/:key/restore-default',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (req, res) => {
+      const key = routeParam(req, 'key');
+      if (!SITE_CONFIG_KEYS.includes(key)) {
+        return res.status(400).json({ message: `Unknown config key: ${key}` });
+      }
+      const value = SITE_CONFIG_DEFAULTS[key] ?? '';
+      const row = await prisma.siteConfig.upsert({
+        where: { key },
+        create: { key, value, label: SITE_CONFIG_META[key].label },
+        update: { value, label: SITE_CONFIG_META[key].label }
+      });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'site_config.restore_default',
+        targetType: 'site_config',
+        targetId: key,
+        summary: `Site config "${key}" restored to its managed default.`,
+        metadata: { key, value }
+      });
+      res.json({ config: row, source: 'default' });
     })
   );
 }

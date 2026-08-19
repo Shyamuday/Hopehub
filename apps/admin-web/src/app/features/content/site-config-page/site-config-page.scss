@@ -118,6 +118,24 @@
   p { font-size: 0.8rem; color: #6b7280; margin: 0.2rem 0 0; line-height: 1.5; }
 }
 
+.config-source {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.45rem;
+  padding: 0.16rem 0.42rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.7rem;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.config-source--custom {
+  background: #ecfdf5;
+  color: #047857;
+}
+
 .config-input {
   display: flex;
   gap: 0.5rem;
@@ -148,6 +166,10 @@
     min-height: 38px;
 
     &:disabled { opacity: 0.5; cursor: not-allowed; }
+  }
+
+  .config-reset {
+    background: #475569;
   }
 }
 

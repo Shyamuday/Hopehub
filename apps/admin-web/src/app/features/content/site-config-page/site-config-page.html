@@ -9,6 +9,9 @@
       <div class="config-meta">
         <span class="config-section">{{ sectionLabel(entry.key) }}</span>
         <strong>{{ entry.label }}</strong>
+        <span class="config-source" [class.config-source--custom]="entry.source === 'custom'">
+          {{ entry.source === 'custom' ? 'Custom' : 'System default' }}
+        </span>
         <p>{{ entry.description }}</p>
       </div>
       <div class="config-input">
@@ -35,6 +38,18 @@
         >
           {{ saving() === entry.key ? 'Saving…' : 'Save' }}
         </button>
+        @if (entry.source === 'custom') {
+          <button
+            type="button"
+            class="config-reset"
+            [adminCan]="managePermissions"
+            adminCanMatch="any"
+            (click)="restoreDefault(entry.key)"
+            [disabled]="saving() === entry.key"
+          >
+            Restore default
+          </button>
+        }
       </div>
     </div>
   }

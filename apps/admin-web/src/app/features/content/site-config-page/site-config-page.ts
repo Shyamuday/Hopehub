@@ -5,7 +5,13 @@ import { AdminCanDirective } from '../../../core/directives/admin-can.directive'
 import { ADMIN_PERMISSIONS } from '../../../core/admin-permissions';
 import type { CarePricingTemplateDto, ProviderRoleDefinitionDto } from '@hopehub/contracts';
 
-type ConfigEntry = { key: string; value: string; label: string; description: string };
+type ConfigEntry = {
+  key: string;
+  value: string;
+  label: string;
+  description: string;
+  source: 'default' | 'custom';
+};
 type PricingMode = CarePricingTemplateDto['pricingMode'];
 type CarePricingTemplate = Omit<CarePricingTemplateDto, 'id'> & { id?: string };
 
@@ -175,6 +181,20 @@ export class SiteConfigPage {
       await this.load();
     } catch {
       this.error.set(`Could not save "${key}".`);
+    } finally {
+      this.saving.set(null);
+    }
+  }
+
+  async restoreDefault(key: string) {
+    this.saving.set(key);
+    this.message.set('');
+    try {
+      await this.api.restoreSiteConfigDefault(key);
+      this.message.set(`"${key}" restored to the system default.`);
+      await this.load();
+    } catch {
+      this.error.set(`Could not restore "${key}".`);
     } finally {
       this.saving.set(null);
     }
