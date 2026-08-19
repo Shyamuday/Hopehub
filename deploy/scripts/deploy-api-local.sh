@@ -235,7 +235,8 @@ TELEGRAM_CONFESSION_CHANNEL_ID="$TELEGRAM_CONFESSION_CHANNEL_ID_VALUE" \
 TELEGRAM_CONFESSION_APPROVAL_GROUP_ID="$TELEGRAM_CONFESSION_APPROVAL_GROUP_ID_VALUE" \
 TELEGRAM_CONFESSION_START_NUMBER="$TELEGRAM_CONFESSION_START_NUMBER_VALUE" \
 TELEGRAM_RULES_BOT_TOKEN="$TELEGRAM_RULES_BOT_TOKEN_VALUE" \
-pm2 startOrReload ecosystem.config.cjs --only hopehub-api --update-env
+pm2 delete hopehub-api >/dev/null 2>&1 || true
+pm2 start "$APP_DIR/node_modules/tsx/dist/cli.mjs" --name hopehub-api -- src/index.ts
 pm2 save
 
 echo "Waiting for API to be ready..."
