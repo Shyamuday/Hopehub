@@ -32,14 +32,10 @@ import {
 import {
   GROUP_HELP_ACTIONS,
   GROUP_HELP_CAPABILITY_GROUPS,
-  GROUP_HELP_CONFIG_DEFAULTS,
   GROUP_HELP_CONFIG_KEYS,
   GROUP_HELP_CONFIG_META
 } from '../../constants/group-help-config.constants.js';
-import {
-  markGroupHelpConfigOverrides,
-  syncGroupHelpConfigDefaults
-} from '../../services/telegram-group-help-defaults.js';
+import { markGroupHelpConfigOverrides } from '../../services/telegram-group-help-defaults.js';
 import {
   TELEGRAM_BOT_CONTROL_DEFAULTS,
   TELEGRAM_BOT_CONTROL_KEYS,
@@ -310,14 +306,10 @@ function linkedName(session: {
 }
 
 async function groupHelpConfigMap() {
-  await syncGroupHelpConfigDefaults();
   const rows = await prisma.siteConfig.findMany({
     where: { key: { in: GROUP_HELP_CONFIG_KEYS } }
   });
-  const values = {
-    ...GROUP_HELP_CONFIG_DEFAULTS,
-    ...Object.fromEntries(rows.map((row) => [row.key, row.value]))
-  };
+  const values = Object.fromEntries(rows.map((row) => [row.key, row.value]));
   if (values.telegramGroupHelpBotUsername?.replace(/^@/, '').toLowerCase() === 'hopehubaibot') {
     values.telegramGroupHelpBotUsername = 'Hopehubbot';
   }
@@ -936,7 +928,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         },
         config: GROUP_HELP_CONFIG_KEYS.map((key) => ({
           ...GROUP_HELP_CONFIG_META[key],
-          value: values[key] ?? GROUP_HELP_CONFIG_DEFAULTS[key] ?? ''
+          value: values[key] ?? ''
         }))
       });
     })
@@ -1234,7 +1226,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
       res.json({
         config: GROUP_HELP_CONFIG_KEYS.map((key) => ({
           ...GROUP_HELP_CONFIG_META[key],
-          value: values[key] ?? GROUP_HELP_CONFIG_DEFAULTS[key] ?? ''
+          value: values[key] ?? ''
         }))
       });
     })

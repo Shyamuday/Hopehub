@@ -1,7 +1,5 @@
-import { GROUP_HELP_CONFIG_DEFAULTS } from '../constants/group-help-config.constants.js';
 import { getTelegramCommunityGroupPolicy } from './telegram-community-group-policy.js';
 import { getSiteConfigMap } from './site-config.service.js';
-import { syncGroupHelpConfigDefaults } from './telegram-group-help-defaults.js';
 import type { CommunityTelegramMessage } from './telegram-community-bots.types.js';
 
 export const GROUP_HELP_CONFIG_KEYS = [
@@ -39,10 +37,12 @@ export const GROUP_HELP_CONFIG_KEYS = [
 ] as const;
 
 export async function groupHelpConfig(chatId?: string) {
-  await syncGroupHelpConfigDefaults();
   const stored = await getSiteConfigMap(GROUP_HELP_CONFIG_KEYS);
   const policy = chatId ? await getTelegramCommunityGroupPolicy(chatId) : {};
-  return { ...GROUP_HELP_CONFIG_DEFAULTS, ...stored, ...policy };
+  // SiteConfig is the single runtime source of truth. New environments must be
+  // initialized through the explicit Telegram community seed, never silently
+  // changed by application startup.
+  return { ...stored, ...policy };
 }
 
 export function floodThreshold(value: string) {

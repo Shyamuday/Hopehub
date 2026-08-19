@@ -26,7 +26,6 @@ import {
   COMMUNITY_BOT_SLUGS,
   TELEGRAM_BOT_URLS
 } from '../constants/telegram-community-bot.constants.js';
-import { GROUP_HELP_CONFIG_DEFAULTS } from '../constants/group-help-config.constants.js';
 import { prisma } from '../db.js';
 
 const slug = COMMUNITY_BOT_SLUGS.CONFESSION;
@@ -141,10 +140,7 @@ export async function publishApprovedConfession(input: {
     },
     select: { key: true, value: true }
   });
-  const groupConfig = {
-    ...GROUP_HELP_CONFIG_DEFAULTS,
-    ...Object.fromEntries(groupConfigRows.map((row) => [row.key, row.value]))
-  };
+  const groupConfig = Object.fromEntries(groupConfigRows.map((row) => [row.key, row.value]));
   const groupChatId = groupConfig.telegramGroupHelpGroupChatId?.trim();
   if (groupConfig.telegramCommunityConfessionsInGroup === 'Disabled' || !groupChatId) {
     return destinations;

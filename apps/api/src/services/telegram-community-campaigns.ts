@@ -12,7 +12,6 @@ import type {
 import { configuredUrlKeyboard } from './telegram-keyboard-config.js';
 import { colorizeTelegramKeyboard } from './telegram-button-styles.js';
 import { getSiteConfigMap } from './site-config.service.js';
-import { syncGroupHelpConfigDefaults } from './telegram-group-help-defaults.js';
 import {
   cleanupCommunityBotData,
   runScheduledCommunityMessageCleanup,
@@ -132,7 +131,6 @@ const SMART_SCHEDULE_CONFIG_KEYS = [
 ] as const;
 
 async function communityConfig() {
-  await syncGroupHelpConfigDefaults();
   const values = await getSiteConfigMap(COMMUNITY_CONFIG_KEYS);
   return {
     welcomeEnabled: values.telegramCommunityWelcomeEnabled !== 'Disabled',
