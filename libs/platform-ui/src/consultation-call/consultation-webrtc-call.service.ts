@@ -2,6 +2,8 @@ import { Injectable, signal } from '@angular/core';
 import {
   CALL_SOCKET_EVENTS,
   type CallMode,
+  type CallNetworkProfile,
+  type CallNetworkType,
   type CallSignalingSocket,
   type CallState,
   type IceServerConfig,
@@ -24,6 +26,21 @@ const CALL_RECOVERY_MAX_AGE_MS = 5 * 60 * 1000;
 const DELIVERY_ACK_TIMEOUT_MS = 8_000;
 const OFFER_RETRY_INTERVAL_MS = 3_000;
 const CALL_DEVICE_PREFERENCES_KEY = 'hopehub:call-device-preferences';
+
+type BrowserNetworkInformation = EventTarget & {
+  type?: string;
+  effectiveType?: string;
+  rtt?: number;
+  downlink?: number;
+  saveData?: boolean;
+};
+
+function isLikelyMobileDevice() {
+  if (typeof navigator === 'undefined') return false;
+  const navigatorWithUaData = navigator as Navigator & { userAgentData?: { mobile?: boolean } };
+  if (navigatorWithUaData.userAgentData?.mobile === true) return true;
+  return /Android|iPhone|iPad|iPod|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
 
 export type CallNetworkQuality = 'unknown' | 'good' | 'unstable' | 'poor';
 export type CallParticipant = { name: string; imageUrl?: string; role?: string };
@@ -58,6 +75,48 @@ function normalizeIceServers(iceServers: IceServerConfig[]) {
     const bIsTurn = bUrls.some((url) => url.startsWith('turn:') || url.startsWith('turns:'));
     return Number(aIsTurn) - Number(bIsTurn);
   });
+}
+
+function browserNetworkProfile(): CallNetworkProfile {
+  const connection = (navigator as Navigator & { connection?: BrowserNetworkInformation })
+    .connection;
+  const type = connection?.type;
+  const effectiveType = connection?.effectiveType;
+  const normalizedType: CallNetworkType =
+    type === 'wifi' ||
+    type === 'cellular' ||
+    type === 'ethernet' ||
+    type === 'bluetooth' ||
+    type === 'none' ||
+    type === 'other'
+      ? type
+      : 'unknown';
+  const normalizedEffectiveType =
+    effectiveType === 'slow-2g' ||
+    effectiveType === '2g' ||
+    effectiveType === '3g' ||
+    effectiveType === '4g'
+      ? effectiveType
+      : 'unknown';
+  const saveData = connection?.saveData === true;
+  const mobileWithoutNetworkType = normalizedType === 'unknown' && isLikelyMobileDevice();
+
+  return {
+    type: normalizedType,
+    effectiveType: normalizedEffectiveType,
+    ...(typeof connection?.rtt === 'number' ? { rttMs: connection.rtt } : {}),
+    ...(typeof connection?.downlink === 'number' ? { downlinkMbps: connection.downlink } : {}),
+    saveData,
+    // iOS Safari does not expose this API. On a likely mobile device, use the
+    // reliable relay rather than risk a carrier-NAT direct-call failure.
+    requiresRelay:
+      normalizedType === 'cellular' ||
+      mobileWithoutNetworkType ||
+      saveData ||
+      normalizedEffectiveType === 'slow-2g' ||
+      normalizedEffectiveType === '2g' ||
+      normalizedEffectiveType === '3g'
+  };
 }
 
 function callReasonMessage(reason: unknown): string {
@@ -142,6 +201,12 @@ export class ConsultationWebrtcCallService {
   readonly networkQuality = signal<CallNetworkQuality>('unknown');
   readonly incomingAlertsEnabled = signal(false);
   readonly privacyRelay = signal(false);
+  readonly networkProfile = signal<CallNetworkProfile>({
+    type: 'unknown',
+    effectiveType: 'unknown',
+    saveData: false,
+    requiresRelay: false
+  });
   readonly connectionOnline = signal(typeof navigator === 'undefined' ? true : navigator.onLine);
   readonly voiceFallbackSuggested = signal(false);
   readonly activeConsultationId = signal('');
@@ -230,6 +295,14 @@ export class ConsultationWebrtcCallService {
       this.startReconnectTimeout();
     }
   };
+  private readonly handleNetworkInformationChange = () => {
+    this.refreshNetworkProfile();
+    if (this.callContext && this.networkProfile().requiresRelay && !this.privacyRelay()) {
+      this.deviceRecoveryMessage.set(
+        'Your network changed. Reconnect the call to use the more reliable connection.'
+      );
+    }
+  };
   private readonly handlePageHide = (event: PageTransitionEvent) => {
     if (event.persisted || !this.callContext) return;
     this.emitSignal(CALL_SOCKET_EVENTS.END, {
@@ -263,6 +336,8 @@ export class ConsultationWebrtcCallService {
   constructor() {
     this.restoreDevicePreferences();
     if (typeof navigator !== 'undefined') {
+      this.refreshNetworkProfile();
+      this.browserConnection()?.addEventListener('change', this.handleNetworkInformationChange);
       navigator.mediaDevices?.addEventListener?.('devicechange', this.handleMediaDeviceChange);
       this.registerHardwareCallControls();
     }
@@ -372,6 +447,44 @@ export class ConsultationWebrtcCallService {
 
   setMediaAccessHandler(handler: (mode: CallMode) => Promise<MediaAccessResult>) {
     this.ensureMediaAccess = handler;
+  }
+
+  refreshNetworkProfile() {
+    if (typeof navigator === 'undefined') return this.networkProfile();
+    const profile = browserNetworkProfile();
+    this.networkProfile.set(profile);
+    return profile;
+  }
+
+  private browserConnection() {
+    if (typeof navigator === 'undefined') return undefined;
+    return (navigator as Navigator & { connection?: BrowserNetworkInformation }).connection;
+  }
+
+  private async resolveRelayPolicy(
+    iceServers: IceServerConfig[],
+    requestedRelay: boolean,
+    mode: CallMode
+  ) {
+    const profile = this.refreshNetworkProfile();
+    const relayRequired = requestedRelay || profile.requiresRelay;
+    if (!relayRequired) return false;
+
+    const connectivity = await this.testConnectivity(iceServers, true);
+    if (!connectivity.ok) {
+      const mobileMessage = profile.requiresRelay
+        ? 'Your current network needs the secure call connection, but it is unavailable. Try another network or continue in chat.'
+        : 'The secure call connection is unavailable. Turn it off and try again, or continue in chat.';
+      this.error.set(mobileMessage);
+      this.state.set('error');
+      throw new Error(mobileMessage);
+    }
+
+    if (mode === 'video' && profile.requiresRelay) {
+      this.lowDataMode.set(true);
+      this.manualLowDataMode = true;
+    }
+    return true;
   }
 
   async refreshMediaDevices() {
@@ -527,6 +640,11 @@ export class ConsultationWebrtcCallService {
       this.error.set(message);
       throw new Error(message);
     }
+    const privacyRelay = await this.resolveRelayPolicy(
+      params.iceServers ?? DEFAULT_STUN,
+      params.privacyRelay === true,
+      params.mode
+    );
     if (!this.acquireCallLock(params.consultationId)) {
       const message = 'This call is already open in another browser tab.';
       this.error.set(message);
@@ -544,7 +662,7 @@ export class ConsultationWebrtcCallService {
     this.signalSequence = 0;
     this.iceRestartAttempts = 0;
     this.totalReconnectCount = 0;
-    this.privacyRelay.set(params.privacyRelay === true);
+    this.privacyRelay.set(privacyRelay);
     this.voiceFallbackSuggested.set(false);
     this.remoteRinging.set(false);
     this.micEnabled.set(true);
@@ -556,7 +674,7 @@ export class ConsultationWebrtcCallService {
     this.receiverUnavailable.set(false);
 
     try {
-      await this.ensurePeer(params.mode, params.iceServers ?? DEFAULT_STUN, this.privacyRelay());
+      await this.ensurePeer(params.mode, params.iceServers ?? DEFAULT_STUN, privacyRelay);
       this.activeConsultationId.set(params.consultationId);
       this.persistRecoveryContext();
       this.makingOffer = true;
@@ -601,6 +719,13 @@ export class ConsultationWebrtcCallService {
     }
     if (!this.socket) return;
     this.answerRequested.set(true);
+    let privacyRelay: boolean;
+    try {
+      privacyRelay = await this.resolveRelayPolicy(iceServers, this.privacyRelay(), offer.mode);
+    } catch {
+      this.answerRequested.set(false);
+      return;
+    }
     if (!this.acquireCallLock(offer.consultationId)) {
       this.answerRequested.set(false);
       this.error.set('This call is already open in another browser tab.');
@@ -618,6 +743,7 @@ export class ConsultationWebrtcCallService {
     this.activeConsultationId.set(offer.consultationId);
     this.activeTargetUserId.set(offer.fromUserId);
     this.callMode.set(offer.mode);
+    this.privacyRelay.set(privacyRelay);
     this.error.set('');
     this.incomingCall.set(false);
     this.state.set('connecting');
@@ -631,7 +757,7 @@ export class ConsultationWebrtcCallService {
     this.persistRecoveryContext();
 
     try {
-      await this.ensurePeer(offer.mode, iceServers, this.privacyRelay());
+      await this.ensurePeer(offer.mode, iceServers, privacyRelay);
       await this.pc!.setRemoteDescription(new RTCSessionDescription(offer.sdp));
       const answer = await this.pc!.createAnswer();
       await this.pc!.setLocalDescription(answer);
@@ -1824,7 +1950,11 @@ export class ConsultationWebrtcCallService {
       iceConnectionState: this.pc?.iceConnectionState,
       mode: this.callMode(),
       lowDataMode: this.lowDataMode(),
-      backgroundBlurEnabled: this.backgroundBlurEnabled()
+      backgroundBlurEnabled: this.backgroundBlurEnabled(),
+      networkType: this.networkProfile().type,
+      networkEffectiveType: this.networkProfile().effectiveType,
+      networkSaveData: this.networkProfile().saveData,
+      relayRequiredByNetwork: this.networkProfile().requiresRelay
     };
   }
 

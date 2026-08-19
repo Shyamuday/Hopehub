@@ -37,6 +37,7 @@ TURN_URLS="$(sudo cat /etc/hopehub-turn-urls 2>/dev/null || echo "${TURN_URL}")"
 TURN_USERNAME="$(sudo cat /etc/hopehub-turn-username 2>/dev/null || true)"
 TURN_CREDENTIAL="$(sudo cat /etc/hopehub-turn-credential 2>/dev/null || true)"
 TURN_SHARED_SECRET="$(sudo cat /etc/hopehub-turn-shared-secret 2>/dev/null || true)"
+TURN_CREDENTIAL_MODE="$(sudo cat /etc/hopehub-turn-credential-mode 2>/dev/null || { if [ -n "$TURN_USERNAME$TURN_CREDENTIAL" ]; then echo static; elif [ -n "$TURN_SHARED_SECRET" ]; then echo temporary; fi; })"
 TURN_USERNAME_PREFIX="$(sudo cat /etc/hopehub-turn-username-prefix 2>/dev/null || echo hopehub)"
 TURN_TTL_SECONDS="$(sudo cat /etc/hopehub-turn-ttl-seconds 2>/dev/null || echo 3600)"
 WEB_PUSH_VAPID_PUBLIC_KEY="$(sudo cat /etc/hopehub-web-push-vapid-public-key 2>/dev/null || true)"
@@ -58,6 +59,13 @@ if [ -z "$WEB_PUSH_VAPID_PUBLIC_KEY" ] || [ -z "$WEB_PUSH_VAPID_PRIVATE_KEY" ]; 
   sudo chmod 644 /etc/hopehub-web-push-vapid-public-key /etc/hopehub-web-push-vapid-subject
   sudo chmod 600 /etc/hopehub-web-push-vapid-private-key
 fi
+
+# TURN is required whenever users are behind mobile-carrier NAT. Keep an installed
+# coturn service enabled across reboots without failing environments that do not run it.
+if sudo systemctl cat coturn.service >/dev/null 2>&1; then
+  sudo systemctl enable coturn.service
+fi
+
 GOOGLE_CLIENT_ID="$(sudo cat /etc/hopehub-google-client-id 2>/dev/null || echo "${GOOGLE_CLIENT_ID:-}")"
 RAZORPAY_KEY_ID_VALUE="$(sudo cat /etc/hopehub-razorpay-key-id 2>/dev/null || echo "${RAZORPAY_KEY_ID:-}")"
 RAZORPAY_KEY_SECRET_VALUE="$(sudo cat /etc/hopehub-razorpay-key-secret 2>/dev/null || echo "${RAZORPAY_KEY_SECRET:-}")"
@@ -141,6 +149,7 @@ TURN_URLS="${TURN_URLS}"
 TURN_USERNAME="${TURN_USERNAME}"
 TURN_CREDENTIAL="${TURN_CREDENTIAL}"
 TURN_SHARED_SECRET="${TURN_SHARED_SECRET}"
+TURN_CREDENTIAL_MODE="${TURN_CREDENTIAL_MODE}"
 TURN_USERNAME_PREFIX="${TURN_USERNAME_PREFIX}"
 TURN_TTL_SECONDS="${TURN_TTL_SECONDS}"
 WEB_PUSH_VAPID_PUBLIC_KEY="${WEB_PUSH_VAPID_PUBLIC_KEY}"

@@ -7,6 +7,18 @@ export type IceServerConfig = { urls: string | string[]; username?: string; cred
 
 export type MediaAccessResult = { granted: boolean; message?: string };
 
+export type CallNetworkType =
+  'wifi' | 'cellular' | 'ethernet' | 'bluetooth' | 'none' | 'other' | 'unknown';
+
+export type CallNetworkProfile = {
+  type: CallNetworkType;
+  effectiveType: 'slow-2g' | '2g' | '3g' | '4g' | 'unknown';
+  rttMs?: number;
+  downlinkMbps?: number;
+  saveData: boolean;
+  requiresRelay: boolean;
+};
+
 export type CallSignalingSocket = {
   connected?: boolean;
   on(event: string, handler: (...args: unknown[]) => void): void;

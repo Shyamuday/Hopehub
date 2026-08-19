@@ -71,6 +71,11 @@
         <p class="call-permission-note">
           Chrome will ask for {{ allowVideo ? 'microphone or camera' : 'microphone' }} access when you start.
         </p>
+        @if (call.networkProfile().requiresRelay) {
+          <p class="call-permission-note">
+            We will use the more reliable call connection for this network.
+          </p>
+        }
       }
 
       @if (!globalOverlayEnabled && isThisCall() && call.state() === 'ringing' && call.incomingCall()) {

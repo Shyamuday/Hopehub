@@ -275,6 +275,10 @@ export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDest
     return 'Checking network';
   }
 
+  requiresRelayForThisNetwork() {
+    return this.call.privacyRelay() || this.call.networkProfile().requiresRelay;
+  }
+
   participantInitial() {
     return (this.participantName.trim().charAt(0) || 'H').toUpperCase();
   }
@@ -426,11 +430,15 @@ export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDest
       this.preCallSpeakerReady.set(await this.call.testSpeaker());
       const connectivity = await this.call.testConnectivity(
         this.iceServers,
-        this.call.privacyRelay()
+        this.requiresRelayForThisNetwork()
       );
       this.preCallNetworkReady.set(connectivity.ok);
       this.preCallMessage.set(
-        connectivity.ok ? 'Everything needed for your call is ready.' : connectivity.message
+        connectivity.ok
+          ? this.requiresRelayForThisNetwork()
+            ? 'Your mobile-friendly call connection is ready.'
+            : 'Everything needed for your call is ready.'
+          : connectivity.message
       );
     } catch (error) {
       this.preCallMessage.set(mediaAccessErrorMessageForCheck(error, mode));
@@ -540,7 +548,7 @@ export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDest
       if (result.granted) {
         const connectivity = await this.call.testConnectivity(
           this.iceServers,
-          this.call.privacyRelay()
+          this.requiresRelayForThisNetwork()
         );
         this.mediaCheckMessage.set(
           connectivity.ok
