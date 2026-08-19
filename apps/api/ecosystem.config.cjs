@@ -9,7 +9,7 @@ module.exports = {
     {
       name: 'hopehub-api',
       cwd: __dirname,
-      script: 'dist/index.js',
+      script: 'dist/apps/api/src/index.js',
       interpreter: 'node',
       exec_mode: 'fork',
       instances: 1,
