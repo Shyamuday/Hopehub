@@ -1,4 +1,4 @@
-import { prisma } from '../db.js';
+﻿import { prisma } from '../db.js';
 import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
 import {
   callCommunityTelegramApi,
@@ -454,11 +454,24 @@ export async function handleGroupHelpMemberCommand(
   }
   if (command === '/help') {
     const canUseStaffTools = await canUseGroupHelpCommand(message, values, '/warn', 'HELPER');
+    const canUseModTools = await canUseGroupHelpCommand(message, values, '/mute', 'MODERATOR');
     const canUseAdminTools = await isModerationExempt(
       message,
       values.telegramGroupHelpAdminWhitelist || ''
     );
+    const muteMinutes = values.telegramGroupHelpMuteMinutes || '60';
     const helpSections = [
+      `💙 *Hope Hub bot help*\n\n*For every member*\n• /rules — community rules\n• /support — private Hope Hub support\n• /warnings — your warning count\n• /id — your Telegram ID (or replied member's ID)\n• /me — your group profile\n• /report — reply to a message to report it\n• /admin — alert the community team\n• /forgot — remove your data from this group`,
+      canUseStaffTools
+        ? `*For Helpers and Moderators* (reply to a message):\n• /warn [reason] or /unwarn — manage warnings\n• /del [reason] — delete the message\n• /delwarn — delete + warn\n• /info or /perms — member details\n• /geturl — link to replied message\n• /clearwarnings — clear all warnings\n• /adminlist — list group admins\n• /staff — community team\n• /stats — group snapshot\n\n*From staff group* (use ID or @username):\n• /warn 123456 reason\n• /mute 123456 reason\n• /ban 123456 reason`
+        : '',
+      canUseModTools
+        ? `*Moderator commands* (reply to a message):\n• /mute [reason] — mute for ${muteMinutes} min\n• /unmute — restore messaging\n• /ro — read-only (permanent)\n• /unro — remove read-only\n• /ban [reason], /unban, /kick\n• /delmute — delete + mute\n• /delban — delete + ban\n• /delkick — delete + kick`
+        : '',
+      canUseAdminTools
+        ? `*For Telegram administrators*:\n• /admin — promote replied member\n• /unadmin — demote replied admin\n• /title [text] — set admin title\n• /untitle — remove title\n• /helper or /mod — assign role\n• /unhelper or /unmod — remove role\n• /pin [notify] — pin replied message\n• /unpin, /unpinall, /pinned\n• /filter [word] — add banned word\n• /unfilter [word] — remove banned word\n• /filters — list banned words\n• /welcome on/off — toggle welcome\n• /lockdown [minutes] — lock group\n• /unlock — unlock group\n• /settings — group settings\n• /setlog — set log channel\n• /settestgroup — set test group`
+        : '',
+      'Tip: prefix commands with /* (e.g. /*info, /*stats) to get the reply privately.',
       `💙 *Hope Hub bot help*\n\n*For every member*\n• /rules — read community rules\n• /support — find private Hope Hub support\n• /warnings — check your warning count\n• /me — view your group profile\n• /report — reply to a message, then report it privately\n• /admin — ask the community team to review an urgent group concern\n• /forget — remove your retained Group Help data for this group\n• Send /forget in a private chat with the bot to remove your Group Help data across all communities.`,
       canUseStaffTools
         ? `*For Helpers and Moderators*\nReply to a member’s message, then use:\n• /warn reason or /unwarn — manage warnings\n• /delete reason — remove the replied message\n• /delwarn, /delmute, /delban — remove a harmful message and apply one action\n• /mute reason — temporarily restrict the member\n• /unmute — restore their ability to send messages\n• /ban reason, /unban, /kick — manage membership\n• /info or /perms — view member details and bot access\n• /geturl — get a direct link to a replied message\n• /clearwarnings — remove recorded warnings\n• /staff — view the community team\n• /stats — view the group snapshot`
