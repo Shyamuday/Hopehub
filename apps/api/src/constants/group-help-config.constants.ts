@@ -884,12 +884,31 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
   {
     key: 'telegramGroupHelpNewMemberAction',
     label: 'Failed verification action',
-    description: 'Preferred action when a new member fails verification.',
+    description:
+      'What happens after three incorrect captcha answers. Staff review keeps the member restricted and sends your team an Allow button.',
     section: 'onboarding',
     type: 'select',
-    options: ['kick', 'ban', 'mute'],
-    maxLength: 10,
-    defaultValue: 'kick'
+    options: ['staff review', 'keep restricted', 'remove from group', 'ban'],
+    maxLength: 20,
+    defaultValue: 'staff review'
+  },
+  {
+    key: 'telegramGroupHelpCaptchaPendingMinutes',
+    label: 'Captcha message expiry',
+    description: 'Minutes to keep the join captcha visible while the new member has not answered.',
+    section: 'onboarding',
+    type: 'number',
+    maxLength: 4,
+    defaultValue: '60'
+  },
+  {
+    key: 'telegramGroupHelpCaptchaSuccessCleanupMinutes',
+    label: 'Captcha success cleanup',
+    description: 'Minutes to keep the welcome and captcha visible after verification succeeds.',
+    section: 'onboarding',
+    type: 'number',
+    maxLength: 4,
+    defaultValue: '5'
   },
   {
     key: 'telegramGroupHelpAntiFloodAction',

@@ -27,12 +27,9 @@ export type CommunityTelegramMessage = {
   message_thread_id?: number;
   new_chat_members?: CommunityTelegramUser[];
   left_chat_member?: CommunityTelegramUser;
-  reply_to_message?: {
-    message_id: number;
-    text?: string;
-    caption?: string;
-    from?: CommunityTelegramUser;
-  };
+  // Telegram nests a complete message here. Keeping the full shape lets moderation
+  // logs preserve the original text/caption and media details for staff review.
+  reply_to_message?: CommunityTelegramMessage;
   forward_origin?: unknown;
   forward_from?: CommunityTelegramUser;
   forward_from_chat?: { id: number | string };

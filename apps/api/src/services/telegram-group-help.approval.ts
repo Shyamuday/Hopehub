@@ -44,17 +44,20 @@ export async function queueGroupHelpMessageReview(
   }
 
   await deleteGroupHelpMessage(chatId, message.message_id).catch(() => null);
+  // Every held message needs its own review record. Previously, when the
+  // member already had one pending review, later configured messages were
+  // removed but not shown to staff at all.
+  await prisma.telegramCommunityModerationCase.create({
+    data: {
+      chatId,
+      sourceMessageId: message.message_id,
+      reportedMessageId: message.message_id,
+      targetUserId: userId,
+      reason,
+      evidence: (message.text || message.caption || '[media]').slice(0, 4000)
+    }
+  });
   if (state?.state !== 'PENDING') {
-    await prisma.telegramCommunityModerationCase.create({
-      data: {
-        chatId,
-        sourceMessageId: message.message_id,
-        reportedMessageId: message.message_id,
-        targetUserId: userId,
-        reason,
-        evidence: (message.text || message.caption || '[media]').slice(0, 4000)
-      }
-    });
     if (reason === 'FIRST_MESSAGE_REVIEW') {
       await prisma.telegramCommunityState.upsert({
         where: { bot_chatId: { bot: approvalBot(chatId), chatId: userId } },
@@ -72,12 +75,12 @@ export async function queueGroupHelpMessageReview(
         }
       });
     }
-    await sendGroupHelpActivityLog(values, 'Message waiting for staff review', [
-      `Group: ${message.chat.title || chatId}`,
-      `Member: ${message.from.first_name || 'Telegram member'} (${userId})`,
-      `Reason: ${reason === 'FIRST_MESSAGE_REVIEW' ? 'first message' : 'media review'}`
-    ]);
   }
+  await sendGroupHelpActivityLog(values, 'Message waiting for staff review', [
+    `Group: ${message.chat.title || chatId}`,
+    `Member: ${message.from.first_name || 'Telegram member'} (${userId})`,
+    `Reason: ${reason === 'FIRST_MESSAGE_REVIEW' ? 'first message' : 'media review'}`
+  ]);
   await sendTemporaryGroupHelpMessage(
     chatId,
     reason === 'FIRST_MESSAGE_REVIEW'

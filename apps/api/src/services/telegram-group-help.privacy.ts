@@ -5,7 +5,14 @@ export async function forgetGroupHelpMemberData(chatId: string, telegramUserId: 
     prisma.telegramCommunityState.deleteMany({
       where: {
         chatId: telegramUserId,
-        bot: { in: [`group-warnings:${chatId}`, `group-flood:${chatId}`, `group-spam:${chatId}`] }
+        bot: {
+          in: [
+            `group-warnings:${chatId}`,
+            `group-flood:${chatId}`,
+            `group-spam:${chatId}`,
+            `group-join-verification:${chatId}`
+          ]
+        }
       }
     }),
     prisma.telegramCommunityMember.deleteMany({ where: { chatId, telegramUserId } }),
@@ -32,7 +39,11 @@ export async function forgetAllGroupHelpMemberData(telegramUserId: string) {
     prisma.telegramCommunityState.deleteMany({
       where: {
         chatId: telegramUserId,
-        bot: { startsWith: 'group-' }
+        bot: {
+          // Includes temporary warning/flood/spam state and all join-verification
+          // records, even though verification state is keyed by the group ID.
+          startsWith: 'group-'
+        }
       }
     }),
     prisma.telegramCommunityMember.deleteMany({ where: { telegramUserId } }),

@@ -434,17 +434,21 @@ async function sendGroupHelpPost(input: { message: string; imageUrl?: string; pi
   const chatId = values.telegramGroupHelpGroupChatId?.trim();
   if (!groupHelpBotToken()) throw new Error('TELEGRAM_HOPEHUBBOT_TOKEN is not configured.');
   if (!chatId) throw new Error('Telegram group chat ID is not configured.');
+  const messageThreadId = Number(values.telegramCommunityDefaultTopicId || 0) || undefined;
 
   const sent = input.imageUrl
     ? await callGroupHelpTelegramApi<{ message_id: number }>('sendPhoto', {
         chat_id: chatId,
         photo: input.imageUrl,
-        caption: input.message.length <= 1024 ? input.message : `${input.message.slice(0, 1021)}...`
+        caption:
+          input.message.length <= 1024 ? input.message : `${input.message.slice(0, 1021)}...`,
+        ...(messageThreadId ? { message_thread_id: messageThreadId } : {})
       })
     : await callGroupHelpTelegramApi<{ message_id: number }>('sendMessage', {
         chat_id: chatId,
         text: input.message,
-        disable_web_page_preview: true
+        disable_web_page_preview: true,
+        ...(messageThreadId ? { message_thread_id: messageThreadId } : {})
       });
   await applyTelegramCommunityAnnouncementPin({
     chatId,

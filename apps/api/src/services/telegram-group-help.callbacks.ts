@@ -16,16 +16,41 @@ import {
   groupHelpSettingsHomeKeyboard
 } from './telegram-group-help.menu.js';
 import { handleGroupHelpBotSettingsCallback } from './telegram-group-help.bot-settings.js';
+import { handleGroupHelpModerationActionCallback } from './telegram-group-help.actions.js';
 import type { CommunityTelegramUpdate } from './telegram-community-bots.types.js';
 
 export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
   const callback = update.callback_query;
   if (!callback?.message || !callback.data) return false;
-  if (await handleTelegramCommunityJoinVerificationCallback(update)) {
+  const moderationAction = await handleGroupHelpModerationActionCallback(update);
+  if (moderationAction) {
+    const notice =
+      moderationAction === 'denied'
+        ? 'Only an administrator of the original group can use this action.'
+        : moderationAction === 'expired'
+          ? 'This action is no longer available.'
+          : moderationAction === 'repost'
+            ? 'Message reposted in the group.'
+            : `${moderationAction[0].toUpperCase()}${moderationAction.slice(1)} completed.`;
+    await answerCommunityCallback(GROUP_HELP_BOT_SLUG, callback.id, notice);
+    return true;
+  }
+  const joinVerification = await handleTelegramCommunityJoinVerificationCallback(update);
+  if (joinVerification) {
     await answerCommunityCallback(
       GROUP_HELP_BOT_SLUG,
       callback.id,
-      'You’re all set. Welcome to Hope Hub 💙'
+      joinVerification === 'verified'
+        ? 'You’re all set. Welcome to Hope Hub.'
+        : joinVerification === 'incorrect'
+          ? 'That answer is not correct. Please try again.'
+          : joinVerification === 'review'
+            ? 'Your request was sent to the community team for review.'
+            : joinVerification === 'approved'
+              ? 'Member approved and unlocked.'
+              : joinVerification === 'denied'
+                ? 'Only an administrator of that community can approve this member.'
+                : 'Verification was not completed. Please ask an admin for help.'
     );
     return true;
   }

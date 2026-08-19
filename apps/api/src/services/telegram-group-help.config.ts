@@ -8,6 +8,8 @@ export const GROUP_HELP_CONFIG_KEYS = [
   'telegramGroupHelpRulesMessage',
   'telegramGroupHelpSupportMessage',
   'telegramGroupHelpFirstMessageReview',
+  'telegramGroupHelpCaptchaPendingMinutes',
+  'telegramGroupHelpCaptchaSuccessCleanupMinutes',
   'telegramGroupHelpBannedWords',
   'telegramGroupHelpLinkPolicy',
   'telegramGroupHelpAntiFloodAction',
@@ -33,7 +35,8 @@ export const GROUP_HELP_CONFIG_KEYS = [
   'telegramGroupHelpNightMode',
   'telegramGroupHelpNightStart',
   'telegramGroupHelpNightEnd',
-  'telegramGroupHelpTimezone'
+  'telegramGroupHelpTimezone',
+  'telegramCommunityDefaultTopicId'
 ] as const;
 
 export async function groupHelpConfig(chatId?: string) {

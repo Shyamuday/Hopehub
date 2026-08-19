@@ -442,7 +442,7 @@ export async function scheduleCommunityMessageCleanup(input: {
   bot: CommunityBotSlug;
   chatId: string | number;
   messageId: number;
-  kind: 'welcome' | 'goodbye' | 'transient';
+  kind: 'welcome' | 'goodbye' | 'transient' | 'join-captcha';
   deleteAfter: Date;
 }) {
   return prisma.telegramCommunityMessageCleanup.upsert({

@@ -96,7 +96,13 @@ export async function handleGroupHelpStaffCommand(
     }
     await sendModerationLog(
       values,
-      { ...message, from: target, text: reason },
+      {
+        ...targetMessage,
+        // A reply object does not consistently include its own chat/topic in
+        // Telegram updates, so retain the context of the staff command.
+        chat: message.chat,
+        message_thread_id: message.message_thread_id
+      },
       reason,
       effectiveAction
     );

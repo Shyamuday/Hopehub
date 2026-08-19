@@ -4,7 +4,13 @@ import {
   sendCommunityMessage
 } from './telegram-community-bots.client.js';
 import { scheduleCommunityMessageCleanup } from './telegram-community-bots.store.js';
-import type { CommunityTelegramMessage } from './telegram-community-bots.types.js';
+import { removeLatestTelegramGroupWarning } from './telegram-community-bots.store.js';
+import type {
+  CommunityTelegramMessage,
+  CommunityTelegramUpdate
+} from './telegram-community-bots.types.js';
+
+const MODERATION_ACTION_STATE = 'group-moderation-action';
 
 export async function sendModerationLog(
   values: Record<string, string>,
@@ -13,7 +19,7 @@ export async function sendModerationLog(
   action: string
 ) {
   const destination =
-    values.telegramGroupHelpLogChannelId?.trim() || values.telegramGroupHelpStaffGroupId?.trim();
+    values.telegramGroupHelpStaffGroupId?.trim() || values.telegramGroupHelpLogChannelId?.trim();
   if (!destination) return;
   const rawText = `${message.text || message.caption || ''}`.trim();
   const normalizedText = rawText.replace(/\s+/g, ' ');
@@ -39,6 +45,38 @@ export async function sendModerationLog(
   ]
     .filter(Boolean)
     .join(', ');
+  const actionId = randomUUID();
+  const normalizedAction = action.toLowerCase();
+  const buttons = [] as Array<{ text: string; callback_data: string }>;
+  if (message.from && ['mute', 'warn'].includes(normalizedAction)) {
+    buttons.push({
+      text: normalizedAction === 'mute' ? 'Unmute member' : 'Remove warning',
+      callback_data: `hh_mod:${actionId}:${normalizedAction === 'mute' ? 'unmute' : 'unwarn'}`
+    });
+  }
+  if (message.from && ['ban', 'kick'].includes(normalizedAction)) {
+    buttons.push({ text: 'Unban member', callback_data: `hh_mod:${actionId}:unban` });
+  }
+  if (rawText) {
+    buttons.push({ text: 'Repost text', callback_data: `hh_mod:${actionId}:repost` });
+  }
+  if (buttons.length) {
+    await prisma.telegramCommunityState.create({
+      data: {
+        bot: MODERATION_ACTION_STATE,
+        chatId: actionId,
+        state: 'OPEN',
+        payload: {
+          targetChatId: String(message.chat.id),
+          targetUserId: message.from ? String(message.from.id) : null,
+          text: rawText || null,
+          messageThreadId: message.message_thread_id || null,
+          action: normalizedAction
+        },
+        expiresAt: new Date(Date.now() + 24 * 60 * 60_000)
+      }
+    });
+  }
   await sendCommunityMessage(
     GROUP_HELP_BOT_SLUG,
     destination,
@@ -51,8 +89,71 @@ export async function sendModerationLog(
       `Member: ${member}`,
       `Content: ${media || 'text'} · ${rawText.length} character${rawText.length === 1 ? '' : 's'}`,
       `Text: ${preview}`
-    ].join('\n')
+    ].join('\n'),
+    buttons.length ? { reply_markup: { inline_keyboard: [buttons] } } : undefined
   ).catch(() => null);
+}
+
+/** Handles staff-group undo/repost controls for a recorded moderation action. */
+export async function handleGroupHelpModerationActionCallback(update: CommunityTelegramUpdate) {
+  const callback = update.callback_query;
+  const data = callback?.data;
+  if (!callback || !data?.startsWith('hh_mod:')) return false;
+  const [, actionId, requestedAction] = data.split(':');
+  if (!actionId || !requestedAction) return false;
+  const state = await prisma.telegramCommunityState.findUnique({
+    where: { bot_chatId: { bot: MODERATION_ACTION_STATE, chatId: actionId } }
+  });
+  if (!state || state.expiresAt <= new Date() || state.state !== 'OPEN') return 'expired';
+  const payload = (state.payload || {}) as {
+    targetChatId?: string;
+    targetUserId?: string | null;
+    text?: string | null;
+    messageThreadId?: number | null;
+  };
+  if (!payload.targetChatId) return 'expired';
+  const membership = await callCommunityTelegramApi<{ status?: string }>(
+    GROUP_HELP_BOT_SLUG,
+    'getChatMember',
+    { chat_id: payload.targetChatId, user_id: callback.from.id }
+  ).catch(() => null);
+  if (!membership || !['creator', 'administrator'].includes(membership.status || ''))
+    return 'denied';
+
+  if (requestedAction === 'unmute' && payload.targetUserId) {
+    const chat = await callCommunityTelegramApi<{ permissions?: Record<string, boolean> }>(
+      GROUP_HELP_BOT_SLUG,
+      'getChat',
+      { chat_id: payload.targetChatId }
+    );
+    await callCommunityTelegramApi(GROUP_HELP_BOT_SLUG, 'restrictChatMember', {
+      chat_id: payload.targetChatId,
+      user_id: Number(payload.targetUserId),
+      permissions: chat.permissions || { can_send_messages: true }
+    });
+  } else if (requestedAction === 'unban' && payload.targetUserId) {
+    await callCommunityTelegramApi(GROUP_HELP_BOT_SLUG, 'unbanChatMember', {
+      chat_id: payload.targetChatId,
+      user_id: Number(payload.targetUserId),
+      only_if_banned: true
+    });
+  } else if (requestedAction === 'unwarn' && payload.targetUserId) {
+    await removeLatestTelegramGroupWarning(payload.targetChatId, payload.targetUserId);
+  } else if (requestedAction === 'repost' && payload.text) {
+    await sendCommunityMessage(
+      GROUP_HELP_BOT_SLUG,
+      payload.targetChatId,
+      `Restored by a community administrator:\n\n${payload.text}`,
+      payload.messageThreadId ? { message_thread_id: payload.messageThreadId } : undefined
+    );
+  } else {
+    return 'expired';
+  }
+  await prisma.telegramCommunityState.update({
+    where: { bot_chatId: { bot: MODERATION_ACTION_STATE, chatId: actionId } },
+    data: { state: 'COMPLETED', expiresAt: new Date() }
+  });
+  return requestedAction;
 }
 
 /** Records a privacy-safe operational event in the configured staff log channel. */
@@ -84,7 +185,11 @@ export async function sendTemporaryGroupHelpMessage(
   values: Record<string, string>,
   options: Parameters<typeof sendCommunityMessage>[3] = {}
 ) {
-  const sent = await sendCommunityMessage(GROUP_HELP_BOT_SLUG, chatId, text, options);
+  const defaultTopicId = Number(values.telegramCommunityDefaultTopicId || 0) || undefined;
+  const sent = await sendCommunityMessage(GROUP_HELP_BOT_SLUG, chatId, text, {
+    ...options,
+    ...(options.message_thread_id || !defaultTopicId ? {} : { message_thread_id: defaultTopicId })
+  });
   const delaySeconds = Math.max(0, Number(values.telegramGroupHelpAutoDeleteSeconds || 300));
   if (delaySeconds > 0) {
     await scheduleCommunityMessageCleanup({
@@ -132,3 +237,5 @@ export async function applyGroupHelpMemberAction(
     });
   }
 }
+import { randomUUID } from 'node:crypto';
+import { prisma } from '../db.js';

@@ -127,8 +127,11 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
   const warnLimit = Math.max(1, Number(values.telegramGroupHelpWarnLimit || 3));
   const warnAction = values.telegramGroupHelpWarnAction || 'mute';
   const text = `${message.text || ''}\n${message.caption || ''}`.trim();
+  // Admin configuration uses off / 1 / 2 / 3. The older "on" check meant
+  // first-message review was silently disabled even when an admin selected it.
   if (
-    values.telegramGroupHelpFirstMessageReview === 'on' &&
+    values.telegramGroupHelpFirstMessageReview !== 'off' &&
+    Number(values.telegramGroupHelpFirstMessageReview || 0) > 0 &&
     (await queueGroupHelpMessageReview(message, values, 'FIRST_MESSAGE_REVIEW'))
   ) {
     return;
