@@ -55,6 +55,37 @@ import {
 
 type LiveConnectMode = ConsumerLiveConnectMode;
 type LiveConnectRoleGroup = '' | ConsumerSupportPath;
+type HomeProviderSection = {
+  roleGroup: ConsumerSupportPath;
+  eyebrow: string;
+  title: string;
+  description: string;
+  providers: HopeHubProvider[];
+  liveCount: number;
+};
+
+const HOME_PROVIDER_SECTIONS: ReadonlyArray<Omit<HomeProviderSection, 'providers' | 'liveCount'>> =
+  [
+    {
+      roleGroup: 'EMOTIONAL_LISTENER',
+      eyebrow: 'Feel heard',
+      title: 'Emotional support listeners',
+      description: 'A gentle, non-clinical space to talk, vent, and feel less alone.',
+    },
+    {
+      roleGroup: 'COACH_MENTOR',
+      eyebrow: 'Find direction',
+      title: 'Coaches and mentors',
+      description: 'Practical guidance for clarity, confidence, habits, study, and career goals.',
+    },
+    {
+      roleGroup: 'PROFESSIONAL_CARE',
+      eyebrow: 'Structured support',
+      title: 'Psychologists and counsellors',
+      description: 'Professional support for deeper emotional and mental-wellness concerns.',
+    },
+  ];
+
 @Component({
   selector: 'app-live-connect',
   standalone: true,
@@ -87,6 +118,7 @@ export class LiveConnectComponent implements OnInit {
 
   readonly currentUser = signal<User | null>(null);
   readonly providers = signal<HopeHubProvider[]>([]);
+  readonly providerSections = signal<HomeProviderSection[]>([]);
   readonly groups = signal<HopeHubLiveGroup[]>([]);
   readonly loading = signal(false);
   readonly groupsLoading = signal(false);
@@ -180,8 +212,65 @@ export class LiveConnectComponent implements OnInit {
     return consumerSessionModeFor(this.mode());
   }
 
-  buttonLabel(_provider: HopeHubProvider): string {
-    return 'Connect now';
+  buttonLabel(provider: HopeHubProvider): string {
+    return this.isProviderLive(provider) ? 'Connect now' : 'Book a session';
+  }
+
+  isProviderLive(provider: HopeHubProvider): boolean {
+    return provider.quickTalkAvailable === true;
+  }
+
+  providerAvailabilityLabel(provider: HopeHubProvider): string {
+    return this.isProviderLive(provider) ? this.providerLiveLabel(provider) : 'Available to book';
+  }
+
+  sectionSummary(section: HomeProviderSection): string {
+    if (section.liveCount > 0) {
+      return `${section.liveCount} available now${
+        section.providers.length > section.liveCount ? ' · More available to book' : ''
+      }`;
+    }
+    return section.providers.length
+      ? 'Choose a profile and book a suitable time'
+      : 'View all profiles';
+  }
+
+  directoryLabel(section: HomeProviderSection): string {
+    if (section.roleGroup === 'EMOTIONAL_LISTENER') return 'See all listeners';
+    if (section.roleGroup === 'COACH_MENTOR') return 'See all coaches and mentors';
+    return 'See all psychologists and counsellors';
+  }
+
+  selectProvider(provider: HopeHubProvider): void {
+    const supportPath = supportPathForProvider(provider);
+    this.roleGroup.set(supportPath);
+    if (this.isProviderLive(provider)) {
+      this.requestStart(provider);
+      return;
+    }
+
+    const service = this.providerServiceForMode(provider);
+    void this.liveConnectAction.openBooking(provider, this.mode(), {
+      careTeamServiceId: service?.id || '',
+      fallbackQueryParams: {
+        service: service?.title || 'Private Hope Hub support',
+        serviceName: service?.title || 'Private Hope Hub support',
+        consultant: provider.name,
+        providerId: provider.id,
+        careTeamServiceId: service?.id || '',
+        supportPath,
+        supportPathLabel: supportPathMeta(supportPath).label,
+        preferredExpertType: supportPathMeta(supportPath).title,
+        duration: service?.durationMinutes ? `${service.durationMinutes} minutes` : undefined,
+        price:
+          service?.effectivePriceInPaise != null
+            ? service.effectivePriceInPaise / 100
+            : service?.priceInPaise != null
+              ? service.priceInPaise / 100
+              : undefined,
+        source: 'home-care-team',
+      },
+    });
   }
 
   providerTrustLabel(provider: HopeHubProvider): string {
@@ -709,31 +798,71 @@ export class LiveConnectComponent implements OnInit {
     return '';
   }
 
-  private loadProviders(): void {
+  private async loadProviders(): Promise<void> {
     const requestVersion = ++this.providerRequestVersion;
     this.loading.set(true);
     this.message.set('');
-    this.bookingService
-      .quickTalkProviders({
-        roleGroup: this.roleGroup(),
-      })
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (res) => {
-          if (requestVersion !== this.providerRequestVersion) return;
-          this.providers.set(res.providers.slice(0, 8));
-          this.loading.set(false);
-          if (!res.providers.length) {
-            this.message.set(this.unavailableMessage());
-          }
-        },
-        error: () => {
-          if (requestVersion !== this.providerRequestVersion) return;
-          this.providers.set([]);
-          this.loading.set(false);
-          this.message.set(CONSUMER_UX_COPY.messages.liveConnectSlow);
-        },
+    let requestFailed = false;
+
+    try {
+      const liveRequest = firstValueFrom(
+        this.bookingService.quickTalkProviders({ mode: this.mode() }),
+      ).catch(() => {
+        requestFailed = true;
+        return { providers: [] as HopeHubProvider[], total: 0 };
       });
+      const directoryRequests = HOME_PROVIDER_SECTIONS.map((section) =>
+        firstValueFrom(
+          this.bookingService.providers({
+            page: 1,
+            pageSize: 10,
+            roleGroup: section.roleGroup,
+          }),
+        ).catch(() => {
+          requestFailed = true;
+          return {
+            providers: [] as HopeHubProvider[],
+            pagination: { page: 1, pageSize: 10, total: 0, totalPages: 1 },
+          };
+        }),
+      );
+      const [liveResponse, ...directoryResponses] = await Promise.all([
+        liveRequest,
+        ...directoryRequests,
+      ]);
+      if (requestVersion !== this.providerRequestVersion) return;
+
+      const sections = HOME_PROVIDER_SECTIONS.map((section, index): HomeProviderSection => {
+        const liveProviders = liveResponse.providers
+          .filter((provider) => supportPathForProvider(provider) === section.roleGroup)
+          .map((provider) => ({ ...provider, quickTalkAvailable: true }));
+        const seen = new Set(liveProviders.map((provider) => provider.id));
+        const bookableProviders = (directoryResponses[index]?.providers || [])
+          .filter((provider) => provider.acceptingNewUsers !== false && !seen.has(provider.id))
+          .map((provider) => ({ ...provider, quickTalkAvailable: false }));
+        const providers = [...liveProviders, ...bookableProviders].slice(0, 5);
+        return {
+          ...section,
+          providers,
+          liveCount: Math.min(liveProviders.length, providers.length),
+        };
+      });
+      const providers = sections.flatMap((section) => section.providers);
+      this.providerSections.set(sections.filter((section) => section.providers.length > 0));
+      this.providers.set(providers);
+      this.loading.set(false);
+      if (!providers.length) {
+        this.message.set(
+          requestFailed ? CONSUMER_UX_COPY.messages.liveConnectSlow : this.unavailableMessage(),
+        );
+      }
+    } catch {
+      if (requestVersion !== this.providerRequestVersion) return;
+      this.providerSections.set([]);
+      this.providers.set([]);
+      this.loading.set(false);
+      this.message.set(CONSUMER_UX_COPY.messages.liveConnectSlow);
+    }
   }
 
   private providerServiceForMode(

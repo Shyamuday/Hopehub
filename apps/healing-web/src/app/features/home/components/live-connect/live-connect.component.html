@@ -5,9 +5,9 @@
         <app-page-header
           align="left"
           compact
-          eyebrow="Live Connect"
-          title="Talk to someone who is available now"
-          description="Connect with someone who feels right. Use chat, voice, or video based on your comfort, and switch whenever you need."
+          eyebrow="Hope Hub care team"
+          title="Choose the kind of support that feels right"
+          description="Talk now when someone is live, or choose a trusted provider and book a suitable time."
         />
         <figure class="live-connect-intro__visual">
           <img
@@ -20,66 +20,111 @@
 
       @if (view() === 'providers') {
         @if (loading()) {
-          <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            @for (item of [1, 2, 3, 4]; track item) {
-              <div
-                class="h-56 animate-pulse rounded-3xl border border-emerald-100 bg-white/80"
-              ></div>
+          <div class="home-provider-sections" aria-label="Loading support providers">
+            @for (row of [1, 2, 3]; track row) {
+              <section class="home-provider-section home-provider-section--loading">
+                <div class="home-provider-section__heading-skeleton"></div>
+                <div class="home-provider-grid">
+                  @for (item of [1, 2, 3, 4, 5]; track item) {
+                    <div
+                      class="h-56 animate-pulse rounded-3xl border border-emerald-100 bg-white/80"
+                    ></div>
+                  }
+                </div>
+              </section>
             }
           </div>
         } @else if (providers().length) {
-          <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            @for (provider of providers(); track provider.id) {
-              <article class="live-provider-card">
-                <div class="live-provider-card__top">
-                  @if (providerImageUrl(provider); as imageUrl) {
-                    <img [src]="imageUrl" [alt]="provider.name" class="live-provider-avatar" />
-                  } @else {
-                    <div class="live-provider-avatar live-provider-avatar--fallback">
-                      {{ provider.name.slice(0, 1) }}
-                    </div>
-                  }
-                  <div class="live-provider-card__identity">
-                    <span class="verified-dot">{{ providerTrustLabel(provider) }}</span>
-                    <h3>{{ provider.name }}</h3>
-                    <p>{{ providerRoleLabel(provider) || providerTierLabel(provider) }}</p>
+          <div class="home-provider-sections">
+            @for (section of providerSections(); track section.roleGroup) {
+              <section
+                class="home-provider-section"
+                [attr.aria-labelledby]="'home-' + section.roleGroup"
+              >
+                <header class="home-provider-section__header">
+                  <div>
+                    <span class="home-provider-section__eyebrow">{{ section.eyebrow }}</span>
+                    <h2 [id]="'home-' + section.roleGroup">{{ section.title }}</h2>
+                    <p>{{ section.description }}</p>
                   </div>
-                </div>
+                  <div class="home-provider-section__actions">
+                    <span class="home-provider-section__summary">{{ sectionSummary(section) }}</span>
+                    <a
+                      [routerLink]="ROUTES.links.careTeam"
+                      [queryParams]="{ roleGroup: section.roleGroup }"
+                    >
+                      {{ directoryLabel(section) }} <span aria-hidden="true">→</span>
+                    </a>
+                  </div>
+                </header>
 
-                <div class="live-provider-card__status-row">
-                  <span class="live-dot">{{ providerLiveLabel(provider) }}</span>
-                  <span class="live-provider-card__private-note">Private 1:1 support</span>
-                </div>
+                <div class="home-provider-grid">
+                  @for (provider of section.providers; track provider.id) {
+                    <article
+                      class="live-provider-card"
+                      [class.live-provider-card--bookable]="!isProviderLive(provider)"
+                    >
+                        <div class="live-provider-card__top">
+                          @if (providerImageUrl(provider); as imageUrl) {
+                            <img
+                              [src]="imageUrl"
+                              [alt]="provider.name"
+                              class="live-provider-avatar"
+                            />
+                          } @else {
+                            <div class="live-provider-avatar live-provider-avatar--fallback">
+                              {{ provider.name.slice(0, 1) }}
+                            </div>
+                          }
+                          <div class="live-provider-card__identity">
+                            <span class="verified-dot">{{ providerTrustLabel(provider) }}</span>
+                            <h3>{{ provider.name }}</h3>
+                            <p>{{ providerRoleLabel(provider) || providerTierLabel(provider) }}</p>
+                          </div>
+                        </div>
 
-                <div class="live-provider-card__meta">
-                  <span>🌐 {{ providerLanguagesLabel(provider) }}</span>
-                  <span>✨ {{ providerFocusLabel(provider) }}</span>
-                </div>
+                        <div class="live-provider-card__status-row">
+                          <span
+                            class="live-dot"
+                            [class.live-dot--bookable]="!isProviderLive(provider)"
+                          >{{ providerAvailabilityLabel(provider) }}</span>
+                          <span class="live-provider-card__private-note">Private 1:1 support</span>
+                        </div>
 
-                <div class="live-provider-card__price">
-                  @if (hasLiveFirstSessionOffer(provider)) {
-                    <span class="live-provider-card__offer">First-session offer</span>
-                    <span class="live-provider-card__regular-price">{{ liveRegularPriceLabel(provider) }}</span>
+                        <div class="live-provider-card__meta">
+                          <span>🌐 {{ providerLanguagesLabel(provider) }}</span>
+                          <span>✨ {{ providerFocusLabel(provider) }}</span>
+                        </div>
+
+                        <div class="live-provider-card__price">
+                          @if (hasLiveFirstSessionOffer(provider)) {
+                            <span class="live-provider-card__offer">First-session offer</span>
+                            <span class="live-provider-card__regular-price">
+                              {{ liveRegularPriceLabel(provider) }}
+                            </span>
+                          }
+                          <span>{{ livePriceLabel(provider) }}</span>
+                        </div>
+
+                        <app-button
+                          type="button"
+                          class="mt-5"
+                          block
+                          [variant]="isProviderLive(provider) ? 'primary' : 'secondary'"
+                          [disabled]="startingProviderId() === provider.id"
+                          (click)="selectProvider(provider)"
+                        >
+                          {{
+                            startingProviderId() === provider.id
+                              ? 'Starting...'
+                              : buttonLabel(provider)
+                          }}
+                        </app-button>
+                    </article>
                   }
-                  <span>{{ livePriceLabel(provider) }}</span>
                 </div>
-
-                <app-button
-                  type="button"
-                  class="mt-5"
-                  block
-                  [disabled]="startingProviderId() === provider.id"
-                  (click)="requestStart(provider)"
-                >
-                  {{ startingProviderId() === provider.id ? 'Starting...' : buttonLabel(provider) }}
-                </app-button>
-              </article>
+              </section>
             }
-          </div>
-          <div class="live-connect__directory-link">
-            <a [routerLink]="ROUTES.links.careTeam"
-              >View all support team <span aria-hidden="true">→</span></a
-            >
           </div>
         } @else {
           <section class="live-booking-fallback" aria-labelledby="live-booking-fallback-title">
