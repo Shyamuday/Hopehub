@@ -85,5 +85,6 @@ supabase/.env.*
 shared/role-task-guides/*.js
 
 temp/
+.tmp-botmux-review/
 *.tmp
 *.bak
