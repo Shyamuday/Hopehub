@@ -25,7 +25,9 @@ export async function replyMenu(kind: TelegramBotKind, session: TelegramSession,
     chat_id: session.chatId,
     text,
     parse_mode: 'HTML',
-    reply_markup: { inline_keyboard: await menuFor(kind, Boolean(session.linkedUserId)) }
+    reply_markup: {
+      inline_keyboard: await menuFor(kind, Boolean(session.linkedUserId), session.linkedUserId)
+    }
   });
 }
 
@@ -550,6 +552,66 @@ export async function unlink(kind: TelegramBotKind, session: TelegramSession) {
     lastCommand: '/unlink'
   });
   await replyMenu(kind, updated, 'Telegram account unlinked.');
+}
+
+export async function showUserPrivacy(kind: TelegramBotKind, session: TelegramSession) {
+  if (kind !== TelegramBotKind.USER) {
+    await replyMenu(
+      kind,
+      session,
+      'Privacy controls are available in the matching Hope Hub account settings.'
+    );
+    return;
+  }
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: [
+      '<b>Telegram privacy</b>',
+      'The bot stores your Telegram chat ID, basic Telegram display details, your account-link state, and lightweight bot settings such as reminders.',
+      '',
+      'Medical records, consultation notes, payments, and clinical information remain in Hope Hub and are not copied into Telegram messages.',
+      '',
+      'You can disconnect Telegram or clear this bot conversation data. Clearing bot data does not delete your Hope Hub account or medical records.'
+    ].join('\n'),
+    parse_mode: 'HTML',
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: 'Disconnect Telegram', callback_data: 'common:unlink' }],
+        [{ text: 'Clear bot data', callback_data: 'user:privacy:clear' }],
+        [{ text: 'Open website privacy settings', url: webUrl('/profile') }],
+        [{ text: 'Main menu', callback_data: 'common:menu' }]
+      ]
+    }
+  });
+}
+
+export async function confirmClearUserBotData(kind: TelegramBotKind, session: TelegramSession) {
+  if (kind !== TelegramBotKind.USER) return;
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: 'Clear saved Telegram bot settings and interaction history? Your Hope Hub account, bookings, and medical records will remain unchanged.',
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: 'Clear bot data', callback_data: 'user:privacy:confirm_clear' }],
+        [{ text: 'Cancel', callback_data: 'common:menu' }]
+      ]
+    }
+  });
+}
+
+export async function clearUserBotData(kind: TelegramBotKind, session: TelegramSession) {
+  if (kind !== TelegramBotKind.USER) return;
+  await prisma.telegramBotEvent.deleteMany({ where: { sessionId: session.id } });
+  const updated = await updateSession(session, {
+    metadata: {},
+    state: 'ACTIVE',
+    lastCommand: '/privacy'
+  });
+  await replyMenu(
+    kind,
+    updated,
+    'Telegram bot settings and interaction history were cleared. Your Hope Hub account remains connected.'
+  );
 }
 
 export async function showMe(kind: TelegramBotKind, session: TelegramSession) {

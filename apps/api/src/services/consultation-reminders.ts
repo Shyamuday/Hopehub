@@ -7,7 +7,10 @@ import {
 import { SCHEDULER_CONFIG } from '../constants/config.constants.js';
 import { prisma } from '../db.js';
 import { enabledNotificationChannels, notificationService } from './notification-service.js';
-import { notifyProviderBookingOnTelegram } from './telegram-provider-notifications.js';
+import {
+  notifyProviderBookingOnTelegram,
+  notifyUserBookingOnTelegram
+} from './telegram-provider-notifications.js';
 
 export const consultationReminderSweepEnabled =
   (process.env.CONSULTATION_REMINDER_SWEEP_ENABLED || 'true').toLowerCase() !== 'false';
@@ -197,6 +200,12 @@ export async function notifyConsultationBooked(consultationId: string) {
     body: `Your ${service} is booked for ${appointmentLabel(appointment)}.`,
     metadata: { consultationId, appointmentAt: appointment?.toISOString() ?? null }
   });
+  void notifyUserBookingOnTelegram({
+    userId: consultation.patient.id,
+    consultationId,
+    title: 'Session booked — Hope Hub',
+    body: `Your ${service} is booked for ${appointmentLabel(appointment)}.`
+  }).catch((error) => console.error('[telegram-user] booking notification failed', error));
 
   if (consultation.assignedDoctor) {
     await sendToUser({
@@ -240,6 +249,12 @@ export async function notifyProviderAssignedAndSchedule(consultationId: string) 
     body: `${consultation.patient.name}'s session is scheduled for ${appointmentLabel(appointment)}.`,
     metadata: { consultationId, appointmentAt: appointment?.toISOString() ?? null }
   });
+  void notifyUserBookingOnTelegram({
+    userId: consultation.patient.id,
+    consultationId,
+    title: 'Care provider assigned',
+    body: `Your Hope Hub session now has an assigned care provider and is scheduled for ${appointmentLabel(appointment)}.`
+  }).catch((error) => console.error('[telegram-user] assignment notification failed', error));
   void notifyProviderBookingOnTelegram({
     providerUserId: consultation.assignedDoctor.id,
     consultationId,
@@ -267,6 +282,12 @@ export async function cancelConsultationReminders(consultationId: string, reason
     body: `Your session has been cancelled${reason ? `: ${reason}` : '.'}`,
     metadata: { consultationId, reason: reason ?? null }
   });
+  void notifyUserBookingOnTelegram({
+    userId: consultation.patient.id,
+    consultationId,
+    title: 'Session cancelled',
+    body: `Your session was cancelled${reason ? `: ${reason}` : '.'}`
+  }).catch((error) => console.error('[telegram-user] cancellation notification failed', error));
   if (consultation.assignedDoctor) {
     await sendToUser({
       eventType: 'BOOKING_CANCELLED',

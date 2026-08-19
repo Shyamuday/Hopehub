@@ -9,6 +9,7 @@ import {
   qualifyReferralAfterCompletedPaidCall,
   restoreReferralFreeCallAfterCancellation
 } from './referral-codes.js';
+import { notifyUserFeedbackRequestOnTelegram } from './telegram-provider-notifications.js';
 
 export type SessionOutcomeStatus =
   'COMPLETED' | 'USER_MISSED' | 'PROVIDER_NO_SHOW' | 'RESCHEDULE_NEEDED';
@@ -192,6 +193,10 @@ export async function applySessionOutcome(input: {
     await qualifyReferralAfterCompletedPaidCall(consultation.id).catch((error) => {
       console.error('[referral] Could not qualify completed paid referral', error);
     });
+    void notifyUserFeedbackRequestOnTelegram({
+      userId: consultation.patientId,
+      consultationId: consultation.id
+    }).catch((error) => console.error('[telegram-user] feedback request failed', error));
   } else if (nextStatus === ConsultationStatus.CANCELLED) {
     await restoreReferralFreeCallAfterCancellation(consultation.id).catch((error) => {
       console.error('[referral] Could not restore cancelled free call', error);

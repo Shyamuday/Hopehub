@@ -48,6 +48,11 @@ export const commandMenus: Record<TelegramBotKind, { command: string; descriptio
     { command: 'support', description: 'Get support options' },
     { command: 'whatsapp', description: 'Join WhatsApp group' },
     { command: 'payments', description: 'Payment and donation links' },
+    { command: 'rewards', description: 'Free sessions and eligible offers' },
+    { command: 'feedback', description: 'Rate a completed session' },
+    { command: 'live', description: 'Open an active live session' },
+    { command: 'urgent', description: 'Urgent support and safety guidance' },
+    { command: 'privacy', description: 'Telegram privacy and data controls' },
     { command: 'volunteer', description: 'Request emotional support listener help' },
     { command: 'me', description: 'Show linked account' },
     { command: 'help', description: 'Get help' }

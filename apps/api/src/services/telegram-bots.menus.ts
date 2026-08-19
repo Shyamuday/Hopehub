@@ -6,6 +6,8 @@ import { escapeHtml } from './telegram-bots.helpers.js';
 import type { InlineButton } from './telegram-bots.types.js';
 import { whatsappJoinButton } from './telegram-bots.payments.js';
 import { getSiteConfigMap } from './site-config.service.js';
+import { prisma } from '../db.js';
+import { ConsultationStatus } from '@prisma/client';
 
 type MenuSession = {
   linkedUser?: { name: string } | null;
@@ -15,15 +17,43 @@ export function telegramBotKindFromSlug(slug: string): TelegramBotKind | null {
   return (botKindBySlug as Record<string, TelegramBotKind | undefined>)[slug] ?? null;
 }
 
-export async function menuFor(kind: TelegramBotKind, linked: boolean): Promise<InlineButton[][]> {
+export async function menuFor(
+  kind: TelegramBotKind,
+  linked: boolean,
+  linkedUserId?: string | null
+): Promise<InlineButton[][]> {
   const { telegramUsername } = await getSiteConfigMap(['telegramUsername']);
   const communityUsername = telegramUsername.trim().replace(/^@/, '');
   const communityRow = communityUsername
     ? [[{ text: 'Hope Hub community', url: `https://t.me/${communityUsername}` }]]
     : [];
   if (kind === 'USER') {
+    if (!linked) {
+      return [
+        [{ text: 'Create Hope Hub account', callback_data: 'common:signup' }],
+        [{ text: 'Link my account', callback_data: 'common:link' }],
+        [
+          { text: 'Explore Hope Hub', url: webUrl('/') },
+          { text: 'Get support', url: webUrl('/#live-connect') }
+        ],
+        ...communityRow
+      ];
+    }
     const whatsappButton = await whatsappJoinButton();
+    const activeConsultation = linkedUserId
+      ? await prisma.consultation.findFirst({
+          where: {
+            patientId: linkedUserId,
+            status: { in: [ConsultationStatus.ASSIGNED, ConsultationStatus.IN_PROGRESS] }
+          },
+          select: { id: true },
+          orderBy: { updatedAt: 'desc' }
+        })
+      : null;
     return [
+      ...(activeConsultation
+        ? [[{ text: 'Open live session', url: webUrl(`/live-session/${activeConsultation.id}`) }]]
+        : []),
       [
         { text: 'Daily plan', callback_data: 'user:plan' },
         { text: 'Take assessment', callback_data: 'user:assessments' }
@@ -36,12 +66,28 @@ export async function menuFor(kind: TelegramBotKind, linked: boolean): Promise<I
         { text: 'Add task', callback_data: 'user:addtask' },
         { text: 'Review day', callback_data: 'user:review' }
       ],
-      [
-        { text: 'Book session', callback_data: 'user:book' },
-        { text: 'Get support', callback_data: 'user:support' }
-      ],
+      ...(activeConsultation
+        ? [
+            [
+              { text: 'My live session', callback_data: 'user:live' },
+              { text: 'Get support', callback_data: 'user:support' }
+            ]
+          ]
+        : [
+            [
+              { text: 'Book session', callback_data: 'user:book' },
+              { text: 'Get support', callback_data: 'user:support' }
+            ]
+          ]),
       [{ text: 'Emotional support listener', callback_data: 'user:volunteer' }, whatsappButton],
-      [{ text: 'Payments / Donate', callback_data: 'user:payments' }],
+      [
+        { text: 'My rewards & offers', callback_data: 'user:rewards' },
+        { text: 'Payments / Donate', callback_data: 'user:payments' }
+      ],
+      [
+        { text: 'Rate a session', callback_data: 'user:feedback' },
+        { text: 'Urgent support', callback_data: 'user:urgent' }
+      ],
       [
         linked
           ? { text: 'My account', callback_data: 'common:me' }
@@ -130,6 +176,11 @@ export function helpText(kind: TelegramBotKind) {
       '/support - support options',
       '/whatsapp - join WhatsApp group',
       '/payments - payment, retry, and donation links',
+      '/rewards - free sessions and eligible offers',
+      '/feedback - rate a completed session',
+      '/live - open an active live session',
+      '/urgent - urgent support and safety guidance',
+      '/privacy - Telegram privacy and data controls',
       '/volunteer - request emotional support listener',
       'WhatsApp group: use Join WhatsApp button in menu',
       '',

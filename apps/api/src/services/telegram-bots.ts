@@ -1,4 +1,4 @@
-import { CareTeamMemberType, Prisma, TelegramBotKind } from '@prisma/client';
+import { CareTeamMemberType, ConsultationStatus, Prisma, TelegramBotKind } from '@prisma/client';
 import {
   PROVIDER_ROLE_CODES,
   PROVIDER_ROLE_DEFINITIONS,
@@ -28,12 +28,15 @@ import { answerTelegramCallback, sendTelegramMessage } from './telegram-bots.cli
 import { adminUrl, callbackRows, menuCancelRows, webUrl } from './telegram-bots.ui.js';
 import {
   cancelPending,
+  clearUserBotData,
+  confirmClearUserBotData,
   finishSignup,
   linkFromWebsite,
   replyMenu,
   requireLinked,
   showMe,
   showOnboarding,
+  showUserPrivacy,
   showSettings,
   startLink,
   startSignup,
@@ -98,6 +101,14 @@ import {
   showProviderReadiness,
   showProviderShareLinks
 } from './telegram-bots.provider-dashboard.js';
+import {
+  chooseUserFeedbackRating,
+  saveUserFeedbackRating,
+  showUrgentSupport,
+  showUserFeedback,
+  showUserLiveSession,
+  showUserRewards
+} from './telegram-bots.user-care.js';
 import { adminQualitySummary } from './telegram-bots.quality.js';
 import {
   ensureSession,
@@ -676,26 +687,40 @@ async function showAssessmentResults(kind: TelegramBotKind, session: TelegramSes
 async function showUserRequests(kind: TelegramBotKind, session: TelegramSession) {
   if (!(await requireLinked(kind, session))) return;
 
-  const leads = await prisma.websiteLead.findMany({
-    where: { userId: session.linkedUserId! },
-    include: {
-      assignments: {
-        orderBy: { assignedAt: 'desc' },
-        take: 1,
-        select: {
-          id: true,
-          assignmentType: true,
-          status: true,
-          assignedAt: true,
-          provider: { select: { name: true } }
+  const [leads, consultations] = await Promise.all([
+    prisma.websiteLead.findMany({
+      where: { userId: session.linkedUserId! },
+      include: {
+        assignments: {
+          orderBy: { assignedAt: 'desc' },
+          take: 1,
+          select: {
+            id: true,
+            assignmentType: true,
+            status: true,
+            assignedAt: true,
+            provider: { select: { name: true } }
+          }
         }
-      }
-    },
-    orderBy: { updatedAt: 'desc' },
-    take: 8
-  });
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: 8
+    }),
+    prisma.consultation.findMany({
+      where: { patientId: session.linkedUserId! },
+      select: {
+        id: true,
+        status: true,
+        consultationMode: true,
+        updatedAt: true,
+        assignedDoctor: { select: { name: true } }
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: 6
+    })
+  ]);
 
-  if (!leads.length) {
+  if (!leads.length && !consultations.length) {
     await sendTelegramMessage(kind, {
       chat_id: session.chatId,
       text: 'No support, booking, or emotional support listener requests yet.',
@@ -730,17 +755,38 @@ async function showUserRequests(kind: TelegramBotKind, session: TelegramSession)
         .join('\n');
     })
     .join('\n\n');
+  const sessionRows = consultations
+    .map(
+      (consultation, index) =>
+        `${index + 1}. <b>${escapeHtml(consultation.consultationMode.replace(/_/g, ' ').toLowerCase())}</b> · ${consultation.status}\n${consultation.assignedDoctor?.name ? `Provider: ${escapeHtml(consultation.assignedDoctor.name)}` : 'Provider: Waiting for assignment'}`
+    )
+    .join('\n\n');
+  const liveSession = consultations.find(
+    (consultation) =>
+      consultation.status === ConsultationStatus.ASSIGNED ||
+      consultation.status === ConsultationStatus.IN_PROGRESS
+  );
 
   await sendTelegramMessage(kind, {
     chat_id: session.chatId,
-    text: `<b>Your Hope Hub requests</b>\n\n${rows}`,
+    text: [
+      '<b>Your Hope Hub requests</b>',
+      sessionRows ? `<b>Sessions</b>\n${sessionRows}` : '',
+      rows ? `<b>Support requests</b>\n${rows}` : ''
+    ]
+      .filter(Boolean)
+      .join('\n\n'),
     parse_mode: 'HTML',
     reply_markup: {
       inline_keyboard: [
-        [
-          { text: 'Get support', callback_data: 'user:support' },
-          { text: 'Book session', callback_data: 'user:book' }
-        ],
+        ...(liveSession
+          ? [[{ text: 'Open live session', url: webUrl(`/live-session/${liveSession.id}`) }]]
+          : [
+              [
+                { text: 'Get support', callback_data: 'user:support' },
+                { text: 'Book session', callback_data: 'user:book' }
+              ]
+            ]),
         [{ text: 'Open profile', url: webUrl('/profile') }],
         [{ text: 'Main menu', callback_data: 'common:menu' }]
       ]
@@ -2478,6 +2524,11 @@ async function handleCommand(kind: TelegramBotKind, session: TelegramSession, te
     else if (command === '/support') await promptLead(kind, session, 'SUPPORT');
     else if (command === '/whatsapp') await showWhatsAppJoin(kind, session);
     else if (command === '/payments' || command === '/pay') await showPaymentHub(kind, session);
+    else if (command === '/rewards') await showUserRewards(kind, session);
+    else if (command === '/feedback') await showUserFeedback(kind, session);
+    else if (command === '/live') await showUserLiveSession(kind, session);
+    else if (command === '/urgent') await showUrgentSupport(kind, session);
+    else if (command === '/privacy') await showUserPrivacy(kind, session);
     else if (command === '/volunteer') await promptLead(kind, session, 'VOLUNTEER');
     else await replyMenu(kind, session, 'Choose an option or send /help.');
     return command;
@@ -2573,7 +2624,18 @@ async function handleCallback(
     else if (data === 'user:results') await showAssessmentResults(kind, session);
     else if (data === 'user:requests') await showUserRequests(kind, session);
     else if (data === 'user:payments') await showPaymentHub(kind, session);
-    else if (data === 'user:whatsapp') await showWhatsAppJoin(kind, session);
+    else if (data === 'user:rewards') await showUserRewards(kind, session);
+    else if (data === 'user:feedback') await showUserFeedback(kind, session);
+    else if (data === 'user:live') await showUserLiveSession(kind, session);
+    else if (data === 'user:urgent') await showUrgentSupport(kind, session);
+    else if (data === 'user:privacy:clear') await confirmClearUserBotData(kind, session);
+    else if (data === 'user:privacy:confirm_clear') await clearUserBotData(kind, session);
+    else if (data.startsWith('user:feedback:rate:')) {
+      const [, , , consultationId, ratingText] = data.split(':');
+      await saveUserFeedbackRating(kind, session, consultationId || '', Number(ratingText));
+    } else if (data.startsWith('user:feedback:')) {
+      await chooseUserFeedbackRating(kind, session, data.slice('user:feedback:'.length));
+    } else if (data === 'user:whatsapp') await showWhatsAppJoin(kind, session);
     else if (data.startsWith('assessment:start:'))
       await startAssessment(kind, session, data.slice('assessment:start:'.length));
     else if (data.startsWith('assessment:plan:'))
