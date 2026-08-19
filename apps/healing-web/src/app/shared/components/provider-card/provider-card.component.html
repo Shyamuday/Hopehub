@@ -69,6 +69,13 @@
       @if (!compact() && metaLabel()) {
         <p class="mt-1 text-xs font-medium text-gray-600">{{ metaLabel() }}</p>
       }
+
+      @if (provider.ratingSummary?.ratingCount) {
+        <p class="mt-2 text-xs font-semibold text-amber-700">
+          ★ {{ provider.ratingSummary?.averageRating }} · {{ provider.ratingSummary?.ratingCount }}
+          verified session {{ provider.ratingSummary?.ratingCount === 1 ? 'rating' : 'ratings' }}
+        </p>
+      }
     </div>
   </div>
 

@@ -16,6 +16,7 @@ import {
   PaymentStatusOverlayComponent,
 } from '../../shared/components/payment-status-overlay/payment-status-overlay.component';
 import { AppButtonComponent } from '../../shared/components/app-button/app-button.component';
+import { SessionFeedbackComponent } from '../../shared/components/session-feedback/session-feedback.component';
 
 type HopeHubConsultation = {
   id: string;
@@ -142,6 +143,7 @@ type DashboardPackage = {
     ProgressDashboardComponent,
     PaymentStatusOverlayComponent,
     AppButtonComponent,
+    SessionFeedbackComponent,
   ],
   template: `
     <div class="min-h-screen bg-gray-50">
@@ -517,6 +519,9 @@ type DashboardPackage = {
                         {{ sessionOutcomeText(consultation) }}
                       </div>
                     }
+                    @if (isCompletedConsultation(consultation)) {
+                      <app-session-feedback [consultationId]="consultation.id" />
+                    }
                     @if (balanceDueInPaise(consultation) > 0 || packageUsage(consultation)) {
                       <div
                         class="mt-3 rounded-md border border-blue-100 bg-white p-3 text-sm text-gray-700"
@@ -758,6 +763,10 @@ export class DashboardComponent implements OnInit {
       consultation.assignedDoctor?.id &&
       ['ASSIGNED', 'IN_PROGRESS', 'PRESCRIPTION_UPLOADED'].includes(status),
     );
+  }
+
+  isCompletedConsultation(consultation: HopeHubConsultation): boolean {
+    return consultation.status === 'COMPLETED';
   }
 
   isLiveConnectConsultation(consultation: HopeHubConsultation): boolean {

@@ -89,6 +89,12 @@
                             [class.live-dot--bookable]="!isProviderLive(provider)"
                           >{{ providerAvailabilityLabel(provider) }}</span>
                           <span class="live-provider-card__private-note">Private 1:1 support</span>
+                          @if (provider.ratingSummary?.ratingCount) {
+                            <span class="live-provider-card__rating">
+                              ★ {{ provider.ratingSummary?.averageRating }} ·
+                              {{ provider.ratingSummary?.ratingCount }} ratings
+                            </span>
+                          }
                         </div>
 
                         <div class="live-provider-card__meta">

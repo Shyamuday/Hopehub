@@ -29,6 +29,8 @@ export const ROUTE_PATHS = {
 
   EARNINGS: 'earnings',
 
+  FEEDBACK: 'feedback',
+
   PATIENT_SCAN: 'scan/patient',
 
   SCAN: 'scan',

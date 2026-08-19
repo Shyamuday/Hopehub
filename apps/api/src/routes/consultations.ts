@@ -600,7 +600,124 @@ export function createConsultationsRouter(io: SocketIoServer) {
     })
   );
 
-  // POST /consultations/:id/complete
+  // Read feedback for one completed consultation. Consumers see only their own submission;
+  // providers see anonymous consumer feedback; admins may audit all submissions.
+  router.get(
+    '/consultations/:id/feedback',
+    authRequired,
+    asyncRoute(async (req, res) => {
+      const consultation = await prisma.consultation.findUniqueOrThrow({
+        where: { id: routeParam(req, 'id') },
+        select: { id: true, patientId: true, assignedDoctorId: true, status: true }
+      });
+      const isPatient = consultation.patientId === req.user!.id;
+      const isAssignedProvider = consultation.assignedDoctorId === req.user!.id;
+      const isAdmin = req.user!.role === Role.ADMIN;
+      if (!isPatient && !isAssignedProvider && !isAdmin) {
+        return res
+          .status(403)
+          .json({ message: 'You do not have access to this session feedback.' });
+      }
+
+      const feedback = await prisma.consultationFeedback.findMany({
+        where: {
+          consultationId: consultation.id,
+          ...(isPatient && !isAdmin ? { actorUserId: req.user!.id } : {}),
+          ...(isAssignedProvider && !isAdmin ? { actorRole: 'CONSUMER' } : {})
+        },
+        orderBy: { updatedAt: 'desc' },
+        select: {
+          id: true,
+          actorRole: true,
+          rating: true,
+          helpful: true,
+          followUpNeeded: true,
+          tags: true,
+          message: true,
+          updatedAt: true
+        }
+      });
+      res.json({
+        feedback: feedback.map((item) => ({
+          ...item,
+          source: item.actorRole === 'CONSUMER' ? 'Hope Hub member' : 'Provider',
+          updatedAt: item.updatedAt.toISOString()
+        }))
+      });
+    })
+  );
+
+  // Provider feedback inbox. Patient identity is deliberately not returned here;
+  // the feedback is tied to a verified completed session and is for service improvement.
+  router.get(
+    '/doctor/feedback',
+    authRequired,
+    allowRoles(Role.DOCTOR, Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const limit = Math.max(1, Math.min(100, Number(req.query['limit'] || 30) || 30));
+      const providerUserId = req.user!.id;
+      const where = {
+        actorRole: 'CONSUMER',
+        consultation: {
+          is: { assignedDoctorId: providerUserId, status: ConsultationStatus.COMPLETED }
+        }
+      };
+      const [summary, items] = await Promise.all([
+        prisma.consultationFeedback.aggregate({
+          where,
+          _avg: { rating: true },
+          _count: { _all: true }
+        }),
+        prisma.consultationFeedback.findMany({
+          where,
+          orderBy: { updatedAt: 'desc' },
+          take: limit,
+          select: {
+            id: true,
+            rating: true,
+            helpful: true,
+            followUpNeeded: true,
+            tags: true,
+            message: true,
+            updatedAt: true,
+            consultation: {
+              select: {
+                id: true,
+                createdAt: true,
+                consultationMode: true,
+                disease: { select: { name: true } }
+              }
+            }
+          }
+        })
+      ]);
+      res.json({
+        summary: {
+          averageRating: summary._count._all
+            ? Math.round(Number(summary._avg.rating || 0) * 10) / 10
+            : null,
+          ratingCount: summary._count._all
+        },
+        feedback: items.map((item) => ({
+          id: item.id,
+          rating: item.rating,
+          helpful: item.helpful,
+          followUpNeeded: item.followUpNeeded,
+          tags: item.tags,
+          message: item.message,
+          updatedAt: item.updatedAt.toISOString(),
+          session: {
+            id: item.consultation.id,
+            date: item.consultation.createdAt.toISOString(),
+            mode: item.consultation.consultationMode,
+            serviceName: item.consultation.disease?.name || 'Hope Hub session'
+          }
+        }))
+      });
+    })
+  );
+
+  // POST /consultations/:id/feedback
   router.post(
     '/consultations/:id/feedback',
     authRequired,
@@ -625,6 +742,11 @@ export function createConsultationsRouter(io: SocketIoServer) {
         return res
           .status(403)
           .json({ message: 'You do not have access to this consultation feedback.' });
+      }
+      if (isAdmin && !isPatient && !isAssignedProvider) {
+        return res
+          .status(403)
+          .json({ message: 'Admins can review feedback but cannot submit it.' });
       }
       if (consultation.status !== ConsultationStatus.COMPLETED) {
         return res

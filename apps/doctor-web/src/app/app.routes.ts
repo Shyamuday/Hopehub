@@ -182,6 +182,13 @@ export const routes: Routes = [
         data: { capability: 'earnings' },
       },
       {
+        path: ROUTE_PATHS.FEEDBACK,
+        loadComponent: () =>
+          import('./features/provider-feedback/provider-feedback-page').then(
+            (m) => m.ProviderFeedbackPage,
+          ),
+      },
+      {
         path: ROUTE_PATHS.SCAN,
         loadComponent: () =>
           import('./features/scan/patient-scan-launcher-page/patient-scan-launcher-page').then(

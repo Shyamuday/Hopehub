@@ -10,6 +10,8 @@ import type {
   ConsultationSessionNote,
   ConsultationSessionOutcome,
   DoctorConsultation,
+  ProviderFeedbackItem,
+  ProviderFeedbackSummary,
 } from '../types/consultation.types';
 
 type CloseConsultationPayload = {
@@ -68,6 +70,15 @@ export class ConsultationApiService {
         { note },
       ),
     ).then((response) => response.note);
+  }
+
+  loadProviderFeedback() {
+    return firstValueFrom(
+      this.http.get<{
+        summary: ProviderFeedbackSummary;
+        feedback: ProviderFeedbackItem[];
+      }>(`${this.apiBase}/doctor/feedback`),
+    );
   }
 
   loadAssessmentSummary(consultationId: string) {

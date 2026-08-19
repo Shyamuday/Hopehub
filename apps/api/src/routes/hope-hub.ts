@@ -1052,6 +1052,57 @@ async function isListenerProviderRole(roleCode?: string | null) {
   return role?.category === 'EMOTIONAL_LISTENER' || isListenerCareTeamType(roleCode as any);
 }
 
+type ProviderRatingSummary = {
+  averageRating: number | null;
+  ratingCount: number;
+};
+
+async function providerRatingSummaries(providerUserIds: string[]) {
+  const uniqueUserIds = [...new Set(providerUserIds.filter(Boolean))];
+  const summaries = new Map<string, { total: number; count: number }>();
+  if (!uniqueUserIds.length) return new Map<string, ProviderRatingSummary>();
+
+  const feedback = await prisma.consultationFeedback.findMany({
+    where: {
+      actorRole: 'CONSUMER',
+      consultation: {
+        is: {
+          assignedDoctorId: { in: uniqueUserIds },
+          status: ConsultationStatus.COMPLETED
+        }
+      }
+    },
+    select: {
+      rating: true,
+      consultation: { select: { assignedDoctorId: true } }
+    }
+  });
+
+  for (const item of feedback) {
+    const providerUserId = item.consultation.assignedDoctorId;
+    if (!providerUserId) continue;
+    const current = summaries.get(providerUserId) ?? { total: 0, count: 0 };
+    summaries.set(providerUserId, {
+      total: current.total + item.rating,
+      count: current.count + 1
+    });
+  }
+
+  return new Map(
+    uniqueUserIds.map((providerUserId) => {
+      const summary = summaries.get(providerUserId);
+      const ratingCount = summary?.count ?? 0;
+      return [
+        providerUserId,
+        {
+          averageRating: ratingCount ? Math.round((summary!.total / ratingCount) * 10) / 10 : null,
+          ratingCount
+        } satisfies ProviderRatingSummary
+      ];
+    })
+  );
+}
+
 function providerPublicPayload(
   provider: {
     id: string;
@@ -1132,7 +1183,8 @@ function providerPublicPayload(
       profileImageUrl?: string | null;
     };
   },
-  defaults: HopeHubPublicDefaults
+  defaults: HopeHubPublicDefaults,
+  ratingSummary: ProviderRatingSummary = { averageRating: null, ratingCount: 0 }
 ) {
   const user = enrichWithProfileImageUrl(provider.user, userProfileImagePath);
   const focusAreas = provider.focusAreas || [];
@@ -1261,7 +1313,8 @@ function providerPublicPayload(
     maxSessionsPerWeek: mental?.maxSessionsPerWeek ?? null,
     services: activeServices,
     sessionFeeInPaise: primaryService?.effectivePriceInPaise ?? defaults.sessionPriceInPaise,
-    sessionDurationMinutes: primaryService?.durationMinutes ?? defaults.sessionDurationMinutes
+    sessionDurationMinutes: primaryService?.durationMinutes ?? defaults.sessionDurationMinutes,
+    ratingSummary
   };
 }
 
@@ -1903,9 +1956,14 @@ async function activeHopeHubProviders(params: {
     }),
     prisma.doctor.count({ where })
   ]);
-  const defaults = await hopeHubPublicDefaults();
+  const [defaults, ratingSummaries] = await Promise.all([
+    hopeHubPublicDefaults(),
+    providerRatingSummaries(providers.map((provider) => provider.user.id))
+  ]);
   return {
-    providers: providers.map((provider) => providerPublicPayload(provider, defaults)),
+    providers: providers.map((provider) =>
+      providerPublicPayload(provider, defaults, ratingSummaries.get(provider.user.id))
+    ),
     pagination: {
       page,
       pageSize,
@@ -3130,7 +3188,13 @@ hopeHubRouter.get(
     if (!provider) {
       return res.status(404).json({ message: 'Provider not found.' });
     }
-    res.json({ provider: providerPublicPayload(provider, await hopeHubPublicDefaults()) });
+    const [defaults, ratingSummaries] = await Promise.all([
+      hopeHubPublicDefaults(),
+      providerRatingSummaries([provider.user.id])
+    ]);
+    res.json({
+      provider: providerPublicPayload(provider, defaults, ratingSummaries.get(provider.user.id))
+    });
   })
 );
 

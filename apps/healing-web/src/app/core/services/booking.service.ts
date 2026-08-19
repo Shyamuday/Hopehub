@@ -396,6 +396,10 @@ export type HopeHubProvider = {
   acceptsVideoCall?: boolean;
   liveConnectMode?: 'chat' | 'voice' | 'video' | string;
   wentLiveAt?: string | null;
+  ratingSummary?: {
+    averageRating: number | null;
+    ratingCount: number;
+  };
 };
 
 export type HopeHubProviderResponse = {
@@ -543,7 +547,13 @@ export class BookingService {
 
   submitConsultationFeedback(
     consultationId: string,
-    payload: { rating: number; helpful?: boolean; followUpNeeded?: boolean; message?: string },
+    payload: {
+      rating: number;
+      helpful?: boolean;
+      followUpNeeded?: boolean;
+      tags?: string[];
+      message?: string;
+    },
   ): Observable<{ feedback: unknown }> {
     return this.http.post<{ feedback: unknown }>(
       `${this.apiUrl}/consultations/${encodeURIComponent(consultationId)}/feedback`,

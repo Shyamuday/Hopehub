@@ -47,6 +47,7 @@ export const DOCTOR_NAV_ICONS: Record<string, { icon: string; shortLabel: string
   Slots: { icon: '📅', shortLabel: 'Slots' },
   Leaves: { icon: '🌴', shortLabel: 'Leave' },
   Earnings: { icon: '💰', shortLabel: 'Pay' },
+  Feedback: { icon: '★', shortLabel: 'Reviews' },
   Content: { icon: '📝', shortLabel: 'Content' },
   'Treatment pages': { icon: '📝', shortLabel: 'Pages' },
   'Blog articles': { icon: '✍️', shortLabel: 'Blog' },
@@ -127,8 +128,14 @@ function buildDoctorNav(
         label: 'More',
         icon: DOCTOR_NAV_ICONS['More'].icon,
         shortLabel: DOCTOR_NAV_ICONS['More'].shortLabel,
-        enabled: capabilities.earnings,
+        enabled: true,
         children: [
+          {
+            id: 'feedback',
+            label: 'Client feedback',
+            path: `/${ROUTE_PATHS.FEEDBACK}`,
+            enabled: true,
+          },
           {
             id: 'earnings',
             label: 'Earnings',

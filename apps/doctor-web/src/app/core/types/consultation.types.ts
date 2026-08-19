@@ -73,6 +73,27 @@ export type ConsultationCallSession = {
   } | null;
 };
 
+export type ProviderFeedbackSummary = {
+  averageRating: number | null;
+  ratingCount: number;
+};
+
+export type ProviderFeedbackItem = {
+  id: string;
+  rating: number;
+  helpful?: boolean | null;
+  followUpNeeded?: boolean | null;
+  tags?: string[] | null;
+  message?: string | null;
+  updatedAt: string;
+  session: {
+    id: string;
+    date: string;
+    mode: string;
+    serviceName: string;
+  };
+};
+
 export type DoctorConsultation = {
   id: string;
   status: string;

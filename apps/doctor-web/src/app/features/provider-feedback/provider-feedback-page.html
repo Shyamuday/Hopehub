@@ -1,0 +1,62 @@
+<main class="provider-feedback-page">
+  <header class="provider-feedback-page__header">
+    <div>
+      <p class="eyebrow">Service feedback</p>
+      <h1>What clients say after a session</h1>
+      <p>Feedback is linked to verified completed sessions. Member identities are kept private here.</p>
+    </div>
+    <div class="provider-feedback-page__actions">
+      <a [routerLink]="['/', worklistPath]">Your sessions</a>
+      <button type="button" (click)="load()" [disabled]="loading()">
+        {{ loading() ? 'Refreshing…' : 'Refresh' }}
+      </button>
+    </div>
+  </header>
+
+  <section class="feedback-summary" aria-label="Feedback summary">
+    <span class="feedback-summary__rating">{{ summary().averageRating ?? '—' }}</span>
+    <div>
+      <strong>Average session rating</strong>
+      <p>
+        {{ summary().ratingCount }} verified {{ summary().ratingCount === 1 ? 'rating' : 'ratings' }}
+      </p>
+    </div>
+  </section>
+
+  @if (loading()) {
+    <section class="feedback-state">Loading client feedback…</section>
+  } @else if (error()) {
+    <section class="feedback-state feedback-state--error">{{ error() }}</section>
+  } @else if (feedback().length) {
+    <section class="feedback-list" aria-label="Client feedback">
+      @for (item of feedback(); track item.id) {
+        <article class="feedback-card">
+          <header>
+            <div>
+              <span class="feedback-card__stars" [attr.aria-label]="item.rating + ' out of 5'">
+                {{ ratingStars(item.rating) }}
+              </span>
+              <p>{{ item.session.serviceName }} · {{ item.session.mode }}</p>
+            </div>
+            <time [attr.datetime]="item.updatedAt">{{ item.updatedAt | date: 'mediumDate' }}</time>
+          </header>
+          @if (item.tags?.length) {
+            <div class="feedback-card__tags">
+              @for (tag of item.tags; track tag) { <span>{{ tag }}</span> }
+            </div>
+          }
+          @if (item.message) {
+            <p class="feedback-card__message">{{ item.message }}</p>
+          }
+          @if (item.followUpNeeded) {
+            <p class="feedback-card__follow-up">This member asked for help booking a follow-up.</p>
+          }
+        </article>
+      }
+    </section>
+  } @else {
+    <section class="feedback-state">
+      No client feedback yet. Feedback requests appear after a session is completed.
+    </section>
+  }
+</main>

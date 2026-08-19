@@ -2,7 +2,7 @@
   <section class="session-feedback" aria-label="Session feedback">
     <div>
       <h3>How did this support feel?</h3>
-      <p>Your feedback is private and helps Hope Hub improve.</p>
+      <p>Your name stays private. We use anonymous rating summaries to help others choose support.</p>
     </div>
     <div class="session-feedback__stars" aria-label="Choose a rating from 1 to 5">
       @for (star of [1, 2, 3, 4, 5]; track star) {
@@ -10,7 +10,22 @@
       }
     </div>
     @if (rating()) {
-      <textarea [ngModel]="note()" (ngModelChange)="note.set($event)" maxlength="500" placeholder="Anything you would like us to know? (optional)"></textarea>
+      <p class="session-feedback__rating-label">{{ ratingLabel() }}</p>
+      <div class="session-feedback__tags" aria-label="What stood out?">
+        @for (tag of feedbackTags; track tag) {
+          <button
+            type="button"
+            [class.active]="selectedTags().includes(tag)"
+            (click)="toggleTag(tag)"
+          >{{ tag }}</button>
+        }
+      </div>
+      <fieldset class="session-feedback__follow-up">
+        <legend>Would you like help booking another session?</legend>
+        <button type="button" [class.active]="followUpNeeded() === true" (click)="followUpNeeded.set(true)">Yes, help me book</button>
+        <button type="button" [class.active]="followUpNeeded() === false" (click)="followUpNeeded.set(false)">Not now</button>
+      </fieldset>
+      <textarea [ngModel]="note()" (ngModelChange)="note.set($event)" maxlength="500" placeholder="Anything you would like Hope Hub to know? (optional)"></textarea>
       <div class="session-feedback__actions">
         <button type="button" class="session-feedback__submit" [disabled]="saving()" (click)="submit()">{{ saving() ? 'Saving…' : 'Send feedback' }}</button>
         <button type="button" class="session-feedback__later" (click)="dismissed.set(true)">Not now</button>
