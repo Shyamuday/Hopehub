@@ -60,6 +60,11 @@ function indiaDateTime(date: Date) {
 
 function assignedHost(event: Pick<VoiceEventNotification, 'title' | 'description'>) {
   const source = `${event.title}\n${event.description || ''}`;
+  // Event descriptions are admin-authored and may contain a display label
+  // such as "Host: @Mind Craft". Preserve that label in the operations alert
+  // even when it is not a linkable Telegram username.
+  const labelledHost = source.match(/\bhosts?\s*:\s*([^\n.]+)/i)?.[1]?.trim();
+  if (labelledHost) return labelledHost;
   const usernames = [...source.matchAll(/(^|\s)@([a-zA-Z0-9_]{5,32})\b/g)].map(
     (match) => `@${match[2]}`
   );
