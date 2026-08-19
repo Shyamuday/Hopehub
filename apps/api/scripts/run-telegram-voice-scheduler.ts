@@ -5,11 +5,16 @@ import { TelegramClient } from 'teleproto';
 import { StringSession } from 'teleproto/sessions';
 import { prisma } from '../src/db.js';
 import { removeTelegramCommunityEventAnnouncement } from '../src/services/telegram-community-campaigns.js';
+import { sendCommunityMessage } from '../src/services/telegram-community-bots.client.js';
+import { getSiteConfigMap } from '../src/services/site-config.service.js';
+import { GROUP_HELP_BOT_SLUG } from '../src/constants/telegram-community-bot.constants.js';
 
 const SESSION_PATH = '/etc/hopehub-telegram-user-session';
 const STATE_BOT = 'TELEGRAM_NATIVE_VOICE_SCHEDULER';
+const HOST_REMINDER_STATE_BOT = 'TELEGRAM_NATIVE_VOICE_HOST_REMINDER';
 const MAX_NATIVE_SCHEDULE_AHEAD_MS = 7 * 24 * 60 * 60 * 1000;
 const MINIMUM_LEAD_TIME_MS = 5 * 60 * 1000;
+const HOST_REMINDER_LEAD_TIME_MS = 5 * 60 * 1000;
 const RETRY_DELAY_MS = 10 * 60 * 1000;
 // Telegram update events handle normal starts and ends. This is only a
 // low-frequency fallback when an update was missed or the server restarted.
@@ -30,8 +35,109 @@ type NativeVoiceSchedulerState = {
   recoveryAfter?: string;
 };
 
+type VoiceEventNotification = {
+  id: string;
+  title: string;
+  description: string | null;
+  startsAt: Date;
+};
+
 function statePayload(value: unknown): NativeVoiceSchedulerState {
   return value && typeof value === 'object' ? (value as NativeVoiceSchedulerState) : {};
+}
+
+function indiaDateTime(date: Date) {
+  return new Intl.DateTimeFormat('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  }).format(date);
+}
+
+function assignedHost(event: Pick<VoiceEventNotification, 'title' | 'description'>) {
+  const source = `${event.title}\n${event.description || ''}`;
+  const usernames = [...source.matchAll(/(^|\s)@([a-zA-Z0-9_]{5,32})\b/g)].map(
+    (match) => `@${match[2]}`
+  );
+  return [...new Set(usernames)].join(' & ') || 'Assigned VC host';
+}
+
+async function voiceOperationsChatId() {
+  const values = await getSiteConfigMap([
+    'telegramGroupHelpStaffGroupId',
+    'telegramGroupHelpLogChannelId'
+  ]);
+  // The private staff group is the operational destination. Retain the log
+  // channel as a safe fallback for existing groups that have not set one yet.
+  return (
+    values.telegramGroupHelpStaffGroupId?.trim() ||
+    values.telegramGroupHelpLogChannelId?.trim() ||
+    ''
+  );
+}
+
+async function notifyVoiceOperations(text: string) {
+  const chatId = await voiceOperationsChatId();
+  if (!chatId) {
+    console.warn('VC operations notice skipped: no private staff or log group is configured.');
+    return false;
+  }
+  try {
+    await sendCommunityMessage(GROUP_HELP_BOT_SLUG, chatId, text);
+    return true;
+  } catch (error) {
+    console.warn(
+      `VC operations notice could not be delivered: ${error instanceof Error ? error.message : String(error)}`
+    );
+    return false;
+  }
+}
+
+async function sendVoiceHostReminders(now: Date) {
+  const upcoming = await prisma.telegramCommunityEvent.findMany({
+    where: {
+      status: 'SCHEDULED',
+      startsAt: {
+        gt: now,
+        lte: new Date(now.getTime() + HOST_REMINDER_LEAD_TIME_MS)
+      }
+    },
+    select: { id: true, title: true, description: true, startsAt: true },
+    orderBy: { startsAt: 'asc' }
+  });
+
+  for (const event of upcoming) {
+    const reminderKey = { bot_chatId: { bot: HOST_REMINDER_STATE_BOT, chatId: event.id } };
+    const alreadySent = await prisma.telegramCommunityState.findUnique({ where: reminderKey });
+    if (alreadySent) continue;
+
+    const sent = await notifyVoiceOperations(
+      [
+        '🎙 VC starts in 5 minutes',
+        '',
+        event.title,
+        `Time: ${indiaDateTime(event.startsAt)} IST`,
+        `Host: ${assignedHost(event)}`,
+        '',
+        'Please start the scheduled voice chat on time. If you are unavailable, arrange handover with another group admin.'
+      ].join('\n')
+    );
+    if (!sent) continue;
+
+    await prisma.telegramCommunityState.create({
+      data: {
+        bot: HOST_REMINDER_STATE_BOT,
+        chatId: event.id,
+        state: 'SENT',
+        payload: { startsAt: event.startsAt.toISOString() },
+        expiresAt: new Date(event.startsAt.getTime() + 24 * 60 * 60 * 1000)
+      }
+    });
+  }
 }
 
 async function retainActiveVoiceState(
@@ -131,7 +237,14 @@ async function expireMissedVoiceChats(client: TelegramClient, now: Date) {
   const cutoff = new Date(now.getTime() - MISSED_VOICE_CHAT_GRACE_MS);
   const missed = await prisma.telegramCommunityEvent.findMany({
     where: { status: 'SCHEDULED', startsAt: { lte: cutoff } },
-    select: { id: true, chatId: true, telegramMessageId: true }
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      startsAt: true,
+      chatId: true,
+      telegramMessageId: true
+    }
   });
 
   for (const event of missed) {
@@ -196,6 +309,17 @@ async function expireMissedVoiceChats(client: TelegramClient, now: Date) {
         : [])
     ]);
     await removeTelegramCommunityEventAnnouncement(event);
+    await notifyVoiceOperations(
+      [
+        '⚠️ Scheduled VC was not started',
+        '',
+        event.title,
+        `Scheduled time: ${indiaDateTime(event.startsAt)} IST`,
+        `Host: ${assignedHost(event)}`,
+        '',
+        'The VC did not start within 15 minutes, so its Telegram slot was released. The next upcoming VC will be scheduled automatically.'
+      ].join('\n')
+    );
 
     console.log(`Marked missed Telegram voice chat ${event.id} and released its next slot.`);
   }
@@ -219,6 +343,7 @@ async function main() {
   });
   await client.connect();
   try {
+    await sendVoiceHostReminders(now);
     await expireMissedVoiceChats(client, now);
     const events = await prisma.telegramCommunityEvent.findMany({
       where: {
