@@ -31,7 +31,10 @@ export async function moderateGroupHelpMessage(
   );
 
   await deleteGroupHelpMessage(chatId, message.message_id).catch(() => null);
-  if (action === 'delete') return true;
+  if (action === 'delete') {
+    await sendModerationLog(values, message, reason, 'delete');
+    return true;
+  }
   const warnings = await addTelegramGroupWarning({
     chatId,
     telegramUserId: String(message.from.id),

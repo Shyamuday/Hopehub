@@ -35,7 +35,7 @@ import {
   hasMedia,
   isForward,
   isWithinQuietHours,
-  matchesBannedPhrase,
+  matchedBannedPhrase,
   mediaKinds
 } from './telegram-group-help.config.js';
 import { isModerationExempt } from './telegram-group-help.permissions.js';
@@ -151,11 +151,21 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
   const rawMaxLength = Number(values.telegramGroupHelpMaxMessageLength);
   const maxLength = rawMaxLength > 0 ? Math.max(100, rawMaxLength) : 4000;
   if (text.length > maxLength) {
-    await moderate(message, 'Message too long', 'warn', warnLimit, warnAction);
+    await moderate(
+      message,
+      `Message too long (${text.length} characters; maximum ${maxLength})`,
+      'warn',
+      warnLimit,
+      warnAction
+    );
     return;
   }
-  if (matchesBannedPhrase(text, bannedPhrases(values.telegramGroupHelpBannedWords))) {
-    await moderate(message, 'Blocked phrase', 'warn', warnLimit, warnAction);
+  const blockedPhrase = matchedBannedPhrase(
+    text,
+    bannedPhrases(values.telegramGroupHelpBannedWords)
+  );
+  if (blockedPhrase) {
+    await moderate(message, `Blocked phrase: “${blockedPhrase}”`, 'warn', warnLimit, warnAction);
     return;
   }
   if (containsLink(text) && values.telegramGroupHelpLinkPolicy !== 'allow') {

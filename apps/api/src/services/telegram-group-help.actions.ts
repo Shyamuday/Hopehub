@@ -14,11 +14,44 @@ export async function sendModerationLog(
 ) {
   const destination =
     values.telegramGroupHelpLogChannelId?.trim() || values.telegramGroupHelpStaffGroupId?.trim();
-  if (!destination || !message.from) return;
+  if (!destination) return;
+  const rawText = `${message.text || message.caption || ''}`.trim();
+  const normalizedText = rawText.replace(/\s+/g, ' ');
+  const preview = normalizedText
+    ? normalizedText.length > 700
+      ? `${normalizedText.slice(0, 700)}…`
+      : normalizedText
+    : '[No text — media or service message]';
+  const member = message.from
+    ? `${message.from.first_name || 'Telegram member'}${message.from.username ? ` (@${message.from.username})` : ''} (${message.from.id})`
+    : message.sender_chat
+      ? `${message.sender_chat.title || 'Channel sender'} (${message.sender_chat.id})`
+      : 'Unknown sender';
+  const media = [
+    message.photo?.length ? 'photo' : '',
+    message.video ? 'video' : '',
+    message.video_note ? 'video note' : '',
+    message.animation ? 'GIF' : '',
+    message.document ? 'document' : '',
+    message.audio ? 'audio' : '',
+    message.voice ? 'voice' : '',
+    message.sticker ? 'sticker' : ''
+  ]
+    .filter(Boolean)
+    .join(', ');
   await sendCommunityMessage(
     GROUP_HELP_BOT_SLUG,
     destination,
-    `🛡 Moderation action\n\nReason: ${reason}\nAction: ${action}\nMember: ${message.from.first_name || 'Telegram member'} (${message.from.id})\nGroup: ${message.chat.title || message.chat.id}`
+    [
+      '🛡 Moderation action',
+      `Action: ${action.toUpperCase()}`,
+      `Rule / reason: ${reason}`,
+      `Group: ${message.chat.title || message.chat.id} (${message.chat.id})`,
+      `Message: ${message.message_id}${message.message_thread_id ? ` · topic ${message.message_thread_id}` : ''}`,
+      `Member: ${member}`,
+      `Content: ${media || 'text'} · ${rawText.length} character${rawText.length === 1 ? '' : 's'}`,
+      `Text: ${preview}`
+    ].join('\n')
   ).catch(() => null);
 }
 

@@ -61,14 +61,22 @@ export function bannedPhrases(value: string) {
 }
 
 export function matchesBannedPhrase(text: string, phrases: readonly string[]) {
+  return Boolean(matchedBannedPhrase(text, phrases));
+}
+
+/** Returns the configured phrase that triggered moderation, if any. */
+export function matchedBannedPhrase(text: string, phrases: readonly string[]) {
   const normalized = text.normalize('NFKC').toLocaleLowerCase();
-  return phrases.some((phrase) => {
+  for (const phrase of phrases) {
     const candidate = phrase.normalize('NFKC').toLocaleLowerCase().trim();
-    if (!candidate) return false;
+    if (!candidate) continue;
     const escaped = candidate.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     // Boundaries prevent a short word from matching inside an innocent larger word.
-    return new RegExp(`(^|[^\\p{L}\\p{N}])${escaped}(?=$|[^\\p{L}\\p{N}])`, 'iu').test(normalized);
-  });
+    if (new RegExp(`(^|[^\\p{L}\\p{N}])${escaped}(?=$|[^\\p{L}\\p{N}])`, 'iu').test(normalized)) {
+      return phrase.trim();
+    }
+  }
+  return null;
 }
 
 export function containsLink(text: string) {
