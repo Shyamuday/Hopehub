@@ -68,6 +68,7 @@ const COMMUNITY_BOTS: Record<
     tokenEnv: 'TELEGRAM_HOPEHUBBOT_TOKEN',
     commands: [
       { command: 'id', description: 'Show your ID or replied member ID' },
+      { command: 'staffid', description: 'Look up staff member ID by username' },
       { command: 'rules', description: 'Community rules' },
       { command: 'support', description: 'Private Hope Hub support' },
       { command: 'warn', description: 'Warn replied member (staff)' },

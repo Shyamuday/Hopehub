@@ -18,6 +18,7 @@ export const GROUP_HELP_COMMAND_CATALOG = {
     '/warnings',
     '/me',
     '/id',
+    '/staffid',
     '/admin',
     '/forget',
     '/forgot'

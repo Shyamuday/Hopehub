@@ -361,7 +361,7 @@ export async function handleGroupHelpMemberCommand(
     );
     return true;
   }
-  if (command === '/id') {
+  if (command === '/id' || command === '/staffid') {
     const target = message.reply_to_message?.from || message.from;
     if (!target) return true;
     const isStaff = await canUseGroupHelpCommand(message, values, '/id', 'HELPER');
