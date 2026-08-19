@@ -24,11 +24,11 @@ export function groupHelpMainMenuKeyboard(chatId?: string): TelegramKeyboard {
   return {
     inline_keyboard: [
       [
-        { text: 'Rules', callback_data: 'hh_menu_rules', style: 'primary' },
+        { text: 'Rules', callback_data: 'hh_menu_rules', style: 'success' },
         { text: 'Private support', callback_data: 'hh_menu_support', style: 'success' }
       ],
       [
-        { text: 'My warnings', callback_data: 'hh_menu_warnings', style: 'primary' },
+        { text: 'My warnings', callback_data: 'hh_menu_warnings', style: 'success' },
         { text: 'Report a concern', callback_data: 'hh_menu_report', style: 'danger' }
       ],
       [
@@ -38,14 +38,14 @@ export function groupHelpMainMenuKeyboard(chatId?: string): TelegramKeyboard {
               {
                 text: 'Admin settings',
                 url: groupHelpPrivateSettingsUrl(chatId),
-                style: 'primary' as const
+                style: 'success' as const
               }
             ]
           : [
               {
                 text: 'Admin settings',
                 callback_data: 'hh_menu_settings',
-                style: 'primary' as const
+                style: 'success' as const
               }
             ])
       ]
@@ -57,11 +57,11 @@ export function groupHelpSettingsHomeKeyboard(): TelegramKeyboard {
   return {
     inline_keyboard: [
       [
-        { text: 'Messages', callback_data: 'hh_settings_messages', style: 'primary' },
-        { text: 'Safety', callback_data: 'hh_settings_safety', style: 'primary' }
+        { text: 'Messages', callback_data: 'hh_settings_messages', style: 'success' },
+        { text: 'Safety', callback_data: 'hh_settings_safety', style: 'success' }
       ],
       [
-        { text: 'Operations', callback_data: 'hh_settings_operations', style: 'primary' },
+        { text: 'Operations', callback_data: 'hh_settings_operations', style: 'success' },
         { text: 'Help', callback_data: 'hh_settings_help', style: 'success' }
       ],
       [{ text: 'Configure group', callback_data: 'hh_cfg_home', style: 'success' }],

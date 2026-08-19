@@ -15,7 +15,7 @@ export function configuredUrlButtons(value: string, maximum = 8) {
       url,
       style: (STYLES.has(requestedStyle as TelegramButtonStyle)
         ? requestedStyle
-        : 'primary') as TelegramButtonStyle
+        : 'success') as TelegramButtonStyle
     }));
 }
 

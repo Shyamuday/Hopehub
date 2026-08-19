@@ -37,7 +37,7 @@ function sectionFields(section: GroupHelpConfigField['section']) {
 function button(
   text: string,
   callback_data: string,
-  style: 'primary' | 'success' | 'danger' = 'primary'
+  style: 'primary' | 'success' | 'danger' = 'success'
 ) {
   return { text, callback_data, style };
 }
@@ -73,7 +73,7 @@ function fieldKeyboard(field: GroupHelpConfigField, currentValue: string): Teleg
           button(
             `${option === currentValue ? '✓ ' : ''}${option}`,
             `${PREFIX}set:${field.key}:${index}`,
-            option === currentValue ? 'success' : 'primary'
+            'success'
           )
         ]),
         [button('← Back', `${PREFIX}section:${field.section}`)]

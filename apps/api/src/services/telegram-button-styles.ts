@@ -30,7 +30,7 @@ function inferredButtonStyle(button: StyleableTelegramButton): TelegramButtonSty
   const action = `${button.callback_data || ''} ${button.text}`.replace(/[_:-]+/g, ' ');
   if (DANGER_ACTION.test(action)) return 'danger';
   if (SUCCESS_ACTION.test(action)) return 'success';
-  return 'primary';
+  return 'success';
 }
 
 /**
@@ -47,7 +47,7 @@ export function colorizeTelegramKeyboard<
       row.map((button) => ({
         ...button,
         text: plainTelegramButtonText(button.text) || 'Open',
-        style: button.style || inferredButtonStyle(button)
+        style: button.style === 'primary' ? 'success' : button.style || inferredButtonStyle(button)
       }))
     )
   } as TKeyboard;

@@ -13,7 +13,7 @@ test('configured Telegram links become compact styled rows', () => {
           { text: 'Support', url: 'https://hopehub.in/support', style: 'success' },
           { text: 'Confess', url: 'https://t.me/example', style: 'danger' }
         ],
-        [{ text: 'Website', url: 'https://hopehub.in', style: 'primary' }]
+        [{ text: 'Website', url: 'https://hopehub.in', style: 'success' }]
       ]
     }
   );
@@ -27,7 +27,7 @@ test('explicit && rows use the GroupHelp layout and preserve button styles', () 
     {
       inline_keyboard: [
         [
-          { text: '📢 Channel', url: 'https://t.me/HopeHubGlobal', style: 'primary' },
+          { text: '📢 Channel', url: 'https://t.me/HopeHubGlobal', style: 'success' },
           { text: '🌐 Website', url: 'https://hopehub.in', style: 'success' }
         ],
         [
