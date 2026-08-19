@@ -469,8 +469,7 @@ export class DoctorShell implements OnInit, OnDestroy {
 
   private async restoreLivePresence(): Promise<void> {
     try {
-      const response = await this.onlineDoctor.loadProfile();
-      this.onlineDoctor.profile.set(response.profile);
+      const response = await this.onlineDoctor.refreshProfile();
       await this.refreshIncomingAssignment();
       this.availabilityLoaded.set(true);
       if (['ONLINE', 'BUSY', 'ON_CALL'].includes(response.profile.liveStatus)) {
@@ -522,7 +521,6 @@ export class DoctorShell implements OnInit, OnDestroy {
             }
           : {}),
       });
-      this.onlineDoctor.profile.set(response.profile);
       if (goingOnline) {
         this.onlineDoctor.connectRealtime();
         this.availabilityMessage.set('You are online and can receive new requests.');

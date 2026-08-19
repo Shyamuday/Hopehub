@@ -31,6 +31,7 @@ const MAX_DELIVERIES_PER_SWEEP = 20;
 const ENGAGEMENT_CAMPAIGN_ID = 'seed_telegram_hourly_engagement';
 const PROMOTION_CAMPAIGN_ID = 'seed_telegram_daily_discovery';
 const VOICE_EVENT_ANNOUNCEMENT_LEAD_MS = 60 * 60 * 1000;
+const NATIVE_VOICE_SCHEDULER_STATE = 'TELEGRAM_NATIVE_VOICE_SCHEDULER';
 
 export const telegramCampaignSweepEnabled =
   (process.env.TELEGRAM_CAMPAIGN_SWEEP_ENABLED || 'true').toLowerCase() !== 'false';
@@ -748,16 +749,25 @@ export async function handleTelegramCommunityVoiceChatEnded(message: CommunityTe
   const current = await prisma.telegramCommunityEvent.findFirst({
     where: {
       chatId,
-      status: { in: ['SCHEDULED', 'IN_PROGRESS'] },
-      startsAt: { lte: now, gte: new Date(now.getTime() - 4 * 60 * 60 * 1000) }
+      // If Telegram tells us a call ended, it genuinely ran even when a delayed
+      // webhook had previously marked its event as missed.
+      status: { in: ['SCHEDULED', 'IN_PROGRESS', 'MISSED'] },
+      startsAt: { lte: now, gte: new Date(now.getTime() - 12 * 60 * 60 * 1000) }
     },
     orderBy: { startsAt: 'desc' }
   });
-  if (!current) return false;
-  await prisma.telegramCommunityEvent.update({
-    where: { id: current.id },
-    data: { status: 'COMPLETED' }
-  });
+  if (current) {
+    await prisma.telegramCommunityEvent.update({
+      where: { id: current.id },
+      data: { status: 'COMPLETED' }
+    });
+  }
+  // Telegram permits one group call only. Once it ends, any local native-call
+  // record is stale and must not prevent the minute scheduler from creating
+  // the next configured slot.
+  await prisma.telegramCommunityState
+    .delete({ where: { bot_chatId: { bot: NATIVE_VOICE_SCHEDULER_STATE, chatId } } })
+    .catch(() => null);
   const next = await prisma.telegramCommunityEvent.findFirst({
     where: { chatId, status: 'SCHEDULED', startsAt: { gt: now }, announcedAt: null },
     orderBy: { startsAt: 'asc' }
@@ -774,7 +784,7 @@ export async function handleTelegramCommunityVoiceChatEnded(message: CommunityTe
       }
     });
   }
-  return true;
+  return Boolean(current);
 }
 
 /** Records that the scheduled Telegram voice chat was actually opened. */

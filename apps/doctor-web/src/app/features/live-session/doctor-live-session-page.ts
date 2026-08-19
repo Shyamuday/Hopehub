@@ -110,7 +110,7 @@ export class DoctorLiveSessionPage implements OnInit, OnDestroy {
         await this.online.acceptInstantConsultation(consultation.id);
         consultation = { ...consultation, status: 'IN_PROGRESS' };
       }
-      if (profile?.profile) this.online.profile.set(profile.profile);
+      if (profile?.profile) this.online.setProfile(profile.profile);
       this.consultation.set(consultation);
     } catch {
       this.error.set('Could not open this live session.');

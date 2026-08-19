@@ -52,6 +52,7 @@ export class OnlineDoctorService implements OnDestroy {
   private connectedToken: string | null = null;
   private heartbeatInFlight = false;
   private recoveryListenersAttached = false;
+  private profileRevision = 0;
 
   private readonly handleVisibilityChange = () => {
     if (document.visibilityState === 'visible') this.recoverRealtimeConnection();
@@ -73,29 +74,50 @@ export class OnlineDoctorService implements OnDestroy {
     );
   }
 
-  saveProfile(
+  /**
+   * The shell and Live Availability page share this service. Only the newest
+   * server response may update the shared profile, otherwise a slow page-load
+   * response can overwrite a just-completed Go online/Go offline action.
+   */
+  async refreshProfile() {
+    const revision = ++this.profileRevision;
+    const response = await this.loadProfile();
+    if (revision === this.profileRevision) this.profile.set(response.profile);
+    return response;
+  }
+
+  setProfile(profile: OnlineDoctorProfile): void {
+    this.profileRevision += 1;
+    this.profile.set(profile);
+  }
+
+  async saveProfile(
     payload: Partial<OnlineDoctorProfile> & { enabled?: boolean; specialtyDiseaseIds?: string[] },
   ) {
-    return firstValueFrom(
+    const response = await firstValueFrom(
       this.http.put<{ profile: OnlineDoctorProfile }>(
         `${this.apiBase}${API_PATHS.DOCTOR.ONLINE_PROFILE}`,
         payload,
       ),
     );
+    this.setProfile(response.profile);
+    return response;
   }
 
-  setLiveStatus(payload: {
+  async setLiveStatus(payload: {
     liveStatus: OnlineDoctorProfile['liveStatus'];
     acceptsChat?: boolean;
     acceptsVoiceCall?: boolean;
     acceptsVideoCall?: boolean;
   }) {
-    return firstValueFrom(
+    const response = await firstValueFrom(
       this.http.put<{ profile: OnlineDoctorProfile }>(
         `${this.apiBase}${API_PATHS.DOCTOR.ONLINE_STATUS}`,
         payload,
       ),
     );
+    this.setProfile(response.profile);
+    return response;
   }
 
   connectRealtime() {

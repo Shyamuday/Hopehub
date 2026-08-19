@@ -62,6 +62,9 @@ export class Login {
   error = signal('');
   message = signal('');
   submitting = signal(false);
+  /** Keeps the OTP controls honest: only the action being performed spins. */
+  sendingOtp = signal(false);
+  verifyingOtp = signal(false);
   readonly phLanguage = PH_PROVIDER_LANGUAGE;
 
   setMode(mode: 'signin' | 'signup'): void {
@@ -205,6 +208,7 @@ export class Login {
     this.error.set('');
     this.message.set('');
     this.submitting.set(true);
+    this.sendingOtp.set(true);
     try {
       const result = await this.auth.requestOtp(normalizedEmail);
       if (!result.ok) {
@@ -216,6 +220,7 @@ export class Login {
       this.otpSentTo.set(normalizedEmail);
       this.message.set('OTP sent to your email.');
     } finally {
+      this.sendingOtp.set(false);
       this.submitting.set(false);
     }
   }
@@ -239,6 +244,7 @@ export class Login {
     this.error.set('');
     this.message.set('');
     this.submitting.set(true);
+    this.verifyingOtp.set(true);
     try {
       const result = await this.auth.loginWithOtp(normalizedEmail, otp);
       if (!result.ok) {
@@ -247,6 +253,7 @@ export class Login {
       }
       await this.navigateAfterLogin();
     } finally {
+      this.verifyingOtp.set(false);
       this.submitting.set(false);
     }
   }

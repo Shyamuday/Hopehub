@@ -67,8 +67,7 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
   async load() {
     this.loading.set(true);
     try {
-      const res = await this.online.loadProfile();
-      this.online.profile.set(res.profile);
+      const res = await this.online.refreshProfile();
       this.diseases.set(res.diseases ?? []);
       this.settingsModel.set({
         category: res.profile.category,
@@ -343,7 +342,6 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
       acceptsVoiceCall: settings.acceptsVoiceCall,
       acceptsVideoCall: settings.acceptsVideoCall,
     });
-    this.online.profile.set(response.profile);
     await this.loadReadiness();
   }
 
@@ -375,7 +373,6 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
         acceptsVoiceCall: this.settingsModel().acceptsVoiceCall,
         acceptsVideoCall: this.settingsModel().acceptsVideoCall,
       });
-      this.online.profile.set(res.profile);
       this.online.connectRealtime();
       this.message.set('You are online and can receive new requests.');
       void this.loadInbox();
@@ -400,7 +397,6 @@ export class OnlineDoctorPage implements OnInit, OnDestroy {
     this.saving.set(true);
     try {
       const res = await this.online.setLiveStatus({ liveStatus: 'OFFLINE' });
-      this.online.profile.set(res.profile);
       this.online.disconnectRealtime();
       this.stopInboxRefresh();
       this.instantConsults.set([]);

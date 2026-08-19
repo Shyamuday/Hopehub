@@ -192,7 +192,15 @@ async function main() {
         );
         continue;
       }
-      const state = await prisma.telegramCommunityState.findUnique({ where: key });
+      let state = await prisma.telegramCommunityState.findUnique({ where: key });
+      // Telegram has no active/scheduled call, so a successful old record
+      // cannot be authoritative. Clear it before selecting the next slot.
+      // This is what lets the worker recover within its one-minute cycle after
+      // a host ends a VC (well inside the 15-minute recovery window).
+      if (state && state.state !== 'NATIVE_VOICE_RETRY') {
+        await prisma.telegramCommunityState.delete({ where: key });
+        state = null;
+      }
       const priorEventId = statePayload(state?.payload).eventId;
       if (priorEventId) {
         const prior = await prisma.telegramCommunityEvent.findUnique({

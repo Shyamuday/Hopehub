@@ -65,7 +65,7 @@
           variant="secondary"
           (click)="sendOtp()"
           [disabled]="submitting() || signInForm.email().invalid()"
-          [loading]="submitting()"
+          [loading]="sendingOtp()"
           block
         >
           {{ otpSent() ? 'Resend OTP' : 'Send OTP' }}
@@ -97,11 +97,11 @@
             ? signInForm().invalid()
             : signInForm.email().invalid() || !otpSent() || otp().length < 4)
         "
-        [loading]="submitting()"
+        [loading]="loginMode() === 'otp' ? verifyingOtp() : submitting()"
         block
       >
         {{
-          submitting()
+          loginMode() === 'otp' && verifyingOtp()
             ? 'Signing in...'
             : loginMode() === 'otp'
               ? 'Verify OTP & sign in'
