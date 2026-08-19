@@ -1,0 +1,37 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.provider-card {
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.provider-card__header,
+.provider-card__identity {
+  min-width: 0;
+}
+
+/* Names, roles, languages, and focus areas come from provider profiles. Keep
+   long values inside the card instead of letting one unbroken value widen it. */
+.provider-card :is(h3, p, span, a) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.provider-card__name {
+  hyphens: auto;
+}
+
+.provider-card__role,
+.provider-card__detail,
+.provider-card__best-for-copy {
+  word-break: break-word;
+}
+
+.provider-card app-status-chip {
+  display: block;
+  max-width: 100%;
+}

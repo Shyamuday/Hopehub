@@ -1,9 +1,9 @@
 <article
-  class="hope-card hope-motion-card h-full"
+  class="provider-card hope-card hope-motion-card h-full"
   [class.p-4]="compact() || result()"
   [class.p-5]="!compact() && !result()"
 >
-  <div class="flex items-start gap-3">
+    <div class="provider-card__header flex items-start gap-3">
     @if (imageUrl(); as image) {
       <img
         [src]="image"
@@ -32,8 +32,8 @@
       </div>
     }
 
-    <div class="min-w-0 flex-1">
-      <h3 class="font-bold text-gray-950" [class.text-base]="compact()" [class.text-lg]="!compact()">
+    <div class="provider-card__identity min-w-0 flex-1">
+      <h3 class="provider-card__name font-bold text-gray-950" [class.text-base]="compact()" [class.text-lg]="!compact()">
         {{ provider.name }}
       </h3>
 
@@ -56,22 +56,22 @@
         [customClass]="roleBadgeClass()"
       />
 
-      <p class="mt-1 text-sm font-medium text-gray-600" [class.line-clamp-1]="compact()">
+      <p class="provider-card__role mt-1 text-sm font-medium text-gray-600" [class.line-clamp-1]="compact()">
         {{ roleLabel() }}
       </p>
 
       @if (!compact() && provider.yearsOfExperience) {
-        <p class="mt-1 text-xs font-medium text-gray-500">
+        <p class="provider-card__detail mt-1 text-xs font-medium text-gray-500">
           {{ provider.yearsOfExperience }}+ years experience
         </p>
       }
 
       @if (!compact() && metaLabel()) {
-        <p class="mt-1 text-xs font-medium text-gray-600">{{ metaLabel() }}</p>
+        <p class="provider-card__detail mt-1 text-xs font-medium text-gray-600">{{ metaLabel() }}</p>
       }
 
       @if (provider.ratingSummary?.ratingCount) {
-        <p class="mt-2 text-xs font-semibold text-amber-700">
+        <p class="provider-card__detail mt-2 text-xs font-semibold text-amber-700">
           ★ {{ provider.ratingSummary?.averageRating }} · {{ provider.ratingSummary?.ratingCount }}
           verified session {{ provider.ratingSummary?.ratingCount === 1 ? 'rating' : 'ratings' }}
         </p>
@@ -94,7 +94,7 @@
       [class.bg-white]="compact()"
     >
       <p class="font-bold text-gray-900">Best for</p>
-      <p>{{ bestForLabel() }}</p>
+      <p class="provider-card__best-for-copy">{{ bestForLabel() }}</p>
     </div>
   }
 

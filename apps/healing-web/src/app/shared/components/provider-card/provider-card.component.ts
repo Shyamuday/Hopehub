@@ -29,6 +29,7 @@ export type ProviderCardVariant = 'compact' | 'standard' | 'result';
     StatusChipComponent,
   ],
   templateUrl: './provider-card.component.html',
+  styleUrl: './provider-card.component.scss',
 })
 export class ProviderCardComponent {
   @Input({ required: true }) provider!: HopeHubProvider;

@@ -5,7 +5,14 @@
   display: inline-flex;
   gap: 0.32rem;
   line-height: 1;
+  max-width: 100%;
   width: fit-content;
+}
+
+.status-chip > span:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.25;
 }
 
 .status-chip--sm {
