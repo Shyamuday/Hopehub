@@ -10,13 +10,12 @@ export function configuredUrlButtons(value: string, maximum = 8) {
     .map((line) => line.split('|').map((part) => part.trim()))
     .filter(([label, url]) => Boolean(label) && /^https:\/\//i.test(url || ''))
     .slice(0, maximum)
-    .map(([text, url, requestedStyle]) => ({
-      text,
-      url,
-      style: (STYLES.has(requestedStyle as TelegramButtonStyle)
-        ? requestedStyle
-        : 'success') as TelegramButtonStyle
-    }));
+    .map(([text, url, requestedStyle]) => {
+      const style = STYLES.has(requestedStyle as TelegramButtonStyle)
+        ? (requestedStyle as TelegramButtonStyle)
+        : 'success';
+      return { text, url, style: style === 'primary' ? 'success' : style };
+    });
 }
 
 export function configuredUrlKeyboard(

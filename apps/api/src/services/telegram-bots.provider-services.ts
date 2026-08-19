@@ -71,10 +71,19 @@ export async function showProviderServices(kind: TelegramBotKind, session: Teleg
 
   const servicesText = profile.services.length
     ? profile.services
-        .map(
-          (service, index) =>
-            `${index + 1}. <b>${escapeHtml(service.title)}</b> · ${service.isActive ? 'Active' : 'Inactive'}\n${escapeHtml(pricingLine(service))}`
-        )
+        .map((service, index) => {
+          const approval =
+            service.approvalStatus === 'APPROVED'
+              ? ''
+              : ` · ${escapeHtml(service.approvalStatus.toLowerCase().replace(/_/g, ' '))}`;
+          const offer =
+            service.firstSessionPriceInPaise != null ||
+            service.offerEndsAt ||
+            service.offerBookingLimit
+              ? `\nOffer${service.offerBookingLimit ? ` · first ${service.offerBookingLimit} booking${service.offerBookingLimit === 1 ? '' : 's'}` : ''}${service.offerEndsAt ? ` · ends ${service.offerEndsAt.toLocaleDateString('en-IN')}` : ''}${service.pauseOfferWhenNoSlots ? ' · pauses when no slots' : ''}`
+              : '';
+          return `${index + 1}. <b>${escapeHtml(service.title)}</b> · ${service.isActive ? 'Active' : 'Inactive'}${approval}\n${escapeHtml(pricingLine(service))}${offer}`;
+        })
         .join('\n\n')
     : 'No services yet. Add one from a pricing template.';
 

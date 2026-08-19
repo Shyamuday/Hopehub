@@ -85,6 +85,7 @@ import {
   telegramReminderSweepEnabled,
   telegramReminderSweepIntervalMs
 } from './services/telegram-bot-reminders.js';
+import { runProviderDailyDigestScheduler } from './services/telegram-bots.provider-dashboard.js';
 import {
   consultationReminderSweepEnabled,
   consultationReminderSweepIntervalMs,
@@ -431,6 +432,9 @@ httpServer.listen(port, bindHost, () => {
   void runTelegramReminderSchedulers().catch((e) =>
     console.error('[scheduler] Initial Telegram reminder scheduler run failed', e)
   );
+  void runProviderDailyDigestScheduler().catch((e) =>
+    console.error('[scheduler] Initial provider Telegram digest failed', e)
+  );
   void runTelegramCampaignScheduler().catch((e) =>
     console.error('[scheduler] Initial Telegram campaign run failed', e)
   );
@@ -454,6 +458,9 @@ httpServer.listen(port, bindHost, () => {
   const telegramReminderTimer = setInterval(() => {
     void runTelegramReminderSchedulers().catch((e) =>
       console.error('[scheduler] Telegram reminder scheduler run failed', e)
+    );
+    void runProviderDailyDigestScheduler().catch((e) =>
+      console.error('[scheduler] Provider Telegram digest failed', e)
     );
   }, telegramReminderSweepIntervalMs);
   telegramReminderTimer.unref();

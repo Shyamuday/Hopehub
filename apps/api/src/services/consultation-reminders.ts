@@ -7,6 +7,7 @@ import {
 import { SCHEDULER_CONFIG } from '../constants/config.constants.js';
 import { prisma } from '../db.js';
 import { enabledNotificationChannels, notificationService } from './notification-service.js';
+import { notifyProviderBookingOnTelegram } from './telegram-provider-notifications.js';
 
 export const consultationReminderSweepEnabled =
   (process.env.CONSULTATION_REMINDER_SWEEP_ENABLED || 'true').toLowerCase() !== 'false';
@@ -205,6 +206,12 @@ export async function notifyConsultationBooked(consultationId: string) {
       body: `${consultation.patient.name} booked ${service} for ${appointmentLabel(appointment)}.`,
       metadata: { consultationId, appointmentAt: appointment?.toISOString() ?? null }
     });
+    void notifyProviderBookingOnTelegram({
+      providerUserId: consultation.assignedDoctor.id,
+      consultationId,
+      title: 'New session assigned',
+      body: `${consultation.patient.name} booked ${service} for ${appointmentLabel(appointment)}.`
+    }).catch((error) => console.error('[telegram-provider] booking notification failed', error));
   } else {
     const admins = await activeAdmins();
     await Promise.all(
@@ -233,6 +240,12 @@ export async function notifyProviderAssignedAndSchedule(consultationId: string) 
     body: `${consultation.patient.name}'s session is scheduled for ${appointmentLabel(appointment)}.`,
     metadata: { consultationId, appointmentAt: appointment?.toISOString() ?? null }
   });
+  void notifyProviderBookingOnTelegram({
+    providerUserId: consultation.assignedDoctor.id,
+    consultationId,
+    title: 'Session assigned to you',
+    body: `${consultation.patient.name}'s session is scheduled for ${appointmentLabel(appointment)}.`
+  }).catch((error) => console.error('[telegram-provider] assignment notification failed', error));
   await scheduleConsultationReminders(consultationId);
 }
 
@@ -262,6 +275,14 @@ export async function cancelConsultationReminders(consultationId: string, reason
       body: `${consultation.patient.name}'s session has been cancelled${reason ? `: ${reason}` : '.'}`,
       metadata: { consultationId, reason: reason ?? null }
     });
+    void notifyProviderBookingOnTelegram({
+      providerUserId: consultation.assignedDoctor.id,
+      consultationId,
+      title: 'Assigned session cancelled',
+      body: `${consultation.patient.name}'s session was cancelled${reason ? `: ${reason}` : '.'}`
+    }).catch((error) =>
+      console.error('[telegram-provider] cancellation notification failed', error)
+    );
   }
 }
 

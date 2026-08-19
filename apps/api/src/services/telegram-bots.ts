@@ -91,6 +91,13 @@ import {
   showProviderServices,
   toggleProviderService
 } from './telegram-bots.provider-services.js';
+import {
+  showProviderDashboard,
+  showProviderEarnings,
+  showProviderFeedback,
+  showProviderReadiness,
+  showProviderShareLinks
+} from './telegram-bots.provider-dashboard.js';
 import { adminQualitySummary } from './telegram-bots.quality.js';
 import {
   ensureSession,
@@ -2482,6 +2489,13 @@ async function handleCommand(kind: TelegramBotKind, session: TelegramSession, te
       await showProviderServices(kind, session);
     else if (command === '/availability' || command === '/slots')
       await showProviderAvailability(kind, session);
+    else if (command === '/dashboard' || command === '/today')
+      await showProviderDashboard(kind, session);
+    else if (command === '/feedback') await showProviderFeedback(kind, session);
+    else if (command === '/earnings' || command === '/income')
+      await showProviderEarnings(kind, session);
+    else if (command === '/share') await showProviderShareLinks(kind, session);
+    else if (command === '/readiness') await showProviderReadiness(kind, session);
     else if (command === '/assignments') await showProviderAssignments(kind, session);
     else if (command === '/queue') await doctorQueue(kind, session);
     else if (command === '/outcomes' || command === '/close')
@@ -2654,7 +2668,12 @@ async function handleCallback(
       const track = data.slice('provider_signup:track:'.length) as ProviderApplicationTrack;
       if (track in providerTrackLabels) await setProviderSignupTrack(kind, session, track);
       else await startProviderSignup(kind, session);
-    } else if (data === 'provider:services') await showProviderServices(kind, session);
+    } else if (data === 'provider:dashboard') await showProviderDashboard(kind, session);
+    else if (data === 'provider:feedback') await showProviderFeedback(kind, session);
+    else if (data === 'provider:earnings') await showProviderEarnings(kind, session);
+    else if (data === 'provider:share') await showProviderShareLinks(kind, session);
+    else if (data === 'provider:readiness') await showProviderReadiness(kind, session);
+    else if (data === 'provider:services') await showProviderServices(kind, session);
     else if (data === 'provider:services:templates')
       await showProviderPricingTemplates(kind, session);
     else if (data.startsWith('provider:service:templates:')) {

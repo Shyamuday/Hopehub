@@ -62,12 +62,23 @@ export async function menuFor(kind: TelegramBotKind, linked: boolean): Promise<I
   if (kind === 'DOCTOR') {
     return [
       [{ text: 'Join care team', callback_data: 'doctor:signup' }],
-      [{ text: 'My services & pricing', callback_data: 'provider:services' }],
-      [{ text: 'My availability', callback_data: 'provider:availability' }],
+      [{ text: 'Provider dashboard', callback_data: 'provider:dashboard' }],
+      [
+        { text: 'My services & pricing', callback_data: 'provider:services' },
+        { text: 'My availability', callback_data: 'provider:availability' }
+      ],
       [{ text: 'Assigned support leads', callback_data: 'doctor:assignments' }],
       [
         { text: 'My queue', callback_data: 'doctor:queue' },
         { text: 'Go online', callback_data: 'doctor:online' }
+      ],
+      [
+        { text: 'Feedback', callback_data: 'provider:feedback' },
+        { text: 'Earnings', callback_data: 'provider:earnings' }
+      ],
+      [
+        { text: 'Share my profile', callback_data: 'provider:share' },
+        { text: 'Profile readiness', callback_data: 'provider:readiness' }
       ],
       [{ text: 'Close session / outcome', callback_data: 'doctor:outcomes' }],
       [
@@ -131,6 +142,11 @@ export function helpText(kind: TelegramBotKind) {
       '/link provider@example.com - link provider account',
       '/services - manage services and pricing',
       '/availability - manage weekly availability',
+      '/dashboard - today’s provider overview',
+      '/feedback - anonymous consumer feedback',
+      '/earnings - this month’s earnings and payout state',
+      '/share - profile, booking, chat, voice, and video links',
+      '/readiness - see what must be completed before public bookings',
       '/assignments - assigned support leads',
       '/queue - real queue summary',
       '/outcomes - close a session with outcome',

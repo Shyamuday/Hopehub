@@ -28,6 +28,7 @@ import { notifyConsultationBooked } from '../services/consultation-reminders.js'
 import { applySessionOutcome } from '../services/consultation-outcomes.js';
 import { SOCKET_EVENTS, SOCKET_ROOM_PREFIXES } from '../constants/socket.constants.js';
 import { restoreDoctorOnlineAfterInstantConsultation } from '../services/online-doctor-presence.js';
+import { notifyProviderFeedbackOnTelegram } from '../services/telegram-provider-notifications.js';
 
 function serializeHopeHubAssessmentAttempt(attempt: {
   id: string;
@@ -788,6 +789,16 @@ export function createConsultationsRouter(io: SocketIoServer) {
           updatedAt: true
         }
       });
+      if (isPatient && consultation.assignedDoctorId) {
+        void notifyProviderFeedbackOnTelegram({
+          providerUserId: consultation.assignedDoctorId,
+          rating: feedback.rating,
+          helpful: feedback.helpful,
+          followUpNeeded: feedback.followUpNeeded
+        }).catch((error) =>
+          console.error('[telegram-provider] feedback notification failed', error)
+        );
+      }
       res.status(201).json({ feedback });
     })
   );
