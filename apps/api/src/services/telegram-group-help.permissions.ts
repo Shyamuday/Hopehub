@@ -36,7 +36,10 @@ export async function isModerationExempt(
       user_id: message.from.id
     }
   ).catch(() => undefined);
-  if (!membership) return true;
+  // A Telegram lookup failure must never grant moderation access. Explicitly
+  // whitelisted administrators already returned above; everyone else retries
+  // once Telegram is reachable again.
+  if (!membership) return false;
   const isAdmin = ['creator', 'administrator'].includes(membership.status || '');
   adminStatusCache.set(cacheKey, { isAdmin, expiresAt: Date.now() + ADMIN_STATUS_TTL_MS });
   return isAdmin;
@@ -74,8 +77,11 @@ export function configuredCommandRole(
   for (const line of (values.telegramGroupHelpCommandPermissions || '').split(/\r?\n/)) {
     const [configuredCommand, configuredRole] = line.split('=').map((part) => part.trim());
     if (configuredCommand?.toLowerCase() !== target) continue;
-    return configuredRole?.toUpperCase() === 'HELPER' ? 'HELPER' :
-      configuredRole?.toUpperCase() === 'MODERATOR' ? 'MODERATOR' : fallback;
+    return configuredRole?.toUpperCase() === 'HELPER'
+      ? 'HELPER'
+      : configuredRole?.toUpperCase() === 'MODERATOR'
+        ? 'MODERATOR'
+        : fallback;
   }
   return fallback;
 }

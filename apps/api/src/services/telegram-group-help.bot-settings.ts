@@ -18,7 +18,9 @@ import type {
 
 const PREFIX = 'hh_cfg_';
 const DRAFT_LIFETIME_MS = 10 * 60 * 1000;
+const SETTINGS_SESSION_LIFETIME_MS = 30 * 60 * 1000;
 const inputDrafts = new Map<string, { key: string; expiresAt: number; value?: string }>();
+const privateSettingsGroups = new Map<number, { chatId: string; expiresAt: number }>();
 
 function draftKey(chatId: string, userId: number) {
   return `${chatId}:${userId}`;
@@ -47,7 +49,7 @@ function sectionKeyboard(): TelegramKeyboard {
       ...sections.map((section) => [
         button(section[0].toUpperCase() + section.slice(1), `${PREFIX}section:${section}`)
       ]),
-      [button('← Settings home', 'hh_settings_home')]
+      [button('← Settings home', `${PREFIX}home`)]
     ]
   };
 }
@@ -110,6 +112,42 @@ async function isTelegramAdmin(chatId: string, userId: number) {
   return Boolean(member && ['creator', 'administrator'].includes(member.status || ''));
 }
 
+function selectedPrivateSettingsGroup(userId: number): string | null {
+  const session = privateSettingsGroups.get(userId);
+  if (!session || session.expiresAt < Date.now()) {
+    privateSettingsGroups.delete(userId);
+    return null;
+  }
+  return session.chatId;
+}
+
+/** Opens a group-scoped editor in private chat after checking Telegram admin rights. */
+export async function handleGroupHelpPrivateSettingsStart(message: CommunityTelegramMessage) {
+  if (!message.from || message.chat.type !== 'private') return false;
+  const match = (message.text || '').trim().match(/^\/start\s+group_settings_(-?\d+)$/i);
+  if (!match) return false;
+  const settingsChatId = match[1];
+  if (!(await isTelegramAdmin(settingsChatId, message.from.id))) {
+    await sendCommunityMessage(
+      GROUP_HELP_BOT_SLUG,
+      String(message.chat.id),
+      'You need to be an administrator of that Hope Hub group to open its settings.'
+    );
+    return true;
+  }
+  privateSettingsGroups.set(message.from.id, {
+    chatId: settingsChatId,
+    expiresAt: Date.now() + SETTINGS_SESSION_LIFETIME_MS
+  });
+  await sendCommunityMessage(
+    GROUP_HELP_BOT_SLUG,
+    String(message.chat.id),
+    '⚙️ *Group settings*\n\nYou are editing the selected group privately. Your admin access is checked again before each change.',
+    { parse_mode: 'Markdown', reply_markup: sectionKeyboard() }
+  );
+  return true;
+}
+
 async function currentValue(field: GroupHelpConfigField) {
   const stored = await prisma.siteConfig.findUnique({ where: { key: field.key } });
   return stored?.value ?? field.defaultValue;
@@ -150,12 +188,24 @@ async function saveValue(
 export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegramUpdate) {
   const callback = update.callback_query;
   if (!callback?.message || !callback.data?.startsWith(PREFIX)) return false;
-  const chatId = String(callback.message.chat.id);
-  if (!['group', 'supergroup'].includes(callback.message.chat.type || '')) {
+  const privateChat = callback.message.chat.type === 'private';
+  if (!privateChat) {
     await answerCommunityCallback(
       GROUP_HELP_BOT_SLUG,
       callback.id,
-      'Open settings inside the community group.'
+      'Open Admin settings privately from the group menu.'
+    );
+    return true;
+  }
+  const chatId = privateChat
+    ? selectedPrivateSettingsGroup(callback.from.id)
+    : String(callback.message.chat.id);
+  const replyChatId = String(callback.message.chat.id);
+  if (!chatId) {
+    await answerCommunityCallback(
+      GROUP_HELP_BOT_SLUG,
+      callback.id,
+      'Open Admin settings from the group first, then continue here.'
     );
     return true;
   }
@@ -172,7 +222,7 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
   if (action === 'home') {
     await sendCommunityMessage(
       GROUP_HELP_BOT_SLUG,
-      chatId,
+      replyChatId,
       '⚙️ *Configure Hope Hub group*\n\nChoose an area.',
       {
         parse_mode: 'Markdown',
@@ -192,7 +242,7 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
     }
     await sendCommunityMessage(
       GROUP_HELP_BOT_SLUG,
-      chatId,
+      replyChatId,
       `⚙️ *${section[0].toUpperCase() + section.slice(1)} settings*\n\nChoose a setting to change.`,
       {
         parse_mode: 'Markdown',
@@ -212,7 +262,7 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
     const value = await currentValue(field);
     await sendCommunityMessage(
       GROUP_HELP_BOT_SLUG,
-      chatId,
+      replyChatId,
       `*${field.label}*\n\n${field.description}\n\nCurrent value: \`${value || 'Not set'}\``,
       { parse_mode: 'Markdown', reply_markup: fieldKeyboard(field, value) }
     );
@@ -235,7 +285,7 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
     });
     await sendCommunityMessage(
       GROUP_HELP_BOT_SLUG,
-      chatId,
+      replyChatId,
       `Change *${field.label}* to \`${option}\`?`,
       {
         parse_mode: 'Markdown',
@@ -255,7 +305,7 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
     if (field.maxLength > 4000) {
       await sendCommunityMessage(
         GROUP_HELP_BOT_SLUG,
-        chatId,
+        replyChatId,
         `${field.label} can be very long. Please edit it in Hope Hub Admin so nothing is truncated.`
       );
     } else {
@@ -265,7 +315,7 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
       });
       await sendCommunityMessage(
         GROUP_HELP_BOT_SLUG,
-        chatId,
+        replyChatId,
         `Send the new value for *${field.label}* in your next message. It will expire in 10 minutes.`,
         { parse_mode: 'Markdown', reply_markup: cancelKeyboard() }
       );
@@ -288,7 +338,7 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
       inputDrafts.delete(key);
       await sendCommunityMessage(
         GROUP_HELP_BOT_SLUG,
-        chatId,
+        replyChatId,
         `✅ *${field.label}* is now set to \`${draft.value}\`.`,
         {
           parse_mode: 'Markdown',
@@ -298,28 +348,24 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
     } catch (error) {
       await sendCommunityMessage(
         GROUP_HELP_BOT_SLUG,
-        chatId,
+        replyChatId,
         error instanceof Error ? error.message : 'Could not save this setting.',
         { reply_markup: cancelKeyboard() }
       );
     }
   } else if (action === 'cancel') {
     inputDrafts.delete(draftKey(chatId, callback.from.id));
-    await sendCommunityMessage(GROUP_HELP_BOT_SLUG, chatId, 'No changes were saved.');
+    await sendCommunityMessage(GROUP_HELP_BOT_SLUG, replyChatId, 'No changes were saved.');
   }
   await answerCommunityCallback(GROUP_HELP_BOT_SLUG, callback.id);
   return true;
 }
 
 export async function handleGroupHelpBotSettingsInput(message: CommunityTelegramMessage) {
-  if (
-    !message.from ||
-    !message.text ||
-    !['group', 'supergroup'].includes(message.chat.type || '')
-  ) {
-    return false;
-  }
-  const chatId = String(message.chat.id);
+  if (!message.from || !message.text || message.chat.type !== 'private') return false;
+  const chatId = selectedPrivateSettingsGroup(message.from.id);
+  if (!chatId) return false;
+  const replyChatId = String(message.chat.id);
   const key = draftKey(chatId, message.from.id);
   const draft = inputDrafts.get(key);
   if (!draft) return false;
@@ -332,7 +378,7 @@ export async function handleGroupHelpBotSettingsInput(message: CommunityTelegram
   if (value.length > field.maxLength) {
     await sendCommunityMessage(
       GROUP_HELP_BOT_SLUG,
-      chatId,
+      replyChatId,
       `${field.label} is too long. Maximum ${field.maxLength} characters. Send a shorter value or cancel.`,
       { reply_markup: cancelKeyboard() }
     );
@@ -341,7 +387,7 @@ export async function handleGroupHelpBotSettingsInput(message: CommunityTelegram
   if (field.type === 'number' && value && !/^\d+$/.test(value)) {
     await sendCommunityMessage(
       GROUP_HELP_BOT_SLUG,
-      chatId,
+      replyChatId,
       `${field.label} must be a whole number. Send it again or cancel.`,
       { reply_markup: cancelKeyboard() }
     );
@@ -350,7 +396,7 @@ export async function handleGroupHelpBotSettingsInput(message: CommunityTelegram
   inputDrafts.set(key, { ...draft, value });
   await sendCommunityMessage(
     GROUP_HELP_BOT_SLUG,
-    chatId,
+    replyChatId,
     `Save this new value for *${field.label}*?\n\n\`${value}\``,
     { parse_mode: 'Markdown', reply_markup: confirmKeyboard() }
   );

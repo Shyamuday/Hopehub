@@ -971,29 +971,39 @@ export function registerAdminTelegramBotRoutes(router: Router) {
       const chatId = parsed.data.chatId || values.telegramGroupHelpGroupChatId?.trim();
       if (!chatId)
         return res.status(400).json({ message: 'Choose a configured Telegram group first.' });
-      const assignment = await prisma.telegramCommunityRoleAssignment.upsert({
-        where: {
-          chatId_telegramUserId_role: {
+      const otherRole = parsed.data.role === 'MODERATOR' ? 'HELPER' : 'MODERATOR';
+      const [, assignment] = await prisma.$transaction([
+        prisma.telegramCommunityRoleAssignment.deleteMany({
+          where: {
             chatId,
             telegramUserId: parsed.data.telegramUserId,
-            role: parsed.data.role
+            role: otherRole
           }
-        },
-        create: {
-          chatId,
-          telegramUserId: parsed.data.telegramUserId,
-          role: parsed.data.role,
-          assignedById: req.user!.id
-        },
-        update: { assignedById: req.user!.id }
-      });
+        }),
+        prisma.telegramCommunityRoleAssignment.upsert({
+          where: {
+            chatId_telegramUserId_role: {
+              chatId,
+              telegramUserId: parsed.data.telegramUserId,
+              role: parsed.data.role
+            }
+          },
+          create: {
+            chatId,
+            telegramUserId: parsed.data.telegramUserId,
+            role: parsed.data.role,
+            assignedById: req.user!.id
+          },
+          update: { assignedById: req.user!.id }
+        })
+      ]);
       await writeAuditLog({
         actorId: req.user!.id,
         actorRole: req.user!.role,
         action: 'telegram_group_help.role_assign',
         targetType: 'telegram_group_help_role',
         targetId: assignment.id,
-        summary: `Assigned ${assignment.role.toLowerCase()} role to Telegram user ${assignment.telegramUserId}.`,
+        summary: `Assigned ${assignment.role.toLowerCase()} role to Telegram user ${assignment.telegramUserId}; replaced any other community role.`,
         metadata: { chatId, telegramUserId: assignment.telegramUserId, role: assignment.role }
       });
       res.status(201).json({ assignment });

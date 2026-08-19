@@ -12,6 +12,7 @@ import { groupHelpConfig } from './telegram-group-help.config.js';
 import { telegramGroupWarningCount } from './telegram-community-bots.store.js';
 import {
   groupHelpMainMenuKeyboard,
+  groupHelpPrivateSettingsKeyboard,
   groupHelpSettingsHomeKeyboard
 } from './telegram-group-help.menu.js';
 import { handleGroupHelpBotSettingsCallback } from './telegram-group-help.bot-settings.js';
@@ -36,8 +37,41 @@ export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
   const chatId = String(callback.message.chat.id);
   if (callback.data === 'hh_menu_home') {
     await sendCommunityMessage(GROUP_HELP_BOT_SLUG, chatId, 'Choose what you need.', {
-      reply_markup: groupHelpMainMenuKeyboard()
+      reply_markup: groupHelpMainMenuKeyboard(
+        ['group', 'supergroup'].includes(callback.message.chat.type || '') ? chatId : undefined
+      )
     });
+    await answerCommunityCallback(GROUP_HELP_BOT_SLUG, callback.id);
+    return true;
+  }
+  if (callback.data === 'hh_menu_settings') {
+    if (!['group', 'supergroup'].includes(callback.message.chat.type || '')) {
+      await answerCommunityCallback(
+        GROUP_HELP_BOT_SLUG,
+        callback.id,
+        'Open Admin settings from the community group.'
+      );
+      return true;
+    }
+    const membership = await callCommunityTelegramApi<{ status?: string }>(
+      GROUP_HELP_BOT_SLUG,
+      'getChatMember',
+      { chat_id: chatId, user_id: callback.from.id }
+    ).catch(() => null);
+    if (!membership || !['creator', 'administrator'].includes(membership.status || '')) {
+      await answerCommunityCallback(
+        GROUP_HELP_BOT_SLUG,
+        callback.id,
+        'Only group admins can open settings.'
+      );
+      return true;
+    }
+    await sendCommunityMessage(
+      GROUP_HELP_BOT_SLUG,
+      chatId,
+      'Open the group editor privately. Your access is checked before every change.',
+      { reply_markup: groupHelpPrivateSettingsKeyboard(chatId) }
+    );
     await answerCommunityCallback(GROUP_HELP_BOT_SLUG, callback.id);
     return true;
   }

@@ -14,14 +14,15 @@ import {
 } from './telegram-group-help.actions.js';
 import { isModerationExempt } from './telegram-group-help.permissions.js';
 import type { CommunityTelegramMessage } from './telegram-community-bots.types.js';
-import { groupHelpSettingsHomeKeyboard } from './telegram-group-help.menu.js';
+import { groupHelpPrivateSettingsKeyboard } from './telegram-group-help.menu.js';
 
 export async function handleGroupHelpAdminCommand(
   message: CommunityTelegramMessage,
   values: Record<string, string>
 ) {
   const command = (message.text || '').trim().split(/\s+/)[0].split('@')[0].toLowerCase();
-  if (!['/settings', '/lockdown', '/unlock'].includes(command)) return false;
+  if (!['/settings', '/lockdown', '/unlock', '/pin', '/unpin', '/pinned'].includes(command))
+    return false;
   if (
     !message.from ||
     !(await isModerationExempt(message, values.telegramGroupHelpAdminWhitelist || ''))
@@ -33,11 +34,49 @@ export async function handleGroupHelpAdminCommand(
     await sendCommunityMessage(
       GROUP_HELP_BOT_SLUG,
       chatId,
-      '⚙️ *Hope Hub group settings*\n\nChoose what you want to review.',
+      '⚙️ *Hope Hub group settings*\n\nOpen the editor privately. Your access is checked against this group before every change.',
       {
         parse_mode: 'Markdown',
-        reply_markup: groupHelpSettingsHomeKeyboard()
+        reply_markup: groupHelpPrivateSettingsKeyboard(chatId)
       }
+    );
+    return true;
+  }
+  if (command === '/pin') {
+    const target = message.reply_to_message;
+    if (!target) {
+      await sendTemporaryGroupHelpMessage(chatId, 'Reply to a message, then use /pin.', values);
+      return true;
+    }
+    const notify = parts.includes('notify');
+    await callCommunityTelegramApi(GROUP_HELP_BOT_SLUG, 'pinChatMessage', {
+      chat_id: chatId,
+      message_id: target.message_id,
+      disable_notification: !notify
+    });
+    await sendTemporaryGroupHelpMessage(chatId, 'Pinned the selected message.', values);
+    return true;
+  }
+  if (command === '/unpin') {
+    await callCommunityTelegramApi(GROUP_HELP_BOT_SLUG, 'unpinChatMessage', { chat_id: chatId });
+    await sendTemporaryGroupHelpMessage(chatId, 'Unpinned the current message.', values);
+    return true;
+  }
+  if (command === '/pinned') {
+    const chat = await callCommunityTelegramApi<{
+      username?: string;
+      pinned_message?: { message_id?: number };
+    }>(GROUP_HELP_BOT_SLUG, 'getChat', { chat_id: chatId });
+    const messageId = Number(chat.pinned_message?.message_id || 0);
+    const link = chat.username
+      ? `https://t.me/${chat.username}/${messageId}`
+      : chatId.startsWith('-100') && messageId
+        ? `https://t.me/c/${chatId.slice(4)}/${messageId}`
+        : '';
+    await sendTemporaryGroupHelpMessage(
+      chatId,
+      link ? `Current pinned message:\n${link}` : 'There is no pinned message.',
+      values
     );
     return true;
   }

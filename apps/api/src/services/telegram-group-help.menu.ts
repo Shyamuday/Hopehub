@@ -1,7 +1,26 @@
 import type { TelegramKeyboard } from './telegram-community-bots.types.js';
+import { TELEGRAM_BOT_URLS } from '../constants/telegram-community-bot.constants.js';
 
 /** A compact, button-first entry point for people who do not know bot commands yet. */
-export function groupHelpMainMenuKeyboard(): TelegramKeyboard {
+export function groupHelpPrivateSettingsUrl(chatId: string): string {
+  return `${TELEGRAM_BOT_URLS.GROUP_HELP}?start=group_settings_${encodeURIComponent(chatId)}`;
+}
+
+export function groupHelpPrivateSettingsKeyboard(chatId: string): TelegramKeyboard {
+  return {
+    inline_keyboard: [
+      [
+        {
+          text: 'Open settings privately',
+          url: groupHelpPrivateSettingsUrl(chatId),
+          style: 'success'
+        }
+      ]
+    ]
+  };
+}
+
+export function groupHelpMainMenuKeyboard(chatId?: string): TelegramKeyboard {
   return {
     inline_keyboard: [
       [
@@ -14,7 +33,21 @@ export function groupHelpMainMenuKeyboard(): TelegramKeyboard {
       ],
       [
         { text: 'Bot help', callback_data: 'hh_menu_help', style: 'success' },
-        { text: 'Admin settings', callback_data: 'hh_menu_settings', style: 'primary' }
+        ...(chatId
+          ? [
+              {
+                text: 'Admin settings',
+                url: groupHelpPrivateSettingsUrl(chatId),
+                style: 'primary' as const
+              }
+            ]
+          : [
+              {
+                text: 'Admin settings',
+                callback_data: 'hh_menu_settings',
+                style: 'primary' as const
+              }
+            ])
       ]
     ]
   };

@@ -52,7 +52,10 @@ import {
 import { handleGroupHelpCallback } from './telegram-group-help.callbacks.js';
 import { handleGroupHelpCommand } from './telegram-group-help.commands.js';
 import { queueGroupHelpMessageReview } from './telegram-group-help.approval.js';
-import { handleGroupHelpBotSettingsInput } from './telegram-group-help.bot-settings.js';
+import {
+  handleGroupHelpBotSettingsInput,
+  handleGroupHelpPrivateSettingsStart
+} from './telegram-group-help.bot-settings.js';
 
 const BOT = GROUP_HELP_BOT_SLUG;
 
@@ -80,6 +83,8 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
   const chatId = String(chat.id);
   const values = await config(chatId);
   if (message?.chat.type === 'private') {
+    if (await handleGroupHelpPrivateSettingsStart(message)) return;
+    if (await handleGroupHelpBotSettingsInput(message)) return;
     if (message.text?.startsWith('/') && (await handleCommand(message, values))) return;
     await sendCommunityMessage(BOT, chatId, values.telegramGroupHelpSupportMessage);
     return;

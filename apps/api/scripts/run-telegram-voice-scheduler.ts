@@ -49,6 +49,30 @@ function nativeGroupCallFromUpdates(
   };
 }
 
+type NativeGroupCallStatus = { id: string; scheduled: boolean };
+
+/**
+ * Telegram is authoritative. The webhook can be delayed, so never create or
+ * discard a group call based only on the database event status.
+ */
+async function currentTelegramGroupCall(
+  client: TelegramClient,
+  chatId: string
+): Promise<NativeGroupCallStatus | null> {
+  const peer = await client.getInputEntity(Number(chatId));
+  const full = await client.api.channels.getFullChannel({ channel: peer });
+  const inputCall = (full as { fullChat?: { call?: unknown } }).fullChat?.call;
+  if (!inputCall) return null;
+  const result = await client.api.phone.getGroupCall({ call: inputCall as never, limit: 1 });
+  const call = (
+    result as {
+      call?: { id?: string | number | bigint; scheduleDate?: number | null };
+    }
+  ).call;
+  if (call?.id == null) return null;
+  return { id: String(call.id), scheduled: Boolean(call.scheduleDate) };
+}
+
 async function expireMissedVoiceChats(client: TelegramClient, now: Date) {
   const cutoff = new Date(now.getTime() - MISSED_VOICE_CHAT_GRACE_MS);
   const missed = await prisma.telegramCommunityEvent.findMany({
@@ -60,6 +84,31 @@ async function expireMissedVoiceChats(client: TelegramClient, now: Date) {
     const key = { bot_chatId: { bot: STATE_BOT, chatId: event.chatId } };
     const state = await prisma.telegramCommunityState.findUnique({ where: key });
     const payload = statePayload(state?.payload);
+
+    let activeCall: NativeGroupCallStatus | null = null;
+    try {
+      activeCall = await currentTelegramGroupCall(client, event.chatId);
+    } catch (error) {
+      // Never risk ending a real call when Telegram state cannot be read.
+      console.warn(
+        `Could not verify Telegram voice chat state for ${event.chatId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+      continue;
+    }
+    if (
+      activeCall &&
+      !activeCall.scheduled &&
+      payload.eventId === event.id &&
+      payload.nativeCallId === activeCall.id
+    ) {
+      await prisma.telegramCommunityEvent.update({
+        where: { id: event.id },
+        data: { status: 'IN_PROGRESS' }
+      });
+      continue;
+    }
 
     // Only the native call belonging to this event may be discarded. A newer
     // event in the same group must never be affected.
@@ -129,6 +178,20 @@ async function main() {
     }
     for (const event of nextByChat.values()) {
       const key = { bot_chatId: { bot: STATE_BOT, chatId: event.chatId } };
+      try {
+        // A currently live or externally scheduled Telegram VC always wins.
+        // Do not create a duplicate based on a stale local state record.
+        if (await currentTelegramGroupCall(client, event.chatId)) continue;
+      } catch (error) {
+        // Failing safe is preferable to accidentally scheduling over a live
+        // community voice chat.
+        console.warn(
+          `Skipping voice scheduling for ${event.chatId}; current call state is unavailable: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+        continue;
+      }
       const state = await prisma.telegramCommunityState.findUnique({ where: key });
       const priorEventId = statePayload(state?.payload).eventId;
       if (priorEventId) {

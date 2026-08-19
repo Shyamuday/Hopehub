@@ -1,7 +1,10 @@
 import { prisma } from '../db.js';
 import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
 import { callCommunityTelegramApi } from './telegram-community-bots.client.js';
-import { addTelegramGroupWarning } from './telegram-community-bots.store.js';
+import {
+  addTelegramGroupWarning,
+  removeLatestTelegramGroupWarning
+} from './telegram-community-bots.store.js';
 import type { CommunityTelegramMessage } from './telegram-community-bots.types.js';
 import {
   applyGroupHelpMemberAction,
@@ -19,10 +22,13 @@ export async function handleGroupHelpStaffCommand(
   const command = (message.text || '').trim().split(/\s+/)[0].split('@')[0].toLowerCase();
   const chatId = String(message.chat.id);
   const parts = (message.text || '').trim().split(/\s+/);
-  const moderationCommand = /^\/(warn|delete|mute|unmute|ban|unban|kick)$/i.exec(command);
+  const moderationCommand =
+    /^\/(warn|unwarn|delete|mute|unmute|ban|unban|kick|delwarn|delmute|delban)$/i.exec(command);
   if (moderationCommand) {
     const commandName = moderationCommand[1].toLowerCase();
-    const requiredRole = ['mute', 'unmute', 'ban', 'unban', 'kick'].includes(commandName)
+    const requiredRole = ['mute', 'unmute', 'ban', 'unban', 'kick', 'delmute', 'delban'].includes(
+      commandName
+    )
       ? 'MODERATOR'
       : 'HELPER';
     if (!(await canUseGroupHelpCommand(message, values, `/${commandName}`, requiredRole)))
@@ -38,9 +44,24 @@ export async function handleGroupHelpStaffCommand(
       return true;
     }
     const reason = parts.slice(1).join(' ').trim() || `Manual ${commandName} by community staff`;
-    if (commandName === 'delete') {
+    const deleteFirst = ['delete', 'delwarn', 'delmute', 'delban'].includes(commandName);
+    const effectiveAction = commandName.replace(/^del/, '') || 'delete';
+    if (deleteFirst) {
       await deleteGroupHelpMessage(chatId, targetMessage.message_id).catch(() => null);
-    } else if (commandName === 'warn') {
+    }
+    if (effectiveAction === 'delete') {
+      // Deletion was already performed above.
+    } else if (effectiveAction === 'unwarn') {
+      const result = await removeLatestTelegramGroupWarning(chatId, String(target.id));
+      if (!result.removed) {
+        await sendTemporaryGroupHelpMessage(
+          chatId,
+          'This member has no recorded warnings to remove.',
+          values
+        );
+        return true;
+      }
+    } else if (effectiveAction === 'warn') {
       const warnings = await addTelegramGroupWarning({
         chatId,
         telegramUserId: String(target.id),
@@ -54,7 +75,7 @@ export async function handleGroupHelpStaffCommand(
           values.telegramGroupHelpWarnAction || 'mute'
         ).catch(() => null);
       }
-    } else if (commandName === 'unmute') {
+    } else if (effectiveAction === 'unmute') {
       const chat = await callCommunityTelegramApi<{ permissions?: Record<string, boolean> }>(
         GROUP_HELP_BOT_SLUG,
         'getChat',
@@ -69,7 +90,7 @@ export async function handleGroupHelpStaffCommand(
       await applyGroupHelpMemberAction(
         chatId,
         target.id,
-        commandName,
+        effectiveAction,
         Number(values.telegramGroupHelpMuteMinutes || 60)
       ).catch(() => null);
     }
@@ -77,11 +98,11 @@ export async function handleGroupHelpStaffCommand(
       values,
       { ...message, from: target, text: reason },
       reason,
-      commandName
+      effectiveAction
     );
     await sendTemporaryGroupHelpMessage(
       chatId,
-      `✅ ${commandName[0].toUpperCase()}${commandName.slice(1)} applied to ${target.first_name || 'this member'}.`,
+      `✅ ${effectiveAction[0].toUpperCase()}${effectiveAction.slice(1)} applied to ${target.first_name || 'this member'}.`,
       values
     );
     return true;
@@ -116,16 +137,22 @@ export async function handleGroupHelpStaffCommand(
       values
     );
   } else {
-    await prisma.telegramCommunityRoleAssignment.upsert({
-      where: { chatId_telegramUserId_role: { chatId, telegramUserId: String(target.id), role } },
-      create: {
-        chatId,
-        telegramUserId: String(target.id),
-        role,
-        assignedById: String(message.from.id)
-      },
-      update: { assignedById: String(message.from.id) }
-    });
+    const otherRole = role === 'MODERATOR' ? 'HELPER' : 'MODERATOR';
+    await prisma.$transaction([
+      prisma.telegramCommunityRoleAssignment.deleteMany({
+        where: { chatId, telegramUserId: String(target.id), role: otherRole }
+      }),
+      prisma.telegramCommunityRoleAssignment.upsert({
+        where: { chatId_telegramUserId_role: { chatId, telegramUserId: String(target.id), role } },
+        create: {
+          chatId,
+          telegramUserId: String(target.id),
+          role,
+          assignedById: String(message.from.id)
+        },
+        update: { assignedById: String(message.from.id) }
+      })
+    ]);
     await sendTemporaryGroupHelpMessage(
       chatId,
       `${target.first_name || 'This member'} is now a ${role.toLowerCase()}.`,

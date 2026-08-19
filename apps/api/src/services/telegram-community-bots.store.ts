@@ -251,6 +251,43 @@ export async function telegramGroupWarningCount(chatId: string, telegramUserId: 
   return Number((row?.payload as { count?: number } | null)?.count || 0);
 }
 
+export async function telegramGroupWarningDetails(chatId: string, telegramUserId: string) {
+  const row = await prisma.telegramCommunityState.findUnique({
+    where: { bot_chatId: { bot: `group-warnings:${chatId}`, chatId: telegramUserId } },
+    select: { payload: true }
+  });
+  const payload = (row?.payload || {}) as { count?: unknown; reasons?: unknown };
+  return {
+    count: Number(payload.count || 0),
+    reasons: Array.isArray(payload.reasons)
+      ? payload.reasons.map(String).filter(Boolean).slice(-5)
+      : []
+  };
+}
+
+/** Removes the newest recorded warning while preserving the older audit reasons. */
+export async function removeLatestTelegramGroupWarning(chatId: string, telegramUserId: string) {
+  const bot = `group-warnings:${chatId}`;
+  const row = await prisma.telegramCommunityState.findUnique({
+    where: { bot_chatId: { bot, chatId: telegramUserId } },
+    select: { payload: true, expiresAt: true }
+  });
+  const payload = (row?.payload || {}) as { count?: unknown; reasons?: unknown };
+  const count = Math.max(0, Number(payload.count || 0) - 1);
+  const reasons = Array.isArray(payload.reasons)
+    ? payload.reasons.map(String).filter(Boolean).slice(0, -1)
+    : [];
+  if (!row || count === 0) {
+    await prisma.telegramCommunityState.deleteMany({ where: { bot, chatId: telegramUserId } });
+    return { count: 0, removed: Boolean(row) };
+  }
+  await prisma.telegramCommunityState.update({
+    where: { bot_chatId: { bot, chatId: telegramUserId } },
+    data: { payload: { count, reasons }, expiresAt: row.expiresAt }
+  });
+  return { count, removed: true };
+}
+
 export async function clearTelegramGroupWarnings(chatId: string, telegramUserId: string) {
   return prisma.telegramCommunityState.deleteMany({
     where: {
