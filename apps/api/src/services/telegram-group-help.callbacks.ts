@@ -31,7 +31,11 @@ export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
           ? 'This action is no longer available.'
           : moderationAction === 'repost'
             ? 'Message reposted in the group.'
-            : `${moderationAction[0].toUpperCase()}${moderationAction.slice(1)} completed.`;
+            : moderationAction === 'allowphrase'
+              ? 'Phrase allowed in this group going forward.'
+              : moderationAction === 'blockphrase'
+                ? 'Phrase will be blocked in this group going forward.'
+                : `${moderationAction[0].toUpperCase()}${moderationAction.slice(1)} completed.`;
     await answerCommunityCallback(GROUP_HELP_BOT_SLUG, callback.id, notice);
     return true;
   }

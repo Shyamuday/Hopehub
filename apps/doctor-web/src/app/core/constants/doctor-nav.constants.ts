@@ -129,6 +129,7 @@ function buildDoctorNav(
         icon: DOCTOR_NAV_ICONS['More'].icon,
         shortLabel: DOCTOR_NAV_ICONS['More'].shortLabel,
         enabled: true,
+        defaultExpanded: true,
         children: [
           {
             id: 'feedback',
@@ -336,6 +337,7 @@ function buildDoctorNav(
         icon: DOCTOR_NAV_ICONS['More'].icon,
         shortLabel: DOCTOR_NAV_ICONS['More'].shortLabel,
         enabled: true,
+        defaultExpanded: true,
         children: moreChildren,
       }
     : null;

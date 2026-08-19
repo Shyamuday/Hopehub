@@ -1,6 +1,9 @@
 <main class="professional-page pb-28 sm:pb-0">
   <div class="container mx-auto px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
-    <a [routerLink]="ROUTES.links.careTeam" class="mb-6 inline-flex text-sm font-semibold text-primary-700 hover:text-primary-800">
+    <a
+      [routerLink]="ROUTES.links.careTeam"
+      class="mb-6 inline-flex text-sm font-semibold text-primary-700 hover:text-primary-800"
+    >
       Back to care team
     </a>
 
@@ -11,7 +14,11 @@
         <div class="grid grid-cols-1 lg:grid-cols-[320px_1fr]">
           <div class="bg-primary-50 p-6">
             @if (providerImageUrl(p); as imageUrl) {
-              <img [src]="imageUrl" [alt]="p.name" class="h-48 w-48 rounded-full object-cover shadow-sm" />
+              <img
+                [src]="imageUrl"
+                [alt]="p.name"
+                class="h-48 w-48 rounded-full object-cover shadow-sm"
+              />
             }
             <div class="mt-6 space-y-2 text-sm text-primary-950">
               <span
@@ -21,7 +28,9 @@
                 {{ providerTierLabel(p) }}
               </span>
               @if (p.isScreenedListener) {
-                <span class="inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200">
+                <span
+                  class="inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200"
+                >
                   {{ p.listenerTrustLabel || 'Screened emotional support listener' }}
                 </span>
               }
@@ -35,35 +44,26 @@
               @if (p.yearsOfExperience) {
                 <p>{{ p.yearsOfExperience }}+ years experience</p>
               }
-              <button
-                type="button"
-                class="pt-1 text-left text-sm font-semibold text-primary-700 hover:text-primary-800"
-                (click)="toggleProfileDetails()"
-              >
-                {{ showProfileDetails() ? 'Hide profile details' : 'View profile details' }}
-              </button>
-              @if (showProfileDetails()) {
-                <div class="space-y-2 border-t border-primary-100 pt-3 text-xs leading-5">
-              @if (p.qualifications?.length) {
-                <p>{{ p.qualifications!.join(', ') }}</p>
-              }
-              @if (p.qualifiedFrom) {
-                <p>Qualified from: {{ p.qualifiedFrom }}</p>
-              }
-              @if (p.department) {
-                <p>{{ p.department }}</p>
-              }
-              @if (p.licenseNumber || p.licenseCouncil) {
-                <p>{{ p.licenseCouncil }}: {{ p.licenseNumber }}</p>
-              }
-              @if (genderLabel(p)) {
-                <p>Gender: {{ genderLabel(p) }}</p>
-              }
-              @if (p.sessionDurationMinutes) {
-                <p>{{ p.sessionDurationMinutes }} min · {{ sessionLabel(p) }}</p>
-              }
-                </div>
-              }
+              <div class="space-y-2 border-t border-primary-100 pt-3 text-xs leading-5">
+                @if (p.qualifications?.length) {
+                  <p>{{ p.qualifications!.join(', ') }}</p>
+                }
+                @if (p.qualifiedFrom) {
+                  <p>Qualified from: {{ p.qualifiedFrom }}</p>
+                }
+                @if (p.department) {
+                  <p>{{ p.department }}</p>
+                }
+                @if (p.licenseNumber || p.licenseCouncil) {
+                  <p>{{ p.licenseCouncil }}: {{ p.licenseNumber }}</p>
+                }
+                @if (genderLabel(p)) {
+                  <p>Gender: {{ genderLabel(p) }}</p>
+                }
+                @if (p.sessionDurationMinutes) {
+                  <p>{{ p.sessionDurationMinutes }} min · {{ sessionLabel(p) }}</p>
+                }
+              </div>
             </div>
           </div>
 
@@ -77,59 +77,30 @@
             </span>
             @if (p.ratingSummary?.ratingCount) {
               <p class="mt-3 text-sm font-semibold text-amber-700">
-                ★ {{ p.ratingSummary?.averageRating }} out of 5 · {{ p.ratingSummary?.ratingCount }}
-                verified session {{ p.ratingSummary?.ratingCount === 1 ? 'rating' : 'ratings' }}
+                ★ {{ p.ratingSummary?.averageRating }} out of 5 ·
+                {{ p.ratingSummary?.ratingCount }} verified session
+                {{ p.ratingSummary?.ratingCount === 1 ? 'rating' : 'ratings' }}
               </p>
             }
             <app-button type="button" class="mt-4 block" (click)="book(p)">
               {{ bookingCta(p) }}
             </app-button>
-            <details class="mt-4 rounded-md border border-gray-200 bg-gray-50 px-4 py-3">
-              <summary class="cursor-pointer text-sm font-semibold text-primary-700">About {{ p.name }}</summary>
-            <div class="mt-4 max-w-3xl">
-              <div
-                class="relative overflow-hidden text-base leading-7 text-gray-700 whitespace-pre-line"
-                [class.max-h-44]="textIsLong(p.bio) && !expandedBio()"
-              >
-                {{ p.bio }}
-                @if (textIsLong(p.bio) && !expandedBio()) {
-                  <div class="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-white to-transparent"></div>
+            @if (p.bio || p.counsellingApproach) {
+              <section class="mt-4 rounded-md border border-gray-200 bg-gray-50 px-4 py-4">
+                @if (p.bio) {
+                  <h2 class="text-sm font-semibold text-primary-700">About {{ p.name }}</h2>
+                  <div class="mt-3 max-w-3xl whitespace-pre-line text-base leading-7 text-gray-700">
+                    {{ p.bio }}
+                  </div>
                 }
-              </div>
-              @if (textIsLong(p.bio)) {
-                <button
-                  type="button"
-                  class="mt-3 text-sm font-semibold text-primary-700 hover:text-primary-800"
-                  (click)="toggleBio()"
-                >
-                  {{ expandedBio() ? 'Show less' : 'See more' }}
-                </button>
-              }
-            </div>
-            @if (p.counsellingApproach) {
-              <div class="mt-5 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm leading-6 text-gray-700">
-                <strong class="text-gray-900">{{ p.introSessionTitle }}</strong>
-                <div
-                  class="relative mt-2 overflow-hidden whitespace-pre-line"
-                  [class.max-h-28]="textIsLong(p.counsellingApproach) && !expandedApproach()"
-                >
-                  {{ p.counsellingApproach }}
-                  @if (textIsLong(p.counsellingApproach) && !expandedApproach()) {
-                    <div class="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-gray-50 to-transparent"></div>
-                  }
-                </div>
-                @if (textIsLong(p.counsellingApproach)) {
-                  <button
-                    type="button"
-                    class="mt-3 text-sm font-semibold text-primary-700 hover:text-primary-800"
-                    (click)="toggleApproach()"
-                  >
-                    {{ expandedApproach() ? 'Show less' : 'See more' }}
-                  </button>
+                @if (p.counsellingApproach) {
+                  <div class="mt-5 text-sm leading-6 text-gray-700">
+                    <strong class="text-gray-900">{{ p.introSessionTitle }}</strong>
+                    <div class="mt-2 whitespace-pre-line">{{ p.counsellingApproach }}</div>
+                  </div>
                 }
-              </div>
+              </section>
             }
-            </details>
           </div>
         </div>
       </section>
@@ -154,15 +125,23 @@
                 <p class="mt-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
                   Private support session
                 </p>
-                <div class="mt-2 flex flex-wrap items-center gap-2 text-sm font-semibold text-primary-800">
+                <div
+                  class="mt-2 flex flex-wrap items-center gap-2 text-sm font-semibold text-primary-800"
+                >
                   @if (serviceHasActiveFirstOffer(service)) {
-                    <span class="rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-800">First-session offer</span>
-                    <span class="text-gray-400 line-through">{{ regularServicePriceLabel(service) }}</span>
+                    <span class="rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-800"
+                      >First-session offer</span
+                    >
+                    <span class="text-gray-400 line-through">{{
+                      regularServicePriceLabel(service)
+                    }}</span>
                   }
                   <span>{{ servicePriceLabel(service) }}</span>
                 </div>
                 @if (serviceHasActiveFirstOffer(service) && service.offerBookingLimit) {
-                  <p class="mt-1 text-xs font-medium text-emerald-800">Limited to the first {{ service.offerBookingLimit }} bookings.</p>
+                  <p class="mt-1 text-xs font-medium text-emerald-800">
+                    Limited to the first {{ service.offerBookingLimit }} bookings.
+                  </p>
                 }
                 <app-button
                   type="button"
@@ -179,98 +158,94 @@
         </section>
       }
 
-      <details class="mt-6 rounded-lg border border-gray-200 bg-white p-4">
-        <summary class="cursor-pointer text-sm font-semibold text-primary-700">Provider details and support scope</summary>
-      <section class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <article class="rounded-lg border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
-          <h2 class="text-lg font-semibold text-emerald-950">Best for</h2>
-          <div class="mt-4 flex flex-wrap gap-2">
-            @for (item of providerBestFor(p); track item) {
-              <span class="rounded-md bg-white px-3 py-1 text-xs font-semibold text-emerald-800">{{ item }}</span>
-            }
-          </div>
-        </article>
+      <section class="mt-6 rounded-lg border border-gray-200 bg-white p-4">
+        <h2 class="text-lg font-semibold text-gray-900">Provider details and support scope</h2>
+        <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <article class="rounded-lg border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
+            <h2 class="text-lg font-semibold text-emerald-950">Best for</h2>
+            <div class="mt-4 flex flex-wrap gap-2">
+              @for (item of providerBestFor(p); track item) {
+                <span
+                  class="rounded-md bg-white px-3 py-1 text-xs font-semibold text-emerald-800"
+                  >{{ item }}</span
+                >
+              }
+            </div>
+          </article>
 
-        <article class="rounded-lg border border-amber-200 bg-amber-50 p-5 shadow-sm">
-          <h2 class="text-lg font-semibold text-amber-950">Not for</h2>
-          <div class="mt-4 flex flex-wrap gap-2">
-            @for (item of providerNotFor(p); track item) {
-              <span class="rounded-md bg-white px-3 py-1 text-xs font-semibold text-amber-900">{{ item }}</span>
-            }
-          </div>
-        </article>
+          <article class="rounded-lg border border-amber-200 bg-amber-50 p-5 shadow-sm">
+            <h2 class="text-lg font-semibold text-amber-950">Not for</h2>
+            <div class="mt-4 flex flex-wrap gap-2">
+              @for (item of providerNotFor(p); track item) {
+                <span class="rounded-md bg-white px-3 py-1 text-xs font-semibold text-amber-900">{{
+                  item
+                }}</span>
+              }
+            </div>
+          </article>
 
-        <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-          <h2 class="text-lg font-semibold text-gray-900">Concerns handled</h2>
-          <div class="mt-4 flex flex-wrap gap-2">
-            @for (item of visibleItems('concerns', p.concernsHandled); track item) {
-              <span class="rounded-md bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-700">{{ item }}</span>
-            }
-          </div>
-          @if (hiddenItemCount('concerns', p.concernsHandled)) {
-            <button type="button" class="mt-4 text-sm font-semibold text-primary-700 hover:text-primary-800" (click)="toggleSection('concerns')">
-              See {{ hiddenItemCount('concerns', p.concernsHandled) }} more
-            </button>
-          } @else if (expandedSections()['concerns']) {
-            <button type="button" class="mt-4 text-sm font-semibold text-primary-700 hover:text-primary-800" (click)="toggleSection('concerns')">
-              Show less
-            </button>
-          }
-        </article>
+          <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+            <h2 class="text-lg font-semibold text-gray-900">Concerns handled</h2>
+            <div class="mt-4 flex flex-wrap gap-2">
+              @for (item of listOrEmpty(p.concernsHandled); track item) {
+                <span
+                  class="rounded-md bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-700"
+                  >{{ item }}</span
+                >
+              }
+            </div>
+          </article>
 
-        <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-          <h2 class="text-lg font-semibold text-gray-900">Session style</h2>
-          <div class="mt-4 flex flex-wrap gap-2">
-            @for (item of visibleItems('sessions', p.sessionTypes); track item) {
-              <span class="rounded-md bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">{{ item }}</span>
+          <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+            <h2 class="text-lg font-semibold text-gray-900">Session style</h2>
+            <div class="mt-4 flex flex-wrap gap-2">
+              @for (item of listOrEmpty(p.sessionTypes); track item) {
+                <span
+                  class="rounded-md bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700"
+                  >{{ item }}</span
+                >
+              }
+            </div>
+            @if (p.ageGroups?.length) {
+              <p class="mt-4 text-sm leading-6 text-gray-600">
+                <strong>Age groups:</strong> {{ p.ageGroups!.join(', ') }}
+              </p>
             }
-          </div>
-          @if (hiddenItemCount('sessions', p.sessionTypes)) {
-            <button type="button" class="mt-4 text-sm font-semibold text-primary-700 hover:text-primary-800" (click)="toggleSection('sessions')">
-              See {{ hiddenItemCount('sessions', p.sessionTypes) }} more
-            </button>
-          } @else if (expandedSections()['sessions']) {
-            <button type="button" class="mt-4 text-sm font-semibold text-primary-700 hover:text-primary-800" (click)="toggleSection('sessions')">
-              Show less
-            </button>
-          }
-          @if (p.ageGroups?.length) {
-            <p class="mt-4 text-sm leading-6 text-gray-600">
-              <strong>Age groups:</strong> {{ p.ageGroups!.join(', ') }}
-            </p>
-          }
-        </article>
+          </article>
 
-        <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-          <h2 class="text-lg font-semibold text-gray-900">Methods and language</h2>
-          <div class="mt-4 space-y-3 text-sm leading-6 text-gray-700">
-            <p><strong>Modalities:</strong> {{ visibleItems('modalities', p.modalities, 4).join(', ') }}</p>
-            @if (hiddenItemCount('modalities', p.modalities, 4)) {
-              <button type="button" class="text-sm font-semibold text-primary-700 hover:text-primary-800" (click)="toggleSection('modalities')">
-                See {{ hiddenItemCount('modalities', p.modalities, 4) }} more methods
-              </button>
-            } @else if (expandedSections()['modalities']) {
-              <button type="button" class="text-sm font-semibold text-primary-700 hover:text-primary-800" (click)="toggleSection('modalities')">
-                Show less
-              </button>
-            }
-            <p><strong>Languages:</strong> {{ listOrEmpty(p.languages).join(', ') || 'Not listed' }}</p>
-          </div>
-        </article>
+          <article class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
+            <h2 class="text-lg font-semibold text-gray-900">Methods and language</h2>
+            <div class="mt-4 space-y-3 text-sm leading-6 text-gray-700">
+              <p>
+                <strong>Modalities:</strong>
+                {{ listOrEmpty(p.modalities).join(', ') || 'Not listed' }}
+              </p>
+              <p>
+                <strong>Languages:</strong>
+                {{ listOrEmpty(p.languages).join(', ') || 'Not listed' }}
+              </p>
+            </div>
+          </article>
+        </div>
       </section>
-      </details>
 
       @if (p.safetyEscalationNote) {
-        <section class="mt-8 rounded-lg border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950">
+        <section
+          class="mt-8 rounded-lg border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-950"
+        >
           {{ p.safetyEscalationNote }}
         </section>
       }
 
-      <div class="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 px-3 py-2 shadow-[0_-12px_30px_rgba(15,23,42,0.12)] backdrop-blur sm:hidden">
+      <div
+        class="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 px-3 py-2 shadow-[0_-12px_30px_rgba(15,23,42,0.12)] backdrop-blur sm:hidden"
+      >
         <app-button type="button" block (click)="book(p)">{{ bookingCta(p) }}</app-button>
       </div>
     } @else {
-      <div class="rounded-lg border border-red-200 bg-red-50 p-6 text-red-700">{{ error() || 'Care team profile not found.' }}</div>
+      <div class="rounded-lg border border-red-200 bg-red-50 p-6 text-red-700">
+        {{ error() || 'Care team profile not found.' }}
+      </div>
     }
   </div>
 </main>

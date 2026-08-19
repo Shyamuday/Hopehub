@@ -53,10 +53,6 @@ export class PsychologistDetailComponent implements OnInit {
   readonly provider = signal<HopeHubProvider | null>(null);
   readonly loading = signal(false);
   readonly error = signal('');
-  readonly expandedBio = signal(false);
-  readonly expandedApproach = signal(false);
-  readonly expandedSections = signal<Record<string, boolean>>({});
-  readonly showProfileDetails = signal(false);
   readonly ROUTES = CONSUMER_ROUTES;
   readonly concernFlows =
     signal<Record<ConsumerConcernKey, ConsumerConcernFlow>>(CONSUMER_CONCERN_FLOWS);
@@ -77,10 +73,6 @@ export class PsychologistDetailComponent implements OnInit {
     this.booking.provider(id).subscribe({
       next: ({ provider }) => {
         this.provider.set(provider);
-        this.expandedBio.set(false);
-        this.expandedApproach.set(false);
-        this.expandedSections.set({});
-        this.showProfileDetails.set(false);
         this.loading.set(false);
       },
       error: () => {
@@ -277,39 +269,6 @@ export class PsychologistDetailComponent implements OnInit {
 
   listOrEmpty(items: string[] | undefined) {
     return items ?? [];
-  }
-
-  textIsLong(value: string | null | undefined): boolean {
-    return (value?.trim().length ?? 0) > 360;
-  }
-
-  toggleBio(): void {
-    this.expandedBio.update((value) => !value);
-  }
-
-  toggleApproach(): void {
-    this.expandedApproach.update((value) => !value);
-  }
-
-  toggleProfileDetails(): void {
-    this.showProfileDetails.update((visible) => !visible);
-  }
-
-  visibleItems(key: string, items: string[] | undefined, limit = 6): string[] {
-    const list = this.listOrEmpty(items);
-    return this.expandedSections()[key] ? list : list.slice(0, limit);
-  }
-
-  hiddenItemCount(key: string, items: string[] | undefined, limit = 6): number {
-    const list = this.listOrEmpty(items);
-    return this.expandedSections()[key] ? 0 : Math.max(0, list.length - limit);
-  }
-
-  toggleSection(key: string): void {
-    this.expandedSections.update((sections) => ({
-      ...sections,
-      [key]: !sections[key],
-    }));
   }
 
   availabilityLabel(provider: HopeHubProvider): string {

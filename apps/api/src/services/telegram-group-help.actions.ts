@@ -1,16 +1,50 @@
+import { randomUUID } from 'node:crypto';
 import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
+import { prisma } from '../db.js';
 import {
   callCommunityTelegramApi,
   sendCommunityMessage
 } from './telegram-community-bots.client.js';
-import { scheduleCommunityMessageCleanup } from './telegram-community-bots.store.js';
-import { removeLatestTelegramGroupWarning } from './telegram-community-bots.store.js';
+import {
+  getTelegramCommunityGroupPolicy,
+  saveTelegramCommunityGroupPolicy
+} from './telegram-community-group-policy.js';
+import { bannedPhrases, groupHelpConfig } from './telegram-group-help.config.js';
+import {
+  removeLatestTelegramGroupWarning,
+  scheduleCommunityMessageCleanup
+} from './telegram-community-bots.store.js';
 import type {
   CommunityTelegramMessage,
   CommunityTelegramUpdate
 } from './telegram-community-bots.types.js';
 
 const MODERATION_ACTION_STATE = 'group-moderation-action';
+
+function blockedPhraseFromReason(reason: string) {
+  return /^blocked phrase:\s*[“"](.+?)[”"]\s*$/i.exec(reason.trim())?.[1]?.trim() || null;
+}
+
+async function updateBlockedPhraseForGroup(input: {
+  chatId: string;
+  phrase: string;
+  shouldBlock: boolean;
+}) {
+  const [values, policy] = await Promise.all([
+    groupHelpConfig(input.chatId),
+    getTelegramCommunityGroupPolicy(input.chatId)
+  ]);
+  const normalizedPhrase = input.phrase.normalize('NFKC').toLocaleLowerCase().trim();
+  const current = bannedPhrases(values.telegramGroupHelpBannedWords || '');
+  const withoutPhrase = current.filter(
+    (candidate) => candidate.normalize('NFKC').toLocaleLowerCase().trim() !== normalizedPhrase
+  );
+  const next = input.shouldBlock ? [...withoutPhrase, input.phrase.trim()] : withoutPhrase;
+  await saveTelegramCommunityGroupPolicy(input.chatId, {
+    ...policy,
+    telegramGroupHelpBannedWords: next.join('\n')
+  });
+}
 
 export async function sendModerationLog(
   values: Record<string, string>,
@@ -48,6 +82,8 @@ export async function sendModerationLog(
   const actionId = randomUUID();
   const normalizedAction = action.toLowerCase();
   const buttons = [] as Array<{ text: string; callback_data: string }>;
+  const phraseButtons = [] as Array<{ text: string; callback_data: string }>;
+  const blockedPhrase = blockedPhraseFromReason(reason);
   if (message.from && ['mute', 'warn'].includes(normalizedAction)) {
     buttons.push({
       text: normalizedAction === 'mute' ? 'Unmute member' : 'Remove warning',
@@ -60,7 +96,19 @@ export async function sendModerationLog(
   if (rawText) {
     buttons.push({ text: 'Repost text', callback_data: `hh_mod:${actionId}:repost` });
   }
-  if (buttons.length) {
+  if (blockedPhrase) {
+    phraseButtons.push(
+      {
+        text: 'Allow phrase in future',
+        callback_data: `hh_mod:${actionId}:allowphrase`
+      },
+      {
+        text: 'Block phrase in future',
+        callback_data: `hh_mod:${actionId}:blockphrase`
+      }
+    );
+  }
+  if (buttons.length || phraseButtons.length) {
     await prisma.telegramCommunityState.create({
       data: {
         bot: MODERATION_ACTION_STATE,
@@ -69,9 +117,12 @@ export async function sendModerationLog(
         payload: {
           targetChatId: String(message.chat.id),
           targetUserId: message.from ? String(message.from.id) : null,
+          targetUserName: message.from?.first_name?.trim() || null,
+          targetUsername: message.from?.username?.trim() || null,
           text: rawText || null,
           messageThreadId: message.message_thread_id || null,
-          action: normalizedAction
+          action: normalizedAction,
+          blockedPhrase
         },
         expiresAt: new Date(Date.now() + 24 * 60 * 60_000)
       }
@@ -90,7 +141,9 @@ export async function sendModerationLog(
       `Content: ${media || 'text'} · ${rawText.length} character${rawText.length === 1 ? '' : 's'}`,
       `Text: ${preview}`
     ].join('\n'),
-    buttons.length ? { reply_markup: { inline_keyboard: [buttons] } } : undefined
+    buttons.length || phraseButtons.length
+      ? { reply_markup: { inline_keyboard: [buttons, phraseButtons].filter((row) => row.length) } }
+      : undefined
   ).catch(() => null);
 }
 
@@ -108,8 +161,11 @@ export async function handleGroupHelpModerationActionCallback(update: CommunityT
   const payload = (state.payload || {}) as {
     targetChatId?: string;
     targetUserId?: string | null;
+    targetUserName?: string | null;
+    targetUsername?: string | null;
     text?: string | null;
     messageThreadId?: number | null;
+    blockedPhrase?: string | null;
   };
   if (!payload.targetChatId) return 'expired';
   const membership = await callCommunityTelegramApi<{ status?: string }>(
@@ -140,12 +196,28 @@ export async function handleGroupHelpModerationActionCallback(update: CommunityT
   } else if (requestedAction === 'unwarn' && payload.targetUserId) {
     await removeLatestTelegramGroupWarning(payload.targetChatId, payload.targetUserId);
   } else if (requestedAction === 'repost' && payload.text) {
+    const originalSender = [
+      payload.targetUserName || 'Telegram member',
+      payload.targetUsername ? `(@${payload.targetUsername.replace(/^@/, '')})` : '',
+      payload.targetUserId ? `· Telegram ID: ${payload.targetUserId}` : ''
+    ]
+      .filter(Boolean)
+      .join(' ');
     await sendCommunityMessage(
       GROUP_HELP_BOT_SLUG,
       payload.targetChatId,
-      `Restored by a community administrator:\n\n${payload.text}`,
+      `Reposted by a community administrator\nOriginal sender: ${originalSender}\n\n${payload.text}`,
       payload.messageThreadId ? { message_thread_id: payload.messageThreadId } : undefined
     );
+  } else if (
+    (requestedAction === 'allowphrase' || requestedAction === 'blockphrase') &&
+    payload.blockedPhrase
+  ) {
+    await updateBlockedPhraseForGroup({
+      chatId: payload.targetChatId,
+      phrase: payload.blockedPhrase,
+      shouldBlock: requestedAction === 'blockphrase'
+    });
   } else {
     return 'expired';
   }
@@ -237,5 +309,3 @@ export async function applyGroupHelpMemberAction(
     });
   }
 }
-import { randomUUID } from 'node:crypto';
-import { prisma } from '../db.js';
