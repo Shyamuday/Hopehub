@@ -166,6 +166,7 @@ model CareTeamService {
   pricingMode              CareTeamServicePricingMode @default(FIXED)
   priceInPaise             Int                        @default(0)
   firstSessionPriceInPaise Int?
+  offerEndsAt              DateTime?
   followUpPriceInPaise     Int?
   introSessionLimit        Int                        @default(1)
   packageSessionCount      Int?

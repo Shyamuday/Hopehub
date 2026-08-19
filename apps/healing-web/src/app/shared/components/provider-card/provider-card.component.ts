@@ -153,4 +153,30 @@ export class ProviderCardComponent {
     if (this.provider?.acceptsVideoCall !== false) return 'video';
     return 'book';
   }
+
+  primaryService() {
+    return this.provider?.services?.[0] ?? null;
+  }
+
+  servicePriceLabel(): string {
+    const service = this.primaryService();
+    if (!service) return '';
+    if (service.pricingLabel) return service.pricingLabel;
+    const amount = service.effectivePriceInPaise ?? service.priceInPaise;
+    return amount <= 0 ? 'Free' : `From ₹${Math.round(amount / 100)}`;
+  }
+
+  hasActiveFirstSessionOffer(): boolean {
+    const service = this.primaryService();
+    return Boolean(
+      service?.pricingRule === 'DISCOUNTED_FIRST' &&
+      service.effectivePriceInPaise != null &&
+      service.effectivePriceInPaise < service.priceInPaise,
+    );
+  }
+
+  regularPriceLabel(): string {
+    const service = this.primaryService();
+    return service?.priceInPaise ? `₹${Math.round(service.priceInPaise / 100)}` : '';
+  }
 }

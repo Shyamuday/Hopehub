@@ -259,6 +259,22 @@ export class PsychologistDetailComponent implements OnInit {
     return service.isFree || amount === 0 ? 'Free' : `₹${amount / 100}`;
   }
 
+  serviceHasActiveFirstOffer(service: {
+    priceInPaise: number;
+    effectivePriceInPaise?: number;
+    pricingRule?: string;
+  }): boolean {
+    return Boolean(
+      service.pricingRule === 'DISCOUNTED_FIRST' &&
+      service.effectivePriceInPaise != null &&
+      service.effectivePriceInPaise < service.priceInPaise,
+    );
+  }
+
+  regularServicePriceLabel(service: { priceInPaise: number }): string {
+    return service.priceInPaise > 0 ? `₹${Math.round(service.priceInPaise / 100)}` : '';
+  }
+
   listOrEmpty(items: string[] | undefined) {
     return items ?? [];
   }

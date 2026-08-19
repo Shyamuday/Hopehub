@@ -627,6 +627,7 @@ type CareTeamServicePricingInput = {
   pricingMode: CareTeamServicePricingMode;
   priceInPaise: number;
   firstSessionPriceInPaise: number | null;
+  offerEndsAt: Date | null;
   followUpPriceInPaise: number | null;
   introSessionLimit: number;
   packageSessionCount: number | null;
@@ -653,6 +654,7 @@ function careTeamServicePricingPreview(service: CareTeamServicePricingInput, pre
   const pricePerMinute = Math.max(0, service.pricePerMinuteInPaise ?? 0);
   const perMinutePrice = billableMinutes * pricePerMinute;
   const introAvailable = previousUseCount < introLimit;
+  const offerActive = !service.offerEndsAt || service.offerEndsAt.getTime() > Date.now();
 
   switch (service.pricingMode) {
     case CareTeamServicePricingMode.FREE_VOLUNTEER:
@@ -673,11 +675,12 @@ function careTeamServicePricingPreview(service: CareTeamServicePricingInput, pre
       };
     case CareTeamServicePricingMode.DISCOUNTED_FIRST:
       return {
-        amountInPaise: introAvailable ? firstPrice : followUpPrice,
-        label: introAvailable
-          ? `First session ${rupeeLabel(firstPrice)}, then ${rupeeLabel(followUpPrice)}`
-          : `Follow-up ${rupeeLabel(followUpPrice)}`,
-        appliedRule: introAvailable ? 'DISCOUNTED_FIRST' : 'FOLLOW_UP_PRICE',
+        amountInPaise: introAvailable && offerActive ? firstPrice : followUpPrice,
+        label:
+          introAvailable && offerActive
+            ? `First session ${rupeeLabel(firstPrice)}, then ${rupeeLabel(followUpPrice)}`
+            : `Follow-up ${rupeeLabel(followUpPrice)}`,
+        appliedRule: introAvailable && offerActive ? 'DISCOUNTED_FIRST' : 'FOLLOW_UP_PRICE',
         sessionCount: 1
       };
     case CareTeamServicePricingMode.PACKAGE:
@@ -810,6 +813,7 @@ function careTeamServiceSelect() {
     pricingMode: true,
     priceInPaise: true,
     firstSessionPriceInPaise: true,
+    offerEndsAt: true,
     followUpPriceInPaise: true,
     introSessionLimit: true,
     packageSessionCount: true,
@@ -983,6 +987,7 @@ function providerPublicPayload(
         pricingMode: CareTeamServicePricingMode;
         priceInPaise: number;
         firstSessionPriceInPaise: number | null;
+        offerEndsAt: Date | null;
         followUpPriceInPaise: number | null;
         introSessionLimit: number;
         packageSessionCount: number | null;
@@ -1740,6 +1745,7 @@ async function activeHopeHubProviders(params: {
                 pricingMode: true,
                 priceInPaise: true,
                 firstSessionPriceInPaise: true,
+                offerEndsAt: true,
                 followUpPriceInPaise: true,
                 introSessionLimit: true,
                 packageSessionCount: true,
@@ -2964,6 +2970,7 @@ hopeHubRouter.get(
                 pricingMode: true,
                 priceInPaise: true,
                 firstSessionPriceInPaise: true,
+                offerEndsAt: true,
                 followUpPriceInPaise: true,
                 introSessionLimit: true,
                 packageSessionCount: true,

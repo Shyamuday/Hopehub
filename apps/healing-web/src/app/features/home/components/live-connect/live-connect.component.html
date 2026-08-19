@@ -56,6 +56,14 @@
                   <span>✨ {{ providerFocusLabel(provider) }}</span>
                 </div>
 
+                <div class="live-provider-card__price">
+                  @if (hasLiveFirstSessionOffer(provider)) {
+                    <span class="live-provider-card__offer">First-session offer</span>
+                    <span class="live-provider-card__regular-price">{{ liveRegularPriceLabel(provider) }}</span>
+                  }
+                  <span>{{ livePriceLabel(provider) }}</span>
+                </div>
+
                 <app-button
                   type="button"
                   class="mt-5"

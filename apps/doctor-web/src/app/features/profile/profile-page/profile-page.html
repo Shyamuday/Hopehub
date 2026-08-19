@@ -424,7 +424,7 @@
               />
               <div class="template-row">
                 <select #serviceTemplate>
-                  <option value="">Choose ready plan</option>
+                  <option value="">Choose a ready plan (optional)</option>
                   @for (template of pricingTemplatesForRole(service.providerRole); track template.id) {
                     <option [value]="template.id">{{ template.title }}</option>
                   }
@@ -433,8 +433,54 @@
                   Use plan
                 </button>
               </div>
+              <p class="service-editor-note">
+                A ready plan is only a starting point. Change the price or duration below, or create
+                a completely custom service.
+              </p>
+              <div class="service-core-fields">
+                @if (
+                  service.pricingMode !== 'FREE_VOLUNTEER' &&
+                  service.pricingMode !== 'PER_MINUTE'
+                ) {
+                  <label>
+                    Session price (₹)
+                    <input
+                      type="number"
+                      min="0"
+                      [value]="rupees(service.priceInPaise)"
+                      placeholder="500"
+                      (input)="updateCareService($index, 'priceInPaise', $any($event.target).value)"
+                    />
+                  </label>
+                }
+                <label>
+                  Duration
+                  <select
+                    [value]="durationChoice($index, service)"
+                    (change)="setCareServiceDuration($index, $any($event.target).value)"
+                  >
+                    @for (minutes of commonServiceDurations; track minutes) {
+                      <option [value]="minutes">{{ minutes }} minutes</option>
+                    }
+                    <option value="custom">Custom duration</option>
+                  </select>
+                </label>
+                @if (durationChoice($index, service) === 'custom') {
+                  <label>
+                    Custom minutes
+                    <input
+                      type="number"
+                      min="5"
+                      max="240"
+                      [value]="service.durationMinutes || 30"
+                      placeholder="45"
+                      (input)="updateCareService($index, 'durationMinutes', $any($event.target).value)"
+                    />
+                  </label>
+                }
+              </div>
               <details class="advanced-service-settings">
-                <summary>Price, duration and details</summary>
+                <summary>More pricing options and details</summary>
                 <div>
                   <label>Pricing</label>
                   <select
@@ -445,27 +491,40 @@
                       <option [value]="mode.value">{{ mode.label }}</option>
                     }
                   </select>
-                  @if (
-                    service.pricingMode !== 'FREE_VOLUNTEER' &&
-                    service.pricingMode !== 'PER_MINUTE'
-                  ) {
-                    <label>Session price</label>
+                  @if (showFirstPrice(service)) {
+                    <label>
+                      Offer discount (%)
+                      <input
+                        type="number"
+                        min="1"
+                        max="99"
+                        [value]="offerDiscountPercent(service)"
+                        placeholder="30"
+                        (input)="setCareServiceOfferDiscount($index, $any($event.target).value)"
+                      />
+                    </label>
+                    <small class="service-offer-preview">
+                      First session: ₹{{ rupees(service.firstSessionPriceInPaise) || '0' }}
+                      <span>from ₹{{ rupees(service.priceInPaise) || '0' }}</span>
+                    </small>
+                    <small class="service-payout-preview">
+                      Your estimated share: ₹{{ rupees(estimatedPayoutInPaise(service.firstSessionPriceInPaise)) }}
+                      ({{ consultationSharePercent }}%, before taxes)
+                    </small>
+                    <label>
+                      Offer ends (optional)
+                      <input
+                        type="datetime-local"
+                        [value]="offerEndsAtInput(service.offerEndsAt)"
+                        (input)="setCareServiceOfferEnd($index, $any($event.target).value)"
+                      />
+                    </label>
                     <input
                       type="number"
-                      [value]="rupees(service.priceInPaise)"
-                      placeholder="₹ amount"
-                      (input)="updateCareService($index, 'priceInPaise', $any($event.target).value)"
+                      [value]="rupees(service.firstSessionPriceInPaise)"
+                      placeholder="First-session offer ₹"
+                      (input)="updateCareService($index, 'firstSessionPriceInPaise', $any($event.target).value)"
                     />
-                  }
-                  <label>Duration in minutes</label>
-                  <input
-                    type="number"
-                    [value]="service.durationMinutes || 30"
-                    placeholder="Minutes"
-                    (input)="updateCareService($index, 'durationMinutes', $any($event.target).value)"
-                  />
-                  @if (showFirstPrice(service)) {
-                    <input type="number" [value]="rupees(service.firstSessionPriceInPaise)" placeholder="First ₹" (input)="updateCareService($index, 'firstSessionPriceInPaise', $any($event.target).value)" />
                   }
                   @if (showFollowUpPrice(service)) {
                     <input type="number" [value]="rupees(service.followUpPriceInPaise)" placeholder="Follow-up ₹" (input)="updateCareService($index, 'followUpPriceInPaise', $any($event.target).value)" />
@@ -480,13 +539,19 @@
                     <input type="number" [value]="rupees(service.pricePerMinuteInPaise)" placeholder="₹ per minute" (input)="updateCareService($index, 'pricePerMinuteInPaise', $any($event.target).value)" />
                   }
                   <input [value]="service.description || ''" placeholder="Description" (input)="updateCareService($index, 'description', $any($event.target).value)" />
+                  @if (!showFirstPrice(service) && service.priceInPaise > 0) {
+                    <small class="service-payout-preview">
+                      Your estimated share: ₹{{ rupees(estimatedPayoutInPaise(service.priceInPaise)) }}
+                      ({{ consultationSharePercent }}%, before taxes)
+                    </small>
+                  }
                   <label><input type="checkbox" [checked]="service.isActive !== false" (change)="updateCareService($index, 'isActive', $any($event.target).checked)" /> Active</label>
                   <button type="button" class="remove-service" (click)="removeCareService($index)">Remove service</button>
                 </div>
               </details>
             </article>
           }
-          <button type="button" class="add-service" (click)="addCareService()">+ Add another service</button>
+          <button type="button" class="add-service" (click)="addCareService()">Add custom service</button>
         </div>
         <details class="availability-settings">
           <summary>Booking limits and matching</summary>

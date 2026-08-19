@@ -136,7 +136,7 @@ export class ProfilePage implements OnDestroy {
   readonly servicePricingModeOptions = [
     { value: 'FIXED', label: 'Fixed price' },
     { value: 'FREE_INTRO', label: 'First session free' },
-    { value: 'DISCOUNTED_FIRST', label: 'Discounted first session' },
+    { value: 'DISCOUNTED_FIRST', label: 'First-session offer' },
     { value: 'PACKAGE', label: 'Package' },
     { value: 'FREE_VOLUNTEER', label: 'Free emotional support listener support' },
     { value: 'PER_MINUTE', label: 'Per-minute pricing' },
@@ -147,11 +147,14 @@ export class ProfilePage implements OnDestroy {
   private roleDefinitions = new Map<string, ProviderRoleDefinitionDto>();
   readonly careServices = signal<Array<any>>([]);
   readonly carePricingTemplates = signal<CarePricingTemplateDto[]>([]);
+  readonly commonServiceDurations = [15, 20, 30, 45, 60, 90, 120];
+  readonly customDurationServiceIndexes = signal<Set<number>>(new Set());
 
   methodOptions: Array<{ id: string; label: string }> = [];
   doctorTypeLabel = '';
   specialtyFocusLabel = '';
   showOnWebsite = false;
+  consultationSharePercent = 60;
   listenerScreeningPassed = false;
   canPrescribe = false;
   isPsychologist = false;
@@ -929,6 +932,10 @@ export class ProfilePage implements OnDestroy {
         ? careTeamTypeLabel(mental?.careTeamType)
         : profile.doctorProfile?.specialtyFocusLabel || '';
       this.showOnWebsite = profile.doctorProfile?.showOnWebsite ?? false;
+      this.consultationSharePercent = Math.max(
+        0,
+        Math.min(100, Number(profile.doctorProfile?.consultationSharePercent ?? 60)),
+      );
       this.listenerScreeningPassed = Boolean(mental?.listenerScreening?.passed);
       this.profileImageUrl =
         (profile as { profileImageUrl?: string | null }).profileImageUrl ?? null;
@@ -1228,6 +1235,7 @@ export class ProfilePage implements OnDestroy {
         pricingMode: 'FIXED',
         priceInPaise: 0,
         firstSessionPriceInPaise: null,
+        offerEndsAt: null,
         followUpPriceInPaise: null,
         introSessionLimit: 1,
         packageSessionCount: null,
@@ -1251,6 +1259,7 @@ export class ProfilePage implements OnDestroy {
     pricingMode: CarePricingTemplateDto['pricingMode'];
     priceInPaise: number;
     firstSessionPriceInPaise?: number | null;
+    offerEndsAt?: string | null;
     followUpPriceInPaise?: number | null;
     introSessionLimit?: number;
     packageSessionCount?: number | null;
@@ -1269,6 +1278,7 @@ export class ProfilePage implements OnDestroy {
         pricingMode: service.pricingMode,
         priceInPaise: service.priceInPaise,
         firstSessionPriceInPaise: service.firstSessionPriceInPaise ?? null,
+        offerEndsAt: service.offerEndsAt ?? null,
         followUpPriceInPaise: service.followUpPriceInPaise ?? null,
         introSessionLimit: service.introSessionLimit ?? 1,
         packageSessionCount: service.packageSessionCount ?? null,
@@ -1329,6 +1339,77 @@ export class ProfilePage implements OnDestroy {
     );
   }
 
+  durationChoice(index: number, service: { durationMinutes?: number | null }): string {
+    const duration = Number(service.durationMinutes || 30);
+    return this.customDurationServiceIndexes().has(index) ||
+      !this.commonServiceDurations.includes(duration)
+      ? 'custom'
+      : String(duration);
+  }
+
+  setCareServiceDuration(index: number, value: string): void {
+    if (value === 'custom') {
+      this.customDurationServiceIndexes.update((indexes) => new Set(indexes).add(index));
+      return;
+    }
+    this.customDurationServiceIndexes.update((indexes) => {
+      const next = new Set(indexes);
+      next.delete(index);
+      return next;
+    });
+    this.updateCareService(index, 'durationMinutes', value);
+  }
+
+  offerDiscountPercent(service: {
+    priceInPaise?: number | null;
+    firstSessionPriceInPaise?: number | null;
+  }): number {
+    const regular = Number(service.priceInPaise || 0);
+    const offer = Number(service.firstSessionPriceInPaise || 0);
+    if (regular <= 0 || offer <= 0 || offer >= regular) return 0;
+    return Math.max(1, Math.min(99, Math.round((1 - offer / regular) * 100)));
+  }
+
+  estimatedPayoutInPaise(amountInPaise: number | null | undefined): number {
+    return Math.max(
+      0,
+      Math.round((Number(amountInPaise || 0) * this.consultationSharePercent) / 100),
+    );
+  }
+
+  setCareServiceOfferDiscount(index: number, value: string): void {
+    const discount = Math.max(1, Math.min(99, Math.round(Number(value) || 0)));
+    this.careServices.update((services) =>
+      services.map((service, currentIndex) => {
+        if (currentIndex !== index) return service;
+        const regular = Math.max(0, Number(service.priceInPaise || 0));
+        return {
+          ...service,
+          firstSessionPriceInPaise: Math.round((regular * (100 - discount)) / 100),
+          introSessionLimit: Math.max(1, Number(service.introSessionLimit || 1)),
+          isFree: false,
+        };
+      }),
+    );
+  }
+
+  offerEndsAtInput(value: string | Date | null | undefined): string {
+    if (!value) return '';
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return '';
+    return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+  }
+
+  setCareServiceOfferEnd(index: number, value: string): void {
+    this.careServices.update((services) =>
+      services.map((service, currentIndex) =>
+        currentIndex === index
+          ? { ...service, offerEndsAt: value ? new Date(value).toISOString() : null }
+          : service,
+      ),
+    );
+  }
+
   applyPricingTemplate(index: number, templateId: string) {
     const template = this.carePricingTemplates().find((item) => item.id === templateId);
     if (!template) return;
@@ -1340,6 +1421,7 @@ export class ProfilePage implements OnDestroy {
               pricingMode: template.pricingMode || 'FIXED',
               priceInPaise: template.priceInPaise ?? 0,
               firstSessionPriceInPaise: template.firstSessionPriceInPaise ?? null,
+              offerEndsAt: service.offerEndsAt ?? null,
               followUpPriceInPaise: template.followUpPriceInPaise ?? null,
               introSessionLimit: template.introSessionLimit || 1,
               packageSessionCount: template.packageSessionCount ?? null,
@@ -1399,6 +1481,7 @@ export class ProfilePage implements OnDestroy {
         providerRoleCode: providerRole,
         pricingMode: service.pricingMode || 'FIXED',
         priceInPaise: service.priceInPaise ?? 0,
+        offerEndsAt: service.offerEndsAt ?? null,
         introSessionLimit: service.introSessionLimit || 1,
         freeMinutes: service.freeMinutes || 0,
         pricePerMinuteInPaise: service.pricePerMinuteInPaise ?? null,

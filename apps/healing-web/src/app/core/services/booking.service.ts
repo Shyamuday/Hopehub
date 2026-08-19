@@ -367,6 +367,7 @@ export type HopeHubProvider = {
     priceInPaise: number;
     effectivePriceInPaise?: number;
     firstSessionPriceInPaise?: number | null;
+    offerEndsAt?: string | null;
     followUpPriceInPaise?: number | null;
     introSessionLimit?: number;
     packageSessionCount?: number | null;

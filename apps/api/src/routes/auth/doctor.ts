@@ -126,6 +126,7 @@ const mentalHealthProviderProfileFieldsSchema = z.object({
           .default(CareTeamServicePricingMode.FIXED),
         priceInPaise: z.number().int().min(0).max(500000).optional().default(0),
         firstSessionPriceInPaise: z.number().int().min(0).max(500000).optional().nullable(),
+        offerEndsAt: z.coerce.date().optional().nullable(),
         followUpPriceInPaise: z.number().int().min(0).max(500000).optional().nullable(),
         introSessionLimit: z.number().int().min(1).max(20).optional().default(1),
         packageSessionCount: z.number().int().min(1).max(100).optional().nullable(),
@@ -833,6 +834,7 @@ export function registerAuthDoctorRoutes(router: Router) {
                 ? 0
                 : (service.priceInPaise ?? 0),
             firstSessionPriceInPaise: service.firstSessionPriceInPaise ?? null,
+            offerEndsAt: service.offerEndsAt ?? null,
             followUpPriceInPaise: service.followUpPriceInPaise ?? null,
             introSessionLimit: service.introSessionLimit ?? 1,
             packageSessionCount: service.packageSessionCount ?? null,
@@ -1062,6 +1064,7 @@ export function registerAuthDoctorRoutes(router: Router) {
                   ? 0
                   : (service.priceInPaise ?? 0),
               firstSessionPriceInPaise: service.firstSessionPriceInPaise ?? null,
+              offerEndsAt: service.offerEndsAt ?? null,
               followUpPriceInPaise: service.followUpPriceInPaise ?? null,
               introSessionLimit: service.introSessionLimit ?? 1,
               packageSessionCount: service.packageSessionCount ?? null,

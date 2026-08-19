@@ -163,6 +163,7 @@ export type CareTeamServiceDto = {
   pricingMode?: CareServicePricingMode;
   priceInPaise: number;
   firstSessionPriceInPaise?: number | null;
+  offerEndsAt?: string | null;
   followUpPriceInPaise?: number | null;
   introSessionLimit?: number;
   packageSessionCount?: number | null;
@@ -222,6 +223,7 @@ export type ProviderProfileSummaryDto = {
   department?: string | null;
   bio?: string | null;
   yearsOfExperience?: number | null;
+  consultationSharePercent?: number | null;
   focusAreas?: string[];
   mentalHealthProfile?: MentalHealthProviderProfileDto | null;
   providerClassification?: ProviderClassificationDto;

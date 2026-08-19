@@ -148,6 +148,13 @@
                 <p class="mt-3 text-xs font-semibold uppercase tracking-wide text-gray-500">
                   Private support session
                 </p>
+                <div class="mt-2 flex flex-wrap items-center gap-2 text-sm font-semibold text-primary-800">
+                  @if (serviceHasActiveFirstOffer(service)) {
+                    <span class="rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-800">First-session offer</span>
+                    <span class="text-gray-400 line-through">{{ regularServicePriceLabel(service) }}</span>
+                  }
+                  <span>{{ servicePriceLabel(service) }}</span>
+                </div>
                 <app-button
                   type="button"
                   class="mt-4 block"

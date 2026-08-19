@@ -336,6 +336,29 @@ export class LiveConnectComponent implements OnInit {
     return pieces.join(' · ');
   }
 
+  livePriceLabel(provider: HopeHubProvider): string {
+    const service = this.providerServiceForMode(provider);
+    if (service?.pricingLabel) return service.pricingLabel;
+    const amount = Number(
+      service?.effectivePriceInPaise ?? service?.priceInPaise ?? provider.sessionFeeInPaise ?? 0,
+    );
+    return amount <= 0 ? 'Free' : `₹${Math.round(amount / 100)}`;
+  }
+
+  hasLiveFirstSessionOffer(provider: HopeHubProvider): boolean {
+    const service = this.providerServiceForMode(provider);
+    return Boolean(
+      service?.pricingRule === 'DISCOUNTED_FIRST' &&
+      service.effectivePriceInPaise != null &&
+      service.effectivePriceInPaise < service.priceInPaise,
+    );
+  }
+
+  liveRegularPriceLabel(provider: HopeHubProvider): string {
+    const price = this.providerServiceForMode(provider)?.priceInPaise;
+    return price ? `₹${Math.round(price / 100)}` : '';
+  }
+
   requestStart(provider: HopeHubProvider): void {
     if (this.startingProviderId()) return;
     this.clearLiveCoupon();
