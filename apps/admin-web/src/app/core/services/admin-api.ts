@@ -830,6 +830,22 @@ export class AdminApi {
       ...(args as Parameters<AdminOpsApi['revokeTelegramGroupHelpRole']>),
     );
   }
+
+  saveTelegramGroupHelpCustomRole(
+    ...args: Parameters<AdminOpsApi['saveTelegramGroupHelpCustomRole']>
+  ) {
+    return this.ops.saveTelegramGroupHelpCustomRole(
+      ...(args as Parameters<AdminOpsApi['saveTelegramGroupHelpCustomRole']>),
+    );
+  }
+
+  deleteTelegramGroupHelpCustomRole(
+    ...args: Parameters<AdminOpsApi['deleteTelegramGroupHelpCustomRole']>
+  ) {
+    return this.ops.deleteTelegramGroupHelpCustomRole(
+      ...(args as Parameters<AdminOpsApi['deleteTelegramGroupHelpCustomRole']>),
+    );
+  }
   getTelegramGroupHelpModerationCases(
     ...args: Parameters<AdminOpsApi['getTelegramGroupHelpModerationCases']>
   ) {

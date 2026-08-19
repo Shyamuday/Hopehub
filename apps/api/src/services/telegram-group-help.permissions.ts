@@ -92,9 +92,25 @@ export async function canUseGroupHelpCommand(
   command: string,
   fallback: 'HELPER' | 'MODERATOR'
 ) {
-  return canModerate(
-    message,
-    values.telegramGroupHelpAdminWhitelist || '',
-    configuredCommandRole(values, command, fallback)
+  if (!message.from) return false;
+  const requiredRole = configuredCommandRole(values, command, fallback);
+  if (await canModerate(message, values.telegramGroupHelpAdminWhitelist || '', requiredRole))
+    return true;
+
+  const customAssignment = await prisma.telegramCommunityRoleAssignment.findFirst({
+    where: {
+      chatId: String(message.chat.id),
+      telegramUserId: String(message.from.id),
+      customRoleId: { not: null }
+    },
+    include: { customRole: { select: { permissions: true } } }
+  });
+  const permissions = customAssignment?.customRole?.permissions;
+  if (!Array.isArray(permissions)) return false;
+  const normalizedCommand = command.toLowerCase();
+  return permissions.some(
+    (permission) =>
+      typeof permission === 'string' &&
+      (permission === '*' || permission.toLowerCase() === normalizedCommand)
   );
 }

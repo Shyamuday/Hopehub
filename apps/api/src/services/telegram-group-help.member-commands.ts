@@ -13,7 +13,6 @@ import type { CommunityTelegramMessage } from './telegram-community-bots.types.j
 import {
   assignedCommunityRole,
   canUseGroupHelpCommand,
-  configuredCommandRole,
   isModerationExempt
 } from './telegram-group-help.permissions.js';
 import { sendTemporaryGroupHelpMessage } from './telegram-group-help.actions.js';
@@ -191,9 +190,14 @@ export async function handleGroupHelpMemberCommand(
       );
       return true;
     }
+    const targetMessage = { ...message, from: target };
     const role = await assignedCommunityRole(chatId, String(target.id));
+    const customAssignment = await prisma.telegramCommunityRoleAssignment.findFirst({
+      where: { chatId, telegramUserId: String(target.id), customRoleId: { not: null } },
+      include: { customRole: { select: { name: true } } }
+    });
     const telegramAdmin = await isModerationExempt(
-      { ...message, from: target },
+      targetMessage,
       values.telegramGroupHelpAdminWhitelist || ''
     );
     const permissions =
@@ -217,19 +221,20 @@ export async function handleGroupHelpMemberCommand(
       ['/stats', 'MODERATOR'],
       ['/clearwarnings', 'MODERATOR']
     ] as const;
-    const effective = commandAccess
-      .filter(([candidate, fallback]) => {
-        const required = configuredCommandRole(values, candidate, fallback);
-        return (
-          telegramAdmin || role === 'MODERATOR' || (required === 'HELPER' && role === 'HELPER')
-        );
-      })
-      .map(([candidate]) => candidate);
+    const effective = (
+      await Promise.all(
+        commandAccess.map(async ([candidate, fallback]) =>
+          (await canUseGroupHelpCommand(targetMessage, values, candidate, fallback))
+            ? candidate
+            : null
+        )
+      )
+    ).filter(Boolean);
     await deliverStaffResult(
       [
         `Permissions for ${target.first_name || 'member'}`,
         `Telegram administrator: ${telegramAdmin ? 'yes' : 'no'}`,
-        `Hope Hub role: ${role ? role.toLowerCase() : 'member'}`,
+        `Hope Hub role: ${customAssignment?.customRole?.name || (role ? role.toLowerCase() : 'member')}`,
         `Effective staff commands: ${effective.length ? effective.join(', ') : 'none'}`,
         '',
         'Command access policy:',
@@ -375,7 +380,7 @@ export async function handleGroupHelpMemberCommand(
     if (!(await canUseGroupHelpCommand(message, values, '/staff', 'HELPER'))) return true;
     const staff = await prisma.telegramCommunityRoleAssignment.findMany({
       where: { chatId },
-      select: { telegramUserId: true, role: true },
+      select: { telegramUserId: true, role: true, customRole: { select: { name: true } } },
       orderBy: [{ role: 'asc' }, { createdAt: 'asc' }]
     });
     const members = staff.length
@@ -394,7 +399,9 @@ export async function handleGroupHelpMemberCommand(
                 [person?.firstName, person?.lastName].filter(Boolean).join(' ') ||
                 'Telegram member';
               const identity = person?.username ? `${name} (@${person.username})` : name;
-              return `• ${member.role === 'MODERATOR' ? 'Moderator' : 'Helper'} · ${identity}`;
+              const roleName =
+                member.customRole?.name || (member.role === 'MODERATOR' ? 'Moderator' : 'Helper');
+              return `• ${roleName} · ${identity}`;
             })
             .join('\n')}`
         : 'There are no custom Helper or Moderator roles in this group yet.'

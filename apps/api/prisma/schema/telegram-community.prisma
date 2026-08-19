@@ -263,10 +263,27 @@ model TelegramCommunityRoleAssignment {
   chatId          String
   telegramUserId  String
   role            String
+  customRoleId    String?
+  customRole      TelegramCommunityCustomRole? @relation(fields: [customRoleId], references: [id], onDelete: Cascade)
   assignedById    String
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   @@unique([chatId, telegramUserId, role])
   @@index([chatId, telegramUserId])
+  @@index([customRoleId])
+}
+
+model TelegramCommunityCustomRole {
+  id          String                           @id @default(cuid())
+  chatId      String
+  name        String
+  permissions Json
+  createdById String
+  assignments TelegramCommunityRoleAssignment[]
+  createdAt   DateTime                         @default(now())
+  updatedAt   DateTime                         @updatedAt
+
+  @@unique([chatId, name])
+  @@index([chatId])
 }

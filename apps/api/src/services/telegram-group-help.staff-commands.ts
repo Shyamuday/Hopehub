@@ -137,10 +137,9 @@ export async function handleGroupHelpStaffCommand(
       values
     );
   } else {
-    const otherRole = role === 'MODERATOR' ? 'HELPER' : 'MODERATOR';
     await prisma.$transaction([
       prisma.telegramCommunityRoleAssignment.deleteMany({
-        where: { chatId, telegramUserId: String(target.id), role: otherRole }
+        where: { chatId, telegramUserId: String(target.id) }
       }),
       prisma.telegramCommunityRoleAssignment.upsert({
         where: { chatId_telegramUserId_role: { chatId, telegramUserId: String(target.id), role } },

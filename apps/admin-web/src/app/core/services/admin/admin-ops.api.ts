@@ -336,7 +336,7 @@ export class AdminOpsApi extends AdminApiBase {
 
   getTelegramGroupHelpRoles(chatId?: string) {
     return firstValueFrom(
-      this.http.get<{ chatId: string; assignments: any[] }>(
+      this.http.get<{ chatId: string; assignments: any[]; customRoles: any[] }>(
         `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_ROLES}`,
         { params: chatId ? { chatId } : {} },
       ),
@@ -346,7 +346,8 @@ export class AdminOpsApi extends AdminApiBase {
   assignTelegramGroupHelpRole(payload: {
     chatId?: string;
     telegramUserId: string;
-    role: 'HELPER' | 'MODERATOR';
+    role?: 'HELPER' | 'MODERATOR';
+    customRoleId?: string;
   }) {
     return firstValueFrom(
       this.http.post<{ assignment: any }>(
@@ -360,6 +361,27 @@ export class AdminOpsApi extends AdminApiBase {
     return firstValueFrom(
       this.http.delete<{ ok: boolean }>(
         `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_ROLE(id)}`,
+      ),
+    );
+  }
+
+  saveTelegramGroupHelpCustomRole(payload: {
+    chatId?: string;
+    name: string;
+    permissions: string[];
+  }) {
+    return firstValueFrom(
+      this.http.post<{ role: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_CUSTOM_ROLES}`,
+        payload,
+      ),
+    );
+  }
+
+  deleteTelegramGroupHelpCustomRole(id: string) {
+    return firstValueFrom(
+      this.http.delete<{ ok: boolean }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_CUSTOM_ROLE(id)}`,
       ),
     );
   }

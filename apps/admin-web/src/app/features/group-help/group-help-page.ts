@@ -212,15 +212,22 @@ export class GroupHelpPage {
   readonly moderatorTarget = signal('');
   readonly moderatorReason = signal('');
   readonly roleAssignments = signal<any[]>([]);
+  readonly customRoles = signal<any[]>([]);
   readonly roleTelegramUserId = signal('');
-  readonly roleToAssign = signal<'HELPER' | 'MODERATOR'>('HELPER');
+  readonly roleToAssign = signal('HELPER');
+  readonly customRoleName = signal('');
+  readonly customRolePermissions = signal('');
   readonly roleSaving = signal(false);
   readonly moderationCases = signal<any[]>([]);
   readonly caseSavingId = signal('');
-  readonly roleOptions: FormDropdownOption[] = [
+  readonly roleOptions = computed<FormDropdownOption[]>(() => [
     { value: 'HELPER', label: 'Helper — warnings and message removal' },
     { value: 'MODERATOR', label: 'Moderator — member actions and helper tools' },
-  ];
+    ...this.customRoles().map((role) => ({
+      value: `CUSTOM:${role.id}`,
+      label: `${role.name} — custom access`,
+    })),
+  ]);
   readonly moderatorActions = [
     { value: 'warn', label: 'Warn member', needsTarget: true },
     { value: 'mute', label: 'Mute member', needsTarget: true },
@@ -338,8 +345,10 @@ export class GroupHelpPage {
     try {
       const response = await this.api.getTelegramGroupHelpRoles();
       this.roleAssignments.set(response.assignments || []);
+      this.customRoles.set(response.customRoles || []);
     } catch {
       this.roleAssignments.set([]);
+      this.customRoles.set([]);
     }
   }
 
@@ -386,7 +395,9 @@ export class GroupHelpPage {
     try {
       await this.api.assignTelegramGroupHelpRole({
         telegramUserId,
-        role: this.roleToAssign(),
+        ...(this.roleToAssign().startsWith('CUSTOM:')
+          ? { customRoleId: this.roleToAssign().slice('CUSTOM:'.length) }
+          : { role: this.roleToAssign() === 'MODERATOR' ? 'MODERATOR' : 'HELPER' }),
       });
       this.roleTelegramUserId.set('');
       this.message.set('Role assigned. The member can use it immediately in the group.');
@@ -407,6 +418,49 @@ export class GroupHelpPage {
       await this.loadRoles();
     } catch (error: any) {
       this.error.set(error?.error?.message || 'Could not remove this role.');
+    } finally {
+      this.roleSaving.set(false);
+    }
+  }
+
+  async saveCustomRole() {
+    const name = this.customRoleName().trim();
+    const permissions = this.customRolePermissions()
+      .split(/[\n,\s]+/)
+      .map((permission) => permission.trim().toLowerCase())
+      .filter(Boolean);
+    if (
+      name.length < 2 ||
+      !permissions.length ||
+      permissions.some((permission) => !/^\/[a-z]+$/i.test(permission))
+    ) {
+      this.error.set('Enter a role name and one command per line, for example /warn or /delete.');
+      return;
+    }
+    this.roleSaving.set(true);
+    this.error.set('');
+    try {
+      await this.api.saveTelegramGroupHelpCustomRole({ name, permissions });
+      this.customRoleName.set('');
+      this.customRolePermissions.set('');
+      this.message.set('Custom role saved. You can now assign it to a member.');
+      await this.loadRoles();
+    } catch (error: any) {
+      this.error.set(error?.error?.message || 'Could not save this custom role.');
+    } finally {
+      this.roleSaving.set(false);
+    }
+  }
+
+  async deleteCustomRole(id: string) {
+    this.roleSaving.set(true);
+    this.error.set('');
+    try {
+      await this.api.deleteTelegramGroupHelpCustomRole(id);
+      this.message.set('Custom role and its assignments were removed.');
+      await this.loadRoles();
+    } catch (error: any) {
+      this.error.set(error?.error?.message || 'Could not remove this custom role.');
     } finally {
       this.roleSaving.set(false);
     }

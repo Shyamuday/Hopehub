@@ -83,10 +83,29 @@ const groupHelpSaveSchema = z.object({
     .max(GROUP_HELP_CONFIG_KEYS.length)
 });
 
-const groupHelpRoleSchema = z.object({
+const groupHelpRoleSchema = z
+  .object({
+    chatId: z.string().trim().min(1).max(80).optional(),
+    telegramUserId: z.string().trim().regex(/^\d+$/, 'Use a numeric Telegram user ID.').max(32),
+    role: z.enum(['HELPER', 'MODERATOR']).optional(),
+    customRoleId: z.string().trim().min(1).max(64).optional()
+  })
+  .refine((value) => Boolean(value.role) !== Boolean(value.customRoleId), {
+    message: 'Choose either a standard role or one custom role.'
+  });
+
+const groupHelpCustomRoleSchema = z.object({
   chatId: z.string().trim().min(1).max(80).optional(),
-  telegramUserId: z.string().trim().regex(/^\d+$/, 'Use a numeric Telegram user ID.').max(32),
-  role: z.enum(['HELPER', 'MODERATOR'])
+  name: z.string().trim().min(2).max(40),
+  permissions: z
+    .array(
+      z
+        .string()
+        .trim()
+        .regex(/^\/[a-z]+$/i)
+    )
+    .min(1)
+    .max(24)
 });
 
 const groupHelpModerationResolutionSchema = z.object({
@@ -945,9 +964,14 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         return res.status(400).json({ message: 'Choose a configured Telegram group first.' });
       const assignments = await prisma.telegramCommunityRoleAssignment.findMany({
         where: { chatId },
+        include: { customRole: { select: { id: true, name: true, permissions: true } } },
         orderBy: [{ role: 'asc' }, { updatedAt: 'desc' }]
       });
-      res.json({ chatId, assignments });
+      const customRoles = await prisma.telegramCommunityCustomRole.findMany({
+        where: { chatId },
+        orderBy: { name: 'asc' }
+      });
+      res.json({ chatId, assignments, customRoles });
     })
   );
 
@@ -958,35 +982,39 @@ export function registerAdminTelegramBotRoutes(router: Router) {
     asyncRoute(async (req, res) => {
       const parsed = groupHelpRoleSchema.safeParse(req.body ?? {});
       if (!parsed.success)
-        return res.status(400).json({ message: 'Enter a numeric Telegram user ID and role.' });
+        return res
+          .status(400)
+          .json({ message: 'Enter a numeric Telegram user ID and choose one role.' });
       const values = await groupHelpConfigMap();
       const chatId = parsed.data.chatId || values.telegramGroupHelpGroupChatId?.trim();
       if (!chatId)
         return res.status(400).json({ message: 'Choose a configured Telegram group first.' });
-      const otherRole = parsed.data.role === 'MODERATOR' ? 'HELPER' : 'MODERATOR';
+      const customRole = parsed.data.customRoleId
+        ? await prisma.telegramCommunityCustomRole.findFirst({
+            where: { id: parsed.data.customRoleId, chatId },
+            select: { id: true, name: true }
+          })
+        : null;
+      if (parsed.data.customRoleId && !customRole)
+        return res
+          .status(400)
+          .json({ message: 'That custom role is not available in this group.' });
+      const role = parsed.data.role || 'CUSTOM';
       const [, assignment] = await prisma.$transaction([
         prisma.telegramCommunityRoleAssignment.deleteMany({
           where: {
             chatId,
-            telegramUserId: parsed.data.telegramUserId,
-            role: otherRole
+            telegramUserId: parsed.data.telegramUserId
           }
         }),
-        prisma.telegramCommunityRoleAssignment.upsert({
-          where: {
-            chatId_telegramUserId_role: {
-              chatId,
-              telegramUserId: parsed.data.telegramUserId,
-              role: parsed.data.role
-            }
-          },
-          create: {
+        prisma.telegramCommunityRoleAssignment.create({
+          data: {
             chatId,
             telegramUserId: parsed.data.telegramUserId,
-            role: parsed.data.role,
+            role,
+            customRoleId: customRole?.id,
             assignedById: req.user!.id
-          },
-          update: { assignedById: req.user!.id }
+          }
         })
       ]);
       await writeAuditLog({
@@ -995,10 +1023,73 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         action: 'telegram_group_help.role_assign',
         targetType: 'telegram_group_help_role',
         targetId: assignment.id,
-        summary: `Assigned ${assignment.role.toLowerCase()} role to Telegram user ${assignment.telegramUserId}; replaced any other community role.`,
-        metadata: { chatId, telegramUserId: assignment.telegramUserId, role: assignment.role }
+        summary: `Assigned ${(customRole?.name || assignment.role).toLowerCase()} role to Telegram user ${assignment.telegramUserId}; replaced any other community role.`,
+        metadata: {
+          chatId,
+          telegramUserId: assignment.telegramUserId,
+          role: assignment.role,
+          customRoleId: customRole?.id
+        }
       });
       res.status(201).json({ assignment });
+    })
+  );
+
+  router.post(
+    '/admin/telegram-bots/group-help/custom-roles',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (req, res) => {
+      const parsed = groupHelpCustomRoleSchema.safeParse(req.body ?? {});
+      if (!parsed.success)
+        return res
+          .status(400)
+          .json({ message: 'Enter a role name and at least one valid /command.' });
+      const values = await groupHelpConfigMap();
+      const chatId = parsed.data.chatId || values.telegramGroupHelpGroupChatId?.trim();
+      if (!chatId)
+        return res.status(400).json({ message: 'Choose a configured Telegram group first.' });
+      const permissions = [
+        ...new Set(parsed.data.permissions.map((permission) => permission.toLowerCase()))
+      ];
+      const role = await prisma.telegramCommunityCustomRole.upsert({
+        where: { chatId_name: { chatId, name: parsed.data.name } },
+        create: { chatId, name: parsed.data.name, permissions, createdById: req.user!.id },
+        update: { permissions }
+      });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'telegram_group_help.custom_role_save',
+        targetType: 'telegram_group_help_custom_role',
+        targetId: role.id,
+        summary: `Saved custom staff role ${role.name}.`,
+        metadata: { chatId, permissions }
+      });
+      res.status(201).json({ role });
+    })
+  );
+
+  router.delete(
+    '/admin/telegram-bots/group-help/custom-roles/:id',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (req, res) => {
+      const role = await prisma.telegramCommunityCustomRole.findUnique({
+        where: { id: routeParam(req, 'id') }
+      });
+      if (!role) return res.status(404).json({ message: 'Custom role was not found.' });
+      await prisma.telegramCommunityCustomRole.delete({ where: { id: role.id } });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'telegram_group_help.custom_role_delete',
+        targetType: 'telegram_group_help_custom_role',
+        targetId: role.id,
+        summary: `Deleted custom staff role ${role.name}.`,
+        metadata: { chatId: role.chatId }
+      });
+      res.json({ ok: true });
     })
   );
 

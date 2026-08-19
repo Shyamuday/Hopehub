@@ -327,6 +327,14 @@ textarea {
   color: var(--color-text-secondary);
 }
 
+.custom-role-editor {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-border);
+}
+
 .capability-grid {
   display: grid;
   gap: 0.75rem;

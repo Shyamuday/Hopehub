@@ -996,9 +996,9 @@
           <label>
             Role
             <app-form-dropdown
-              [options]="roleOptions"
+              [options]="roleOptions()"
               [ngModel]="roleToAssign()"
-              (ngModelChange)="roleToAssign.set($event === 'MODERATOR' ? 'MODERATOR' : 'HELPER')"
+              (ngModelChange)="roleToAssign.set($event)"
             ></app-form-dropdown>
           </label>
           <button type="button" class="primary" [disabled]="roleSaving()" (click)="assignRole()">
@@ -1022,6 +1022,52 @@
         } @else {
           <p class="muted">No custom roles yet.</p>
         }
+
+        <div class="custom-role-editor">
+          <div>
+            <h3>Create custom role</h3>
+            <p>Choose the exact bot commands this role may use. Each member can have one staff role.</p>
+          </div>
+          <div class="moderator-form">
+            <label>
+              Role name
+              <input
+                type="text"
+                maxlength="40"
+                [value]="customRoleName()"
+                (input)="customRoleName.set($any($event.target).value)"
+                placeholder="Community guide"
+              />
+            </label>
+            <label>
+              Allowed commands <small>One per line</small>
+              <textarea
+                rows="3"
+                [value]="customRolePermissions()"
+                (input)="customRolePermissions.set($any($event.target).value)"
+                placeholder="/warn&#10;/delete&#10;/info"
+              ></textarea>
+            </label>
+            <button type="button" class="primary" [disabled]="roleSaving()" (click)="saveCustomRole()">
+              Save custom role
+            </button>
+          </div>
+          @if (customRoles().length) {
+            <div class="role-list">
+              @for (customRole of customRoles(); track customRole.id) {
+                <article>
+                  <span>
+                    <strong>{{ customRole.name }}</strong>
+                    <small>{{ customRole.permissions.join(', ') }}</small>
+                  </span>
+                  <button type="button" class="danger-text" [disabled]="roleSaving()" (click)="deleteCustomRole(customRole.id)">
+                    Delete role
+                  </button>
+                </article>
+              }
+            </div>
+          }
+        </div>
       </div>
 
       <div class="moderation-queue">
