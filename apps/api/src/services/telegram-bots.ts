@@ -29,6 +29,7 @@ import { adminUrl, callbackRows, menuCancelRows, webUrl } from './telegram-bots.
 import {
   cancelPending,
   finishSignup,
+  linkFromWebsite,
   replyMenu,
   requireLinked,
   showMe,
@@ -2406,6 +2407,11 @@ async function handleCommand(kind: TelegramBotKind, session: TelegramSession, te
     if (await handlePendingState(kind, session, text)) return 'state';
     await replyMenu(kind, session, 'Choose an option or send /help.');
     return 'message';
+  }
+
+  if (command === '/start' && argText.startsWith('connect_')) {
+    await linkFromWebsite(kind, session, argText.slice('connect_'.length));
+    return command;
   }
 
   if (command === '/start' || command === '/menu') {

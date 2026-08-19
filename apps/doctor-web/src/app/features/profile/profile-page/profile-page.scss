@@ -381,6 +381,45 @@
   }
 }
 
+.telegram-connect-card {
+  align-items: center;
+  background: var(--color-info-bg);
+  border: 1px solid var(--color-info-border);
+  border-radius: var(--radius-md);
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin: 1rem 0;
+  padding: 0.9rem 1rem;
+
+  strong,
+  span {
+    display: block;
+  }
+
+  span {
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    line-height: var(--leading-relaxed);
+    margin-top: 0.2rem;
+  }
+}
+
+.telegram-connect-actions {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.telegram-community-link {
+  color: var(--color-brand);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-decoration: none;
+}
+
 .service-editor-note {
   color: var(--color-text-muted);
   font-size: var(--text-xs);
@@ -881,6 +920,11 @@
 @media (max-width: 768px) {
   .profile-top {
     align-items: flex-start;
+  }
+
+  .telegram-connect-card {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .profile-card {

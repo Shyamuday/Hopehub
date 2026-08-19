@@ -17,6 +17,8 @@ import { escapeHtml, metadataOf } from './telegram-bots.helpers.js';
 import { menuCancelRows, webUrl } from './telegram-bots.ui.js';
 import type { SessionMetadata } from './telegram-bots.types.js';
 import { updateSession, type TelegramSession } from './telegram-bots.sessions.js';
+import { claimTelegramAccountLink } from './telegram-account-link.js';
+import { getSiteConfigMap } from './site-config.service.js';
 
 export async function replyMenu(kind: TelegramBotKind, session: TelegramSession, text: string) {
   await sendTelegramMessage(kind, {
@@ -255,6 +257,50 @@ export async function startLink(
       ]
     }
   });
+}
+
+/** Completes a one-time website-generated Telegram deep link. */
+export async function linkFromWebsite(
+  kind: TelegramBotKind,
+  session: TelegramSession,
+  token: string
+) {
+  const claim = await claimTelegramAccountLink(kind, token, session.telegramUserId);
+  if (!claim) {
+    await replyMenu(
+      kind,
+      session,
+      'This connection link has expired or was already used. Return to your Hope Hub profile and choose Connect Telegram again.'
+    );
+    return;
+  }
+
+  const linkedSession = await updateSession(session, {
+    linkedUser: { connect: { id: claim.userId } },
+    state: 'ACTIVE',
+    lastCommand: '/start connect'
+  });
+  const { telegramUsername } = await getSiteConfigMap(['telegramUsername']);
+  const communityUsername = telegramUsername.trim().replace(/^@/, '');
+  await sendTelegramMessage(kind, {
+    chat_id: session.chatId,
+    text: [
+      '<b>Telegram connected.</b>',
+      `${escapeHtml(claim.name)} is now connected to this Hope Hub bot.`,
+      '',
+      'You can use the menu here, or return to your Hope Hub profile at any time.'
+    ].join('\n'),
+    parse_mode: 'HTML',
+    reply_markup: {
+      inline_keyboard: [
+        ...(communityUsername
+          ? [[{ text: 'Join Hope Hub community', url: `https://t.me/${communityUsername}` }]]
+          : []),
+        [{ text: 'Open menu', callback_data: 'common:menu' }]
+      ]
+    }
+  });
+  if (kind === TelegramBotKind.USER) await showOnboarding(kind, linkedSession);
 }
 
 export async function startSignup(

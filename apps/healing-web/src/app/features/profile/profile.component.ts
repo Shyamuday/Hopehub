@@ -46,6 +46,16 @@ export class ProfileComponent implements OnInit {
   readonly updatingTaskId = signal<string | null>(null);
   readonly uploadingTarget = signal<string | null>(null);
   readonly selectedPlanId = signal<string | null>(null);
+  readonly telegramConnection = signal<{
+    connected: boolean;
+    telegramUsername: string | null;
+    displayName: string | null;
+    connectedAt: string | null;
+    botUsername: string;
+    communityUrl: string | null;
+  } | null>(null);
+  readonly telegramLoading = signal(false);
+  readonly telegramConnecting = signal(false);
 
   readonly today = this.formatLocalDate(new Date());
 
@@ -116,12 +126,68 @@ export class ProfileComponent implements OnInit {
         this.loading.set(false);
         this.loadReferralSummary();
         this.loadDailyPlans();
+        this.loadTelegramConnection();
       },
       error: () => {
         const message = 'Could not load your profile.';
         this.error.set(message);
         this.notificationService.error(message);
         this.loading.set(false);
+      },
+    });
+  }
+
+  loadTelegramConnection(): void {
+    this.telegramLoading.set(true);
+    this.auth.telegramConnection().subscribe({
+      next: (connection) => {
+        this.telegramConnection.set(connection);
+        this.telegramLoading.set(false);
+      },
+      error: () => this.telegramLoading.set(false),
+    });
+  }
+
+  connectTelegram(): void {
+    this.telegramConnecting.set(true);
+    this.auth.createTelegramConnection().subscribe({
+      next: (connection) => {
+        window.open(connection.url, '_blank', 'noopener');
+        this.telegramConnecting.set(false);
+        this.notificationService.info(
+          'Telegram opened. Tap Start there to confirm the connection.',
+        );
+      },
+      error: (error: { error?: { message?: string } }) => {
+        this.telegramConnecting.set(false);
+        this.notificationService.error(
+          error.error?.message || 'Could not open Telegram. Please try again.',
+        );
+      },
+    });
+  }
+
+  disconnectTelegram(): void {
+    this.telegramConnecting.set(true);
+    this.auth.removeTelegramConnection().subscribe({
+      next: () => {
+        this.telegramConnection.update((connection) =>
+          connection
+            ? {
+                ...connection,
+                connected: false,
+                telegramUsername: null,
+                displayName: null,
+                connectedAt: null,
+              }
+            : connection,
+        );
+        this.telegramConnecting.set(false);
+        this.notificationService.info('Telegram account disconnected.');
+      },
+      error: () => {
+        this.telegramConnecting.set(false);
+        this.notificationService.error('Could not disconnect Telegram. Please try again.');
       },
     });
   }

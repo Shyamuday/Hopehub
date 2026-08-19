@@ -207,6 +207,7 @@ model User {
   dailyPlans                     PatientDailyPlan[]                @relation("PatientDailyPlans")
   dailyPlanUploads               PatientDailyPlanImage[]           @relation("PatientDailyPlanUploads")
   telegramBotSessions            TelegramBotSession[]              @relation("UserTelegramBotSessions")
+  telegramAccountLinks           TelegramAccountLink[]             @relation("UserTelegramAccountLinks")
   leadAssignmentsReceived        WebsiteLeadAssignment[]           @relation("LeadAssignmentProvider")
   leadAssignmentsCreated         WebsiteLeadAssignment[]           @relation("LeadAssignmentAdmin")
   lifestyleTipSessions           UserLifestyleTipSession[]         @relation("UserLifestyleTipSessions")
@@ -382,6 +383,23 @@ model TelegramBotSession {
   @@index([telegramUserId])
   @@index([linkedUserId])
   @@index([botKind, updatedAt])
+}
+
+/// Short-lived, one-time tokens used when a signed-in Hope Hub account connects
+/// its Telegram account from the website. Only a SHA-256 hash is stored.
+model TelegramAccountLink {
+  id             String          @id @default(cuid())
+  userId         String
+  user           User            @relation("UserTelegramAccountLinks", fields: [userId], references: [id], onDelete: Cascade)
+  botKind        TelegramBotKind
+  tokenHash      String          @unique
+  telegramUserId String?
+  expiresAt      DateTime
+  usedAt         DateTime?
+  createdAt      DateTime        @default(now())
+
+  @@index([userId, botKind, expiresAt])
+  @@index([expiresAt])
 }
 
 model TelegramBotEvent {

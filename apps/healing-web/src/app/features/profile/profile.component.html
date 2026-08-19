@@ -44,6 +44,34 @@
             </div>
           </section>
 
+          <section class="rounded-xl border border-sky-200 bg-sky-50 p-5 shadow-sm">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+              <div class="min-w-0">
+                <p class="text-xs font-semibold uppercase tracking-wide text-sky-700">Telegram connection</p>
+                <h2 class="mt-1 text-lg font-semibold text-gray-950">Keep Hope Hub close on Telegram</h2>
+                @if (telegramLoading()) {
+                  <p class="mt-2 text-sm text-gray-600">Checking your connection…</p>
+                } @else if (telegramConnection()?.connected) {
+                  <p class="mt-2 text-sm leading-6 text-gray-700">
+                    Connected{{ telegramConnection()?.telegramUsername ? ' as @' + telegramConnection()?.telegramUsername : telegramConnection()?.displayName ? ' as ' + telegramConnection()?.displayName : '' }}.
+                  </p>
+                } @else {
+                  <p class="mt-2 text-sm leading-6 text-gray-700">Connect once to receive support updates and use the Hope Hub bot without sharing your phone number with us.</p>
+                }
+              </div>
+              <div class="flex flex-wrap gap-2">
+                @if (!telegramConnection()?.connected) {
+                  <app-button type="button" size="sm" (click)="connectTelegram()" [disabled]="telegramConnecting()">{{ telegramConnecting() ? 'Opening…' : 'Connect Telegram' }}</app-button>
+                } @else {
+                  <app-button type="button" size="sm" variant="outline" (click)="disconnectTelegram()" [disabled]="telegramConnecting()">Disconnect</app-button>
+                }
+                @if (telegramConnection()?.communityUrl; as communityUrl) {
+                  <a [href]="communityUrl" target="_blank" rel="noopener" class="inline-flex min-h-10 items-center justify-center rounded-md border border-sky-300 bg-white px-3 text-sm font-semibold text-sky-800">Join community</a>
+                }
+              </div>
+            </div>
+          </section>
+
           <section class="overflow-hidden rounded-xl border border-emerald-200 bg-white shadow-sm">
             <div class="bg-gradient-to-br from-emerald-700 to-teal-700 p-5 text-white">
               <p class="text-xs font-semibold uppercase tracking-wider text-emerald-100">Refer &amp; get a free call</p>

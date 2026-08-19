@@ -70,6 +70,7 @@ import { lifestyleTipsRouter } from './routes/lifestyle-tips.js';
 import { providerShareLinksRouter } from './routes/provider-share-links.js';
 import { rtcRouter } from './routes/rtc.js';
 import { telegramBotsRouter } from './routes/telegram-bots.js';
+import { telegramAccountLinkRouter } from './routes/telegram-account-link.js';
 import { createRepertoryRouter } from './routes/repertory/index.js';
 import { roleGuidesRouter } from './routes/role-guides.js';
 import { ReceptionScopeError } from './routes/reception/shared.js';
@@ -347,6 +348,7 @@ app.use(assessmentDefinitionsRouter);
 app.use(practicesRouter);
 app.use(lifestyleTipsRouter);
 app.use(providerShareLinksRouter);
+app.use(telegramAccountLinkRouter);
 app.use(telegramBotsRouter);
 
 // ── Global error handler ───────────────────────────────────────────────────────

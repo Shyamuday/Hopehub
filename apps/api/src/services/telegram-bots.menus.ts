@@ -5,6 +5,7 @@ import { adminUrl, doctorUrl, webUrl } from './telegram-bots.ui.js';
 import { escapeHtml } from './telegram-bots.helpers.js';
 import type { InlineButton } from './telegram-bots.types.js';
 import { whatsappJoinButton } from './telegram-bots.payments.js';
+import { getSiteConfigMap } from './site-config.service.js';
 
 type MenuSession = {
   linkedUser?: { name: string } | null;
@@ -15,6 +16,11 @@ export function telegramBotKindFromSlug(slug: string): TelegramBotKind | null {
 }
 
 export async function menuFor(kind: TelegramBotKind, linked: boolean): Promise<InlineButton[][]> {
+  const { telegramUsername } = await getSiteConfigMap(['telegramUsername']);
+  const communityUsername = telegramUsername.trim().replace(/^@/, '');
+  const communityRow = communityUsername
+    ? [[{ text: 'Hope Hub community', url: `https://t.me/${communityUsername}` }]]
+    : [];
   if (kind === 'USER') {
     const whatsappButton = await whatsappJoinButton();
     return [
@@ -48,6 +54,7 @@ export async function menuFor(kind: TelegramBotKind, linked: boolean): Promise<I
         { text: 'Settings', callback_data: 'common:settings' },
         { text: 'Onboarding checklist', callback_data: 'common:onboarding' }
       ],
+      ...communityRow,
       [{ text: 'Open website', url: webUrl('/') }]
     ];
   }
@@ -69,6 +76,7 @@ export async function menuFor(kind: TelegramBotKind, linked: boolean): Promise<I
           ? { text: 'My account', callback_data: 'common:me' }
           : { text: 'Link account', callback_data: 'common:link' }
       ],
+      ...communityRow,
       [{ text: 'Open provider portal', url: doctorUrl('/') }]
     ];
   }

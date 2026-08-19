@@ -57,6 +57,28 @@
           <span>This helps people feel confident before starting a conversation.</span>
         </div>
       </div>
+      <div class="telegram-connect-card">
+        <div>
+          <strong>Connect the Hope Hub Provider Bot</strong>
+          @if (telegramLoading()) {
+            <span>Checking your Telegram connection…</span>
+          } @else if (telegramConnection()?.connected) {
+            <span>Connected{{ telegramConnection()?.telegramUsername ? ' as @' + telegramConnection()?.telegramUsername : telegramConnection()?.displayName ? ' as ' + telegramConnection()?.displayName : '' }}. Receive provider updates and manage your queue from Telegram.</span>
+          } @else {
+            <span>Connect once to receive provider updates and open your Hope Hub tools from Telegram.</span>
+          }
+        </div>
+        <div class="telegram-connect-actions">
+          @if (telegramConnection()?.connected) {
+            <app-button type="button" size="sm" variant="outline" (click)="disconnectTelegram()" [disabled]="telegramConnecting()">Disconnect</app-button>
+          } @else {
+            <app-button type="button" size="sm" (click)="connectTelegram()" [disabled]="telegramConnecting()">{{ telegramConnecting() ? 'Opening…' : 'Connect Telegram' }}</app-button>
+          }
+          @if (telegramConnection()?.communityUrl; as communityUrl) {
+            <a class="telegram-community-link" [href]="communityUrl" target="_blank" rel="noopener">Join community</a>
+          }
+        </div>
+      </div>
       <div class="grid two-column">
         <label for="name">Name</label>
         <input id="name" [formField]="profileForm.name" />

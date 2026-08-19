@@ -386,6 +386,30 @@ export class AuthService {
     return this.http.get<PatientReferralSummary>(`${this.apiUrl}/patient/referrals/summary`);
   }
 
+  telegramConnection() {
+    return this.http.get<{
+      connected: boolean;
+      telegramUsername: string | null;
+      displayName: string | null;
+      connectedAt: string | null;
+      botUsername: string;
+      communityUrl: string | null;
+    }>(`${this.apiUrl}/telegram/account-link`);
+  }
+
+  createTelegramConnection() {
+    return this.http.post<{
+      url: string;
+      expiresAt: string;
+      botUsername: string;
+      communityUrl: string | null;
+    }>(`${this.apiUrl}/telegram/account-link`, {});
+  }
+
+  removeTelegramConnection() {
+    return this.http.delete<void>(`${this.apiUrl}/telegram/account-link`);
+  }
+
   async savePatientProfile(request: PatientProfileUpdateRequest): Promise<PatientProfileResponse> {
     const response = await firstValueFrom(
       this.http.put<PatientProfileResponse>(`${this.apiUrl}/patient/profile`, request),

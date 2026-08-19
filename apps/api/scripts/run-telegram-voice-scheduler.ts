@@ -11,6 +11,9 @@ const STATE_BOT = 'TELEGRAM_NATIVE_VOICE_SCHEDULER';
 const MAX_NATIVE_SCHEDULE_AHEAD_MS = 7 * 24 * 60 * 60 * 1000;
 const MINIMUM_LEAD_TIME_MS = 5 * 60 * 1000;
 const RETRY_DELAY_MS = 10 * 60 * 1000;
+// Telegram update events handle normal starts and ends. This is only a
+// low-frequency fallback when an update was missed or the server restarted.
+const ACTIVE_VOICE_FALLBACK_CHECK_MS = 15 * 60 * 1000;
 // A scheduled Telegram voice chat remains visible until its creator starts or
 // discards it. Do not leave an unattended slot blocking the next host.
 const MISSED_VOICE_CHAT_GRACE_MS = 15 * 60 * 1000;
@@ -21,10 +24,61 @@ type NativeVoiceSchedulerState = {
   eventId?: string;
   nativeCallId?: string;
   nativeCallAccessHash?: string;
+  startedAt?: string;
+  startedEarly?: boolean;
+  endedAt?: string;
+  recoveryAfter?: string;
 };
 
 function statePayload(value: unknown): NativeVoiceSchedulerState {
   return value && typeof value === 'object' ? (value as NativeVoiceSchedulerState) : {};
+}
+
+async function retainActiveVoiceState(
+  chatId: string,
+  payload: NativeVoiceSchedulerState,
+  now: Date
+) {
+  const key = { bot_chatId: { bot: STATE_BOT, chatId } };
+  await prisma.telegramCommunityState.upsert({
+    where: key,
+    create: {
+      bot: STATE_BOT,
+      chatId,
+      state: 'NATIVE_VOICE_ACTIVE',
+      payload,
+      expiresAt: new Date(now.getTime() + ACTIVE_VOICE_FALLBACK_CHECK_MS)
+    },
+    update: {
+      state: 'NATIVE_VOICE_ACTIVE',
+      payload,
+      expiresAt: new Date(now.getTime() + ACTIVE_VOICE_FALLBACK_CHECK_MS)
+    }
+  });
+}
+
+async function releaseEndedVoiceState(
+  chatId: string,
+  payload: NativeVoiceSchedulerState,
+  now: Date
+) {
+  if (payload.eventId) {
+    const event = await prisma.telegramCommunityEvent.findUnique({
+      where: { id: payload.eventId },
+      select: { id: true, startsAt: true, status: true }
+    });
+    // A future VC may have been started early. Keep that future event queued
+    // so it can be scheduled again after the 15-minute recovery window.
+    if (event && event.startsAt <= now && ['SCHEDULED', 'IN_PROGRESS'].includes(event.status)) {
+      await prisma.telegramCommunityEvent.update({
+        where: { id: event.id },
+        data: { status: 'COMPLETED' }
+      });
+    }
+  }
+  await prisma.telegramCommunityState
+    .delete({ where: { bot_chatId: { bot: STATE_BOT, chatId } } })
+    .catch(() => null);
 }
 
 function nativeGroupCallFromUpdates(
@@ -107,6 +161,7 @@ async function expireMissedVoiceChats(client: TelegramClient, now: Date) {
         where: { id: event.id },
         data: { status: 'IN_PROGRESS' }
       });
+      await retainActiveVoiceState(event.chatId, payload, now);
       continue;
     }
 
@@ -178,10 +233,29 @@ async function main() {
     }
     for (const event of nextByChat.values()) {
       const key = { bot_chatId: { bot: STATE_BOT, chatId: event.chatId } };
+      let state = await prisma.telegramCommunityState.findUnique({ where: key });
+      const payload = statePayload(state?.payload);
+
+      // Normal operation is event-first: Telegram's video_chat_started and
+      // video_chat_ended updates move the state. Do not query Telegram every
+      // minute while a native VC is already scheduled, live, or in its
+      // 15-minute post-end handover window.
+      if (
+        (state?.state === 'NATIVE_VOICE_SCHEDULED' && payload.eventId === event.id) ||
+        ((state?.state === 'NATIVE_VOICE_ACTIVE' || state?.state === 'NATIVE_VOICE_RECOVERY') &&
+          state.expiresAt > now) ||
+        (state?.state === 'NATIVE_VOICE_RETRY' && state.expiresAt > now)
+      ) {
+        continue;
+      }
+
       try {
-        // A currently live or externally scheduled Telegram VC always wins.
-        // Do not create a duplicate based on a stale local state record.
-        if (await currentTelegramGroupCall(client, event.chatId)) continue;
+        // A 15-minute safety reconciliation for a missed Telegram update.
+        // A currently live or externally scheduled VC always wins.
+        if (await currentTelegramGroupCall(client, event.chatId)) {
+          await retainActiveVoiceState(event.chatId, payload, now);
+          continue;
+        }
       } catch (error) {
         // Failing safe is preferable to accidentally scheduling over a live
         // community voice chat.
@@ -192,12 +266,19 @@ async function main() {
         );
         continue;
       }
-      let state = await prisma.telegramCommunityState.findUnique({ where: key });
-      // Telegram has no active/scheduled call, so a successful old record
-      // cannot be authoritative. Clear it before selecting the next slot.
-      // This is what lets the worker recover within its one-minute cycle after
-      // a host ends a VC (well inside the 15-minute recovery window).
-      if (state && state.state !== 'NATIVE_VOICE_RETRY') {
+
+      // Telegram is clear. If a previous live/recovery state has reached its
+      // 15-minute fallback boundary, release it and retain only a future
+      // event—an early-started 7 PM VC remains eligible for 7 PM.
+      if (state?.state === 'NATIVE_VOICE_ACTIVE' || state?.state === 'NATIVE_VOICE_RECOVERY') {
+        await releaseEndedVoiceState(event.chatId, payload, now);
+        state = null;
+      } else if (state && state.state !== 'NATIVE_VOICE_RETRY') {
+        await prisma.telegramCommunityState.delete({ where: key });
+        state = null;
+      } else if (state?.state === 'NATIVE_VOICE_RETRY') {
+        // Its retry window has elapsed and Telegram is clear, so allow a
+        // fresh create attempt instead of retaining a stale failure record.
         await prisma.telegramCommunityState.delete({ where: key });
         state = null;
       }

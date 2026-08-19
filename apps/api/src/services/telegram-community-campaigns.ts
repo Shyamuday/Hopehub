@@ -31,7 +31,28 @@ const MAX_DELIVERIES_PER_SWEEP = 20;
 const ENGAGEMENT_CAMPAIGN_ID = 'seed_telegram_hourly_engagement';
 const PROMOTION_CAMPAIGN_ID = 'seed_telegram_daily_discovery';
 const VOICE_EVENT_ANNOUNCEMENT_LEAD_MS = 60 * 60 * 1000;
+// A Telegram group can keep only one live or scheduled voice chat. After a
+// call ends, leave a short handover window before restoring the next slot.
+const VOICE_EVENT_RECOVERY_DELAY_MS = 15 * 60 * 1000;
 const NATIVE_VOICE_SCHEDULER_STATE = 'TELEGRAM_NATIVE_VOICE_SCHEDULER';
+
+type NativeVoiceStatePayload = {
+  eventId?: string;
+  nativeCallId?: string;
+  nativeCallAccessHash?: string;
+  startedAt?: string;
+  startedEarly?: boolean;
+  endedAt?: string;
+  recoveryAfter?: string;
+};
+
+function nativeVoiceStatePayload(
+  value: Prisma.JsonValue | null | undefined
+): NativeVoiceStatePayload {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as NativeVoiceStatePayload)
+    : {};
+}
 
 export const telegramCampaignSweepEnabled =
   (process.env.TELEGRAM_CAMPAIGN_SWEEP_ENABLED || 'true').toLowerCase() !== 'false';
@@ -746,6 +767,13 @@ export async function handleTelegramCommunityVoiceChatEnded(message: CommunityTe
   }
   const chatId = String(message.chat.id);
   const now = new Date();
+  const recoveryAfter = new Date(now.getTime() + VOICE_EVENT_RECOVERY_DELAY_MS);
+  const stateKey = { bot_chatId: { bot: NATIVE_VOICE_SCHEDULER_STATE, chatId } };
+  const nativeState = await prisma.telegramCommunityState.findUnique({ where: stateKey });
+  const nativePayload = nativeVoiceStatePayload(nativeState?.payload);
+  const linkedEvent = nativePayload.eventId
+    ? await prisma.telegramCommunityEvent.findUnique({ where: { id: nativePayload.eventId } })
+    : null;
   const current = await prisma.telegramCommunityEvent.findFirst({
     where: {
       chatId,
@@ -756,18 +784,40 @@ export async function handleTelegramCommunityVoiceChatEnded(message: CommunityTe
     },
     orderBy: { startsAt: 'desc' }
   });
-  if (current) {
+  // A host can start a future scheduled VC early. In that case the future
+  // slot must remain SCHEDULED so it can be restored after the handover gap.
+  const completedEvent = linkedEvent && linkedEvent.startsAt <= now ? linkedEvent : current;
+  if (completedEvent) {
     await prisma.telegramCommunityEvent.update({
-      where: { id: current.id },
+      where: { id: completedEvent.id },
       data: { status: 'COMPLETED' }
     });
   }
-  // Telegram permits one group call only. Once it ends, any local native-call
-  // record is stale and must not prevent the minute scheduler from creating
-  // the next configured slot.
-  await prisma.telegramCommunityState
-    .delete({ where: { bot_chatId: { bot: NATIVE_VOICE_SCHEDULER_STATE, chatId } } })
-    .catch(() => null);
+  // Preserve a future planned slot, but do not recreate it immediately. The
+  // native worker wakes at the recovery time and verifies Telegram once.
+  await prisma.telegramCommunityState.upsert({
+    where: stateKey,
+    create: {
+      bot: NATIVE_VOICE_SCHEDULER_STATE,
+      chatId,
+      state: 'NATIVE_VOICE_RECOVERY',
+      payload: {
+        eventId: nativePayload.eventId,
+        endedAt: now.toISOString(),
+        recoveryAfter: recoveryAfter.toISOString()
+      },
+      expiresAt: recoveryAfter
+    },
+    update: {
+      state: 'NATIVE_VOICE_RECOVERY',
+      payload: {
+        eventId: nativePayload.eventId,
+        endedAt: now.toISOString(),
+        recoveryAfter: recoveryAfter.toISOString()
+      },
+      expiresAt: recoveryAfter
+    }
+  });
   const next = await prisma.telegramCommunityEvent.findFirst({
     where: { chatId, status: 'SCHEDULED', startsAt: { gt: now }, announcedAt: null },
     orderBy: { startsAt: 'asc' }
@@ -784,7 +834,7 @@ export async function handleTelegramCommunityVoiceChatEnded(message: CommunityTe
       }
     });
   }
-  return Boolean(current);
+  return Boolean(completedEvent || nativeState);
 }
 
 /** Records that the scheduled Telegram voice chat was actually opened. */
@@ -793,18 +843,56 @@ export async function handleTelegramCommunityVoiceChatStarted(message: Community
     return false;
   }
   const now = new Date();
+  const chatId = String(message.chat.id);
+  const stateKey = { bot_chatId: { bot: NATIVE_VOICE_SCHEDULER_STATE, chatId } };
+  const nativeState = await prisma.telegramCommunityState.findUnique({ where: stateKey });
+  const nativePayload = nativeVoiceStatePayload(nativeState?.payload);
+  const linkedEvent = nativePayload.eventId
+    ? await prisma.telegramCommunityEvent.findUnique({ where: { id: nativePayload.eventId } })
+    : null;
   const current = await prisma.telegramCommunityEvent.findFirst({
     where: {
-      chatId: String(message.chat.id),
+      chatId,
       status: 'SCHEDULED',
       startsAt: { lte: now, gte: new Date(now.getTime() - 4 * 60 * 60 * 1000) }
     },
     orderBy: { startsAt: 'desc' }
   });
-  if (!current) return false;
-  await prisma.telegramCommunityEvent.update({
-    where: { id: current.id },
-    data: { status: 'IN_PROGRESS' }
+  const activeEvent = linkedEvent || current;
+  if (!activeEvent) return false;
+  const startedEarly = activeEvent.startsAt > now;
+  if (!startedEarly) {
+    await prisma.telegramCommunityEvent.update({
+      where: { id: activeEvent.id },
+      data: { status: 'IN_PROGRESS' }
+    });
+  }
+  await prisma.telegramCommunityState.upsert({
+    where: stateKey,
+    create: {
+      bot: NATIVE_VOICE_SCHEDULER_STATE,
+      chatId,
+      state: 'NATIVE_VOICE_ACTIVE',
+      payload: {
+        ...nativePayload,
+        eventId: activeEvent.id,
+        startedAt: now.toISOString(),
+        startedEarly
+      },
+      // Event updates are primary. This is only a 15-minute fallback in case
+      // Telegram does not deliver the eventual video_chat_ended update.
+      expiresAt: new Date(now.getTime() + VOICE_EVENT_RECOVERY_DELAY_MS)
+    },
+    update: {
+      state: 'NATIVE_VOICE_ACTIVE',
+      payload: {
+        ...nativePayload,
+        eventId: activeEvent.id,
+        startedAt: now.toISOString(),
+        startedEarly
+      },
+      expiresAt: new Date(now.getTime() + VOICE_EVENT_RECOVERY_DELAY_MS)
+    }
   });
   return true;
 }
@@ -1489,8 +1577,18 @@ async function runTelegramCommunityEventScheduler(now: Date) {
     where: {
       status: 'SCHEDULED',
       announcedAt: null,
-      announcementDueAt: { lte: now }
+      startsAt: { gt: now },
+      // Older generated voice slots did not persist announcementDueAt. They
+      // should still receive the same one-hour-before join announcement.
+      OR: [
+        { announcementDueAt: { lte: now } },
+        {
+          announcementDueAt: null,
+          startsAt: { lte: new Date(now.getTime() + VOICE_EVENT_ANNOUNCEMENT_LEAD_MS) }
+        }
+      ]
     },
+    orderBy: { startsAt: 'asc' },
     take: 10
   });
   await Promise.allSettled(unannounced.map((event) => announceTelegramCommunityEvent(event.id)));

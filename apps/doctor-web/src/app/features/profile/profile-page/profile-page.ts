@@ -152,6 +152,14 @@ export class ProfilePage implements OnDestroy {
   readonly carePricingTemplates = signal<CarePricingTemplateDto[]>([]);
   readonly commonServiceDurations = [15, 20, 30, 45, 60, 90, 120];
   readonly customDurationServiceIndexes = signal<Set<number>>(new Set());
+  readonly telegramConnection = signal<{
+    connected: boolean;
+    telegramUsername: string | null;
+    displayName: string | null;
+    communityUrl: string | null;
+  } | null>(null);
+  readonly telegramLoading = signal(false);
+  readonly telegramConnecting = signal(false);
 
   methodOptions: Array<{ id: string; label: string }> = [];
   doctorTypeLabel = '';
@@ -182,6 +190,7 @@ export class ProfilePage implements OnDestroy {
       this.setSetupStepFromParam(params.get('step'));
     });
     void this.loadProfile();
+    void this.loadTelegramConnection();
     void this.loadProviderTaxonomy();
     void this.loadCarePricingTemplates();
     void this.loadPricingHistory();
@@ -206,6 +215,60 @@ export class ProfilePage implements OnDestroy {
       this.pricingHistory.set(response.history ?? []);
     } catch {
       this.pricingHistory.set([]);
+    }
+  }
+
+  async loadTelegramConnection(): Promise<void> {
+    this.telegramLoading.set(true);
+    try {
+      const connection = await firstValueFrom(
+        this.http.get<{
+          connected: boolean;
+          telegramUsername: string | null;
+          displayName: string | null;
+          communityUrl: string | null;
+        }>(`${this.apiBase}${API_PATHS.TELEGRAM_ACCOUNT_LINK}`),
+      );
+      this.telegramConnection.set(connection);
+    } catch {
+      this.telegramConnection.set(null);
+    } finally {
+      this.telegramLoading.set(false);
+    }
+  }
+
+  async connectTelegram(): Promise<void> {
+    this.telegramConnecting.set(true);
+    try {
+      const connection = await firstValueFrom(
+        this.http.post<{ url: string }>(`${this.apiBase}${API_PATHS.TELEGRAM_ACCOUNT_LINK}`, {}),
+      );
+      window.open(connection.url, '_blank', 'noopener');
+      this.message =
+        'Telegram opened. Tap Start in the Hope Hub Provider Bot to finish connecting.';
+    } catch (error: any) {
+      this.error = error?.error?.message || 'Could not open Telegram. Please try again.';
+    } finally {
+      this.telegramConnecting.set(false);
+    }
+  }
+
+  async disconnectTelegram(): Promise<void> {
+    this.telegramConnecting.set(true);
+    try {
+      await firstValueFrom(
+        this.http.delete<void>(`${this.apiBase}${API_PATHS.TELEGRAM_ACCOUNT_LINK}`),
+      );
+      this.telegramConnection.update((connection) =>
+        connection
+          ? { ...connection, connected: false, telegramUsername: null, displayName: null }
+          : connection,
+      );
+      this.message = 'Telegram account disconnected.';
+    } catch {
+      this.error = 'Could not disconnect Telegram. Please try again.';
+    } finally {
+      this.telegramConnecting.set(false);
     }
   }
 

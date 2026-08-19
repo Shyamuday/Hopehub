@@ -3,6 +3,7 @@ import { CROSS_APP_API_PATHS } from '@hopehub/clinic-api/cross-app-api-paths.con
 export const API_PATHS = {
   CONSULTATIONS: '/consultations',
   RTC_ICE_SERVERS: '/rtc/ice-servers',
+  TELEGRAM_ACCOUNT_LINK: '/telegram/account-link',
   DOCTOR: {
     WORKLIST: CROSS_APP_API_PATHS.DOCTOR.WORKLIST,
     PROFILE: '/doctor/profile',
