@@ -69,6 +69,19 @@ export const SITE_CONFIG_META: Record<string, { label: string; description: stri
     label: 'Hope Hub default care role label',
     description: 'Fallback public role label for care team members without a custom role label.'
   },
+  careTeamPricingApprovalRequiredForFree: {
+    label: 'Approve free provider services',
+    description: 'Set to true to require admin approval before a free provider service is public.'
+  },
+  careTeamPricingApprovalMaxPriceInPaise: {
+    label: 'Provider price approval threshold',
+    description: 'Prices above this amount in paise require admin approval. E.g. 100000 for ₹1,000.'
+  },
+  careTeamPricingApprovalMaxDiscountPercent: {
+    label: 'Provider discount approval threshold',
+    description:
+      'First-session, follow-up, or package discounts above this percentage require admin approval.'
+  },
   clinicName: {
     label: 'Clinic name',
     description: 'Public clinic name shown in header, emails, and meta tags.'
@@ -157,7 +170,10 @@ export const SITE_CONFIG_DEFAULTS: Record<string, string> = {
   hopeHubDefaultSessionPriceInPaise: '50000',
   hopeHubDefaultSessionDurationMinutes: '30',
   hopeHubDefaultSessionLabel: '30 min + 15 min follow-up',
-  hopeHubDefaultCareRoleLabel: 'Hope Hub care guide'
+  hopeHubDefaultCareRoleLabel: 'Hope Hub care guide',
+  careTeamPricingApprovalRequiredForFree: 'true',
+  careTeamPricingApprovalMaxPriceInPaise: '100000',
+  careTeamPricingApprovalMaxDiscountPercent: '50'
 };
 
 export const PUBLIC_SITE_CONFIG_KEYS = [

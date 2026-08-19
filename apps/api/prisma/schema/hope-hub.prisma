@@ -167,7 +167,15 @@ model CareTeamService {
   priceInPaise             Int                        @default(0)
   firstSessionPriceInPaise Int?
   offerEndsAt              DateTime?
+  offerBookingLimit        Int?
+  pauseOfferWhenNoSlots    Boolean                    @default(false)
+  approvalStatus           String                     @default("APPROVED")
+  approvalReason           String?                    @db.Text
+  approvalRequestedAt      DateTime?
+  approvedAt               DateTime?
+  approvedById             String?
   followUpPriceInPaise     Int?
+  followUpSessionLimit     Int?
   introSessionLimit        Int                        @default(1)
   packageSessionCount      Int?
   packagePriceInPaise      Int?
@@ -189,6 +197,7 @@ model CareTeamService {
   @@index([mentalHealthProfileId, isActive, sortOrder])
   @@index([providerRole, isActive])
   @@index([providerRoleCode, isActive])
+  @@index([approvalStatus, isActive])
 }
 
 model CareTeamPricingTemplate {

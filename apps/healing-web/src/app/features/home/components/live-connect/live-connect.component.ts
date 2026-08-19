@@ -590,11 +590,23 @@ export class LiveConnectComponent implements OnInit {
       }
       this.appliedCouponCode.set(code);
       this.couponQuote.set(quote);
-      this.couponSuccess.set(
-        quote.payableInPaise <= 0
-          ? `${code} applied. No payment will be needed.`
-          : `${code} applied. Pay ${this.formatPaise(quote.payableInPaise)} after confirmation.`,
-      );
+      if (quote.discountStrategy === 'PROVIDER_OFFER') {
+        this.couponSuccess.set(
+          `The provider offer gives you the lower price. ${code} was checked but was not combined. Pay ${this.formatPaise(quote.payableInPaise)} after confirmation.`,
+        );
+      } else if (quote.discountStrategy === 'COUPON') {
+        this.couponSuccess.set(
+          quote.payableInPaise <= 0
+            ? `${code} gives you the better price. No payment will be needed.`
+            : `${code} gives you the better price. Pay ${this.formatPaise(quote.payableInPaise)} after confirmation.`,
+        );
+      } else {
+        this.couponSuccess.set(
+          quote.payableInPaise <= 0
+            ? `${code} applied. No payment will be needed.`
+            : `${code} applied. Pay ${this.formatPaise(quote.payableInPaise)} after confirmation.`,
+        );
+      }
     } catch (error) {
       this.appliedCouponCode.set('');
       this.couponQuote.set(null);

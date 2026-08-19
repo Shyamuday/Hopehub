@@ -19,6 +19,33 @@
   (save)="saveDoctorListLimit()"
 />
 
+@if (workspaceKey() === 'hope-hub' && pendingPricingReviews().length) {
+  <section class="panel" [adminCan]="manageProviderPermission">
+    <div class="panel-header">
+      <div>
+        <h2>Pricing approvals</h2>
+        <p class="panel-hint">Review services that are free, unusually priced, or deeply discounted.</p>
+      </div>
+      <span>{{ pendingPricingReviews().length }} waiting</span>
+    </div>
+    <div class="service-editor">
+      @for (service of pendingPricingReviews(); track service.id) {
+        <article class="service-editor-card">
+          <strong>{{ service.provider?.name || service.provider?.email || 'Provider' }} · {{ service.title }}</strong>
+          <p>
+            ₹{{ service.priceInPaise / 100 }} · {{ service.durationMinutes }} min ·
+            {{ service.approvalReason || 'Review required' }}
+          </p>
+          <div class="template-row">
+            <button type="button" class="btn-primary" [disabled]="mutating()" (click)="reviewServicePricing(service, 'APPROVED')">Approve</button>
+            <button type="button" class="btn-secondary" [disabled]="mutating()" (click)="reviewServicePricing(service, 'REJECTED')">Request changes</button>
+          </div>
+        </article>
+      }
+    </div>
+  </section>
+}
+
 <section class="panel panel--compact" [adminCan]="manageProviderPermission">
   <div class="panel-header">
     <div>
@@ -341,6 +368,27 @@
                       )
                     "
                   />
+                  <input
+                    type="datetime-local"
+                    [value]="dateTimeLocalValue(service.offerEndsAt)"
+                    title="Offer end time"
+                    (input)="updateCareService('create', $index, 'offerEndsAt', $any($event.target).value)"
+                  />
+                  <input
+                    type="number"
+                    min="1"
+                    [value]="service.offerBookingLimit || ''"
+                    placeholder="Total offer bookings"
+                    (input)="updateCareService('create', $index, 'offerBookingLimit', $any($event.target).value)"
+                  />
+                  <label>
+                    <input
+                      type="checkbox"
+                      [checked]="service.pauseOfferWhenNoSlots || false"
+                      (change)="updateCareService('create', $index, 'pauseOfferWhenNoSlots', $any($event.target).checked)"
+                    />
+                    Pause offer when no slots are available
+                  </label>
                 }
                 @if (showFollowUpPrice(service)) {
                   <input
@@ -355,6 +403,13 @@
                         $any($event.target).value
                       )
                     "
+                  />
+                  <input
+                    type="number"
+                    min="1"
+                    [value]="service.followUpSessionLimit || ''"
+                    placeholder="Follow-up sessions (blank = ongoing)"
+                    (input)="updateCareService('create', $index, 'followUpSessionLimit', $any($event.target).value)"
                   />
                   <input
                     type="number"
@@ -1232,6 +1287,13 @@
               <div class="service-editor">
                 @for (service of editCareServices(); track $index) {
                   <article class="service-editor-card">
+                    @if (service.approvalStatus === 'PENDING') {
+                      <div class="template-row">
+                        <span>Pending pricing review: {{ service.approvalReason || 'Review required' }}</span>
+                        <button type="button" class="btn-primary" [disabled]="mutating()" (click)="reviewServicePricing(service, 'APPROVED')">Approve</button>
+                        <button type="button" class="btn-secondary" [disabled]="mutating()" (click)="reviewServicePricing(service, 'REJECTED')">Request changes</button>
+                      </div>
+                    }
                     <input
                       [value]="service.title"
                       placeholder="Service title"
@@ -1296,6 +1358,27 @@
                           )
                         "
                       />
+                      <input
+                        type="datetime-local"
+                        [value]="dateTimeLocalValue(service.offerEndsAt)"
+                        title="Offer end time"
+                        (input)="updateCareService('edit', $index, 'offerEndsAt', $any($event.target).value)"
+                      />
+                      <input
+                        type="number"
+                        min="1"
+                        [value]="service.offerBookingLimit || ''"
+                        placeholder="Total offer bookings"
+                        (input)="updateCareService('edit', $index, 'offerBookingLimit', $any($event.target).value)"
+                      />
+                      <label>
+                        <input
+                          type="checkbox"
+                          [checked]="service.pauseOfferWhenNoSlots || false"
+                          (change)="updateCareService('edit', $index, 'pauseOfferWhenNoSlots', $any($event.target).checked)"
+                        />
+                        Pause offer when no slots are available
+                      </label>
                     }
                     @if (showFollowUpPrice(service)) {
                       <input
@@ -1310,6 +1393,13 @@
                             $any($event.target).value
                           )
                         "
+                      />
+                      <input
+                        type="number"
+                        min="1"
+                        [value]="service.followUpSessionLimit || ''"
+                        placeholder="Follow-up sessions (blank = ongoing)"
+                        (input)="updateCareService('edit', $index, 'followUpSessionLimit', $any($event.target).value)"
                       />
                       <input
                         type="number"

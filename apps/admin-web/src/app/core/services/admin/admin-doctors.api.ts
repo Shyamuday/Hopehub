@@ -100,6 +100,21 @@ export class AdminDoctorsApi extends AdminApiBase {
     );
   }
 
+  reviewServicePricing(serviceId: string, decision: 'APPROVED' | 'REJECTED', reason?: string) {
+    return firstValueFrom(
+      this.http.patch(`${this.apiBase}/admin/doctors/services/${serviceId}/pricing-approval`, {
+        decision,
+        reason: reason || null,
+      }),
+    );
+  }
+
+  getPendingPricingApprovals() {
+    return firstValueFrom(
+      this.http.get<{ reviews: Array<any> }>(`${this.apiBase}/admin/doctors/pricing-approvals`),
+    );
+  }
+
   rejectDoctor(doctorId: string) {
     return firstValueFrom(
       this.http.post(`${this.apiBase}${API_PATHS.ADMIN.DOCTORS}/${doctorId}/reject`, {}),
@@ -168,6 +183,7 @@ export class AdminDoctorsApi extends AdminApiBase {
         maxSessionsPerDay?: number | null;
         maxSessionsPerWeek?: number | null;
         services?: Array<{
+          id?: string;
           title: string;
           description?: string | null;
           pricingMode?:
@@ -179,7 +195,13 @@ export class AdminDoctorsApi extends AdminApiBase {
             | 'PER_MINUTE';
           priceInPaise?: number;
           firstSessionPriceInPaise?: number | null;
+          offerEndsAt?: string | null;
+          offerBookingLimit?: number | null;
+          pauseOfferWhenNoSlots?: boolean;
+          approvalStatus?: string;
+          approvalReason?: string | null;
           followUpPriceInPaise?: number | null;
+          followUpSessionLimit?: number | null;
           introSessionLimit?: number;
           packageSessionCount?: number | null;
           packagePriceInPaise?: number | null;
@@ -234,13 +256,20 @@ export class AdminDoctorsApi extends AdminApiBase {
       maxSessionsPerDay?: number | null;
       maxSessionsPerWeek?: number | null;
       services?: Array<{
+        id?: string;
         title: string;
         description?: string | null;
         pricingMode?:
           'FIXED' | 'FREE_INTRO' | 'DISCOUNTED_FIRST' | 'PACKAGE' | 'FREE_VOLUNTEER' | 'PER_MINUTE';
         priceInPaise?: number;
         firstSessionPriceInPaise?: number | null;
+        offerEndsAt?: string | null;
+        offerBookingLimit?: number | null;
+        pauseOfferWhenNoSlots?: boolean;
+        approvalStatus?: string;
+        approvalReason?: string | null;
         followUpPriceInPaise?: number | null;
+        followUpSessionLimit?: number | null;
         introSessionLimit?: number;
         packageSessionCount?: number | null;
         packagePriceInPaise?: number | null;

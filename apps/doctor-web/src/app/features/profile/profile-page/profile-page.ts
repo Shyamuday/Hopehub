@@ -1,4 +1,5 @@
 import { HttpClient } from '@angular/common/http';
+import { DatePipe } from '@angular/common';
 import { Component, effect, inject, OnDestroy, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -113,6 +114,7 @@ function emptyProfileModel() {
     AppButtonComponent,
     AppActionBarComponent,
     AppTagInputComponent,
+    DatePipe,
   ],
   templateUrl: './profile-page.html',
   styleUrl: './profile-page.scss',
@@ -146,6 +148,7 @@ export class ProfilePage implements OnDestroy {
   ];
   private roleDefinitions = new Map<string, ProviderRoleDefinitionDto>();
   readonly careServices = signal<Array<any>>([]);
+  readonly pricingHistory = signal<Array<any>>([]);
   readonly carePricingTemplates = signal<CarePricingTemplateDto[]>([]);
   readonly commonServiceDurations = [15, 20, 30, 45, 60, 90, 120];
   readonly customDurationServiceIndexes = signal<Set<number>>(new Set());
@@ -175,6 +178,7 @@ export class ProfilePage implements OnDestroy {
     void this.loadProfile();
     void this.loadProviderTaxonomy();
     void this.loadCarePricingTemplates();
+    void this.loadPricingHistory();
     effect(() => {
       const model = this.profileModel();
       const services = this.careServices();
@@ -186,6 +190,37 @@ export class ProfilePage implements OnDestroy {
 
   ngOnDestroy(): void {
     if (this.autosaveTimer) clearTimeout(this.autosaveTimer);
+  }
+
+  async loadPricingHistory(): Promise<void> {
+    try {
+      const response = await firstValueFrom(
+        this.http.get<{ history: Array<any> }>(`${this.apiBase}/doctor/pricing-history`),
+      );
+      this.pricingHistory.set(response.history ?? []);
+    } catch {
+      this.pricingHistory.set([]);
+    }
+  }
+
+  pricingHistoryActor(entry: any): string {
+    return entry?.actor?.name || (entry?.actor?.role === 'ADMIN' ? 'Hope Hub admin' : 'Provider');
+  }
+
+  pricingHistoryServices(entry: any): string[] {
+    const services = Array.isArray(entry?.metadata?.after) ? entry.metadata.after : [];
+    return services.map((service: any) => {
+      const regular = Number(service.regularPriceInPaise || 0) / 100;
+      const first =
+        service.firstSessionPriceInPaise == null
+          ? ''
+          : ` · first ₹${Number(service.firstSessionPriceInPaise) / 100}`;
+      const followUp =
+        service.followUpPriceInPaise == null
+          ? ''
+          : ` · follow-up ₹${Number(service.followUpPriceInPaise) / 100}`;
+      return `${service.title}: ₹${regular}${first}${followUp} · ${service.durationMinutes} min`;
+    });
   }
 
   isListenerProfile(): boolean {
@@ -1002,6 +1037,7 @@ export class ProfilePage implements OnDestroy {
       this.onboardingDrafts.clear(form.email);
       this.autosaveStatus.set('saved');
       this.lastServerPayload = JSON.stringify(this.profileStepPayload(step, form));
+      if (step === 'services') await this.loadPricingHistory();
       if (refreshProfile) {
         await this.session.load(true);
         await this.loadProfile();
@@ -1236,7 +1272,10 @@ export class ProfilePage implements OnDestroy {
         priceInPaise: 0,
         firstSessionPriceInPaise: null,
         offerEndsAt: null,
+        offerBookingLimit: null,
+        pauseOfferWhenNoSlots: false,
         followUpPriceInPaise: null,
+        followUpSessionLimit: null,
         introSessionLimit: 1,
         packageSessionCount: null,
         packagePriceInPaise: null,
@@ -1260,7 +1299,10 @@ export class ProfilePage implements OnDestroy {
     priceInPaise: number;
     firstSessionPriceInPaise?: number | null;
     offerEndsAt?: string | null;
+    offerBookingLimit?: number | null;
+    pauseOfferWhenNoSlots?: boolean;
     followUpPriceInPaise?: number | null;
+    followUpSessionLimit?: number | null;
     introSessionLimit?: number;
     packageSessionCount?: number | null;
     packagePriceInPaise?: number | null;
@@ -1279,7 +1321,10 @@ export class ProfilePage implements OnDestroy {
         priceInPaise: service.priceInPaise,
         firstSessionPriceInPaise: service.firstSessionPriceInPaise ?? null,
         offerEndsAt: service.offerEndsAt ?? null,
+        offerBookingLimit: service.offerBookingLimit ?? null,
+        pauseOfferWhenNoSlots: service.pauseOfferWhenNoSlots ?? false,
         followUpPriceInPaise: service.followUpPriceInPaise ?? null,
+        followUpSessionLimit: service.followUpSessionLimit ?? null,
         introSessionLimit: service.introSessionLimit ?? 1,
         packageSessionCount: service.packageSessionCount ?? null,
         packagePriceInPaise: service.packagePriceInPaise ?? null,
@@ -1318,6 +1363,8 @@ export class ProfilePage implements OnDestroy {
         } else if (
           key === 'durationMinutes' ||
           key === 'introSessionLimit' ||
+          key === 'offerBookingLimit' ||
+          key === 'followUpSessionLimit' ||
           key === 'packageSessionCount' ||
           key === 'freeMinutes'
         ) {
@@ -1375,6 +1422,40 @@ export class ProfilePage implements OnDestroy {
       0,
       Math.round((Number(amountInPaise || 0) * this.consultationSharePercent) / 100),
     );
+  }
+
+  servicePayoutPreview(service: any): string {
+    const payout = (amount: number | null | undefined) =>
+      `₹${this.rupees(this.estimatedPayoutInPaise(amount)) || '0'}`;
+    const regular = Math.max(0, Number(service.priceInPaise || 0));
+    switch (service.pricingMode) {
+      case 'DISCOUNTED_FIRST':
+        return `${payout(service.firstSessionPriceInPaise)} first · ${payout(
+          service.followUpPriceInPaise ?? regular,
+        )} follow-up · ${payout(regular)} regular`;
+      case 'FREE_INTRO':
+        return `₹0 first · ${payout(service.followUpPriceInPaise ?? regular)} follow-up`;
+      case 'PACKAGE': {
+        const sessions = Math.max(1, Number(service.packageSessionCount || 1));
+        const packagePrice = Math.max(0, Number(service.packagePriceInPaise || 0));
+        return `${payout(packagePrice)} per package · ${payout(
+          Math.round(packagePrice / sessions),
+        )} per session`;
+      }
+      case 'PER_MINUTE': {
+        const billableMinutes = Math.max(
+          0,
+          Number(service.durationMinutes || 0) - Number(service.freeMinutes || 0),
+        );
+        return `${payout(
+          billableMinutes * Math.max(0, Number(service.pricePerMinuteInPaise || 0)),
+        )} for the configured session`;
+      }
+      case 'FREE_VOLUNTEER':
+        return '₹0 for this free support service';
+      default:
+        return payout(regular);
+    }
   }
 
   setCareServiceOfferDiscount(index: number, value: string): void {
@@ -1482,6 +1563,9 @@ export class ProfilePage implements OnDestroy {
         pricingMode: service.pricingMode || 'FIXED',
         priceInPaise: service.priceInPaise ?? 0,
         offerEndsAt: service.offerEndsAt ?? null,
+        offerBookingLimit: service.offerBookingLimit ?? null,
+        pauseOfferWhenNoSlots: service.pauseOfferWhenNoSlots ?? false,
+        followUpSessionLimit: service.followUpSessionLimit ?? null,
         introSessionLimit: service.introSessionLimit || 1,
         freeMinutes: service.freeMinutes || 0,
         pricePerMinuteInPaise: service.pricePerMinuteInPaise ?? null,

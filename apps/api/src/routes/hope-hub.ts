@@ -23,7 +23,8 @@ import {
 import { ensureBillingPlans } from './catalog.js';
 import {
   assertRequestedPromoApplied,
-  resolveConsultationCheckout
+  resolveConsultationCheckout,
+  resolveBestCareTeamDiscount
 } from '../services/checkout-pricing.js';
 import {
   HOPE_HUB_EVENTS,
@@ -628,7 +629,10 @@ type CareTeamServicePricingInput = {
   priceInPaise: number;
   firstSessionPriceInPaise: number | null;
   offerEndsAt: Date | null;
+  offerBookingLimit: number | null;
+  pauseOfferWhenNoSlots: boolean;
   followUpPriceInPaise: number | null;
+  followUpSessionLimit: number | null;
   introSessionLimit: number;
   packageSessionCount: number | null;
   packagePriceInPaise: number | null;
@@ -642,7 +646,12 @@ function rupeeLabel(amountInPaise: number) {
   return amountInPaise <= 0 ? 'Free' : `₹${Math.round(amountInPaise / 100)}`;
 }
 
-function careTeamServicePricingPreview(service: CareTeamServicePricingInput, previousUseCount = 0) {
+function careTeamServicePricingPreview(
+  service: CareTeamServicePricingInput,
+  previousUseCount = 0,
+  globalOfferUseCount = 0,
+  offerAvailableBySlots = true
+) {
   const introLimit = Math.max(1, service.introSessionLimit || 1);
   const basePrice = service.isFree ? 0 : Math.max(0, service.priceInPaise || 0);
   const firstPrice = Math.max(0, service.firstSessionPriceInPaise ?? basePrice);
@@ -654,7 +663,17 @@ function careTeamServicePricingPreview(service: CareTeamServicePricingInput, pre
   const pricePerMinute = Math.max(0, service.pricePerMinuteInPaise ?? 0);
   const perMinutePrice = billableMinutes * pricePerMinute;
   const introAvailable = previousUseCount < introLimit;
-  const offerActive = !service.offerEndsAt || service.offerEndsAt.getTime() > Date.now();
+  const followUpAvailable =
+    service.followUpSessionLimit == null ||
+    previousUseCount < introLimit + service.followUpSessionLimit;
+  const offerWithinTime = !service.offerEndsAt || service.offerEndsAt.getTime() > Date.now();
+  const offerWithinBookingLimit =
+    service.offerBookingLimit == null || globalOfferUseCount < service.offerBookingLimit;
+  const offerActive = offerWithinTime && offerWithinBookingLimit && offerAvailableBySlots;
+  const offerAvailabilityLabel =
+    service.offerBookingLimit == null
+      ? ''
+      : ` · ${Math.max(0, service.offerBookingLimit - globalOfferUseCount)} offer ${Math.max(0, service.offerBookingLimit - globalOfferUseCount) === 1 ? 'spot' : 'spots'} left`;
 
   switch (service.pricingMode) {
     case CareTeamServicePricingMode.FREE_VOLUNTEER:
@@ -673,23 +692,52 @@ function careTeamServicePricingPreview(service: CareTeamServicePricingInput, pre
         appliedRule: introAvailable ? 'FREE_INTRO' : 'FOLLOW_UP_PRICE',
         sessionCount: 1
       };
-    case CareTeamServicePricingMode.DISCOUNTED_FIRST:
+    case CareTeamServicePricingMode.DISCOUNTED_FIRST: {
+      const saving = Math.max(0, basePrice - firstPrice);
+      const followUpLabel =
+        followUpPrice !== basePrice
+          ? service.followUpSessionLimit == null
+            ? ` · Follow-up ${rupeeLabel(followUpPrice)}`
+            : ` · Next ${service.followUpSessionLimit} at ${rupeeLabel(followUpPrice)} · Regular ${rupeeLabel(basePrice)}`
+          : ` · Then ${rupeeLabel(basePrice)}`;
       return {
-        amountInPaise: introAvailable && offerActive ? firstPrice : followUpPrice,
+        amountInPaise:
+          introAvailable && offerActive
+            ? firstPrice
+            : followUpAvailable
+              ? followUpPrice
+              : basePrice,
         label:
           introAvailable && offerActive
-            ? `First session ${rupeeLabel(firstPrice)}, then ${rupeeLabel(followUpPrice)}`
-            : `Follow-up ${rupeeLabel(followUpPrice)}`,
-        appliedRule: introAvailable && offerActive ? 'DISCOUNTED_FIRST' : 'FOLLOW_UP_PRICE',
+            ? `First session ${rupeeLabel(firstPrice)} · Save ${rupeeLabel(saving)}${offerAvailabilityLabel}${followUpLabel}`
+            : followUpAvailable
+              ? service.followUpSessionLimit == null
+                ? `Follow-up ${rupeeLabel(followUpPrice)}`
+                : `Follow-up ${rupeeLabel(followUpPrice)} · Regular ${rupeeLabel(basePrice)} later`
+              : `Regular ${rupeeLabel(basePrice)}`,
+        appliedRule:
+          introAvailable && offerActive
+            ? 'DISCOUNTED_FIRST'
+            : followUpAvailable
+              ? 'FOLLOW_UP_PRICE'
+              : 'FIXED_PRICE',
         sessionCount: 1
       };
-    case CareTeamServicePricingMode.PACKAGE:
+    }
+    case CareTeamServicePricingMode.PACKAGE: {
+      const regularPackagePrice = basePrice * packageSessions;
+      const packageSaving = Math.max(0, regularPackagePrice - packagePrice);
+      const perSessionPrice = Math.round(packagePrice / packageSessions);
       return {
         amountInPaise: packagePrice,
-        label: `${packageSessions} session package · ${rupeeLabel(packagePrice)}`,
+        label:
+          packageSaving > 0
+            ? `${packageSessions} session package · ${rupeeLabel(packagePrice)} · ${rupeeLabel(perSessionPrice)}/session · Save ${rupeeLabel(packageSaving)}`
+            : `${packageSessions} session package · ${rupeeLabel(packagePrice)} · ${rupeeLabel(perSessionPrice)}/session`,
         appliedRule: 'PACKAGE_PRICE',
         sessionCount: packageSessions
       };
+    }
     case CareTeamServicePricingMode.PER_MINUTE:
       return {
         amountInPaise: perMinutePrice,
@@ -709,6 +757,15 @@ function careTeamServicePricingPreview(service: CareTeamServicePricingInput, pre
         sessionCount: 1
       };
   }
+}
+
+function careTeamServiceRegularGrossInPaise(
+  service: Pick<CareTeamServicePricingInput, 'pricingMode' | 'priceInPaise' | 'packageSessionCount'>
+) {
+  const basePrice = Math.max(0, service.priceInPaise || 0);
+  return service.pricingMode === CareTeamServicePricingMode.PACKAGE
+    ? basePrice * Math.max(1, service.packageSessionCount ?? 1)
+    : basePrice;
 }
 
 function quickTalkSessionPricingLabel(
@@ -737,6 +794,22 @@ async function previousCareTeamServiceUseCount(patientId: string, careTeamServic
   return consultations.filter((consultation) => {
     const snapshot = (consultation.pricingSnapshot || {}) as Record<string, unknown>;
     return snapshot['careTeamServiceId'] === careTeamServiceId;
+  }).length;
+}
+
+async function globalCareTeamServiceOfferUseCount(careTeamServiceId: string) {
+  const consultations = await prisma.consultation.findMany({
+    where: {
+      payment: { is: { status: { in: [PaymentStatus.PAID, PaymentStatus.PARTIALLY_REFUNDED] } } }
+    },
+    select: { pricingSnapshot: true }
+  });
+  return consultations.filter((consultation) => {
+    const snapshot = (consultation.pricingSnapshot || {}) as Record<string, unknown>;
+    return (
+      snapshot['careTeamServiceId'] === careTeamServiceId &&
+      snapshot['careTeamPricingRule'] === 'DISCOUNTED_FIRST'
+    );
   }).length;
 }
 
@@ -814,7 +887,12 @@ function careTeamServiceSelect() {
     priceInPaise: true,
     firstSessionPriceInPaise: true,
     offerEndsAt: true,
+    offerBookingLimit: true,
+    pauseOfferWhenNoSlots: true,
+    approvalStatus: true,
+    approvalReason: true,
     followUpPriceInPaise: true,
+    followUpSessionLimit: true,
     introSessionLimit: true,
     packageSessionCount: true,
     packagePriceInPaise: true,
@@ -838,11 +916,53 @@ function careTeamServiceSelect() {
   } as const;
 }
 
+async function offerSlotAvailability(service: {
+  pauseOfferWhenNoSlots: boolean;
+  id: string;
+  mentalHealthProfile: { doctor: { id: string } };
+}) {
+  if (!service.pauseOfferWhenNoSlots) return true;
+  const now = new Date();
+  const indiaParts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23'
+    })
+      .formatToParts(now)
+      .filter((part) => part.type !== 'literal')
+      .map((part) => [part.type, part.value])
+  );
+  const today = new Date(
+    Date.UTC(Number(indiaParts['year']), Number(indiaParts['month']) - 1, Number(indiaParts['day']))
+  );
+  const currentTime = `${indiaParts['hour']}:${indiaParts['minute']}`;
+  const slots = await prisma.doctorSlot.count({
+    where: {
+      doctorId: service.mentalHealthProfile.doctor.id,
+      isBooked: false,
+      isBlocked: false,
+      AND: [
+        {
+          OR: [{ date: { gt: today } }, { date: today, startTime: { gt: currentTime } }]
+        }
+      ],
+      OR: [{ careTeamServiceId: service.id }, { careTeamServiceId: null }]
+    }
+  });
+  return slots > 0;
+}
+
 async function findAvailableCareTeamService(id: string, providerId?: string) {
   return prisma.careTeamService.findFirst({
     where: {
       id,
       isActive: true,
+      approvalStatus: 'APPROVED',
       mentalHealthProfile: {
         doctor: {
           ...(providerId ? { id: providerId } : {}),
@@ -988,7 +1108,10 @@ function providerPublicPayload(
         priceInPaise: number;
         firstSessionPriceInPaise: number | null;
         offerEndsAt: Date | null;
+        offerBookingLimit: number | null;
+        pauseOfferWhenNoSlots: boolean;
         followUpPriceInPaise: number | null;
+        followUpSessionLimit: number | null;
         introSessionLimit: number;
         packageSessionCount: number | null;
         packagePriceInPaise: number | null;
@@ -1734,7 +1857,7 @@ async function activeHopeHubProviders(params: {
             maxSessionsPerDay: true,
             maxSessionsPerWeek: true,
             services: {
-              where: { isActive: true },
+              where: { isActive: true, approvalStatus: 'APPROVED' },
               orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
               select: {
                 id: true,
@@ -1746,7 +1869,10 @@ async function activeHopeHubProviders(params: {
                 priceInPaise: true,
                 firstSessionPriceInPaise: true,
                 offerEndsAt: true,
+                offerBookingLimit: true,
+                pauseOfferWhenNoSlots: true,
                 followUpPriceInPaise: true,
+                followUpSessionLimit: true,
                 introSessionLimit: true,
                 packageSessionCount: true,
                 packagePriceInPaise: true,
@@ -2959,7 +3085,7 @@ hopeHubRouter.get(
             maxSessionsPerDay: true,
             maxSessionsPerWeek: true,
             services: {
-              where: { isActive: true },
+              where: { isActive: true, approvalStatus: 'APPROVED' },
               orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
               select: {
                 id: true,
@@ -2971,7 +3097,10 @@ hopeHubRouter.get(
                 priceInPaise: true,
                 firstSessionPriceInPaise: true,
                 offerEndsAt: true,
+                offerBookingLimit: true,
+                pauseOfferWhenNoSlots: true,
                 followUpPriceInPaise: true,
+                followUpSessionLimit: true,
                 introSessionLimit: true,
                 packageSessionCount: true,
                 packagePriceInPaise: true,
@@ -3063,15 +3192,23 @@ hopeHubRouter.get(
       return res.status(404).json({ message: 'Selected care team service is not available.' });
     }
 
-    const [previousUseCount, packageBalance] = await Promise.all([
-      previousCareTeamServiceUseCount(req.user!.id, service.id),
-      service.pricingMode === CareTeamServicePricingMode.PACKAGE
-        ? findActiveCareTeamPackageBalance(req.user!.id, service.id)
-        : Promise.resolve(null)
-    ]);
+    const [previousUseCount, globalOfferUseCount, offerSlotsAvailable, packageBalance] =
+      await Promise.all([
+        previousCareTeamServiceUseCount(req.user!.id, service.id),
+        globalCareTeamServiceOfferUseCount(service.id),
+        offerSlotAvailability(service),
+        service.pricingMode === CareTeamServicePricingMode.PACKAGE
+          ? findActiveCareTeamPackageBalance(req.user!.id, service.id)
+          : Promise.resolve(null)
+      ]);
     const pricing = packageBalance
       ? careTeamPackageRedemptionPricing(packageBalance)
-      : careTeamServicePricingPreview(service, previousUseCount);
+      : careTeamServicePricingPreview(
+          service,
+          previousUseCount,
+          globalOfferUseCount,
+          offerSlotsAvailable
+        );
 
     res.json({
       service: {
@@ -3089,6 +3226,7 @@ hopeHubRouter.get(
         label: pricing.label,
         appliedRule: pricing.appliedRule,
         previousUseCount,
+        globalOfferUseCount,
         sessionCount: pricing.sessionCount,
         requiresPayment: pricing.amountInPaise > 0,
         packageBalance: packageBalance
@@ -3174,11 +3312,20 @@ hopeHubRouter.post(
           'Please confirm you understand listener support is non-clinical and not emergency care.'
       });
     }
-    const previousUseCount = careTeamService
-      ? await previousCareTeamServiceUseCount(req.user!.id, careTeamService.id)
-      : 0;
+    const [previousUseCount, globalOfferUseCount, offerSlotsAvailable] = careTeamService
+      ? await Promise.all([
+          previousCareTeamServiceUseCount(req.user!.id, careTeamService.id),
+          globalCareTeamServiceOfferUseCount(careTeamService.id),
+          offerSlotAvailability(careTeamService)
+        ])
+      : [0, 0, true];
     const careTeamServicePricing = careTeamService
-      ? careTeamServicePricingPreview(careTeamService, previousUseCount)
+      ? careTeamServicePricingPreview(
+          careTeamService,
+          previousUseCount,
+          globalOfferUseCount,
+          offerSlotsAvailable
+        )
       : null;
     const effectiveServiceName = careTeamService?.title || 'Quick Hope Hub talk';
     const selectedServiceDurationMinutes =
@@ -3219,9 +3366,12 @@ hopeHubRouter.post(
       }
     });
 
-    const checkout = await resolveConsultationCheckout({
+    const checkout = await resolveBestCareTeamDiscount({
       patientId: req.user!.id,
       grossInPaise: amountInPaise,
+      regularGrossInPaise: careTeamService
+        ? careTeamServiceRegularGrossInPaise(careTeamService)
+        : amountInPaise,
       walletRedeemInPaise: amountInPaise <= 0 ? 0 : body.walletRedeemInPaise,
       promoCode: body.promoCode || '',
       serviceName: effectiveServiceName,
@@ -3241,7 +3391,7 @@ hopeHubRouter.post(
     const isFreeOrWalletPaid = finalPayableInPaise <= 0;
     const isFreeByPricing = amountInPaise <= 0;
     const paymentProvider = isFreeOrWalletPaid ? 'internal_free' : 'razorpay';
-    const grossRevenueSplit = hopeHubRevenueSplit(amountInPaise);
+    const grossRevenueSplit = hopeHubRevenueSplit(checkout.grossAmountInPaise);
     const payableRevenueSplit = hopeHubRevenueSplit(finalPayableInPaise);
 
     const consultation = await prisma.$transaction(async (tx) => {
@@ -3562,19 +3712,49 @@ hopeHubRouter.post(
   allowRoles(Role.PATIENT),
   asyncRoute(async (req, res) => {
     const body = hopeHubCheckoutQuoteSchema.parse(req.body);
-    const quote = await resolveConsultationCheckout({
+    const careTeamServiceId = isBackendCareTeamServiceId(body.careTeamServiceId)
+      ? body.careTeamServiceId
+      : null;
+    const careTeamService = careTeamServiceId
+      ? await prisma.careTeamService.findFirst({
+          where: {
+            id: careTeamServiceId,
+            isActive: true,
+            approvalStatus: 'APPROVED',
+            ...(body.providerId ? { mentalHealthProfile: { doctorId: body.providerId } } : {})
+          },
+          select: { pricingMode: true, priceInPaise: true, packageSessionCount: true }
+        })
+      : null;
+    if (careTeamServiceId && !careTeamService) {
+      return res.status(400).json({ message: 'This provider service is not available.' });
+    }
+    const checkoutInput = {
       patientId: req.user!.id,
       grossInPaise: body.grossInPaise,
       promoCode: body.promoCode || '',
       walletRedeemInPaise: body.walletRedeemInPaise,
       serviceName: body.serviceName || '',
       offeringId: body.offeringId || null,
-      careTeamServiceId: isBackendCareTeamServiceId(body.careTeamServiceId)
-        ? body.careTeamServiceId
-        : null,
+      careTeamServiceId,
       providerId: body.providerId || null,
       assessmentId: body.assessmentId || null
-    });
+    };
+    const quote = careTeamService
+      ? await resolveBestCareTeamDiscount({
+          ...checkoutInput,
+          regularGrossInPaise: careTeamServiceRegularGrossInPaise(careTeamService)
+        })
+      : await resolveConsultationCheckout(checkoutInput);
+
+    try {
+      assertRequestedPromoApplied(body.promoCode, quote);
+    } catch (error) {
+      const statusCode = (error as Error & { statusCode?: number }).statusCode ?? 400;
+      return res.status(statusCode).json({
+        message: error instanceof Error ? error.message : 'Coupon could not be applied.'
+      });
+    }
 
     res.json({ quote });
   })
@@ -3627,18 +3807,30 @@ hopeHubRouter.post(
     if (requestedCareTeamServiceId && !selectedCareTeamService) {
       return res.status(400).json({ message: 'Selected care team service is not available.' });
     }
-    const [careTeamServiceUseCount, activeCareTeamPackageBalance] = selectedCareTeamService
+    const [
+      careTeamServiceUseCount,
+      globalOfferUseCount,
+      offerSlotsAvailable,
+      activeCareTeamPackageBalance
+    ] = selectedCareTeamService
       ? await Promise.all([
           previousCareTeamServiceUseCount(req.user!.id, selectedCareTeamService.id),
+          globalCareTeamServiceOfferUseCount(selectedCareTeamService.id),
+          offerSlotAvailability(selectedCareTeamService),
           selectedCareTeamService.pricingMode === CareTeamServicePricingMode.PACKAGE
             ? findActiveCareTeamPackageBalance(req.user!.id, selectedCareTeamService.id)
             : Promise.resolve(null)
         ])
-      : [0, null];
+      : [0, 0, true, null];
     const careTeamServicePricing = selectedCareTeamService
       ? activeCareTeamPackageBalance
         ? careTeamPackageRedemptionPricing(activeCareTeamPackageBalance)
-        : careTeamServicePricingPreview(selectedCareTeamService, careTeamServiceUseCount)
+        : careTeamServicePricingPreview(
+            selectedCareTeamService,
+            careTeamServiceUseCount,
+            globalOfferUseCount,
+            offerSlotsAvailable
+          )
       : null;
     const effectiveServiceName = selectedCareTeamService?.title || body.serviceName;
     const selectedServiceDurationMinutes =
@@ -3857,17 +4049,30 @@ hopeHubRouter.post(
             }
           : null;
 
-    const checkout = await resolveConsultationCheckout({
-      patientId: req.user!.id,
-      grossInPaise: partialPayment.payableInPaise,
-      walletRedeemInPaise: partialPayment.payableInPaise <= 0 ? 0 : body.walletRedeemInPaise,
-      promoCode: body.promoCode || '',
-      serviceName: effectiveServiceName,
-      offeringId: selectedOffering?.id || body.offeringId || null,
-      careTeamServiceId: selectedCareTeamService?.id || null,
-      providerId: requestedProvider?.id || body.providerId || null,
-      careTeamTypes: sessionProviderRoles
-    });
+    const checkout = selectedCareTeamService
+      ? await resolveBestCareTeamDiscount({
+          patientId: req.user!.id,
+          grossInPaise: partialPayment.payableInPaise,
+          regularGrossInPaise: careTeamServiceRegularGrossInPaise(selectedCareTeamService),
+          walletRedeemInPaise: partialPayment.payableInPaise <= 0 ? 0 : body.walletRedeemInPaise,
+          promoCode: body.promoCode || '',
+          serviceName: effectiveServiceName,
+          offeringId: selectedOffering?.id || body.offeringId || null,
+          careTeamServiceId: selectedCareTeamService.id,
+          providerId: requestedProvider?.id || body.providerId || null,
+          careTeamTypes: sessionProviderRoles
+        })
+      : await resolveConsultationCheckout({
+          patientId: req.user!.id,
+          grossInPaise: partialPayment.payableInPaise,
+          walletRedeemInPaise: partialPayment.payableInPaise <= 0 ? 0 : body.walletRedeemInPaise,
+          promoCode: body.promoCode || '',
+          serviceName: effectiveServiceName,
+          offeringId: selectedOffering?.id || body.offeringId || null,
+          careTeamServiceId: selectedCareTeamService?.id || null,
+          providerId: requestedProvider?.id || body.providerId || null,
+          careTeamTypes: sessionProviderRoles
+        });
     try {
       assertRequestedPromoApplied(body.promoCode, checkout);
     } catch (error) {
@@ -3882,7 +4087,7 @@ hopeHubRouter.post(
     const requiresPayment = finalPayableInPaise > 0;
     const paymentProvider = requiresPayment ? 'razorpay' : 'internal_free';
     const totalDiscountInPaise = offerDiscount.discountInPaise + checkout.discountInPaise;
-    const grossRevenueSplit = hopeHubRevenueSplit(amountInPaise);
+    const grossRevenueSplit = hopeHubRevenueSplit(checkout.grossAmountInPaise);
     const payableRevenueSplit = hopeHubRevenueSplit(checkout.payableInPaise);
 
     const consultation = await prisma.$transaction(async (tx) => {

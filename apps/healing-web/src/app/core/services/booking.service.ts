@@ -114,6 +114,8 @@ export type HopeHubCheckoutQuote = {
   payableInPaise: number;
   walletBalanceInPaise: number;
   maxWalletRedeemInPaise: number;
+  discountStrategy?: 'STANDARD' | 'PROVIDER_OFFER' | 'COUPON';
+  providerOfferDiscountInPaise?: number;
   appliedRules: Array<{
     ruleId: string;
     code: string;
@@ -368,7 +370,10 @@ export type HopeHubProvider = {
     effectivePriceInPaise?: number;
     firstSessionPriceInPaise?: number | null;
     offerEndsAt?: string | null;
+    offerBookingLimit?: number | null;
+    pauseOfferWhenNoSlots?: boolean;
     followUpPriceInPaise?: number | null;
+    followUpSessionLimit?: number | null;
     introSessionLimit?: number;
     packageSessionCount?: number | null;
     packagePriceInPaise?: number | null;

@@ -37,6 +37,9 @@ export type ConsultationCheckoutQuote = {
   appliedRules: AppliedCheckoutRule[];
   referralFreeCallRewardId?: string | null;
   referralFreeCallCouponCode?: string | null;
+  discountStrategy?: 'STANDARD' | 'PROVIDER_OFFER' | 'COUPON';
+  providerOfferDiscountInPaise?: number;
+  requestedPromoCodeHandled?: boolean;
 };
 
 type CheckoutContext = {
@@ -398,6 +401,49 @@ export async function resolveConsultationCheckout(
   };
 }
 
+export async function resolveBestCareTeamDiscount(
+  input: CheckoutContext & { regularGrossInPaise: number }
+): Promise<ConsultationCheckoutQuote> {
+  const offeredGross = Math.max(0, input.grossInPaise);
+  const regularGross = Math.max(offeredGross, input.regularGrossInPaise);
+  const requestedPromo = input.promoCode?.trim().toUpperCase() || '';
+  if (!requestedPromo || regularGross <= offeredGross) {
+    return { ...(await resolveConsultationCheckout(input)), discountStrategy: 'STANDARD' };
+  }
+
+  const [providerQuote, couponQuote] = await Promise.all([
+    resolveConsultationCheckout({ ...input, promoCode: '', grossInPaise: offeredGross }),
+    resolveConsultationCheckout({ ...input, grossInPaise: regularGross })
+  ]);
+  const couponApplied =
+    couponQuote.referralFreeCallCouponCode?.trim().toUpperCase() === requestedPromo ||
+    couponQuote.appliedRules.some(
+      (rule) =>
+        String(rule.promoCode || '')
+          .trim()
+          .toUpperCase() === requestedPromo
+    );
+  if (!couponApplied) return couponQuote;
+
+  const providerOfferSaving = Math.max(0, regularGross - offeredGross);
+  if (providerQuote.payableInPaise <= couponQuote.payableInPaise) {
+    return {
+      ...providerQuote,
+      grossAmountInPaise: regularGross,
+      discountInPaise: providerOfferSaving + providerQuote.discountInPaise,
+      discountStrategy: 'PROVIDER_OFFER',
+      providerOfferDiscountInPaise: providerOfferSaving,
+      requestedPromoCodeHandled: true
+    };
+  }
+  return {
+    ...couponQuote,
+    discountStrategy: 'COUPON',
+    providerOfferDiscountInPaise: providerOfferSaving,
+    requestedPromoCodeHandled: true
+  };
+}
+
 /**
  * A submitted promo must never silently become a full-price checkout. The quote
  * endpoint and the final booking endpoint both calculate pricing independently,
@@ -413,6 +459,7 @@ export function assertRequestedPromoApplied(
   if (!requestedPromo) return;
 
   const applied =
+    quote.requestedPromoCodeHandled === true ||
     quote.referralFreeCallCouponCode?.trim().toUpperCase() === requestedPromo ||
     quote.appliedRules.some(
       (rule) =>

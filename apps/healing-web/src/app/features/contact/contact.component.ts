@@ -1092,6 +1092,16 @@ export class ContactComponent implements OnInit {
 
   couponSuccessMessage(): string {
     if (!this.appliedPromoCode() || this.checkoutQuoteError()) return '';
+    const quote = this.checkoutQuote();
+    if (quote?.discountStrategy === 'PROVIDER_OFFER') {
+      return `The provider offer gives you the lower price. ${this.appliedPromoCode()} was checked but was not combined.`;
+    }
+    if (quote?.discountStrategy === 'COUPON') {
+      const freeText = quote.payableInPaise <= 0 ? ' No payment is needed.' : '';
+      return `${this.appliedPromoCode()} gives you the better price: ${this.formatPaise(
+        quote.discountInPaise,
+      )} off.${freeText}`;
+    }
     if (this.couponDiscountInPaise() > 0) {
       const freeText =
         this.payTodayInPaise() <= 0 ? ' Your booking can be confirmed without payment.' : '';
@@ -1105,7 +1115,7 @@ export class ContactComponent implements OnInit {
   couponHelperMessage(): string {
     return this.appliedPromoCode()
       ? ''
-      : 'Discount and free-session coupons are managed by admin and applied securely.';
+      : 'We compare coupons with provider offers and automatically use only the lower price.';
   }
 
   checkoutEyebrow(): string {
@@ -1263,7 +1273,7 @@ export class ContactComponent implements OnInit {
   couponDiscountInPaise(): number {
     const quote = this.checkoutQuote();
     if (!quote || !this.appliedPromoCode()) return 0;
-    return quote.grossAmountInPaise === this.basePayTodayInPaise() ? quote.discountInPaise : 0;
+    return quote.discountInPaise;
   }
 
   basePayTodayInPaise(): number {
@@ -1293,7 +1303,7 @@ export class ContactComponent implements OnInit {
   payTodayInPaise(): number {
     const quote = this.checkoutQuote();
     const basePayable = this.basePayTodayInPaise();
-    if (quote && this.appliedPromoCode() && quote.grossAmountInPaise === basePayable) {
+    if (quote && this.appliedPromoCode()) {
       return quote.payableInPaise;
     }
     return basePayable;

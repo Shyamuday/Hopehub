@@ -233,6 +233,7 @@
           [applied]="!!appliedCouponCode()"
           [error]="couponError()"
           [success]="couponSuccess()"
+          helper="We compare the coupon with the provider offer and use only the lower price."
           (valueChange)="updateLiveCoupon($event)"
           (apply)="applyLiveCoupon()"
         />

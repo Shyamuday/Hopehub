@@ -48,6 +48,7 @@ import { syncProviderRoleAssignments } from '../../services/provider-taxonomy.se
 
 const textArraySchema = z.array(z.string().trim().min(1).max(160)).max(40).optional();
 const careTeamServiceSchema = z.object({
+  id: z.string().trim().min(1).optional(),
   providerRole: z.nativeEnum(CareTeamMemberType).optional().nullable(),
   providerRoleCode: z.string().trim().min(3).max(64).optional().nullable(),
   title: z.string().trim().min(2).max(120),
@@ -59,7 +60,10 @@ const careTeamServiceSchema = z.object({
   priceInPaise: z.number().int().min(0).max(500000).optional().default(0),
   firstSessionPriceInPaise: z.number().int().min(0).max(500000).optional().nullable(),
   offerEndsAt: z.coerce.date().optional().nullable(),
+  offerBookingLimit: z.number().int().min(1).max(50000).optional().nullable(),
+  pauseOfferWhenNoSlots: z.boolean().optional().default(false),
   followUpPriceInPaise: z.number().int().min(0).max(500000).optional().nullable(),
+  followUpSessionLimit: z.number().int().min(1).max(1000).optional().nullable(),
   introSessionLimit: z.number().int().min(1).max(20).optional().default(1),
   packageSessionCount: z.number().int().min(1).max(100).optional().nullable(),
   packagePriceInPaise: z.number().int().min(0).max(5000000).optional().nullable(),
@@ -123,6 +127,7 @@ function toMentalHealthProfilePayload(body: z.infer<typeof mentalHealthProfileSc
   ) as CareTeamMemberType[];
   const requestedRoles = requestedProviderRoles(body, careTeamType, careTeamTypes);
   const services = (body?.services ?? []).map((service, index) => ({
+    ...(service.id ? { id: service.id } : {}),
     providerRole:
       service.providerRole && careTeamTypes.includes(service.providerRole)
         ? service.providerRole
@@ -140,7 +145,14 @@ function toMentalHealthProfilePayload(body: z.infer<typeof mentalHealthProfileSc
         : (service.priceInPaise ?? 0),
     firstSessionPriceInPaise: service.firstSessionPriceInPaise ?? null,
     offerEndsAt: service.offerEndsAt ?? null,
+    offerBookingLimit: service.offerBookingLimit ?? null,
+    pauseOfferWhenNoSlots: service.pauseOfferWhenNoSlots ?? false,
+    approvalStatus: 'APPROVED',
+    approvalReason: null,
+    approvalRequestedAt: null,
+    approvedAt: new Date(),
     followUpPriceInPaise: service.followUpPriceInPaise ?? null,
+    followUpSessionLimit: service.followUpSessionLimit ?? null,
     introSessionLimit: service.introSessionLimit ?? 1,
     packageSessionCount: service.packageSessionCount ?? null,
     packagePriceInPaise: service.packagePriceInPaise ?? null,
@@ -185,9 +197,10 @@ function mentalHealthProfileCreatePayload(
   payload: ReturnType<typeof toMentalHealthProfilePayload>
 ) {
   const { services, ...profile } = payload;
+  const createServices = services.map(({ id: _id, ...service }) => service);
   return {
     ...profile,
-    services: services.length ? { create: services } : undefined
+    services: createServices.length ? { create: createServices } : undefined
   };
 }
 
@@ -195,11 +208,24 @@ function mentalHealthProfileUpdatePayload(
   payload: ReturnType<typeof toMentalHealthProfilePayload>
 ) {
   const { services, ...profile } = payload;
+  const existingServices = services.filter((service): service is typeof service & { id: string } =>
+    Boolean(service.id)
+  );
+  const newServices = services.filter((service) => !service.id);
   return {
     ...profile,
     services: {
-      deleteMany: {},
-      ...(services.length ? { create: services } : {})
+      deleteMany: { id: { notIn: existingServices.map((service) => service.id) } },
+      ...(existingServices.length
+        ? {
+            upsert: existingServices.map(({ id, ...service }) => ({
+              where: { id },
+              update: service,
+              create: { id, ...service }
+            }))
+          }
+        : {}),
+      ...(newServices.length ? { create: newServices } : {})
     }
   };
 }
@@ -777,7 +803,7 @@ export function registerAdminDoctorRoutes(router: Router) {
               specialtyFocus: true,
               designation: true,
               department: true,
-              mentalHealthProfile: true
+              mentalHealthProfile: { include: { services: true } }
             }
           }
         }
@@ -826,6 +852,15 @@ export function registerAdminDoctorRoutes(router: Router) {
           ? { consultationSharePercent: PSYCHOLOGIST_CONSULTATION_SHARE_PERCENT }
           : {};
       const mentalProfilePayload = toMentalHealthProfilePayload(body.mentalHealthProfile);
+      const existingServiceIds = new Set(
+        existing.doctorProfile?.mentalHealthProfile?.services.map((service) => service.id) ?? []
+      );
+      const unknownServiceId = body.mentalHealthProfile?.services?.find(
+        (service) => service.id && !existingServiceIds.has(service.id)
+      )?.id;
+      if (unknownServiceId) {
+        return res.status(400).json({ message: 'One of the selected services is not available.' });
+      }
       const mentalHealthProfileCreate =
         profilePayload.doctorType === HomeopathicDoctorType.PSYCHOLOGIST
           ? {
@@ -943,7 +978,126 @@ export function registerAdminDoctorRoutes(router: Router) {
           }
         }
       });
+      if (body.mentalHealthProfile?.services && doctor.doctorProfile) {
+        await writeAuditLog({
+          actorId: req.user!.id,
+          actorRole: req.user!.role,
+          action: 'provider.pricing_update',
+          targetType: 'doctor-pricing',
+          targetId: doctor.doctorProfile.id,
+          summary: 'Provider pricing and service configuration updated by admin.',
+          metadata: {
+            before: existing.doctorProfile?.mentalHealthProfile?.services ?? [],
+            after: doctor.doctorProfile.mentalHealthProfile?.services ?? []
+          }
+        });
+      }
       res.json({ doctor, message: 'Provider profile updated successfully.' });
+    })
+  );
+
+  router.patch(
+    '/admin/doctors/services/:serviceId/pricing-approval',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (req, res) => {
+      const serviceId = routeParam(req, 'serviceId');
+      const body = z
+        .object({
+          decision: z.enum(['APPROVED', 'REJECTED']),
+          reason: z.string().trim().max(1000).optional().nullable()
+        })
+        .parse(req.body);
+      const existingService = await prisma.careTeamService.findUniqueOrThrow({
+        where: { id: serviceId },
+        include: {
+          mentalHealthProfile: { select: { doctor: { select: { id: true, userId: true } } } }
+        }
+      });
+      const service = await prisma.careTeamService.update({
+        where: { id: serviceId },
+        data: {
+          approvalStatus: body.decision,
+          approvalReason: body.reason || null,
+          approvedAt: body.decision === 'APPROVED' ? new Date() : null,
+          approvedById: body.decision === 'APPROVED' ? req.user!.id : null
+        }
+      });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action:
+          body.decision === 'APPROVED' ? 'provider.pricing_approved' : 'provider.pricing_rejected',
+        targetType: 'care-team-service',
+        targetId: serviceId,
+        summary: `Provider service pricing ${body.decision.toLowerCase()} by admin.`,
+        metadata: { before: existingService, after: service, reason: body.reason || null }
+      });
+      const provider = existingService.mentalHealthProfile.doctor;
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action:
+          body.decision === 'APPROVED' ? 'provider.pricing_approved' : 'provider.pricing_rejected',
+        targetType: 'doctor-pricing',
+        targetId: provider.id,
+        summary:
+          body.decision === 'APPROVED'
+            ? `${service.title} pricing approved.`
+            : `${service.title} pricing changes requested.`,
+        metadata: {
+          serviceId,
+          serviceTitle: service.title,
+          decision: body.decision,
+          reason: body.reason || null
+        }
+      });
+      const readiness = await providerPublicReadiness(provider.userId);
+      await prisma.doctor.update({
+        where: { id: provider.id },
+        data: { showOnWebsite: readiness.ready }
+      });
+      res.json({ service, readiness });
+    })
+  );
+
+  router.get(
+    '/admin/doctors/pricing-approvals',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (_req, res) => {
+      const services = await prisma.careTeamService.findMany({
+        where: { approvalStatus: 'PENDING' },
+        orderBy: [{ approvalRequestedAt: 'asc' }, { updatedAt: 'asc' }],
+        take: 100,
+        select: {
+          id: true,
+          title: true,
+          pricingMode: true,
+          priceInPaise: true,
+          firstSessionPriceInPaise: true,
+          followUpPriceInPaise: true,
+          packagePriceInPaise: true,
+          packageSessionCount: true,
+          durationMinutes: true,
+          approvalReason: true,
+          approvalRequestedAt: true,
+          mentalHealthProfile: {
+            select: {
+              doctor: {
+                select: { id: true, user: { select: { id: true, name: true, email: true } } }
+              }
+            }
+          }
+        }
+      });
+      res.json({
+        reviews: services.map(({ mentalHealthProfile, ...service }) => ({
+          ...service,
+          providerId: mentalHealthProfile.doctor.id,
+          provider: mentalHealthProfile.doctor.user
+        }))
+      });
     })
   );
 

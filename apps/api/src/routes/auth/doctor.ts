@@ -27,10 +27,11 @@ import {
 import { assertMethodOptionId } from '../../services/doctor-prescribing-preferences.js';
 import { PSYCHOLOGIST_CONSULTATION_SHARE_PERCENT } from '../../services/doctor-compensation.js';
 import { notifyAdminsAboutDoctorSignup } from '../../services/doctor-signup-notifications.js';
-import { asyncRoute, publicUserSelect, logAuthEvent } from '../../utils/helpers.js';
+import { asyncRoute, publicUserSelect, logAuthEvent, writeAuditLog } from '../../utils/helpers.js';
 import { enrichWithProfileImageUrl, userProfileImagePath } from '../../utils/profile-image-url.js';
 import { createEmailVerificationToken } from '../../services/email-verification.js';
 import { recordAuthProcess } from '../../services/auth-process-log.js';
+import { getSiteConfigMap } from '../../services/site-config.service.js';
 import { providerPublicReadiness } from '../../doctor-capabilities.js';
 import {
   normalizeProviderRoles,
@@ -49,6 +50,117 @@ import {
 } from '../../services/provider-taxonomy.service.js';
 
 const LISTENER_SAFETY_ACKNOWLEDGEMENT_VERSION = 'listener-safety-v1-2026-08-07';
+
+function pricingAuditSnapshot(services: Array<Record<string, any>>) {
+  return services.map((service) => ({
+    id: service.id ?? null,
+    title: service.title,
+    pricingMode: service.pricingMode,
+    regularPriceInPaise: service.priceInPaise,
+    firstSessionPriceInPaise: service.firstSessionPriceInPaise ?? null,
+    followUpPriceInPaise: service.followUpPriceInPaise ?? null,
+    followUpSessionLimit: service.followUpSessionLimit ?? null,
+    introSessionLimit: service.introSessionLimit ?? 1,
+    offerEndsAt: service.offerEndsAt ? new Date(service.offerEndsAt).toISOString() : null,
+    offerBookingLimit: service.offerBookingLimit ?? null,
+    pauseOfferWhenNoSlots: service.pauseOfferWhenNoSlots ?? false,
+    packageSessionCount: service.packageSessionCount ?? null,
+    packagePriceInPaise: service.packagePriceInPaise ?? null,
+    durationMinutes: service.durationMinutes,
+    isFree: service.isFree,
+    isActive: service.isActive
+  }));
+}
+
+async function providerPricingApprovalPolicy() {
+  const config = await getSiteConfigMap([
+    'careTeamPricingApprovalRequiredForFree',
+    'careTeamPricingApprovalMaxPriceInPaise',
+    'careTeamPricingApprovalMaxDiscountPercent'
+  ]);
+  return {
+    requireFreeApproval: config['careTeamPricingApprovalRequiredForFree'] === 'true',
+    maxPriceInPaise: Math.max(0, Number(config['careTeamPricingApprovalMaxPriceInPaise'] || 0)),
+    maxDiscountPercent: Math.max(
+      0,
+      Number(config['careTeamPricingApprovalMaxDiscountPercent'] || 0)
+    )
+  };
+}
+
+function providerPricingApprovalReason(
+  service: {
+    pricingMode?: CareTeamServicePricingMode;
+    priceInPaise?: number;
+    firstSessionPriceInPaise?: number | null;
+    followUpPriceInPaise?: number | null;
+    packagePriceInPaise?: number | null;
+    packageSessionCount?: number | null;
+    pricePerMinuteInPaise?: number | null;
+    isFree?: boolean;
+  },
+  policy: Awaited<ReturnType<typeof providerPricingApprovalPolicy>>
+) {
+  const price = Math.max(0, Number(service.priceInPaise || 0));
+  const comparablePrices = [service.firstSessionPriceInPaise, service.followUpPriceInPaise].filter(
+    (value): value is number => value != null
+  );
+  if (service.packagePriceInPaise != null && service.packageSessionCount) {
+    comparablePrices.push(
+      Math.round(service.packagePriceInPaise / Math.max(1, service.packageSessionCount))
+    );
+  }
+  const discount = comparablePrices.reduce(
+    (highest, candidate) =>
+      price > 0
+        ? Math.max(highest, Math.max(0, Math.round((1 - candidate / price) * 100)))
+        : highest,
+    0
+  );
+  const configuredPrices = [
+    price,
+    service.firstSessionPriceInPaise,
+    service.followUpPriceInPaise,
+    service.packagePriceInPaise != null && service.packageSessionCount
+      ? Math.round(service.packagePriceInPaise / Math.max(1, service.packageSessionCount))
+      : null,
+    service.pricePerMinuteInPaise
+  ].filter((value): value is number => value != null);
+  const reasons: string[] = [];
+  if (policy.requireFreeApproval && (service.isFree || price === 0)) reasons.push('Free service');
+  if (
+    policy.maxPriceInPaise > 0 &&
+    configuredPrices.some((configuredPrice) => configuredPrice > policy.maxPriceInPaise)
+  ) {
+    reasons.push(`Price exceeds ₹${policy.maxPriceInPaise / 100}`);
+  }
+  if (policy.maxDiscountPercent > 0 && discount > policy.maxDiscountPercent) {
+    reasons.push(`Discount exceeds ${policy.maxDiscountPercent}%`);
+  }
+  return reasons.join('; ');
+}
+
+function providerPricingFingerprint(service: Record<string, unknown>) {
+  return JSON.stringify({
+    pricingMode: service['pricingMode'] ?? CareTeamServicePricingMode.FIXED,
+    priceInPaise: Number(service['priceInPaise'] ?? 0),
+    firstSessionPriceInPaise: service['firstSessionPriceInPaise'] ?? null,
+    offerEndsAt: service['offerEndsAt']
+      ? new Date(String(service['offerEndsAt'])).toISOString()
+      : null,
+    offerBookingLimit: service['offerBookingLimit'] ?? null,
+    pauseOfferWhenNoSlots: Boolean(service['pauseOfferWhenNoSlots']),
+    followUpPriceInPaise: service['followUpPriceInPaise'] ?? null,
+    followUpSessionLimit: service['followUpSessionLimit'] ?? null,
+    introSessionLimit: Number(service['introSessionLimit'] ?? 1),
+    packageSessionCount: service['packageSessionCount'] ?? null,
+    packagePriceInPaise: service['packagePriceInPaise'] ?? null,
+    freeMinutes: Number(service['freeMinutes'] ?? 0),
+    pricePerMinuteInPaise: service['pricePerMinuteInPaise'] ?? null,
+    durationMinutes: Number(service['durationMinutes'] ?? 30),
+    isFree: Boolean(service['isFree'])
+  });
+}
 
 const indianMobileSchema = z
   .string()
@@ -116,6 +228,7 @@ const mentalHealthProviderProfileFieldsSchema = z.object({
   services: z
     .array(
       z.object({
+        id: z.string().trim().min(1).optional(),
         providerRole: z.nativeEnum(CareTeamMemberType).optional().nullable(),
         providerRoleCode: z.string().trim().min(3).max(64).optional().nullable(),
         title: z.string().trim().min(2).max(120),
@@ -127,7 +240,10 @@ const mentalHealthProviderProfileFieldsSchema = z.object({
         priceInPaise: z.number().int().min(0).max(500000).optional().default(0),
         firstSessionPriceInPaise: z.number().int().min(0).max(500000).optional().nullable(),
         offerEndsAt: z.coerce.date().optional().nullable(),
+        offerBookingLimit: z.number().int().min(1).max(50000).optional().nullable(),
+        pauseOfferWhenNoSlots: z.boolean().optional().default(false),
         followUpPriceInPaise: z.number().int().min(0).max(500000).optional().nullable(),
+        followUpSessionLimit: z.number().int().min(1).max(1000).optional().nullable(),
         introSessionLimit: z.number().int().min(1).max(20).optional().default(1),
         packageSessionCount: z.number().int().min(1).max(100).optional().nullable(),
         packagePriceInPaise: z.number().int().min(0).max(5000000).optional().nullable(),
@@ -669,6 +785,42 @@ export function registerAuthDoctorRoutes(router: Router) {
     })
   );
 
+  router.get(
+    '/doctor/pricing-history',
+    authRequired,
+    allowRoles(Role.DOCTOR, Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const doctor = await prisma.doctor.findUnique({
+        where: { userId: req.user!.id },
+        select: { id: true }
+      });
+      if (!doctor) return res.status(404).json({ message: 'Provider profile not found.' });
+      const history = await prisma.auditLog.findMany({
+        where: {
+          targetType: 'doctor-pricing',
+          targetId: doctor.id,
+          action: {
+            in: [
+              'provider.pricing_update',
+              'provider.pricing_approved',
+              'provider.pricing_rejected'
+            ]
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+        select: {
+          id: true,
+          summary: true,
+          metadata: true,
+          createdAt: true,
+          actor: { select: { id: true, name: true, role: true } }
+        }
+      });
+      res.json({ history });
+    })
+  );
+
   router.patch(
     '/doctor/profile',
     authRequired,
@@ -681,7 +833,7 @@ export function registerAuthDoctorRoutes(router: Router) {
           id: true,
           doctorType: true,
           mentalHealthProfile: {
-            select: { careTeamType: true, careTeamTypes: true }
+            select: { careTeamType: true, careTeamTypes: true, services: true }
           }
         }
       });
@@ -820,42 +972,110 @@ export function registerAuthDoctorRoutes(router: Router) {
             (service) => service.providerRoleCode || service.providerRole || servicePrimary
           );
           await assertServiceRolesAssigned(existing.id, serviceRoleCodes);
-          const services = mental.services.map((service, index) => ({
-            providerRole:
-              service.providerRole && serviceProviderRoles.includes(service.providerRole)
-                ? service.providerRole
-                : servicePrimary,
-            providerRoleCode: service.providerRoleCode || service.providerRole || servicePrimary,
-            title: service.title,
-            description: service.description || null,
-            pricingMode: service.pricingMode ?? CareTeamServicePricingMode.FIXED,
-            priceInPaise:
-              service.isFree && service.pricingMode !== CareTeamServicePricingMode.PER_MINUTE
-                ? 0
-                : (service.priceInPaise ?? 0),
-            firstSessionPriceInPaise: service.firstSessionPriceInPaise ?? null,
-            offerEndsAt: service.offerEndsAt ?? null,
-            followUpPriceInPaise: service.followUpPriceInPaise ?? null,
-            introSessionLimit: service.introSessionLimit ?? 1,
-            packageSessionCount: service.packageSessionCount ?? null,
-            packagePriceInPaise: service.packagePriceInPaise ?? null,
-            freeMinutes: service.freeMinutes ?? 0,
-            pricePerMinuteInPaise: service.pricePerMinuteInPaise ?? null,
-            currency: service.currency || 'INR',
-            durationMinutes: service.durationMinutes ?? 30,
-            isFree:
+          const approvalPolicy = await providerPricingApprovalPolicy();
+          const existingServicesById = new Map(
+            (existing.mentalHealthProfile?.services ?? []).map((service) => [service.id, service])
+          );
+          const unknownServiceId = mental.services.find(
+            (service) => service.id && !existingServicesById.has(service.id)
+          )?.id;
+          if (unknownServiceId) {
+            return res
+              .status(400)
+              .json({ message: 'One of the selected services is not available.' });
+          }
+          const services = mental.services.map((service, index) => {
+            const normalizedIsFree =
               service.pricingMode === CareTeamServicePricingMode.FREE_VOLUNTEER
                 ? true
                 : service.pricingMode === CareTeamServicePricingMode.PER_MINUTE
                   ? false
-                  : (service.isFree ?? (service.priceInPaise ?? 0) === 0),
-            isActive: service.isActive ?? true,
-            sortOrder: service.sortOrder ?? index
-          }));
+                  : (service.isFree ?? (service.priceInPaise ?? 0) === 0);
+            const normalizedPriceInPaise =
+              normalizedIsFree && service.pricingMode !== CareTeamServicePricingMode.PER_MINUTE
+                ? 0
+                : (service.priceInPaise ?? 0);
+            const approvalReason = providerPricingApprovalReason(
+              { ...service, priceInPaise: normalizedPriceInPaise, isFree: normalizedIsFree },
+              approvalPolicy
+            );
+            const existingService = service.id ? existingServicesById.get(service.id) : null;
+            const pricingUnchanged =
+              existingService &&
+              providerPricingFingerprint(existingService as unknown as Record<string, unknown>) ===
+                providerPricingFingerprint({
+                  ...service,
+                  priceInPaise: normalizedPriceInPaise,
+                  isFree: normalizedIsFree
+                });
+            const approvalStatus = !approvalReason
+              ? 'APPROVED'
+              : pricingUnchanged && existingService?.approvalStatus === 'APPROVED'
+                ? 'APPROVED'
+                : pricingUnchanged && existingService?.approvalStatus === 'REJECTED'
+                  ? 'REJECTED'
+                  : 'PENDING';
+            return {
+              ...(service.id ? { id: service.id } : {}),
+              providerRole:
+                service.providerRole && serviceProviderRoles.includes(service.providerRole)
+                  ? service.providerRole
+                  : servicePrimary,
+              providerRoleCode: service.providerRoleCode || service.providerRole || servicePrimary,
+              title: service.title,
+              description: service.description || null,
+              pricingMode: service.pricingMode ?? CareTeamServicePricingMode.FIXED,
+              priceInPaise: normalizedPriceInPaise,
+              firstSessionPriceInPaise: service.firstSessionPriceInPaise ?? null,
+              offerEndsAt: service.offerEndsAt ?? null,
+              offerBookingLimit: service.offerBookingLimit ?? null,
+              pauseOfferWhenNoSlots: service.pauseOfferWhenNoSlots ?? false,
+              approvalStatus,
+              approvalReason:
+                approvalStatus === 'REJECTED'
+                  ? existingService?.approvalReason || approvalReason
+                  : approvalReason || null,
+              approvalRequestedAt:
+                approvalStatus === 'PENDING'
+                  ? new Date()
+                  : (existingService?.approvalRequestedAt ?? null),
+              approvedAt:
+                approvalStatus === 'APPROVED' ? (existingService?.approvedAt ?? new Date()) : null,
+              approvedById:
+                approvalStatus === 'APPROVED' ? (existingService?.approvedById ?? null) : null,
+              followUpPriceInPaise: service.followUpPriceInPaise ?? null,
+              followUpSessionLimit: service.followUpSessionLimit ?? null,
+              introSessionLimit: service.introSessionLimit ?? 1,
+              packageSessionCount: service.packageSessionCount ?? null,
+              packagePriceInPaise: service.packagePriceInPaise ?? null,
+              freeMinutes: service.freeMinutes ?? 0,
+              pricePerMinuteInPaise: service.pricePerMinuteInPaise ?? null,
+              currency: service.currency || 'INR',
+              durationMinutes: service.durationMinutes ?? 30,
+              isFree: normalizedIsFree,
+              isActive: service.isActive ?? true,
+              sortOrder: service.sortOrder ?? index
+            };
+          });
           servicesForMentalProfileCreate = services;
+          const existingServiceUpdates = services.filter(
+            (service): service is typeof service & { id: string } => Boolean(service.id)
+          );
+          const newServices = services.filter((service) => !service.id);
           mentalData.services = {
-            deleteMany: {},
-            ...(services.length ? { create: services } : {})
+            deleteMany: {
+              id: { notIn: existingServiceUpdates.map((service) => service.id) }
+            },
+            ...(existingServiceUpdates.length
+              ? {
+                  upsert: existingServiceUpdates.map(({ id, ...data }) => ({
+                    where: { id },
+                    update: data,
+                    create: { id, ...data }
+                  }))
+                }
+              : {}),
+            ...(newServices.length ? { create: newServices } : {})
           };
         }
       }
@@ -921,6 +1141,27 @@ export function registerAuthDoctorRoutes(router: Router) {
         where: { userId: req.user!.id },
         data: { showOnWebsite: readiness.ready }
       });
+      if (body.step === 'services') {
+        const currentServices = await prisma.careTeamService.findMany({
+          where: { mentalHealthProfile: { doctorId: existing.id } },
+          orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }]
+        });
+        const beforePricing = pricingAuditSnapshot(
+          (existing.mentalHealthProfile?.services ?? []) as Array<Record<string, any>>
+        );
+        const afterPricing = pricingAuditSnapshot(currentServices as Array<Record<string, any>>);
+        if (JSON.stringify(beforePricing) !== JSON.stringify(afterPricing)) {
+          await writeAuditLog({
+            actorId: req.user!.id,
+            actorRole: req.user!.role,
+            action: 'provider.pricing_update',
+            targetType: 'doctor-pricing',
+            targetId: existing.id,
+            summary: 'Provider pricing and service configuration updated.',
+            metadata: { before: beforePricing, after: afterPricing }
+          });
+        }
+      }
       res.json({ message: 'Profile step saved.', readiness });
     })
   );
@@ -1065,7 +1306,10 @@ export function registerAuthDoctorRoutes(router: Router) {
                   : (service.priceInPaise ?? 0),
               firstSessionPriceInPaise: service.firstSessionPriceInPaise ?? null,
               offerEndsAt: service.offerEndsAt ?? null,
+              offerBookingLimit: service.offerBookingLimit ?? null,
+              pauseOfferWhenNoSlots: service.pauseOfferWhenNoSlots ?? false,
               followUpPriceInPaise: service.followUpPriceInPaise ?? null,
+              followUpSessionLimit: service.followUpSessionLimit ?? null,
               introSessionLimit: service.introSessionLimit ?? 1,
               packageSessionCount: service.packageSessionCount ?? null,
               packagePriceInPaise: service.packagePriceInPaise ?? null,

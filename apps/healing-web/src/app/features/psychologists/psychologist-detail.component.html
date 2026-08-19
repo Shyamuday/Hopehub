@@ -155,6 +155,9 @@
                   }
                   <span>{{ servicePriceLabel(service) }}</span>
                 </div>
+                @if (serviceHasActiveFirstOffer(service) && service.offerBookingLimit) {
+                  <p class="mt-1 text-xs font-medium text-emerald-800">Limited to the first {{ service.offerBookingLimit }} bookings.</p>
+                }
                 <app-button
                   type="button"
                   class="mt-4 block"

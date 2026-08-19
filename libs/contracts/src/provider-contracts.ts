@@ -164,7 +164,12 @@ export type CareTeamServiceDto = {
   priceInPaise: number;
   firstSessionPriceInPaise?: number | null;
   offerEndsAt?: string | null;
+  offerBookingLimit?: number | null;
+  pauseOfferWhenNoSlots?: boolean;
+  approvalStatus?: 'APPROVED' | 'PENDING' | 'REJECTED' | string;
+  approvalReason?: string | null;
   followUpPriceInPaise?: number | null;
+  followUpSessionLimit?: number | null;
   introSessionLimit?: number;
   packageSessionCount?: number | null;
   packagePriceInPaise?: number | null;

@@ -44,6 +44,7 @@ const BLOCKER_STEP: Record<string, string> = {
   LISTENER_SAFETY_REQUIRED: 'safety',
   LISTENER_SCREENING_REQUIRED: 'screening',
   ACTIVE_SERVICE_REQUIRED: 'services',
+  PRICING_APPROVAL_PENDING: 'services',
   SERVICE_ROLE_MISMATCH: 'services',
   PROVIDER_AVAILABILITY_OFF: 'availability',
   NOT_ACCEPTING_USERS: 'availability'
@@ -255,7 +256,13 @@ export async function providerPublicReadiness(userId: string) {
           acceptingNewUsers: true,
           services: {
             where: { isActive: true },
-            select: { id: true, title: true, durationMinutes: true, providerRoleCode: true }
+            select: {
+              id: true,
+              title: true,
+              durationMinutes: true,
+              providerRoleCode: true,
+              approvalStatus: true
+            }
           }
         }
       }
@@ -395,15 +402,24 @@ export async function providerPublicReadiness(userId: string) {
       action: 'Turn on accepting new users in Profile.'
     });
   }
-  if (!mental?.services?.some((service) => service.title.trim() && service.durationMinutes >= 5)) {
+  const approvedServices =
+    mental?.services?.filter((service) => service.approvalStatus === 'APPROVED') ?? [];
+  if (!approvedServices.some((service) => service.title.trim() && service.durationMinutes >= 5)) {
+    const hasPendingPricing = mental?.services?.some(
+      (service) => service.approvalStatus === 'PENDING'
+    );
     blockers.push({
-      code: 'ACTIVE_SERVICE_REQUIRED',
-      label: 'No active service/price is configured.',
-      action: 'Add at least one active service in Profile.'
+      code: hasPendingPricing ? 'PRICING_APPROVAL_PENDING' : 'ACTIVE_SERVICE_REQUIRED',
+      label: hasPendingPricing
+        ? 'Your service pricing is awaiting admin review.'
+        : 'No active service/price is configured.',
+      action: hasPendingPricing
+        ? 'You can continue after an admin approves the pricing.'
+        : 'Add at least one active service in Profile.'
     });
   }
   const activeRoleCodes = new Set(assignedRoles.map((assignment) => assignment.roleCode));
-  if (mental?.services?.some((service) => !activeRoleCodes.has(service.providerRoleCode))) {
+  if (approvedServices.some((service) => !activeRoleCodes.has(service.providerRoleCode))) {
     blockers.push({
       code: 'SERVICE_ROLE_MISMATCH',
       label: 'A service is linked to a role that is not active on this profile.',

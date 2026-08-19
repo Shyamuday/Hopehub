@@ -316,6 +316,7 @@ export class DoctorsPage {
 
   readonly doctors = signal<Doctor[]>([]);
   readonly pendingDoctors = signal<Doctor[]>([]);
+  readonly pendingPricingReviews = signal<Array<any>>([]);
   selectedPendingDoctorIds: string[] = [];
   selectedDoctorId = '';
 
@@ -406,7 +407,7 @@ export class DoctorsPage {
     const filters = this.listFilterModel();
     const pendingFilters = this.pendingFilterModel();
     try {
-      const [allDoctors, pending] = await Promise.all([
+      const [allDoctors, pending, pricingApprovals] = await Promise.all([
         this.api.getDoctorsPaged({
           page: this.doctorsPage,
           pageSize: this.pageSize,
@@ -424,9 +425,13 @@ export class DoctorsPage {
           workspace: this.workspace.selectedWorkspace(),
           supportPath: this.workspace.isHopeHub() ? pendingFilters.supportPath : '',
         }),
+        this.workspace.isHopeHub()
+          ? this.api.getPendingPricingApprovals()
+          : Promise.resolve({ reviews: [] }),
       ]);
       this.doctors.set(allDoctors.doctors || []);
       this.pendingDoctors.set(pending.pendingDoctors || []);
+      this.pendingPricingReviews.set(pricingApprovals.reviews || []);
       this.doctorsTotalPagesCount = Math.max(1, Number(allDoctors.pagination?.totalPages || 1));
       this.pendingTotalPagesCount = Math.max(1, Number(pending.pagination?.totalPages || 1));
       this.selectedPendingDoctorIds = [];
@@ -459,6 +464,29 @@ export class DoctorsPage {
       await this.load();
     } catch {
       this.error.set(`Could not activate ${this.providerSingularLabel()}.`);
+    } finally {
+      this.mutating.set(false);
+    }
+  }
+
+  async reviewServicePricing(
+    service: { id?: string; title?: string },
+    decision: 'APPROVED' | 'REJECTED',
+  ) {
+    if (!this.canManageProviders() || !service.id) return;
+    const reason =
+      decision === 'REJECTED'
+        ? window.prompt('Why should the provider change this pricing?', '') || ''
+        : '';
+    this.mutating.set(true);
+    this.message.set('');
+    this.error.set('');
+    try {
+      await this.api.reviewServicePricing(service.id, decision, reason);
+      this.message.set(`${service.title || 'Service'} pricing ${decision.toLowerCase()}.`);
+      await this.load();
+    } catch {
+      this.error.set('Could not update the pricing approval.');
     } finally {
       this.mutating.set(false);
     }
@@ -1162,7 +1190,11 @@ export class DoctorsPage {
       pricingMode: 'FIXED',
       priceInPaise: 50000,
       firstSessionPriceInPaise: null,
+      offerEndsAt: null,
+      offerBookingLimit: null,
+      pauseOfferWhenNoSlots: false,
       followUpPriceInPaise: null,
+      followUpSessionLimit: null,
       introSessionLimit: 1,
       packageSessionCount: null,
       packagePriceInPaise: null,
@@ -1207,10 +1239,15 @@ export class DoctorsPage {
         } else if (
           key === 'durationMinutes' ||
           key === 'introSessionLimit' ||
-          key === 'packageSessionCount' ||
-          key === 'freeMinutes'
+          key === 'packageSessionCount'
         ) {
           (next as any)[key] = value === '' ? null : Math.max(1, Math.round(Number(value)));
+        } else if (key === 'offerBookingLimit' || key === 'followUpSessionLimit') {
+          (next as any)[key] = value === '' ? null : Math.max(1, Math.round(Number(value)));
+        } else if (key === 'freeMinutes') {
+          next.freeMinutes = value === '' ? 0 : Math.max(0, Math.round(Number(value)));
+        } else if (key === 'offerEndsAt') {
+          next.offerEndsAt = value ? new Date(String(value)).toISOString() : null;
         } else {
           (next as any)[key] = value;
         }
@@ -1264,6 +1301,14 @@ export class DoctorsPage {
     return value == null ? '' : String(value / 100);
   }
 
+  dateTimeLocalValue(value: string | null | undefined): string {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    const offset = date.getTimezoneOffset() * 60_000;
+    return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+  }
+
   showFirstPrice(service: CareTeamService) {
     return service.pricingMode === 'DISCOUNTED_FIRST';
   }
@@ -1289,6 +1334,10 @@ export class DoctorsPage {
       ...service,
       pricingMode: service.pricingMode || 'FIXED',
       priceInPaise: service.priceInPaise ?? 0,
+      offerEndsAt: service.offerEndsAt ?? null,
+      offerBookingLimit: service.offerBookingLimit ?? null,
+      pauseOfferWhenNoSlots: service.pauseOfferWhenNoSlots ?? false,
+      followUpSessionLimit: service.followUpSessionLimit ?? null,
       introSessionLimit: service.introSessionLimit || 1,
       freeMinutes: service.freeMinutes || 0,
       pricePerMinuteInPaise: service.pricePerMinuteInPaise ?? null,
