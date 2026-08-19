@@ -21,6 +21,23 @@ import type {
 
 const MODERATION_ACTION_STATE = 'group-moderation-action';
 
+const NORMAL_MEMBER_PERMISSIONS = {
+  can_send_messages: true,
+  can_send_audios: true,
+  can_send_documents: true,
+  can_send_photos: true,
+  can_send_videos: true,
+  can_send_video_notes: true,
+  can_send_voice_notes: true,
+  can_send_polls: true,
+  can_send_other_messages: true,
+  can_add_web_page_previews: true,
+  can_change_info: false,
+  can_invite_users: true,
+  can_pin_messages: false,
+  can_manage_topics: false
+};
+
 function blockedPhraseFromReason(reason: string) {
   return /^blocked phrase:\s*[“"](.+?)[”"]\s*$/i.exec(reason.trim())?.[1]?.trim() || null;
 }
@@ -52,9 +69,9 @@ export async function sendModerationLog(
   reason: string,
   action: string
 ) {
-  const destination =
-    values.telegramGroupHelpStaffGroupId?.trim() || values.telegramGroupHelpLogChannelId?.trim();
-  if (!destination) return;
+  const staffDestination = values.telegramGroupHelpStaffGroupId?.trim() || '';
+  const logDestination = values.telegramGroupHelpLogChannelId?.trim() || '';
+  if (!staffDestination && !logDestination) return;
   const rawText = `${message.text || message.caption || ''}`.trim();
   const normalizedText = rawText.replace(/\s+/g, ' ');
   const preview = normalizedText
@@ -108,7 +125,8 @@ export async function sendModerationLog(
       }
     );
   }
-  if (buttons.length || phraseButtons.length) {
+  const actionDestination = staffDestination || logDestination;
+  if (actionDestination && (buttons.length || phraseButtons.length)) {
     await prisma.telegramCommunityState.create({
       data: {
         bot: MODERATION_ACTION_STATE,
@@ -128,23 +146,47 @@ export async function sendModerationLog(
       }
     });
   }
-  await sendCommunityMessage(
-    GROUP_HELP_BOT_SLUG,
-    destination,
-    [
-      '🛡 Moderation action',
-      `Action: ${action.toUpperCase()}`,
-      `Rule / reason: ${reason}`,
-      `Group: ${message.chat.title || message.chat.id} (${message.chat.id})`,
-      `Message: ${message.message_id}${message.message_thread_id ? ` · topic ${message.message_thread_id}` : ''}`,
-      `Member: ${member}`,
-      `Content: ${media || 'text'} · ${rawText.length} character${rawText.length === 1 ? '' : 's'}`,
-      `Text: ${preview}`
-    ].join('\n'),
-    buttons.length || phraseButtons.length
-      ? { reply_markup: { inline_keyboard: [buttons, phraseButtons].filter((row) => row.length) } }
-      : undefined
-  ).catch(() => null);
+  const body = [
+    '🛡 Moderation action',
+    `Action: ${action.toUpperCase()}`,
+    `Rule / reason: ${reason}`,
+    `Group: ${message.chat.title || message.chat.id} (${message.chat.id})`,
+    `Message: ${message.message_id}${message.message_thread_id ? ` · topic ${message.message_thread_id}` : ''}`,
+    `Member: ${member}`,
+    `Content: ${media || 'text'} · ${rawText.length} character${rawText.length === 1 ? '' : 's'}`,
+    `Text: ${preview}`
+  ].join('\n');
+
+  // The log channel remains a complete audit trail. The private staff group
+  // gets the same alert with the controls that can change a member's access.
+  // When a separate staff group has not been configured, retain the old
+  // single-destination behavior so existing installations do not lose actions.
+  const deliveries = [] as Promise<unknown>[];
+  if (staffDestination) {
+    if (logDestination && logDestination !== staffDestination) {
+      deliveries.push(
+        sendCommunityMessage(GROUP_HELP_BOT_SLUG, logDestination, body).catch(() => null)
+      );
+    }
+    deliveries.push(
+      sendCommunityMessage(GROUP_HELP_BOT_SLUG, staffDestination, body, {
+        reply_markup: { inline_keyboard: [buttons, phraseButtons].filter((row) => row.length) }
+      }).catch(() => null)
+    );
+  } else if (logDestination) {
+    deliveries.push(
+      sendCommunityMessage(GROUP_HELP_BOT_SLUG, logDestination, body, {
+        ...(buttons.length || phraseButtons.length
+          ? {
+              reply_markup: {
+                inline_keyboard: [buttons, phraseButtons].filter((row) => row.length)
+              }
+            }
+          : {})
+      }).catch(() => null)
+    );
+  }
+  await Promise.all(deliveries);
 }
 
 /** Handles staff-group undo/repost controls for a recorded moderation action. */
@@ -185,7 +227,11 @@ export async function handleGroupHelpModerationActionCallback(update: CommunityT
     await callCommunityTelegramApi(GROUP_HELP_BOT_SLUG, 'restrictChatMember', {
       chat_id: payload.targetChatId,
       user_id: Number(payload.targetUserId),
-      permissions: chat.permissions || { can_send_messages: true }
+      permissions: {
+        ...NORMAL_MEMBER_PERMISSIONS,
+        ...(chat.permissions || {}),
+        can_send_messages: true
+      }
     });
   } else if (requestedAction === 'unban' && payload.targetUserId) {
     await callCommunityTelegramApi(GROUP_HELP_BOT_SLUG, 'unbanChatMember', {
@@ -234,14 +280,21 @@ export async function sendGroupHelpActivityLog(
   title: string,
   details: Array<string | null | undefined> = []
 ) {
-  const destination = values.telegramGroupHelpLogChannelId?.trim();
-  if (!destination) return;
+  const destinations = [
+    values.telegramGroupHelpLogChannelId?.trim(),
+    values.telegramGroupHelpStaffGroupId?.trim()
+  ].filter((value): value is string => Boolean(value));
+  if (!destinations.length) return;
   const body = details.filter((detail): detail is string => Boolean(detail?.trim())).join('\n');
-  await sendCommunityMessage(
-    GROUP_HELP_BOT_SLUG,
-    destination,
-    ['📋 ' + title, body].filter(Boolean).join('\n\n')
-  ).catch(() => null);
+  await Promise.all(
+    [...new Set(destinations)].map((destination) =>
+      sendCommunityMessage(
+        GROUP_HELP_BOT_SLUG,
+        destination,
+        ['📋 ' + title, body].filter(Boolean).join('\n\n')
+      ).catch(() => null)
+    )
+  );
 }
 
 export async function deleteGroupHelpMessage(chatId: string, messageId: number) {

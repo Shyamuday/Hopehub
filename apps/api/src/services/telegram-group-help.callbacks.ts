@@ -22,7 +22,18 @@ import type { CommunityTelegramUpdate } from './telegram-community-bots.types.js
 export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
   const callback = update.callback_query;
   if (!callback?.message || !callback.data) return false;
-  const moderationAction = await handleGroupHelpModerationActionCallback(update);
+  let moderationAction: Awaited<ReturnType<typeof handleGroupHelpModerationActionCallback>>;
+  try {
+    moderationAction = await handleGroupHelpModerationActionCallback(update);
+  } catch (error) {
+    console.error('[telegram-group-help] Moderation action failed.', error);
+    await answerCommunityCallback(
+      GROUP_HELP_BOT_SLUG,
+      callback.id,
+      'Could not complete this action. Check the bot permissions and try again.'
+    ).catch(() => null);
+    return true;
+  }
   if (moderationAction) {
     const notice =
       moderationAction === 'denied'
