@@ -263,6 +263,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          # The backend deployment script fetches the public repository from
+          # /opt/hopehub itself. Avoid checkout's post-job credential cleanup
+          # on the self-hosted runner, which can otherwise mark a completed
+          # deployment as failed when its local Git state has changed.
+          persist-credentials: false
 
       - name: Decide whether API deploy is needed
         id: api-changes
