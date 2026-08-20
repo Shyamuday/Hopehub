@@ -3,6 +3,8 @@ import { handleGroupHelpAdminCommand } from './telegram-group-help.admin-command
 import { handleGroupHelpMemberCommand } from './telegram-group-help.member-commands.js';
 import { handleGroupHelpReportCommand } from './telegram-group-help.reports.js';
 import { handleGroupHelpStaffCommand } from './telegram-group-help.staff-commands.js';
+import { resolveGroupHelpCommandContext } from './telegram-group-help.command-context.js';
+import { groupHelpConfig } from './telegram-group-help.config.js';
 
 /**
  * The single source of truth for commands supported by the Hope Hub group bot.
@@ -20,6 +22,7 @@ export const GROUP_HELP_COMMAND_CATALOG = {
     '/id',
     '/staffid',
     '/admin',
+    '/alertadmin',
     '/forget',
     '/forgot'
   ],
@@ -66,7 +69,8 @@ export const GROUP_HELP_COMMAND_CATALOG = {
     '/unpin',
     '/unpinall',
     '/pinned',
-    '/admin',
+    '/promote',
+    '/demote',
     '/unadmin',
     '/title',
     '/untitle',
@@ -86,8 +90,12 @@ export async function handleGroupHelpCommand(
   message: CommunityTelegramMessage,
   values: Record<string, string>
 ) {
-  if (await handleGroupHelpStaffCommand(message, values)) return true;
-  if (await handleGroupHelpMemberCommand(message, values)) return true;
-  if (await handleGroupHelpReportCommand(message, values)) return true;
-  return handleGroupHelpAdminCommand(message, values);
+  const context = await resolveGroupHelpCommandContext(message);
+  const effectiveValues = context.isControlGroup
+    ? await groupHelpConfig(context.targetChatId)
+    : values;
+  if (await handleGroupHelpStaffCommand(message, effectiveValues)) return true;
+  if (await handleGroupHelpMemberCommand(message, effectiveValues)) return true;
+  if (await handleGroupHelpReportCommand(message, effectiveValues)) return true;
+  return handleGroupHelpAdminCommand(message, effectiveValues);
 }

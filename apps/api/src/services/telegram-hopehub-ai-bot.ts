@@ -51,6 +51,11 @@ import {
 } from './telegram-group-help.registration.js';
 import { handleGroupHelpCallback } from './telegram-group-help.callbacks.js';
 import { handleGroupHelpCommand } from './telegram-group-help.commands.js';
+import {
+  configuredGroupHelpChatIds,
+  groupHelpCommandContextFromConfig,
+  groupHelpCommandFailureMessage
+} from './telegram-group-help.command-context.js';
 import { queueGroupHelpMessageReview } from './telegram-group-help.approval.js';
 import {
   handleGroupHelpBotSettingsInput,
@@ -60,7 +65,29 @@ import {
 const BOT = GROUP_HELP_BOT_SLUG;
 
 async function handleCommand(message: CommunityTelegramMessage, values: Record<string, string>) {
-  return handleGroupHelpCommand(message, values);
+  const chatId = String(message.chat.id);
+  try {
+    const handled = await handleGroupHelpCommand(message, values);
+    if (!handled) {
+      await sendCommunityMessage(
+        BOT,
+        chatId,
+        'This command is not available. Send /help to see the commands you can use.'
+      );
+    }
+    return true;
+  } catch (error) {
+    console.error('[telegram-group-help] Command failed.', {
+      command: message.text?.trim().split(/\s+/)[0],
+      chatId,
+      userId: message.from?.id,
+      error
+    });
+    await sendCommunityMessage(BOT, chatId, groupHelpCommandFailureMessage(error)).catch(
+      () => null
+    );
+    return true;
+  }
 }
 
 export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) {
@@ -77,7 +104,10 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
   const membership = update.chat_member;
   const chat = message?.chat || membership?.chat;
   if (!chat) return;
-  if (message && message.from?.is_bot) return;
+  const anonymousAdminMessage = Boolean(
+    message?.sender_chat && String(message.sender_chat.id) === String(message.chat.id)
+  );
+  if (message && message.from?.is_bot && !anonymousAdminMessage) return;
   if (message && (await registerTestGroup(message))) return;
   if (message && (await registerLogGroup(message))) return;
   const chatId = String(chat.id);
@@ -85,29 +115,36 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
   if (message?.chat.type === 'private') {
     if (await handleGroupHelpPrivateSettingsStart(message)) return;
     if (await handleGroupHelpBotSettingsInput(message)) return;
-    if (message.text?.startsWith('/') && (await handleCommand(message, values))) return;
+    if (message.text?.startsWith('/')) {
+      await handleCommand(message, values);
+      return;
+    }
     await sendCommunityMessage(BOT, chatId, values.telegramGroupHelpSupportMessage);
     return;
   }
-  const allowedGroups = [
-    values.telegramGroupHelpGroupChatId,
-    values.telegramGroupHelpTestGroupChatId
-  ]
-    .filter(Boolean)
-    .map((value) => value.toLowerCase());
+  const allowedGroups = configuredGroupHelpChatIds(values);
   const chatUsername = chat.username ? `@${chat.username.toLowerCase()}` : '';
   if (
-    allowedGroups.length &&
-    !allowedGroups.includes(chatId.toLowerCase()) &&
-    (!chatUsername || !allowedGroups.includes(chatUsername))
-  )
+    !allowedGroups.length ||
+    (!allowedGroups.includes(chatId.toLowerCase()) &&
+      (!chatUsername || !allowedGroups.includes(chatUsername)))
+  ) {
     return;
+  }
+  const commandContext = groupHelpCommandContextFromConfig(chatId, values);
+  if (commandContext.isControlGroup) {
+    if (message?.text?.startsWith('/')) await handleCommand(message, values);
+    return;
+  }
   if (await recordTelegramCommunityDeparture(update)) return;
   if (await welcomeTelegramCommunityMembers(update)) return;
   if (!message) return;
   if (await handleTelegramCommunityVoiceChatStarted(message)) return;
   if (await handleTelegramCommunityVoiceChatEnded(message)) return;
-  if (message.text?.startsWith('/') && (await handleCommand(message, values))) return;
+  if (message.text?.startsWith('/')) {
+    await handleCommand(message, values);
+    return;
+  }
   if (await handleGroupHelpBotSettingsInput(message)) return;
   if (message.sender_chat && values.telegramGroupHelpChannelSenderPolicy !== 'allow') {
     await deleteMessage(chatId, message.message_id).catch(() => null);

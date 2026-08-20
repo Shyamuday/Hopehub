@@ -13,13 +13,18 @@ import type { CommunityTelegramMessage } from './telegram-community-bots.types.j
 import {
   assignedCommunityRole,
   canUseGroupHelpCommand,
-  isModerationExempt
+  isModerationExempt,
+  sendGroupHelpPermissionDenied
 } from './telegram-group-help.permissions.js';
 import { sendTemporaryGroupHelpMessage } from './telegram-group-help.actions.js';
 import { forgetGroupHelpMemberData } from './telegram-group-help.privacy.js';
 import { forgetAllGroupHelpMemberData } from './telegram-group-help.privacy.js';
 import { sendGroupHelpActivityLog } from './telegram-group-help.actions.js';
 import { groupHelpMainMenuKeyboard } from './telegram-group-help.menu.js';
+import {
+  messageForGroupHelpTarget,
+  resolveGroupHelpCommandContext
+} from './telegram-group-help.command-context.js';
 
 type TelegramMemberSnapshot = {
   status?: string;
@@ -79,6 +84,27 @@ export async function handleGroupHelpMemberCommand(
   const privateResult = rawCommand.startsWith('/*');
   const command = privateResult ? `/${rawCommand.slice(2)}` : rawCommand;
   const chatId = String(message.chat.id);
+  const context = await resolveGroupHelpCommandContext(message);
+  const targetChatId = context.targetChatId;
+  const permissionMessage = messageForGroupHelpTarget(message, targetChatId);
+  const commandParts = (message.text || '').trim().split(/\s+/);
+  const resolveMainGroupMember = async (argument: string) => {
+    let targetId = /^\d+$/.test(argument) ? Number(argument) : 0;
+    if (!targetId && argument.startsWith('@')) {
+      const known = await prisma.telegramCommunityMember.findFirst({
+        where: { chatId: targetChatId, username: argument.slice(1) },
+        select: { telegramUserId: true }
+      });
+      targetId = Number(known?.telegramUserId || 0);
+    }
+    if (!targetId) return undefined;
+    const member = await callCommunityTelegramApi<TelegramMemberSnapshot>(
+      GROUP_HELP_BOT_SLUG,
+      'getChatMember',
+      { chat_id: targetChatId, user_id: targetId }
+    ).catch(() => null);
+    return member?.user;
+  };
   const deliverStaffResult = async (text: string) => {
     if (privateResult && message.from) {
       try {
@@ -128,7 +154,7 @@ export async function handleGroupHelpMemberCommand(
       );
       return true;
     }
-    await forgetGroupHelpMemberData(chatId, String(message.from.id));
+    await forgetGroupHelpMemberData(targetChatId, String(message.from.id));
     await sendTemporaryGroupHelpMessage(
       chatId,
       'Your Hope Hub bot data for this group has been removed. Telegram message history is managed by Telegram and the group administrators.',
@@ -137,9 +163,9 @@ export async function handleGroupHelpMemberCommand(
     );
     return true;
   }
-  if (command === '/admin' && message.from) {
+  if ((command === '/admin' || command === '/alertadmin') && message.from) {
     await sendGroupHelpActivityLog(values, 'Member requested administrator support', [
-      `Group: ${message.chat.title || chatId}`,
+      `Group ID: ${targetChatId}`,
       `Member: ${message.from.first_name || 'Telegram member'} (${message.from.id})`
     ]);
     await sendTemporaryGroupHelpMessage(
@@ -168,10 +194,10 @@ export async function handleGroupHelpMemberCommand(
   if (command === '/warnings' && message.from) {
     const target =
       message.reply_to_message?.from &&
-      (await canUseGroupHelpCommand(message, values, '/warnings', 'HELPER'))
+      (await canUseGroupHelpCommand(permissionMessage, values, '/warnings', 'HELPER'))
         ? message.reply_to_message.from
         : message.from;
-    const count = await telegramGroupWarningCount(chatId, String(target.id));
+    const count = await telegramGroupWarningCount(targetChatId, String(target.id));
     await sendTemporaryGroupHelpMessage(
       chatId,
       `${target.id === message.from.id ? 'You currently have' : `${target.first_name || 'This member'} has`} ${count} warning${count === 1 ? '' : 's'}.`,
@@ -181,24 +207,35 @@ export async function handleGroupHelpMemberCommand(
     return true;
   }
   if (command === '/perms') {
-    if (!(await canUseGroupHelpCommand(message, values, '/perms', 'HELPER'))) return true;
-    const target = message.reply_to_message?.from;
+    if (!(await canUseGroupHelpCommand(permissionMessage, values, '/perms', 'HELPER'))) {
+      await sendGroupHelpPermissionDenied(message, 'HELPER', chatId);
+      return true;
+    }
+    const target =
+      message.reply_to_message?.from ||
+      (context.isControlGroup ? await resolveMainGroupMember(commandParts[1] || '') : undefined);
     if (!target) {
       await sendTemporaryGroupHelpMessage(
         chatId,
-        'Reply to a member’s message, then use /perms.',
+        context.isControlGroup
+          ? 'Use /perms <user_id or @username> from this private admin group.'
+          : 'Reply to a member’s message, then use /perms.',
         values
       );
       return true;
     }
     const targetMessage = { ...message, from: target };
-    const role = await assignedCommunityRole(chatId, String(target.id));
+    const role = await assignedCommunityRole(targetChatId, String(target.id));
     const customAssignment = await prisma.telegramCommunityRoleAssignment.findFirst({
-      where: { chatId, telegramUserId: String(target.id), customRoleId: { not: null } },
+      where: {
+        chatId: targetChatId,
+        telegramUserId: String(target.id),
+        customRoleId: { not: null }
+      },
       include: { customRole: { select: { name: true } } }
     });
     const telegramAdmin = await isModerationExempt(
-      targetMessage,
+      messageForGroupHelpTarget(targetMessage, targetChatId),
       values.telegramGroupHelpAdminWhitelist || ''
     );
     const permissions =
@@ -225,7 +262,12 @@ export async function handleGroupHelpMemberCommand(
     const effective = (
       await Promise.all(
         commandAccess.map(async ([candidate, fallback]) =>
-          (await canUseGroupHelpCommand(targetMessage, values, candidate, fallback))
+          (await canUseGroupHelpCommand(
+            messageForGroupHelpTarget(targetMessage, targetChatId),
+            values,
+            candidate,
+            fallback
+          ))
             ? candidate
             : null
         )
@@ -245,21 +287,32 @@ export async function handleGroupHelpMemberCommand(
     return true;
   }
   if (command === '/geturl') {
-    if (!(await canUseGroupHelpCommand(message, values, '/geturl', 'HELPER'))) return true;
+    if (!(await canUseGroupHelpCommand(permissionMessage, values, '/geturl', 'HELPER'))) {
+      await sendGroupHelpPermissionDenied(message, 'HELPER', chatId);
+      return true;
+    }
     const targetMessage = message.reply_to_message;
-    if (!targetMessage) {
-      await sendTemporaryGroupHelpMessage(chatId, 'Reply to a message, then use /geturl.', values);
+    const explicitMessageId = context.isControlGroup ? Number(commandParts[1] || 0) : 0;
+    const targetMessageId = targetMessage?.message_id || explicitMessageId;
+    if (!Number.isInteger(targetMessageId) || targetMessageId <= 0) {
+      await sendTemporaryGroupHelpMessage(
+        chatId,
+        context.isControlGroup
+          ? 'Use /geturl <main_group_message_id> from this private admin group.'
+          : 'Reply to a message, then use /geturl.',
+        values
+      );
       return true;
     }
     const chat = await callCommunityTelegramApi<{ username?: string }>(
       GROUP_HELP_BOT_SLUG,
       'getChat',
-      { chat_id: chatId }
+      { chat_id: targetChatId }
     ).catch(() => null);
     const link = chat?.username
-      ? `https://t.me/${chat.username}/${targetMessage.message_id}`
-      : chatId.startsWith('-100')
-        ? `https://t.me/c/${chatId.slice(4)}/${targetMessage.message_id}`
+      ? `https://t.me/${chat.username}/${targetMessageId}`
+      : targetChatId.startsWith('-100')
+        ? `https://t.me/c/${targetChatId.slice(4)}/${targetMessageId}`
         : '';
     await sendTemporaryGroupHelpMessage(
       chatId,
@@ -270,8 +323,13 @@ export async function handleGroupHelpMemberCommand(
     return true;
   }
   if (command === '/info' || command === '/member' || command === '/me') {
-    if (command !== '/me' && !(await canUseGroupHelpCommand(message, values, command, 'HELPER')))
+    if (
+      command !== '/me' &&
+      !(await canUseGroupHelpCommand(permissionMessage, values, command, 'HELPER'))
+    ) {
+      await sendGroupHelpPermissionDenied(message, 'HELPER', chatId);
       return true;
+    }
     const targetArgument = (message.text || '').trim().split(/\s+/)[1] || '';
     const replyTarget = message.reply_to_message?.from;
     let targetId =
@@ -280,7 +338,7 @@ export async function handleGroupHelpMemberCommand(
         : replyTarget?.id || (/^\d+$/.test(targetArgument) ? Number(targetArgument) : 0);
     if (!targetId && targetArgument.startsWith('@')) {
       const known = await prisma.telegramCommunityMember.findFirst({
-        where: { chatId, username: targetArgument.slice(1) },
+        where: { chatId: targetChatId, username: targetArgument.slice(1) },
         select: { telegramUserId: true }
       });
       targetId = Number(known?.telegramUserId || 0);
@@ -296,7 +354,7 @@ export async function handleGroupHelpMemberCommand(
     const telegramMember = await callCommunityTelegramApi<TelegramMemberSnapshot>(
       GROUP_HELP_BOT_SLUG,
       'getChatMember',
-      { chat_id: chatId, user_id: targetId }
+      { chat_id: targetChatId, user_id: targetId }
     ).catch(() => null);
     if (!telegramMember?.user) {
       await sendTemporaryGroupHelpMessage(
@@ -310,12 +368,14 @@ export async function handleGroupHelpMemberCommand(
     const target = telegramMember.user;
     const [member, role, warnings, openCases] = await Promise.all([
       prisma.telegramCommunityMember.findUnique({
-        where: { chatId_telegramUserId: { chatId, telegramUserId: String(target.id) } }
+        where: {
+          chatId_telegramUserId: { chatId: targetChatId, telegramUserId: String(target.id) }
+        }
       }),
-      assignedCommunityRole(chatId, String(target.id)),
-      telegramGroupWarningDetails(chatId, String(target.id)),
+      assignedCommunityRole(targetChatId, String(target.id)),
+      telegramGroupWarningDetails(targetChatId, String(target.id)),
       prisma.telegramCommunityModerationCase.count({
-        where: { chatId, targetUserId: String(target.id), status: 'OPEN' }
+        where: { chatId: targetChatId, targetUserId: String(target.id), status: 'OPEN' }
       })
     ]);
     const fullName =
@@ -342,18 +402,24 @@ export async function handleGroupHelpMemberCommand(
     return true;
   }
   if (command === '/clearwarnings') {
-    if (!(await canUseGroupHelpCommand(message, values, '/clearwarnings', 'MODERATOR')))
+    if (!(await canUseGroupHelpCommand(permissionMessage, values, '/clearwarnings', 'MODERATOR'))) {
+      await sendGroupHelpPermissionDenied(message, 'MODERATOR', chatId);
       return true;
-    const target = message.reply_to_message?.from;
+    }
+    const target =
+      message.reply_to_message?.from ||
+      (context.isControlGroup ? await resolveMainGroupMember(commandParts[1] || '') : undefined);
     if (!target) {
       await sendTemporaryGroupHelpMessage(
         chatId,
-        'Reply to a member’s message, then use /clearwarnings.',
+        context.isControlGroup
+          ? 'Use /clearwarnings <user_id or @username> from this private admin group.'
+          : 'Reply to a member’s message, then use /clearwarnings.',
         values
       );
       return true;
     }
-    await clearTelegramGroupWarnings(chatId, String(target.id));
+    await clearTelegramGroupWarnings(targetChatId, String(target.id));
     await sendTemporaryGroupHelpMessage(
       chatId,
       `✅ Cleared warnings for ${target.first_name || 'this member'}.`,
@@ -364,7 +430,7 @@ export async function handleGroupHelpMemberCommand(
   if (command === '/id' || command === '/staffid') {
     const target = message.reply_to_message?.from || message.from;
     if (!target) return true;
-    const isStaff = await canUseGroupHelpCommand(message, values, '/id', 'HELPER');
+    const isStaff = await canUseGroupHelpCommand(permissionMessage, values, '/id', 'HELPER');
     const lines = [`Your Telegram ID: ${message.from?.id || 'unknown'}`];
     if (
       isStaff &&
@@ -375,20 +441,23 @@ export async function handleGroupHelpMemberCommand(
       lines.push(`Replied member ID: ${replied.id}`);
       if (replied.username) lines.push(`Username: @${replied.username}`);
     }
-    lines.push(`This group ID: ${chatId}`);
+    lines.push(`Target group ID: ${targetChatId}`);
     await deliverStaffResult(lines.join('\n'));
     return true;
   }
 
   if (command === '/adminlist') {
-    if (!(await canUseGroupHelpCommand(message, values, '/adminlist', 'HELPER'))) return true;
+    if (!(await canUseGroupHelpCommand(permissionMessage, values, '/adminlist', 'HELPER'))) {
+      await sendGroupHelpPermissionDenied(message, 'HELPER', chatId);
+      return true;
+    }
     const admins = await callCommunityTelegramApi<
       Array<{
         status?: string;
         user?: { id: number; first_name?: string; username?: string; is_bot?: boolean };
         custom_title?: string;
       }>
-    >(GROUP_HELP_BOT_SLUG, 'getChatAdministrators', { chat_id: chatId }).catch(() => []);
+    >(GROUP_HELP_BOT_SLUG, 'getChatAdministrators', { chat_id: targetChatId }).catch(() => []);
     const lines = admins
       .filter((admin) => !admin.user?.is_bot)
       .map((admin) => {
@@ -405,15 +474,20 @@ export async function handleGroupHelpMemberCommand(
   }
 
   if (command === '/stats') {
-    if (!(await canUseGroupHelpCommand(message, values, '/stats', 'MODERATOR'))) return true;
+    if (!(await canUseGroupHelpCommand(permissionMessage, values, '/stats', 'MODERATOR'))) {
+      await sendGroupHelpPermissionDenied(message, 'MODERATOR', chatId);
+      return true;
+    }
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const [activeMembers, joinedThisWeek, openReports, staff] = await Promise.all([
-      prisma.telegramCommunityMember.count({ where: { chatId, leftAt: null } }),
+      prisma.telegramCommunityMember.count({ where: { chatId: targetChatId, leftAt: null } }),
       prisma.telegramCommunityMember.count({
-        where: { chatId, joinedAt: { gte: since }, leftAt: null }
+        where: { chatId: targetChatId, joinedAt: { gte: since }, leftAt: null }
       }),
-      prisma.telegramCommunityModerationCase.count({ where: { chatId, status: 'OPEN' } }),
-      prisma.telegramCommunityRoleAssignment.count({ where: { chatId } })
+      prisma.telegramCommunityModerationCase.count({
+        where: { chatId: targetChatId, status: 'OPEN' }
+      }),
+      prisma.telegramCommunityRoleAssignment.count({ where: { chatId: targetChatId } })
     ]);
     await deliverStaffResult(
       `📊 Group snapshot\n\nActive members tracked: ${activeMembers}\nJoined this week: ${joinedThisWeek}\nOpen reports: ${openReports}\nCustom staff roles: ${staff}`
@@ -421,15 +495,21 @@ export async function handleGroupHelpMemberCommand(
     return true;
   }
   if (command === '/staff') {
-    if (!(await canUseGroupHelpCommand(message, values, '/staff', 'HELPER'))) return true;
+    if (!(await canUseGroupHelpCommand(permissionMessage, values, '/staff', 'HELPER'))) {
+      await sendGroupHelpPermissionDenied(message, 'HELPER', chatId);
+      return true;
+    }
     const staff = await prisma.telegramCommunityRoleAssignment.findMany({
-      where: { chatId },
+      where: { chatId: targetChatId },
       select: { telegramUserId: true, role: true, customRole: { select: { name: true } } },
       orderBy: [{ role: 'asc' }, { createdAt: 'asc' }]
     });
     const members = staff.length
       ? await prisma.telegramCommunityMember.findMany({
-          where: { chatId, telegramUserId: { in: staff.map((member) => member.telegramUserId) } },
+          where: {
+            chatId: targetChatId,
+            telegramUserId: { in: staff.map((member) => member.telegramUserId) }
+          },
           select: { telegramUserId: true, firstName: true, lastName: true, username: true }
         })
       : [];
@@ -453,33 +533,41 @@ export async function handleGroupHelpMemberCommand(
     return true;
   }
   if (command === '/help') {
-    const canUseStaffTools = await canUseGroupHelpCommand(message, values, '/warn', 'HELPER');
-    const canUseModTools = await canUseGroupHelpCommand(message, values, '/mute', 'MODERATOR');
+    const canUseStaffTools = await canUseGroupHelpCommand(
+      permissionMessage,
+      values,
+      '/warn',
+      'HELPER'
+    );
+    const canUseModTools = await canUseGroupHelpCommand(
+      permissionMessage,
+      values,
+      '/mute',
+      'MODERATOR'
+    );
     const canUseAdminTools = await isModerationExempt(
-      message,
+      permissionMessage,
       values.telegramGroupHelpAdminWhitelist || ''
     );
     const muteMinutes = values.telegramGroupHelpMuteMinutes || '60';
     const helpSections = [
-      `💙 *Hope Hub bot help*\n\n*For every member*\n• /rules — community rules\n• /support — private Hope Hub support\n• /warnings — your warning count\n• /id — your Telegram ID (or replied member's ID)\n• /me — your group profile\n• /report — reply to a message to report it\n• /admin — alert the community team\n• /forgot — remove your data from this group`,
+      `*Hope Hub bot help*\n\n*Member commands*\n/rules — community rules\n/support — private support\n/warnings — your warning count\n/me — your group profile\n/id — Telegram and target-group IDs\n/report — report a replied message\n/admin or /alertadmin — alert the community team\n/forget — delete retained Group Help data`,
       canUseStaffTools
-        ? `*For Helpers and Moderators* (reply to a message):\n• /warn [reason] or /unwarn — manage warnings\n• /del [reason] — delete the message\n• /delwarn — delete + warn\n• /info or /perms — member details\n• /geturl — link to replied message\n• /clearwarnings — clear all warnings\n• /adminlist — list group admins\n• /staff — community team\n• /stats — group snapshot\n\n*From staff group* (use ID or @username):\n• /warn 123456 reason\n• /mute 123456 reason\n• /ban 123456 reason`
+        ? `*Helper tools*\nIn the main group, reply to a message:\n/warn [reason], /unwarn, /delete [reason], /delwarn [reason]\n/info, /perms, /geturl, /clearwarnings\n/adminlist, /staff, /stats`
         : '',
       canUseModTools
-        ? `*Moderator commands* (reply to a message):\n• /mute [reason] — mute for ${muteMinutes} min\n• /unmute — restore messaging\n• /ro — read-only (permanent)\n• /unro — remove read-only\n• /ban [reason], /unban, /kick\n• /delmute — delete + mute\n• /delban — delete + ban\n• /delkick — delete + kick`
+        ? `*Moderator tools*\n/mute [reason] — mute for ${muteMinutes} minutes\n/unmute, /ro, /unro, /ban, /unban, /kick\n/delmute, /delban, /delkick — delete plus member action`
         : '',
       canUseAdminTools
-        ? `*For Telegram administrators*:\n• /admin — promote replied member\n• /unadmin — demote replied admin\n• /title [text] — set admin title\n• /untitle — remove title\n• /helper or /mod — assign role\n• /unhelper or /unmod — remove role\n• /pin [notify] — pin replied message\n• /unpin, /unpinall, /pinned\n• /filter [word] — add banned word\n• /unfilter [word] — remove banned word\n• /filters — list banned words\n• /welcome on/off — toggle welcome\n• /lockdown [minutes] — lock group\n• /unlock — unlock group\n• /settings — group settings\n• /setlog — set log channel\n• /settestgroup — set test group`
+        ? `*Administrator tools*\n/promote, /unadmin, /title, /untitle\n/helper, /unhelper, /mod, /unmod\n/pin [notify], /unpin, /unpinall, /pinned\n/filter, /unfilter, /filters\n/welcome on|off, /lockdown [minutes], /unlock\n/settings, /setlog, /settestgroup`
         : '',
-      'Tip: prefix commands with /* (e.g. /*info, /*stats) to get the reply privately.',
-      `💙 *Hope Hub bot help*\n\n*For every member*\n• /rules — read community rules\n• /support — find private Hope Hub support\n• /warnings — check your warning count\n• /me — view your group profile\n• /report — reply to a message, then report it privately\n• /admin — ask the community team to review an urgent group concern\n• /forget — remove your retained Group Help data for this group\n• Send /forget in a private chat with the bot to remove your Group Help data across all communities.`,
-      canUseStaffTools
-        ? `*For Helpers and Moderators*\nReply to a member’s message, then use:\n• /warn reason or /unwarn — manage warnings\n• /delete reason — remove the replied message\n• /delwarn, /delmute, /delban — remove a harmful message and apply one action\n• /mute reason — temporarily restrict the member\n• /unmute — restore their ability to send messages\n• /ban reason, /unban, /kick — manage membership\n• /info or /perms — view member details and bot access\n• /geturl — get a direct link to a replied message\n• /clearwarnings — remove recorded warnings\n• /staff — view the community team\n• /stats — view the group snapshot`
+      context.isControlGroup && canUseStaffTools
+        ? `*Private admin-group syntax*\n/info <user_id or @username>\n/perms <user_id or @username>\n/warn|mute|ban <user_id or @username> [reason]\n/delete <main_message_id> [reason]\n/delwarn|delmute|delban <user> <main_message_id> [reason]\n/geturl <main_message_id>\n/clearwarnings <user_id or @username>`
         : '',
-      canUseAdminTools
-        ? `*For Telegram administrators*\n• /settings — open the group settings menu\n• /pin — reply to a message; add “notify” to alert members\n• /unpin or /pinned — manage the current pin\n• /lockdown 30 — pause member messages for a chosen number of minutes\n• /unlock — restore normal group access\n• /helper or /moderator — reply to a member to assign a community role\n• /unhelper or /unmoderator — remove that role\n• /settestgroup — register the current group as the bot test group\n• /setlog — register the current private channel/group as the activity log`
+      context.isControlGroup && canUseAdminTools
+        ? `*Private admin-group administration*\n/promote <user> [title]\n/unadmin <user>\n/title <user> <title>, /untitle <user>\n/helper|mod <user>, /unhelper|unmod <user>\n/pin <main_message_id> [notify]\nAll policy commands above apply to the configured main group.`
         : '',
-      'Tip: prefix staff information commands with /* (for example, /*info or /*stats) to receive the result privately. Do not share private personal details in the group.'
+      'For sensitive staff results, run the command in the configured private admin group.'
     ]
       .filter(Boolean)
       .join('\n\n');

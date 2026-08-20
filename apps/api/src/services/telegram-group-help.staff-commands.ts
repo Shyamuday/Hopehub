@@ -16,23 +16,16 @@ import {
   sendModerationLog,
   sendTemporaryGroupHelpMessage
 } from './telegram-group-help.actions.js';
-import { canUseGroupHelpCommand, isModerationExempt } from './telegram-group-help.permissions.js';
-import { getSiteConfigMap } from './site-config.service.js';
-
-/**
- * If the command was sent from the configured staff group, return the main
- * group ID so commands apply there instead. Returns null otherwise.
- */
-async function crossGroupTarget(chatId: string): Promise<string | null> {
-  const config = await getSiteConfigMap([
-    'telegramGroupHelpStaffGroupId',
-    'telegramGroupHelpGroupChatId'
-  ]);
-  const staffGroupId = config.telegramGroupHelpStaffGroupId?.trim();
-  const mainGroupId = config.telegramGroupHelpGroupChatId?.trim();
-  if (staffGroupId && mainGroupId && chatId === staffGroupId) return mainGroupId;
-  return null;
-}
+import {
+  canUseGroupHelpCommand,
+  isModerationExempt,
+  sendGroupHelpPermissionDenied
+} from './telegram-group-help.permissions.js';
+import {
+  groupHelpCommandFailureMessage,
+  messageForGroupHelpTarget,
+  resolveGroupHelpCommandContext
+} from './telegram-group-help.command-context.js';
 
 export async function handleGroupHelpStaffCommand(
   message: CommunityTelegramMessage,
@@ -42,10 +35,11 @@ export async function handleGroupHelpStaffCommand(
   const chatId = String(message.chat.id);
   const parts = (message.text || '').trim().split(/\s+/);
 
-  // When sent from the private staff group, redirect actions to the main group
-  const mainGroupId = await crossGroupTarget(chatId);
-  const targetChatId = mainGroupId || chatId;
-  const isCrossGroup = Boolean(mainGroupId);
+  // Commands from either configured private control group act on the main group.
+  const context = await resolveGroupHelpCommandContext(message);
+  const targetChatId = context.targetChatId;
+  const isCrossGroup = context.isControlGroup;
+  const permissionMessage = messageForGroupHelpTarget(message, targetChatId);
 
   // ── Moderation commands ──────────────────────────────────────────────────
 
@@ -74,8 +68,46 @@ export async function handleGroupHelpStaffCommand(
       ? 'MODERATOR'
       : 'HELPER';
 
-    if (!(await canUseGroupHelpCommand(message, values, `/${canonicalName}`, requiredRole)))
+    if (
+      !(await canUseGroupHelpCommand(permissionMessage, values, `/${canonicalName}`, requiredRole))
+    ) {
+      await sendGroupHelpPermissionDenied(message, requiredRole, chatId);
       return true;
+    }
+
+    const deleteFirst = ['delete', 'del', 'delwarn', 'delmute', 'delban', 'delkick'].includes(
+      commandName
+    );
+    const effectiveAction =
+      canonicalName === 'delete' ? 'delete' : canonicalName.replace(/^del/, '') || 'delete';
+
+    // A command in another group cannot reply to a main-group message. Require
+    // the exact message ID so the bot never reports a deletion it did not do.
+    if (isCrossGroup && effectiveAction === 'delete') {
+      const messageId = Number((parts[1] || '').replace(/^message:/i, ''));
+      if (!Number.isInteger(messageId) || messageId <= 0) {
+        await sendCommunityMessage(
+          GROUP_HELP_BOT_SLUG,
+          chatId,
+          `Usage: ${command} <main_group_message_id> [reason]\nExample: ${command} 12345 harmful content`
+        );
+        return true;
+      }
+      const reason = parts.slice(2).join(' ').trim() || 'Manual deletion by community staff';
+      await deleteGroupHelpMessage(targetChatId, messageId);
+      await sendGroupHelpActivityLog(values, 'Main-group message deleted', [
+        `Group ID: ${targetChatId}`,
+        `Message ID: ${messageId}`,
+        `Reason: ${reason}`,
+        `By: ${message.from?.first_name || 'Administrator'} (${message.from?.id || 'anonymous'})`
+      ]);
+      await sendCommunityMessage(
+        GROUP_HELP_BOT_SLUG,
+        chatId,
+        `Deleted main-group message ${messageId}. Reason: ${reason}`
+      );
+      return true;
+    }
 
     // Resolve target — reply in main group OR user ID/username from staff group
     let target = message.reply_to_message?.from as
@@ -130,22 +162,28 @@ export async function handleGroupHelpStaffCommand(
 
     if (!target) return true;
 
-    const reasonStart = isCrossGroup ? 2 : 1;
+    let crossGroupMessageId: number | null = null;
+    if (isCrossGroup && deleteFirst) {
+      crossGroupMessageId = Number((parts[2] || '').replace(/^message:/i, ''));
+      if (!Number.isInteger(crossGroupMessageId) || crossGroupMessageId <= 0) {
+        await sendCommunityMessage(
+          GROUP_HELP_BOT_SLUG,
+          chatId,
+          `Usage: ${command} <user_id or @username> <main_group_message_id> [reason]`
+        );
+        return true;
+      }
+    }
+
+    const reasonStart = isCrossGroup ? (deleteFirst ? 3 : 2) : 1;
     const reason =
       parts.slice(reasonStart).join(' ').trim() || `Manual ${canonicalName} by community staff`;
 
-    const deleteFirst = ['delete', 'del', 'delwarn', 'delmute', 'delban', 'delkick'].includes(
-      commandName
-    );
-
-    const effectiveAction =
-      canonicalName === 'delete' ? 'delete' : canonicalName.replace(/^del/, '') || 'delete';
-
-    // Delete the replied message (only possible in same group)
-    if (deleteFirst && !isCrossGroup && message.reply_to_message) {
-      await deleteGroupHelpMessage(targetChatId, message.reply_to_message.message_id).catch(
-        () => null
-      );
+    if (deleteFirst) {
+      const messageId = isCrossGroup
+        ? crossGroupMessageId
+        : message.reply_to_message?.message_id || null;
+      if (messageId) await deleteGroupHelpMessage(targetChatId, messageId);
     }
 
     if (effectiveAction === 'delete') {
@@ -169,11 +207,21 @@ export async function handleGroupHelpStaffCommand(
       });
       const warnLimit = Math.max(1, Number(values.telegramGroupHelpWarnLimit || 3));
       if (warnings >= warnLimit) {
-        await applyGroupHelpMemberAction(
-          targetChatId,
-          target.id,
-          values.telegramGroupHelpWarnAction || 'mute'
-        ).catch(() => null);
+        try {
+          await applyGroupHelpMemberAction(
+            targetChatId,
+            target.id,
+            values.telegramGroupHelpWarnAction || 'mute'
+          );
+        } catch (error) {
+          await sendCommunityMessage(
+            GROUP_HELP_BOT_SLUG,
+            chatId,
+            `The warning was recorded, but the configured follow-up action failed. ${groupHelpCommandFailureMessage(error)}`
+          );
+          await sendModerationLog(values, permissionMessage, reason, 'warn');
+          return true;
+        }
       }
     } else if (effectiveAction === 'unmute' || effectiveAction === 'unro') {
       const chat = await callCommunityTelegramApi<{
@@ -197,22 +245,25 @@ export async function handleGroupHelpStaffCommand(
         target.id,
         effectiveAction,
         Number(values.telegramGroupHelpMuteMinutes || 60)
-      ).catch(() => null);
+      );
     }
 
-    await sendModerationLog(
-      values,
-      {
-        ...message,
-        chat: {
-          ...message.chat,
-          id: Number(targetChatId)
-        } as typeof message.chat,
-        from: target as typeof message.from
-      },
-      reason,
-      effectiveAction
-    );
+    if (isCrossGroup) {
+      await sendGroupHelpActivityLog(values, 'Private admin command applied', [
+        `Action: ${effectiveAction}`,
+        `Main group ID: ${targetChatId}`,
+        `Member: ${target.first_name || 'Telegram member'} (${target.id})`,
+        `Reason: ${reason}`,
+        `By: ${message.from?.first_name || 'Administrator'} (${message.from?.id || 'anonymous'})`
+      ]);
+    } else {
+      await sendModerationLog(
+        values,
+        { ...message, from: target as typeof message.from },
+        reason,
+        effectiveAction
+      );
+    }
 
     const confirmText = `✅ ${effectiveAction[0].toUpperCase()}${effectiveAction.slice(1)} applied to ${target.first_name || target.id}${isCrossGroup ? ' in main group.' : '.'}`;
     if (isCrossGroup) {
@@ -232,17 +283,38 @@ export async function handleGroupHelpStaffCommand(
 
   if (
     !message.from ||
-    !(await isModerationExempt(message, values.telegramGroupHelpAdminWhitelist || ''))
-  )
+    !(await isModerationExempt(permissionMessage, values.telegramGroupHelpAdminWhitelist || ''))
+  ) {
+    await sendGroupHelpPermissionDenied(message, 'ADMIN', chatId);
     return true;
+  }
 
-  const target = message.reply_to_message?.from;
+  let target = message.reply_to_message?.from;
+  if (isCrossGroup) {
+    const argument = parts[1] || '';
+    let targetId = /^\d+$/.test(argument) ? Number(argument) : 0;
+    if (!targetId && argument.startsWith('@')) {
+      const known = await prisma.telegramCommunityMember.findFirst({
+        where: { chatId: targetChatId, username: argument.slice(1) },
+        select: { telegramUserId: true }
+      });
+      targetId = Number(known?.telegramUserId || 0);
+    }
+    if (targetId) {
+      const member = await callCommunityTelegramApi<{
+        user?: { id: number; first_name?: string; username?: string };
+      }>(GROUP_HELP_BOT_SLUG, 'getChatMember', {
+        chat_id: targetChatId,
+        user_id: targetId
+      }).catch(() => null);
+      target = member?.user;
+    }
+  }
   if (!target) {
-    await sendTemporaryGroupHelpMessage(
-      chatId,
-      'Reply to a member, then use this role command.',
-      values
-    );
+    const usage = isCrossGroup
+      ? `Use ${command} <user_id or @username> from this private admin group.`
+      : 'Reply to a member, then use this role command.';
+    await sendTemporaryGroupHelpMessage(chatId, usage, values);
     return true;
   }
 
@@ -253,7 +325,7 @@ export async function handleGroupHelpStaffCommand(
 
   if (roleCommandName.startsWith('un')) {
     await prisma.telegramCommunityRoleAssignment.deleteMany({
-      where: { chatId, telegramUserId: String(target.id), role }
+      where: { chatId: targetChatId, telegramUserId: String(target.id), role }
     });
     await sendTemporaryGroupHelpMessage(
       chatId,
@@ -263,18 +335,18 @@ export async function handleGroupHelpStaffCommand(
   } else {
     await prisma.$transaction([
       prisma.telegramCommunityRoleAssignment.deleteMany({
-        where: { chatId, telegramUserId: String(target.id) }
+        where: { chatId: targetChatId, telegramUserId: String(target.id) }
       }),
       prisma.telegramCommunityRoleAssignment.upsert({
         where: {
           chatId_telegramUserId_role: {
-            chatId,
+            chatId: targetChatId,
             telegramUserId: String(target.id),
             role
           }
         },
         create: {
-          chatId,
+          chatId: targetChatId,
           telegramUserId: String(target.id),
           role,
           assignedById: String(message.from.id)
@@ -290,7 +362,7 @@ export async function handleGroupHelpStaffCommand(
   }
 
   await sendGroupHelpActivityLog(values, 'Community role updated', [
-    `Group: ${message.chat.title || chatId}`,
+    `Group ID: ${targetChatId}`,
     `Member: ${target.first_name || 'Telegram member'} (${target.id})`,
     `Role: ${roleCommandName.startsWith('un') ? 'removed' : 'assigned'} ${role.toLowerCase()}`,
     `By: ${message.from.first_name || 'Administrator'} (${message.from.id})`

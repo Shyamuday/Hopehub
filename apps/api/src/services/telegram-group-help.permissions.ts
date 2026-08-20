@@ -1,6 +1,9 @@
 import { prisma } from '../db.js';
 import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
-import { callCommunityTelegramApi } from './telegram-community-bots.client.js';
+import {
+  callCommunityTelegramApi,
+  sendCommunityMessage
+} from './telegram-community-bots.client.js';
 import type { CommunityTelegramMessage } from './telegram-community-bots.types.js';
 
 const adminStatusCache = new Map<string, { isAdmin: boolean; expiresAt: number }>();
@@ -19,7 +22,9 @@ export async function isModerationExempt(
   message: CommunityTelegramMessage,
   whitelistValue: string
 ) {
-  if (!message.from) return true;
+  if (message.sender_chat && String(message.sender_chat.id) === String(message.chat.id))
+    return true;
+  if (!message.from) return false;
   const whitelist = telegramAdminWhitelist(whitelistValue);
   const userId = String(message.from.id);
   const username = message.from.username?.trim().toLowerCase();
@@ -43,6 +48,24 @@ export async function isModerationExempt(
   const isAdmin = ['creator', 'administrator'].includes(membership.status || '');
   adminStatusCache.set(cacheKey, { isAdmin, expiresAt: Date.now() + ADMIN_STATUS_TTL_MS });
   return isAdmin;
+}
+
+export async function sendGroupHelpPermissionDenied(
+  message: CommunityTelegramMessage,
+  requiredRole: 'HELPER' | 'MODERATOR' | 'ADMIN',
+  replyChatId = String(message.chat.id)
+) {
+  const label =
+    requiredRole === 'ADMIN'
+      ? 'a Telegram administrator of the main group'
+      : requiredRole === 'MODERATOR'
+        ? 'a Hope Hub Moderator or main-group administrator'
+        : 'a Hope Hub Helper, Moderator, or main-group administrator';
+  await sendCommunityMessage(
+    GROUP_HELP_BOT_SLUG,
+    replyChatId,
+    `This command was not applied. It can only be used by ${label}.`
+  ).catch(() => null);
 }
 
 export async function assignedCommunityRole(chatId: string, telegramUserId: string) {
