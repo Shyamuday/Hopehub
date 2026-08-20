@@ -24,7 +24,6 @@ jobs:
           --health-retries 10
     env:
       DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/hopehub_ci?schema=public
-      SHADOW_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/hopehub_ci_shadow?schema=public
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -45,9 +44,6 @@ jobs:
       - name: API install and generate
         working-directory: apps/api
         run: npm run prisma:generate
-
-      - name: Create Prisma shadow database
-        run: PGPASSWORD=postgres createdb -h 127.0.0.1 -U postgres hopehub_ci_shadow
 
       - name: Apply and verify Prisma migrations
         working-directory: apps/api

@@ -10,13 +10,11 @@ function run(cmd: string) {
   execSync(cmd, { stdio: 'inherit', cwd: apiRoot, env: process.env });
 }
 
-const shadowUrl = process.env.SHADOW_DATABASE_URL;
-if (!shadowUrl) {
-  console.log('SHADOW_DATABASE_URL not set — skipping migrate diff verification.');
-  process.exit(0);
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL is required for migration/schema verification.');
 }
 
-// Exit code 2 means schema and migrations are out of sync.
-run(
-  `npx prisma migrate diff --from-migrations prisma/migrations --to-schema-datamodel prisma/schema --shadow-database-url "${shadowUrl}" --exit-code`
-);
+// The release gate applies every migration to a clean database first. Comparing
+// that datasource with the Prisma schema avoids deprecated shadow-database CLI
+// flags and detects both missing migration SQL and schema drift.
+run('npx prisma migrate diff --from-config-datasource --to-schema prisma/schema --exit-code');
