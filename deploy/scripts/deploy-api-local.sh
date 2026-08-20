@@ -261,7 +261,10 @@ ensure_zero_downtime_proxy() {
     return 0
   fi
 
-  local backup_site="${API_NGINX_SITE}.before-zero-downtime"
+  # Keep the temporary backup outside sites-enabled: Nginx includes every file
+  # in that directory, so a backup there would be parsed as a second server.
+  local backup_site
+  backup_site="$(mktemp /tmp/hopehub-api-nginx.XXXXXX)"
   sudo cp "$API_NGINX_SITE" "$backup_site"
   write_api_upstream 4000
   sudo sed -i 's#proxy_pass http://127\.0\.0\.1:4000#proxy_pass http://hopehub_api_active#g' "$API_NGINX_SITE"
