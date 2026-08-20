@@ -192,7 +192,10 @@ chmod 600 .env
 
 npm install --no-audit --no-fund
 npm run prisma:generate
-npm run build
+# Production runs the API through tsx, and the repository CI performs the
+# TypeScript validation. Compiling the full monorepo API on this 911 MB host
+# exhausts V8's heap and prevents an otherwise valid deployment from reaching
+# migrations, scheduler setup, and the process restart.
 npm run prisma:deploy
 npm run release:verify
 
