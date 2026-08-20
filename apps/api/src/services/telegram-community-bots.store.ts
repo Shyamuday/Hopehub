@@ -460,7 +460,7 @@ export async function scheduleCommunityMessageCleanup(input: {
   bot: CommunityBotSlug;
   chatId: string | number;
   messageId: number;
-  kind: 'welcome' | 'goodbye' | 'transient' | 'join-captcha';
+  kind: 'welcome' | 'goodbye' | 'transient' | 'join-captcha' | 'identity-alert' | 'voice-reminder';
   deleteAfter: Date;
 }) {
   return prisma.telegramCommunityMessageCleanup.upsert({

@@ -1060,11 +1060,32 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
   {
     key: 'telegramGroupHelpAutoDeleteSeconds',
     label: 'Automatic deletion',
-    description: 'How long temporary bot messages stay visible, in seconds. Use 0 to keep them.',
+    description:
+      'How long temporary bot messages stay visible, in seconds. This includes command replies, help, About Hope Hub, report acknowledgements, and public moderation notices. Use 0 to keep them.',
     section: 'content',
     type: 'number',
     maxLength: 8,
     defaultValue: '300'
+  },
+  {
+    key: 'telegramGroupHelpIdentityAlertDeleteHours',
+    label: 'Profile-change alert expiry',
+    description:
+      'Hours to keep public name or username-change alerts in the group. The full history remains in private moderation records. Use 0 to keep public alerts.',
+    section: 'people',
+    type: 'number',
+    maxLength: 4,
+    defaultValue: '24'
+  },
+  {
+    key: 'telegramCommunityVoiceReminderCleanupMinutes',
+    label: 'Voice reminder expiry',
+    description:
+      'Minutes after the scheduled VC start to remove the short “starts soon” reminder. The main VC announcement and join link are kept.',
+    section: 'content',
+    type: 'number',
+    maxLength: 4,
+    defaultValue: '15'
   },
   {
     key: 'telegramCommunityAnnouncementPinMode',

@@ -144,7 +144,8 @@ const COMMUNITY_CONFIG_KEYS = [
   'telegramCampaignContactUrl',
   'telegramCommunityAnnouncementPinMode',
   'telegramCommunityAnnouncementPinMinutes',
-  'telegramCommunityAnnouncementReplacePin'
+  'telegramCommunityAnnouncementReplacePin',
+  'telegramCommunityVoiceReminderCleanupMinutes'
 ] as const;
 
 const SMART_SCHEDULE_CONFIG_KEYS = [
@@ -205,7 +206,13 @@ async function communityConfig() {
       0,
       43_200
     ),
-    announcementReplacePin: values.telegramCommunityAnnouncementReplacePin !== 'no'
+    announcementReplacePin: values.telegramCommunityAnnouncementReplacePin !== 'no',
+    voiceReminderCleanupMinutes: boundedNumber(
+      values.telegramCommunityVoiceReminderCleanupMinutes,
+      15,
+      0,
+      1_440
+    )
   };
 }
 
@@ -1606,12 +1613,24 @@ async function runTelegramCommunityEventScheduler(now: Date) {
   for (const event of events) {
     const reminderAt = new Date(event.startsAt.getTime() - event.reminderMinutes * 60_000);
     if (reminderAt > now) continue;
-    await sendCommunityMessage(
+    const reminder = await sendCommunityMessage(
       CAMPAIGN_BOT,
       event.chatId,
       `🎧 ${event.title} starts soon. ${event._count.rsvps} people plan to join.`,
       { reply_markup: await telegramCommunityEventReminderKeyboard(event) }
     );
+    const config = await communityConfig();
+    if (config.voiceReminderCleanupMinutes > 0) {
+      await scheduleCommunityMessageCleanup({
+        bot: CAMPAIGN_BOT,
+        chatId: event.chatId,
+        messageId: reminder.message_id,
+        kind: 'voice-reminder',
+        deleteAfter: new Date(
+          event.startsAt.getTime() + config.voiceReminderCleanupMinutes * 60_000
+        )
+      });
+    }
     await prisma.telegramCommunityEvent.update({
       where: { id: event.id },
       data: { reminderSentAt: now }

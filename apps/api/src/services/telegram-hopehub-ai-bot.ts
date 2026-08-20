@@ -5,7 +5,8 @@ import {
 } from './telegram-community-bots.client.js';
 import {
   checkTelegramGroupFlood,
-  checkTelegramGroupRepeatedSpam
+  checkTelegramGroupRepeatedSpam,
+  scheduleCommunityMessageCleanup
 } from './telegram-community-bots.store.js';
 import type {
   CommunityTelegramMessage,
@@ -263,7 +264,22 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
                 '',
                 'Previous details are available to the moderation team.'
               ].join('\n');
-        await sendCommunityMessage(BOT, chatId, publicMessage).catch(() => null);
+        const publicAlert = await sendCommunityMessage(BOT, chatId, publicMessage).catch(
+          () => null
+        );
+        const identityAlertHours = Math.max(
+          0,
+          Math.min(720, Number(values.telegramGroupHelpIdentityAlertDeleteHours || 24))
+        );
+        if (publicAlert && identityAlertHours > 0) {
+          await scheduleCommunityMessageCleanup({
+            bot: BOT,
+            chatId,
+            messageId: publicAlert.message_id,
+            kind: 'identity-alert',
+            deleteAfter: new Date(Date.now() + identityAlertHours * 60 * 60_000)
+          });
+        }
       }
     }
   }

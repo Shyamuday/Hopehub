@@ -1,13 +1,12 @@
-import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
 import { addTelegramGroupWarning } from './telegram-community-bots.store.js';
 import type { CommunityTelegramMessage } from './telegram-community-bots.types.js';
 import { groupHelpConfig } from './telegram-group-help.config.js';
 import {
   applyGroupHelpMemberAction,
   deleteGroupHelpMessage,
-  sendModerationLog
+  sendModerationLog,
+  sendTemporaryGroupHelpMessage
 } from './telegram-group-help.actions.js';
-import { sendCommunityMessage } from './telegram-community-bots.client.js';
 
 export async function moderateGroupHelpMessage(
   message: CommunityTelegramMessage,
@@ -50,12 +49,12 @@ export async function moderateGroupHelpMessage(
     ).catch(() => null);
   }
   await sendModerationLog(values, message, reason, finalAction);
-  await sendCommunityMessage(
-    GROUP_HELP_BOT_SLUG,
+  await sendTemporaryGroupHelpMessage(
     chatId,
     warnings >= warnLimit
       ? `Community safety action applied after ${warnings} warnings.`
       : `Please follow the community rules. Warning ${warnings}/${warnLimit}.`,
+    values,
     { reply_to_message_id: message.message_id, message_thread_id: message.message_thread_id }
   ).catch(() => null);
   return true;

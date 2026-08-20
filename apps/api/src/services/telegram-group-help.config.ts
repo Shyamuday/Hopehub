@@ -32,6 +32,7 @@ export const GROUP_HELP_CONFIG_KEYS = [
   'telegramGroupHelpAdminWhitelist',
   'telegramGroupHelpReportsMode',
   'telegramGroupHelpIdentityChangeAlerts',
+  'telegramGroupHelpIdentityAlertDeleteHours',
   'telegramGroupHelpStaffGroupId',
   'telegramGroupHelpMemberDirectorySync',
   'telegramGroupHelpMemberSyncHours',
