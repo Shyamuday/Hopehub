@@ -240,7 +240,12 @@ function nativeGroupCallFromUpdates(
   };
 }
 
-type NativeGroupCallStatus = { id: string; scheduled: boolean };
+type NativeGroupCallStatus = {
+  id: string;
+  accessHash?: string;
+  scheduled: boolean;
+  scheduleDate?: number;
+};
 
 /**
  * Telegram is authoritative. The webhook can be delayed, so never create or
@@ -257,11 +262,20 @@ async function currentTelegramGroupCall(
   const result = await client.api.phone.getGroupCall({ call: inputCall as never, limit: 1 });
   const call = (
     result as {
-      call?: { id?: string | number | bigint; scheduleDate?: number | null };
+      call?: {
+        id?: string | number | bigint;
+        accessHash?: string | number | bigint;
+        scheduleDate?: number | null;
+      };
     }
   ).call;
   if (call?.id == null) return null;
-  return { id: String(call.id), scheduled: Boolean(call.scheduleDate) };
+  return {
+    id: String(call.id),
+    ...(call.accessHash == null ? {} : { accessHash: String(call.accessHash) }),
+    scheduled: Boolean(call.scheduleDate),
+    ...(call.scheduleDate == null ? {} : { scheduleDate: call.scheduleDate })
+  };
 }
 
 async function expireMissedVoiceChats(client: TelegramClient, now: Date) {
@@ -310,14 +324,29 @@ async function expireMissedVoiceChats(client: TelegramClient, now: Date) {
     }
 
     // Only the native call belonging to this event may be discarded. A newer
-    // event in the same group must never be affected.
+    // event in the same group must never be affected. The exact scheduled
+    // timestamp is a recovery path for old slots created before native call
+    // credentials were persisted in state.
+    const recoveredMissedScheduledCall = Boolean(
+      activeCall?.scheduled &&
+      activeCall.scheduleDate != null &&
+      Math.abs(activeCall.scheduleDate * 1000 - event.startsAt.getTime()) < 60_000 &&
+      activeCall.accessHash
+    );
+    const callId = payload.eventId === event.id ? payload.nativeCallId : activeCall?.id;
+    const callAccessHash =
+      payload.eventId === event.id ? payload.nativeCallAccessHash : activeCall?.accessHash;
     let discardFailed = false;
-    if (payload.eventId === event.id && payload.nativeCallId && payload.nativeCallAccessHash) {
+    if (
+      (payload.eventId === event.id || recoveredMissedScheduledCall) &&
+      callId &&
+      callAccessHash
+    ) {
       try {
         await client.api.phone.discardGroupCall({
           call: {
-            id: BigInt(payload.nativeCallId),
-            accessHash: BigInt(payload.nativeCallAccessHash)
+            id: BigInt(callId),
+            accessHash: BigInt(callAccessHash)
           }
         });
       } catch (error) {
@@ -337,11 +366,19 @@ async function expireMissedVoiceChats(client: TelegramClient, now: Date) {
       where: { id: event.id },
       data: { status: 'MISSED' }
     });
-    if (payload.eventId === event.id) {
+    if (payload.eventId === event.id || recoveredMissedScheduledCall) {
+      const retainedPayload =
+        payload.eventId === event.id
+          ? payload
+          : {
+              eventId: event.id,
+              nativeCallId: callId,
+              nativeCallAccessHash: callAccessHash
+            };
       if (discardFailed) {
         await deferForScheduledVoiceCall(
           event.chatId,
-          payload,
+          retainedPayload,
           now,
           'Retrying release of missed native VC'
         );
@@ -354,7 +391,7 @@ async function expireMissedVoiceChats(client: TelegramClient, now: Date) {
         // later VC blocked behind it.
         await deferForScheduledVoiceCall(
           event.chatId,
-          payload,
+          retainedPayload,
           now,
           'Waiting for Telegram to clear the released missed VC'
         );
