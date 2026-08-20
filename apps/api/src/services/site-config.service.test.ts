@@ -9,10 +9,9 @@ test('runtime config prefers the primary database value', () => {
   });
 });
 
-test('runtime config identifies a registered managed fallback', () => {
+test('runtime config identifies a missing registered value instead of using a code fallback', () => {
   const resolved = resolveSiteConfigValue('telegramUserBotUsername', undefined);
-  assert.equal(resolved.source, 'managed-fallback');
-  assert.notEqual(resolved.value, '');
+  assert.deepEqual(resolved, { value: '', source: 'missing-primary' });
 });
 
 test('runtime config distinguishes a registered key that has no safe default', () => {

@@ -4,14 +4,8 @@ import {
   SITE_CONFIG_KEYS,
   SITE_CONFIG_META
 } from '../constants/site-config.constants.js';
-import {
-  GROUP_HELP_CONFIG_DEFAULTS,
-  GROUP_HELP_CONFIG_META
-} from '../constants/group-help-config.constants.js';
-import {
-  TELEGRAM_BOT_CONTROL_DEFAULTS,
-  TELEGRAM_BOT_CONTROL_META
-} from '../constants/telegram-bot-controls.constants.js';
+import { GROUP_HELP_CONFIG_META } from '../constants/group-help-config.constants.js';
+import { TELEGRAM_BOT_CONTROL_META } from '../constants/telegram-bot-controls.constants.js';
 
 /**
  * A snapshot lets deployments refresh a built-in default without ever replacing
@@ -22,23 +16,17 @@ export const MANAGED_SITE_CONFIG_OVERRIDE_PREFIX = 'system:site-config:override:
 const LEGACY_TELEGRAM_DEFAULT_PREFIX = 'system:telegram-group-help:default:';
 const LEGACY_GROUP_HELP_OVERRIDE_PREFIX = '__system:group-help-default:';
 
-const RUNTIME_CONFIG_DEFAULTS: Record<string, string> = {
-  ...SITE_CONFIG_DEFAULTS,
-  ...GROUP_HELP_CONFIG_DEFAULTS,
-  ...TELEGRAM_BOT_CONTROL_DEFAULTS
-};
 const REGISTERED_RUNTIME_CONFIG_KEYS = new Set([
   ...Object.keys(SITE_CONFIG_META),
   ...Object.keys(GROUP_HELP_CONFIG_META),
   ...Object.keys(TELEGRAM_BOT_CONTROL_META)
 ]);
-const runtimeFallbackRepairs = new Map<string, Promise<void>>();
 const reportedUnknownKeys = new Set<string>();
 
 export type ManagedSiteConfigEntry = { key: string; value: string; label: string };
 export type SiteConfigResolution = {
   value: string;
-  source: 'database' | 'managed-fallback' | 'missing-primary' | 'unregistered';
+  source: 'database' | 'missing-primary' | 'unregistered';
 };
 
 export function resolveSiteConfigValue(
@@ -46,67 +34,10 @@ export function resolveSiteConfigValue(
   savedValue: string | undefined
 ): SiteConfigResolution {
   if (savedValue !== undefined) return { value: savedValue, source: 'database' };
-  if (Object.prototype.hasOwnProperty.call(RUNTIME_CONFIG_DEFAULTS, key)) {
-    return { value: RUNTIME_CONFIG_DEFAULTS[key] ?? '', source: 'managed-fallback' };
-  }
   if (REGISTERED_RUNTIME_CONFIG_KEYS.has(key)) {
     return { value: '', source: 'missing-primary' };
   }
   return { value: '', source: 'unregistered' };
-}
-
-function siteConfigLabel(key: string) {
-  return (
-    SITE_CONFIG_META[key]?.label ||
-    GROUP_HELP_CONFIG_META[key]?.label ||
-    TELEGRAM_BOT_CONTROL_META[key as keyof typeof TELEGRAM_BOT_CONTROL_META]?.label ||
-    key
-  );
-}
-
-async function repairRuntimeFallback(key: string, value: string) {
-  const existing = runtimeFallbackRepairs.get(key);
-  if (existing) return existing;
-
-  const repair = (async () => {
-    const label = siteConfigLabel(key);
-    console.warn(
-      `[site-config] Managed fallback used for missing database key "${key}"; repairing the primary configuration row.`
-    );
-    await prisma.$transaction([
-      prisma.siteConfig.upsert({
-        where: { key },
-        create: { key, value, label },
-        update: {}
-      }),
-      prisma.siteConfig.upsert({
-        where: { key: `${MANAGED_SITE_CONFIG_DEFAULT_PREFIX}${key}` },
-        create: {
-          key: `${MANAGED_SITE_CONFIG_DEFAULT_PREFIX}${key}`,
-          value,
-          label: `Managed default snapshot for ${label}`
-        },
-        update: { value, label: `Managed default snapshot for ${label}` }
-      }),
-      prisma.auditLog.create({
-        data: {
-          action: 'site_config.runtime_fallback_repaired',
-          targetType: 'site_config',
-          targetId: key,
-          summary: `Recovered missing site configuration "${key}" from its managed default.`,
-          metadata: {
-            key,
-            source: 'managed-fallback',
-            reason: 'missing_database_row',
-            persistence: 'create_primary_if_still_missing'
-          }
-        }
-      })
-    ]);
-  })().finally(() => runtimeFallbackRepairs.delete(key));
-
-  runtimeFallbackRepairs.set(key, repair);
-  return repair;
 }
 
 async function reportMissingRuntimeKey(key: string, source: 'missing-primary' | 'unregistered') {
@@ -120,7 +51,7 @@ async function reportMissingRuntimeKey(key: string, source: 'missing-primary' | 
     ? 'missing_database_row_without_default'
     : 'missing_default_registration';
   const summary = registered
-    ? `Registered site configuration "${key}" is missing from the primary database and has no managed default.`
+    ? `Required site configuration "${key}" is missing from the primary database.`
     : `Unregistered site configuration key "${key}" was requested at runtime.`;
   console.error(`[site-config] ${summary}`);
   try {
@@ -158,21 +89,21 @@ export async function getSiteConfigMap(keys: readonly string[]) {
   const resolved = uniqueKeys.map((key) => ({ key, ...resolveSiteConfigValue(key, saved[key]) }));
 
   await Promise.all(
-    resolved.map(async ({ key, value, source }) => {
-      if (source === 'managed-fallback') {
-        try {
-          await repairRuntimeFallback(key, value);
-        } catch (error) {
-          console.error(
-            `[site-config] Could not persist managed fallback for "${key}"; this request will continue with the safe fallback.`,
-            error
-          );
-        }
-      } else if (source === 'missing-primary' || source === 'unregistered') {
+    resolved.map(async ({ key, source }) => {
+      if (source === 'missing-primary' || source === 'unregistered') {
         await reportMissingRuntimeKey(key, source);
       }
     })
   );
+
+  const unavailable = resolved.filter(({ source }) => source !== 'database');
+  if (unavailable.length) {
+    throw new Error(
+      `Required site configuration is unavailable: ${unavailable
+        .map(({ key, source }) => `${key} (${source})`)
+        .join(', ')}. Run the managed configuration sync, then set the primary database value.`
+    );
+  }
 
   return Object.fromEntries(resolved.map(({ key, value }) => [key, value])) as Record<
     string,
