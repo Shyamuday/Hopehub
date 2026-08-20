@@ -147,6 +147,102 @@ export function groupHelpCommandDefinition(command: string) {
   return commandDefinitions.get(command.toLowerCase());
 }
 
+export const GROUP_HELP_STAFF_PERMISSION_GROUPS = [
+  {
+    key: 'member_info',
+    label: 'View member information',
+    commands: ['/info', '/member', '/perms', '/geturl', '/staff', '/adminlist'],
+    defaultEnabled: true
+  },
+  { key: 'statistics', label: 'View statistics', commands: ['/stats'], defaultEnabled: true },
+  {
+    key: 'warnings',
+    label: 'Manage warnings',
+    commands: ['/warn', '/unwarn', '/clearwarnings'],
+    defaultEnabled: true
+  },
+  {
+    key: 'delete',
+    label: 'Delete messages',
+    commands: ['/delete', '/del', '/delwarn'],
+    defaultEnabled: true
+  },
+  {
+    key: 'mute',
+    label: 'Mute and unmute',
+    commands: ['/mute', '/unmute', '/ro', '/unro', '/delmute'],
+    defaultEnabled: true
+  },
+  {
+    key: 'ban',
+    label: 'Ban and unban',
+    commands: ['/ban', '/unban', '/delban'],
+    defaultEnabled: false
+  },
+  {
+    key: 'kick',
+    label: 'Remove members',
+    commands: ['/kick', '/delkick'],
+    defaultEnabled: false
+  },
+  {
+    key: 'pin',
+    label: 'Manage pinned messages',
+    commands: ['/pin', '/unpin', '/pinned', '/unpinall'],
+    defaultEnabled: false
+  },
+  {
+    key: 'filters',
+    label: 'Manage blocked phrases',
+    commands: ['/filter', '/unfilter', '/filters'],
+    defaultEnabled: false
+  },
+  {
+    key: 'welcome',
+    label: 'Manage welcome messages',
+    commands: ['/welcome'],
+    defaultEnabled: false
+  },
+  {
+    key: 'lockdown',
+    label: 'Lock and unlock group',
+    commands: ['/lockdown', '/unlock'],
+    defaultEnabled: false
+  },
+  {
+    key: 'staff_roles',
+    label: 'Manage Hope Hub staff roles',
+    commands: [
+      '/helper',
+      '/unhelper',
+      '/mod',
+      '/unmod',
+      '/moderator',
+      '/unmoderator',
+      '/free',
+      '/unfree'
+    ],
+    defaultEnabled: false
+  },
+  {
+    key: 'telegram_admins',
+    label: 'Manage Telegram administrators',
+    commands: ['/promote', '/demote', '/unadmin', '/title', '/untitle'],
+    defaultEnabled: false
+  },
+  {
+    key: 'settings',
+    label: 'Open and update settings',
+    commands: ['/settings'],
+    defaultEnabled: false
+  }
+] as const;
+
+/** Routine powers automatically granted when a person joins the private staff group. */
+export const GROUP_HELP_DEFAULT_STAFF_COMMANDS = GROUP_HELP_STAFF_PERMISSION_GROUPS.filter(
+  (group) => group.defaultEnabled
+).flatMap((group) => [...group.commands]);
+
 export async function handleGroupHelpCommand(
   message: CommunityTelegramMessage,
   values: Record<string, string>
@@ -163,11 +259,15 @@ export async function handleGroupHelpCommand(
     (await handleGroupHelpReportCommand(message, effectiveValues)) ||
     (await handleGroupHelpAdminCommand(message, effectiveValues));
   if (handled) {
-    await recordGroupHelpCommandAudit({
-      message,
-      targetChatId: context.targetChatId,
-      status: 'HANDLED'
-    });
+    if (!message._groupHelpAuditRecorded) {
+      await recordGroupHelpCommandAudit({
+        message,
+        targetChatId: context.targetChatId,
+        status: 'HANDLED',
+        logChatId: effectiveValues.telegramGroupHelpLogChannelId
+      });
+      message._groupHelpAuditRecorded = true;
+    }
   }
   return handled;
 }

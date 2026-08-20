@@ -338,9 +338,33 @@ export class AdminOpsApi extends AdminApiBase {
 
   getTelegramGroupHelpRoles(chatId?: string) {
     return firstValueFrom(
-      this.http.get<{ chatId: string; assignments: any[]; customRoles: any[] }>(
-        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_ROLES}`,
-        { params: chatId ? { chatId } : {} },
+      this.http.get<{
+        chatId: string;
+        staffGroupId: string;
+        assignments: any[];
+        customRoles: any[];
+        staffMembers: any[];
+        permissionGroups: Array<{
+          key: string;
+          label: string;
+          commands: string[];
+          defaultEnabled: boolean;
+        }>;
+      }>(`${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_ROLES}`, {
+        params: chatId ? { chatId } : {},
+      }),
+    );
+  }
+
+  updateTelegramGroupHelpStaffPermissions(payload: {
+    telegramUserId: string;
+    permissions: string[];
+    fullAdmin?: boolean;
+  }) {
+    return firstValueFrom(
+      this.http.patch<{ ok: boolean; telegramUserId: string; permissions: string[] }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_STAFF_PERMISSIONS}`,
+        payload,
       ),
     );
   }

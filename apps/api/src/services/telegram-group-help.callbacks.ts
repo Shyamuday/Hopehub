@@ -3,11 +3,7 @@ import {
   handleTelegramCommunityEventCallback,
   handleTelegramCommunityJoinVerificationCallback
 } from './telegram-community-campaigns.js';
-import {
-  answerCommunityCallback,
-  callCommunityTelegramApi,
-  sendCommunityMessage
-} from './telegram-community-bots.client.js';
+import { answerCommunityCallback, sendCommunityMessage } from './telegram-community-bots.client.js';
 import { groupHelpConfig } from './telegram-group-help.config.js';
 import { telegramGroupWarningCount } from './telegram-community-bots.store.js';
 import {
@@ -16,8 +12,16 @@ import {
   groupHelpSettingsHomeKeyboard
 } from './telegram-group-help.menu.js';
 import { handleGroupHelpBotSettingsCallback } from './telegram-group-help.bot-settings.js';
-import { handleGroupHelpModerationActionCallback } from './telegram-group-help.actions.js';
+import {
+  handleGroupHelpModerationActionCallback,
+  sendGroupHelpActivityLog
+} from './telegram-group-help.actions.js';
 import type { CommunityTelegramUpdate } from './telegram-community-bots.types.js';
+import {
+  messageForGroupHelpTarget,
+  resolveGroupHelpCommandContext
+} from './telegram-group-help.command-context.js';
+import { canUseGroupHelpAdminCommand } from './telegram-group-help.permissions.js';
 
 export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
   const callback = update.callback_query;
@@ -93,16 +97,26 @@ export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
       );
       return true;
     }
-    const membership = await callCommunityTelegramApi<{ status?: string }>(
-      GROUP_HELP_BOT_SLUG,
-      'getChatMember',
-      { chat_id: chatId, user_id: callback.from.id }
-    ).catch(() => null);
-    if (!membership || !['creator', 'administrator'].includes(membership.status || '')) {
+    const settingsMessage = { ...callback.message, from: callback.from, text: '/settings' };
+    const context = await resolveGroupHelpCommandContext(settingsMessage);
+    const values = await groupHelpConfig(context.targetChatId);
+    if (
+      !(await canUseGroupHelpAdminCommand(
+        messageForGroupHelpTarget(settingsMessage, context.targetChatId),
+        values,
+        '/settings'
+      ))
+    ) {
+      await sendGroupHelpActivityLog(values, 'Private settings access denied', [
+        `By: ${callback.from.first_name || 'Telegram member'}${callback.from.username ? ` (@${callback.from.username})` : ''} [${callback.from.id}]`,
+        `From group: ${chatId}`,
+        `Target group: ${context.targetChatId}`,
+        'Reason: this member does not have the settings permission.'
+      ]);
       await answerCommunityCallback(
         GROUP_HELP_BOT_SLUG,
         callback.id,
-        'Only group admins can open settings.'
+        'You do not have permission to open group settings.'
       );
       return true;
     }
@@ -110,7 +124,7 @@ export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
       GROUP_HELP_BOT_SLUG,
       chatId,
       'Open the group editor privately. Your access is checked before every change.',
-      { reply_markup: groupHelpPrivateSettingsKeyboard(chatId) }
+      { reply_markup: groupHelpPrivateSettingsKeyboard(context.targetChatId) }
     );
     await answerCommunityCallback(GROUP_HELP_BOT_SLUG, callback.id);
     return true;
@@ -148,23 +162,29 @@ export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
     );
     return true;
   }
-  const membership = await callCommunityTelegramApi<{ status?: string }>(
-    GROUP_HELP_BOT_SLUG,
-    'getChatMember',
-    {
-      chat_id: chatId,
-      user_id: callback.from.id
-    }
-  ).catch(() => null);
-  if (!membership || !['creator', 'administrator'].includes(membership.status || '')) {
+  const settingsMessage = { ...callback.message, from: callback.from, text: '/settings' };
+  const settingsContext = await resolveGroupHelpCommandContext(settingsMessage);
+  const values = await groupHelpConfig(settingsContext.targetChatId);
+  if (
+    !(await canUseGroupHelpAdminCommand(
+      messageForGroupHelpTarget(settingsMessage, settingsContext.targetChatId),
+      values,
+      '/settings'
+    ))
+  ) {
+    await sendGroupHelpActivityLog(values, 'Private settings access denied', [
+      `By: ${callback.from.first_name || 'Telegram member'}${callback.from.username ? ` (@${callback.from.username})` : ''} [${callback.from.id}]`,
+      `From group: ${chatId}`,
+      `Target group: ${settingsContext.targetChatId}`,
+      'Reason: this member does not have the settings permission.'
+    ]);
     await answerCommunityCallback(
       GROUP_HELP_BOT_SLUG,
       callback.id,
-      'Only group admins can open settings.'
+      'You do not have permission to open group settings.'
     );
     return true;
   }
-  const values = await groupHelpConfig(chatId);
   const page =
     callback.data === 'hh_menu_settings' ? 'home' : callback.data.slice('hh_settings_'.length);
   const isHome = page === 'home';

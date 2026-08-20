@@ -44,3 +44,24 @@ export const TELEGRAM_BOT_URLS = Object.fromEntries(
 
 export const GROUP_HELP_BOT_SLUG = COMMUNITY_BOT_SLUGS.GROUP_HELP;
 export const GROUP_HELP_BOT_DISPLAY_NAME = 'Hope Hub community bot';
+
+/**
+ * Trusted private-staff identities that receive full bot powers when first detected.
+ * Values are normalized without @. The historical spelling is retained because it
+ * is the username previously used by the Mind Craft account.
+ */
+export const GROUP_HELP_AUTOMATIC_FULL_ADMIN_USERNAMES = [
+  'spiritualspirit',
+  'spiritualspirirt'
+] as const;
+
+/** Matches the requested Stoic staff identity when its complete username changes. */
+export const GROUP_HELP_AUTOMATIC_FULL_ADMIN_USERNAME_MARKERS = ['stoic'] as const;
+
+export function isGroupHelpAutomaticFullAdminUsername(username: string | undefined) {
+  const normalized = username?.trim().replace(/^@/, '').toLowerCase() || '';
+  return (
+    GROUP_HELP_AUTOMATIC_FULL_ADMIN_USERNAMES.some((candidate) => candidate === normalized) ||
+    GROUP_HELP_AUTOMATIC_FULL_ADMIN_USERNAME_MARKERS.some((marker) => normalized.includes(marker))
+  );
+}

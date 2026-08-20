@@ -10,6 +10,11 @@ import {
   saveTelegramCommunityGroupPolicy
 } from './telegram-community-group-policy.js';
 import { bannedPhrases, groupHelpConfig } from './telegram-group-help.config.js';
+import { messageForGroupHelpTarget } from './telegram-group-help.command-context.js';
+import {
+  canUseGroupHelpAdminCommand,
+  canUseGroupHelpCommand
+} from './telegram-group-help.permissions.js';
 import {
   removeLatestTelegramGroupWarning,
   scheduleCommunityMessageCleanup
@@ -192,8 +197,9 @@ export async function sendModerationLog(
 /** Handles staff-group undo/repost controls for a recorded moderation action. */
 export async function handleGroupHelpModerationActionCallback(update: CommunityTelegramUpdate) {
   const callback = update.callback_query;
+  const callbackMessage = callback?.message;
   const data = callback?.data;
-  if (!callback || !data?.startsWith('hh_mod:')) return false;
+  if (!callback || !callbackMessage || !data?.startsWith('hh_mod:')) return false;
   const [, actionId, requestedAction] = data.split(':');
   if (!actionId || !requestedAction) return false;
   const state = await prisma.telegramCommunityState.findUnique({
@@ -210,13 +216,44 @@ export async function handleGroupHelpModerationActionCallback(update: CommunityT
     blockedPhrase?: string | null;
   };
   if (!payload.targetChatId) return 'expired';
-  const membership = await callCommunityTelegramApi<{ status?: string }>(
-    GROUP_HELP_BOT_SLUG,
-    'getChatMember',
-    { chat_id: payload.targetChatId, user_id: callback.from.id }
-  ).catch(() => null);
-  if (!membership || !['creator', 'administrator'].includes(membership.status || ''))
+  const values = await groupHelpConfig(payload.targetChatId);
+  const commandByAction: Record<string, string> = {
+    unmute: '/unmute',
+    unban: '/unban',
+    unwarn: '/unwarn',
+    repost: '/delete',
+    allowphrase: '/unfilter',
+    blockphrase: '/filter'
+  };
+  const command = commandByAction[requestedAction];
+  const permissionMessage = messageForGroupHelpTarget(
+    {
+      ...callbackMessage,
+      text: command,
+      from: callback.from
+    },
+    payload.targetChatId
+  );
+  const permitted = command
+    ? ['/filter', '/unfilter'].includes(command)
+      ? await canUseGroupHelpAdminCommand(permissionMessage, values, command)
+      : await canUseGroupHelpCommand(
+          permissionMessage,
+          values,
+          command,
+          ['/unmute', '/unban'].includes(command) ? 'MODERATOR' : 'HELPER'
+        )
+    : false;
+  if (!permitted) {
+    await sendGroupHelpActivityLog(values, 'Private staff action denied', [
+      `Action: ${requestedAction}`,
+      `By: ${callback.from.first_name || 'Telegram member'}${callback.from.username ? ` (@${callback.from.username})` : ''} [${callback.from.id}]`,
+      `From group: ${callbackMessage.chat.id}`,
+      `Target group: ${payload.targetChatId}`,
+      'Reason: this member does not have the required bot permission.'
+    ]);
     return 'denied';
+  }
 
   if (requestedAction === 'unmute' && payload.targetUserId) {
     const chat = await callCommunityTelegramApi<{ permissions?: Record<string, boolean> }>(
@@ -271,6 +308,14 @@ export async function handleGroupHelpModerationActionCallback(update: CommunityT
     where: { bot_chatId: { bot: MODERATION_ACTION_STATE, chatId: actionId } },
     data: { state: 'COMPLETED', expiresAt: new Date() }
   });
+  await sendGroupHelpActivityLog(values, 'Private staff action applied', [
+    `Action: ${requestedAction}`,
+    `By: ${callback.from.first_name || 'Telegram staff'}${callback.from.username ? ` (@${callback.from.username})` : ''} [${callback.from.id}]`,
+    `From group: ${callbackMessage.chat.id}`,
+    `Target group: ${payload.targetChatId}`,
+    payload.targetUserId ? `Target member: ${payload.targetUserId}` : null,
+    payload.blockedPhrase ? `Phrase: ${payload.blockedPhrase}` : null
+  ]);
   return requestedAction;
 }
 

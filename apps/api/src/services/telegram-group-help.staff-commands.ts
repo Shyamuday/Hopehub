@@ -18,7 +18,7 @@ import {
 } from './telegram-group-help.actions.js';
 import {
   canUseGroupHelpCommand,
-  isModerationExempt,
+  canUseGroupHelpAdminCommand,
   sendGroupHelpPermissionDenied
 } from './telegram-group-help.permissions.js';
 import {
@@ -72,7 +72,7 @@ export async function handleGroupHelpStaffCommand(
     if (
       !(await canUseGroupHelpCommand(permissionMessage, values, `/${canonicalName}`, requiredRole))
     ) {
-      await sendGroupHelpPermissionDenied(message, requiredRole, chatId);
+      await sendGroupHelpPermissionDenied(message, requiredRole, chatId, values);
       return true;
     }
     if (
@@ -295,11 +295,8 @@ export async function handleGroupHelpStaffCommand(
   );
   if (!roleCommand) return false;
 
-  if (
-    !message.from ||
-    !(await isModerationExempt(permissionMessage, values.telegramGroupHelpAdminWhitelist || ''))
-  ) {
-    await sendGroupHelpPermissionDenied(message, 'ADMIN', chatId);
+  if (!message.from || !(await canUseGroupHelpAdminCommand(permissionMessage, values, command))) {
+    await sendGroupHelpPermissionDenied(message, 'ADMIN', chatId, values);
     return true;
   }
 

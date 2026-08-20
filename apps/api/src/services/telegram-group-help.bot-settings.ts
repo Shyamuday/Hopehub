@@ -5,12 +5,10 @@ import {
   type GroupHelpConfigField
 } from '../constants/group-help-config.constants.js';
 import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
-import {
-  answerCommunityCallback,
-  callCommunityTelegramApi,
-  sendCommunityMessage
-} from './telegram-community-bots.client.js';
+import { answerCommunityCallback, sendCommunityMessage } from './telegram-community-bots.client.js';
 import { sendGroupHelpActivityLog } from './telegram-group-help.actions.js';
+import { groupHelpConfig } from './telegram-group-help.config.js';
+import { canUseGroupHelpAdminCommand } from './telegram-group-help.permissions.js';
 import type {
   CommunityTelegramMessage,
   CommunityTelegramUpdate,
@@ -106,13 +104,22 @@ function cancelKeyboard(): TelegramKeyboard {
   return { inline_keyboard: [[button('Cancel', `${PREFIX}cancel`, 'danger')]] };
 }
 
-async function isTelegramAdmin(chatId: string, userId: number) {
-  const member = await callCommunityTelegramApi<{ status?: string }>(
-    GROUP_HELP_BOT_SLUG,
-    'getChatMember',
-    { chat_id: chatId, user_id: userId }
-  ).catch(() => null);
-  return Boolean(member && ['creator', 'administrator'].includes(member.status || ''));
+async function canEditGroupSettings(
+  chatId: string,
+  actor: NonNullable<CommunityTelegramMessage['from']>,
+  messageId: number
+) {
+  const values = await groupHelpConfig(chatId);
+  return canUseGroupHelpAdminCommand(
+    {
+      message_id: messageId,
+      chat: { id: chatId, type: 'supergroup' },
+      from: actor,
+      text: '/settings'
+    },
+    values,
+    '/settings'
+  );
 }
 
 async function readSettingsState<T>(bot: string, chatId: string): Promise<T | null> {
@@ -177,7 +184,7 @@ export async function handleGroupHelpPrivateSettingsStart(message: CommunityTele
   const match = (message.text || '').trim().match(/^\/start\s+group_settings_(-?\d+)$/i);
   if (!match) return false;
   const settingsChatId = match[1];
-  if (!(await isTelegramAdmin(settingsChatId, message.from.id))) {
+  if (!(await canEditGroupSettings(settingsChatId, message.from, message.message_id))) {
     await sendCommunityMessage(
       GROUP_HELP_BOT_SLUG,
       String(message.chat.id),
@@ -261,7 +268,7 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
     );
     return true;
   }
-  if (!(await isTelegramAdmin(chatId, callback.from.id))) {
+  if (!(await canEditGroupSettings(chatId, callback.from, callback.message.message_id))) {
     await answerCommunityCallback(
       GROUP_HELP_BOT_SLUG,
       callback.id,
@@ -381,7 +388,12 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
       return true;
     }
     try {
-      await saveValue(field, draft.value, chatId, String(callback.from.id));
+      await saveValue(
+        field,
+        draft.value,
+        chatId,
+        `${callback.from.first_name || 'Telegram staff'}${callback.from.username ? ` (@${callback.from.username})` : ''} [${callback.from.id}]`
+      );
       await clearSettingsDraft(chatId, callback.from.id);
       await sendCommunityMessage(
         GROUP_HELP_BOT_SLUG,
@@ -415,7 +427,7 @@ export async function handleGroupHelpBotSettingsInput(message: CommunityTelegram
   const replyChatId = String(message.chat.id);
   const draft = await readSettingsDraft(chatId, message.from.id);
   if (!draft) return false;
-  if (!(await isTelegramAdmin(chatId, message.from.id))) return true;
+  if (!(await canEditGroupSettings(chatId, message.from, message.message_id))) return true;
   const field = fieldByKey(draft.key);
   if (!field) return true;
   if (draft.value !== undefined) return false;

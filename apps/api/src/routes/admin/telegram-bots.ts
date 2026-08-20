@@ -65,6 +65,10 @@ import {
   GROUP_HELP_BOT_DISPLAY_NAME,
   GROUP_HELP_BOT_SLUG
 } from '../../constants/telegram-community-bot.constants.js';
+import {
+  GROUP_HELP_COMMAND_DEFINITIONS,
+  GROUP_HELP_STAFF_PERMISSION_GROUPS
+} from '../../services/telegram-group-help.commands.js';
 
 const setupSchema = z.object({
   dropPendingUpdates: z.boolean().optional(),
@@ -106,6 +110,19 @@ const groupHelpCustomRoleSchema = z.object({
     )
     .min(1)
     .max(24)
+});
+
+const groupHelpStaffPermissionsSchema = z.object({
+  telegramUserId: z.string().trim().regex(/^\d+$/).max(32),
+  permissions: z
+    .array(
+      z
+        .string()
+        .trim()
+        .regex(/^\/[a-z]+$/i)
+    )
+    .max(64),
+  fullAdmin: z.boolean().optional()
 });
 
 const groupHelpModerationResolutionSchema = z.object({
@@ -1012,10 +1029,132 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         orderBy: [{ role: 'asc' }, { updatedAt: 'desc' }]
       });
       const customRoles = await prisma.telegramCommunityCustomRole.findMany({
-        where: { chatId },
+        where: { chatId, NOT: { name: { startsWith: 'HH staff ' } } },
         orderBy: { name: 'asc' }
       });
-      res.json({ chatId, assignments, customRoles });
+      const staffGroupId = values.telegramGroupHelpStaffGroupId?.trim() || '';
+      const staffMembers = staffGroupId
+        ? await prisma.telegramCommunityMember.findMany({
+            where: { chatId: staffGroupId, leftAt: null },
+            orderBy: [{ firstName: 'asc' }, { updatedAt: 'desc' }],
+            take: 250
+          })
+        : [];
+      const assignmentsByUser = new Map(
+        assignments.map((assignment) => [assignment.telegramUserId, assignment])
+      );
+      const staffWithPermissions = staffMembers.map((member) => {
+        const assignment = assignmentsByUser.get(member.telegramUserId);
+        const customPermissions = assignment?.customRole?.permissions;
+        const permissions = Array.isArray(customPermissions)
+          ? customPermissions.filter(
+              (permission): permission is string => typeof permission === 'string'
+            )
+          : assignment?.role === 'MODERATOR'
+            ? GROUP_HELP_COMMAND_DEFINITIONS.filter((definition) =>
+                ['HELPER', 'MODERATOR'].includes(definition.minimumRole)
+              ).map((definition) => definition.command)
+            : assignment?.role === 'HELPER'
+              ? GROUP_HELP_COMMAND_DEFINITIONS.filter(
+                  (definition) => definition.minimumRole === 'HELPER'
+                ).map((definition) => definition.command)
+              : [];
+        return { ...member, assignment, permissions, fullAdmin: permissions.includes('*') };
+      });
+      res.json({
+        chatId,
+        staffGroupId,
+        assignments,
+        customRoles,
+        staffMembers: staffWithPermissions,
+        permissionGroups: GROUP_HELP_STAFF_PERMISSION_GROUPS
+      });
+    })
+  );
+
+  router.patch(
+    '/admin/telegram-bots/group-help/staff-permissions',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (req, res) => {
+      const parsed = groupHelpStaffPermissionsSchema.safeParse(req.body ?? {});
+      if (!parsed.success) {
+        return res.status(400).json({ message: 'Choose a staff member and valid permissions.' });
+      }
+      const values = await groupHelpConfigMap();
+      const chatId = values.telegramGroupHelpGroupChatId?.trim() || '';
+      const staffGroupId = values.telegramGroupHelpStaffGroupId?.trim() || '';
+      if (!chatId || !staffGroupId) {
+        return res
+          .status(400)
+          .json({ message: 'Configure both the main and private staff groups.' });
+      }
+      const staffMember = await prisma.telegramCommunityMember.findFirst({
+        where: {
+          chatId: staffGroupId,
+          telegramUserId: parsed.data.telegramUserId,
+          leftAt: null
+        }
+      });
+      if (!staffMember) {
+        return res.status(400).json({
+          message: 'This user has not been detected as an active private staff-group member.'
+        });
+      }
+      const allowedCommands = new Set<string>(
+        GROUP_HELP_STAFF_PERMISSION_GROUPS.flatMap((group) => [...group.commands])
+      );
+      const permissions = parsed.data.fullAdmin
+        ? ['*']
+        : [...new Set(parsed.data.permissions.map((permission) => permission.toLowerCase()))];
+      if (
+        !parsed.data.fullAdmin &&
+        permissions.some((permission) => !allowedCommands.has(permission))
+      ) {
+        return res
+          .status(400)
+          .json({ message: 'One or more selected commands cannot be delegated.' });
+      }
+      const generatedRoleName = `HH staff ${parsed.data.telegramUserId}`;
+      // Keep an explicit empty role when all toggles are off. Without this
+      // marker, the next staff-group message would look like a new member and
+      // restore the automatic daily permissions that the admin intentionally removed.
+      const role = await prisma.telegramCommunityCustomRole.upsert({
+        where: { chatId_name: { chatId, name: generatedRoleName } },
+        create: {
+          chatId,
+          name: generatedRoleName,
+          permissions,
+          createdById: req.user!.id
+        },
+        update: { permissions, createdById: req.user!.id }
+      });
+      await prisma.$transaction([
+        prisma.telegramCommunityRoleAssignment.deleteMany({
+          where: { chatId, telegramUserId: parsed.data.telegramUserId }
+        }),
+        prisma.telegramCommunityRoleAssignment.create({
+          data: {
+            chatId,
+            telegramUserId: parsed.data.telegramUserId,
+            role: 'CUSTOM',
+            customRoleId: role.id,
+            assignedById: req.user!.id
+          }
+        })
+      ]);
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'telegram_group_help.staff_permissions_update',
+        targetType: 'telegram_group_help_staff_member',
+        targetId: parsed.data.telegramUserId,
+        summary: permissions.length
+          ? `Updated bot permissions for Telegram staff member ${parsed.data.telegramUserId}.`
+          : `Removed bot permissions from Telegram staff member ${parsed.data.telegramUserId}.`,
+        metadata: { chatId, staffGroupId, permissions }
+      });
+      res.json({ ok: true, telegramUserId: parsed.data.telegramUserId, permissions });
     })
   );
 

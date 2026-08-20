@@ -12,7 +12,7 @@ import {
   sendGroupHelpActivityLog,
   sendTemporaryGroupHelpMessage
 } from './telegram-group-help.actions.js';
-import { isModerationExempt } from './telegram-group-help.permissions.js';
+import { canUseGroupHelpAdminCommand } from './telegram-group-help.permissions.js';
 import type { CommunityTelegramMessage } from './telegram-community-bots.types.js';
 import { groupHelpPrivateSettingsKeyboard } from './telegram-group-help.menu.js';
 import {
@@ -53,11 +53,8 @@ export async function handleGroupHelpAdminCommand(
   const context = await resolveGroupHelpCommandContext(message);
   const targetChatId = context.targetChatId;
   const permissionMessage = messageForGroupHelpTarget(message, targetChatId);
-  if (
-    !message.from ||
-    !(await isModerationExempt(permissionMessage, values.telegramGroupHelpAdminWhitelist || ''))
-  ) {
-    await sendGroupHelpPermissionDenied(message, 'ADMIN', chatId);
+  if (!message.from || !(await canUseGroupHelpAdminCommand(permissionMessage, values, command))) {
+    await sendGroupHelpPermissionDenied(message, 'ADMIN', chatId, values);
     return true;
   }
   if (

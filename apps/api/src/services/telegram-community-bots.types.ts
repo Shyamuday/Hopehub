@@ -48,6 +48,9 @@ export type CommunityTelegramMessage = {
   location?: unknown;
   /** Internal marker used only after a staff member confirms a destructive command. */
   _groupHelpConfirmed?: boolean;
+  _groupHelpControlSourceChatId?: string;
+  _groupHelpRequiresActiveStaff?: boolean;
+  _groupHelpAuditRecorded?: boolean;
 };
 
 export type CommunityTelegramUpdate = {

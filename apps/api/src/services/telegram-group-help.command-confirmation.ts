@@ -6,6 +6,8 @@ import type {
   CommunityTelegramMessage,
   CommunityTelegramUpdate
 } from './telegram-community-bots.types.js';
+import { groupHelpConfig } from './telegram-group-help.config.js';
+import { recordGroupHelpCommandAudit } from './telegram-group-help.command-audit.js';
 
 const STATE_BOT = 'group-help:command-confirmation';
 const CONFIRM = 'hh_cmd_confirm';
@@ -18,6 +20,7 @@ type PendingCommand = {
   replyToMessage?: CommunityTelegramMessage;
   targetChatId: string;
   command: string;
+  sourceMessageId: number;
 };
 
 function stateChatId(chatId: string | number, userId: number) {
@@ -44,7 +47,8 @@ export async function requestGroupHelpCommandConfirmation(input: {
     chat: input.message.chat,
     replyToMessage: input.message.reply_to_message,
     targetChatId: input.targetChatId,
-    command: input.command
+    command: input.command,
+    sourceMessageId: input.message.message_id
   };
   await prisma.telegramCommunityState.upsert({
     where: { bot_chatId: { bot: STATE_BOT, chatId: key } },
@@ -110,11 +114,24 @@ export async function handleGroupHelpCommandConfirmationCallback(
       callback.message.chat.id,
       'No action was applied.'
     );
+    const values = await groupHelpConfig(pending.targetChatId);
+    await recordGroupHelpCommandAudit({
+      message: {
+        message_id: pending.sourceMessageId || callback.message.message_id,
+        text: pending.text,
+        chat: pending.chat,
+        from: callback.from
+      },
+      targetChatId: pending.targetChatId,
+      status: 'CANCELLED',
+      detail: 'The administrator cancelled the confirmation request.',
+      logChatId: values.telegramGroupHelpLogChannelId
+    }).catch(() => null);
     return true;
   }
   await answerCommunityCallback(GROUP_HELP_BOT_SLUG, callback.id, 'Applying command…');
   await execute({
-    message_id: callback.message.message_id,
+    message_id: pending.sourceMessageId || callback.message.message_id,
     text: pending.text,
     chat: pending.chat,
     from: callback.from,

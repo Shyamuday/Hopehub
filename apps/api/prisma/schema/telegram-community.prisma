@@ -56,6 +56,9 @@ model TelegramGroupHelpCommandAudit {
   sourceChatId String
   targetChatId String?
   actorUserId  String?
+  actorUsername String?
+  actorName     String?
+  sourceMessageId Int?
   command      String
   status       String
   detail       String?

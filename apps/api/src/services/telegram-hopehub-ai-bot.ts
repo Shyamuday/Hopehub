@@ -50,7 +50,10 @@ import {
   registerGroupHelpTestGroup as registerTestGroup
 } from './telegram-group-help.registration.js';
 import { handleGroupHelpCallback } from './telegram-group-help.callbacks.js';
-import { handleGroupHelpCommand } from './telegram-group-help.commands.js';
+import {
+  GROUP_HELP_DEFAULT_STAFF_COMMANDS,
+  handleGroupHelpCommand
+} from './telegram-group-help.commands.js';
 import {
   configuredGroupHelpChatIds,
   groupHelpCommandContextFromConfig,
@@ -63,6 +66,7 @@ import {
 } from './telegram-group-help.bot-settings.js';
 import { handleGroupHelpCommandConfirmationCallback } from './telegram-group-help.command-confirmation.js';
 import { recordGroupHelpCommandAudit } from './telegram-group-help.command-audit.js';
+import { recordGroupHelpStaffGroupMember } from './telegram-group-help.staff-members.js';
 
 const BOT = GROUP_HELP_BOT_SLUG;
 
@@ -90,7 +94,8 @@ async function handleCommand(message: CommunityTelegramMessage, values: Record<s
       message,
       targetChatId: context.targetChatId || undefined,
       status: 'FAILED',
-      detail: error instanceof Error ? error.message : String(error)
+      detail: error instanceof Error ? error.message : String(error),
+      logChatId: values.telegramGroupHelpLogChannelId
     }).catch(() => null);
     await sendCommunityMessage(BOT, chatId, groupHelpCommandFailureMessage(error)).catch(
       () => null
@@ -149,6 +154,13 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
   }
   const commandContext = groupHelpCommandContextFromConfig(chatId, values);
   if (commandContext.isControlGroup) {
+    await recordGroupHelpStaffGroupMember(
+      update,
+      values.telegramGroupHelpStaffGroupId || '',
+      values.telegramGroupHelpGroupChatId || '',
+      GROUP_HELP_DEFAULT_STAFF_COMMANDS,
+      values.telegramGroupHelpLogChannelId || ''
+    );
     if (commandContext.configurationError) {
       if (message?.text?.startsWith('/')) {
         await sendCommunityMessage(BOT, chatId, commandContext.configurationError);

@@ -49,8 +49,8 @@
     >
       <strong>Important safety line</strong>
       <p>
-        Hope Hub bot continues to manage group moderation. The Community bot handles scheduled posts,
-        polls, events, onboarding and engagement records.
+        Hope Hub bot continues to manage group moderation. The Community bot handles scheduled
+        posts, polls, events, onboarding and engagement records.
       </p>
     </section>
 
@@ -250,7 +250,9 @@
                       maxlength="1600"
                       placeholder="Explore Hope Hub | https://hopehub.in/ | primary"
                       [value]="item.buttonsText"
-                      (input)="updateCampaignItem(itemIndex, { buttonsText: $any($event.target).value })"
+                      (input)="
+                        updateCampaignItem(itemIndex, { buttonsText: $any($event.target).value })
+                      "
                     ></textarea>
                   </label>
                 } @else if (item.kind === 'SUMMARY') {
@@ -725,10 +727,19 @@
       </section>
     }
 
-    <section class="settings-savebar" [class.workspace-hidden]="activeWorkspaceSection() !== 'settings'">
+    <section
+      class="settings-savebar"
+      [class.workspace-hidden]="activeWorkspaceSection() !== 'settings'"
+    >
       <span>
-        <strong>{{ hasUnsavedConfigChanges() ? 'You have unsaved changes' : 'All settings are saved' }}</strong>
-        <small>{{ hasUnsavedConfigChanges() ? 'Save before leaving this screen.' : 'Changes take effect for future bot activity.' }}</small>
+        <strong>{{
+          hasUnsavedConfigChanges() ? 'You have unsaved changes' : 'All settings are saved'
+        }}</strong>
+        <small>{{
+          hasUnsavedConfigChanges()
+            ? 'Save before leaving this screen.'
+            : 'Changes take effect for future bot activity.'
+        }}</small>
       </span>
       <app-apply-button
         [loading]="saving()"
@@ -739,14 +750,24 @@
       ></app-apply-button>
     </section>
 
-    <section class="settings-essentials panel" [class.workspace-hidden]="activeWorkspaceSection() !== 'settings'">
+    <section
+      class="settings-essentials panel"
+      [class.workspace-hidden]="activeWorkspaceSection() !== 'settings'"
+    >
       <div class="panel-head">
         <div>
           <p class="eyebrow">Quick setup</p>
           <h2>Community essentials</h2>
-          <p>Choose the safe operating mode for each essential. No commands or manual values needed.</p>
+          <p>
+            Choose the safe operating mode for each essential. No commands or manual values needed.
+          </p>
         </div>
-        <button type="button" class="primary" (click)="saveEssentials()" [disabled]="savingEssentials()">
+        <button
+          type="button"
+          class="primary"
+          (click)="saveEssentials()"
+          [disabled]="savingEssentials()"
+        >
           {{ savingEssentials() ? 'Saving…' : 'Save essentials' }}
         </button>
       </div>
@@ -985,54 +1006,136 @@
 
       <div class="role-manager">
         <div>
-          <h3>Community roles</h3>
-          <p>Roles apply only in the main Hope Hub group. Telegram admins can still manage everything.</p>
+          <h3>Private staff permissions</h3>
+          <p>
+            Members detected in the private staff group appear here. Give each person only the Hope
+            Hub bot powers they need; this does not make them a Telegram administrator.
+          </p>
         </div>
-        <div class="moderator-form">
-          <label>
-            Telegram user ID
-            <input
-              type="text"
-              inputmode="numeric"
-              [value]="roleTelegramUserId()"
-              (input)="roleTelegramUserId.set($any($event.target).value)"
-              placeholder="Example: 7217536617"
-            />
-          </label>
-          <label>
-            Role
-            <app-form-dropdown
-              [options]="roleOptions()"
-              [ngModel]="roleToAssign()"
-              (ngModelChange)="roleToAssign.set($event)"
-            ></app-form-dropdown>
-          </label>
-          <button type="button" class="primary" [disabled]="roleSaving()" (click)="assignRole()">
-            {{ roleSaving() ? 'Saving…' : 'Assign role' }}
-          </button>
-        </div>
-        @if (roleAssignments().length) {
-          <div class="role-list">
-            @for (assignment of roleAssignments(); track assignment.id) {
-              <article>
-                <span>
-                  <strong>{{ assignment.role === 'MODERATOR' ? 'Moderator' : 'Helper' }}</strong>
-                  <small>Telegram ID {{ assignment.telegramUserId }}</small>
-                </span>
-                <button type="button" class="danger-text" [disabled]="roleSaving()" (click)="revokeRole(assignment.id)">
-                  Remove
-                </button>
+        @if (staffMembers().length) {
+          <div class="staff-permission-list">
+            @for (member of staffMembers(); track member.telegramUserId) {
+              <article class="staff-permission-card">
+                <header>
+                  <span>
+                    <strong>{{ staffMemberName(member) }}</strong>
+                    <small>
+                      @if (member.username) {
+                        &#64;{{ member.username }} ·
+                      }
+                      ID {{ member.telegramUserId }}
+                    </small>
+                  </span>
+                  <label class="staff-permission-toggle staff-permission-toggle--admin">
+                    <input
+                      type="checkbox"
+                      [checked]="member.fullAdmin"
+                      [disabled]="staffPermissionSavingId() === member.telegramUserId"
+                      (change)="toggleStaffFullAdmin(member, $any($event.target).checked)"
+                    />
+                    <span>Full bot administrator</span>
+                  </label>
+                </header>
+                <div
+                  class="staff-permission-grid"
+                  [attr.aria-busy]="staffPermissionSavingId() === member.telegramUserId"
+                >
+                  @for (group of staffPermissionGroups(); track group.key) {
+                    <label class="staff-permission-toggle">
+                      <input
+                        type="checkbox"
+                        [checked]="staffHasPermissionGroup(member, group)"
+                        [disabled]="
+                          member.fullAdmin || staffPermissionSavingId() === member.telegramUserId
+                        "
+                        (change)="toggleStaffPermission(member, group, $any($event.target).checked)"
+                      />
+                      <span>
+                        {{ group.label }}
+                        <small class="staff-permission-kind">
+                          {{ group.defaultEnabled ? 'Daily default' : 'Sensitive — admin choice' }}
+                        </small>
+                      </span>
+                    </label>
+                  }
+                </div>
+                @if (staffPermissionSavingId() === member.telegramUserId) {
+                  <small class="muted">Saving permissions…</small>
+                }
               </article>
             }
           </div>
         } @else {
-          <p class="muted">No custom roles yet.</p>
+          <p class="muted">
+            No private staff members have been detected yet. Ask a member to send one message in the
+            configured staff group, then refresh this page.
+          </p>
         }
 
         <div class="custom-role-editor">
           <div>
+            <h3>Advanced role assignment</h3>
+            <p>Use a Telegram user ID when the person has not yet appeared in the list above.</p>
+          </div>
+          <div class="moderator-form">
+            <label>
+              Telegram user ID
+              <input
+                type="text"
+                inputmode="numeric"
+                [value]="roleTelegramUserId()"
+                (input)="roleTelegramUserId.set($any($event.target).value)"
+                placeholder="Example: 7217536617"
+              />
+            </label>
+            <label>
+              Role
+              <app-form-dropdown
+                [options]="roleOptions()"
+                [ngModel]="roleToAssign()"
+                (ngModelChange)="roleToAssign.set($event)"
+              ></app-form-dropdown>
+            </label>
+            <button type="button" class="primary" [disabled]="roleSaving()" (click)="assignRole()">
+              {{ roleSaving() ? 'Saving…' : 'Assign role' }}
+            </button>
+          </div>
+          @if (roleAssignments().length) {
+            <div class="role-list">
+              @for (assignment of roleAssignments(); track assignment.id) {
+                <article>
+                  <span>
+                    <strong>{{
+                      assignment.role === 'MODERATOR'
+                        ? 'Moderator'
+                        : assignment.role === 'HELPER'
+                          ? 'Helper'
+                          : assignment.customRole?.name || 'Custom role'
+                    }}</strong>
+                    <small>Telegram ID {{ assignment.telegramUserId }}</small>
+                  </span>
+                  <button
+                    type="button"
+                    class="danger-text"
+                    [disabled]="roleSaving()"
+                    (click)="revokeRole(assignment.id)"
+                  >
+                    Remove
+                  </button>
+                </article>
+              }
+            </div>
+          } @else {
+            <p class="muted">No delegated roles yet.</p>
+          }
+        </div>
+
+        <div class="custom-role-editor">
+          <div>
             <h3>Create custom role</h3>
-            <p>Choose the exact bot commands this role may use. Each member can have one staff role.</p>
+            <p>
+              Choose the exact bot commands this role may use. Each member can have one staff role.
+            </p>
           </div>
           <div class="moderator-form">
             <label>
@@ -1054,7 +1157,12 @@
                 placeholder="/warn&#10;/delete&#10;/info"
               ></textarea>
             </label>
-            <button type="button" class="primary" [disabled]="roleSaving()" (click)="saveCustomRole()">
+            <button
+              type="button"
+              class="primary"
+              [disabled]="roleSaving()"
+              (click)="saveCustomRole()"
+            >
               Save custom role
             </button>
           </div>
@@ -1066,7 +1174,12 @@
                     <strong>{{ customRole.name }}</strong>
                     <small>{{ customRole.permissions.join(', ') }}</small>
                   </span>
-                  <button type="button" class="danger-text" [disabled]="roleSaving()" (click)="deleteCustomRole(customRole.id)">
+                  <button
+                    type="button"
+                    class="danger-text"
+                    [disabled]="roleSaving()"
+                    (click)="deleteCustomRole(customRole.id)"
+                  >
                     Delete role
                   </button>
                 </article>
@@ -1086,19 +1199,59 @@
             @for (moderationCase of moderationCases(); track moderationCase.id) {
               <article>
                 <span>
-                  <strong>{{ moderationCase.status === 'OPEN' ? 'Needs review' : 'Resolved' }}</strong>
+                  <strong>{{
+                    moderationCase.status === 'OPEN' ? 'Needs review' : 'Resolved'
+                  }}</strong>
                   <small>{{ moderationCase.evidence || 'No message preview available.' }}</small>
-                  <small>Member {{ moderationCase.targetUserId || 'unknown' }} · {{ moderationCase.createdAt | date: 'medium' }}</small>
+                  <small
+                    >Member {{ moderationCase.targetUserId || 'unknown' }} ·
+                    {{ moderationCase.createdAt | date: 'medium' }}</small
+                  >
                 </span>
                 @if (moderationCase.status === 'OPEN') {
                   <div class="case-actions">
                     @if (moderationCase.reason === 'FIRST_MESSAGE_REVIEW') {
-                      <button type="button" class="primary" [disabled]="caseSavingId() === moderationCase.id" (click)="resolveModerationCase(moderationCase, 'APPROVE')">Approve member</button>
+                      <button
+                        type="button"
+                        class="primary"
+                        [disabled]="caseSavingId() === moderationCase.id"
+                        (click)="resolveModerationCase(moderationCase, 'APPROVE')"
+                      >
+                        Approve member
+                      </button>
                     }
-                    <button type="button" class="btn-ghost" [disabled]="caseSavingId() === moderationCase.id" (click)="resolveModerationCase(moderationCase, 'NO_ACTION')">Close</button>
-                    <button type="button" class="btn-ghost" [disabled]="caseSavingId() === moderationCase.id" (click)="resolveModerationCase(moderationCase, 'DELETE')">Remove</button>
-                    <button type="button" class="btn-sec" [disabled]="caseSavingId() === moderationCase.id" (click)="resolveModerationCase(moderationCase, 'MUTE')">Mute</button>
-                    <button type="button" class="danger-text" [disabled]="caseSavingId() === moderationCase.id" (click)="resolveModerationCase(moderationCase, 'BAN')">Ban</button>
+                    <button
+                      type="button"
+                      class="btn-ghost"
+                      [disabled]="caseSavingId() === moderationCase.id"
+                      (click)="resolveModerationCase(moderationCase, 'NO_ACTION')"
+                    >
+                      Close
+                    </button>
+                    <button
+                      type="button"
+                      class="btn-ghost"
+                      [disabled]="caseSavingId() === moderationCase.id"
+                      (click)="resolveModerationCase(moderationCase, 'DELETE')"
+                    >
+                      Remove
+                    </button>
+                    <button
+                      type="button"
+                      class="btn-sec"
+                      [disabled]="caseSavingId() === moderationCase.id"
+                      (click)="resolveModerationCase(moderationCase, 'MUTE')"
+                    >
+                      Mute
+                    </button>
+                    <button
+                      type="button"
+                      class="danger-text"
+                      [disabled]="caseSavingId() === moderationCase.id"
+                      (click)="resolveModerationCase(moderationCase, 'BAN')"
+                    >
+                      Ban
+                    </button>
                   </div>
                 } @else {
                   <small>{{ moderationCase.action?.replace('_', ' ') || 'Closed' }}</small>

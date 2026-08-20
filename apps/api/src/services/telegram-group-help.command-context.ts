@@ -63,6 +63,8 @@ export function messageForGroupHelpTarget(
   if (String(message.chat.id) === targetChatId) return message;
   return {
     ...message,
+    _groupHelpControlSourceChatId: String(message.chat.id),
+    _groupHelpRequiresActiveStaff: true,
     chat: {
       ...message.chat,
       id: targetChatId

@@ -214,6 +214,12 @@ export class GroupHelpPage {
   readonly moderatorReason = signal('');
   readonly roleAssignments = signal<any[]>([]);
   readonly customRoles = signal<any[]>([]);
+  readonly staffGroupId = signal('');
+  readonly staffMembers = signal<any[]>([]);
+  readonly staffPermissionGroups = signal<
+    Array<{ key: string; label: string; commands: string[]; defaultEnabled: boolean }>
+  >([]);
+  readonly staffPermissionSavingId = signal('');
   readonly roleTelegramUserId = signal('');
   readonly roleToAssign = signal('HELPER');
   readonly customRoleName = signal('');
@@ -347,9 +353,67 @@ export class GroupHelpPage {
       const response = await this.api.getTelegramGroupHelpRoles();
       this.roleAssignments.set(response.assignments || []);
       this.customRoles.set(response.customRoles || []);
+      this.staffGroupId.set(response.staffGroupId || '');
+      this.staffMembers.set(response.staffMembers || []);
+      this.staffPermissionGroups.set(response.permissionGroups || []);
     } catch {
       this.roleAssignments.set([]);
       this.customRoles.set([]);
+      this.staffGroupId.set('');
+      this.staffMembers.set([]);
+      this.staffPermissionGroups.set([]);
+    }
+  }
+
+  staffMemberName(member: any) {
+    return [member.firstName, member.lastName].filter(Boolean).join(' ') || 'Telegram member';
+  }
+
+  staffHasPermissionGroup(member: any, group: { commands: string[] }) {
+    if (member.fullAdmin) return true;
+    const permissions = new Set<string>(member.permissions || []);
+    return group.commands.every((command) => permissions.has(command));
+  }
+
+  async toggleStaffFullAdmin(member: any, enabled: boolean) {
+    const dailyPermissions = this.staffPermissionGroups()
+      .filter((group) => group.defaultEnabled)
+      .flatMap((group) => group.commands);
+    await this.saveStaffPermissions(member, enabled ? [] : dailyPermissions, enabled);
+  }
+
+  async toggleStaffPermission(member: any, group: { commands: string[] }, enabled: boolean) {
+    const permissions = new Set<string>(
+      (member.permissions || []).filter((permission: string) => permission !== '*'),
+    );
+    for (const command of group.commands) {
+      if (enabled) permissions.add(command);
+      else permissions.delete(command);
+    }
+    await this.saveStaffPermissions(member, [...permissions], false);
+  }
+
+  private async saveStaffPermissions(member: any, permissions: string[], fullAdmin: boolean) {
+    this.staffPermissionSavingId.set(member.telegramUserId);
+    this.error.set('');
+    try {
+      await this.api.updateTelegramGroupHelpStaffPermissions({
+        telegramUserId: member.telegramUserId,
+        permissions,
+        fullAdmin,
+      });
+      this.message.set(
+        fullAdmin
+          ? `${this.staffMemberName(member)} can now use all Hope Hub bot admin commands.`
+          : permissions.length
+            ? `${this.staffMemberName(member)}'s bot permissions were updated.`
+            : `${this.staffMemberName(member)} no longer has delegated bot permissions.`,
+      );
+      await this.loadRoles();
+    } catch (error: any) {
+      this.error.set(error?.error?.message || 'Could not update this staff member’s permissions.');
+    } finally {
+      this.staffPermissionSavingId.set('');
     }
   }
 

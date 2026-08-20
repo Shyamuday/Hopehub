@@ -211,7 +211,7 @@ export async function handleGroupHelpMemberCommand(
   }
   if (command === '/perms') {
     if (!(await canUseGroupHelpCommand(permissionMessage, values, '/perms', 'HELPER'))) {
-      await sendGroupHelpPermissionDenied(message, 'HELPER', chatId);
+      await sendGroupHelpPermissionDenied(message, 'HELPER', chatId, values);
       return true;
     }
     const target =
@@ -291,7 +291,7 @@ export async function handleGroupHelpMemberCommand(
   }
   if (command === '/geturl') {
     if (!(await canUseGroupHelpCommand(permissionMessage, values, '/geturl', 'HELPER'))) {
-      await sendGroupHelpPermissionDenied(message, 'HELPER', chatId);
+      await sendGroupHelpPermissionDenied(message, 'HELPER', chatId, values);
       return true;
     }
     const targetMessage = message.reply_to_message;
@@ -330,7 +330,7 @@ export async function handleGroupHelpMemberCommand(
       command !== '/me' &&
       !(await canUseGroupHelpCommand(permissionMessage, values, command, 'HELPER'))
     ) {
-      await sendGroupHelpPermissionDenied(message, 'HELPER', chatId);
+      await sendGroupHelpPermissionDenied(message, 'HELPER', chatId, values);
       return true;
     }
     const targetArgument = (message.text || '').trim().split(/\s+/)[1] || '';
@@ -409,7 +409,7 @@ export async function handleGroupHelpMemberCommand(
   }
   if (command === '/clearwarnings') {
     if (!(await canUseGroupHelpCommand(permissionMessage, values, '/clearwarnings', 'MODERATOR'))) {
-      await sendGroupHelpPermissionDenied(message, 'MODERATOR', chatId);
+      await sendGroupHelpPermissionDenied(message, 'MODERATOR', chatId, values);
       return true;
     }
     const target =
@@ -454,7 +454,7 @@ export async function handleGroupHelpMemberCommand(
 
   if (command === '/adminlist') {
     if (!(await canUseGroupHelpCommand(permissionMessage, values, '/adminlist', 'HELPER'))) {
-      await sendGroupHelpPermissionDenied(message, 'HELPER', chatId);
+      await sendGroupHelpPermissionDenied(message, 'HELPER', chatId, values);
       return true;
     }
     const admins = await callCommunityTelegramApi<
@@ -481,7 +481,7 @@ export async function handleGroupHelpMemberCommand(
 
   if (command === '/stats') {
     if (!(await canUseGroupHelpCommand(permissionMessage, values, '/stats', 'MODERATOR'))) {
-      await sendGroupHelpPermissionDenied(message, 'MODERATOR', chatId);
+      await sendGroupHelpPermissionDenied(message, 'MODERATOR', chatId, values);
       return true;
     }
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -502,7 +502,7 @@ export async function handleGroupHelpMemberCommand(
   }
   if (command === '/staff') {
     if (!(await canUseGroupHelpCommand(permissionMessage, values, '/staff', 'HELPER'))) {
-      await sendGroupHelpPermissionDenied(message, 'HELPER', chatId);
+      await sendGroupHelpPermissionDenied(message, 'HELPER', chatId, values);
       return true;
     }
     const staff = await prisma.telegramCommunityRoleAssignment.findMany({

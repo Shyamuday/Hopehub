@@ -6,6 +6,7 @@ import {
 } from './telegram-community-bots.client.js';
 import type { CommunityTelegramMessage } from './telegram-community-bots.types.js';
 import { recordGroupHelpCommandAudit } from './telegram-group-help.command-audit.js';
+import { isActiveGroupHelpStaffMember } from './telegram-group-help.staff-members.js';
 
 const adminStatusCache = new Map<string, { isAdmin: boolean; expiresAt: number }>();
 const ADMIN_STATUS_TTL_MS = 5 * 60 * 1000;
@@ -23,6 +24,18 @@ export async function isModerationExempt(
   message: CommunityTelegramMessage,
   whitelistValue: string
 ) {
+  if (message._groupHelpRequiresActiveStaff) {
+    if (
+      !message.from ||
+      !message._groupHelpControlSourceChatId ||
+      !(await isActiveGroupHelpStaffMember(
+        message._groupHelpControlSourceChatId,
+        String(message.from.id)
+      ))
+    ) {
+      return false;
+    }
+  }
   if (message.sender_chat && String(message.sender_chat.id) === String(message.chat.id))
     return true;
   if (!message.from) return false;
@@ -54,7 +67,8 @@ export async function isModerationExempt(
 export async function sendGroupHelpPermissionDenied(
   message: CommunityTelegramMessage,
   requiredRole: 'HELPER' | 'MODERATOR' | 'ADMIN',
-  replyChatId = String(message.chat.id)
+  replyChatId = String(message.chat.id),
+  values?: Record<string, string>
 ) {
   const label =
     requiredRole === 'ADMIN'
@@ -69,10 +83,18 @@ export async function sendGroupHelpPermissionDenied(
   ).catch(() => null);
   await recordGroupHelpCommandAudit({
     message,
-    targetChatId: String(message.chat.id),
+    targetChatId:
+      values &&
+      [values.telegramGroupHelpStaffGroupId, values.telegramGroupHelpLogChannelId]
+        .map((value) => value?.trim())
+        .includes(String(message.chat.id))
+        ? values.telegramGroupHelpGroupChatId
+        : String(message.chat.id),
     status: 'DENIED',
-    detail: `Required role: ${requiredRole}`
+    detail: `Required role: ${requiredRole}`,
+    logChatId: values?.telegramGroupHelpLogChannelId
   }).catch(() => null);
+  message._groupHelpAuditRecorded = true;
 }
 
 export async function assignedCommunityRole(chatId: string, telegramUserId: string) {
@@ -124,8 +146,26 @@ export async function canUseGroupHelpCommand(
 ) {
   if (!message.from) return false;
   const requiredRole = configuredCommandRole(values, command, fallback);
-  if (await canModerate(message, values.telegramGroupHelpAdminWhitelist || '', requiredRole))
+  if (await isModerationExempt(message, values.telegramGroupHelpAdminWhitelist || '')) return true;
+
+  // Database roles are virtual bot powers, not Telegram administrator rights.
+  // They stay valid only while the user is an active member of the configured
+  // private staff group, so removing a person there immediately removes access.
+  const staffGroupId = values.telegramGroupHelpStaffGroupId?.trim();
+  if (
+    staffGroupId &&
+    !(await isActiveGroupHelpStaffMember(staffGroupId, String(message.from.id)))
+  ) {
+    return false;
+  }
+
+  const assignedRole = await assignedCommunityRole(
+    String(message.chat.id),
+    String(message.from.id)
+  );
+  if (assignedRole === 'MODERATOR' || (requiredRole === 'HELPER' && assignedRole === 'HELPER')) {
     return true;
+  }
 
   const customAssignment = await prisma.telegramCommunityRoleAssignment.findFirst({
     where: {
@@ -142,5 +182,38 @@ export async function canUseGroupHelpCommand(
     (permission) =>
       typeof permission === 'string' &&
       (permission === '*' || permission.toLowerCase() === normalizedCommand)
+  );
+}
+
+/** Admin-only commands may be delegated explicitly without granting Telegram admin status. */
+export async function canUseGroupHelpAdminCommand(
+  message: CommunityTelegramMessage,
+  values: Record<string, string>,
+  command: string
+) {
+  if (!message.from) return false;
+  if (await isModerationExempt(message, values.telegramGroupHelpAdminWhitelist || '')) return true;
+  const staffGroupId = values.telegramGroupHelpStaffGroupId?.trim();
+  if (
+    staffGroupId &&
+    !(await isActiveGroupHelpStaffMember(staffGroupId, String(message.from.id)))
+  ) {
+    return false;
+  }
+  const assignment = await prisma.telegramCommunityRoleAssignment.findFirst({
+    where: {
+      chatId: String(message.chat.id),
+      telegramUserId: String(message.from.id),
+      customRoleId: { not: null }
+    },
+    include: { customRole: { select: { permissions: true } } }
+  });
+  const permissions = assignment?.customRole?.permissions;
+  if (!Array.isArray(permissions)) return false;
+  const normalized = command.toLowerCase();
+  return permissions.some(
+    (permission) =>
+      typeof permission === 'string' &&
+      (permission === '*' || permission.toLowerCase() === normalized)
   );
 }
