@@ -784,6 +784,53 @@
       </div>
     </section>
 
+    <section
+      class="settings-essentials panel"
+      [class.workspace-hidden]="activeWorkspaceSection() !== 'settings'"
+    >
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">Keep the group clear</p>
+          <h2>Message expiry &amp; cleanup</h2>
+          <p>
+            Set how long temporary bot notices stay visible. Member messages, polls, resources,
+            rules, and main VC announcements are never removed here.
+          </p>
+        </div>
+        <app-apply-button
+          [loading]="savingCleanup()"
+          label="Save cleanup settings"
+          pendingLabel="Saving cleanup…"
+          (click)="saveCleanup()"
+        ></app-apply-button>
+      </div>
+      <div class="settings-essentials__grid">
+        @for (entry of cleanupSettings(); track entry.key) {
+          <label class="config-field">
+            <span>
+              <strong>{{ entry.label }}</strong>
+              <small>{{ entry.description }}</small>
+            </span>
+            @if (entry.type === 'select') {
+              <app-form-dropdown
+                [options]="dropdownOptions(entry)"
+                [ngModel]="value(entry.key)"
+                (ngModelChange)="update(entry.key, $event)"
+              ></app-form-dropdown>
+            } @else {
+              <input
+                type="number"
+                min="0"
+                [value]="value(entry.key)"
+                [attr.maxlength]="entry.maxLength"
+                (input)="update(entry.key, $any($event.target).value)"
+              />
+            }
+          </label>
+        }
+      </div>
+    </section>
+
     <section class="config-grid" [class.workspace-hidden]="activeWorkspaceSection() !== 'settings'">
       @for (section of sectionOrder; track section) {
         <details
@@ -1082,7 +1129,10 @@
                           {{ entry.previousDisplayName || 'no public name' }}
                           → {{ entry.displayName || 'no public name' }}
                           @if (entry.previousUsername !== entry.username) {
-                            · username {{ entry.previousUsername ? '@' + entry.previousUsername : 'not set' }}
+                            · username
+                            {{
+                              entry.previousUsername ? '@' + entry.previousUsername : 'not set'
+                            }}
                             → {{ entry.username ? '@' + entry.username : 'not set' }}
                           }
                         }

@@ -302,6 +302,15 @@ export class GroupHelpPage {
     'telegramGroupHelpStatisticsMode',
   ]);
   readonly savingEssentials = signal(false);
+  readonly savingCleanup = signal(false);
+  readonly cleanupSettingKeys = new Set([
+    'telegramGroupHelpAutoDeleteSeconds',
+    'telegramGroupHelpWelcomeCleanup',
+    'telegramGroupHelpCaptchaPendingMinutes',
+    'telegramGroupHelpCaptchaSuccessCleanupMinutes',
+    'telegramGroupHelpIdentityAlertDeleteHours',
+    'telegramCommunityVoiceReminderCleanupMinutes',
+  ]);
 
   messageCommands: CommandItem[] = [];
   moderationCommands: CommandItem[] = [];
@@ -930,6 +939,10 @@ export class GroupHelpPage {
     );
   }
 
+  cleanupSettings() {
+    return this.config().filter((entry) => this.cleanupSettingKeys.has(entry.key));
+  }
+
   dropdownOptions(entry: GroupHelpConfigEntry): FormDropdownOption[] {
     return (entry.options || []).map((option) => ({ value: option, label: option }));
   }
@@ -1049,6 +1062,33 @@ export class GroupHelpPage {
       this.error.set('Could not save community essentials.');
     } finally {
       this.savingEssentials.set(false);
+    }
+  }
+
+  async saveCleanup() {
+    this.savingCleanup.set(true);
+    this.error.set('');
+    this.message.set('');
+    try {
+      const entries = this.cleanupSettings().map((entry) => ({
+        key: entry.key,
+        value: this.value(entry.key),
+      }));
+      const res = await this.api.saveTelegramGroupHelpConfig(entries);
+      this.config.set(res.config as GroupHelpConfigEntry[]);
+      this.localValues.update((current) => ({
+        ...current,
+        ...Object.fromEntries(
+          (res.config as GroupHelpConfigEntry[]).map((entry) => [entry.key, entry.value]),
+        ),
+      }));
+      this.message.set(
+        'Message cleanup settings saved. New bot messages will follow these timings.',
+      );
+    } catch (error: any) {
+      this.error.set(error?.error?.message || 'Could not save message cleanup settings.');
+    } finally {
+      this.savingCleanup.set(false);
     }
   }
 
