@@ -7,14 +7,26 @@ APP_DIR="${LIGHTSAIL_APP_DIR:-/opt/hopehub}"
 API_DIR="$APP_DIR/apps/api"
 
 cd "$APP_DIR"
+PREVIOUS_SHA="$(git rev-parse HEAD 2>/dev/null || true)"
 git remote set-url origin https://github.com/Shyamuday/Hopehub.git
 if git ls-files --error-unmatch apps/api/.env >/dev/null 2>&1; then
   git update-index --no-skip-worktree apps/api/.env || true
   git checkout --force -- apps/api/.env || true
 fi
 git fetch origin main
-git checkout -f main
-git reset --hard origin/main
+if [ -n "${DEPLOY_SHA:-}" ]; then
+  if [[ ! "$DEPLOY_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+    echo "DEPLOY_SHA must be a full 40-character Git commit SHA."
+    exit 1
+  fi
+  git cat-file -e "${DEPLOY_SHA}^{commit}" 2>/dev/null || git fetch origin "$DEPLOY_SHA"
+  git checkout -f --detach "$DEPLOY_SHA"
+  git reset --hard "$DEPLOY_SHA"
+else
+  echo "DEPLOY_SHA is not set; falling back to origin/main."
+  git checkout -f main
+  git reset --hard origin/main
+fi
 if git ls-files --error-unmatch apps/api/.env >/dev/null 2>&1; then
   git update-index --skip-worktree apps/api/.env || true
 fi
@@ -190,14 +202,21 @@ TELEGRAM_RULES_BOT_TOKEN="${TELEGRAM_RULES_BOT_TOKEN_VALUE}"
 ENV
 chmod 600 .env
 
-npm install --no-audit --no-fund
+npm ci --no-audit --no-fund
 npm run prisma:generate
 # Production runs the API through tsx, and the repository CI performs the
 # TypeScript validation. Compiling the full monorepo API on this 911 MB host
 # exhausts V8's heap and prevents an otherwise valid deployment from reaching
 # migrations, scheduler setup, and the process restart.
+if [ ! -f /etc/hopehub-db-backup.env ]; then
+  echo "Missing /etc/hopehub-db-backup.env; refusing to migrate without a recoverable backup."
+  exit 1
+fi
+echo "Creating a production database backup before migrations..."
+sudo HOPEHUB_API_DIR="$API_DIR" bash "$APP_DIR/deploy/scripts/backup-postgres-to-s3.sh" daily
 npm run prisma:deploy
 npm run release:verify
+npm run config:sync
 
 # Telegram's native scheduled voice chats use a separate user-account session.
 # Keep that session isolated from the API process and only enable the timer once
@@ -211,62 +230,88 @@ else
   sudo systemctl disable --now hopehub-telegram-voice-scheduler.timer >/dev/null 2>&1 || true
   echo "Telegram native voice scheduler is awaiting its one-time user login."
 fi
-# Explicitly pass server-resolved production credentials to PM2. GitHub Actions
-# may expose older repository secrets in the runner environment, and PM2 keeps
-# inherited values ahead of dotenv unless they are replaced during restart.
-RAZORPAY_KEY_ID="$RAZORPAY_KEY_ID_VALUE" \
-RAZORPAY_KEY_SECRET="$RAZORPAY_KEY_SECRET_VALUE" \
-RAZORPAY_WEBHOOK_SECRET="$RAZORPAY_WEBHOOK_SECRET_VALUE" \
-GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" \
-WEB_PUSH_VAPID_PUBLIC_KEY="$WEB_PUSH_VAPID_PUBLIC_KEY" \
-WEB_PUSH_VAPID_PRIVATE_KEY="$WEB_PUSH_VAPID_PRIVATE_KEY" \
-WEB_PUSH_VAPID_SUBJECT="$WEB_PUSH_VAPID_SUBJECT" \
-AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID_VALUE" \
-AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY_VALUE" \
-TELEGRAM_USER_BOT_TOKEN="$TELEGRAM_USER_BOT_TOKEN_VALUE" \
-TELEGRAM_DOCTOR_BOT_TOKEN="$TELEGRAM_DOCTOR_BOT_TOKEN_VALUE" \
-TELEGRAM_ADMIN_BOT_TOKEN="$TELEGRAM_ADMIN_BOT_TOKEN_VALUE" \
-TELEGRAM_HOPEHUBBOT_TOKEN="$TELEGRAM_HOPEHUBBOT_TOKEN_VALUE" \
-TELEGRAM_WEBHOOK_SECRET="$TELEGRAM_WEBHOOK_SECRET_VALUE" \
-TELEGRAM_SETUP_SECRET="$TELEGRAM_SETUP_SECRET_VALUE" \
-TELEGRAM_CONTACT_BOT_TOKEN="$TELEGRAM_CONTACT_BOT_TOKEN_VALUE" \
-TELEGRAM_CONTACT_ADMIN_CHAT_ID="$TELEGRAM_CONTACT_ADMIN_CHAT_ID_VALUE" \
-TELEGRAM_CONTACT_SUPPORT_GROUP_ID="$TELEGRAM_CONTACT_SUPPORT_GROUP_ID_VALUE" \
-TELEGRAM_CONFESSION_BOT_TOKEN="$TELEGRAM_CONFESSION_BOT_TOKEN_VALUE" \
-TELEGRAM_CONFESSION_ADMIN_CHAT_ID="$TELEGRAM_CONFESSION_ADMIN_CHAT_ID_VALUE" \
-TELEGRAM_CONFESSION_CHANNEL_ID="$TELEGRAM_CONFESSION_CHANNEL_ID_VALUE" \
-TELEGRAM_CONFESSION_APPROVAL_GROUP_ID="$TELEGRAM_CONFESSION_APPROVAL_GROUP_ID_VALUE" \
-TELEGRAM_CONFESSION_START_NUMBER="$TELEGRAM_CONFESSION_START_NUMBER_VALUE" \
-TELEGRAM_RULES_BOT_TOKEN="$TELEGRAM_RULES_BOT_TOKEN_VALUE" \
-pm2 delete hopehub-api >/dev/null 2>&1 || true
-pm2 start "$APP_DIR/node_modules/tsx/dist/cli.mjs" --name hopehub-api -- src/index.ts
-pm2 save
-
-echo "Waiting for API to be ready..."
-for i in $(seq 1 15); do
-  if curl -fsS http://127.0.0.1:4000/health/ready > /dev/null 2>&1; then
-    echo "API is up after ${i} attempt(s)"
-    break
-  fi
-  if [ "$i" -eq 15 ]; then
-    echo "API did not respond on port 4000 after 30s"
-    pm2 logs hopehub-api --lines 50 --nostream
-    exit 1
-  fi
-  echo "Attempt $i: not ready yet, retrying in 2s..."
-  sleep 2
-done
-
-if [ -n "${TELEGRAM_USER_BOT_TOKEN_VALUE}${TELEGRAM_DOCTOR_BOT_TOKEN_VALUE}${TELEGRAM_ADMIN_BOT_TOKEN_VALUE}${TELEGRAM_CONTACT_BOT_TOKEN_VALUE}${TELEGRAM_CONFESSION_BOT_TOKEN_VALUE}${TELEGRAM_RULES_BOT_TOKEN_VALUE}${TELEGRAM_HOPEHUBBOT_TOKEN_VALUE}" ]; then
-  echo "Configuring Telegram bot webhooks..."
-  npm run telegram:setup -- --drop-pending
-fi
-
 if [ -n "${TELEGRAM_HOPEHUBBOT_TOKEN_VALUE}" ]; then
   echo "Seeding Telegram community settings and automated campaigns..."
   TELEGRAM_RULES_BOT_TOKEN="${TELEGRAM_RULES_BOT_TOKEN_VALUE}" \
   TELEGRAM_HOPEHUBBOT_TOKEN="${TELEGRAM_HOPEHUBBOT_TOKEN_VALUE}" \
   npm run telegram:seed
+fi
+
+start_or_restart_api() {
+  local -a pm2_args
+  if pm2 describe hopehub-api >/dev/null 2>&1; then
+    pm2_args=(restart hopehub-api --update-env)
+  else
+    pm2_args=(start "$APP_DIR/node_modules/tsx/dist/cli.mjs" --name hopehub-api -- src/index.ts)
+  fi
+
+  # Explicitly replace server-resolved credentials. PM2 otherwise keeps older
+  # inherited values ahead of dotenv when a process is restarted.
+  RAZORPAY_KEY_ID="$RAZORPAY_KEY_ID_VALUE" \
+  RAZORPAY_KEY_SECRET="$RAZORPAY_KEY_SECRET_VALUE" \
+  RAZORPAY_WEBHOOK_SECRET="$RAZORPAY_WEBHOOK_SECRET_VALUE" \
+  GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID" \
+  WEB_PUSH_VAPID_PUBLIC_KEY="$WEB_PUSH_VAPID_PUBLIC_KEY" \
+  WEB_PUSH_VAPID_PRIVATE_KEY="$WEB_PUSH_VAPID_PRIVATE_KEY" \
+  WEB_PUSH_VAPID_SUBJECT="$WEB_PUSH_VAPID_SUBJECT" \
+  AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID_VALUE" \
+  AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY_VALUE" \
+  TELEGRAM_USER_BOT_TOKEN="$TELEGRAM_USER_BOT_TOKEN_VALUE" \
+  TELEGRAM_DOCTOR_BOT_TOKEN="$TELEGRAM_DOCTOR_BOT_TOKEN_VALUE" \
+  TELEGRAM_ADMIN_BOT_TOKEN="$TELEGRAM_ADMIN_BOT_TOKEN_VALUE" \
+  TELEGRAM_HOPEHUBBOT_TOKEN="$TELEGRAM_HOPEHUBBOT_TOKEN_VALUE" \
+  TELEGRAM_WEBHOOK_SECRET="$TELEGRAM_WEBHOOK_SECRET_VALUE" \
+  TELEGRAM_SETUP_SECRET="$TELEGRAM_SETUP_SECRET_VALUE" \
+  TELEGRAM_CONTACT_BOT_TOKEN="$TELEGRAM_CONTACT_BOT_TOKEN_VALUE" \
+  TELEGRAM_CONTACT_ADMIN_CHAT_ID="$TELEGRAM_CONTACT_ADMIN_CHAT_ID_VALUE" \
+  TELEGRAM_CONTACT_SUPPORT_GROUP_ID="$TELEGRAM_CONTACT_SUPPORT_GROUP_ID_VALUE" \
+  TELEGRAM_CONFESSION_BOT_TOKEN="$TELEGRAM_CONFESSION_BOT_TOKEN_VALUE" \
+  TELEGRAM_CONFESSION_ADMIN_CHAT_ID="$TELEGRAM_CONFESSION_ADMIN_CHAT_ID_VALUE" \
+  TELEGRAM_CONFESSION_CHANNEL_ID="$TELEGRAM_CONFESSION_CHANNEL_ID_VALUE" \
+  TELEGRAM_CONFESSION_APPROVAL_GROUP_ID="$TELEGRAM_CONFESSION_APPROVAL_GROUP_ID_VALUE" \
+  TELEGRAM_CONFESSION_START_NUMBER="$TELEGRAM_CONFESSION_START_NUMBER_VALUE" \
+  TELEGRAM_RULES_BOT_TOKEN="$TELEGRAM_RULES_BOT_TOKEN_VALUE" \
+  pm2 "${pm2_args[@]}"
+}
+
+wait_for_api() {
+  echo "Waiting for API to be ready..."
+  for i in $(seq 1 15); do
+    if curl -fsS http://127.0.0.1:4000/health/ready >/dev/null 2>&1; then
+      echo "API is up after ${i} attempt(s)"
+      return 0
+    fi
+    echo "Attempt $i: not ready yet, retrying in 2s..."
+    sleep 2
+  done
+  return 1
+}
+
+start_or_restart_api
+if ! wait_for_api; then
+  echo "API did not respond on port 4000 after 30s"
+  pm2 logs hopehub-api --lines 50 --nostream
+  if [ -n "$PREVIOUS_SHA" ] && [ "$PREVIOUS_SHA" != "$(git rev-parse HEAD)" ]; then
+    echo "Restoring previously running application commit $PREVIOUS_SHA..."
+    git checkout -f --detach "$PREVIOUS_SHA"
+    git reset --hard "$PREVIOUS_SHA"
+    npm ci --no-audit --no-fund
+    npm run prisma:generate
+    start_or_restart_api
+    if wait_for_api; then
+      pm2 save
+      echo "Previous application release restored. Database migrations remain applied and must be backward compatible."
+    else
+      echo "Previous application release also failed readiness checks."
+    fi
+  fi
+  exit 1
+fi
+pm2 save
+
+if [ -n "${TELEGRAM_USER_BOT_TOKEN_VALUE}${TELEGRAM_DOCTOR_BOT_TOKEN_VALUE}${TELEGRAM_ADMIN_BOT_TOKEN_VALUE}${TELEGRAM_CONTACT_BOT_TOKEN_VALUE}${TELEGRAM_CONFESSION_BOT_TOKEN_VALUE}${TELEGRAM_RULES_BOT_TOKEN_VALUE}${TELEGRAM_HOPEHUBBOT_TOKEN_VALUE}" ]; then
+  echo "Configuring Telegram bot webhooks without discarding queued updates..."
+  npm run telegram:setup
 fi
 
 bash "$APP_DIR/deploy/scripts/deploy-telegram-bots-local.sh"

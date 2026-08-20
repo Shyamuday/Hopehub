@@ -8,6 +8,23 @@ on:
 jobs:
   quality:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hopehub_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d hopehub_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/hopehub_ci?schema=public
+      SHADOW_DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/hopehub_ci_shadow?schema=public
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,8 +45,22 @@ jobs:
       - name: API install and generate
         working-directory: apps/api
         run: npm run prisma:generate
+
+      - name: Create Prisma shadow database
+        run: PGPASSWORD=postgres createdb -h 127.0.0.1 -U postgres hopehub_ci_shadow
+
+      - name: Apply and verify Prisma migrations
+        working-directory: apps/api
+        run: |
+          npm run prisma:deploy
+          npm run prisma:verify
+          npm run release:verify
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hopehub_ci?schema=public
+          NODE_ENV: test
+
+      - name: Verify migration transaction policy
+        working-directory: apps/api
+        run: npm run prisma:safety
 
       - name: Typecheck all apps
         run: npm run typecheck

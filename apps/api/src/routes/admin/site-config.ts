@@ -9,7 +9,12 @@ import {
 } from '../../constants/site-config.constants.js';
 import { prisma } from '../../db.js';
 import { asyncRoute, routeParam, writeAuditLog } from '../../utils/helpers.js';
-import { MANAGED_SITE_CONFIG_DEFAULT_PREFIX } from '../../services/site-config.service.js';
+import {
+  clearSiteConfigOverride,
+  MANAGED_SITE_CONFIG_DEFAULT_PREFIX,
+  MANAGED_SITE_CONFIG_OVERRIDE_PREFIX,
+  markSiteConfigOverrides
+} from '../../services/site-config.service.js';
 
 export function registerAdminSiteConfigRoutes(router: Router) {
   /** GET all known site config entries (fills in defaults for missing keys). */
@@ -23,7 +28,8 @@ export function registerAdminSiteConfigRoutes(router: Router) {
           key: {
             in: SITE_CONFIG_KEYS.flatMap((key) => [
               key,
-              `${MANAGED_SITE_CONFIG_DEFAULT_PREFIX}${key}`
+              `${MANAGED_SITE_CONFIG_DEFAULT_PREFIX}${key}`,
+              `${MANAGED_SITE_CONFIG_OVERRIDE_PREFIX}${key}`
             ])
           }
         }
@@ -36,7 +42,8 @@ export function registerAdminSiteConfigRoutes(router: Router) {
         label: SITE_CONFIG_META[key].label,
         description: SITE_CONFIG_META[key].description,
         source:
-          map[key] == null || map[key] === map[`${MANAGED_SITE_CONFIG_DEFAULT_PREFIX}${key}`]
+          map[`${MANAGED_SITE_CONFIG_OVERRIDE_PREFIX}${key}`] == null &&
+          (map[key] == null || map[key] === map[`${MANAGED_SITE_CONFIG_DEFAULT_PREFIX}${key}`])
             ? 'default'
             : 'custom'
       }));
@@ -63,6 +70,7 @@ export function registerAdminSiteConfigRoutes(router: Router) {
         create: { key, value, label: SITE_CONFIG_META[key].label },
         update: { value }
       });
+      await markSiteConfigOverrides([{ key, value }]);
 
       await writeAuditLog({
         actorId: req.user!.id,
@@ -94,6 +102,7 @@ export function registerAdminSiteConfigRoutes(router: Router) {
         create: { key, value, label: SITE_CONFIG_META[key].label },
         update: { value, label: SITE_CONFIG_META[key].label }
       });
+      await clearSiteConfigOverride(key);
       await writeAuditLog({
         actorId: req.user!.id,
         actorRole: req.user!.role,

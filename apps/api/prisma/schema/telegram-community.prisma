@@ -72,6 +72,8 @@ model TelegramGroupHelpCommandAudit {
 model TelegramCampaign {
   id               String                     @id @default(cuid())
   name             String
+  source           String                     @default("ADMIN")
+  templateVersion  Int                        @default(0)
   bot              String                     @default("rules")
   chatId           String
   timezone         String                     @default("Asia/Kolkata")

@@ -86,5 +86,7 @@ shared/role-task-guides/*.js
 
 temp/
 .tmp-botmux-review/
+.tmp-grouphelp-reference/
+deploy/grouphelpbot/GroupHelp/
 *.tmp
 *.bak

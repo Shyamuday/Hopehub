@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-readonly APP_DIR="/opt/hopehub/apps/api"
+readonly APP_DIR="${HOPEHUB_API_DIR:-/opt/hopehub/apps/api}"
 readonly BACKUP_DIR="/var/backups/hopehub/postgres"
 readonly DB_PASSWORD_FILE="/etc/hopehub-db-pass"
 
@@ -15,8 +15,8 @@ mkdir -p "${BACKUP_DIR}"
 chmod 700 "${BACKUP_DIR}"
 
 timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
-tier="daily"
-if [[ "$(date -u +%d)" == "01" ]]; then tier="monthly"; fi
+tier="${1:-daily}"
+if [[ "$tier" == "daily" && "$(date -u +%d)" == "01" ]]; then tier="monthly"; fi
 database="${DATABASE_NAME:-hopehub_clinic}"
 backup_prefix="${DATABASE_BACKUP_PREFIX:-private-backups/postgres}"
 backup_file="${BACKUP_DIR}/${database}-${timestamp}.dump"

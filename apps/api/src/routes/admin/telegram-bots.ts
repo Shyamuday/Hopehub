@@ -32,6 +32,7 @@ import {
 import {
   GROUP_HELP_ACTIONS,
   GROUP_HELP_CAPABILITY_GROUPS,
+  GROUP_HELP_CONFIG_DEFAULTS,
   GROUP_HELP_CONFIG_KEYS,
   GROUP_HELP_CONFIG_META
 } from '../../constants/group-help-config.constants.js';
@@ -45,6 +46,7 @@ import {
   clearTelegramBotControlsCache,
   getTelegramBotControls
 } from '../../services/telegram-bot-controls.js';
+import { markSiteConfigOverrides } from '../../services/site-config.service.js';
 import {
   callCommunityTelegramApi,
   sendCommunityMessage
@@ -349,7 +351,10 @@ async function groupHelpConfigMap() {
   const rows = await prisma.siteConfig.findMany({
     where: { key: { in: GROUP_HELP_CONFIG_KEYS } }
   });
-  const values = Object.fromEntries(rows.map((row) => [row.key, row.value]));
+  const values = {
+    ...GROUP_HELP_CONFIG_DEFAULTS,
+    ...Object.fromEntries(rows.map((row) => [row.key, row.value]))
+  };
   if (values.telegramGroupHelpBotUsername?.replace(/^@/, '').toLowerCase() === 'hopehubaibot') {
     values.telegramGroupHelpBotUsername = 'Hopehubbot';
   }
@@ -620,6 +625,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
           })
         )
       );
+      await markSiteConfigOverrides(updates.map(({ key, value }) => ({ key, value })));
       clearTelegramBotControlsCache();
       await writeAuditLog({
         actorId: req.user!.id,
@@ -762,6 +768,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
           })
         )
       );
+      await markSiteConfigOverrides(changes.map(({ key, before }) => ({ key, value: before })));
       clearTelegramBotControlsCache();
       await writeAuditLog({
         actorId: req.user!.id,
@@ -1667,7 +1674,9 @@ export function registerAdminTelegramBotRoutes(router: Router) {
       const campaign = await prisma.telegramCampaign.create({
         data: {
           name: parsed.data.name,
-          bot: COMMUNITY_BOT_SLUGS.RULES,
+          source: 'ADMIN',
+          templateVersion: 0,
+          bot: GROUP_HELP_BOT_SLUG,
           chatId,
           timezone: parsed.data.timezone,
           intervalMinutes: parsed.data.intervalMinutes,
@@ -1746,6 +1755,8 @@ export function registerAdminTelegramBotRoutes(router: Router) {
           where: { id },
           data: {
             name: parsed.data.name,
+            source: 'ADMIN',
+            templateVersion: 0,
             chatId,
             timezone: parsed.data.timezone,
             intervalMinutes: parsed.data.intervalMinutes,
