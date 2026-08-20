@@ -245,6 +245,7 @@ type NativeGroupCallStatus = {
   accessHash?: string;
   scheduled: boolean;
   scheduleDate?: number;
+  inputCall: unknown;
 };
 
 /**
@@ -280,7 +281,10 @@ async function currentTelegramGroupCall(
       ? {}
       : { accessHash: String(call.accessHash ?? inputCallReference.accessHash) }),
     scheduled: Boolean(call.scheduleDate),
-    ...(call.scheduleDate == null ? {} : { scheduleDate: call.scheduleDate })
+    ...(call.scheduleDate == null ? {} : { scheduleDate: call.scheduleDate }),
+    // Keep Telegram's original InputGroupCall object. Reconstructing it from
+    // its ID and access hash is rejected by Telegram for some scheduled VCs.
+    inputCall
   };
 }
 
@@ -339,22 +343,12 @@ async function expireMissedVoiceChats(client: TelegramClient, now: Date) {
       Math.abs(activeCall.scheduleDate * 1000 - event.startsAt.getTime()) < 60_000 &&
       activeCall.accessHash
     );
-    const callId = payload.eventId === event.id ? payload.nativeCallId : activeCall?.id;
-    const callAccessHash =
-      payload.eventId === event.id ? payload.nativeCallAccessHash : activeCall?.accessHash;
+    const isTrackedMissedCall =
+      payload.eventId === event.id && payload.nativeCallId === activeCall?.id;
     let discardFailed = false;
-    if (
-      (payload.eventId === event.id || recoveredMissedScheduledCall) &&
-      callId &&
-      callAccessHash
-    ) {
+    if ((isTrackedMissedCall || recoveredMissedScheduledCall) && activeCall?.scheduled) {
       try {
-        await client.api.phone.discardGroupCall({
-          call: {
-            id: BigInt(callId),
-            accessHash: BigInt(callAccessHash)
-          }
-        });
+        await client.api.phone.discardGroupCall({ call: activeCall.inputCall as never });
       } catch (error) {
         // Retain the call credentials so the next one-minute reconciliation
         // can release the same stale native slot. Deleting this state here
@@ -378,8 +372,8 @@ async function expireMissedVoiceChats(client: TelegramClient, now: Date) {
           ? payload
           : {
               eventId: event.id,
-              nativeCallId: callId,
-              nativeCallAccessHash: callAccessHash
+              nativeCallId: activeCall?.id,
+              nativeCallAccessHash: activeCall?.accessHash
             };
       if (discardFailed) {
         await deferForScheduledVoiceCall(
@@ -495,11 +489,7 @@ async function main() {
         }
         if (currentCall?.scheduled) {
           let releasedStaleCall = false;
-          if (
-            payload.eventId &&
-            payload.nativeCallId === currentCall.id &&
-            payload.nativeCallAccessHash
-          ) {
+          if (payload.eventId && payload.nativeCallId === currentCall.id) {
             const prior = await prisma.telegramCommunityEvent.findUnique({
               where: { id: payload.eventId },
               select: { status: true }
@@ -507,10 +497,7 @@ async function main() {
             if (!prior || !['SCHEDULED', 'IN_PROGRESS'].includes(prior.status)) {
               try {
                 await client.api.phone.discardGroupCall({
-                  call: {
-                    id: BigInt(payload.nativeCallId),
-                    accessHash: BigInt(payload.nativeCallAccessHash)
-                  }
+                  call: currentCall.inputCall as never
                 });
                 releasedStaleCall = true;
                 console.log(`Released stale native Telegram VC for ${event.chatId}.`);
