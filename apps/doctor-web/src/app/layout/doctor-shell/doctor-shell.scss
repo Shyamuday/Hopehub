@@ -3,7 +3,9 @@
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  background: var(--color-bg);
+  background:
+    radial-gradient(circle at 92% -12%, color-mix(in srgb, var(--color-brand) 10%, transparent), transparent 26rem),
+    linear-gradient(180deg, #f8fafc 0%, var(--color-bg) 22rem);
   min-width: 0;
 }
 
@@ -20,7 +22,7 @@
   flex-direction: column;
   flex-shrink: 0;
   width: var(--shell-sidebar-width);
-  background: var(--color-surface);
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
   border-right: 1px solid var(--color-border);
   box-shadow: var(--shadow-sm);
 }
@@ -28,7 +30,7 @@
 .sidebar-brand {
   padding: 1rem 0.85rem;
   border-bottom: 1px solid var(--color-border);
-  background: var(--color-surface);
+  background: linear-gradient(135deg, #ffffff 0%, var(--color-brand-soft) 170%);
 }
 
 .sidebar-identity {
@@ -119,6 +121,7 @@
     &.active {
       background: var(--color-brand-soft);
       color: var(--color-brand);
+      box-shadow: inset 3px 0 0 var(--color-brand);
     }
 
     &:hover:not(.active) {
@@ -242,10 +245,11 @@
   min-height: var(--shell-topbar-height);
   padding: 0.5rem 1rem;
   padding-top: calc(0.5rem + var(--safe-top));
-  background: var(--color-surface);
+  background: color-mix(in srgb, var(--color-surface) 92%, transparent);
   border-bottom: 1px solid var(--color-border);
   color: var(--color-text);
-  box-shadow: none;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.02);
+  backdrop-filter: blur(14px);
 }
 
 .assignment-notice {
@@ -354,6 +358,13 @@
   min-height: 2.25rem;
   padding: 0.4rem 0.7rem;
   white-space: nowrap;
+  transition: border-color var(--transition), background var(--transition), box-shadow var(--transition), transform var(--transition);
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-brand-light);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--color-brand) 12%, transparent);
+    transform: translateY(-1px);
+  }
 }
 
 .header-availability > span {
@@ -436,7 +447,7 @@
   flex: 1;
   width: 100%;
   min-width: 0;
-  padding: 1rem;
+  padding: clamp(1rem, 2vw, 1.5rem);
   padding-bottom: calc(1rem + var(--safe-bottom));
 }
 
@@ -749,7 +760,7 @@
   }
 
   .content {
-    padding: 1.25rem 1.5rem;
+    padding: clamp(1.25rem, 2.5vw, 2rem);
   }
 }
 

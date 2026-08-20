@@ -15,20 +15,24 @@
 
 .hope-dashboard {
   display: grid;
-  gap: 0.85rem;
+  gap: 1rem;
   margin: 0 auto;
-  max-width: 62rem;
+  max-width: 66rem;
 }
 
 .hope-dashboard__primary {
   align-items: center;
-  background: linear-gradient(135deg, var(--color-brand-dark), var(--color-brand));
+  background:
+    radial-gradient(circle at 88% 16%, rgba(255, 255, 255, 0.2), transparent 11rem),
+    linear-gradient(135deg, #155ca8 0%, var(--color-brand-dark) 46%, var(--color-brand) 100%);
+  box-shadow: 0 14px 30px rgba(40, 116, 197, 0.18);
   border-radius: var(--radius-lg);
   color: #fff;
   display: flex;
   gap: 1rem;
   justify-content: space-between;
-  padding: 1rem;
+  min-height: 8.25rem;
+  padding: clamp(1rem, 2.3vw, 1.45rem);
 }
 
 .hope-dashboard__primary small {
@@ -59,6 +63,14 @@
   min-height: var(--touch-min);
   padding: 0.65rem 0.85rem;
   text-decoration: none;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+  transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
+
+  &:hover {
+    background: #f8fbff;
+    box-shadow: 0 7px 16px rgba(15, 23, 42, 0.18);
+    transform: translateY(-1px);
+  }
 }
 
 .hope-dashboard__grid {
@@ -74,8 +86,17 @@
   color: inherit;
   display: grid;
   gap: 0.15rem;
-  padding: 0.85rem;
+  min-height: 6.5rem;
+  padding: 0.95rem;
   text-decoration: none;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.025);
+  transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
+
+  &:hover {
+    border-color: var(--color-brand-muted);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.07);
+    transform: translateY(-2px);
+  }
 }
 
 .hope-summary-card span,
@@ -87,6 +108,10 @@
 .hope-summary-card strong {
   color: var(--color-text);
   font-size: var(--text-lg);
+}
+
+.hope-summary-card small {
+  align-self: end;
 }
 
 .hope-summary-card--availability strong {
@@ -157,6 +182,13 @@
   font-weight: 700;
   padding: 0.4rem 0.65rem;
   text-decoration: none;
+  transition: border-color var(--transition), background var(--transition), color var(--transition);
+
+  &:hover {
+    background: var(--color-brand-soft);
+    border-color: var(--color-brand-muted);
+    color: var(--color-brand-dark);
+  }
 }
 
 .muted {
@@ -178,6 +210,15 @@
   text-decoration: none;
   font-size: var(--text-sm);
   font-weight: 600;
+  box-shadow: 0 2px 5px color-mix(in srgb, var(--color-brand) 20%, transparent);
+  transition: background var(--transition), box-shadow var(--transition), transform var(--transition);
+
+  &:hover {
+    background: var(--color-brand-dark);
+    box-shadow: 0 5px 12px color-mix(in srgb, var(--color-brand) 22%, transparent);
+    color: #fff;
+    transform: translateY(-1px);
+  }
 }
 
 .stat-link {
@@ -205,10 +246,10 @@
 .panel {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   padding: 1rem;
   margin-bottom: 1rem;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.035);
 }
 
 .dashboard-board {
@@ -487,7 +528,7 @@
 .launch-action {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  background: rgba(255, 255, 255, 0.88);
+  background: linear-gradient(145deg, #ffffff, #fbfdff);
   color: inherit;
   display: grid;
   gap: 0.35rem;
@@ -524,6 +565,14 @@
       color: #fff;
     }
   }
+}
+
+.hope-dashboard a:focus-visible,
+.launch-action:focus-visible,
+.stat-link:focus-visible,
+.primary-link:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--color-brand) 35%, transparent);
+  outline-offset: 3px;
 }
 
 .listener-dashboard-card {
@@ -667,6 +716,10 @@ button {
     justify-content: center;
     text-align: center;
     width: 100%;
+  }
+
+  .hope-summary-card {
+    min-height: 0;
   }
 
   .hope-dashboard__grid {
