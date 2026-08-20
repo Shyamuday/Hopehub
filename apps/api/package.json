@@ -19,6 +19,7 @@
     "config:sync": "tsx scripts/sync-managed-site-config.ts",
     "healing-content:sync": "tsx scripts/sync-healing-content.ts",
     "db-backup:bucket:configure": "tsx scripts/configure-db-backup-bucket.ts",
+    "db-backup:retention:configure": "tsx scripts/configure-db-backup-bucket.ts --lifecycle-only",
     "prisma:verify": "tsx scripts/verify-migrations.ts",
     "prisma:safety": "tsx scripts/verify-migration-safety.ts",
     "prisma:push": "prisma db push",
