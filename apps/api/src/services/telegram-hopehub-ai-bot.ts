@@ -274,7 +274,14 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
     return;
   }
   if (await handleGroupHelpBotSettingsInput(message)) return;
-  if (message.sender_chat && values.telegramGroupHelpChannelSenderPolicy !== 'allow') {
+  // Telegram represents an anonymous group administrator as the group itself
+  // in sender_chat. That is an admin message, not an external channel post,
+  // and must never be caught by the channel-sender moderation rule.
+  if (
+    message.sender_chat &&
+    !anonymousAdminMessage &&
+    values.telegramGroupHelpChannelSenderPolicy !== 'allow'
+  ) {
     await deleteMessage(chatId, message.message_id).catch(() => null);
     await sendModerationLog(values, message, 'Message sent as a channel', 'delete');
     return;
