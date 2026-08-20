@@ -10,6 +10,7 @@ export const GROUP_HELP_CONFIG_KEYS = [
   'telegramGroupHelpAboutMessage',
   'telegramGroupHelpRulesMessage',
   'telegramGroupHelpSupportMessage',
+  'telegramCommunitySupportUrl',
   'telegramGroupHelpFirstMessageReview',
   'telegramGroupHelpCaptchaPendingMinutes',
   'telegramGroupHelpCaptchaSuccessCleanupMinutes',

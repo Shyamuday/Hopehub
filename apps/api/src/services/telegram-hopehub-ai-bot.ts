@@ -78,6 +78,23 @@ import { notifyTelegramBotFailure } from './telegram-bot-failure-alerts.js';
 
 const BOT = GROUP_HELP_BOT_SLUG;
 
+/**
+ * A request to talk to someone is a care-seeking message, not a moderation
+ * problem. Keep this deliberately narrow so ordinary messages are never
+ * redirected unexpectedly.
+ */
+function isLiveConnectRequest(text: string) {
+  const normalized = text
+    .normalize('NFKC')
+    .toLocaleLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const asksForSomeone = /\b(?:any\s*one|nayone)\b/.test(normalized);
+  const asksToTalk = /\b(?:for|to|foe)\s+(?:talk|chat|speak)\b/.test(normalized);
+  return asksForSomeone && asksToTalk;
+}
+
 function forwardedTelegramUserId(message: CommunityTelegramMessage) {
   if (message.forward_from?.id) return message.forward_from.id;
   const origin = message.forward_origin;
@@ -355,6 +372,26 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
     text,
     bannedPhrases(values.telegramGroupHelpBannedWords)
   );
+  if (isLiveConnectRequest(text)) {
+    const liveConnectUrl = values.telegramCommunitySupportUrl?.trim();
+    await sendTemporaryMessage(
+      chatId,
+      'If you would like to talk privately, Hope Hub Live can help you find support.',
+      values,
+      {
+        reply_to_message_id: message.message_id,
+        message_thread_id: message.message_thread_id,
+        ...(liveConnectUrl && /^https:\/\//i.test(liveConnectUrl)
+          ? {
+              reply_markup: {
+                inline_keyboard: [[{ text: 'Talk live', url: liveConnectUrl }]]
+              }
+            }
+          : {})
+      }
+    );
+    return;
+  }
   if (blockedPhrase) {
     await moderate(message, `Blocked phrase: “${blockedPhrase}”`, 'warn', warnLimit, warnAction);
     return;
