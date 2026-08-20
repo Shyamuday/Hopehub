@@ -72,6 +72,7 @@ import {
   getTelegramCommunityMemberIdentityHistory,
   observeTelegramCommunityMember
 } from './telegram-community-member-identity.js';
+import { publicIdentityChangeAlert } from './telegram-group-help.identity-alert.js';
 import { notifyTelegramBotFailure } from './telegram-bot-failure-alerts.js';
 
 const BOT = GROUP_HELP_BOT_SLUG;
@@ -96,13 +97,6 @@ function distinctNonEmpty(values: Array<string | null | undefined>) {
       values.map((value) => value?.trim()).filter((value): value is string => Boolean(value))
     )
   ];
-}
-
-function truncateIdentityAliases(values: string[], maximum = 24) {
-  const limited = values.slice(-maximum);
-  const suffix =
-    values.length > limited.length ? ` (+${values.length - limited.length} older)` : '';
-  return `${limited.join(' • ')}${suffix}` || 'None recorded';
 }
 
 async function handleCommand(message: CommunityTelegramMessage, values: Record<string, string>) {
@@ -246,26 +240,30 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
         const history = await getTelegramCommunityMemberIdentityHistory(chatId, message.from.id);
         const previousNames = distinctNonEmpty(history.map((entry) => entry.previousDisplayName));
         const previousUsernames = distinctNonEmpty(
-          history.map((entry) => entry.previousUsername).map((username) => `@${username}`)
+          history.map((entry) => (entry.previousUsername ? `@${entry.previousUsername}` : null))
         );
-        const publicDetails =
+        const publicMessage =
           alertMode === 'public full history'
-            ? [
-                `Previous names: ${truncateIdentityAliases(previousNames)}`,
-                `Previous usernames: ${truncateIdentityAliases(previousUsernames)}`,
-                `Name changes recorded: ${identity.nameChangeCount}`
-              ]
-            : ['Previous details are available to the moderation team.'];
-        await sendCommunityMessage(
-          BOT,
-          chatId,
-          [
-            'Profile updated',
-            `Member: ${identity.displayName || 'Telegram member'} (${message.from.id})`,
-            `Changed: ${identity.changedFields.join(' and ')}`,
-            ...publicDetails
-          ].join('\n')
-        ).catch(() => null);
+            ? publicIdentityChangeAlert({
+                telegramUserId: message.from.id,
+                displayName: identity.displayName,
+                changedFields: identity.changedFields,
+                previousDisplayName: identity.previousDisplayName,
+                previousUsername: identity.previousUsername,
+                username: identity.username,
+                previousNames,
+                previousUsernames,
+                nameChangeCount: identity.nameChangeCount
+              })
+            : [
+                'Profile updated',
+                '',
+                `Member: ${identity.displayName || 'Telegram member'}`,
+                `Telegram ID: ${message.from.id}`,
+                '',
+                'Previous details are available to the moderation team.'
+              ].join('\n');
+        await sendCommunityMessage(BOT, chatId, publicMessage).catch(() => null);
       }
     }
   }
