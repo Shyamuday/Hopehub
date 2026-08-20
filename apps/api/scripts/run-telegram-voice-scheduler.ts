@@ -259,6 +259,10 @@ async function currentTelegramGroupCall(
   const full = await client.api.channels.getFullChannel({ channel: peer });
   const inputCall = (full as { fullChat?: { call?: unknown } }).fullChat?.call;
   if (!inputCall) return null;
+  const inputCallReference = inputCall as {
+    id?: string | number | bigint;
+    accessHash?: string | number | bigint;
+  };
   const result = await client.api.phone.getGroupCall({ call: inputCall as never, limit: 1 });
   const call = (
     result as {
@@ -272,7 +276,9 @@ async function currentTelegramGroupCall(
   if (call?.id == null) return null;
   return {
     id: String(call.id),
-    ...(call.accessHash == null ? {} : { accessHash: String(call.accessHash) }),
+    ...(call.accessHash == null && inputCallReference.accessHash == null
+      ? {}
+      : { accessHash: String(call.accessHash ?? inputCallReference.accessHash) }),
     scheduled: Boolean(call.scheduleDate),
     ...(call.scheduleDate == null ? {} : { scheduleDate: call.scheduleDate })
   };
