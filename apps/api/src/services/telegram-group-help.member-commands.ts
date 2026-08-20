@@ -92,7 +92,10 @@ export async function handleGroupHelpMemberCommand(
     let targetId = /^\d+$/.test(argument) ? Number(argument) : 0;
     if (!targetId && argument.startsWith('@')) {
       const known = await prisma.telegramCommunityMember.findFirst({
-        where: { chatId: targetChatId, username: argument.slice(1) },
+        where: {
+          chatId: targetChatId,
+          username: { equals: argument.slice(1), mode: 'insensitive' }
+        },
         select: { telegramUserId: true }
       });
       targetId = Number(known?.telegramUserId || 0);
@@ -338,7 +341,10 @@ export async function handleGroupHelpMemberCommand(
         : replyTarget?.id || (/^\d+$/.test(targetArgument) ? Number(targetArgument) : 0);
     if (!targetId && targetArgument.startsWith('@')) {
       const known = await prisma.telegramCommunityMember.findFirst({
-        where: { chatId: targetChatId, username: targetArgument.slice(1) },
+        where: {
+          chatId: targetChatId,
+          username: { equals: targetArgument.slice(1), mode: 'insensitive' }
+        },
         select: { telegramUserId: true }
       });
       targetId = Number(known?.telegramUserId || 0);

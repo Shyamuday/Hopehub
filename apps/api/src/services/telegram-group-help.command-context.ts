@@ -12,6 +12,7 @@ export type GroupHelpCommandContext = {
   sourceChatId: string;
   targetChatId: string;
   isControlGroup: boolean;
+  configurationError?: string;
 };
 
 export function configuredGroupHelpChatIds(values: Record<string, string>) {
@@ -33,12 +34,18 @@ export function groupHelpCommandContextFromConfig(
   const controlGroups = [values.telegramGroupHelpStaffGroupId, values.telegramGroupHelpLogChannelId]
     .map((value) => value?.trim().toLowerCase())
     .filter(Boolean);
-  const mainGroupId = values.telegramGroupHelpGroupChatId?.trim();
-  const isControlGroup = Boolean(mainGroupId && controlGroups.includes(normalizedSource));
+  const mainGroupId = values.telegramGroupHelpGroupChatId?.trim() || '';
+  const isControlGroup = controlGroups.includes(normalizedSource);
   return {
     sourceChatId,
-    targetChatId: isControlGroup ? mainGroupId! : sourceChatId,
-    isControlGroup
+    targetChatId: isControlGroup ? mainGroupId : sourceChatId,
+    isControlGroup,
+    ...(isControlGroup && !mainGroupId
+      ? {
+          configurationError:
+            'The main Hope Hub group is not configured. Set telegramGroupHelpGroupChatId before using this control group.'
+        }
+      : {})
   };
 }
 

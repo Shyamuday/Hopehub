@@ -336,6 +336,13 @@ async function groupHelpConfigMap() {
 }
 
 async function groupHelpConnectionHealth(values: Record<string, string>) {
+  const requiredPermissions = [
+    'can_delete_messages',
+    'can_restrict_members',
+    'can_promote_members',
+    'can_pin_messages',
+    'can_manage_video_chats'
+  ] as const;
   try {
     const bot = await callCommunityTelegramApi<{
       id: number;
@@ -378,7 +385,11 @@ async function groupHelpConnectionHealth(values: Record<string, string>) {
             title: chat.title || chat.username || id,
             type: chat.type || null,
             memberCount,
-            membership
+            membership,
+            missingPermissions:
+              membership.status === 'creator'
+                ? []
+                : requiredPermissions.filter((permission) => membership[permission] !== true)
           };
         } catch (error) {
           return {
@@ -801,7 +812,15 @@ export function registerAdminTelegramBotRoutes(router: Router) {
           take: 50
         }),
         prisma.telegramWebhookReceipt.findMany({
-          select: { bot: true, updateId: true, status: true, error: true, updatedAt: true },
+          select: {
+            bot: true,
+            updateId: true,
+            status: true,
+            error: true,
+            attempts: true,
+            nextAttemptAt: true,
+            updatedAt: true
+          },
           orderBy: { updatedAt: 'desc' },
           take: 200
         }),
@@ -831,14 +850,26 @@ export function registerAdminTelegramBotRoutes(router: Router) {
 
       const webhookInfoByKind = Object.fromEntries(webhookInfos);
       const communityWebhookInfoBySlug = Object.fromEntries(communityWebhookInfos);
+      const recentGroupHelpCommands = await prisma.telegramGroupHelpCommandAudit.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 100
+      });
       const receiptSummary = (slug: string) => {
         const rows = webhookReceipts.filter((receipt) => receipt.bot === slug);
-        const lastFailure = rows.find((receipt) => receipt.status === 'FAILED');
+        const lastFailure = rows.find((receipt) =>
+          ['FAILED', 'DEAD_LETTER'].includes(receipt.status)
+        );
         return {
           processedUpdates: rows.filter((receipt) => receipt.status === 'COMPLETED').length,
           failedUpdates: rows.filter((receipt) => receipt.status === 'FAILED').length,
+          deadLetterUpdates: rows.filter((receipt) => receipt.status === 'DEAD_LETTER').length,
           lastFailure: lastFailure
-            ? { error: lastFailure.error, updatedAt: lastFailure.updatedAt }
+            ? {
+                error: lastFailure.error,
+                attempts: lastFailure.attempts,
+                nextAttemptAt: lastFailure.nextAttemptAt,
+                updatedAt: lastFailure.updatedAt
+              }
             : null
         };
       };
@@ -885,7 +916,11 @@ export function registerAdminTelegramBotRoutes(router: Router) {
       const healthCutoff = Date.now() - 24 * 60 * 60 * 1000;
       const recentFailedWebhookUpdates = webhookReceipts.filter(
         (receipt) =>
-          receipt.status === 'FAILED' && new Date(receipt.updatedAt).getTime() >= healthCutoff
+          ['FAILED', 'DEAD_LETTER'].includes(receipt.status) &&
+          new Date(receipt.updatedAt).getTime() >= healthCutoff
+      ).length;
+      const failedGroupHelpCommands = recentGroupHelpCommands.filter(
+        (entry) => entry.status === 'FAILED' && entry.createdAt.getTime() >= healthCutoff
       ).length;
 
       res.json({
@@ -898,12 +933,17 @@ export function registerAdminTelegramBotRoutes(router: Router) {
           ...event,
           updateId: event.updateId?.toString() ?? null
         })),
+        groupHelpCommandAudits: recentGroupHelpCommands,
         health: {
           failedWebhookUpdates: recentFailedWebhookUpdates,
+          failedGroupHelpCommands,
           failedDeliveries,
           overdueCampaigns,
           needsAttention:
-            failedDeliveries > 0 || overdueCampaigns > 0 || recentFailedWebhookUpdates > 0
+            failedDeliveries > 0 ||
+            overdueCampaigns > 0 ||
+            recentFailedWebhookUpdates > 0 ||
+            failedGroupHelpCommands > 0
         }
       });
     })
@@ -1401,19 +1441,33 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         callGroupHelpTelegramApi('getWebhookInfo', {})
       ]);
 
-      let chat: unknown = null;
-      let botMembership: unknown = null;
+      let chat: Record<string, unknown> | null = null;
+      let botMembership: Record<string, unknown> | null = null;
       let chatError: string | null = null;
       if (chatId) {
         try {
           [chat, botMembership] = await Promise.all([
-            callGroupHelpTelegramApi('getChat', { chat_id: chatId }),
-            callGroupHelpTelegramApi('getChatMember', { chat_id: chatId, user_id: me.id })
+            callGroupHelpTelegramApi<Record<string, unknown>>('getChat', { chat_id: chatId }),
+            callGroupHelpTelegramApi<Record<string, unknown>>('getChatMember', {
+              chat_id: chatId,
+              user_id: me.id
+            })
           ]);
         } catch (error) {
           chatError = error instanceof Error ? error.message : 'Could not read Telegram chat.';
         }
       }
+      const requiredPermissions = [
+        'can_delete_messages',
+        'can_restrict_members',
+        'can_promote_members',
+        'can_pin_messages',
+        'can_manage_video_chats'
+      ];
+      const missingBotPermissions =
+        botMembership?.status === 'creator'
+          ? []
+          : requiredPermissions.filter((permission) => botMembership?.[permission] !== true);
 
       res.json({
         tokenConfigured: true,
@@ -1422,6 +1476,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         webhook,
         chat,
         botMembership,
+        missingBotPermissions,
         chatError
       });
     })

@@ -48,6 +48,16 @@ test('main and test group commands remain scoped to their own group', () => {
   });
 });
 
+test('control groups fail closed when the main group is not configured', () => {
+  const context = groupHelpCommandContextFromConfig('-100-staff', {
+    ...config,
+    telegramGroupHelpGroupChatId: ''
+  });
+  assert.equal(context.isControlGroup, true);
+  assert.equal(context.targetChatId, '');
+  assert.match(context.configurationError || '', /main Hope Hub group is not configured/i);
+});
+
 test('Telegram failures produce actionable and truthful operator messages', () => {
   assert.match(
     groupHelpCommandFailureMessage(new Error('Bad Request: not enough rights')),

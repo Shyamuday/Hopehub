@@ -34,17 +34,36 @@ model TelegramCommunitySubmission {
 }
 
 model TelegramWebhookReceipt {
-  id        String   @id @default(cuid())
-  bot       String
-  updateId  BigInt
-  status    String
-  error     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String    @id @default(cuid())
+  bot           String
+  updateId      BigInt
+  status        String
+  error         String?
+  payload       Json?
+  attempts      Int       @default(0)
+  nextAttemptAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   @@unique([bot, updateId])
   @@index([status, updatedAt])
+  @@index([status, nextAttemptAt])
   @@index([createdAt])
+}
+
+model TelegramGroupHelpCommandAudit {
+  id           String   @id @default(cuid())
+  sourceChatId String
+  targetChatId String?
+  actorUserId  String?
+  command      String
+  status       String
+  detail       String?
+  createdAt    DateTime @default(now())
+
+  @@index([status, createdAt])
+  @@index([sourceChatId, createdAt])
+  @@index([actorUserId, createdAt])
 }
 
 model TelegramCampaign {

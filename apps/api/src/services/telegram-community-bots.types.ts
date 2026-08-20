@@ -46,11 +46,14 @@ export type CommunityTelegramMessage = {
   video_chat_started?: Record<string, never>;
   contact?: unknown;
   location?: unknown;
+  /** Internal marker used only after a staff member confirms a destructive command. */
+  _groupHelpConfirmed?: boolean;
 };
 
 export type CommunityTelegramUpdate = {
   update_id: number;
   message?: CommunityTelegramMessage;
+  channel_post?: CommunityTelegramMessage;
   my_chat_member?: {
     chat: { id: number | string; type?: string; title?: string };
     from: CommunityTelegramUser;

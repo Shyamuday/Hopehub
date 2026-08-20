@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../db.js';
 import {
   GROUP_HELP_CONFIG_FIELDS,
@@ -19,8 +20,10 @@ import type {
 const PREFIX = 'hh_cfg_';
 const DRAFT_LIFETIME_MS = 10 * 60 * 1000;
 const SETTINGS_SESSION_LIFETIME_MS = 30 * 60 * 1000;
-const inputDrafts = new Map<string, { key: string; expiresAt: number; value?: string }>();
-const privateSettingsGroups = new Map<number, { chatId: string; expiresAt: number }>();
+const SETTINGS_SESSION_STATE = 'group-help:settings-session';
+const SETTINGS_DRAFT_STATE = 'group-help:settings-draft';
+
+type SettingsDraft = { key: string; value?: string };
 
 function draftKey(chatId: string, userId: number) {
   return `${chatId}:${userId}`;
@@ -112,13 +115,60 @@ async function isTelegramAdmin(chatId: string, userId: number) {
   return Boolean(member && ['creator', 'administrator'].includes(member.status || ''));
 }
 
-function selectedPrivateSettingsGroup(userId: number): string | null {
-  const session = privateSettingsGroups.get(userId);
-  if (!session || session.expiresAt < Date.now()) {
-    privateSettingsGroups.delete(userId);
+async function readSettingsState<T>(bot: string, chatId: string): Promise<T | null> {
+  const row = await prisma.telegramCommunityState.findUnique({
+    where: { bot_chatId: { bot, chatId } },
+    select: { payload: true, expiresAt: true }
+  });
+  if (!row) return null;
+  if (row.expiresAt <= new Date()) {
+    await prisma.telegramCommunityState.delete({ where: { bot_chatId: { bot, chatId } } });
     return null;
   }
-  return session.chatId;
+  return row.payload as T | null;
+}
+
+async function writeSettingsState(
+  bot: string,
+  chatId: string,
+  payload: Record<string, unknown>,
+  ttlMs: number
+) {
+  const expiresAt = new Date(Date.now() + ttlMs);
+  await prisma.telegramCommunityState.upsert({
+    where: { bot_chatId: { bot, chatId } },
+    create: { bot, chatId, state: 'OPEN', payload: payload as Prisma.InputJsonValue, expiresAt },
+    update: { state: 'OPEN', payload: payload as Prisma.InputJsonValue, expiresAt }
+  });
+}
+
+function clearSettingsState(bot: string, chatId: string) {
+  return prisma.telegramCommunityState.deleteMany({ where: { bot, chatId } });
+}
+
+async function selectedPrivateSettingsGroup(userId: number): Promise<string | null> {
+  const session = await readSettingsState<{ targetChatId?: string }>(
+    SETTINGS_SESSION_STATE,
+    String(userId)
+  );
+  return session?.targetChatId || null;
+}
+
+function readSettingsDraft(chatId: string, userId: number) {
+  return readSettingsState<SettingsDraft>(SETTINGS_DRAFT_STATE, draftKey(chatId, userId));
+}
+
+function writeSettingsDraft(chatId: string, userId: number, draft: SettingsDraft) {
+  return writeSettingsState(
+    SETTINGS_DRAFT_STATE,
+    draftKey(chatId, userId),
+    draft,
+    DRAFT_LIFETIME_MS
+  );
+}
+
+function clearSettingsDraft(chatId: string, userId: number) {
+  return clearSettingsState(SETTINGS_DRAFT_STATE, draftKey(chatId, userId));
 }
 
 /** Opens a group-scoped editor in private chat after checking Telegram admin rights. */
@@ -135,10 +185,12 @@ export async function handleGroupHelpPrivateSettingsStart(message: CommunityTele
     );
     return true;
   }
-  privateSettingsGroups.set(message.from.id, {
-    chatId: settingsChatId,
-    expiresAt: Date.now() + SETTINGS_SESSION_LIFETIME_MS
-  });
+  await writeSettingsState(
+    SETTINGS_SESSION_STATE,
+    String(message.from.id),
+    { targetChatId: settingsChatId },
+    SETTINGS_SESSION_LIFETIME_MS
+  );
   await sendCommunityMessage(
     GROUP_HELP_BOT_SLUG,
     String(message.chat.id),
@@ -198,7 +250,7 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
     return true;
   }
   const chatId = privateChat
-    ? selectedPrivateSettingsGroup(callback.from.id)
+    ? await selectedPrivateSettingsGroup(callback.from.id)
     : String(callback.message.chat.id);
   const replyChatId = String(callback.message.chat.id);
   if (!chatId) {
@@ -278,10 +330,9 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
       );
       return true;
     }
-    inputDrafts.set(draftKey(chatId, callback.from.id), {
+    await writeSettingsDraft(chatId, callback.from.id, {
       key: field.key,
-      value: option,
-      expiresAt: Date.now() + DRAFT_LIFETIME_MS
+      value: option
     });
     await sendCommunityMessage(
       GROUP_HELP_BOT_SLUG,
@@ -309,10 +360,7 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
         `${field.label} can be very long. Please edit it in Hope Hub Admin so nothing is truncated.`
       );
     } else {
-      inputDrafts.set(draftKey(chatId, callback.from.id), {
-        key: field.key,
-        expiresAt: Date.now() + DRAFT_LIFETIME_MS
-      });
+      await writeSettingsDraft(chatId, callback.from.id, { key: field.key });
       await sendCommunityMessage(
         GROUP_HELP_BOT_SLUG,
         replyChatId,
@@ -321,11 +369,10 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
       );
     }
   } else if (action === 'confirm') {
-    const key = draftKey(chatId, callback.from.id);
-    const draft = inputDrafts.get(key);
+    const draft = await readSettingsDraft(chatId, callback.from.id);
     const field = draft && fieldByKey(draft.key);
-    if (!draft || !field || draft.expiresAt < Date.now() || draft.value === undefined) {
-      inputDrafts.delete(key);
+    if (!draft || !field || draft.value === undefined) {
+      await clearSettingsDraft(chatId, callback.from.id);
       await answerCommunityCallback(
         GROUP_HELP_BOT_SLUG,
         callback.id,
@@ -335,7 +382,7 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
     }
     try {
       await saveValue(field, draft.value, chatId, String(callback.from.id));
-      inputDrafts.delete(key);
+      await clearSettingsDraft(chatId, callback.from.id);
       await sendCommunityMessage(
         GROUP_HELP_BOT_SLUG,
         replyChatId,
@@ -354,7 +401,7 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
       );
     }
   } else if (action === 'cancel') {
-    inputDrafts.delete(draftKey(chatId, callback.from.id));
+    await clearSettingsDraft(chatId, callback.from.id);
     await sendCommunityMessage(GROUP_HELP_BOT_SLUG, replyChatId, 'No changes were saved.');
   }
   await answerCommunityCallback(GROUP_HELP_BOT_SLUG, callback.id);
@@ -363,13 +410,11 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
 
 export async function handleGroupHelpBotSettingsInput(message: CommunityTelegramMessage) {
   if (!message.from || !message.text || message.chat.type !== 'private') return false;
-  const chatId = selectedPrivateSettingsGroup(message.from.id);
+  const chatId = await selectedPrivateSettingsGroup(message.from.id);
   if (!chatId) return false;
   const replyChatId = String(message.chat.id);
-  const key = draftKey(chatId, message.from.id);
-  const draft = inputDrafts.get(key);
+  const draft = await readSettingsDraft(chatId, message.from.id);
   if (!draft) return false;
-  if (draft.expiresAt < Date.now()) return false;
   if (!(await isTelegramAdmin(chatId, message.from.id))) return true;
   const field = fieldByKey(draft.key);
   if (!field) return true;
@@ -393,7 +438,7 @@ export async function handleGroupHelpBotSettingsInput(message: CommunityTelegram
     );
     return true;
   }
-  inputDrafts.set(key, { ...draft, value });
+  await writeSettingsDraft(chatId, message.from.id, { ...draft, value });
   await sendCommunityMessage(
     GROUP_HELP_BOT_SLUG,
     replyChatId,

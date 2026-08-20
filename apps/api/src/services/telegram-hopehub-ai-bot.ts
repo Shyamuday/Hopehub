@@ -61,6 +61,8 @@ import {
   handleGroupHelpBotSettingsInput,
   handleGroupHelpPrivateSettingsStart
 } from './telegram-group-help.bot-settings.js';
+import { handleGroupHelpCommandConfirmationCallback } from './telegram-group-help.command-confirmation.js';
+import { recordGroupHelpCommandAudit } from './telegram-group-help.command-audit.js';
 
 const BOT = GROUP_HELP_BOT_SLUG;
 
@@ -83,6 +85,13 @@ async function handleCommand(message: CommunityTelegramMessage, values: Record<s
       userId: message.from?.id,
       error
     });
+    const context = groupHelpCommandContextFromConfig(chatId, values);
+    await recordGroupHelpCommandAudit({
+      message,
+      targetChatId: context.targetChatId || undefined,
+      status: 'FAILED',
+      detail: error instanceof Error ? error.message : String(error)
+    }).catch(() => null);
     await sendCommunityMessage(BOT, chatId, groupHelpCommandFailureMessage(error)).catch(
       () => null
     );
@@ -99,8 +108,15 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
     await recordTelegramCampaignPollUpdate(update);
     return;
   }
+  if (
+    await handleGroupHelpCommandConfirmationCallback(update, async (confirmedMessage) => {
+      const confirmedValues = await config(String(confirmedMessage.chat.id));
+      await handleCommand(confirmedMessage, confirmedValues);
+    })
+  )
+    return;
   if (await handleGroupHelpCallback(update)) return;
-  const message = update.message;
+  const message = update.message || update.channel_post;
   const membership = update.chat_member;
   const chat = message?.chat || membership?.chat;
   if (!chat) return;
@@ -133,6 +149,12 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
   }
   const commandContext = groupHelpCommandContextFromConfig(chatId, values);
   if (commandContext.isControlGroup) {
+    if (commandContext.configurationError) {
+      if (message?.text?.startsWith('/')) {
+        await sendCommunityMessage(BOT, chatId, commandContext.configurationError);
+      }
+      return;
+    }
     if (message?.text?.startsWith('/')) await handleCommand(message, values);
     return;
   }

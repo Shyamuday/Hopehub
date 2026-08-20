@@ -5,6 +5,7 @@ import {
   sendCommunityMessage
 } from './telegram-community-bots.client.js';
 import type { CommunityTelegramMessage } from './telegram-community-bots.types.js';
+import { recordGroupHelpCommandAudit } from './telegram-group-help.command-audit.js';
 
 const adminStatusCache = new Map<string, { isAdmin: boolean; expiresAt: number }>();
 const ADMIN_STATUS_TTL_MS = 5 * 60 * 1000;
@@ -66,6 +67,12 @@ export async function sendGroupHelpPermissionDenied(
     replyChatId,
     `This command was not applied. It can only be used by ${label}.`
   ).catch(() => null);
+  await recordGroupHelpCommandAudit({
+    message,
+    targetChatId: String(message.chat.id),
+    status: 'DENIED',
+    detail: `Required role: ${requiredRole}`
+  }).catch(() => null);
 }
 
 export async function assignedCommunityRole(chatId: string, telegramUserId: string) {

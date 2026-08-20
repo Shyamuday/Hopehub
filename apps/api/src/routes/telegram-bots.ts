@@ -78,12 +78,13 @@ telegramBotsRouter.post(
     if (!kind && !communityBot) return res.status(404).json({ message: 'Unknown Telegram bot.' });
 
     const update = req.body as TelegramUpdate & CommunityTelegramUpdate;
-    const claimed = await claimCommunityWebhookUpdate(botSlug, update.update_id);
+    const claimed = await claimCommunityWebhookUpdate(botSlug, update.update_id, update);
     if (!claimed) return res.json({ ok: true, duplicate: true });
 
     try {
-      const chat = update.message?.chat || update.callback_query?.message?.chat;
-      if (update.message && chat?.type === 'private') {
+      const incomingMessage = update.message || update.channel_post;
+      const chat = incomingMessage?.chat || update.callback_query?.message?.chat;
+      if (incomingMessage && chat?.type === 'private') {
         const controls = await getTelegramBotControls();
         if (controlBoolean(controls.telegramProtectionEnabled)) {
           const rate = await checkTelegramPrivateRateLimit({
@@ -93,7 +94,7 @@ telegramBotsRouter.post(
             blockMinutes: controlNumber(controls.telegramRateLimitBlockMinutes, 5)
           });
           if (!rate.allowed) {
-            if (rate.newlyBlocked && update.message) {
+            if (rate.newlyBlocked) {
               const minutes = Math.max(1, Math.ceil(rate.retryAfterSeconds / 60));
               const text = `You are moving a little too quickly. Please try again in about ${minutes} minute${minutes === 1 ? '' : 's'}.`;
               if (kind) {

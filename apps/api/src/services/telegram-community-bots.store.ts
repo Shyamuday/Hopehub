@@ -359,10 +359,15 @@ export function submissionForGroupMessage(
   });
 }
 
-export async function claimCommunityWebhookUpdate(bot: string, updateId: number) {
+export async function claimCommunityWebhookUpdate(bot: string, updateId: number, payload: unknown) {
   try {
     await prisma.telegramWebhookReceipt.create({
-      data: { bot, updateId: BigInt(updateId), status: 'PROCESSING' }
+      data: {
+        bot,
+        updateId: BigInt(updateId),
+        status: 'PROCESSING',
+        payload: payload as Prisma.InputJsonValue
+      }
     });
     if (updateId % 100 === 0) {
       void cleanupCommunityBotData().catch((error) =>
@@ -381,15 +386,25 @@ export async function claimCommunityWebhookUpdate(bot: string, updateId: number)
 export function completeCommunityWebhookUpdate(bot: string, updateId: number) {
   return prisma.telegramWebhookReceipt.update({
     where: { bot_updateId: { bot, updateId: BigInt(updateId) } },
-    data: { status: 'COMPLETED', error: null }
+    data: { status: 'COMPLETED', error: null, nextAttemptAt: null }
   });
 }
 
-export function failCommunityWebhookUpdate(bot: string, updateId: number, error: unknown) {
+export async function failCommunityWebhookUpdate(bot: string, updateId: number, error: unknown) {
+  const receipt = await prisma.telegramWebhookReceipt.findUnique({
+    where: { bot_updateId: { bot, updateId: BigInt(updateId) } },
+    select: { attempts: true }
+  });
+  const attempts = (receipt?.attempts || 0) + 1;
+  const deadLetter = attempts >= 5;
   return prisma.telegramWebhookReceipt.update({
     where: { bot_updateId: { bot, updateId: BigInt(updateId) } },
     data: {
-      status: 'FAILED',
+      status: deadLetter ? 'DEAD_LETTER' : 'FAILED',
+      attempts,
+      nextAttemptAt: deadLetter
+        ? null
+        : new Date(Date.now() + Math.min(15 * 60_000, 30_000 * 2 ** (attempts - 1))),
       error: String(error instanceof Error ? error.message : error).slice(0, 1000)
     }
   });
@@ -433,6 +448,9 @@ export async function cleanupCommunityBotData() {
         createdAt: { lt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
         attempts: { gte: 3 }
       }
+    }),
+    prisma.telegramGroupHelpCommandAudit.deleteMany({
+      where: { createdAt: { lt: deliveryCutoff } }
     })
   ]);
   await runScheduledCommunityMessageCleanup(now);

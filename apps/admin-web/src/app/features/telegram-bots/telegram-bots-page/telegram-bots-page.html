@@ -29,6 +29,7 @@
           <strong>Some Telegram activity needs attention</strong>
           <p>
             {{ health().failedWebhookUpdates }} update failures ·
+            {{ health().failedGroupHelpCommands || 0 }} command failures ·
             {{ health().failedDeliveries }} undelivered messages ·
             {{ health().overdueCampaigns }} delayed campaigns
           </p>
@@ -81,6 +82,9 @@
               <span
                 ><strong>{{ bot.summary.failedUpdates || 0 }}</strong> failed</span
               >
+              @if (bot.summary.deadLetterUpdates) {
+                <span><strong>{{ bot.summary.deadLetterUpdates }}</strong> need manual review</span>
+              }
             </div>
             @if (bot.summary.lastFailure) {
               <p class="issue">Last processing issue: {{ bot.summary.lastFailure.error }}</p>

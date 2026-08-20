@@ -207,6 +207,7 @@ export class GroupHelpPage {
     group?: string;
     runtime?: string;
     permissions?: string[];
+    missingPermissions?: string[];
   }>({});
   readonly moderatorAction = signal('warn');
   readonly moderatorTarget = signal('');
@@ -924,17 +925,31 @@ export class GroupHelpPage {
         membership.can_invite_users && 'Invite users',
         membership.can_pin_messages && 'Pin messages',
         membership.can_promote_members && 'Promote members',
+        membership.can_manage_video_chats && 'Manage voice chats',
       ].filter(Boolean) as string[];
+      const permissionLabels: Record<string, string> = {
+        can_delete_messages: 'Delete messages',
+        can_restrict_members: 'Restrict members',
+        can_promote_members: 'Promote members',
+        can_pin_messages: 'Pin messages',
+        can_manage_video_chats: 'Manage voice chats',
+      };
+      const missingPermissions = (result.missingBotPermissions || []).map(
+        (permission) => permissionLabels[permission] || permission,
+      );
       this.connectionDetails.set({
         bot: result.me?.username ? `@${result.me.username}` : undefined,
         group: result.chat?.title,
         runtime: result.webhook?.url ? 'External webhook' : 'External polling/runtime',
         permissions,
+        missingPermissions,
       });
       this.message.set(
         result.chatError
           ? `Bot connected, but the group could not be reached: ${result.chatError}`
-          : 'Bot token and configured Telegram group are connected.',
+          : missingPermissions.length
+            ? `Bot connected, but it still needs: ${missingPermissions.join(', ')}.`
+            : 'Bot token and configured Telegram group are connected.',
       );
     } catch (error: any) {
       this.error.set(error?.error?.message || 'Could not test Group Help connection.');

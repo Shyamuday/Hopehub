@@ -20,6 +20,7 @@ import {
   resolveGroupHelpCommandContext
 } from './telegram-group-help.command-context.js';
 import { sendGroupHelpPermissionDenied } from './telegram-group-help.permissions.js';
+import { requestGroupHelpCommandConfirmation } from './telegram-group-help.command-confirmation.js';
 
 export async function handleGroupHelpAdminCommand(
   message: CommunityTelegramMessage,
@@ -59,11 +60,20 @@ export async function handleGroupHelpAdminCommand(
     await sendGroupHelpPermissionDenied(message, 'ADMIN', chatId);
     return true;
   }
+  if (
+    ['/unpinall', '/promote', '/demote', '/unadmin', '/lockdown'].includes(command) &&
+    (await requestGroupHelpCommandConfirmation({ message, targetChatId, command }))
+  ) {
+    return true;
+  }
   const resolveMainGroupMember = async (argument: string) => {
     let targetId = /^\d+$/.test(argument) ? Number(argument) : 0;
     if (!targetId && argument.startsWith('@')) {
       const known = await prisma.telegramCommunityMember.findFirst({
-        where: { chatId: targetChatId, username: argument.slice(1) },
+        where: {
+          chatId: targetChatId,
+          username: { equals: argument.slice(1), mode: 'insensitive' }
+        },
         select: { telegramUserId: true }
       });
       targetId = Number(known?.telegramUserId || 0);

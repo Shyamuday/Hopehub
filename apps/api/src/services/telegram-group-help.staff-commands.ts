@@ -26,6 +26,7 @@ import {
   messageForGroupHelpTarget,
   resolveGroupHelpCommandContext
 } from './telegram-group-help.command-context.js';
+import { requestGroupHelpCommandConfirmation } from './telegram-group-help.command-confirmation.js';
 
 export async function handleGroupHelpStaffCommand(
   message: CommunityTelegramMessage,
@@ -74,6 +75,16 @@ export async function handleGroupHelpStaffCommand(
       await sendGroupHelpPermissionDenied(message, requiredRole, chatId);
       return true;
     }
+    if (
+      ['ban', 'kick', 'delban', 'delkick'].includes(commandName) &&
+      (await requestGroupHelpCommandConfirmation({
+        message,
+        targetChatId,
+        command
+      }))
+    ) {
+      return true;
+    }
 
     const deleteFirst = ['delete', 'del', 'delwarn', 'delmute', 'delban', 'delkick'].includes(
       commandName
@@ -119,7 +130,10 @@ export async function handleGroupHelpStaffCommand(
 
       if (!userId && arg.startsWith('@')) {
         const known = await prisma.telegramCommunityMember.findFirst({
-          where: { chatId: targetChatId, username: arg.slice(1) },
+          where: {
+            chatId: targetChatId,
+            username: { equals: arg.slice(1), mode: 'insensitive' }
+          },
           select: { telegramUserId: true }
         });
         if (known) userId = Number(known.telegramUserId);
@@ -295,7 +309,10 @@ export async function handleGroupHelpStaffCommand(
     let targetId = /^\d+$/.test(argument) ? Number(argument) : 0;
     if (!targetId && argument.startsWith('@')) {
       const known = await prisma.telegramCommunityMember.findFirst({
-        where: { chatId: targetChatId, username: argument.slice(1) },
+        where: {
+          chatId: targetChatId,
+          username: { equals: argument.slice(1), mode: 'insensitive' }
+        },
         select: { telegramUserId: true }
       });
       targetId = Number(known?.telegramUserId || 0);

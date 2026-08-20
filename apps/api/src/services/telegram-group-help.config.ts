@@ -5,6 +5,7 @@ import type { CommunityTelegramMessage } from './telegram-community-bots.types.j
 export const GROUP_HELP_CONFIG_KEYS = [
   'telegramGroupHelpGroupChatId',
   'telegramGroupHelpTestGroupChatId',
+  'telegramGroupHelpWelcomeMessage',
   'telegramGroupHelpRulesMessage',
   'telegramGroupHelpSupportMessage',
   'telegramGroupHelpFirstMessageReview',

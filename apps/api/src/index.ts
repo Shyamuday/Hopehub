@@ -121,6 +121,7 @@ import {
   runCallSessionMaintenance
 } from './services/call-session-maintenance.js';
 import { getRuntimeReadiness } from './services/runtime-health.js';
+import { retryFailedTelegramWebhookUpdates } from './services/telegram-webhook-retries.js';
 
 // ── App & HTTP server ──────────────────────────────────────────────────────────
 
@@ -466,6 +467,9 @@ httpServer.listen(port, bindHost, () => {
   void runCallSessionMaintenance().catch((e) =>
     console.error('[scheduler] Initial call maintenance failed', e)
   );
+  void retryFailedTelegramWebhookUpdates().catch((e) =>
+    console.error('[scheduler] Initial Telegram webhook retry failed', e)
+  );
 
   const doseTimer = setInterval(() => {
     void runDoseSchedulers().catch((e) =>
@@ -511,6 +515,13 @@ httpServer.listen(port, bindHost, () => {
     );
   }, callMaintenanceIntervalMs);
   callMaintenanceTimer.unref();
+
+  const telegramWebhookRetryTimer = setInterval(() => {
+    void retryFailedTelegramWebhookUpdates().catch((e) =>
+      console.error('[scheduler] Telegram webhook retry failed', e)
+    );
+  }, 30_000);
+  telegramWebhookRetryTimer.unref();
 
   void restoreEmployeesFromLeave().catch((e) =>
     console.error('[scheduler] Leave restore failed', e)

@@ -76,6 +76,12 @@
             connectionDetails().permissions?.join(', ') || 'No admin permissions detected'
           }}</strong>
         </div>
+        @if (connectionDetails().missingPermissions?.length) {
+          <div class="permission-summary">
+            <small>Missing permissions</small>
+            <strong>{{ connectionDetails().missingPermissions?.join(', ') }}</strong>
+          </div>
+        }
       </section>
     }
 

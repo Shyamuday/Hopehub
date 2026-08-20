@@ -8,6 +8,7 @@ import {
 import { apiUrl, webUrl } from './telegram-bots.ui.js';
 import type { SendMessagePayload } from './telegram-bots.types.js';
 import { colorizeTelegramKeyboard, colorizeTelegramPayload } from './telegram-button-styles.js';
+import { callTelegramBotApi } from './telegram-api-request.js';
 
 export function telegramWebhookSecret() {
   return process.env.TELEGRAM_WEBHOOK_SECRET || '';
@@ -25,28 +26,7 @@ function getBotTokenOrThrow(kind: TelegramBotKind) {
 
 async function callTelegramApi<T>(kind: TelegramBotKind, method: string, payload: unknown) {
   const token = getBotTokenOrThrow(kind);
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(colorizeTelegramPayload(payload))
-    });
-    const body = (await response.json()) as {
-      ok?: boolean;
-      description?: string;
-      result?: T;
-      parameters?: { retry_after?: number };
-    };
-    if (response.ok && body.ok) return body.result as T;
-
-    const retryAfterSeconds = body.parameters?.retry_after;
-    if (response.status === 429 && retryAfterSeconds && attempt < 2) {
-      await new Promise((resolve) => setTimeout(resolve, (retryAfterSeconds + 1) * 1000));
-      continue;
-    }
-    throw new Error(body.description || `Telegram ${method} failed.`);
-  }
-  throw new Error(`Telegram ${method} could not be completed.`);
+  return callTelegramBotApi<T>(token, method, colorizeTelegramPayload(payload));
 }
 
 export function sendTelegramMessage(kind: TelegramBotKind, payload: SendMessagePayload) {

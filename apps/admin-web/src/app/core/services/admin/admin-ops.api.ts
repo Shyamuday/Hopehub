@@ -200,8 +200,10 @@ export class AdminOpsApi extends AdminApiBase {
         bots: any[];
         sessions: any[];
         events: any[];
+        groupHelpCommandAudits?: any[];
         health?: {
           failedWebhookUpdates: number;
+          failedGroupHelpCommands: number;
           failedDeliveries: number;
           overdueCampaigns: number;
           needsAttention: boolean;
@@ -424,7 +426,9 @@ export class AdminOpsApi extends AdminApiBase {
           can_invite_users?: boolean;
           can_pin_messages?: boolean;
           can_promote_members?: boolean;
+          can_manage_video_chats?: boolean;
         };
+        missingBotPermissions?: string[];
         chatError?: string | null;
       }>(`${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_TEST}`, {}),
     );
