@@ -4,7 +4,11 @@ import { fileURLToPath } from 'node:url';
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const migrationsDirectory = path.join(scriptDirectory, '..', 'prisma', 'migrations');
-const TRANSACTION_REQUIRED_FROM = '20260820130000';
+// This guard was introduced after 20260820163000 had already been applied in
+// production without an explicit transaction wrapper. Never rewrite an
+// applied migration (Prisma checksum validation would reject it); enforce the
+// rule from the first migration created under this policy instead.
+const TRANSACTION_REQUIRED_FROM = '20260820173000';
 
 const unsafe = fs
   .readdirSync(migrationsDirectory, { withFileTypes: true })

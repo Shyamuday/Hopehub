@@ -34,6 +34,7 @@ import {
 import { sendTelegramMessage } from '../services/telegram-bots.client.js';
 import { sendCommunityMessage } from '../services/telegram-community-bots.client.js';
 import { groupHelpBotStatus } from '../services/telegram-group-help.client.js';
+import { notifyTelegramBotFailure } from '../services/telegram-bot-failure-alerts.js';
 
 export const telegramBotsRouter = Router();
 
@@ -117,6 +118,15 @@ telegramBotsRouter.post(
         console.error('[telegram] Could not record failed webhook update.', receiptError)
       );
       console.error(`[telegram] ${botSlug} update ${update.update_id} failed.`, error);
+      const failedChat =
+        update.message?.chat || update.channel_post?.chat || update.callback_query?.message?.chat;
+      void notifyTelegramBotFailure({
+        bot: botSlug,
+        area: 'webhook update',
+        error,
+        updateId: update.update_id,
+        chatId: failedChat?.id
+      });
       // Telegram retries every non-2xx response. Acknowledge handled failures so one blocked
       // user or malformed update cannot create a retry storm; diagnostics remain in the database.
       res.json({ ok: true, handled: false });

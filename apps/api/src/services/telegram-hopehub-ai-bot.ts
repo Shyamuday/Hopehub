@@ -72,6 +72,7 @@ import {
   getTelegramCommunityMemberIdentityHistory,
   observeTelegramCommunityMember
 } from './telegram-community-member-identity.js';
+import { notifyTelegramBotFailure } from './telegram-bot-failure-alerts.js';
 
 const BOT = GROUP_HELP_BOT_SLUG;
 
@@ -122,6 +123,13 @@ async function handleCommand(message: CommunityTelegramMessage, values: Record<s
       chatId,
       userId: message.from?.id,
       error
+    });
+    void notifyTelegramBotFailure({
+      bot: BOT,
+      area: 'group command',
+      error,
+      chatId,
+      updateId: message.message_id
     });
     const context = groupHelpCommandContextFromConfig(chatId, values);
     await recordGroupHelpCommandAudit({

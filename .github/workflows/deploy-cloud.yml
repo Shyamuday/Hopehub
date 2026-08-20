@@ -408,7 +408,56 @@ jobs:
           TELEGRAM_USER_BOT_TOKEN: ${{ secrets.TELEGRAM_USER_BOT_TOKEN }}
           TELEGRAM_DOCTOR_BOT_TOKEN: ${{ secrets.TELEGRAM_DOCTOR_BOT_TOKEN }}
           TELEGRAM_ADMIN_BOT_TOKEN: ${{ secrets.TELEGRAM_ADMIN_BOT_TOKEN }}
+          TELEGRAM_ADMIN_ALERT_CHAT_IDS: ${{ secrets.TELEGRAM_ADMIN_ALERT_CHAT_IDS }}
           TELEGRAM_HOPEHUBBOT_TOKEN: ${{ secrets.TELEGRAM_HOPEHUBBOT_TOKEN }}
           TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
           TELEGRAM_SETUP_SECRET: ${{ secrets.TELEGRAM_SETUP_SECRET }}
         run: bash deploy/scripts/deploy-api-local.sh
+
+  notify-deployment-failure:
+    name: Notify admin about failed deployment
+    runs-on: ubuntu-latest
+    environment: production
+    needs: [release-gate, deploy, deploy-api]
+    # A release gate can fail before the deploy jobs begin, so this must run
+    # regardless of skipped dependencies. Alerting must never mask the
+    # original deployment result.
+    if: >-
+      ${{ always() &&
+          (needs.release-gate.result == 'failure' ||
+           needs.deploy.result == 'failure' ||
+           needs.deploy-api.result == 'failure') }}
+    steps:
+      - name: Send Telegram alert
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_ADMIN_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_DEPLOY_ALERT_CHAT_ID }}
+          RELEASE_GATE_RESULT: ${{ needs.release-gate.result }}
+          FRONTEND_RESULT: ${{ needs.deploy.result }}
+          API_RESULT: ${{ needs.deploy-api.result }}
+          WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          COMMIT_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -z "${TELEGRAM_BOT_TOKEN:-}" ] || [ -z "${TELEGRAM_CHAT_ID:-}" ]; then
+            echo "::warning::Deployment alert was not sent: add TELEGRAM_DEPLOY_ALERT_CHAT_ID and ensure TELEGRAM_ADMIN_BOT_TOKEN is available as production secrets."
+            exit 0
+          fi
+
+          text="<b>Hope Hub deployment needs attention</b>
+
+          Release gate: ${RELEASE_GATE_RESULT}
+          Frontend deploy: ${FRONTEND_RESULT}
+          API deploy: ${API_RESULT}
+          Commit: <code>${COMMIT_SHA}</code>
+
+          <a href=\"${WORKFLOW_URL}\">Open GitHub Actions logs</a>"
+
+          curl --fail --silent --show-error --retry 2 \
+            --request POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=${text}" \
+            --data-urlencode 'parse_mode=HTML' \
+            --data-urlencode 'disable_web_page_preview=true'

@@ -87,6 +87,11 @@ AWS_SECRET_ACCESS_KEY_VALUE="$(sudo cat /etc/hopehub-aws-secret-access-key 2>/de
 TELEGRAM_USER_BOT_TOKEN_VALUE="$(sudo cat /etc/hopehub-telegram-user-bot-token 2>/dev/null || echo "${TELEGRAM_USER_BOT_TOKEN:-}")"
 TELEGRAM_DOCTOR_BOT_TOKEN_VALUE="$(sudo cat /etc/hopehub-telegram-doctor-bot-token 2>/dev/null || echo "${TELEGRAM_DOCTOR_BOT_TOKEN:-}")"
 TELEGRAM_ADMIN_BOT_TOKEN_VALUE="$(sudo cat /etc/hopehub-telegram-admin-bot-token 2>/dev/null || echo "${TELEGRAM_ADMIN_BOT_TOKEN:-}")"
+TELEGRAM_ADMIN_ALERT_CHAT_IDS_VALUE="${TELEGRAM_ADMIN_ALERT_CHAT_IDS:-$(sudo cat /etc/hopehub-telegram-admin-alert-chat-ids 2>/dev/null || true)}"
+if [ -n "${TELEGRAM_ADMIN_ALERT_CHAT_IDS:-}" ]; then
+  printf '%s\n' "$TELEGRAM_ADMIN_ALERT_CHAT_IDS_VALUE" | sudo tee /etc/hopehub-telegram-admin-alert-chat-ids >/dev/null
+  sudo chmod 600 /etc/hopehub-telegram-admin-alert-chat-ids
+fi
 # A production secret explicitly supplied by the deployment workflow replaces a
 # retired community-bot token. Otherwise preserve the server's current token.
 TELEGRAM_HOPEHUBBOT_TOKEN_VALUE="${TELEGRAM_HOPEHUBBOT_TOKEN:-$(sudo cat /etc/hopehub-telegram-hopehubbot-token 2>/dev/null || sudo cat /etc/hopehub-telegram-group-help-bot-token 2>/dev/null || echo "${TELEGRAM_GROUP_HELP_BOT_TOKEN:-}")}" # deployment secret takes priority
@@ -187,6 +192,7 @@ OOREP_TIMEOUT_MS="15000"
 TELEGRAM_USER_BOT_TOKEN="${TELEGRAM_USER_BOT_TOKEN_VALUE}"
 TELEGRAM_DOCTOR_BOT_TOKEN="${TELEGRAM_DOCTOR_BOT_TOKEN_VALUE}"
 TELEGRAM_ADMIN_BOT_TOKEN="${TELEGRAM_ADMIN_BOT_TOKEN_VALUE}"
+TELEGRAM_ADMIN_ALERT_CHAT_IDS="${TELEGRAM_ADMIN_ALERT_CHAT_IDS_VALUE}"
 TELEGRAM_HOPEHUBBOT_TOKEN="${TELEGRAM_HOPEHUBBOT_TOKEN_VALUE}"
 TELEGRAM_WEBHOOK_SECRET="${TELEGRAM_WEBHOOK_SECRET_VALUE}"
 TELEGRAM_SETUP_SECRET="${TELEGRAM_SETUP_SECRET_VALUE}"
@@ -263,6 +269,7 @@ start_or_restart_api() {
   TELEGRAM_USER_BOT_TOKEN="$TELEGRAM_USER_BOT_TOKEN_VALUE" \
   TELEGRAM_DOCTOR_BOT_TOKEN="$TELEGRAM_DOCTOR_BOT_TOKEN_VALUE" \
   TELEGRAM_ADMIN_BOT_TOKEN="$TELEGRAM_ADMIN_BOT_TOKEN_VALUE" \
+  TELEGRAM_ADMIN_ALERT_CHAT_IDS="$TELEGRAM_ADMIN_ALERT_CHAT_IDS_VALUE" \
   TELEGRAM_HOPEHUBBOT_TOKEN="$TELEGRAM_HOPEHUBBOT_TOKEN_VALUE" \
   TELEGRAM_WEBHOOK_SECRET="$TELEGRAM_WEBHOOK_SECRET_VALUE" \
   TELEGRAM_SETUP_SECRET="$TELEGRAM_SETUP_SECRET_VALUE" \

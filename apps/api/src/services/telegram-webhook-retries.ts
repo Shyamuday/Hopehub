@@ -13,6 +13,7 @@ import {
   telegramBotKindFromSlug,
   type TelegramUpdate
 } from './telegram-bots.js';
+import { notifyTelegramBotFailure } from './telegram-bot-failure-alerts.js';
 
 const BATCH_SIZE = 20;
 const STALE_PROCESSING_MS = 2 * 60_000;
@@ -68,6 +69,12 @@ export async function retryFailedTelegramWebhookUpdates() {
       completed += 1;
     } catch (error) {
       await failCommunityWebhookUpdate(candidate.bot, Number(candidate.updateId), error);
+      void notifyTelegramBotFailure({
+        bot: candidate.bot,
+        area: 'webhook retry',
+        error,
+        updateId: candidate.updateId.toString()
+      });
       failed += 1;
     }
   }

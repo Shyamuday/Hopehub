@@ -1,3 +1,5 @@
+BEGIN;
+
 CREATE TABLE "TelegramCommunityMemberIdentityHistory" (
     "id" TEXT NOT NULL,
     "chatId" TEXT NOT NULL,
@@ -18,8 +20,12 @@ CREATE TABLE "TelegramCommunityMemberIdentityHistory" (
     CONSTRAINT "TelegramCommunityMemberIdentityHistory_pkey" PRIMARY KEY ("id")
 );
 
-CREATE INDEX "TelegramCommunityMemberIdentityHistory_chatId_telegramUserId_observedAt_idx"
+-- PostgreSQL limits identifiers to 63 bytes. Use Prisma's deterministic
+-- shortened name so the clean migration result exactly matches the schema.
+CREATE INDEX "TelegramCommunityMemberIdentityHistory_chatId_telegramUserI_idx"
   ON "TelegramCommunityMemberIdentityHistory"("chatId", "telegramUserId", "observedAt");
 
 CREATE INDEX "TelegramCommunityMemberIdentityHistory_chatId_observedAt_idx"
   ON "TelegramCommunityMemberIdentityHistory"("chatId", "observedAt");
+
+COMMIT;
