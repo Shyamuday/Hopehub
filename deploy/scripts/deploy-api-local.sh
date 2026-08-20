@@ -118,8 +118,8 @@ if [ -n "$TELEGRAM_CONTACT_SUPPORT_GROUP_ID_VALUE" ] && [ ! -f /etc/hopehub-cont
   printf '%s\n' "$TELEGRAM_CONTACT_SUPPORT_GROUP_ID_VALUE" | sudo tee /etc/hopehub-contact-support-group-id >/dev/null
   sudo chmod 600 /etc/hopehub-contact-support-group-id
 fi
-if [ -n "$TELEGRAM_CONTACT_BOT_TOKEN_VALUE" ] && [ -z "$TELEGRAM_CONTACT_SUPPORT_GROUP_ID_VALUE" ]; then
-  echo "WARNING: Contact bot is configured, but its private support group ID is missing."
+if [ -n "$TELEGRAM_CONTACT_BOT_TOKEN_VALUE" ] && [ -z "$TELEGRAM_CONTACT_SUPPORT_GROUP_ID_VALUE" ] && [ -z "$TELEGRAM_CONTACT_ADMIN_CHAT_ID_VALUE" ]; then
+  echo "WARNING: Contact bot is configured, but neither a support group nor an admin chat is configured."
 fi
 TELEGRAM_CONFESSION_BOT_TOKEN_VALUE="$(sudo cat /etc/hopehub-confession-bot-token 2>/dev/null || echo "${TELEGRAM_CONFESSION_BOT_TOKEN:-}")"
 TELEGRAM_CONFESSION_ADMIN_CHAT_ID_VALUE="$(sudo cat /etc/hopehub-confession-admin-chat-id 2>/dev/null || echo "${TELEGRAM_CONFESSION_ADMIN_CHAT_ID:-}")"
@@ -244,6 +244,10 @@ start_or_restart_api() {
   else
     pm2_args=(start "$APP_DIR/node_modules/tsx/dist/cli.mjs" --name hopehub-api -- src/index.ts)
   fi
+
+  # GitHub's self-hosted runner kills descendants carrying its tracking ID
+  # during post-job cleanup. The API must remain owned by PM2 after deployment.
+  unset RUNNER_TRACKING_ID
 
   # Explicitly replace server-resolved credentials. PM2 otherwise keeps older
   # inherited values ahead of dotenv when a process is restarted.
