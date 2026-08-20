@@ -243,12 +243,69 @@ if [ -n "${TELEGRAM_HOPEHUBBOT_TOKEN_VALUE}" ]; then
   npm run telegram:seed
 fi
 
-start_or_restart_api() {
-  local -a pm2_args
-  if pm2 describe hopehub-api >/dev/null 2>&1; then
-    pm2_args=(restart hopehub-api --update-env)
+API_NGINX_SITE="/etc/nginx/sites-enabled/hopehub-api"
+API_NGINX_UPSTREAM="/etc/nginx/conf.d/hopehub-api-upstream.conf"
+
+write_api_upstream() {
+  local port="$1"
+  printf 'upstream hopehub_api_active {\n    server 127.0.0.1:%s;\n    keepalive 32;\n}\n' "$port" \
+    | sudo tee "${API_NGINX_UPSTREAM}.next" >/dev/null
+  sudo mv "${API_NGINX_UPSTREAM}.next" "$API_NGINX_UPSTREAM"
+}
+
+ensure_zero_downtime_proxy() {
+  # Production originally proxied directly to port 4000. Convert that once to
+  # a named upstream, which lets us atomically point Nginx at a verified new
+  # process while the old process continues to serve Telegram webhooks.
+  if sudo grep -q 'proxy_pass http://hopehub_api_active' "$API_NGINX_SITE"; then
+    return 0
+  fi
+
+  local backup_site="${API_NGINX_SITE}.before-zero-downtime"
+  sudo cp "$API_NGINX_SITE" "$backup_site"
+  write_api_upstream 4000
+  sudo sed -i 's#proxy_pass http://127\.0\.0\.1:4000#proxy_pass http://hopehub_api_active#g' "$API_NGINX_SITE"
+  if ! sudo nginx -t; then
+    echo "Could not enable the zero-downtime Nginx upstream; restoring the previous proxy config."
+    sudo mv "$backup_site" "$API_NGINX_SITE"
+    sudo nginx -t
+    return 1
+  fi
+  sudo rm -f "$backup_site"
+  sudo systemctl reload nginx
+}
+
+active_api_port() {
+  local configured
+  configured="$(sudo sed -nE 's/^[[:space:]]*server 127\.0\.0\.1:(4000|4001);/\1/p' "$API_NGINX_UPSTREAM" 2>/dev/null | head -n 1 || true)"
+  if [ "$configured" = "4000" ] || [ "$configured" = "4001" ]; then
+    printf '%s\n' "$configured"
   else
-    pm2_args=(start "$APP_DIR/node_modules/tsx/dist/cli.mjs" --name hopehub-api -- src/index.ts)
+    printf '4000\n'
+  fi
+}
+
+switch_api_upstream() {
+  local next_port="$1"
+  local previous_port="$2"
+  local backup_upstream="${API_NGINX_UPSTREAM}.before-switch"
+  sudo cp "$API_NGINX_UPSTREAM" "$backup_upstream"
+  write_api_upstream "$next_port"
+  if ! sudo nginx -t; then
+    echo "New Nginx upstream did not validate; keeping port ${previous_port} active."
+    sudo mv "$backup_upstream" "$API_NGINX_UPSTREAM"
+    sudo nginx -t
+    return 1
+  fi
+  sudo systemctl reload nginx
+  sudo rm -f "$backup_upstream"
+}
+
+start_api_candidate() {
+  local port="$1"
+  local process_name="hopehub-api-${port}"
+  if pm2 describe "$process_name" >/dev/null 2>&1; then
+    pm2 delete "$process_name"
   fi
 
   # GitHub's self-hosted runner kills descendants carrying its tracking ID
@@ -257,6 +314,7 @@ start_or_restart_api() {
 
   # Explicitly replace server-resolved credentials. PM2 otherwise keeps older
   # inherited values ahead of dotenv when a process is restarted.
+  PORT="$port" \
   RAZORPAY_KEY_ID="$RAZORPAY_KEY_ID_VALUE" \
   RAZORPAY_KEY_SECRET="$RAZORPAY_KEY_SECRET_VALUE" \
   RAZORPAY_WEBHOOK_SECRET="$RAZORPAY_WEBHOOK_SECRET_VALUE" \
@@ -282,13 +340,14 @@ start_or_restart_api() {
   TELEGRAM_CONFESSION_APPROVAL_GROUP_ID="$TELEGRAM_CONFESSION_APPROVAL_GROUP_ID_VALUE" \
   TELEGRAM_CONFESSION_START_NUMBER="$TELEGRAM_CONFESSION_START_NUMBER_VALUE" \
   TELEGRAM_RULES_BOT_TOKEN="$TELEGRAM_RULES_BOT_TOKEN_VALUE" \
-  pm2 "${pm2_args[@]}"
+  pm2 start "$APP_DIR/node_modules/tsx/dist/cli.mjs" --name "$process_name" --cwd "$API_DIR" -- src/index.ts
 }
 
 wait_for_api() {
-  echo "Waiting for API to be ready..."
+  local port="$1"
+  echo "Waiting for API on port ${port} to be ready..."
   for i in $(seq 1 15); do
-    if curl -fsS http://127.0.0.1:4000/health/ready >/dev/null 2>&1; then
+    if curl -fsS "http://127.0.0.1:${port}/health/ready" >/dev/null 2>&1; then
       echo "API is up after ${i} attempt(s)"
       return 0
     fi
@@ -298,26 +357,42 @@ wait_for_api() {
   return 1
 }
 
-start_or_restart_api
-if ! wait_for_api; then
-  echo "API did not respond on port 4000 after 30s"
-  pm2 logs hopehub-api --lines 50 --nostream
-  if [ -n "$PREVIOUS_SHA" ] && [ "$PREVIOUS_SHA" != "$(git rev-parse HEAD)" ]; then
-    echo "Restoring previously running application commit $PREVIOUS_SHA..."
-    git checkout -f --detach "$PREVIOUS_SHA"
-    git reset --hard "$PREVIOUS_SHA"
-    npm ci --no-audit --no-fund
-    npm run prisma:generate
-    start_or_restart_api
-    if wait_for_api; then
-      pm2 save
-      echo "Previous application release restored. Database migrations remain applied and must be backward compatible."
-    else
-      echo "Previous application release also failed readiness checks."
-    fi
-  fi
+if ! ensure_zero_downtime_proxy; then
   exit 1
 fi
+
+CURRENT_API_PORT="$(active_api_port)"
+if [ "$CURRENT_API_PORT" = "4000" ]; then
+  NEXT_API_PORT=4001
+else
+  NEXT_API_PORT=4000
+fi
+NEXT_API_PROCESS="hopehub-api-${NEXT_API_PORT}"
+
+start_api_candidate "$NEXT_API_PORT"
+if ! wait_for_api "$NEXT_API_PORT"; then
+  echo "Candidate API did not respond on port ${NEXT_API_PORT} after 30s. The active API on ${CURRENT_API_PORT} was not changed."
+  pm2 logs "$NEXT_API_PROCESS" --lines 50 --nostream || true
+  pm2 delete "$NEXT_API_PROCESS" || true
+  exit 1
+fi
+
+if ! switch_api_upstream "$NEXT_API_PORT" "$CURRENT_API_PORT"; then
+  pm2 delete "$NEXT_API_PROCESS" || true
+  exit 1
+fi
+
+if ! curl -fsSk --resolve api.hopehub.in:443:127.0.0.1 https://api.hopehub.in/health/ready >/dev/null; then
+  echo "Nginx did not reach the new API. Restoring port ${CURRENT_API_PORT}."
+  switch_api_upstream "$CURRENT_API_PORT" "$NEXT_API_PORT" || true
+  pm2 delete "$NEXT_API_PROCESS" || true
+  exit 1
+fi
+
+echo "API handover complete: port ${CURRENT_API_PORT} -> ${NEXT_API_PORT}."
+pm2 delete "hopehub-api-${CURRENT_API_PORT}" >/dev/null 2>&1 || true
+# Retire the original single-process name after the first blue/green handover.
+pm2 delete hopehub-api >/dev/null 2>&1 || true
 pm2 save
 
 if [ -n "${TELEGRAM_USER_BOT_TOKEN_VALUE}${TELEGRAM_DOCTOR_BOT_TOKEN_VALUE}${TELEGRAM_ADMIN_BOT_TOKEN_VALUE}${TELEGRAM_CONTACT_BOT_TOKEN_VALUE}${TELEGRAM_CONFESSION_BOT_TOKEN_VALUE}${TELEGRAM_RULES_BOT_TOKEN_VALUE}${TELEGRAM_HOPEHUBBOT_TOKEN_VALUE}" ]; then

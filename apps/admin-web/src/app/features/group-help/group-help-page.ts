@@ -132,6 +132,15 @@ export class GroupHelpPage {
   readonly loading = signal(false);
   readonly saving = signal(false);
   readonly savingWelcome = signal(false);
+  readonly savingRevision = signal(false);
+  readonly revisionBusyId = signal('');
+  readonly configDraftName = signal('');
+  readonly configRevisions = signal<any[]>([]);
+  readonly configRevisionPreview = signal<{
+    revision: any;
+    changes: any[];
+    unchanged: number;
+  } | null>(null);
   readonly sending = signal(false);
   readonly testing = signal(false);
   readonly clearingMenu = signal(false);
@@ -369,6 +378,7 @@ export class GroupHelpPage {
         this.loadRoles(),
         this.loadModerationCases(),
         this.loadMemberDirectory(),
+        this.loadConfigRevisions(),
       ]);
     } catch {
       this.error.set('Could not load Group Help config.');
@@ -977,6 +987,93 @@ export class GroupHelpPage {
 
   update(key: string, value: string) {
     this.localValues.update((current) => ({ ...current, [key]: value }));
+  }
+
+  async loadConfigRevisions() {
+    try {
+      const response = await this.api.getTelegramGroupHelpRevisions();
+      this.configRevisions.set(response.revisions || []);
+    } catch {
+      this.configRevisions.set([]);
+    }
+  }
+
+  async saveConfigDraft() {
+    const name = this.configDraftName().trim();
+    if (!name) {
+      this.error.set('Give this draft a short name before saving it.');
+      return;
+    }
+    this.savingRevision.set(true);
+    this.error.set('');
+    try {
+      await this.api.createTelegramGroupHelpRevision(
+        name,
+        this.config().map((entry) => ({ key: entry.key, value: this.value(entry.key) })),
+      );
+      this.configDraftName.set('');
+      this.message.set('Draft saved. It will not affect the group until you publish it.');
+      await this.loadConfigRevisions();
+    } catch (error: any) {
+      this.error.set(error?.error?.message || 'Could not save this configuration draft.');
+    } finally {
+      this.savingRevision.set(false);
+    }
+  }
+
+  async previewConfigRevision(id: string) {
+    this.revisionBusyId.set(id);
+    this.error.set('');
+    try {
+      this.configRevisionPreview.set(await this.api.previewTelegramGroupHelpRevision(id));
+    } catch (error: any) {
+      this.error.set(error?.error?.message || 'Could not compare this configuration version.');
+    } finally {
+      this.revisionBusyId.set('');
+    }
+  }
+
+  async publishConfigRevision(id: string) {
+    if (!window.confirm('Publish this configuration version to the live group?')) return;
+    this.revisionBusyId.set(id);
+    this.error.set('');
+    try {
+      const response = await this.api.publishTelegramGroupHelpRevision(id);
+      this.config.set(response.config as GroupHelpConfigEntry[]);
+      this.localValues.set(
+        Object.fromEntries(
+          (response.config as GroupHelpConfigEntry[]).map((entry) => [entry.key, entry.value]),
+        ),
+      );
+      this.configRevisionPreview.set(null);
+      this.message.set('Configuration version published. New bot activity will use it now.');
+      await this.loadConfigRevisions();
+    } catch (error: any) {
+      this.error.set(error?.error?.message || 'Could not publish this configuration version.');
+    } finally {
+      this.revisionBusyId.set('');
+    }
+  }
+
+  async restoreConfigRevision(id: string) {
+    if (!window.confirm('Restore the values that were in place before this change?')) return;
+    this.revisionBusyId.set(id);
+    this.error.set('');
+    try {
+      const response = await this.api.restoreTelegramGroupHelpRevision(id);
+      this.config.set(response.config as GroupHelpConfigEntry[]);
+      this.localValues.set(
+        Object.fromEntries(
+          (response.config as GroupHelpConfigEntry[]).map((entry) => [entry.key, entry.value]),
+        ),
+      );
+      this.message.set('Previous values restored. New bot activity will use them now.');
+      await this.loadConfigRevisions();
+    } catch (error: any) {
+      this.error.set(error?.error?.message || 'Could not restore this configuration version.');
+    } finally {
+      this.revisionBusyId.set('');
+    }
   }
 
   async saveAll() {

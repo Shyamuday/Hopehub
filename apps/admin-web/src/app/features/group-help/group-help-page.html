@@ -752,6 +752,69 @@
     >
       <div class="panel-head">
         <div>
+          <p class="eyebrow">Safe configuration changes</p>
+          <h2>Draft, compare, publish</h2>
+          <p>Save a version first, compare it with the live group setup, then publish only when ready.</p>
+        </div>
+      </div>
+      <div class="campaign-basics">
+        <label>
+          Draft name
+          <input
+            type="text"
+            maxlength="80"
+            placeholder="Safer welcome message"
+            [value]="configDraftName()"
+            (input)="configDraftName.set($any($event.target).value)"
+          />
+        </label>
+        <app-apply-button
+          [loading]="savingRevision()"
+          label="Save draft"
+          pendingLabel="Saving draft…"
+          (click)="saveConfigDraft()"
+        ></app-apply-button>
+      </div>
+      @if (configRevisionPreview(); as preview) {
+        <div class="config-section__actions">
+          <div>
+            <strong>{{ preview.changes.length }} live change(s)</strong>
+            <small>{{ preview.unchanged }} setting(s) already match this version.</small>
+            @for (change of preview.changes.slice(0, 8); track change.key) {
+              <small><b>{{ change.label }}:</b> {{ change.current || 'empty' }} → {{ change.next || 'empty' }}</small>
+            }
+          </div>
+          <button type="button" (click)="configRevisionPreview.set(null)">Close preview</button>
+        </div>
+      }
+      @if (configRevisions().length) {
+        <div class="action-history">
+          @for (revision of configRevisions(); track revision.id) {
+            <article>
+              <div>
+                <strong>{{ revision.name }}</strong>
+                <small>{{ revision.entryCount }} settings · {{ revision.createdAt | date: 'medium' }}</small>
+              </div>
+              <div class="campaign-card__actions">
+                <button type="button" (click)="previewConfigRevision(revision.id)" [disabled]="revisionBusyId() === revision.id">Compare</button>
+                @if (revision.action === 'telegram_group_help.config_draft') {
+                  <button type="button" class="primary" (click)="publishConfigRevision(revision.id)" [disabled]="revisionBusyId() === revision.id">Publish</button>
+                } @else {
+                  <button type="button" (click)="restoreConfigRevision(revision.id)" [disabled]="revisionBusyId() === revision.id">Restore previous</button>
+                }
+              </div>
+            </article>
+          }
+        </div>
+      }
+    </section>
+
+    <section
+      class="settings-essentials panel"
+      [class.workspace-hidden]="activeWorkspaceSection() !== 'settings'"
+    >
+      <div class="panel-head">
+        <div>
           <p class="eyebrow">Quick setup</p>
           <h2>Community essentials</h2>
           <p>

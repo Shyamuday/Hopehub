@@ -27,6 +27,13 @@ export const API_PATHS = {
     TELEGRAM_BOTS_SETUP_ALL: '/admin/telegram-bots/setup-all',
     TELEGRAM_BOT_SESSION_UNLINK: (id: string) => `/admin/telegram-bots/sessions/${id}/unlink`,
     TELEGRAM_GROUP_HELP: '/admin/telegram-bots/group-help',
+    TELEGRAM_GROUP_HELP_REVISIONS: '/admin/telegram-bots/group-help/revisions',
+    TELEGRAM_GROUP_HELP_REVISION_PREVIEW: (id: string) =>
+      `/admin/telegram-bots/group-help/revisions/${id}/preview`,
+    TELEGRAM_GROUP_HELP_REVISION_PUBLISH: (id: string) =>
+      `/admin/telegram-bots/group-help/revisions/${id}/publish`,
+    TELEGRAM_GROUP_HELP_REVISION_RESTORE: (id: string) =>
+      `/admin/telegram-bots/group-help/revisions/${id}/restore`,
     TELEGRAM_GROUP_HELP_MEMBERS: '/admin/telegram-bots/group-help/members',
     TELEGRAM_GROUP_HELP_MEMBER_IDENTITY_HISTORY: (telegramUserId: string) =>
       `/admin/telegram-bots/group-help/members/${encodeURIComponent(telegramUserId)}/identity-history`,

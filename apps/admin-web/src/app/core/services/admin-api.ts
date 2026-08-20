@@ -842,6 +842,44 @@ export class AdminApi {
       ...(args as Parameters<AdminOpsApi['saveTelegramGroupHelpConfig']>),
     );
   }
+
+  getTelegramGroupHelpRevisions(...args: Parameters<AdminOpsApi['getTelegramGroupHelpRevisions']>) {
+    return this.ops.getTelegramGroupHelpRevisions(
+      ...(args as Parameters<AdminOpsApi['getTelegramGroupHelpRevisions']>),
+    );
+  }
+
+  createTelegramGroupHelpRevision(
+    ...args: Parameters<AdminOpsApi['createTelegramGroupHelpRevision']>
+  ) {
+    return this.ops.createTelegramGroupHelpRevision(
+      ...(args as Parameters<AdminOpsApi['createTelegramGroupHelpRevision']>),
+    );
+  }
+
+  previewTelegramGroupHelpRevision(
+    ...args: Parameters<AdminOpsApi['previewTelegramGroupHelpRevision']>
+  ) {
+    return this.ops.previewTelegramGroupHelpRevision(
+      ...(args as Parameters<AdminOpsApi['previewTelegramGroupHelpRevision']>),
+    );
+  }
+
+  publishTelegramGroupHelpRevision(
+    ...args: Parameters<AdminOpsApi['publishTelegramGroupHelpRevision']>
+  ) {
+    return this.ops.publishTelegramGroupHelpRevision(
+      ...(args as Parameters<AdminOpsApi['publishTelegramGroupHelpRevision']>),
+    );
+  }
+
+  restoreTelegramGroupHelpRevision(
+    ...args: Parameters<AdminOpsApi['restoreTelegramGroupHelpRevision']>
+  ) {
+    return this.ops.restoreTelegramGroupHelpRevision(
+      ...(args as Parameters<AdminOpsApi['restoreTelegramGroupHelpRevision']>),
+    );
+  }
   getTelegramGroupHelpRoles(...args: Parameters<AdminOpsApi['getTelegramGroupHelpRoles']>) {
     return this.ops.getTelegramGroupHelpRoles(
       ...(args as Parameters<AdminOpsApi['getTelegramGroupHelpRoles']>),

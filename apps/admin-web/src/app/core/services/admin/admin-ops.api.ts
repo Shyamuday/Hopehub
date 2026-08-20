@@ -336,6 +336,49 @@ export class AdminOpsApi extends AdminApiBase {
     );
   }
 
+  getTelegramGroupHelpRevisions() {
+    return firstValueFrom(
+      this.http.get<{ revisions: any[] }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_REVISIONS}`,
+      ),
+    );
+  }
+
+  createTelegramGroupHelpRevision(name: string, entries: Array<{ key: string; value: string }>) {
+    return firstValueFrom(
+      this.http.post<{ revision: any; entryCount: number }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_REVISIONS}`,
+        { name, entries },
+      ),
+    );
+  }
+
+  previewTelegramGroupHelpRevision(id: string) {
+    return firstValueFrom(
+      this.http.get<{ revision: any; changes: any[]; unchanged: number }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_REVISION_PREVIEW(id)}`,
+      ),
+    );
+  }
+
+  publishTelegramGroupHelpRevision(id: string) {
+    return firstValueFrom(
+      this.http.post<{ ok: boolean; config: any[] }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_REVISION_PUBLISH(id)}`,
+        {},
+      ),
+    );
+  }
+
+  restoreTelegramGroupHelpRevision(id: string) {
+    return firstValueFrom(
+      this.http.post<{ ok: boolean; config: any[] }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_REVISION_RESTORE(id)}`,
+        {},
+      ),
+    );
+  }
+
   getTelegramGroupHelpMembers(params: {
     scope?: 'main' | 'staff';
     q?: string;

@@ -94,6 +94,19 @@ const groupHelpSaveSchema = z.object({
     .max(GROUP_HELP_CONFIG_KEYS.length)
 });
 
+const groupHelpRevisionSchema = z.object({
+  name: z.string().trim().min(2).max(80),
+  entries: z
+    .array(
+      z.object({
+        key: z.string(),
+        value: z.string()
+      })
+    )
+    .min(1)
+    .max(GROUP_HELP_CONFIG_KEYS.length)
+});
+
 const groupHelpRoleSchema = z
   .object({
     chatId: z.string().trim().min(1).max(80).optional(),
@@ -368,6 +381,90 @@ async function groupHelpConfigMap() {
     values.telegramGroupHelpBotUsername = 'Hopehubbot';
   }
   return values;
+}
+
+type GroupHelpConfigEntryInput = { key: string; value: string };
+
+function validateGroupHelpConfigEntries(entries: GroupHelpConfigEntryInput[]) {
+  const updates: Array<{
+    key: string;
+    value: string;
+    meta: (typeof GROUP_HELP_CONFIG_META)[string];
+  }> = [];
+  for (const entry of entries) {
+    const meta = GROUP_HELP_CONFIG_META[entry.key];
+    if (!meta) throw new Error(`Unknown Group Help config key: ${entry.key}`);
+    const value = entry.value.trim();
+    if (value.length > meta.maxLength) {
+      throw new Error(`${meta.label} is too long. Maximum ${meta.maxLength} characters.`);
+    }
+    if (meta.type === 'select' && meta.options && !meta.options.includes(value)) {
+      throw new Error(`${meta.label} has an unsupported option.`);
+    }
+    if (meta.type === 'number' && value && !/^\d+$/.test(value)) {
+      throw new Error(`${meta.label} must be a whole number.`);
+    }
+    if (
+      ['telegramGroupHelpNightStart', 'telegramGroupHelpNightEnd'].includes(entry.key) &&
+      value &&
+      !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value)
+    ) {
+      throw new Error(`${meta.label} must use HH:MM format.`);
+    }
+    if (entry.key === 'telegramGroupHelpAntiFloodLimit' && value && !/^\d+\s+\d+$/.test(value)) {
+      throw new Error('Anti-flood threshold must use “count seconds”.');
+    }
+    updates.push({ key: entry.key, value, meta });
+  }
+  return updates;
+}
+
+function revisionEntries(metadata: Prisma.JsonValue | null): GroupHelpConfigEntryInput[] {
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) return [];
+  const raw = (metadata as { entries?: unknown }).entries;
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(
+    (entry): entry is GroupHelpConfigEntryInput =>
+      Boolean(entry) &&
+      typeof entry === 'object' &&
+      typeof (entry as { key?: unknown }).key === 'string' &&
+      typeof (entry as { value?: unknown }).value === 'string' &&
+      GROUP_HELP_CONFIG_KEYS.includes((entry as { key: string }).key as any)
+  );
+}
+
+async function persistGroupHelpConfig(
+  entries: GroupHelpConfigEntryInput[],
+  actor: { id: string; role: Role },
+  action: 'telegram_group_help.config_update' | 'telegram_group_help.config_publish',
+  summary: string,
+  targetId = 'config'
+) {
+  const updates = validateGroupHelpConfigEntries(entries);
+  const current = await groupHelpConfigMap();
+  const saved = await prisma.$transaction(
+    updates.map(({ key, value, meta }) =>
+      prisma.siteConfig.upsert({
+        where: { key },
+        create: { key, value, label: meta.label },
+        update: { value, label: meta.label }
+      })
+    )
+  );
+  await markGroupHelpConfigOverrides(updates.map(({ key, value }) => ({ key, value })));
+  await writeAuditLog({
+    actorId: actor.id,
+    actorRole: actor.role,
+    action,
+    targetType: 'telegram_group_help',
+    targetId,
+    summary,
+    metadata: {
+      entries: updates.map(({ key, value }) => ({ key, value })),
+      changes: updates.map(({ key, value }) => ({ key, before: current[key] ?? '', after: value }))
+    }
+  });
+  return saved;
 }
 
 async function groupHelpConnectionHealth(values: Record<string, string>) {
@@ -1047,6 +1144,191 @@ export function registerAdminTelegramBotRoutes(router: Router) {
   );
 
   router.get(
+    '/admin/telegram-bots/group-help/revisions',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (_req, res) => {
+      const revisions = await prisma.auditLog.findMany({
+        where: {
+          targetType: 'telegram_group_help',
+          action: {
+            in: [
+              'telegram_group_help.config_draft',
+              'telegram_group_help.config_update',
+              'telegram_group_help.config_publish'
+            ]
+          }
+        },
+        select: {
+          id: true,
+          action: true,
+          summary: true,
+          metadata: true,
+          actorId: true,
+          createdAt: true
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 30
+      });
+      res.json({
+        revisions: revisions.map((revision) => ({
+          ...revision,
+          name:
+            typeof (revision.metadata as { name?: unknown } | null)?.name === 'string'
+              ? (revision.metadata as { name: string }).name
+              : revision.summary || 'Configuration version',
+          entryCount: revisionEntries(revision.metadata).length
+        }))
+      });
+    })
+  );
+
+  router.post(
+    '/admin/telegram-bots/group-help/revisions',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (req, res) => {
+      const parsed = groupHelpRevisionSchema.safeParse(req.body ?? {});
+      if (!parsed.success)
+        return res.status(400).json({ message: 'Enter a draft name and valid settings.' });
+      try {
+        validateGroupHelpConfigEntries(parsed.data.entries);
+      } catch (error) {
+        return res
+          .status(400)
+          .json({ message: error instanceof Error ? error.message : 'Invalid draft.' });
+      }
+      const revision = await prisma.auditLog.create({
+        data: {
+          actorId: req.user!.id,
+          actorRole: req.user!.role,
+          action: 'telegram_group_help.config_draft',
+          targetType: 'telegram_group_help',
+          targetId: 'config-draft',
+          summary: `Draft: ${parsed.data.name}`,
+          metadata: {
+            name: parsed.data.name,
+            entries: parsed.data.entries
+          } as Prisma.InputJsonValue
+        },
+        select: { id: true, action: true, summary: true, metadata: true, createdAt: true }
+      });
+      res.status(201).json({ revision, entryCount: parsed.data.entries.length });
+    })
+  );
+
+  router.get(
+    '/admin/telegram-bots/group-help/revisions/:id/preview',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (req, res) => {
+      const revision = await prisma.auditLog.findUnique({ where: { id: routeParam(req, 'id') } });
+      if (!revision || revision.targetType !== 'telegram_group_help') {
+        return res.status(404).json({ message: 'Configuration version not found.' });
+      }
+      const entries = revisionEntries(revision.metadata);
+      if (!entries.length)
+        return res.status(400).json({ message: 'This version cannot be previewed.' });
+      const current = await groupHelpConfigMap();
+      const changes = entries
+        .map((entry) => ({
+          key: entry.key,
+          label: GROUP_HELP_CONFIG_META[entry.key].label,
+          current: current[entry.key] ?? '',
+          next: entry.value
+        }))
+        .filter((entry) => entry.current !== entry.next);
+      res.json({
+        revision: { id: revision.id, summary: revision.summary, createdAt: revision.createdAt },
+        changes,
+        unchanged: entries.length - changes.length
+      });
+    })
+  );
+
+  router.post(
+    '/admin/telegram-bots/group-help/revisions/:id/publish',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const revision = await prisma.auditLog.findUnique({ where: { id: routeParam(req, 'id') } });
+      if (!revision || revision.targetType !== 'telegram_group_help') {
+        return res.status(404).json({ message: 'Configuration version not found.' });
+      }
+      const entries = revisionEntries(revision.metadata);
+      if (!entries.length)
+        return res.status(400).json({ message: 'This version cannot be published.' });
+      try {
+        await persistGroupHelpConfig(
+          entries,
+          { id: req.user!.id, role: req.user!.role },
+          'telegram_group_help.config_publish',
+          `Published Group Help configuration version “${revision.summary || revision.id}”.`,
+          revision.id
+        );
+      } catch (error) {
+        return res
+          .status(400)
+          .json({ message: error instanceof Error ? error.message : 'Could not publish version.' });
+      }
+      const values = await groupHelpConfigMap();
+      res.json({
+        ok: true,
+        config: GROUP_HELP_CONFIG_KEYS.map((key) => ({
+          ...GROUP_HELP_CONFIG_META[key],
+          value: values[key] ?? ''
+        }))
+      });
+    })
+  );
+
+  router.post(
+    '/admin/telegram-bots/group-help/revisions/:id/restore',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      const revision = await prisma.auditLog.findUnique({ where: { id: routeParam(req, 'id') } });
+      if (!revision || revision.targetType !== 'telegram_group_help') {
+        return res.status(404).json({ message: 'Configuration version not found.' });
+      }
+      const metadata = revision.metadata as {
+        changes?: Array<{ key?: string; before?: string }>;
+      } | null;
+      const entries = (metadata?.changes || [])
+        .filter(
+          (change): change is { key: string; before: string } =>
+            typeof change?.key === 'string' &&
+            GROUP_HELP_CONFIG_KEYS.includes(change.key as any) &&
+            typeof change.before === 'string'
+        )
+        .map((change) => ({ key: change.key, value: change.before }));
+      if (!entries.length)
+        return res.status(400).json({ message: 'This version has no prior values to restore.' });
+      try {
+        await persistGroupHelpConfig(
+          entries,
+          { id: req.user!.id, role: req.user!.role },
+          'telegram_group_help.config_publish',
+          `Restored ${entries.length} Group Help setting(s) from a previous version.`,
+          revision.id
+        );
+      } catch (error) {
+        return res
+          .status(400)
+          .json({ message: error instanceof Error ? error.message : 'Could not restore version.' });
+      }
+      const values = await groupHelpConfigMap();
+      res.json({
+        ok: true,
+        config: GROUP_HELP_CONFIG_KEYS.map((key) => ({
+          ...GROUP_HELP_CONFIG_META[key],
+          value: values[key] ?? ''
+        }))
+      });
+    })
+  );
+
+  router.get(
     '/admin/telegram-bots/group-help/members',
     authRequired,
     allowRoles(Role.ADMIN, Role.HR),
@@ -1556,69 +1838,18 @@ export function registerAdminTelegramBotRoutes(router: Router) {
       if (!parsed.success) {
         return res.status(400).json({ message: 'Invalid Group Help config payload.' });
       }
-
-      const updates: Array<{
-        key: string;
-        value: string;
-        meta: (typeof GROUP_HELP_CONFIG_META)[string];
-      }> = [];
-
-      for (const entry of parsed.data.entries) {
-        const meta = GROUP_HELP_CONFIG_META[entry.key];
-        if (!meta) {
-          return res.status(400).json({ message: `Unknown Group Help config key: ${entry.key}` });
-        }
-        const value = entry.value.trim();
-        if (value.length > meta.maxLength) {
-          return res
-            .status(400)
-            .json({ message: `${meta.label} is too long. Maximum ${meta.maxLength} characters.` });
-        }
-        if (meta.type === 'select' && meta.options && !meta.options.includes(value)) {
-          return res.status(400).json({ message: `${meta.label} has an unsupported option.` });
-        }
-        if (meta.type === 'number' && value && !/^\d+$/.test(value)) {
-          return res.status(400).json({ message: `${meta.label} must be a whole number.` });
-        }
-        if (
-          ['telegramGroupHelpNightStart', 'telegramGroupHelpNightEnd'].includes(entry.key) &&
-          value &&
-          !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value)
-        ) {
-          return res.status(400).json({ message: `${meta.label} must use HH:MM format.` });
-        }
-        if (
-          entry.key === 'telegramGroupHelpAntiFloodLimit' &&
-          value &&
-          !/^\d+\s+\d+$/.test(value)
-        ) {
-          return res
-            .status(400)
-            .json({ message: 'Anti-flood threshold must use “count seconds”.' });
-        }
-        updates.push({ key: entry.key, value, meta });
+      try {
+        await persistGroupHelpConfig(
+          parsed.data.entries,
+          { id: req.user!.id, role: req.user!.role },
+          'telegram_group_help.config_update',
+          `Updated ${parsed.data.entries.length} Group Help config item(s).`
+        );
+      } catch (error) {
+        return res.status(400).json({
+          message: error instanceof Error ? error.message : 'Invalid Group Help config payload.'
+        });
       }
-
-      const saved = await prisma.$transaction(
-        updates.map(({ key, value, meta }) =>
-          prisma.siteConfig.upsert({
-            where: { key },
-            create: { key, value, label: meta.label },
-            update: { value, label: meta.label }
-          })
-        )
-      );
-      await markGroupHelpConfigOverrides(updates.map(({ key, value }) => ({ key, value })));
-
-      await writeAuditLog({
-        actorId: req.user!.id,
-        actorRole: req.user!.role,
-        action: 'telegram_group_help.config_update',
-        targetType: 'telegram_group_help',
-        targetId: 'config',
-        summary: `Updated ${saved.length} Group Help config item(s).`,
-        metadata: { keys: saved.map((row) => row.key) }
-      });
 
       const values = await groupHelpConfigMap();
       res.json({
