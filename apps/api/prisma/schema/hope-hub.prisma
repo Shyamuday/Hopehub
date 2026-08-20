@@ -80,7 +80,7 @@ model ProviderRoleDefinition {
   sortOrder                 Int            @default(0)
   version                   Int            @default(1)
   createdAt                 DateTime       @default(now())
-  updatedAt                 DateTime       @updatedAt
+  updatedAt                 DateTime       @default(now()) @updatedAt
 
   assignments ProviderRoleAssignment[]
   services    CareTeamService[]
@@ -100,7 +100,7 @@ model ProviderRoleAssignment {
   verifiedById     String?
   assignedById     String?
   createdAt        DateTime                     @default(now())
-  updatedAt        DateTime                     @updatedAt
+  updatedAt        DateTime                     @default(now()) @updatedAt
 
   doctor Doctor                 @relation(fields: [doctorId], references: [id], onDelete: Cascade)
   role   ProviderRoleDefinition @relation(fields: [roleCode], references: [code], onDelete: Restrict)
@@ -153,7 +153,7 @@ model MentalHealthProviderProfile {
   @@index([doctorId])
   @@index([careTeamType])
   @@index([listenerSafetyAcknowledgedAt])
-  @@index([autoMatchEnabled, acceptingNewUsers])
+  @@index([autoMatchEnabled, acceptingNewUsers], map: "MentalHealthProviderProfile_autoMatchEnabled_acceptingNewUsers_")
 }
 
 model CareTeamService {
@@ -199,6 +199,8 @@ model CareTeamService {
   @@index([providerRole, isActive])
   @@index([providerRoleCode, isActive])
   @@index([approvalStatus, isActive])
+  @@index([offerEndsAt])
+  @@index([offerBookingLimit])
 }
 
 model CareTeamPricingTemplate {
@@ -220,7 +222,7 @@ model CareTeamPricingTemplate {
   isActive                 Boolean                    @default(true)
   sortOrder                Int                        @default(0)
   createdAt                DateTime                   @default(now())
-  updatedAt                DateTime                   @updatedAt
+  updatedAt                DateTime                   @default(now()) @updatedAt
 
   @@index([isActive, sortOrder])
 }
@@ -476,7 +478,7 @@ model HopeHubOffering {
   requiresLeadForm          Boolean                   @default(false)
   sortOrder                 Int                       @default(0)
   createdAt                 DateTime                  @default(now())
-  updatedAt                 DateTime                  @updatedAt
+  updatedAt                 DateTime                  @default(now()) @updatedAt
 
   banners           HopeHubBanner[]
   organizationLeads HopeHubOrganizationLead[]
@@ -504,7 +506,7 @@ model HopeHubBanner {
   metadata        Json?
   offering        HopeHubOffering? @relation(fields: [offeringId], references: [id], onDelete: SetNull)
   createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  updatedAt       DateTime         @default(now()) @updatedAt
 
   @@index([isActive, sortOrder])
   @@index([offeringId])
@@ -528,7 +530,7 @@ model HopeHubOrganizationLead {
   followUpNotes    String?                       @db.Text
   offering         HopeHubOffering?              @relation(fields: [offeringId], references: [id], onDelete: SetNull)
   createdAt        DateTime                      @default(now())
-  updatedAt        DateTime                      @updatedAt
+  updatedAt        DateTime                      @default(now()) @updatedAt
 
   @@index([status, createdAt])
   @@index([organizationType])
@@ -708,7 +710,7 @@ model LifestyleTipRecommendationRule {
 
   lifestyleTip LifestyleTip @relation(fields: [lifestyleTipId], references: [id], onDelete: Cascade)
 
-  @@index([assessmentType, minScore, maxScore])
+  @@index([assessmentType, minScore, maxScore], map: "LifestyleTipRecommendationRule_assessmentType_minScore_maxScore")
   @@index([concernSlug, priority])
   @@index([lifestyleTipId])
 }

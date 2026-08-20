@@ -307,7 +307,7 @@ model ProviderAvailabilityRule {
   endsOn              DateTime? @db.Date
   isActive            Boolean   @default(true)
   createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  updatedAt           DateTime  @default(now()) @updatedAt
 
   doctor          Doctor           @relation(fields: [doctorId], references: [id], onDelete: Cascade)
   careTeamService CareTeamService? @relation(fields: [careTeamServiceId], references: [id], onDelete: SetNull)

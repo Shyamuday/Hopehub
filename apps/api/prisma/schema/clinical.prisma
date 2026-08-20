@@ -94,6 +94,9 @@ model Consultation {
   feedback              ConsultationFeedback[]
   createdAt             DateTime                         @default(now())
   updatedAt             DateTime                         @updatedAt
+
+  @@index([consultationMode])
+  @@index([preferredDoctorUserId])
 }
 
 model ConsultationFeedback {
@@ -250,7 +253,7 @@ model ProviderEarning {
   paidAt                 DateTime?
   paidByUserId           String?
   createdAt              DateTime             @default(now())
-  updatedAt              DateTime             @updatedAt
+  updatedAt              DateTime             @default(now()) @updatedAt
 
   consultation Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
   payment      Payment      @relation(fields: [paymentId], references: [id], onDelete: Cascade)

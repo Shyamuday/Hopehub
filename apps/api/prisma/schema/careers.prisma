@@ -137,7 +137,10 @@ model CounsellorApplication {
   @@index([email])
   @@index([phone])
   @@index([specialization])
-  @@index([listenerScreeningPassed, listenerScreeningCompletedAt])
+  @@index([careTeamType])
+  @@index([listenerScreeningPassed])
+  @@index([listenerScreeningPassed, listenerScreeningCompletedAt], map: "CounsellorApplication_listenerScreeningPassed_listenerScreening")
+  @@index([autoApprovedDoctorUserId])
   @@index([createdAt])
 }
 
@@ -253,4 +256,5 @@ model CareContributor {
   @@index([applicationTrack])
   @@index([serviceScope])
   @@index([email])
+  @@index([careTeamType])
 }

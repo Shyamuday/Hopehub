@@ -117,7 +117,7 @@ model ReferralFreeCallReward {
   couponCode              String                       @unique
   status                  ReferralFreeCallRewardStatus @default(AVAILABLE)
   qualifyingReferralCount Int                          @default(5)
-  qualifyingReferralIds   Json
+  qualifyingReferralIds   Json                         @default("[]")
   redeemedConsultationId  String?                      @unique
   earnedAt                DateTime                     @default(now())
   redeemedAt              DateTime?

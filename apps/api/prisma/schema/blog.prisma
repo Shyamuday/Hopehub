@@ -22,6 +22,7 @@ model BlogPost {
   comments BlogComment[]
 
   @@index([isPublished, isHidden, category])
+  @@index([isPublished, category])
   @@index([slug])
   @@index([publishedAt])
   @@index([viewCount])

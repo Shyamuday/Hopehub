@@ -452,7 +452,7 @@ model AuthSession {
   revokedAt        DateTime?
   lastUsedAt       DateTime?
   createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  updatedAt        DateTime  @default(now()) @updatedAt
   user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])

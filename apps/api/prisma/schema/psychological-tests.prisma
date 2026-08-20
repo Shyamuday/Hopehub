@@ -34,7 +34,7 @@ enum PsychologicalTestSourceRepository {
 }
 
 model PsychologicalTestCatalog {
-  id String @id @default(cuid())
+  id String @id @default(dbgenerated("concat('psych_', md5(((random())::text || (clock_timestamp())::text)))"))
 
   slug         String  @unique
   name         String
@@ -61,7 +61,7 @@ model PsychologicalTestCatalog {
   metadata Json?
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime @default(now()) @updatedAt
 
   @@index([category, isActive])
   @@index([accessLevel, isActive])
