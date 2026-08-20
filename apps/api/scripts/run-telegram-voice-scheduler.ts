@@ -346,7 +346,18 @@ async function expireMissedVoiceChats(client: TelegramClient, now: Date) {
           'Retrying release of missed native VC'
         );
       } else {
-        await prisma.telegramCommunityState.delete({ where: key }).catch(() => null);
+        // Telegram can continue to return the discarded scheduled call for a
+        // short period. Keep its call credentials during that window so the
+        // next one-minute pass can verify/discard the *same* stale slot. If
+        // we delete this state immediately, the following pass sees a
+        // schedule but cannot identify it as the missed VC, leaving every
+        // later VC blocked behind it.
+        await deferForScheduledVoiceCall(
+          event.chatId,
+          payload,
+          now,
+          'Waiting for Telegram to clear the released missed VC'
+        );
       }
     }
     await removeTelegramCommunityEventAnnouncement(event);
