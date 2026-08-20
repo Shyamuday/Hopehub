@@ -1,8 +1,9 @@
-import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
+import { Component, DestroyRef, OnInit, PLATFORM_ID, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, interval } from 'rxjs';
 import { environment } from '../../../../../environments/environment';
 import {
   AuthService,
@@ -105,6 +106,8 @@ const HOME_PROVIDER_SECTIONS: ReadonlyArray<Omit<HomeProviderSection, 'providers
 })
 export class LiveConnectComponent implements OnInit {
   private static readonly DEFAULT_LIVE_COUPON = 'WELCOME100';
+  private static readonly PROVIDER_CAROUSEL_INTERVAL_MS = 7000;
+  private static readonly PROVIDER_CAROUSEL_INTERACTION_PAUSE_MS = 12000;
   readonly UX = CONSUMER_UX_COPY;
   readonly ROUTES = CONSUMER_ROUTES;
   private readonly bookingService = inject(BookingService);
@@ -114,11 +117,15 @@ export class LiveConnectComponent implements OnInit {
   private readonly paymentService = inject(PaymentService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
+  private readonly document = inject(DOCUMENT);
+  private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
   private providerRequestVersion = 0;
+  private readonly providerCarouselPausedUntil = new Map<ConsumerSupportPath, number>();
 
   readonly currentUser = signal<User | null>(null);
   readonly providers = signal<HopeHubProvider[]>([]);
   readonly providerSections = signal<HomeProviderSection[]>([]);
+  readonly providerCarouselIndexes = signal<Partial<Record<ConsumerSupportPath, number>>>({});
   readonly groups = signal<HopeHubLiveGroup[]>([]);
   readonly loading = signal(false);
   readonly groupsLoading = signal(false);
@@ -158,6 +165,50 @@ export class LiveConnectComponent implements OnInit {
     this.loadProviders();
     this.loadGroups();
     this.loadAvailableCoupons();
+
+    if (this.isBrowser) {
+      interval(LiveConnectComponent.PROVIDER_CAROUSEL_INTERVAL_MS)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(() => this.autoAdvanceVisibleProviderCarousels());
+    }
+  }
+
+  providerCarouselIndex(roleGroup: ConsumerSupportPath): number {
+    return this.providerCarouselIndexes()[roleGroup] ?? 0;
+  }
+
+  pauseProviderCarousel(roleGroup: ConsumerSupportPath): void {
+    this.providerCarouselPausedUntil.set(
+      roleGroup,
+      Date.now() + LiveConnectComponent.PROVIDER_CAROUSEL_INTERACTION_PAUSE_MS,
+    );
+  }
+
+  moveProviderCarousel(roleGroup: ConsumerSupportPath, direction: -1 | 1): void {
+    this.pauseProviderCarousel(roleGroup);
+    this.scrollProviderCarousel(roleGroup, direction, false);
+  }
+
+  updateProviderCarouselIndex(roleGroup: ConsumerSupportPath, event: Event): void {
+    if (!this.isBrowser) return;
+    const carousel = event.currentTarget as HTMLElement | null;
+    if (!carousel) return;
+    const cards = this.providerCarouselCards(carousel);
+    if (!cards.length) return;
+
+    const carouselLeft = carousel.getBoundingClientRect().left;
+    let closestIndex = 0;
+    let closestDistance = Number.POSITIVE_INFINITY;
+    cards.forEach((card, index) => {
+      const distance = Math.abs(card.getBoundingClientRect().left - carouselLeft);
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestIndex = index;
+      }
+    });
+
+    if (this.providerCarouselIndex(roleGroup) === closestIndex) return;
+    this.providerCarouselIndexes.update((indexes) => ({ ...indexes, [roleGroup]: closestIndex }));
   }
 
   setView(view: 'providers' | 'groups'): void {
@@ -849,6 +900,7 @@ export class LiveConnectComponent implements OnInit {
       });
       const providers = sections.flatMap((section) => section.providers);
       this.providerSections.set(sections.filter((section) => section.providers.length > 0));
+      this.providerCarouselIndexes.set({});
       this.providers.set(providers);
       this.loading.set(false);
       if (!providers.length) {
@@ -863,6 +915,48 @@ export class LiveConnectComponent implements OnInit {
       this.loading.set(false);
       this.message.set(CONSUMER_UX_COPY.messages.liveConnectSlow);
     }
+  }
+
+  private autoAdvanceVisibleProviderCarousels(): void {
+    const view = this.document.defaultView;
+    if (!view || view.innerWidth > 640 || this.document.hidden) return;
+    if (view.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    this.providerSections().forEach((section) => {
+      if ((this.providerCarouselPausedUntil.get(section.roleGroup) ?? 0) > Date.now()) return;
+      this.scrollProviderCarousel(section.roleGroup, 1, true);
+    });
+  }
+
+  private scrollProviderCarousel(
+    roleGroup: ConsumerSupportPath,
+    direction: -1 | 1,
+    automatic: boolean,
+  ): void {
+    const view = this.document.defaultView;
+    if (!view || view.innerWidth > 640) return;
+
+    const carousel = this.document.getElementById(`home-provider-carousel-${roleGroup}`);
+    if (!carousel) return;
+    const bounds = carousel.getBoundingClientRect();
+    if (automatic && (bounds.bottom <= 0 || bounds.top >= view.innerHeight)) return;
+
+    const cards = this.providerCarouselCards(carousel);
+    if (cards.length < 2) return;
+    const currentIndex = Math.min(this.providerCarouselIndex(roleGroup), cards.length - 1);
+    const nextIndex = (currentIndex + direction + cards.length) % cards.length;
+    const cardBounds = cards[nextIndex].getBoundingClientRect();
+    const targetLeft = carousel.scrollLeft + cardBounds.left - bounds.left;
+    const reduceMotion = view.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    carousel.scrollTo({ left: targetLeft, behavior: reduceMotion ? 'auto' : 'smooth' });
+    this.providerCarouselIndexes.update((indexes) => ({ ...indexes, [roleGroup]: nextIndex }));
+  }
+
+  private providerCarouselCards(carousel: HTMLElement): HTMLElement[] {
+    return Array.from(carousel.children).filter((child) =>
+      child.classList.contains('live-provider-card'),
+    ) as HTMLElement[];
   }
 
   private providerServiceForMode(

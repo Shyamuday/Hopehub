@@ -48,7 +48,9 @@
                     <p>{{ section.description }}</p>
                   </div>
                   <div class="home-provider-section__actions">
-                    <span class="home-provider-section__summary">{{ sectionSummary(section) }}</span>
+                    <span class="home-provider-section__summary">{{
+                      sectionSummary(section)
+                    }}</span>
                     <a
                       [routerLink]="ROUTES.links.careTeam"
                       [queryParams]="{ roleGroup: section.roleGroup }"
@@ -58,77 +60,150 @@
                   </div>
                 </header>
 
-                <div class="home-provider-grid">
-                  @for (provider of section.providers; track provider.id) {
+                <div
+                  class="home-provider-grid"
+                  [id]="'home-provider-carousel-' + section.roleGroup"
+                  [attr.aria-label]="section.title"
+                  [attr.aria-roledescription]="section.providers.length > 1 ? 'carousel' : null"
+                  [attr.tabindex]="section.providers.length > 1 ? 0 : null"
+                  (pointerdown)="pauseProviderCarousel(section.roleGroup)"
+                  (focusin)="pauseProviderCarousel(section.roleGroup)"
+                  (keydown.arrowleft)="
+                    $event.preventDefault(); moveProviderCarousel(section.roleGroup, -1)
+                  "
+                  (keydown.arrowright)="
+                    $event.preventDefault(); moveProviderCarousel(section.roleGroup, 1)
+                  "
+                  (scroll)="updateProviderCarouselIndex(section.roleGroup, $event)"
+                >
+                  @for (
+                    provider of section.providers;
+                    track provider.id;
+                    let providerIndex = $index
+                  ) {
                     <article
                       class="live-provider-card"
                       [class.live-provider-card--bookable]="!isProviderLive(provider)"
+                      [attr.aria-label]="provider.name"
+                      [attr.aria-posinset]="providerIndex + 1"
+                      [attr.aria-setsize]="section.providers.length"
+                      aria-roledescription="slide"
+                      role="group"
                     >
-                        <div class="live-provider-card__top">
-                          @if (providerImageUrl(provider); as imageUrl) {
-                            <img
-                              [src]="imageUrl"
-                              [alt]="provider.name"
-                              class="live-provider-avatar"
-                            />
-                          } @else {
-                            <div class="live-provider-avatar live-provider-avatar--fallback">
-                              {{ provider.name.slice(0, 1) }}
-                            </div>
-                          }
-                          <div class="live-provider-card__identity">
-                            <span class="verified-dot">{{ providerTrustLabel(provider) }}</span>
-                            <h3>{{ provider.name }}</h3>
-                            <p>{{ providerRoleLabel(provider) || providerTierLabel(provider) }}</p>
+                      <div class="live-provider-card__top">
+                        @if (providerImageUrl(provider); as imageUrl) {
+                          <img
+                            [src]="imageUrl"
+                            [alt]="provider.name"
+                            class="live-provider-avatar"
+                          />
+                        } @else {
+                          <div class="live-provider-avatar live-provider-avatar--fallback">
+                            {{ provider.name.slice(0, 1) }}
                           </div>
+                        }
+                        <div class="live-provider-card__identity">
+                          <span class="verified-dot">{{ providerTrustLabel(provider) }}</span>
+                          <h3>{{ provider.name }}</h3>
+                          <p>{{ providerRoleLabel(provider) || providerTierLabel(provider) }}</p>
                         </div>
+                      </div>
 
-                        <div class="live-provider-card__status-row">
-                          <span
-                            class="live-dot"
-                            [class.live-dot--bookable]="!isProviderLive(provider)"
-                          >{{ providerAvailabilityLabel(provider) }}</span>
-                          <span class="live-provider-card__private-note">Private 1:1 support</span>
-                          @if (provider.ratingSummary?.ratingCount) {
-                            <span class="live-provider-card__rating">
-                              ★ {{ provider.ratingSummary.averageRating }} ·
-                              {{ provider.ratingSummary.ratingCount }} ratings
-                            </span>
-                          }
-                        </div>
-
-                        <div class="live-provider-card__meta">
-                          <span>🌐 {{ providerLanguagesLabel(provider) }}</span>
-                          <span>✨ {{ providerFocusLabel(provider) }}</span>
-                        </div>
-
-                        <div class="live-provider-card__price">
-                          @if (hasLiveFirstSessionOffer(provider)) {
-                            <span class="live-provider-card__offer">First-session offer</span>
-                            <span class="live-provider-card__regular-price">
-                              {{ liveRegularPriceLabel(provider) }}
-                            </span>
-                          }
-                          <span>{{ livePriceLabel(provider) }}</span>
-                        </div>
-
-                        <app-button
-                          type="button"
-                          class="mt-5"
-                          block
-                          [variant]="isProviderLive(provider) ? 'primary' : 'secondary'"
-                          [disabled]="startingProviderId() === provider.id"
-                          (click)="selectProvider(provider)"
+                      <div class="live-provider-card__status-row">
+                        <span
+                          class="live-dot"
+                          [class.live-dot--bookable]="!isProviderLive(provider)"
+                          >{{ providerAvailabilityLabel(provider) }}</span
                         >
-                          {{
-                            startingProviderId() === provider.id
-                              ? 'Starting...'
-                              : buttonLabel(provider)
-                          }}
-                        </app-button>
+                        <span class="live-provider-card__private-note">Private 1:1 support</span>
+                        @if (provider.ratingSummary?.ratingCount) {
+                          <span class="live-provider-card__rating">
+                            ★ {{ provider.ratingSummary.averageRating }} ·
+                            {{ provider.ratingSummary.ratingCount }} ratings
+                          </span>
+                        }
+                      </div>
+
+                      <div class="live-provider-card__meta">
+                        <span>🌐 {{ providerLanguagesLabel(provider) }}</span>
+                        <span>✨ {{ providerFocusLabel(provider) }}</span>
+                      </div>
+
+                      <div class="live-provider-card__price">
+                        @if (hasLiveFirstSessionOffer(provider)) {
+                          <span class="live-provider-card__offer">First-session offer</span>
+                          <span class="live-provider-card__regular-price">
+                            {{ liveRegularPriceLabel(provider) }}
+                          </span>
+                        }
+                        <span>{{ livePriceLabel(provider) }}</span>
+                      </div>
+
+                      <app-button
+                        type="button"
+                        class="mt-5"
+                        block
+                        [variant]="isProviderLive(provider) ? 'primary' : 'secondary'"
+                        [disabled]="startingProviderId() === provider.id"
+                        (click)="selectProvider(provider)"
+                      >
+                        {{
+                          startingProviderId() === provider.id
+                            ? 'Starting...'
+                            : buttonLabel(provider)
+                        }}
+                      </app-button>
                     </article>
                   }
                 </div>
+
+                @if (section.providers.length > 1) {
+                  <div
+                    class="home-provider-carousel-controls"
+                    [attr.aria-label]="'Browse ' + section.title"
+                    role="group"
+                  >
+                    <button
+                      type="button"
+                      class="home-provider-carousel-controls__arrow"
+                      [attr.aria-controls]="'home-provider-carousel-' + section.roleGroup"
+                      [attr.aria-label]="'Previous ' + section.title"
+                      (click)="moveProviderCarousel(section.roleGroup, -1)"
+                    >
+                      <span aria-hidden="true">‹</span>
+                    </button>
+
+                    <div class="home-provider-carousel-controls__position">
+                      <div class="home-provider-carousel-controls__dots" aria-hidden="true">
+                        @for (
+                          provider of section.providers;
+                          track provider.id;
+                          let dotIndex = $index
+                        ) {
+                          <span
+                            [class.is-active]="
+                              providerCarouselIndex(section.roleGroup) === dotIndex
+                            "
+                          ></span>
+                        }
+                      </div>
+                      <span>
+                        {{ providerCarouselIndex(section.roleGroup) + 1 }} of
+                        {{ section.providers.length }} · Swipe to explore
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      class="home-provider-carousel-controls__arrow"
+                      [attr.aria-controls]="'home-provider-carousel-' + section.roleGroup"
+                      [attr.aria-label]="'Next ' + section.title"
+                      (click)="moveProviderCarousel(section.roleGroup, 1)"
+                    >
+                      <span aria-hidden="true">›</span>
+                    </button>
+                  </div>
+                }
               </section>
             }
           </div>
@@ -146,9 +221,7 @@
               </ul>
             </div>
             <div class="live-booking-fallback__actions">
-              <app-button type="button" (click)="bookConsultation()">
-                Book a session
-              </app-button>
+              <app-button type="button" (click)="bookConsultation()"> Book a session </app-button>
               <app-button [routerLink]="ROUTES.links.careTeam" variant="secondary">
                 View support team
               </app-button>
