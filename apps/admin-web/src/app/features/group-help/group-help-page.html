@@ -966,6 +966,108 @@
           </p>
         </div>
       </div>
+
+      <div class="member-directory">
+        <div class="member-directory__head">
+          <div>
+            <h3>Telegram member directory</h3>
+            <p>
+              Search synchronized members, copy a direct mention, or place their Telegram ID into
+              the moderation tool.
+            </p>
+          </div>
+          <strong>{{ memberDirectoryTotal() }} active</strong>
+        </div>
+        <div class="member-directory__scope" aria-label="Telegram member group">
+          <button
+            type="button"
+            [class.active]="memberDirectoryScope() === 'main'"
+            (click)="setMemberDirectoryScope('main')"
+          >
+            Main group
+          </button>
+          <button
+            type="button"
+            [class.active]="memberDirectoryScope() === 'staff'"
+            (click)="setMemberDirectoryScope('staff')"
+          >
+            Private staff group
+          </button>
+        </div>
+        @if (memberDirectorySyncedAt()) {
+          <small class="muted">
+            Last complete sync: {{ memberDirectorySyncedAt() | date: 'medium' }} · Next refresh:
+            {{ memberDirectoryNextSyncAt() | date: 'medium' }}
+          </small>
+        }
+        <div class="member-directory__search">
+          <input
+            type="search"
+            [value]="memberDirectorySearch()"
+            (input)="memberDirectorySearch.set($any($event.target).value)"
+            (keydown.enter)="loadMemberDirectory()"
+            placeholder="Search name, username, or Telegram ID"
+            aria-label="Search Telegram members"
+          />
+          <button
+            type="button"
+            class="primary"
+            [disabled]="memberDirectoryLoading()"
+            (click)="loadMemberDirectory()"
+          >
+            {{ memberDirectoryLoading() ? 'Searching…' : 'Search' }}
+          </button>
+        </div>
+        @if (memberDirectoryLoading()) {
+          <p class="muted">Loading synchronized Telegram members…</p>
+        } @else if (memberDirectory().length) {
+          <div class="member-directory__list">
+            @for (member of memberDirectory(); track member.telegramUserId) {
+              <article>
+                <span>
+                  <strong>{{ member.displayName }}</strong>
+                  <small>
+                    @if (member.username) {
+                      &#64;{{ member.username }} ·
+                    }
+                    ID {{ member.telegramUserId }}
+                  </small>
+                  @if (member.telegramAdministrator) {
+                    <em>{{ member.telegramAdministratorTitle || 'Telegram administrator' }}</em>
+                  }
+                </span>
+                <div>
+                  <button
+                    type="button"
+                    (click)="copy(member.mention, 'member-mention-' + member.telegramUserId)"
+                  >
+                    {{
+                      copied() === 'member-mention-' + member.telegramUserId
+                        ? 'Copied'
+                        : 'Copy mention'
+                    }}
+                  </button>
+                  <button type="button" class="primary" (click)="useMemberForModeration(member)">
+                    Use target
+                  </button>
+                </div>
+              </article>
+            }
+          </div>
+          @if (memberDirectoryTotal() > memberDirectory().length) {
+            <small class="muted"
+              >Showing the first {{ memberDirectory().length }} matches. Search to narrow the
+              list.</small
+            >
+          }
+        } @else {
+          <p class="muted">
+            No synchronized members found. The MTProto worker refreshes the directory according to
+            the Bot settings interval.
+          </p>
+        }
+      </div>
+
       <div class="moderator-form">
         <label>
           Action

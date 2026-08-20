@@ -1091,6 +1091,27 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
     defaultValue: ''
   },
   {
+    key: 'telegramGroupHelpMemberDirectorySync',
+    label: 'Telegram member directory sync',
+    description:
+      'Use the connected MTProto account to synchronize active members from the main and private staff groups.',
+    section: 'people',
+    type: 'select',
+    options: ['on', 'off'],
+    maxLength: 8,
+    defaultValue: 'on'
+  },
+  {
+    key: 'telegramGroupHelpMemberSyncHours',
+    label: 'Member directory refresh interval',
+    description:
+      'Hours between complete MTProto member-directory refreshes. Membership updates from the bot continue between refreshes.',
+    section: 'people',
+    type: 'number',
+    maxLength: 4,
+    defaultValue: '6'
+  },
+  {
     key: 'telegramGroupHelpCustomReplies',
     label: 'Custom replies',
     description: 'One “trigger => response” definition per line.',

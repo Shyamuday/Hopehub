@@ -8,6 +8,7 @@ import { removeTelegramCommunityEventAnnouncement } from '../src/services/telegr
 import { sendCommunityMessage } from '../src/services/telegram-community-bots.client.js';
 import { getSiteConfigMap } from '../src/services/site-config.service.js';
 import { GROUP_HELP_BOT_SLUG } from '../src/constants/telegram-community-bot.constants.js';
+import { synchronizeConfiguredTelegramGroupMembers } from '../src/services/telegram-mtproto-member-sync.js';
 
 const SESSION_PATH = '/etc/hopehub-telegram-user-session';
 const STATE_BOT = 'TELEGRAM_NATIVE_VOICE_SCHEDULER';
@@ -383,6 +384,21 @@ async function main() {
   });
   await client.connect();
   try {
+    try {
+      const memberSync = await synchronizeConfiguredTelegramGroupMembers(client);
+      for (const result of memberSync) {
+        if (result.skipped) continue;
+        console.log(
+          `Synchronized ${result.scope} Telegram directory ${result.chatId}: ${result.active} active, ${result.administrators} administrators, ${result.departed} departed.`
+        );
+      }
+    } catch (error) {
+      // Member synchronization must not block native VC scheduling. A later
+      // scheduler run retries because a failed sync never advances its state.
+      console.warn(
+        `Telegram member directory sync failed: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
     await sendVoiceHostReminders(now);
     await expireMissedVoiceChats(client, now);
     const events = await prisma.telegramCommunityEvent.findMany({

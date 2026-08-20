@@ -336,6 +336,43 @@ export class AdminOpsApi extends AdminApiBase {
     );
   }
 
+  getTelegramGroupHelpMembers(params: {
+    scope?: 'main' | 'staff';
+    q?: string;
+    page?: number;
+    pageSize?: number;
+  }) {
+    return firstValueFrom(
+      this.http.get<{
+        scope: 'main' | 'staff';
+        chatId: string;
+        page: number;
+        pageSize: number;
+        total: number;
+        synchronizedAt?: string | null;
+        nextSyncAt?: string | null;
+        members: Array<{
+          telegramUserId: string;
+          username?: string | null;
+          firstName?: string | null;
+          lastName?: string | null;
+          displayName: string;
+          mention: string;
+          commandTarget: string;
+          telegramAdministrator: boolean;
+          telegramAdministratorTitle?: string | null;
+        }>;
+      }>(`${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_MEMBERS}`, {
+        params: {
+          scope: params.scope || 'main',
+          q: params.q || '',
+          page: String(params.page || 1),
+          pageSize: String(params.pageSize || 50),
+        },
+      }),
+    );
+  }
+
   getTelegramGroupHelpRoles(chatId?: string) {
     return firstValueFrom(
       this.http.get<{

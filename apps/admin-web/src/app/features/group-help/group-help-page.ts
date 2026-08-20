@@ -216,6 +216,13 @@ export class GroupHelpPage {
   readonly moderatorAction = signal('warn');
   readonly moderatorTarget = signal('');
   readonly moderatorReason = signal('');
+  readonly memberDirectory = signal<any[]>([]);
+  readonly memberDirectoryScope = signal<'main' | 'staff'>('main');
+  readonly memberDirectorySearch = signal('');
+  readonly memberDirectoryTotal = signal(0);
+  readonly memberDirectorySyncedAt = signal('');
+  readonly memberDirectoryNextSyncAt = signal('');
+  readonly memberDirectoryLoading = signal(false);
   readonly roleAssignments = signal<any[]>([]);
   readonly customRoles = signal<any[]>([]);
   readonly staffGroupId = signal('');
@@ -346,7 +353,12 @@ export class GroupHelpPage {
       }
       this.actionStatuses.set(latestStatuses);
       this.localValues.set(Object.fromEntries(res.config.map((entry) => [entry.key, entry.value])));
-      await Promise.all([this.loadCampaigns(), this.loadRoles(), this.loadModerationCases()]);
+      await Promise.all([
+        this.loadCampaigns(),
+        this.loadRoles(),
+        this.loadModerationCases(),
+        this.loadMemberDirectory(),
+      ]);
     } catch {
       this.error.set('Could not load Group Help config.');
     } finally {
@@ -373,6 +385,39 @@ export class GroupHelpPage {
 
   staffMemberName(member: any) {
     return [member.firstName, member.lastName].filter(Boolean).join(' ') || 'Telegram member';
+  }
+
+  async loadMemberDirectory() {
+    this.memberDirectoryLoading.set(true);
+    try {
+      const response = await this.api.getTelegramGroupHelpMembers({
+        scope: this.memberDirectoryScope(),
+        q: this.memberDirectorySearch().trim(),
+        pageSize: 50,
+      });
+      this.memberDirectory.set(response.members || []);
+      this.memberDirectoryTotal.set(response.total || 0);
+      this.memberDirectorySyncedAt.set(response.synchronizedAt || '');
+      this.memberDirectoryNextSyncAt.set(response.nextSyncAt || '');
+    } catch {
+      this.memberDirectory.set([]);
+      this.memberDirectoryTotal.set(0);
+      this.memberDirectorySyncedAt.set('');
+      this.memberDirectoryNextSyncAt.set('');
+    } finally {
+      this.memberDirectoryLoading.set(false);
+    }
+  }
+
+  setMemberDirectoryScope(scope: 'main' | 'staff') {
+    if (this.memberDirectoryScope() === scope) return;
+    this.memberDirectoryScope.set(scope);
+    void this.loadMemberDirectory();
+  }
+
+  useMemberForModeration(member: any) {
+    this.moderatorTarget.set(member.commandTarget || member.telegramUserId);
+    document.querySelector('.moderator-form')?.scrollIntoView({ behavior: 'smooth' });
   }
 
   staffHasPermissionGroup(member: any, group: { commands: string[] }) {

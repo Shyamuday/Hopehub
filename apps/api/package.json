@@ -31,6 +31,7 @@
     "telegram:seed": "tsx scripts/seed-telegram-community.ts",
     "telegram:voice:login": "tsx scripts/login-telegram-voice-scheduler.ts",
     "telegram:voice:schedule": "tsx scripts/run-telegram-voice-scheduler.ts",
+    "telegram:members:sync": "tsx scripts/sync-telegram-group-members.ts",
     "push:vapid:generate": "web-push generate-vapid-keys",
     "assets:migrate:s3": "tsx scripts/migrate-local-assets-to-s3.ts"
   },

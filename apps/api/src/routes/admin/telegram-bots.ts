@@ -23,6 +23,7 @@ import {
 } from '../../services/telegram-community-bots.js';
 import type { CommunityBotSlug } from '../../services/telegram-community-bots.types.js';
 import { apiUrl } from '../../services/telegram-bots.ui.js';
+import { escapeHtml } from '../../services/telegram-bots.helpers.js';
 import {
   callGroupHelpTelegramApi,
   getGroupHelpWebhookInfo,
@@ -1041,6 +1042,94 @@ export function registerAdminTelegramBotRoutes(router: Router) {
           ...GROUP_HELP_CONFIG_META[key],
           value: values[key] ?? ''
         }))
+      });
+    })
+  );
+
+  router.get(
+    '/admin/telegram-bots/group-help/members',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (req, res) => {
+      const values = await groupHelpConfigMap();
+      const scope = String(req.query.scope || 'main').toLowerCase() === 'staff' ? 'staff' : 'main';
+      const chatId =
+        scope === 'staff'
+          ? values.telegramGroupHelpStaffGroupId?.trim() || ''
+          : values.telegramGroupHelpGroupChatId?.trim() || '';
+      if (!chatId) {
+        return res.status(400).json({ message: `The ${scope} Telegram group is not configured.` });
+      }
+      const query = String(req.query.q || '')
+        .trim()
+        .slice(0, 100);
+      const page = Math.max(1, Number(req.query.page) || 1);
+      const pageSize = Math.min(100, Math.max(10, Number(req.query.pageSize) || 50));
+      const where = {
+        chatId,
+        leftAt: null,
+        ...(query
+          ? {
+              OR: [
+                { telegramUserId: { contains: query } },
+                { username: { contains: query, mode: 'insensitive' as const } },
+                { firstName: { contains: query, mode: 'insensitive' as const } },
+                { lastName: { contains: query, mode: 'insensitive' as const } }
+              ]
+            }
+          : {})
+      };
+      const [members, total, telegramAdministrators, syncState] = await Promise.all([
+        prisma.telegramCommunityMember.findMany({
+          where,
+          orderBy: [{ firstName: 'asc' }, { username: 'asc' }, { telegramUserId: 'asc' }],
+          skip: (page - 1) * pageSize,
+          take: pageSize
+        }),
+        prisma.telegramCommunityMember.count({ where }),
+        callGroupHelpTelegramApi<
+          Array<{
+            status?: string;
+            custom_title?: string;
+            user?: { id?: number | string };
+          }>
+        >('getChatAdministrators', { chat_id: chatId }).catch(() => []),
+        prisma.telegramCommunityState.findUnique({
+          where: {
+            bot_chatId: { bot: 'TELEGRAM_MTPROTO_MEMBER_SYNC', chatId }
+          },
+          select: { payload: true, updatedAt: true, expiresAt: true }
+        })
+      ]);
+      const administrators = new Map(
+        telegramAdministrators
+          .filter((member) => member.user?.id != null)
+          .map((member) => [String(member.user!.id), member])
+      );
+      res.json({
+        scope,
+        chatId,
+        page,
+        pageSize,
+        total,
+        synchronizedAt: syncState?.updatedAt || null,
+        nextSyncAt: syncState?.expiresAt || null,
+        members: members.map((member) => {
+          const administrator = administrators.get(member.telegramUserId);
+          const displayName =
+            [member.firstName, member.lastName].filter(Boolean).join(' ').trim() ||
+            (member.username ? `@${member.username}` : `Telegram ${member.telegramUserId}`);
+          return {
+            ...member,
+            displayName,
+            mention: member.username
+              ? `@${member.username}`
+              : `<a href="tg://user?id=${member.telegramUserId}">${escapeHtml(displayName)}</a>`,
+            commandTarget: member.username ? `@${member.username}` : member.telegramUserId,
+            telegramAdministrator: Boolean(administrator),
+            telegramAdministratorTitle: administrator?.custom_title || null
+          };
+        })
       });
     })
   );

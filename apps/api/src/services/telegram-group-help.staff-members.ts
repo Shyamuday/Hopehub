@@ -15,6 +15,14 @@ const AUTOMATIC_ROLE_ACTOR = 'telegram-private-staff-auto';
 const STAFF_STATUS_TTL_MS = 6 * 60 * 60_000;
 const staffStatusCache = new Map<string, { status: string; expiresAt: number }>();
 
+export type GroupHelpDirectoryMember = {
+  telegramUserId: string;
+  username?: string;
+  firstName?: string;
+  lastName?: string;
+  isAdministrator?: boolean;
+};
+
 async function staffMembershipStatus(
   staffGroupId: string,
   telegramUserId: string,
@@ -55,15 +63,29 @@ async function ensureDailyStaffPermissions(
   const trustedUsername = isGroupHelpAutomaticFullAdminUsername(username);
   const existing = await prisma.telegramCommunityRoleAssignment.findFirst({
     where: { chatId: mainGroupId, telegramUserId },
-    include: { customRole: { select: { permissions: true } } }
+    include: { customRole: { select: { id: true, permissions: true, createdById: true } } }
   });
   const existingPermissions = existing?.customRole?.permissions;
-  if (existing && Array.isArray(existingPermissions) && existingPermissions.includes('*')) {
-    return false;
-  }
   const membershipStatus = await staffMembershipStatus(staffGroupId, telegramUserId, knownStatus);
   const fullAdmin =
-    trustedUsername || ['creator', 'owner'].includes(membershipStatus.toLowerCase());
+    trustedUsername ||
+    ['administrator', 'creator', 'owner'].includes(membershipStatus.toLowerCase());
+  if (
+    existing?.customRole?.createdById !== undefined &&
+    existing.customRole.createdById !== AUTOMATIC_ROLE_ACTOR
+  ) {
+    return false;
+  }
+  if (existing && Array.isArray(existingPermissions) && existingPermissions.includes('*')) {
+    // Explicit admin-panel grants remain explicit. Automatically granted full
+    // access follows the person's current Telegram administrator status.
+    if (existing.customRole?.createdById !== AUTOMATIC_ROLE_ACTOR || fullAdmin) return false;
+    await prisma.telegramCommunityCustomRole.update({
+      where: { id: existing.customRole.id },
+      data: { permissions: [...defaultPermissions], createdById: AUTOMATIC_ROLE_ACTOR }
+    });
+    return 'DAILY';
+  }
   if (existing && !fullAdmin) return false;
   const permissions = fullAdmin ? ['*'] : [...defaultPermissions];
   const role = await prisma.telegramCommunityCustomRole.upsert({
@@ -214,4 +236,99 @@ export async function isActiveGroupHelpStaffMember(chatId: string, telegramUserI
       select: { id: true }
     })
   );
+}
+
+async function upsertDirectoryMembers(
+  chatId: string,
+  members: readonly GroupHelpDirectoryMember[]
+) {
+  const activeBefore = await prisma.telegramCommunityMember.findMany({
+    where: { chatId, leftAt: null },
+    select: { telegramUserId: true }
+  });
+  const activeIds = new Set(members.map((member) => member.telegramUserId));
+
+  for (let offset = 0; offset < members.length; offset += 100) {
+    const chunk = members.slice(offset, offset + 100);
+    await prisma.$transaction(
+      chunk.map((member) =>
+        prisma.telegramCommunityMember.upsert({
+          where: {
+            chatId_telegramUserId: { chatId, telegramUserId: member.telegramUserId }
+          },
+          create: {
+            chatId,
+            telegramUserId: member.telegramUserId,
+            username: member.username,
+            firstName: member.firstName,
+            lastName: member.lastName
+          },
+          update: {
+            username: member.username,
+            firstName: member.firstName,
+            lastName: member.lastName,
+            leftAt: null
+          }
+        })
+      )
+    );
+  }
+
+  const departedIds = activeBefore
+    .map((member) => member.telegramUserId)
+    .filter((telegramUserId) => !activeIds.has(telegramUserId));
+  for (let offset = 0; offset < departedIds.length; offset += 500) {
+    await prisma.telegramCommunityMember.updateMany({
+      where: { chatId, telegramUserId: { in: departedIds.slice(offset, offset + 500) } },
+      data: { leftAt: new Date() }
+    });
+  }
+
+  return { active: members.length, departed: departedIds.length };
+}
+
+/** Reconciles a complete MTProto member snapshot with the stored group directory. */
+export async function synchronizeGroupHelpMemberDirectory(
+  chatId: string,
+  members: readonly GroupHelpDirectoryMember[]
+) {
+  return upsertDirectoryMembers(chatId, members);
+}
+
+/**
+ * Reconciles the private staff group and grants safe defaults. Telegram
+ * administrators/owners receive full bot access; ordinary staff receive only
+ * the configured daily command set and can be adjusted from the admin panel.
+ */
+export async function synchronizeGroupHelpStaffDirectory(input: {
+  staffGroupId: string;
+  mainGroupId: string;
+  members: readonly GroupHelpDirectoryMember[];
+  defaultPermissions: readonly string[];
+  logChatId?: string;
+}) {
+  const result = await upsertDirectoryMembers(input.staffGroupId, input.members);
+  let fullAdministrators = 0;
+  let defaultStaff = 0;
+  for (const member of input.members) {
+    const granted = await ensureDailyStaffPermissions(
+      input.mainGroupId,
+      input.staffGroupId,
+      member.telegramUserId,
+      member.username,
+      input.defaultPermissions,
+      member.isAdministrator ? 'administrator' : 'member'
+    );
+    if (granted === 'FULL_ADMIN') fullAdministrators += 1;
+    if (granted === 'DAILY') defaultStaff += 1;
+  }
+  await sendStaffAccessLog(input.logChatId?.trim() || '', [
+    'Private staff directory synchronized',
+    `Active members: ${result.active}`,
+    `Departed since last sync: ${result.departed}`,
+    `New full administrators: ${fullAdministrators}`,
+    `New daily-access staff: ${defaultStaff}`,
+    `Main group: ${input.mainGroupId}`
+  ]);
+  return { ...result, fullAdministrators, defaultStaff };
 }
