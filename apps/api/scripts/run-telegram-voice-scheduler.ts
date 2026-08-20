@@ -16,6 +16,7 @@ const MAX_NATIVE_SCHEDULE_AHEAD_MS = 7 * 24 * 60 * 60 * 1000;
 const MINIMUM_LEAD_TIME_MS = 5 * 60 * 1000;
 const HOST_REMINDER_LEAD_TIME_MS = 5 * 60 * 1000;
 const RETRY_DELAY_MS = 10 * 60 * 1000;
+const SCHEDULED_CALL_RECHECK_DELAY_MS = 60 * 1000;
 // Telegram update events handle normal starts and ends. This is only a
 // low-frequency fallback when an update was missed or the server restarted.
 const ACTIVE_VOICE_FALLBACK_CHECK_MS = 15 * 60 * 1000;
@@ -168,6 +169,30 @@ async function retainActiveVoiceState(
   });
 }
 
+async function deferForScheduledVoiceCall(
+  chatId: string,
+  payload: NativeVoiceSchedulerState,
+  now: Date,
+  reason: string
+) {
+  const key = { bot_chatId: { bot: STATE_BOT, chatId } };
+  await prisma.telegramCommunityState.upsert({
+    where: key,
+    create: {
+      bot: STATE_BOT,
+      chatId,
+      state: 'NATIVE_VOICE_RETRY',
+      payload: { ...payload, reason },
+      expiresAt: new Date(now.getTime() + SCHEDULED_CALL_RECHECK_DELAY_MS)
+    },
+    update: {
+      state: 'NATIVE_VOICE_RETRY',
+      payload: { ...payload, reason },
+      expiresAt: new Date(now.getTime() + SCHEDULED_CALL_RECHECK_DELAY_MS)
+    }
+  });
+}
+
 async function releaseEndedVoiceState(
   chatId: string,
   payload: NativeVoiceSchedulerState,
@@ -285,6 +310,7 @@ async function expireMissedVoiceChats(client: TelegramClient, now: Date) {
 
     // Only the native call belonging to this event may be discarded. A newer
     // event in the same group must never be affected.
+    let discardFailed = false;
     if (payload.eventId === event.id && payload.nativeCallId && payload.nativeCallAccessHash) {
       try {
         await client.api.phone.discardGroupCall({
@@ -294,8 +320,10 @@ async function expireMissedVoiceChats(client: TelegramClient, now: Date) {
           }
         });
       } catch (error) {
-        // The call may already have been manually closed or started. The
-        // database still needs to release the slot so the next one can run.
+        // Retain the call credentials so the next one-minute reconciliation
+        // can release the same stale native slot. Deleting this state here
+        // made Telegram's stale schedule look like a live VC for 15 minutes.
+        discardFailed = true;
         console.warn(
           `Could not discard missed Telegram voice chat ${event.id}: ${
             error instanceof Error ? error.message : String(error)
@@ -304,15 +332,22 @@ async function expireMissedVoiceChats(client: TelegramClient, now: Date) {
       }
     }
 
-    await prisma.$transaction([
-      prisma.telegramCommunityEvent.update({
-        where: { id: event.id },
-        data: { status: 'MISSED' }
-      }),
-      ...(payload.eventId === event.id
-        ? [prisma.telegramCommunityState.delete({ where: key })]
-        : [])
-    ]);
+    await prisma.telegramCommunityEvent.update({
+      where: { id: event.id },
+      data: { status: 'MISSED' }
+    });
+    if (payload.eventId === event.id) {
+      if (discardFailed) {
+        await deferForScheduledVoiceCall(
+          event.chatId,
+          payload,
+          now,
+          'Retrying release of missed native VC'
+        );
+      } else {
+        await prisma.telegramCommunityState.delete({ where: key }).catch(() => null);
+      }
+    }
     await removeTelegramCommunityEventAnnouncement(event);
     await notifyVoiceOperations(
       [
@@ -380,10 +415,52 @@ async function main() {
       }
 
       try {
-        // A 15-minute safety reconciliation for a missed Telegram update.
-        // A currently live or externally scheduled VC always wins.
-        if (await currentTelegramGroupCall(client, event.chatId)) {
+        // A live VC always wins. A scheduled VC is different: it may be the
+        // stale native call belonging to an event we just marked MISSED. Do
+        // not treat it as active or wait through a 15-minute recovery window.
+        const currentCall = await currentTelegramGroupCall(client, event.chatId);
+        if (currentCall && !currentCall.scheduled) {
           await retainActiveVoiceState(event.chatId, payload, now);
+          continue;
+        }
+        if (currentCall?.scheduled) {
+          let releasedStaleCall = false;
+          if (
+            payload.eventId &&
+            payload.nativeCallId === currentCall.id &&
+            payload.nativeCallAccessHash
+          ) {
+            const prior = await prisma.telegramCommunityEvent.findUnique({
+              where: { id: payload.eventId },
+              select: { status: true }
+            });
+            if (!prior || !['SCHEDULED', 'IN_PROGRESS'].includes(prior.status)) {
+              try {
+                await client.api.phone.discardGroupCall({
+                  call: {
+                    id: BigInt(payload.nativeCallId),
+                    accessHash: BigInt(payload.nativeCallAccessHash)
+                  }
+                });
+                releasedStaleCall = true;
+                console.log(`Released stale native Telegram VC for ${event.chatId}.`);
+              } catch (error) {
+                console.warn(
+                  `Could not release stale native Telegram VC for ${event.chatId}: ${
+                    error instanceof Error ? error.message : String(error)
+                  }`
+                );
+              }
+            }
+          }
+          await deferForScheduledVoiceCall(
+            event.chatId,
+            payload,
+            now,
+            releasedStaleCall
+              ? 'Waiting for Telegram to clear released scheduled VC'
+              : 'Another scheduled Telegram VC is still present'
+          );
           continue;
         }
       } catch (error) {
