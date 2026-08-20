@@ -53,8 +53,16 @@ Please remember:
 export const HOPEHUB_COMMUNITY_WELCOME_MEDIA_URL =
   'https://hopehub-public-assets-924479393196.s3.us-east-1.amazonaws.com/hope-hub-media/2026-08-20/7b1e58ab-67be-4ae6-a47a-4b7bf84d951f.mp4';
 
-export const HOPEHUB_COMMUNITY_WELCOME_BUTTONS = `Support | https://hopehub.in/#live-connect | success && Confess | ${TELEGRAM_BOT_URLS.CONFESSION} | success && Channel | https://t.me/HopeHubGlobal | success
-Website | https://hopehub.in/ | success && Web bot | ${TELEGRAM_BOT_URLS.WEB} | success && Rules | ${TELEGRAM_BOT_URLS.RULES} | success`;
+export const HOPEHUB_COMMUNITY_WELCOME_BUTTONS = `Talk live | https://hopehub.in/#live-connect | success && Confess | ${TELEGRAM_BOT_URLS.CONFESSION} | success && Channel | https://t.me/HopeHubGlobal | success
+Website | https://hopehub.in/ | success && Earn | https://earn.hopehub.in/ | success && Rules | ${TELEGRAM_BOT_URLS.RULES} | success`;
+
+export const HOPEHUB_COMMUNITY_ABOUT_MESSAGE = `About Hope Hub
+
+Hope Hub is India’s emotional-support and peer-support community. We are here to make it easier to take a first step when life feels heavy, confusing, or lonely.
+
+You can listen quietly, join the conversation when you feel ready, share in your own words, or explore private support and wellbeing tools. Our community is built around kindness, privacy, and respect—because everyone may be carrying something unseen.
+
+Hope Hub is not an emergency service. If you or someone else is in immediate danger, please contact local emergency services or a crisis helpline right away.`;
 
 export type GroupHelpConfigField = {
   key: string;
@@ -592,6 +600,16 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
     maxLength: 4000,
     placeholder: 'Button label | https://example.com | primary',
     defaultValue: HOPEHUB_COMMUNITY_WELCOME_BUTTONS
+  },
+  {
+    key: 'telegramGroupHelpAboutMessage',
+    label: 'About Hope Hub message',
+    description:
+      'Shown in the group when a member taps the large About Hope Hub button on a welcome message.',
+    section: 'messages',
+    type: 'textarea',
+    maxLength: 3000,
+    defaultValue: HOPEHUB_COMMUNITY_ABOUT_MESSAGE
   },
   {
     key: 'telegramGroupHelpGoodbyeMessage',

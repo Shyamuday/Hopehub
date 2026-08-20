@@ -14,7 +14,8 @@ import {
 import { handleGroupHelpBotSettingsCallback } from './telegram-group-help.bot-settings.js';
 import {
   handleGroupHelpModerationActionCallback,
-  sendGroupHelpActivityLog
+  sendGroupHelpActivityLog,
+  sendTemporaryGroupHelpMessage
 } from './telegram-group-help.actions.js';
 import type { CommunityTelegramUpdate } from './telegram-community-bots.types.js';
 import {
@@ -79,6 +80,21 @@ export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
   }
   if (await handleGroupHelpBotSettingsCallback(update)) return true;
   const chatId = String(callback.message.chat.id);
+  if (callback.data === 'hh_welcome_about') {
+    const values = await groupHelpConfig(chatId);
+    const aboutMessage =
+      values.telegramGroupHelpAboutMessage?.trim() ||
+      'About Hope Hub\n\nHope Hub is India’s emotional-support and peer-support community. We are here to make it easier to take a first step when life feels heavy, confusing, or lonely.\n\nYou can listen quietly, join the conversation when you feel ready, share in your own words, or explore private support and wellbeing tools.\n\nHope Hub is not an emergency service. If you or someone else is in immediate danger, please contact local emergency services or a crisis helpline right away.';
+    await sendTemporaryGroupHelpMessage(chatId, aboutMessage, values, {
+      reply_to_message_id: callback.message.message_id
+    });
+    await answerCommunityCallback(
+      GROUP_HELP_BOT_SLUG,
+      callback.id,
+      'About Hope Hub shared in the group.'
+    );
+    return true;
+  }
   if (callback.data === 'hh_menu_home') {
     await sendCommunityMessage(GROUP_HELP_BOT_SLUG, chatId, 'Choose what you need.', {
       reply_markup: groupHelpMainMenuKeyboard(

@@ -170,7 +170,13 @@ async function communityConfig() {
       values.telegramGroupHelpWelcomeMessage ||
       'Welcome to Hope Hub 💙 Participate at your own pace and protect your personal details.',
     welcomeMediaUrl: values.telegramGroupHelpWelcomeImageUrl?.trim() || '',
-    welcomeKeyboard: configuredUrlKeyboard(values.telegramGroupHelpWelcomeButtons || ''),
+    welcomeKeyboard: {
+      inline_keyboard: [
+        [{ text: 'About Hope Hub', callback_data: 'hh_welcome_about', style: 'success' }],
+        ...(configuredUrlKeyboard(values.telegramGroupHelpWelcomeButtons || '')?.inline_keyboard ||
+          [])
+      ]
+    },
     goodbyeText: values.telegramGroupHelpGoodbyeMessage?.trim() || '',
     joinProtection: values.telegramGroupHelpJoinProtection || 'off',
     captchaMode: values.telegramGroupHelpCaptchaMode || 'on',
