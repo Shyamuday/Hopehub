@@ -140,6 +140,8 @@ html {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  max-width: 100%;
+  overflow-x: clip;
 }
 
 body {
@@ -149,6 +151,28 @@ body {
   line-height: var(--hope-line-copy);
   color: var(--text-primary);
   background-color: #ffffff;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+body.hope-overlay-open {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+app-root {
+  display: block;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+
+img,
+video,
+canvas,
+iframe {
+  max-width: 100%;
 }
 
 /* Font Loading Optimization - Prevent FOIT (Flash of Invisible Text) */
@@ -379,20 +403,20 @@ html {
 }
 
 /* Enhanced focus styles for accessibility and branding */
-*:focus {
+*:focus-visible {
   outline: 2px solid var(--brand-primary);
   outline-offset: 2px;
 }
 
 /* Button focus styles */
-button:focus,
-.btn:focus {
+button:focus-visible,
+.btn:focus-visible {
   outline: 2px solid var(--brand-primary);
   outline-offset: 2px;
 }
 
 /* Link focus styles */
-a:focus {
+a:focus-visible {
   outline: 2px solid var(--brand-primary);
   outline-offset: 2px;
   text-decoration: underline;
@@ -777,4 +801,54 @@ a:focus {
 @media (max-width: 640px) {
   :root { --hope-card-padding: 1rem; }
   .consumer-card__action { padding-top: .85rem; }
+
+  button,
+  a,
+  [role='button'] {
+    touch-action: manipulation;
+  }
+
+  form,
+  fieldset,
+  input,
+  select,
+  textarea {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  :is(input, select, textarea, .ng-invalid, [aria-invalid='true']) {
+    scroll-margin-block: 7rem;
+  }
+
+  .mobile-sticky-cta {
+    z-index: 55 !important;
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  :is(
+      .support-moment-rail,
+      .home-provider-grid,
+      .consumer-selection-rail,
+      .live-tab-row,
+      .day-list,
+      .stories-grid
+    ) {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-inline: contain;
+    scroll-padding-inline: 1rem;
+    scrollbar-width: none;
+    touch-action: pan-x;
+  }
+
+  :is(
+      .support-moment-rail,
+      .home-provider-grid,
+      .consumer-selection-rail,
+      .live-tab-row,
+      .day-list,
+      .stories-grid
+    )::-webkit-scrollbar {
+    display: none;
+  }
 }

@@ -16,3 +16,6 @@ export * from './notification.service';
 export * from './product-analytics.service';
 export * from './public-communication-config.service';
 export * from './consumer-flows.service';
+export * from './consumer-chrome.service';
+export * from './consumer-chrome.rules';
+export * from './viewport-overlay.service';

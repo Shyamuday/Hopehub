@@ -32,7 +32,9 @@
 
 @media (max-width: 640px) {
   .scroll-to-top {
-    left: 0.85rem;
-    bottom: 1rem;
+    left: 0.75rem;
+    bottom: calc(5.65rem + env(safe-area-inset-bottom));
+    width: 2.75rem;
+    height: 2.75rem;
   }
 }

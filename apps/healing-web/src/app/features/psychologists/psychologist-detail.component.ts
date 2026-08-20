@@ -108,6 +108,7 @@ export class PsychologistDetailComponent implements OnInit {
         chat: 'Start private chat',
         voice: 'Start voice call',
         video: 'Start video call',
+        book: 'Book a session',
       };
       return labels[this.sharedMode()];
     }

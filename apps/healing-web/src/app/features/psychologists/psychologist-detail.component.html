@@ -91,9 +91,9 @@
             </span>
             @if (p.ratingSummary?.ratingCount) {
               <p class="mt-3 text-sm font-semibold text-amber-700">
-                ★ {{ p.ratingSummary?.averageRating }} out of 5 ·
-                {{ p.ratingSummary?.ratingCount }} verified session
-                {{ p.ratingSummary?.ratingCount === 1 ? 'rating' : 'ratings' }}
+                ★ {{ p.ratingSummary.averageRating }} out of 5 ·
+                {{ p.ratingSummary.ratingCount }} verified session
+                {{ p.ratingSummary.ratingCount === 1 ? 'rating' : 'ratings' }}
               </p>
             }
             <app-button type="button" class="mt-4 block" (click)="book(p)">
@@ -252,7 +252,7 @@
       }
 
       <div
-        class="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 px-3 py-2 shadow-[0_-12px_30px_rgba(15,23,42,0.12)] backdrop-blur sm:hidden"
+        class="mobile-sticky-cta fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/95 px-3 py-2 shadow-[0_-12px_30px_rgba(15,23,42,0.12)] backdrop-blur sm:hidden"
       >
         <app-button type="button" block (click)="book(p)">{{ bookingCta(p) }}</app-button>
       </div>

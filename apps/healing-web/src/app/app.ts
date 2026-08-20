@@ -1,4 +1,4 @@
-import { Component, signal, OnInit, PLATFORM_ID, inject } from '@angular/core';
+import { Component, HostListener, signal, OnInit, PLATFORM_ID, inject } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { isPlatformBrowser } from '@angular/common';
 import { filter, take } from 'rxjs';
@@ -16,7 +16,12 @@ import {
   ConsultationWebrtcCallService,
   type IceServerConfig,
 } from '@hopehub/platform-ui';
-import { HopeHubRealtimeService, NavigationService, SEOService } from './core/services';
+import {
+  ConsumerChromeService,
+  HopeHubRealtimeService,
+  NavigationService,
+  SEOService,
+} from './core/services';
 import { AuthModalService } from './core/services/auth-modal.service';
 import { AuthService } from './core/services/auth.service';
 import { BookingService } from './core/services/booking.service';
@@ -43,6 +48,8 @@ import { CallPushNotificationService } from './core/services/call-push-notificat
 })
 export class App implements OnInit {
   protected readonly title = signal('hope-hub-website');
+  protected readonly isOnline = signal(true);
+  protected readonly chrome = inject(ConsumerChromeService);
 
   private seoService = inject(SEOService);
   private platformId = inject(PLATFORM_ID);
@@ -62,6 +69,7 @@ export class App implements OnInit {
 
     // Initialize font loading detection in browser only
     if (isPlatformBrowser(this.platformId)) {
+      this.isOnline.set(window.navigator.onLine);
       captureReferralAttribution(new URLSearchParams(window.location.search).get('ref'));
       FontLoader.init();
 
@@ -73,6 +81,31 @@ export class App implements OnInit {
       this.callPush.init();
       this.loadCallIceServers();
     }
+  }
+
+  @HostListener('window:online')
+  onOnline(): void {
+    this.isOnline.set(true);
+  }
+
+  @HostListener('window:offline')
+  onOffline(): void {
+    this.isOnline.set(false);
+  }
+
+  @HostListener('document:submit', ['$event'])
+  onFormSubmit(event: SubmitEvent): void {
+    if (!isPlatformBrowser(this.platformId) || !(event.target instanceof HTMLFormElement)) return;
+    const form = event.target;
+    window.requestAnimationFrame(() => {
+      const invalid = Array.from(
+        form.querySelectorAll<HTMLElement>(
+          ':invalid, .ng-invalid:not(form), [aria-invalid="true"]',
+        ),
+      ).find((element) => element.getClientRects().length > 0);
+      if (!invalid) return;
+      invalid.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
+    });
   }
 
   openIncomingCall(consultationId: string): void {

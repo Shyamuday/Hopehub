@@ -3,7 +3,14 @@
     [iceServers]="callIceServers()"
     (opened)="openIncomingCall($event)"
   ></hopehub-consultation-call-invite>
-  <app-header class="sticky top-0 z-50"></app-header>
+  @if (!isOnline()) {
+    <div class="app-offline-banner" role="status" aria-live="polite">
+      You are offline. Your page is still here; actions will resume when your connection returns.
+    </div>
+  }
+  @if (chrome.showStandardChrome()) {
+    <app-header class="sticky top-0 z-50"></app-header>
+  }
   <!-- <app-announcement-banner
     variant="marquee"
     tone="teal"
@@ -12,11 +19,17 @@
   ></app-announcement-banner> -->
   <!-- <app-breadcrumb class="bg-white border-b border-gray-200"></app-breadcrumb> -->
 
-  <main class="app-main flex-1 w-full">
+  <main
+    class="app-main flex-1 w-full"
+    [class.app-main--focus]="chrome.focusMode()"
+    [class.app-main--has-mobile-actions]="chrome.showQuickActions()"
+  >
     <router-outlet></router-outlet>
   </main>
 
-  <app-footer class="mt-auto"></app-footer>
+  @if (chrome.showStandardChrome()) {
+    <app-footer class="mt-auto"></app-footer>
+  }
 
   <!-- Global loading overlay -->
   <app-global-loading></app-global-loading>
@@ -25,13 +38,19 @@
   <app-notification-center></app-notification-center>
 
   <!-- Quick access floating action button -->
-  <app-quick-access></app-quick-access>
+  @if (chrome.showQuickActions()) {
+    <app-quick-access></app-quick-access>
+  }
 
   <!-- Optional contextual page guide -->
-  <app-hope-guide></app-hope-guide>
+  @if (chrome.showStandardChrome()) {
+    <app-hope-guide></app-hope-guide>
+  }
 
   <!-- Move to top floating button -->
-  <app-scroll-to-top></app-scroll-to-top>
+  @if (chrome.showStandardChrome()) {
+    <app-scroll-to-top></app-scroll-to-top>
+  }
 
   <!-- Auth Modal Overlay -->
   <app-auth-modal></app-auth-modal>

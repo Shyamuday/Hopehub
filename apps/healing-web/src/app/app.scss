@@ -4,7 +4,10 @@
 :host {
   display: block;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   min-height: 100vh;
+  overflow-x: clip;
 }
 
 /* Mobile viewport handling */
@@ -15,7 +18,30 @@
 
 .app-main {
   display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   min-height: calc(100svh - 14rem);
+  overflow-x: clip;
+}
+
+.app-main--focus {
+  min-height: 100svh;
+}
+
+.app-offline-banner {
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  width: 100%;
+  padding: 0.55rem 1rem;
+  border-bottom: 1px solid #f59e0b;
+  background: #fffbeb;
+  color: #78350f;
+  font-size: 0.875rem;
+  font-weight: 650;
+  line-height: 1.35;
+  text-align: center;
 }
 
 @supports not (height: 100svh) {
@@ -27,5 +53,14 @@
 @media (max-width: 640px) {
   .app-main {
     min-height: calc(100svh - 12rem);
+  }
+
+  .app-main--has-mobile-actions {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .app-main--focus {
+    min-height: 100svh;
+    padding-bottom: 0;
   }
 }

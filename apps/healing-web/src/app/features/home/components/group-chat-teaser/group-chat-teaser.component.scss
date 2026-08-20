@@ -121,6 +121,10 @@
   border-radius: 999px;
 }
 
+.chat-teaser__backdrop {
+  display: none;
+}
+
 .chat-teaser__empty {
   align-self: center;
   color: #64748b;
@@ -302,13 +306,26 @@
 }
 
 @media (max-width: 640px) {
+  .chat-teaser__backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 69;
+    display: block;
+    border: 0;
+    background: rgba(15, 23, 42, 0.48);
+    backdrop-filter: blur(2px);
+  }
+
   .chat-teaser {
-    bottom: 5.75rem;
-    height: min(30rem, calc(100dvh - 7rem));
-    left: 0.75rem;
+    bottom: 0;
+    z-index: 70;
+    height: min(38rem, calc(100dvh - 4.5rem));
+    left: 0;
     max-width: none;
-    right: 0.75rem;
+    right: 0;
     width: auto;
+    border-radius: 1.35rem 1.35rem 0 0;
+    padding-bottom: env(safe-area-inset-bottom);
   }
 
   .chat-teaser__header {
@@ -329,7 +346,7 @@
   }
 
   .chat-teaser-pill {
-    bottom: 5.75rem;
+    bottom: calc(5.65rem + env(safe-area-inset-bottom));
     right: 0.75rem;
   }
 }

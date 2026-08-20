@@ -175,7 +175,7 @@
 
 @media (max-width: 640px) {
   .hope-guide {
-    bottom: 10.75rem;
+    bottom: calc(5.65rem + env(safe-area-inset-bottom));
     right: 0.75rem;
   }
 

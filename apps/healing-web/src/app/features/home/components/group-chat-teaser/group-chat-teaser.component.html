@@ -5,6 +5,7 @@
       Open support chat
     </button>
   } @else {
+    <button type="button" class="chat-teaser__backdrop" aria-label="Close support chat" (click)="close()"></button>
     <aside class="chat-teaser" [attr.aria-label]="hasRealChat() ? 'Hope Hub live user chat' : 'Hope Hub community chat preview'">
       <header class="chat-teaser__header">
         <div>

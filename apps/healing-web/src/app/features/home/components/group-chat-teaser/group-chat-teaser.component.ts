@@ -5,6 +5,7 @@ import {
   OnInit,
   PLATFORM_ID,
   ElementRef,
+  effect,
   ViewChild,
   computed,
   inject,
@@ -20,6 +21,7 @@ import {
   BookingService,
   GroupChatTeaserService,
   HopeHubRealtimeService,
+  ViewportOverlayService,
 } from '../../../../core/services';
 import { CONSUMER_ROUTES } from '../../../../core/constants/consumer-routes.constants';
 import { APP_CONSTANTS } from '../../../../core/constants/app.constants';
@@ -57,6 +59,8 @@ export class GroupChatTeaserComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly overlay = inject(ViewportOverlayService);
+  private readonly overlayOwner = 'group-chat';
   readonly ROUTES = CONSUMER_ROUTES;
   readonly APP_CONSTANTS = APP_CONSTANTS;
 
@@ -85,6 +89,18 @@ export class GroupChatTeaserComponent implements OnInit {
   private subscribedGroupId = '';
   private readonly dismissedStorageKey = CONSUMER_STORAGE_KEYS.groupChatTeaserDismissed;
   private readonly pendingDraftStorageKey = CONSUMER_STORAGE_KEYS.groupChatTeaserPendingDraft;
+
+  constructor() {
+    effect(() => {
+      if (!isPlatformBrowser(this.platformId)) return;
+      if (this.isOpen() && !this.isMinimized()) this.overlay.acquire(this.overlayOwner);
+      else this.overlay.release(this.overlayOwner);
+    });
+
+    this.destroyRef.onDestroy(() => {
+      this.overlay.release(this.overlayOwner);
+    });
+  }
 
   private readonly handleIncomingMessage = (raw: unknown) => {
     const message = raw as HopeHubLiveGroupMessage;

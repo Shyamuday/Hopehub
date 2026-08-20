@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, signal, inject } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NavigationService, NavigationState } from '../../core/services/navigation.service';
@@ -9,6 +9,7 @@ import { User } from '../../core/models/auth.model';
 import { APP_CONSTANTS } from '../../core/constants/app.constants';
 import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
 import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants';
+import { ViewportOverlayService } from '../../core/services/viewport-overlay.service';
 
 @Component({
   selector: 'app-header',
@@ -256,7 +257,7 @@ import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants'
           <div class="md:hidden">
             <button
               (click)="toggleMobileMenu()"
-              class="text-gray-700 hover:text-primary-600 focus:outline-none focus:text-primary-600 focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 rounded-md p-1"
+              class="mobile-menu-toggle text-gray-700 hover:text-primary-600 focus:outline-none focus:text-primary-600 focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 rounded-md p-1"
               [attr.aria-expanded]="mobileMenuOpen()"
               aria-label="Toggle mobile menu"
             >
@@ -283,11 +284,13 @@ import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants'
 
         <!-- Mobile Navigation -->
         @if (mobileMenuOpen()) {
-          <div
-            class="md:hidden border-t border-gray-200 pt-4 pb-4"
-            role="menu"
-            aria-label="Mobile navigation menu"
-          >
+          <button
+            type="button"
+            class="mobile-nav-backdrop md:hidden"
+            aria-label="Close mobile navigation"
+            (click)="closeMobileMenu()"
+          ></button>
+          <div class="mobile-nav-panel md:hidden" role="menu" aria-label="Mobile navigation menu">
             <div class="flex flex-col space-y-2">
               <a
                 [routerLink]="ROUTES.links.support"
@@ -338,119 +341,119 @@ import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants'
               >
                 About
               </a>
-              <div class="border-t border-gray-200 pt-3 mt-2">
-                <div class="px-3 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                  Explore
+              <details class="mobile-nav-section border-t border-gray-200 pt-3 mt-2">
+                <summary>Explore</summary>
+                <div class="mobile-nav-section__links">
+                  <a
+                    [routerLink]="ROUTES.links.services"
+                    (click)="closeMobileMenu()"
+                    routerLinkActive="text-primary-600 bg-primary-50"
+                    class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                    role="menuitem"
+                  >
+                    Services
+                  </a>
+                  <a
+                    [routerLink]="ROUTES.links.careTeam"
+                    (click)="closeMobileMenu()"
+                    routerLinkActive="text-primary-600 bg-primary-50"
+                    class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                    role="menuitem"
+                  >
+                    Care team
+                  </a>
+                  <a
+                    [routerLink]="ROUTES.links.exercises"
+                    (click)="closeMobileMenu()"
+                    routerLinkActive="text-primary-600 bg-primary-50"
+                    class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                    role="menuitem"
+                  >
+                    Exercises
+                  </a>
+                  <a
+                    [routerLink]="ROUTES.links.lifestyleTips"
+                    (click)="closeMobileMenu()"
+                    routerLinkActive="text-primary-600 bg-primary-50"
+                    class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                    role="menuitem"
+                  >
+                    Lifestyle tips
+                  </a>
+                  <a
+                    [routerLink]="ROUTES.links.articles"
+                    (click)="closeMobileMenu()"
+                    routerLinkActive="text-primary-600 bg-primary-50"
+                    class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                    role="menuitem"
+                  >
+                    Articles
+                  </a>
+                  <a
+                    [routerLink]="ROUTES.links.packages"
+                    (click)="closeMobileMenu()"
+                    routerLinkActive="text-primary-600 bg-primary-50"
+                    class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                    role="menuitem"
+                  >
+                    Packages
+                  </a>
+                  <a
+                    [routerLink]="ROUTES.links.events"
+                    (click)="closeMobileMenu()"
+                    routerLinkActive="text-primary-600 bg-primary-50"
+                    class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                    role="menuitem"
+                  >
+                    Events
+                  </a>
+                  <a
+                    [routerLink]="ROUTES.links.resources"
+                    (click)="closeMobileMenu()"
+                    routerLinkActive="text-primary-600 bg-primary-50"
+                    class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                    role="menuitem"
+                  >
+                    Recorded sessions
+                  </a>
+                  <a
+                    [routerLink]="ROUTES.links.organization"
+                    (click)="closeMobileMenu()"
+                    routerLinkActive="text-primary-600 bg-primary-50"
+                    class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                    role="menuitem"
+                  >
+                    Organisation
+                  </a>
+                  <a
+                    [routerLink]="ROUTES.links.feedback"
+                    (click)="closeMobileMenu()"
+                    routerLinkActive="text-primary-600 bg-primary-50"
+                    class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                    role="menuitem"
+                  >
+                    Share feedback
+                  </a>
+                  <a
+                    [routerLink]="ROUTES.links.donate"
+                    (click)="closeMobileMenu()"
+                    routerLinkActive="text-primary-600 bg-primary-50"
+                    class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                    role="menuitem"
+                  >
+                    Support us
+                  </a>
+                  <a
+                    [routerLink]="ROUTES.links.careers"
+                    (click)="closeMobileMenu()"
+                    routerLinkActive="text-primary-600 bg-primary-50"
+                    class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                    role="menuitem"
+                  >
+                    Careers
+                  </a>
                 </div>
-                <a
-                  [routerLink]="ROUTES.links.services"
-                  (click)="closeMobileMenu()"
-                  routerLinkActive="text-primary-600 bg-primary-50"
-                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
-                  role="menuitem"
-                >
-                  Services
-                </a>
-                <a
-                  [routerLink]="ROUTES.links.careTeam"
-                  (click)="closeMobileMenu()"
-                  routerLinkActive="text-primary-600 bg-primary-50"
-                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
-                  role="menuitem"
-                >
-                  Care team
-                </a>
-                <a
-                  [routerLink]="ROUTES.links.exercises"
-                  (click)="closeMobileMenu()"
-                  routerLinkActive="text-primary-600 bg-primary-50"
-                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
-                  role="menuitem"
-                >
-                  Exercises
-                </a>
-                <a
-                  [routerLink]="ROUTES.links.lifestyleTips"
-                  (click)="closeMobileMenu()"
-                  routerLinkActive="text-primary-600 bg-primary-50"
-                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
-                  role="menuitem"
-                >
-                  Lifestyle tips
-                </a>
-                <a
-                  [routerLink]="ROUTES.links.articles"
-                  (click)="closeMobileMenu()"
-                  routerLinkActive="text-primary-600 bg-primary-50"
-                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
-                  role="menuitem"
-                >
-                  Articles
-                </a>
-                <a
-                  [routerLink]="ROUTES.links.packages"
-                  (click)="closeMobileMenu()"
-                  routerLinkActive="text-primary-600 bg-primary-50"
-                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
-                  role="menuitem"
-                >
-                  Packages
-                </a>
-                <a
-                  [routerLink]="ROUTES.links.events"
-                  (click)="closeMobileMenu()"
-                  routerLinkActive="text-primary-600 bg-primary-50"
-                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
-                  role="menuitem"
-                >
-                  Events
-                </a>
-                <a
-                  [routerLink]="ROUTES.links.resources"
-                  (click)="closeMobileMenu()"
-                  routerLinkActive="text-primary-600 bg-primary-50"
-                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
-                  role="menuitem"
-                >
-                  Recorded sessions
-                </a>
-                <a
-                  [routerLink]="ROUTES.links.organization"
-                  (click)="closeMobileMenu()"
-                  routerLinkActive="text-primary-600 bg-primary-50"
-                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
-                  role="menuitem"
-                >
-                  Organisation
-                </a>
-                <a
-                  [routerLink]="ROUTES.links.feedback"
-                  (click)="closeMobileMenu()"
-                  routerLinkActive="text-primary-600 bg-primary-50"
-                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
-                  role="menuitem"
-                >
-                  Share feedback
-                </a>
-                <a
-                  [routerLink]="ROUTES.links.donate"
-                  (click)="closeMobileMenu()"
-                  routerLinkActive="text-primary-600 bg-primary-50"
-                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
-                  role="menuitem"
-                >
-                  Support us
-                </a>
-                <a
-                  [routerLink]="ROUTES.links.careers"
-                  (click)="closeMobileMenu()"
-                  routerLinkActive="text-primary-600 bg-primary-50"
-                  class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
-                  role="menuitem"
-                >
-                  Careers
-                </a>
-              </div>
+              </details>
 
               <a
                 [routerLink]="ROUTES.links.bookSupport"
@@ -546,9 +549,9 @@ import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants'
       </nav>
     </header>
   `,
-  styles: [],
+  styleUrl: './header.component.scss',
 })
-export class HeaderComponent implements OnInit {
+export class HeaderComponent implements OnInit, OnDestroy {
   readonly APP_CONSTANTS = APP_CONSTANTS;
   readonly UX = CONSUMER_UX_COPY;
   readonly ROUTES = CONSUMER_ROUTES;
@@ -560,6 +563,8 @@ export class HeaderComponent implements OnInit {
   private authService = inject(AuthService);
   private authModalService = inject(AuthModalService);
   private notificationService = inject(NotificationService);
+  private readonly overlay = inject(ViewportOverlayService);
+  private readonly overlayOwner = 'mobile-navigation';
 
   constructor() {
     this.navigationService.navigationState$
@@ -571,7 +576,7 @@ export class HeaderComponent implements OnInit {
         if (!state.isNavigating && this.mobileMenuOpen()) {
           // Small delay to allow for smooth transition
           setTimeout(() => {
-            this.mobileMenuOpen.set(false);
+            this.closeMobileMenu();
           }, 100);
         }
       });
@@ -586,12 +591,19 @@ export class HeaderComponent implements OnInit {
     // Component initialization if needed
   }
 
+  ngOnDestroy(): void {
+    this.overlay.release(this.overlayOwner);
+  }
+
   toggleMobileMenu(): void {
     this.mobileMenuOpen.update((value: boolean) => !value);
+    if (this.mobileMenuOpen()) this.overlay.acquire(this.overlayOwner);
+    else this.overlay.release(this.overlayOwner);
   }
 
   closeMobileMenu(): void {
     this.mobileMenuOpen.set(false);
+    this.overlay.release(this.overlayOwner);
   }
 
   isCurrentRoute(route: string): boolean {

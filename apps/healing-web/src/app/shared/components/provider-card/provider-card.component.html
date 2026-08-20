@@ -72,8 +72,8 @@
 
       @if (provider.ratingSummary?.ratingCount) {
         <p class="provider-card__detail mt-2 text-xs font-semibold text-amber-700">
-          ★ {{ provider.ratingSummary?.averageRating }} · {{ provider.ratingSummary?.ratingCount }}
-          verified session {{ provider.ratingSummary?.ratingCount === 1 ? 'rating' : 'ratings' }}
+          ★ {{ provider.ratingSummary.averageRating }} · {{ provider.ratingSummary.ratingCount }}
+          verified session {{ provider.ratingSummary.ratingCount === 1 ? 'rating' : 'ratings' }}
         </p>
       }
     </div>
