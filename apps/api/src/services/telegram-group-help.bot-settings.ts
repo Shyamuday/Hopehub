@@ -9,6 +9,14 @@ import { answerCommunityCallback, sendCommunityMessage } from './telegram-commun
 import { sendGroupHelpActivityLog } from './telegram-group-help.actions.js';
 import { groupHelpConfig } from './telegram-group-help.config.js';
 import { canUseGroupHelpAdminCommand } from './telegram-group-help.permissions.js';
+import {
+  GROUP_HELP_DEFAULT_STAFF_COMMANDS,
+  GROUP_HELP_STAFF_PERMISSION_GROUPS
+} from './telegram-group-help.commands.js';
+import {
+  groupHelpStaffPermissions,
+  saveGroupHelpStaffPermissions
+} from './telegram-group-help.staff-permissions.js';
 import type {
   CommunityTelegramMessage,
   CommunityTelegramUpdate,
@@ -50,6 +58,7 @@ function sectionKeyboard(): TelegramKeyboard {
       ...sections.map((section) => [
         button(section[0].toUpperCase() + section.slice(1), `${PREFIX}section:${section}`)
       ]),
+      [button('Staff permissions', `${PREFIX}staff`)],
       [button('← Settings home', `${PREFIX}home`)]
     ]
   };
@@ -107,7 +116,8 @@ function cancelKeyboard(): TelegramKeyboard {
 async function canEditGroupSettings(
   chatId: string,
   actor: NonNullable<CommunityTelegramMessage['from']>,
-  messageId: number
+  messageId: number,
+  command = '/settings'
 ) {
   const values = await groupHelpConfig(chatId);
   return canUseGroupHelpAdminCommand(
@@ -115,11 +125,94 @@ async function canEditGroupSettings(
       message_id: messageId,
       chat: { id: chatId, type: 'supergroup' },
       from: actor,
-      text: '/settings'
+      text: command
     },
     values,
-    '/settings'
+    command
   );
+}
+
+function staffMemberLabel(member: {
+  telegramUserId: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  username?: string | null;
+}) {
+  const name = [member.firstName, member.lastName].filter(Boolean).join(' ');
+  return (name || (member.username ? `@${member.username}` : member.telegramUserId)).slice(0, 48);
+}
+
+function staffPermissionsKeyboard(
+  telegramUserId: string,
+  permissions: string[],
+  fullAdmin: boolean
+): TelegramKeyboard {
+  const selected = new Set(permissions);
+  return {
+    inline_keyboard: [
+      [
+        button(
+          `${fullAdmin ? '✓ ' : ''}Full bot administrator`,
+          `${PREFIX}staff-full:${telegramUserId}`,
+          fullAdmin ? 'success' : 'danger'
+        )
+      ],
+      ...GROUP_HELP_STAFF_PERMISSION_GROUPS.map((group, index) => {
+        const enabled = fullAdmin || group.commands.every((command) => selected.has(command));
+        return [
+          button(
+            `${enabled ? '✓ ' : ''}${group.label}`,
+            `${PREFIX}staff-toggle:${telegramUserId}:${index}`,
+            enabled ? 'success' : 'primary'
+          )
+        ];
+      }),
+      [
+        button('Restore daily defaults', `${PREFIX}staff-daily:${telegramUserId}`),
+        button('Remove all access', `${PREFIX}staff-none:${telegramUserId}`, 'danger')
+      ],
+      [button('← Staff members', `${PREFIX}staff`)]
+    ]
+  };
+}
+
+async function sendPrivateStaffEditor(
+  replyChatId: string,
+  mainGroupId: string,
+  staffGroupId: string,
+  telegramUserId: string
+) {
+  const member = await prisma.telegramCommunityMember.findFirst({
+    where: { chatId: staffGroupId, telegramUserId, leftAt: null }
+  });
+  if (!member) {
+    await sendCommunityMessage(
+      GROUP_HELP_BOT_SLUG,
+      replyChatId,
+      'This member is no longer active in the private staff group.'
+    );
+    return false;
+  }
+  const access = await groupHelpStaffPermissions(mainGroupId, telegramUserId);
+  await sendCommunityMessage(
+    GROUP_HELP_BOT_SLUG,
+    replyChatId,
+    [
+      `Staff permissions — ${staffMemberLabel(member)}`,
+      member.username ? `@${member.username}` : '',
+      `Telegram ID: ${telegramUserId}`,
+      '',
+      access.fullAdmin
+        ? 'Full bot administrator access is enabled.'
+        : 'Choose the daily and sensitive actions this member may use.'
+    ]
+      .filter((line) => line !== '')
+      .join('\n'),
+    {
+      reply_markup: staffPermissionsKeyboard(telegramUserId, access.permissions, access.fullAdmin)
+    }
+  );
+  return true;
 }
 
 async function readSettingsState<T>(bot: string, chatId: string): Promise<T | null> {
@@ -278,7 +371,142 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
   }
 
   const action = callback.data.slice(PREFIX.length);
-  if (action === 'home') {
+  if (action === 'staff' || action.startsWith('staff-')) {
+    if (
+      !(await canEditGroupSettings(chatId, callback.from, callback.message.message_id, '/helper'))
+    ) {
+      await answerCommunityCallback(
+        GROUP_HELP_BOT_SLUG,
+        callback.id,
+        'You do not have permission to manage staff access.'
+      );
+      return true;
+    }
+    const values = await groupHelpConfig(chatId);
+    const staffGroupId = values.telegramGroupHelpStaffGroupId?.trim() || '';
+    if (!staffGroupId) {
+      await answerCommunityCallback(
+        GROUP_HELP_BOT_SLUG,
+        callback.id,
+        'Connect the private staff group first.'
+      );
+      return true;
+    }
+    if (action === 'staff') {
+      const members = await prisma.telegramCommunityMember.findMany({
+        where: { chatId: staffGroupId, leftAt: null },
+        orderBy: [{ firstName: 'asc' }, { updatedAt: 'desc' }],
+        take: 50
+      });
+      await sendCommunityMessage(
+        GROUP_HELP_BOT_SLUG,
+        replyChatId,
+        members.length
+          ? 'Choose a private staff member to review their bot permissions.'
+          : 'No private staff members have been detected yet. Ask them to send one message in the staff group.',
+        {
+          reply_markup: {
+            inline_keyboard: [
+              ...members.map((member) => [
+                button(staffMemberLabel(member), `${PREFIX}staff-user:${member.telegramUserId}`)
+              ]),
+              [button('← Settings home', `${PREFIX}home`)]
+            ]
+          }
+        }
+      );
+      await answerCommunityCallback(GROUP_HELP_BOT_SLUG, callback.id);
+      return true;
+    }
+    const parts = action.split(':');
+    const staffAction = parts[0];
+    const telegramUserId = parts[1];
+    if (!telegramUserId || !/^\d+$/.test(telegramUserId)) {
+      await answerCommunityCallback(
+        GROUP_HELP_BOT_SLUG,
+        callback.id,
+        'That staff member is unavailable.'
+      );
+      return true;
+    }
+    if (staffAction === 'staff-user') {
+      await sendPrivateStaffEditor(replyChatId, chatId, staffGroupId, telegramUserId);
+      await answerCommunityCallback(GROUP_HELP_BOT_SLUG, callback.id);
+      return true;
+    }
+    const current = await groupHelpStaffPermissions(chatId, telegramUserId);
+    let nextPermissions = [...current.permissions.filter((permission) => permission !== '*')];
+    let fullAdmin = false;
+    let changeLabel = '';
+    if (staffAction === 'staff-full') {
+      fullAdmin = !current.fullAdmin;
+      nextPermissions = fullAdmin ? [] : [...GROUP_HELP_DEFAULT_STAFF_COMMANDS];
+      changeLabel = fullAdmin ? 'Full bot administrator enabled' : 'Daily defaults restored';
+    } else if (staffAction === 'staff-daily') {
+      nextPermissions = [...GROUP_HELP_DEFAULT_STAFF_COMMANDS];
+      changeLabel = 'Daily defaults restored';
+    } else if (staffAction === 'staff-none') {
+      nextPermissions = [];
+      changeLabel = 'All delegated access removed';
+    } else if (staffAction === 'staff-toggle') {
+      if (current.fullAdmin) {
+        await answerCommunityCallback(
+          GROUP_HELP_BOT_SLUG,
+          callback.id,
+          'Turn off Full bot administrator before changing individual permissions.'
+        );
+        return true;
+      }
+      const group = GROUP_HELP_STAFF_PERMISSION_GROUPS[Number(parts[2])];
+      if (!group) {
+        await answerCommunityCallback(
+          GROUP_HELP_BOT_SLUG,
+          callback.id,
+          'That permission is unavailable.'
+        );
+        return true;
+      }
+      const selected = new Set(nextPermissions);
+      const enabled = group.commands.every((command) => selected.has(command));
+      for (const command of group.commands) {
+        if (enabled) selected.delete(command);
+        else selected.add(command);
+      }
+      nextPermissions = [...selected];
+      changeLabel = `${group.label} ${enabled ? 'disabled' : 'enabled'}`;
+    } else {
+      await answerCommunityCallback(
+        GROUP_HELP_BOT_SLUG,
+        callback.id,
+        'That staff action is unavailable.'
+      );
+      return true;
+    }
+    try {
+      await saveGroupHelpStaffPermissions({
+        mainGroupId: chatId,
+        staffGroupId,
+        telegramUserId,
+        permissions: nextPermissions,
+        fullAdmin,
+        actorId: `telegram:${callback.from.id}`
+      });
+      await sendGroupHelpActivityLog(values, 'Staff permissions changed privately', [
+        `Member: ${telegramUserId}`,
+        `Change: ${changeLabel}`,
+        `By: ${callback.from.first_name || 'Telegram administrator'}${callback.from.username ? ` (@${callback.from.username})` : ''} [${callback.from.id}]`
+      ]);
+      await sendPrivateStaffEditor(replyChatId, chatId, staffGroupId, telegramUserId);
+      await answerCommunityCallback(GROUP_HELP_BOT_SLUG, callback.id, 'Permissions updated.');
+    } catch (error) {
+      await answerCommunityCallback(
+        GROUP_HELP_BOT_SLUG,
+        callback.id,
+        error instanceof Error ? error.message : 'Could not update these permissions.'
+      );
+    }
+    return true;
+  } else if (action === 'home') {
     await sendCommunityMessage(
       GROUP_HELP_BOT_SLUG,
       replyChatId,

@@ -69,6 +69,10 @@ import {
   GROUP_HELP_COMMAND_DEFINITIONS,
   GROUP_HELP_STAFF_PERMISSION_GROUPS
 } from '../../services/telegram-group-help.commands.js';
+import {
+  GroupHelpStaffPermissionError,
+  saveGroupHelpStaffPermissions
+} from '../../services/telegram-group-help.staff-permissions.js';
 
 const setupSchema = z.object({
   dropPendingUpdates: z.boolean().optional(),
@@ -1089,60 +1093,22 @@ export function registerAdminTelegramBotRoutes(router: Router) {
           .status(400)
           .json({ message: 'Configure both the main and private staff groups.' });
       }
-      const staffMember = await prisma.telegramCommunityMember.findFirst({
-        where: {
-          chatId: staffGroupId,
+      let permissions: string[];
+      try {
+        permissions = await saveGroupHelpStaffPermissions({
+          mainGroupId: chatId,
+          staffGroupId,
           telegramUserId: parsed.data.telegramUserId,
-          leftAt: null
-        }
-      });
-      if (!staffMember) {
-        return res.status(400).json({
-          message: 'This user has not been detected as an active private staff-group member.'
+          permissions: parsed.data.permissions,
+          fullAdmin: parsed.data.fullAdmin,
+          actorId: req.user!.id
         });
+      } catch (error) {
+        if (error instanceof GroupHelpStaffPermissionError) {
+          return res.status(400).json({ message: error.message });
+        }
+        throw error;
       }
-      const allowedCommands = new Set<string>(
-        GROUP_HELP_STAFF_PERMISSION_GROUPS.flatMap((group) => [...group.commands])
-      );
-      const permissions = parsed.data.fullAdmin
-        ? ['*']
-        : [...new Set(parsed.data.permissions.map((permission) => permission.toLowerCase()))];
-      if (
-        !parsed.data.fullAdmin &&
-        permissions.some((permission) => !allowedCommands.has(permission))
-      ) {
-        return res
-          .status(400)
-          .json({ message: 'One or more selected commands cannot be delegated.' });
-      }
-      const generatedRoleName = `HH staff ${parsed.data.telegramUserId}`;
-      // Keep an explicit empty role when all toggles are off. Without this
-      // marker, the next staff-group message would look like a new member and
-      // restore the automatic daily permissions that the admin intentionally removed.
-      const role = await prisma.telegramCommunityCustomRole.upsert({
-        where: { chatId_name: { chatId, name: generatedRoleName } },
-        create: {
-          chatId,
-          name: generatedRoleName,
-          permissions,
-          createdById: req.user!.id
-        },
-        update: { permissions, createdById: req.user!.id }
-      });
-      await prisma.$transaction([
-        prisma.telegramCommunityRoleAssignment.deleteMany({
-          where: { chatId, telegramUserId: parsed.data.telegramUserId }
-        }),
-        prisma.telegramCommunityRoleAssignment.create({
-          data: {
-            chatId,
-            telegramUserId: parsed.data.telegramUserId,
-            role: 'CUSTOM',
-            customRoleId: role.id,
-            assignedById: req.user!.id
-          }
-        })
-      ]);
       await writeAuditLog({
         actorId: req.user!.id,
         actorRole: req.user!.role,
