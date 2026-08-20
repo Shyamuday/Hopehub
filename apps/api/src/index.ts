@@ -122,6 +122,7 @@ import {
 } from './services/call-session-maintenance.js';
 import { getRuntimeReadiness } from './services/runtime-health.js';
 import { retryFailedTelegramWebhookUpdates } from './services/telegram-webhook-retries.js';
+import { monitorHopeHubCommunityWebhook } from './services/telegram-community-webhook-health.js';
 
 // ── App & HTTP server ──────────────────────────────────────────────────────────
 
@@ -470,6 +471,9 @@ httpServer.listen(port, bindHost, () => {
   void retryFailedTelegramWebhookUpdates().catch((e) =>
     console.error('[scheduler] Initial Telegram webhook retry failed', e)
   );
+  void monitorHopeHubCommunityWebhook().catch((e) =>
+    console.error('[scheduler] Initial Hope Hub Telegram webhook health check failed', e)
+  );
 
   const doseTimer = setInterval(() => {
     void runDoseSchedulers().catch((e) =>
@@ -522,6 +526,13 @@ httpServer.listen(port, bindHost, () => {
     );
   }, 30_000);
   telegramWebhookRetryTimer.unref();
+
+  const telegramWebhookHealthTimer = setInterval(() => {
+    void monitorHopeHubCommunityWebhook().catch((e) =>
+      console.error('[scheduler] Hope Hub Telegram webhook health check failed', e)
+    );
+  }, 5 * 60_000);
+  telegramWebhookHealthTimer.unref();
 
   void restoreEmployeesFromLeave().catch((e) =>
     console.error('[scheduler] Leave restore failed', e)
