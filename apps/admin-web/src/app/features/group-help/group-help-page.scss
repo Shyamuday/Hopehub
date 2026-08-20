@@ -516,44 +516,14 @@ textarea {
   padding-left: 1.15rem;
 }
 
-.image-tools {
-  display: grid;
-  gap: 0.55rem;
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface);
-  padding: 0.75rem;
-}
-
-.image-tools img,
-.direct-image-preview img {
+.direct-image-preview img,
+.direct-image-preview video {
   display: block;
   width: 100%;
   max-height: 10rem;
-  object-fit: cover;
+  object-fit: contain;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-}
-
-.empty-image {
-  margin: 0;
-  font-size: var(--text-sm);
-}
-
-.upload-button {
-  align-items: center;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  display: inline-flex;
-  font-weight: 800;
-  justify-content: center;
-  min-height: var(--touch-min);
-  padding: 0.65rem 0.9rem;
-}
-
-.upload-button input {
-  display: none;
 }
 
 pre {

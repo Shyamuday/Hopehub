@@ -287,7 +287,15 @@ const communityEventSchema = z.object({
 
 const confessionReviewSchema = z.object({ action: z.enum(['APPROVE', 'REJECT']) });
 
-const GROUP_HELP_IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+const GROUP_HELP_MEDIA_MIME_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'video/mp4',
+  'video/webm',
+  'video/quicktime'
+]);
 
 type WebhookSnapshot =
   | {
@@ -473,10 +481,11 @@ async function sendGroupHelpPost(input: { message: string; imageUrl?: string; pi
   if (!chatId) throw new Error('Telegram group chat ID is not configured.');
   const messageThreadId = Number(values.telegramCommunityDefaultTopicId || 0) || undefined;
 
-  const sent = input.imageUrl
-    ? await callGroupHelpTelegramApi<{ message_id: number }>('sendPhoto', {
+  const media = input.imageUrl ? groupHelpMediaPayload(input.imageUrl) : null;
+  const sent = media
+    ? await callGroupHelpTelegramApi<{ message_id: number }>(media.method, {
         chat_id: chatId,
-        photo: input.imageUrl,
+        ...media.payload,
         caption:
           input.message.length <= 1024 ? input.message : `${input.message.slice(0, 1021)}...`,
         ...(messageThreadId ? { message_thread_id: messageThreadId } : {})
@@ -494,6 +503,17 @@ async function sendGroupHelpPost(input: { message: string; imageUrl?: string; pi
     force: input.pin === true
   });
   return { chatId, sent, pinned: input.pin === true };
+}
+
+function groupHelpMediaPayload(url: string) {
+  const path = url.split(/[?#]/, 1)[0].toLowerCase();
+  if (/\.(mp4|webm|mov|m4v)$/.test(path)) {
+    return { method: 'sendVideo', payload: { video: url } };
+  }
+  if (/\.gif$/.test(path)) {
+    return { method: 'sendAnimation', payload: { animation: url } };
+  }
+  return { method: 'sendPhoto', payload: { photo: url } };
 }
 
 function campaignItemData(
@@ -2152,11 +2172,11 @@ export function registerAdminTelegramBotRoutes(router: Router) {
     asyncRoute(async (req, res) => {
       try {
         const form = await parseMultipartForm(req, { maxFileBytes: 5 * 1024 * 1024 });
-        if (!form.file) return res.status(400).json({ message: 'Choose an image to upload.' });
-        if (!GROUP_HELP_IMAGE_MIME_TYPES.has(form.file.mimeType)) {
+        if (!form.file) return res.status(400).json({ message: 'Choose media to upload.' });
+        if (!GROUP_HELP_MEDIA_MIME_TYPES.has(form.file.mimeType)) {
           return res
             .status(400)
-            .json({ message: 'Only JPG, PNG, WebP, and GIF images are allowed.' });
+            .json({ message: 'Only JPG, PNG, WebP, GIF, MP4, WebM, and MOV files are allowed.' });
         }
         const saved = await saveHopeHubMedia({
           mimeType: form.file.mimeType,
@@ -2168,10 +2188,10 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         await writeAuditLog({
           actorId: req.user!.id,
           actorRole: req.user!.role,
-          action: 'telegram_group_help.image_upload',
+          action: 'telegram_group_help.media_upload',
           targetType: 'telegram_group_help_media',
           targetId: saved.storageKey,
-          summary: `Uploaded Group Help image "${form.fields['fileName'] || form.file.fileName || saved.storageKey}".`
+          summary: `Uploaded Group Help media "${form.fields['fileName'] || form.file.fileName || saved.storageKey}".`
         });
 
         res.status(201).json(saved);
@@ -2180,13 +2200,13 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         if (code === 'UNSUPPORTED_MIME') {
           return res
             .status(400)
-            .json({ message: 'Only JPG, PNG, WebP, and GIF images are allowed.' });
+            .json({ message: 'Only JPG, PNG, WebP, GIF, MP4, WebM, and MOV files are allowed.' });
         }
         if (code === 'EMPTY_FILE') {
-          return res.status(400).json({ message: 'Image file is empty.' });
+          return res.status(400).json({ message: 'Media file is empty.' });
         }
         if (code === 'FILE_TOO_LARGE') {
-          return res.status(400).json({ message: 'Image upload must be 5 MB or smaller.' });
+          return res.status(400).json({ message: 'Media upload must be 5 MB or smaller.' });
         }
         throw error;
       }

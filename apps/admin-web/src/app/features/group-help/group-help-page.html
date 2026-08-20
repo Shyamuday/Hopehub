@@ -232,17 +232,13 @@
                       (input)="updateCampaignItem(itemIndex, { text: $any($event.target).value })"
                     ></textarea>
                   </label>
-                  <label>
-                    Image URL <small>Optional</small>
-                    <input
-                      type="url"
-                      placeholder="https://..."
-                      [value]="item.imageUrl"
-                      (input)="
-                        updateCampaignItem(itemIndex, { imageUrl: $any($event.target).value })
-                      "
-                    />
-                  </label>
+                  <app-media-url-field
+                    label="Post media"
+                    help="Optional image, GIF, or short video. Uploading fills the URL automatically."
+                    [value]="item.imageUrl"
+                    [uploadFile]="uploadBotMedia"
+                    (valueChange)="updateCampaignItem(itemIndex, { imageUrl: $event })"
+                  ></app-media-url-field>
                   <label>
                     Action buttons <small>Optional · one button per line</small>
                     <textarea
@@ -800,36 +796,48 @@
           </summary>
           <div class="field-list">
             @for (entry of fieldsFor(section); track entry.key) {
-              <label class="config-field">
-                <span>
-                  <strong>{{ entry.label }}</strong>
-                  <small>{{ entry.description }}</small>
-                </span>
+              @if (isMediaUrlEntry(entry)) {
+                <div class="config-field">
+                  <app-media-url-field
+                    [label]="entry.label"
+                    [help]="entry.description"
+                    [value]="value(entry.key)"
+                    [uploadFile]="uploadBotMedia"
+                    (valueChange)="update(entry.key, $event)"
+                  ></app-media-url-field>
+                </div>
+              } @else {
+                <label class="config-field">
+                  <span>
+                    <strong>{{ entry.label }}</strong>
+                    <small>{{ entry.description }}</small>
+                  </span>
 
-                @if (entry.type === 'textarea') {
-                  <textarea
-                    rows="5"
-                    [value]="value(entry.key)"
-                    [attr.maxlength]="entry.maxLength"
-                    [placeholder]="entry.placeholder || ''"
-                    (input)="update(entry.key, $any($event.target).value)"
-                  ></textarea>
-                } @else if (entry.type === 'select') {
-                  <app-form-dropdown
-                    [options]="dropdownOptions(entry)"
-                    [ngModel]="value(entry.key)"
-                    (ngModelChange)="update(entry.key, $event)"
-                  ></app-form-dropdown>
-                } @else {
-                  <input
-                    [type]="entry.type === 'number' ? 'number' : 'text'"
-                    [value]="value(entry.key)"
-                    [attr.maxlength]="entry.maxLength"
-                    [placeholder]="entry.placeholder || ''"
-                    (input)="update(entry.key, $any($event.target).value)"
-                  />
-                }
-              </label>
+                  @if (entry.type === 'textarea') {
+                    <textarea
+                      rows="5"
+                      [value]="value(entry.key)"
+                      [attr.maxlength]="entry.maxLength"
+                      [placeholder]="entry.placeholder || ''"
+                      (input)="update(entry.key, $any($event.target).value)"
+                    ></textarea>
+                  } @else if (entry.type === 'select') {
+                    <app-form-dropdown
+                      [options]="dropdownOptions(entry)"
+                      [ngModel]="value(entry.key)"
+                      (ngModelChange)="update(entry.key, $event)"
+                    ></app-form-dropdown>
+                  } @else {
+                    <input
+                      [type]="entry.type === 'number' ? 'number' : 'text'"
+                      [value]="value(entry.key)"
+                      [attr.maxlength]="entry.maxLength"
+                      [placeholder]="entry.placeholder || ''"
+                      (input)="update(entry.key, $any($event.target).value)"
+                    />
+                  }
+                </label>
+              }
             }
           </div>
           @if (section === 'messages') {
@@ -880,27 +888,14 @@
             </div>
             <p>{{ item.helper }}</p>
             @if (item.imageUrlKey) {
-              <div class="image-tools">
-                <div>
-                  <strong>Image</strong>
-                  <small>Upload to public S3 and attach the URL to this message.</small>
-                </div>
-                @if (value(item.imageUrlKey)) {
-                  <img [src]="value(item.imageUrlKey)" [alt]="item.title + ' image preview'" />
-                  <input
-                    type="url"
-                    [value]="value(item.imageUrlKey)"
-                    (input)="update(item.imageUrlKey, $any($event.target).value)"
-                    placeholder="https://..."
-                  />
-                } @else {
-                  <p class="empty-image">No image selected.</p>
-                }
-                <label class="upload-button">
-                  <input type="file" accept="image/*" (change)="uploadImage($event, item)" />
-                  {{ uploadingImage() === item.id ? 'Uploading…' : 'Upload image' }}
-                </label>
-              </div>
+              <app-media-url-field
+                label="Message media"
+                help="Upload an image, GIF, or short video, or paste its public URL."
+                [value]="value(item.imageUrlKey)"
+                [uploadFile]="uploadBotMedia"
+                [compact]="true"
+                (valueChange)="update(item.imageUrlKey, $event)"
+              ></app-media-url-field>
             }
             <pre>{{ commandFor(item) }}</pre>
             <div class="command-actions">
@@ -1333,11 +1328,19 @@
         </label>
         @if (imageUrlForMessageKey(selectedDirectMessageKey())) {
           <div class="direct-image-preview">
-            <span>Image will be sent as Telegram photo</span>
-            <img
-              [src]="imageUrlForMessageKey(selectedDirectMessageKey())"
-              alt="Selected Group Help message image preview"
-            />
+            <span>Media will be attached to the Telegram message</span>
+            @if (isVideoMediaUrl(imageUrlForMessageKey(selectedDirectMessageKey()))) {
+              <video
+                [src]="imageUrlForMessageKey(selectedDirectMessageKey())"
+                controls
+                preload="metadata"
+              ></video>
+            } @else {
+              <img
+                [src]="imageUrlForMessageKey(selectedDirectMessageKey())"
+                alt="Selected Group Help message media preview"
+              />
+            }
           </div>
         }
         <label class="check-row">

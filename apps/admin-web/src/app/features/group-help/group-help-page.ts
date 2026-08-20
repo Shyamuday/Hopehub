@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { FormDropdownComponent, type FormDropdownOption } from '@hopehub/platform-ui';
 import { AdminApi } from '../../core/services/admin-api';
 import { AppApplyButtonComponent } from '../../shared/ui/app-apply-button.component';
+import { AppMediaUrlFieldComponent } from '../../shared/ui/app-media-url-field.component';
 
 type GroupHelpConfigEntry = {
   key: string;
@@ -82,8 +83,6 @@ const emptyCampaignItem = (kind: 'TEXT' | 'POLL' | 'SUMMARY'): CampaignItemDraft
   followUpMessage: '',
 });
 
-const IMAGE_UPLOAD_LIMIT_BYTES = 5 * 1024 * 1024;
-
 const SECTION_LABELS: Record<GroupHelpConfigEntry['section'], string> = {
   connection: 'Connection',
   messages: 'Messages',
@@ -97,7 +96,13 @@ const SECTION_LABELS: Record<GroupHelpConfigEntry['section'], string> = {
 
 @Component({
   selector: 'app-group-help-page',
-  imports: [CommonModule, FormsModule, FormDropdownComponent, AppApplyButtonComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    FormDropdownComponent,
+    AppApplyButtonComponent,
+    AppMediaUrlFieldComponent,
+  ],
   templateUrl: './group-help-page.html',
   styleUrl: './group-help-page.scss',
 })
@@ -131,7 +136,6 @@ export class GroupHelpPage {
   readonly testing = signal(false);
   readonly clearingMenu = signal(false);
   readonly applying = signal('');
-  readonly uploadingImage = signal('');
   readonly copied = signal('');
   readonly telegramApplyUrl = signal('');
   readonly message = signal('');
@@ -296,6 +300,8 @@ export class GroupHelpPage {
   constructor(private readonly api: AdminApi) {
     void this.load();
   }
+
+  readonly uploadBotMedia = (file: File) => this.api.uploadTelegramGroupHelpMedia(file);
 
   openWorkspaceSection(section: GroupHelpWorkspaceSection) {
     this.activeWorkspaceSection.set(section);
@@ -1092,33 +1098,12 @@ export class GroupHelpPage {
     return option?.imageUrlKey ? this.value(option.imageUrlKey).trim() : '';
   }
 
-  async uploadImage(event: Event, item: CommandItem) {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    input.value = '';
-    if (!file || !item.imageUrlKey) return;
+  isVideoMediaUrl(url: string) {
+    return /\.(mp4|webm|mov|m4v)(?:[?#]|$)/i.test(url);
+  }
 
-    if (!file.type.startsWith('image/')) {
-      this.error.set('Please choose an image file.');
-      return;
-    }
-    if (file.size > IMAGE_UPLOAD_LIMIT_BYTES) {
-      this.error.set('Image must be 5 MB or smaller.');
-      return;
-    }
-
-    this.uploadingImage.set(item.id);
-    this.error.set('');
-    this.message.set('');
-    try {
-      const uploaded = await this.api.uploadTelegramGroupHelpImage(file);
-      this.update(item.imageUrlKey, uploaded.fileUrl);
-      this.message.set(`${item.title} image uploaded. Save config to keep it.`);
-    } catch {
-      this.error.set('Could not upload image.');
-    } finally {
-      this.uploadingImage.set('');
-    }
+  isMediaUrlEntry(entry: GroupHelpConfigEntry) {
+    return /(?:image|media)url$/i.test(entry.key);
   }
 
   async copy(text: string, label: string) {

@@ -905,9 +905,9 @@ export class AdminApi {
   clearTelegramGroupHelpMenu(...args: Parameters<AdminOpsApi['clearTelegramGroupHelpMenu']>) {
     return this.ops.clearTelegramGroupHelpMenu(...args);
   }
-  uploadTelegramGroupHelpImage(...args: Parameters<AdminOpsApi['uploadTelegramGroupHelpImage']>) {
-    return this.ops.uploadTelegramGroupHelpImage(
-      ...(args as Parameters<AdminOpsApi['uploadTelegramGroupHelpImage']>),
+  uploadTelegramGroupHelpMedia(...args: Parameters<AdminOpsApi['uploadTelegramGroupHelpMedia']>) {
+    return this.ops.uploadTelegramGroupHelpMedia(
+      ...(args as Parameters<AdminOpsApi['uploadTelegramGroupHelpMedia']>),
     );
   }
   sendTelegramGroupHelpMessage(...args: Parameters<AdminOpsApi['sendTelegramGroupHelpMessage']>) {

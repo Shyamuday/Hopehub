@@ -619,8 +619,8 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
   },
   {
     key: 'telegramGroupHelpRulesImageUrl',
-    label: 'Rules image URL',
-    description: 'Optional public S3/image URL attached to the rules message or command.',
+    label: 'Rules media URL',
+    description: 'Optional uploaded image, GIF, or short video attached to the rules message.',
     section: 'messages',
     type: 'text',
     maxLength: 1000,
@@ -639,8 +639,8 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
   },
   {
     key: 'telegramGroupHelpSupportImageUrl',
-    label: 'Support image URL',
-    description: 'Optional public S3/image URL attached to the support message or command.',
+    label: 'Support media URL',
+    description: 'Optional uploaded image, GIF, or short video attached to the support message.',
     section: 'messages',
     type: 'text',
     maxLength: 1000,
@@ -659,8 +659,8 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
   },
   {
     key: 'telegramGroupHelpPinnedImageUrl',
-    label: 'Pinned intro image URL',
-    description: 'Optional public S3/image URL attached to the pinned intro.',
+    label: 'Pinned intro media URL',
+    description: 'Optional uploaded image, GIF, or short video attached to the pinned intro.',
     section: 'messages',
     type: 'text',
     maxLength: 1000,
@@ -679,8 +679,8 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
   },
   {
     key: 'telegramGroupHelpRecurringImageUrl',
-    label: 'Recurring reminder image URL',
-    description: 'Optional public S3/image URL attached to the recurring reminder.',
+    label: 'Recurring reminder media URL',
+    description: 'Optional uploaded image, GIF, or short video attached to the recurring reminder.',
     section: 'messages',
     type: 'text',
     maxLength: 1000,

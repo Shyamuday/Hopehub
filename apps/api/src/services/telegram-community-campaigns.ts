@@ -111,7 +111,7 @@ function isWelcomeVideo(url: string) {
   return /\.(mp4|webm|mov|m4v)$/.test(filename);
 }
 
-function welcomeMediaPayload(url: string) {
+function communityMediaPayload(url: string) {
   if (isWelcomeVideo(url)) {
     return { method: 'sendVideo' as const, media: { video: url } };
   }
@@ -610,10 +610,14 @@ async function performCampaignDelivery(input: {
         ...(messageThreadId ? { message_thread_id: messageThreadId } : {})
       });
     } else if (item.imageUrl) {
-      sent = await callCommunityTelegramApi<SentTelegramMessage>(CAMPAIGN_BOT, 'sendPhoto', {
+      const media = communityMediaPayload(item.imageUrl);
+      sent = await callCommunityTelegramApi<SentTelegramMessage>(CAMPAIGN_BOT, media.method, {
         chat_id: campaign.chatId,
-        photo: item.imageUrl,
+        ...media.media,
         caption: (item.text || '').slice(0, 1024),
+        ...(campaignItemKeyboard(item.buttons)
+          ? { reply_markup: campaignItemKeyboard(item.buttons) }
+          : {}),
         ...(messageThreadId ? { message_thread_id: messageThreadId } : {})
       });
     } else {
@@ -1138,7 +1142,7 @@ export async function welcomeTelegramCommunityMembers(update: CommunityTelegramU
       ? `\n\nTo join the conversation, choose the answer: ${first} + ${second} = ?`
       : '';
     const welcomeMessageText = `${welcomeText}${verificationPrompt}`;
-    const media = config.welcomeMediaUrl ? welcomeMediaPayload(config.welcomeMediaUrl) : null;
+    const media = config.welcomeMediaUrl ? communityMediaPayload(config.welcomeMediaUrl) : null;
     const sent =
       media && welcomeMessageText.length <= 1024
         ? await callCommunityTelegramApi<{ message_id: number }>(CAMPAIGN_BOT, media.method, {

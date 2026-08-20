@@ -479,7 +479,7 @@ export class AdminOpsApi extends AdminApiBase {
     );
   }
 
-  uploadTelegramGroupHelpImage(file: File) {
+  uploadTelegramGroupHelpMedia(file: File) {
     const formData = new FormData();
     formData.append('file', file, file.name);
     formData.append('fileName', file.name);
