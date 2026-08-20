@@ -465,22 +465,24 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
   {
     key: 'telegramCommunityScheduleStart',
     label: 'Community posts start',
-    description: 'Earliest local group time for automated community posts, in HH:MM format.',
+    description:
+      'Earliest local group time for automated posts. Set the same start and end time for 24/7 scheduling.',
     section: 'content',
     type: 'text',
     maxLength: 5,
-    placeholder: '09:00',
-    defaultValue: '09:00'
+    placeholder: '00:00',
+    defaultValue: '00:00'
   },
   {
     key: 'telegramCommunityScheduleEnd',
     label: 'Community posts end',
-    description: 'Latest local group time for automated community posts, in HH:MM format.',
+    description:
+      'Latest local group time for automated posts. Set the same start and end time for 24/7 scheduling.',
     section: 'content',
     type: 'text',
     maxLength: 5,
-    placeholder: '22:00',
-    defaultValue: '22:00'
+    placeholder: '00:00',
+    defaultValue: '00:00'
   },
   {
     key: 'telegramCommunityMaxPostsPerDay',

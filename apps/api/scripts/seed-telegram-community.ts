@@ -130,15 +130,24 @@ const campaigns = (chatId: string) =>
       items: TELEGRAM_COMMUNITY_ENGAGEMENT_ITEMS
     },
     {
-      id: 'seed_telegram_daily_discovery',
-      name: 'Daily Hope Hub discovery links',
+      id: 'seed_telegram_bihourly_group_invite',
+      name: 'Invite friends to Hope Hub',
       intervalMinutes: 120,
       nextRunAt: nextAt(9),
       items: [
         {
           kind: 'MESSAGE',
           text: '💙 Could you help someone find a kind place today?\n\nIf Hope Hub has felt helpful to you, please invite five friends and add @hopehubindia to your bio if that feels right.\n\nYou never know who may be quietly going through a hard time. A small share can help someone find a place to talk, be heard, and feel less alone.\n\nThank you for helping this space grow with care.'
-        },
+        }
+      ]
+    },
+    {
+      id: 'seed_telegram_daily_discovery',
+      name: 'Daily Hope Hub discovery links',
+      templateVersion: 2,
+      intervalMinutes: 120,
+      nextRunAt: nextAt(10),
+      items: [
         {
           kind: 'MESSAGE',
           text: '✨ Earn with Hope Hub\n\nWant to explore ways to earn while contributing to a kinder community?',
@@ -154,10 +163,6 @@ const campaigns = (chatId: string) =>
           kind: 'MESSAGE',
           text: '🌐 Explore Hope Hub\n\nFind private support, caring listeners, self-checks, care options, community spaces, and wellbeing tools.',
           buttons: [{ text: 'Explore Hope Hub', url: 'https://hopehub.in/', style: 'primary' }]
-        },
-        {
-          kind: 'MESSAGE',
-          text: '💙 Could you help someone find a kind place today?\n\nIf Hope Hub has felt helpful to you, please invite five friends and add @hopehubindia to your bio if that feels right.\n\nYou never know who may be quietly going through a hard time. A small share can help someone find a place to talk, be heard, and feel less alone.\n\nThank you for helping this space grow with care.'
         },
         {
           kind: 'MESSAGE',
@@ -395,7 +400,12 @@ const campaigns = (chatId: string) =>
         }
       ]
     }
-  ].map((campaign) => ({ ...campaign, chatId, source: 'SYSTEM' as const, templateVersion: 1 }));
+  ].map((campaign) => ({
+    ...campaign,
+    chatId,
+    source: 'SYSTEM' as const,
+    templateVersion: 'templateVersion' in campaign ? campaign.templateVersion : 1
+  }));
 
 async function seedSiteConfig(chatId: string) {
   await syncManagedSiteConfigDefaults();

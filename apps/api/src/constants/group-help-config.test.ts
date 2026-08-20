@@ -34,10 +34,10 @@ test('HopeHubAI exposes an optional moderation bypass list for trusted people', 
   assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramGroupHelpAdminWhitelist, '');
 });
 
-test('community automation has conservative engagement defaults', () => {
+test('community automation runs around the clock with conservative engagement limits', () => {
   assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramCommunitySmartScheduleEnabled, 'Enabled');
-  assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramCommunityScheduleStart, '09:00');
-  assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramCommunityScheduleEnd, '22:00');
+  assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramCommunityScheduleStart, '00:00');
+  assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramCommunityScheduleEnd, '00:00');
   assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramCommunityMaxPostsPerDay, '14');
   assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramCommunityEngagementPostsPerDay, '3');
   assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramCommunityPromotionPostsPerDay, '6');

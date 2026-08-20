@@ -357,8 +357,8 @@ async function smartSchedulePolicy() {
   const values = await getSiteConfigMap(SMART_SCHEDULE_CONFIG_KEYS);
   return {
     enabled: values.telegramCommunitySmartScheduleEnabled !== 'Disabled',
-    startMinute: timeMinutes(values.telegramCommunityScheduleStart, 9 * 60),
-    endMinute: timeMinutes(values.telegramCommunityScheduleEnd, 22 * 60),
+    startMinute: timeMinutes(values.telegramCommunityScheduleStart, 0),
+    endMinute: timeMinutes(values.telegramCommunityScheduleEnd, 0),
     maxPosts: boundedNumber(values.telegramCommunityMaxPostsPerDay, 14, 1, 30),
     maxEngagementPosts: boundedNumber(values.telegramCommunityEngagementPostsPerDay, 3, 0, 20),
     maxPromotionPosts: boundedNumber(values.telegramCommunityPromotionPostsPerDay, 6, 0, 20),
@@ -429,9 +429,11 @@ async function claimNextCampaign(now: Date) {
     if (policy.enabled) {
       const minute = indiaMinuteOfDay(now);
       const inActiveHours =
-        policy.startMinute <= policy.endMinute
-          ? minute >= policy.startMinute && minute < policy.endMinute
-          : minute >= policy.startMinute || minute < policy.endMinute;
+        policy.startMinute === policy.endMinute
+          ? true
+          : policy.startMinute < policy.endMinute
+            ? minute >= policy.startMinute && minute < policy.endMinute
+            : minute >= policy.startMinute || minute < policy.endMinute;
       const dayStart = indiaDayStart(now);
       const [dailyPosts, engagementPosts, promotionPosts, lastDelivery, activity] =
         await Promise.all([
