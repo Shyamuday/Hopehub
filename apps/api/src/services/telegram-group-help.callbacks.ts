@@ -3,8 +3,13 @@ import {
   handleTelegramCommunityEventCallback,
   handleTelegramCommunityJoinVerificationCallback
 } from './telegram-community-campaigns.js';
-import { answerCommunityCallback, sendCommunityMessage } from './telegram-community-bots.client.js';
+import {
+  answerCommunityCallback,
+  editCommunityReplyMarkup,
+  sendCommunityMessage
+} from './telegram-community-bots.client.js';
 import { groupHelpConfig } from './telegram-group-help.config.js';
+import { configuredUrlKeyboard } from './telegram-keyboard-config.js';
 import { telegramGroupWarningCount } from './telegram-community-bots.store.js';
 import {
   groupHelpMainMenuKeyboard,
@@ -84,10 +89,21 @@ export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
     const values = await groupHelpConfig(chatId);
     const aboutMessage =
       values.telegramGroupHelpAboutMessage?.trim() ||
-      'About Hope Hub\n\nHope Hub is India’s emotional-support and peer-support community. We are here to make it easier to take a first step when life feels heavy, confusing, or lonely.\n\nYou can listen quietly, join the conversation when you feel ready, share in your own words, or explore private support and wellbeing tools.\n\nHope Hub is not an emergency service. If you or someone else is in immediate danger, please contact local emergency services or a crisis helpline right away.';
+      'About Hope Hub\n\nHope Hub is an India-based emotional wellbeing and support startup. This community is a calm place to listen, share at your own pace, join group conversations and voice chats, explore private support, and find wellbeing tools.\n\nPlease be kind, protect privacy, and do not pressure anyone to share. Hope Hub is not an emergency service; contact local emergency services or a crisis helpline if someone is in immediate danger.';
     await sendTemporaryGroupHelpMessage(chatId, aboutMessage, values, {
       reply_to_message_id: callback.message.message_id
     });
+    // Each welcome message belongs to one new member. Once they have opened the
+    // introduction, keep its useful links but remove About so it cannot be
+    // opened repeatedly from the same welcome.
+    await editCommunityReplyMarkup(
+      GROUP_HELP_BOT_SLUG,
+      chatId,
+      callback.message.message_id,
+      configuredUrlKeyboard(values.telegramGroupHelpWelcomeButtons || '') || {
+        inline_keyboard: []
+      }
+    );
     await answerCommunityCallback(
       GROUP_HELP_BOT_SLUG,
       callback.id,

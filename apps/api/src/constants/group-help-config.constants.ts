@@ -58,11 +58,24 @@ Website | https://hopehub.in/ | success && Earn | https://earn.hopehub.in/ | suc
 
 export const HOPEHUB_COMMUNITY_ABOUT_MESSAGE = `About Hope Hub
 
-Hope Hub is India’s emotional-support and peer-support community. We are here to make it easier to take a first step when life feels heavy, confusing, or lonely.
+This group is part of Hope Hub, an India-based emotional wellbeing and support startup. Hope Hub was founded by passionate people who have been working in this space for more than five years.
 
-You can listen quietly, join the conversation when you feel ready, share in your own words, or explore private support and wellbeing tools. Our community is built around kindness, privacy, and respect—because everyone may be carrying something unseen.
+Our purpose is simple: help people feel heard sooner, find the right kind of support, and take one steady step at a time. You never have to share more than you are comfortable with.
 
-Hope Hub is not an emergency service. If you or someone else is in immediate danger, please contact local emergency services or a crisis helpline right away.`;
+What you can find in this group
+• A kind peer-support community where you can listen, speak, or simply stay present.
+• Daily conversations, check-ins, and voice chats when they are scheduled.
+• Support for stress, anxiety, loneliness, breakups, low mood, and everyday overwhelm.
+• Private ways to talk when you need a more personal conversation.
+• Hope Hub resources, self-checks, wellbeing activities, and routes to professional support.
+
+How to keep this space safe
+• Take your time; quiet members are welcome too.
+• Be kind, protect privacy, and do not pressure anyone to share.
+• Do not send unwanted DMs, spam, hate, bullying, or medical diagnoses.
+• Use the group tools to report something that feels unsafe or inappropriate.
+
+Hope Hub is a community space and not an emergency service. If you or someone else is in immediate danger, contact local emergency services or a crisis helpline right away.`;
 
 export type GroupHelpConfigField = {
   key: string;
