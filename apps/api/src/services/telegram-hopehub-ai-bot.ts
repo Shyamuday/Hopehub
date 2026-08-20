@@ -41,6 +41,7 @@ import {
 import { isModerationExempt } from './telegram-group-help.permissions.js';
 import {
   deleteGroupHelpMessage as deleteMessage,
+  sendGroupHelpActivityLog,
   sendModerationLog,
   sendTemporaryGroupHelpMessage as sendTemporaryMessage
 } from './telegram-group-help.actions.js';
@@ -67,8 +68,41 @@ import {
 import { handleGroupHelpCommandConfirmationCallback } from './telegram-group-help.command-confirmation.js';
 import { recordGroupHelpCommandAudit } from './telegram-group-help.command-audit.js';
 import { recordGroupHelpStaffGroupMember } from './telegram-group-help.staff-members.js';
+import {
+  getTelegramCommunityMemberIdentityHistory,
+  observeTelegramCommunityMember
+} from './telegram-community-member-identity.js';
 
 const BOT = GROUP_HELP_BOT_SLUG;
+
+function forwardedTelegramUserId(message: CommunityTelegramMessage) {
+  if (message.forward_from?.id) return message.forward_from.id;
+  const origin = message.forward_origin;
+  if (!origin || typeof origin !== 'object') return 0;
+  const value = origin as {
+    type?: string;
+    sender_user?: { id?: number | string };
+    user?: { id?: number | string };
+  };
+  if (value.type !== 'user') return 0;
+  const id = value.sender_user?.id ?? value.user?.id;
+  return typeof id === 'number' || typeof id === 'string' ? Number(id) : 0;
+}
+
+function distinctNonEmpty(values: Array<string | null | undefined>) {
+  return [
+    ...new Set(
+      values.map((value) => value?.trim()).filter((value): value is string => Boolean(value))
+    )
+  ];
+}
+
+function truncateIdentityAliases(values: string[], maximum = 24) {
+  const limited = values.slice(-maximum);
+  const suffix =
+    values.length > limited.length ? ` (+${values.length - limited.length} older)` : '';
+  return `${limited.join(' • ')}${suffix}` || 'None recorded';
+}
 
 async function handleCommand(message: CommunityTelegramMessage, values: Record<string, string>) {
   const chatId = String(message.chat.id);
@@ -140,6 +174,11 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
       await handleCommand(message, values);
       return;
     }
+    const forwardedUserId = forwardedTelegramUserId(message);
+    if (forwardedUserId) {
+      await handleCommand({ ...message, text: `/history ${forwardedUserId}` }, values);
+      return;
+    }
     await sendCommunityMessage(BOT, chatId, values.telegramGroupHelpSupportMessage);
     return;
   }
@@ -173,6 +212,55 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
   if (await recordTelegramCommunityDeparture(update)) return;
   if (await welcomeTelegramCommunityMembers(update)) return;
   if (!message) return;
+  if (message.from && !message.from.is_bot) {
+    const identity = await observeTelegramCommunityMember({
+      chatId,
+      member: message.from,
+      source: 'MESSAGE'
+    });
+    if (identity.changed) {
+      const alertMode = values.telegramGroupHelpIdentityChangeAlerts || 'public full history';
+      if (alertMode !== 'off') {
+        await sendGroupHelpActivityLog(values, 'Member identity changed', [
+          `Group: ${message.chat.title || message.chat.id} (${message.chat.id})`,
+          `Member ID: ${message.from.id}`,
+          `Changed: ${identity.changedFields.join(', ')}`,
+          identity.changedFields.includes('name')
+            ? `Name: ${identity.previousDisplayName || 'no public name'} → ${identity.displayName || 'no public name'}`
+            : null,
+          identity.changedFields.includes('username')
+            ? `Username: ${identity.previousUsername ? `@${identity.previousUsername}` : 'not set'} → ${identity.username ? `@${identity.username}` : 'not set'}`
+            : null,
+          `Observed name changes: ${identity.nameChangeCount}`
+        ]);
+      }
+      if (alertMode === 'public summary' || alertMode === 'public full history') {
+        const history = await getTelegramCommunityMemberIdentityHistory(chatId, message.from.id);
+        const previousNames = distinctNonEmpty(history.map((entry) => entry.previousDisplayName));
+        const previousUsernames = distinctNonEmpty(
+          history.map((entry) => entry.previousUsername).map((username) => `@${username}`)
+        );
+        const publicDetails =
+          alertMode === 'public full history'
+            ? [
+                `Previous names: ${truncateIdentityAliases(previousNames)}`,
+                `Previous usernames: ${truncateIdentityAliases(previousUsernames)}`,
+                `Name changes recorded: ${identity.nameChangeCount}`
+              ]
+            : ['Previous details are available to the moderation team.'];
+        await sendCommunityMessage(
+          BOT,
+          chatId,
+          [
+            'Profile updated',
+            `Member: ${identity.displayName || 'Telegram member'} (${message.from.id})`,
+            `Changed: ${identity.changedFields.join(' and ')}`,
+            ...publicDetails
+          ].join('\n')
+        ).catch(() => null);
+      }
+    }
+  }
   if (await handleTelegramCommunityVoiceChatStarted(message)) return;
   if (await handleTelegramCommunityVoiceChatEnded(message)) return;
   if (message.text?.startsWith('/')) {

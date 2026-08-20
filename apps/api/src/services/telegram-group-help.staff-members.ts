@@ -11,6 +11,12 @@ import type {
   CommunityTelegramUpdate,
   CommunityTelegramUser
 } from './telegram-community-bots.types.js';
+import {
+  changedTelegramIdentityFields,
+  normalizedTelegramIdentity,
+  observeTelegramCommunityMember,
+  telegramDisplayName
+} from './telegram-community-member-identity.js';
 const AUTOMATIC_ROLE_ACTOR = 'telegram-private-staff-auto';
 const STAFF_STATUS_TTL_MS = 6 * 60 * 60_000;
 const staffStatusCache = new Map<string, { status: string; expiresAt: number }>();
@@ -129,21 +135,10 @@ async function upsertActiveMember(
   knownStatus?: string
 ) {
   if (member.is_bot) return;
-  await prisma.telegramCommunityMember.upsert({
-    where: { chatId_telegramUserId: { chatId, telegramUserId: String(member.id) } },
-    create: {
-      chatId,
-      telegramUserId: String(member.id),
-      username: member.username,
-      firstName: member.first_name,
-      lastName: member.last_name
-    },
-    update: {
-      username: member.username,
-      firstName: member.first_name,
-      lastName: member.last_name,
-      leftAt: null
-    }
+  await observeTelegramCommunityMember({
+    chatId,
+    member,
+    source: 'STAFF_GROUP'
   });
   const granted = await ensureDailyStaffPermissions(
     mainGroupId,
@@ -247,30 +242,65 @@ async function upsertDirectoryMembers(
     select: { telegramUserId: true }
   });
   const activeIds = new Set(members.map((member) => member.telegramUserId));
+  const memberIds = [...activeIds];
+  const [existingMembers, historicalMembers] = await Promise.all([
+    prisma.telegramCommunityMember.findMany({
+      where: { chatId, telegramUserId: { in: memberIds } },
+      select: { telegramUserId: true, firstName: true, lastName: true, username: true }
+    }),
+    prisma.telegramCommunityMemberIdentityHistory.findMany({
+      where: { chatId, telegramUserId: { in: memberIds } },
+      distinct: ['telegramUserId'],
+      select: { telegramUserId: true }
+    })
+  ]);
+  const existingByMemberId = new Map(
+    existingMembers.map((member) => [member.telegramUserId, member])
+  );
+  const historyMemberIds = new Set(historicalMembers.map((member) => member.telegramUserId));
 
   for (let offset = 0; offset < members.length; offset += 100) {
     const chunk = members.slice(offset, offset + 100);
     await prisma.$transaction(
-      chunk.map((member) =>
-        prisma.telegramCommunityMember.upsert({
-          where: {
-            chatId_telegramUserId: { chatId, telegramUserId: member.telegramUserId }
-          },
-          create: {
-            chatId,
-            telegramUserId: member.telegramUserId,
-            username: member.username,
-            firstName: member.firstName,
-            lastName: member.lastName
-          },
-          update: {
-            username: member.username,
-            firstName: member.firstName,
-            lastName: member.lastName,
-            leftAt: null
-          }
-        })
-      )
+      chunk.flatMap((member) => {
+        const previous = existingByMemberId.get(member.telegramUserId);
+        const next = normalizedTelegramIdentity(member);
+        const changedFields = previous
+          ? changedTelegramIdentityFields(previous, next)
+          : ['initial'];
+        const shouldRecord =
+          !previous || !historyMemberIds.has(member.telegramUserId) || changedFields.length > 0;
+        const identityInitial = !previous || !historyMemberIds.has(member.telegramUserId);
+        return [
+          prisma.telegramCommunityMember.upsert({
+            where: {
+              chatId_telegramUserId: { chatId, telegramUserId: member.telegramUserId }
+            },
+            create: { chatId, telegramUserId: member.telegramUserId, ...next },
+            update: { ...next, leftAt: null }
+          }),
+          ...(shouldRecord
+            ? [
+                prisma.telegramCommunityMemberIdentityHistory.create({
+                  data: {
+                    chatId,
+                    telegramUserId: member.telegramUserId,
+                    previousFirstName: identityInitial ? null : previous?.firstName,
+                    previousLastName: identityInitial ? null : previous?.lastName,
+                    previousUsername: identityInitial ? null : previous?.username,
+                    previousDisplayName: identityInitial ? null : telegramDisplayName(previous!),
+                    firstName: next.firstName,
+                    lastName: next.lastName,
+                    username: next.username,
+                    displayName: telegramDisplayName(next),
+                    changedFields: identityInitial ? ['initial'] : changedFields,
+                    source: 'DIRECTORY_SYNC'
+                  }
+                })
+              ]
+            : [])
+        ];
+      })
     );
   }
 

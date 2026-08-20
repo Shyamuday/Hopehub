@@ -48,10 +48,13 @@ Please remember:
 
 💙 Every conversation matters. Every person matters. You matter.`;
 
-export const HOPEHUB_COMMUNITY_WELCOME_MEDIA_URL = '';
+// Public S3 object uploaded through the Hope Hub media flow. Keep the runtime
+// fallback usable when a new environment has not yet been configured in admin.
+export const HOPEHUB_COMMUNITY_WELCOME_MEDIA_URL =
+  'https://hopehub-public-assets-924479393196.s3.us-east-1.amazonaws.com/hope-hub-media/2026-08-20/7b1e58ab-67be-4ae6-a47a-4b7bf84d951f.mp4';
 
-export const HOPEHUB_COMMUNITY_WELCOME_BUTTONS = `Support | https://hopehub.in/#live-connect | success && Confess | ${TELEGRAM_BOT_URLS.CONFESSION} | danger && Channel | https://t.me/HopeHubGlobal | primary
-Website | https://hopehub.in/ | success && Web bot | ${TELEGRAM_BOT_URLS.WEB} | primary && Rules | ${TELEGRAM_BOT_URLS.RULES} | primary`;
+export const HOPEHUB_COMMUNITY_WELCOME_BUTTONS = `Support | https://hopehub.in/#live-connect | success && Confess | ${TELEGRAM_BOT_URLS.CONFESSION} | success && Channel | https://t.me/HopeHubGlobal | success
+Website | https://hopehub.in/ | success && Web bot | ${TELEGRAM_BOT_URLS.WEB} | success && Rules | ${TELEGRAM_BOT_URLS.RULES} | success`;
 
 export type GroupHelpConfigField = {
   key: string;
@@ -1081,6 +1084,17 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
     options: ['off', 'admins', 'staff group'],
     maxLength: 20,
     defaultValue: 'admins'
+  },
+  {
+    key: 'telegramGroupHelpIdentityChangeAlerts',
+    label: 'Profile-change alerts',
+    description:
+      'Choose where name and username changes are reported. Public full history posts the previously observed aliases in the group for moderation safety.',
+    section: 'people',
+    type: 'select',
+    options: ['off', 'staff only', 'public summary', 'public full history'],
+    maxLength: 24,
+    defaultValue: 'public full history'
   },
   {
     key: 'telegramGroupHelpStaffGroupId',

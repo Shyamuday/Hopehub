@@ -18,6 +18,7 @@ import {
   scheduleCommunityMessageCleanup
 } from './telegram-community-bots.store.js';
 import { sendGroupHelpActivityLog } from './telegram-group-help.actions.js';
+import { observeTelegramCommunityMember } from './telegram-community-member-identity.js';
 import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
 import { TELEGRAM_BOT_URLS } from '../constants/telegram-community-bot.constants.js';
 import {
@@ -1031,32 +1032,24 @@ export async function welcomeTelegramCommunityMembers(update: CommunityTelegramU
   const chat = message?.chat || membership?.chat;
   if (!chat) return false;
   const config = await communityConfig();
-  await prisma.$transaction(
+  await Promise.all(
     members.map((member) =>
-      prisma.telegramCommunityMember.upsert({
-        where: {
-          chatId_telegramUserId: {
-            chatId: String(chat.id),
-            telegramUserId: String(member.id)
-          }
-        },
-        create: {
-          chatId: String(chat.id),
-          telegramUserId: String(member.id),
-          username: member.username,
-          firstName: member.first_name,
-          lastName: member.last_name
-        },
-        update: {
-          username: member.username,
-          firstName: member.first_name,
-          lastName: member.last_name,
-          joinedAt: new Date(),
-          leftAt: null
-        }
+      observeTelegramCommunityMember({
+        chatId: String(chat.id),
+        member,
+        source: 'JOIN'
       })
     )
   );
+  // A rejoin is a new membership period, while a normal message should not
+  // rewrite the original join date.
+  await prisma.telegramCommunityMember.updateMany({
+    where: {
+      chatId: String(chat.id),
+      telegramUserId: { in: members.map((member) => String(member.id)) }
+    },
+    data: { joinedAt: new Date(), leftAt: null }
+  });
   if (message?.new_chat_members?.length && config.cleanJoinNotice) {
     await callCommunityTelegramApi(CAMPAIGN_BOT, 'deleteMessage', {
       chat_id: chat.id,

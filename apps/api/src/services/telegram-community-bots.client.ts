@@ -90,6 +90,7 @@ const COMMUNITY_BOTS: Record<
       { command: 'adminlist', description: 'List group admins (staff)' },
       { command: 'staff', description: 'Show community staff (staff)' },
       { command: 'info', description: 'Show replied member details (staff)' },
+      { command: 'history', description: 'Show member name history (staff)' },
       { command: 'perms', description: 'Show member bot permissions (staff)' },
       { command: 'geturl', description: 'Get link to replied message (staff)' },
       { command: 'stats', description: 'Group activity snapshot (moderators)' },

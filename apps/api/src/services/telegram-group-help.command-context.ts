@@ -53,6 +53,23 @@ export async function resolveGroupHelpCommandContext(
   message: CommunityTelegramMessage
 ): Promise<GroupHelpCommandContext> {
   const values = await getSiteConfigMap([...COMMAND_GROUP_KEYS]);
+  // In a direct bot chat, staff should be able to use lookups without first
+  // opening the main group. The normal permission layer still requires an
+  // active private-staff membership before any staff command is applied.
+  if (message.chat.type === 'private') {
+    const mainGroupId = values.telegramGroupHelpGroupChatId?.trim() || '';
+    return {
+      sourceChatId: String(message.chat.id),
+      targetChatId: mainGroupId,
+      isControlGroup: true,
+      ...(mainGroupId
+        ? {}
+        : {
+            configurationError:
+              'The main Hope Hub group is not configured. Set telegramGroupHelpGroupChatId before using private staff commands.'
+          })
+    };
+  }
   return groupHelpCommandContextFromConfig(String(message.chat.id), values);
 }
 

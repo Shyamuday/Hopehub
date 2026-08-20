@@ -1035,8 +1035,27 @@
                   @if (member.telegramAdministrator) {
                     <em>{{ member.telegramAdministratorTitle || 'Telegram administrator' }}</em>
                   }
+                  @if (member.nameChangeCount) {
+                    <em class="member-directory__identity-warning">
+                      Name changed {{ member.nameChangeCount }}
+                      {{ member.nameChangeCount === 1 ? 'time' : 'times' }}
+                    </em>
+                  }
                 </span>
                 <div>
+                  <button
+                    type="button"
+                    [disabled]="memberIdentityHistoryLoading() === memberIdentityKey(member)"
+                    (click)="toggleMemberIdentityHistory(member)"
+                  >
+                    @if (memberIdentityHistory()[memberIdentityKey(member)]) {
+                      Hide names
+                    } @else if (memberIdentityHistoryLoading() === memberIdentityKey(member)) {
+                      Loading…
+                    } @else {
+                      Name history
+                    }
+                  </button>
                   <button
                     type="button"
                     (click)="copy(member.mention, 'member-mention-' + member.telegramUserId)"
@@ -1051,6 +1070,26 @@
                     Use target
                   </button>
                 </div>
+                @if (memberIdentityHistory()[memberIdentityKey(member)]; as history) {
+                  <div class="member-directory__identity-history">
+                    <strong>Observed profile history</strong>
+                    @for (entry of history; track entry.id) {
+                      <small>
+                        {{ entry.observedAt | date: 'medium' }} ·
+                        @if (entry.changedFields.includes('initial')) {
+                          First observed as {{ entry.displayName || 'no public name' }}
+                        } @else {
+                          {{ entry.previousDisplayName || 'no public name' }}
+                          → {{ entry.displayName || 'no public name' }}
+                          @if (entry.previousUsername !== entry.username) {
+                            · username {{ entry.previousUsername ? '@' + entry.previousUsername : 'not set' }}
+                            → {{ entry.username ? '@' + entry.username : 'not set' }}
+                          }
+                        }
+                      </small>
+                    }
+                  </div>
+                }
               </article>
             }
           </div>

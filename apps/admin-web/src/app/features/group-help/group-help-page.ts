@@ -223,6 +223,8 @@ export class GroupHelpPage {
   readonly memberDirectorySyncedAt = signal('');
   readonly memberDirectoryNextSyncAt = signal('');
   readonly memberDirectoryLoading = signal(false);
+  readonly memberIdentityHistory = signal<Record<string, any[]>>({});
+  readonly memberIdentityHistoryLoading = signal('');
   readonly roleAssignments = signal<any[]>([]);
   readonly customRoles = signal<any[]>([]);
   readonly staffGroupId = signal('');
@@ -413,6 +415,35 @@ export class GroupHelpPage {
     if (this.memberDirectoryScope() === scope) return;
     this.memberDirectoryScope.set(scope);
     void this.loadMemberDirectory();
+  }
+
+  memberIdentityKey(member: any) {
+    return `${this.memberDirectoryScope()}:${member.telegramUserId}`;
+  }
+
+  async toggleMemberIdentityHistory(member: any) {
+    const key = this.memberIdentityKey(member);
+    const current = this.memberIdentityHistory();
+    if (current[key]) {
+      const { [key]: _hidden, ...remaining } = current;
+      this.memberIdentityHistory.set(remaining);
+      return;
+    }
+    this.memberIdentityHistoryLoading.set(key);
+    try {
+      const response = await this.api.getTelegramGroupHelpMemberIdentityHistory(
+        member.telegramUserId,
+        this.memberDirectoryScope(),
+      );
+      this.memberIdentityHistory.set({
+        ...this.memberIdentityHistory(),
+        [key]: response.history || [],
+      });
+    } catch {
+      this.error.set('Could not load this member’s name history.');
+    } finally {
+      this.memberIdentityHistoryLoading.set('');
+    }
   }
 
   useMemberForModeration(member: any) {

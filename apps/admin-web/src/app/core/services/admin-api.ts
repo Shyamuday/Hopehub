@@ -852,6 +852,13 @@ export class AdminApi {
       ...(args as Parameters<AdminOpsApi['getTelegramGroupHelpMembers']>),
     );
   }
+  getTelegramGroupHelpMemberIdentityHistory(
+    ...args: Parameters<AdminOpsApi['getTelegramGroupHelpMemberIdentityHistory']>
+  ) {
+    return this.ops.getTelegramGroupHelpMemberIdentityHistory(
+      ...(args as Parameters<AdminOpsApi['getTelegramGroupHelpMemberIdentityHistory']>),
+    );
+  }
   updateTelegramGroupHelpStaffPermissions(
     ...args: Parameters<AdminOpsApi['updateTelegramGroupHelpStaffPermissions']>
   ) {

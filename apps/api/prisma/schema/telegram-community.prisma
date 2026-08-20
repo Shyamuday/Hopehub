@@ -235,6 +235,30 @@ model TelegramCommunityMember {
   @@index([chatId, joinedAt])
 }
 
+/// An append-only record of profile names the Group Help bot has actually
+/// observed. It is scoped to a community chat, rather than attempting to build
+/// a Telegram-wide profile, and is removed by /forget with the member record.
+model TelegramCommunityMemberIdentityHistory {
+  id                  String   @id @default(cuid())
+  chatId              String
+  telegramUserId      String
+  previousFirstName   String?
+  previousLastName    String?
+  previousUsername    String?
+  previousDisplayName String?
+  firstName           String?
+  lastName            String?
+  username            String?
+  displayName         String?
+  changedFields       String[] @default([])
+  source              String
+  observedAt          DateTime @default(now())
+  createdAt           DateTime @default(now())
+
+  @@index([chatId, telegramUserId, observedAt])
+  @@index([chatId, observedAt])
+}
+
 model TelegramCommunityMessageCleanup {
   id          String   @id @default(cuid())
   bot         String

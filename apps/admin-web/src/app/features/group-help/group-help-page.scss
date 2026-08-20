@@ -371,6 +371,7 @@ textarea {
 }
 
 .member-directory__list article {
+  flex-wrap: wrap;
   padding: 0.75rem 0;
   border-bottom: 1px solid var(--color-border);
 }
@@ -395,6 +396,26 @@ textarea {
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 0.4rem;
+}
+
+.member-directory__identity-warning {
+  background: color-mix(in srgb, var(--color-danger, #b42318) 12%, var(--color-surface)) !important;
+  color: var(--color-danger, #b42318) !important;
+}
+
+.member-directory__identity-history {
+  display: grid !important;
+  flex: 1 0 100%;
+  justify-content: initial !important;
+  gap: 0.35rem;
+  margin-top: 0.15rem;
+  padding: 0.65rem;
+  border-left: 3px solid var(--color-brand);
+  background: var(--color-surface);
+}
+
+.member-directory__identity-history strong {
+  font-size: var(--text-sm);
 }
 
 .case-actions {

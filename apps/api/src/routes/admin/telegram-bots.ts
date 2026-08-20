@@ -1101,10 +1101,24 @@ export function registerAdminTelegramBotRoutes(router: Router) {
           select: { payload: true, updatedAt: true, expiresAt: true }
         })
       ]);
+      const nameChangeCounts = members.length
+        ? await prisma.telegramCommunityMemberIdentityHistory.groupBy({
+            by: ['telegramUserId'],
+            where: {
+              chatId,
+              telegramUserId: { in: members.map((member) => member.telegramUserId) },
+              changedFields: { has: 'name' }
+            },
+            _count: { _all: true }
+          })
+        : [];
       const administrators = new Map(
         telegramAdministrators
           .filter((member) => member.user?.id != null)
           .map((member) => [String(member.user!.id), member])
+      );
+      const nameChangesByMember = new Map(
+        nameChangeCounts.map((entry) => [entry.telegramUserId, entry._count._all])
       );
       res.json({
         scope,
@@ -1126,11 +1140,39 @@ export function registerAdminTelegramBotRoutes(router: Router) {
               ? `@${member.username}`
               : `<a href="tg://user?id=${member.telegramUserId}">${escapeHtml(displayName)}</a>`,
             commandTarget: member.username ? `@${member.username}` : member.telegramUserId,
+            nameChangeCount: nameChangesByMember.get(member.telegramUserId) || 0,
             telegramAdministrator: Boolean(administrator),
             telegramAdministratorTitle: administrator?.custom_title || null
           };
         })
       });
+    })
+  );
+
+  router.get(
+    '/admin/telegram-bots/group-help/members/:telegramUserId/identity-history',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (req, res) => {
+      const values = await groupHelpConfigMap();
+      const scope = String(req.query.scope || 'main').toLowerCase() === 'staff' ? 'staff' : 'main';
+      const chatId =
+        scope === 'staff'
+          ? values.telegramGroupHelpStaffGroupId?.trim() || ''
+          : values.telegramGroupHelpGroupChatId?.trim() || '';
+      if (!chatId) {
+        return res.status(400).json({ message: `The ${scope} Telegram group is not configured.` });
+      }
+      const telegramUserId = routeParam(req, 'telegramUserId');
+      if (!/^\d{1,32}$/.test(telegramUserId)) {
+        return res.status(400).json({ message: 'A numeric Telegram user ID is required.' });
+      }
+      const history = await prisma.telegramCommunityMemberIdentityHistory.findMany({
+        where: { chatId, telegramUserId },
+        orderBy: { observedAt: 'desc' },
+        take: 100
+      });
+      res.json({ scope, chatId, telegramUserId, history });
     })
   );
 

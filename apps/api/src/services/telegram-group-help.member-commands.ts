@@ -25,6 +25,10 @@ import {
   messageForGroupHelpTarget,
   resolveGroupHelpCommandContext
 } from './telegram-group-help.command-context.js';
+import {
+  identityHistoryDisplayName,
+  observeTelegramCommunityMember
+} from './telegram-community-member-identity.js';
 
 type TelegramMemberSnapshot = {
   status?: string;
@@ -325,7 +329,7 @@ export async function handleGroupHelpMemberCommand(
     );
     return true;
   }
-  if (command === '/info' || command === '/member' || command === '/me') {
+  if (command === '/info' || command === '/history' || command === '/member' || command === '/me') {
     if (
       command !== '/me' &&
       !(await canUseGroupHelpCommand(permissionMessage, values, command, 'HELPER'))
@@ -352,7 +356,7 @@ export async function handleGroupHelpMemberCommand(
     if (!targetId) {
       await sendTemporaryGroupHelpMessage(
         chatId,
-        'Reply to a member’s message, or use /info followed by their Telegram numeric ID.',
+        'Reply to or forward a member’s message, or use /history followed by their Telegram numeric ID.',
         values
       );
       return true;
@@ -372,7 +376,20 @@ export async function handleGroupHelpMemberCommand(
       return true;
     }
     const target = telegramMember.user;
-    const [member, role, warnings, openCases] = await Promise.all([
+    await observeTelegramCommunityMember({
+      chatId: targetChatId,
+      member: target,
+      source: 'INFO_LOOKUP'
+    });
+    const [
+      member,
+      role,
+      warnings,
+      openCases,
+      identityHistory,
+      nameChangeCount,
+      usernameChangeCount
+    ] = await Promise.all([
       prisma.telegramCommunityMember.findUnique({
         where: {
           chatId_telegramUserId: { chatId: targetChatId, telegramUserId: String(target.id) }
@@ -382,12 +399,56 @@ export async function handleGroupHelpMemberCommand(
       telegramGroupWarningDetails(targetChatId, String(target.id)),
       prisma.telegramCommunityModerationCase.count({
         where: { chatId: targetChatId, targetUserId: String(target.id), status: 'OPEN' }
+      }),
+      prisma.telegramCommunityMemberIdentityHistory.findMany({
+        where: { chatId: targetChatId, telegramUserId: String(target.id) },
+        orderBy: { observedAt: 'desc' },
+        take: 25
+      }),
+      prisma.telegramCommunityMemberIdentityHistory.count({
+        where: {
+          chatId: targetChatId,
+          telegramUserId: String(target.id),
+          changedFields: { has: 'name' }
+        }
+      }),
+      prisma.telegramCommunityMemberIdentityHistory.count({
+        where: {
+          chatId: targetChatId,
+          telegramUserId: String(target.id),
+          changedFields: { has: 'username' }
+        }
       })
     ]);
     const fullName =
       [target.first_name, target.last_name].filter(Boolean).join(' ') || 'Telegram member';
     const warningLimit = Math.max(1, Number(values.telegramGroupHelpWarnLimit || 3));
     const adminPermissions = administratorPermissions(telegramMember);
+    const previousNames = [
+      ...new Set(
+        identityHistory
+          .filter((entry) => entry.changedFields.includes('name'))
+          .map((entry) =>
+            identityHistoryDisplayName({
+              firstName: entry.previousFirstName,
+              lastName: entry.previousLastName,
+              username: entry.previousUsername,
+              displayName: entry.previousDisplayName
+            })
+          )
+          .filter((name) => name !== fullName)
+      )
+    ].slice(0, 8);
+    const previousUsernames = [
+      ...new Set(
+        identityHistory
+          .filter((entry) => entry.changedFields.includes('username'))
+          .map((entry) => (entry.previousUsername ? `@${entry.previousUsername}` : 'no username'))
+          .filter(
+            (username) => username !== (target.username ? `@${target.username}` : 'no username')
+          )
+      )
+    ].slice(0, 8);
     const details = [
       'Member details',
       '',
@@ -400,6 +461,10 @@ export async function handleGroupHelpMemberCommand(
       warnings.reasons.length ? `Recent warning reasons: ${warnings.reasons.join(' · ')}` : '',
       `Open safety/moderation cases: ${openCases}`,
       `Joined: ${member?.joinedAt ? member.joinedAt.toLocaleDateString('en-IN') : 'not recorded'}`,
+      `Name changes observed: ${nameChangeCount}`,
+      previousNames.length ? `Previous names: ${previousNames.join(' · ')}` : '',
+      `Username changes observed: ${usernameChangeCount}`,
+      previousUsernames.length ? `Previous usernames: ${previousUsernames.join(' · ')}` : '',
       adminPermissions.length ? `Admin permissions: ${adminPermissions.join(', ')}` : ''
     ]
       .filter(Boolean)
@@ -559,7 +624,7 @@ export async function handleGroupHelpMemberCommand(
     const helpSections = [
       `*Hope Hub bot help*\n\n*Member commands*\n/rules — community rules\n/support — private support\n/warnings — your warning count\n/me — your group profile\n/id — Telegram and target-group IDs\n/report — report a replied message\n/admin or /alertadmin — alert the community team\n/forget — delete retained Group Help data`,
       canUseStaffTools
-        ? `*Helper tools*\nIn the main group, reply to a message:\n/warn [reason], /unwarn, /delete [reason], /delwarn [reason]\n/info, /perms, /geturl, /clearwarnings\n/adminlist, /staff, /stats`
+        ? `*Helper tools*\nIn the main group, reply to a message:\n/warn [reason], /unwarn, /delete [reason], /delwarn [reason]\n/info, /history, /perms, /geturl, /clearwarnings\n/adminlist, /staff, /stats`
         : '',
       canUseModTools
         ? `*Moderator tools*\n/mute [reason] — mute for ${muteMinutes} minutes\n/unmute, /ro, /unro, /ban, /unban, /kick\n/delmute, /delban, /delkick — delete plus member action`
@@ -568,7 +633,7 @@ export async function handleGroupHelpMemberCommand(
         ? `*Administrator tools*\n/promote, /unadmin, /title, /untitle\n/helper, /unhelper, /mod, /unmod\n/pin [notify], /unpin, /unpinall, /pinned\n/filter, /unfilter, /filters\n/welcome on|off, /lockdown [minutes], /unlock\n/settings, /setlog, /settestgroup`
         : '',
       context.isControlGroup && canUseStaffTools
-        ? `*Private admin-group syntax*\n/info <user_id or @username>\n/perms <user_id or @username>\n/warn|mute|ban <user_id or @username> [reason]\n/delete <main_message_id> [reason]\n/delwarn|delmute|delban <user> <main_message_id> [reason]\n/geturl <main_message_id>\n/clearwarnings <user_id or @username>`
+        ? `*Private admin-group syntax*\n/info or /history <user_id or @username>\nForward a member message directly to the bot for /history\n/perms <user_id or @username>\n/warn|mute|ban <user_id or @username> [reason]\n/delete <main_message_id> [reason]\n/delwarn|delmute|delban <user> <main_message_id> [reason]\n/geturl <main_message_id>\n/clearwarnings <user_id or @username>`
         : '',
       context.isControlGroup && canUseAdminTools
         ? `*Private admin-group administration*\n/promote <user> [title]\n/unadmin <user>\n/title <user> <title>, /untitle <user>\n/helper|mod <user>, /unhelper|unmod <user>\n/pin <main_message_id> [notify]\nAll policy commands above apply to the configured main group.`

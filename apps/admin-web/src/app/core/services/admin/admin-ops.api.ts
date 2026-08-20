@@ -359,6 +359,7 @@ export class AdminOpsApi extends AdminApiBase {
           displayName: string;
           mention: string;
           commandTarget: string;
+          nameChangeCount: number;
           telegramAdministrator: boolean;
           telegramAdministratorTitle?: string | null;
         }>;
@@ -370,6 +371,32 @@ export class AdminOpsApi extends AdminApiBase {
           pageSize: String(params.pageSize || 50),
         },
       }),
+    );
+  }
+
+  getTelegramGroupHelpMemberIdentityHistory(
+    telegramUserId: string,
+    scope: 'main' | 'staff' = 'main',
+  ) {
+    return firstValueFrom(
+      this.http.get<{
+        scope: 'main' | 'staff';
+        chatId: string;
+        telegramUserId: string;
+        history: Array<{
+          id: string;
+          previousDisplayName?: string | null;
+          previousUsername?: string | null;
+          displayName?: string | null;
+          username?: string | null;
+          changedFields: string[];
+          source: string;
+          observedAt: string;
+        }>;
+      }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_MEMBER_IDENTITY_HISTORY(telegramUserId)}`,
+        { params: { scope } },
+      ),
     );
   }
 

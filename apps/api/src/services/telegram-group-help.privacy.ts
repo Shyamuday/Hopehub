@@ -64,6 +64,7 @@ export async function forgetGroupHelpMemberData(chatId: string, telegramUserId: 
         }
       }
     }),
+    prisma.telegramCommunityMemberIdentityHistory.deleteMany({ where: { chatId, telegramUserId } }),
     prisma.telegramCommunityMember.deleteMany({ where: { chatId, telegramUserId } }),
     prisma.telegramCommunityRoleAssignment.deleteMany({ where: { chatId, telegramUserId } }),
     prisma.telegramCommunityReaction.deleteMany({ where: { chatId, telegramUserId } }),
@@ -98,6 +99,7 @@ export async function forgetAllGroupHelpMemberData(telegramUserId: string) {
         }
       }
     }),
+    prisma.telegramCommunityMemberIdentityHistory.deleteMany({ where: { telegramUserId } }),
     prisma.telegramCommunityMember.deleteMany({ where: { telegramUserId } }),
     prisma.telegramCommunityRoleAssignment.deleteMany({ where: { telegramUserId } }),
     prisma.telegramCommunityReaction.deleteMany({ where: { telegramUserId } }),

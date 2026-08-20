@@ -29,6 +29,7 @@ export const GROUP_HELP_COMMAND_CATALOG = {
   ],
   staff: [
     '/info',
+    '/history',
     '/member',
     '/perms',
     '/geturl',
@@ -151,7 +152,7 @@ export const GROUP_HELP_STAFF_PERMISSION_GROUPS = [
   {
     key: 'member_info',
     label: 'View member information',
-    commands: ['/info', '/member', '/perms', '/geturl', '/staff', '/adminlist'],
+    commands: ['/info', '/history', '/member', '/perms', '/geturl', '/staff', '/adminlist'],
     defaultEnabled: true
   },
   { key: 'statistics', label: 'View statistics', commands: ['/stats'], defaultEnabled: true },

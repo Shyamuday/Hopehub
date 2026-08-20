@@ -29,6 +29,7 @@ export const GROUP_HELP_CONFIG_KEYS = [
   'telegramGroupHelpMaxMessageLength',
   'telegramGroupHelpAdminWhitelist',
   'telegramGroupHelpReportsMode',
+  'telegramGroupHelpIdentityChangeAlerts',
   'telegramGroupHelpStaffGroupId',
   'telegramGroupHelpMemberDirectorySync',
   'telegramGroupHelpMemberSyncHours',
