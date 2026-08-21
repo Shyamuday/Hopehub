@@ -196,7 +196,7 @@ export async function handleGroupHelpAdminCommand(
     );
     await sendGroupHelpActivityLog(values, 'Member promoted to admin', [
       `Group ID: ${targetChatId}`,
-      `Member: ${target.first_name || 'Telegram member'} (${target.id})`,
+      `Member: ${telegramPersonLogLabel(target)}`,
       `By: ${telegramPersonLogLabel(message.from, 'Administrator')}`
     ]);
     return true;
@@ -233,7 +233,7 @@ export async function handleGroupHelpAdminCommand(
     );
     await sendGroupHelpActivityLog(values, 'Member demoted from admin', [
       `Group ID: ${targetChatId}`,
-      `Member: ${target.first_name || 'Telegram member'} (${target.id})`,
+      `Member: ${telegramPersonLogLabel(target)}`,
       `By: ${telegramPersonLogLabel(message.from, 'Administrator')}`
     ]);
     return true;

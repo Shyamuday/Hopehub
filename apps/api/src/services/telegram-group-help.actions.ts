@@ -156,6 +156,8 @@ export async function sendModerationLog(
     '🛡 Moderation action',
     `Action: ${action.toUpperCase()}`,
     `Rule / reason: ${reason}`,
+    'Outcome: completed',
+    'Performed by: Hope Hub bot (automatic moderation)',
     `Group: ${message.chat.title || message.chat.id} (${message.chat.id})`,
     `Message: ${message.message_id}${message.message_thread_id ? ` · topic ${message.message_thread_id}` : ''}`,
     `Member: ${member}`,
@@ -313,7 +315,13 @@ export async function handleGroupHelpModerationActionCallback(update: CommunityT
     `By: ${telegramPersonLogLabel(callback.from, 'Telegram staff')}`,
     `From group: ${callbackMessage.chat.id}`,
     `Target group: ${payload.targetChatId}`,
-    payload.targetUserId ? `Target member: ${payload.targetUserId}` : null,
+    payload.targetUserId
+      ? `Target member: ${telegramPersonLogLabel({
+          firstName: payload.targetUserName,
+          username: payload.targetUsername,
+          telegramUserId: payload.targetUserId
+        })}`
+      : null,
     payload.blockedPhrase ? `Phrase: ${payload.blockedPhrase}` : null
   ]);
   return requestedAction;

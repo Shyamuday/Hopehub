@@ -58,6 +58,9 @@ model TelegramGroupHelpCommandAudit {
   actorUserId  String?
   actorUsername String?
   actorName     String?
+  targetUserId  String?
+  targetUsername String?
+  targetName     String?
   sourceMessageId Int?
   command      String
   status       String
@@ -67,6 +70,7 @@ model TelegramGroupHelpCommandAudit {
   @@index([status, createdAt])
   @@index([sourceChatId, createdAt])
   @@index([actorUserId, createdAt])
+  @@index([targetUserId, createdAt])
 }
 
 model TelegramCampaign {

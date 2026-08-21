@@ -10,6 +10,7 @@ export type TelegramPersonForLog = {
   last_name?: string | null;
   firstName?: string | null;
   lastName?: string | null;
+  username?: string | null;
 };
 
 export function telegramPersonName(
@@ -28,7 +29,9 @@ export function telegramPersonLogLabel(
   fallback = 'Telegram member'
 ) {
   const id = person?.id ?? person?.telegramUserId;
-  return id == null
-    ? telegramPersonName(person, fallback)
-    : `${telegramPersonName(person, fallback)} [${id}]`;
+  const username = person?.username?.trim().replace(/^@/, '') || '';
+  const identity = [telegramPersonName(person, fallback), username ? `@${username}` : '']
+    .filter(Boolean)
+    .join(' · ');
+  return id == null ? identity : `${identity} [${id}]`;
 }

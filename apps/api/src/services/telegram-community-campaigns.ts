@@ -19,6 +19,7 @@ import {
 } from './telegram-community-bots.store.js';
 import { sendGroupHelpActivityLog } from './telegram-group-help.actions.js';
 import { observeTelegramCommunityMember } from './telegram-community-member-identity.js';
+import { telegramPersonLogLabel } from './telegram-group-help.people.js';
 import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
 import { TELEGRAM_BOT_URLS } from '../constants/telegram-community-bot.constants.js';
 import {
@@ -1208,7 +1209,7 @@ export async function welcomeTelegramCommunityMembers(update: CommunityTelegramU
     }
     await logCommunityActivity(config, 'Member welcomed', [
       `Group: ${chat.title || chat.id}`,
-      `Member: ${member.first_name || 'Telegram member'} (${member.id})`,
+      `Member: ${telegramPersonLogLabel(member)}`,
       needsVerification ? 'Join verification: required' : 'Join verification: not required'
     ]);
   }
@@ -1260,7 +1261,7 @@ export async function recordTelegramCommunityDeparture(update: CommunityTelegram
   }
   await logCommunityActivity(config, 'Member left the community', [
     `Group: ${chat.title || chat.id}`,
-    `Member: ${member.first_name || 'Telegram member'} (${member.id})`
+    `Member: ${telegramPersonLogLabel(member)}`
   ]);
   return true;
 }

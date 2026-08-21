@@ -5,6 +5,7 @@ import {
   sendGroupHelpActivityLog,
   sendTemporaryGroupHelpMessage
 } from './telegram-group-help.actions.js';
+import { telegramPersonLogLabel } from './telegram-group-help.people.js';
 
 const approvalBot = (chatId: string) => `group-first-message-approval:${chatId}`;
 
@@ -78,7 +79,7 @@ export async function queueGroupHelpMessageReview(
   }
   await sendGroupHelpActivityLog(values, 'Message waiting for staff review', [
     `Group: ${message.chat.title || chatId}`,
-    `Member: ${message.from.first_name || 'Telegram member'} (${userId})`,
+    `Member: ${telegramPersonLogLabel(message.from)}`,
     `Reason: ${reason === 'FIRST_MESSAGE_REVIEW' ? 'first message' : 'media review'}`
   ]);
   await sendTemporaryGroupHelpMessage(

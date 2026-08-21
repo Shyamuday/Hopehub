@@ -369,7 +369,7 @@ export async function handleGroupHelpStaffCommand(
       await sendGroupHelpActivityLog(values, 'Private admin command applied', [
         `Action: ${effectiveAction}`,
         `Main group ID: ${targetChatId}`,
-        `Member: ${target.first_name || 'Telegram member'} (${target.id})`,
+        `Member: ${telegramPersonLogLabel(target)}`,
         `Reason: ${reason}`,
         `By: ${telegramPersonLogLabel(message.from, 'Administrator')}`
       ]);
@@ -480,7 +480,7 @@ export async function handleGroupHelpStaffCommand(
 
   await sendGroupHelpActivityLog(values, 'Community role updated', [
     `Group ID: ${targetChatId}`,
-    `Member: ${target.first_name || 'Telegram member'} (${target.id})`,
+    `Member: ${telegramPersonLogLabel(target)}`,
     `Role: ${roleCommandName.startsWith('un') ? 'removed' : 'assigned'} ${role.toLowerCase()}`,
     `By: ${telegramPersonLogLabel(message.from, 'Administrator')}`
   ]);

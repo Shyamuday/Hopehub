@@ -29,6 +29,7 @@ import {
   identityHistoryDisplayName,
   observeTelegramCommunityMember
 } from './telegram-community-member-identity.js';
+import { telegramPersonLogLabel } from './telegram-group-help.people.js';
 
 type TelegramMemberSnapshot = {
   status?: string;
@@ -173,7 +174,7 @@ export async function handleGroupHelpMemberCommand(
   if ((command === '/admin' || command === '/alertadmin') && message.from) {
     await sendGroupHelpActivityLog(values, 'Member requested administrator support', [
       `Group ID: ${targetChatId}`,
-      `Member: ${message.from.first_name || 'Telegram member'} (${message.from.id})`
+      `Member: ${telegramPersonLogLabel(message.from)}`
     ]);
     await sendTemporaryGroupHelpMessage(
       chatId,
