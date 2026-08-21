@@ -51,6 +51,14 @@
         <div class="val">{{ duration(report.summary.averageDurationSeconds) }}</div>
         <div class="lbl">Avg duration</div>
       </article>
+      <article class="card" [class.warn]="report.summary.p95ConnectMs > 8000">
+        <div class="val">{{ milliseconds(report.summary.p95ConnectMs) }}</div>
+        <div class="lbl">p95 connection</div>
+      </article>
+      <article class="card" [class.warn]="report.summary.p95FirstMediaMs > 10000">
+        <div class="val">{{ milliseconds(report.summary.p95FirstMediaMs) }}</div>
+        <div class="lbl">p95 first media</div>
+      </article>
     </div>
 
     <div class="insight-grid">

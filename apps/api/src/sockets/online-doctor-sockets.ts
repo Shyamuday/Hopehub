@@ -10,6 +10,7 @@ import {
 import { sendIncomingCallPush } from '../services/push-devices.js';
 import { callQualitySnapshot } from '../services/call-session-quality.js';
 import { recordCallTimelineEvent, safeCallEventMetadata } from '../services/call-event-tracker.js';
+import { maybeNotifyCallReliabilityIssue } from '../services/call-reliability-alerts.js';
 
 type CallSignalPayload = {
   callId?: string;
@@ -501,6 +502,11 @@ async function recordCallSignal(
         }
       }
     });
+    if (event === SOCKET_EVENTS.CALL_END) {
+      void maybeNotifyCallReliabilityIssue(payload.reason).catch((error) =>
+        console.warn('[call-health] Reliability alert check failed', error)
+      );
+    }
     lastSignalSequences.delete(`${payload.callId}:${fromUserId}`);
     lastSignalSequences.delete(`${payload.callId}:${payload.targetUserId}`);
     return { relay: true, sessionId: existing.id };
@@ -591,11 +597,15 @@ export function registerOnlineDoctorSockets(io: SocketIoServer, socket: Socket, 
         const storedCallId = String(
           ((session?.metadata as Record<string, unknown> | null) || {})['callId'] || ''
         );
+        const resolvedCallId = storedCallId || payload.callId;
         socket.emit(SOCKET_EVENTS.CALL_STATE, {
           consultationId: payload.consultationId,
-          callId: storedCallId || payload.callId,
+          callId: resolvedCallId,
           active: Boolean(session && (!storedCallId || storedCallId === payload.callId)),
-          status: session?.status || null
+          status: session?.status || null,
+          mode: session?.mode || payload.mode || null,
+          lastAcceptedSequence: lastSignalSequences.get(`${resolvedCallId}:${userId}`) ?? 0,
+          reason: session ? undefined : 'call_not_active'
         });
         trackCallEvent(payload, SOCKET_EVENTS.CALL_SYNC, 'ACCEPTED', {
           sessionId: session?.id
@@ -618,6 +628,7 @@ export function registerOnlineDoctorSockets(io: SocketIoServer, socket: Socket, 
     { event: SOCKET_EVENTS.CALL_RING, relay: SOCKET_EVENTS.CALL_RING },
     { event: SOCKET_EVENTS.CALL_RING_ACK, relay: SOCKET_EVENTS.CALL_RING_ACK },
     { event: SOCKET_EVENTS.CALL_HEARTBEAT, relay: SOCKET_EVENTS.CALL_HEARTBEAT },
+    { event: SOCKET_EVENTS.CALL_MEDIA_STATE, relay: SOCKET_EVENTS.CALL_MEDIA_STATE },
     { event: SOCKET_EVENTS.CALL_DIAGNOSTIC, relay: SOCKET_EVENTS.CALL_DIAGNOSTIC }
   ];
 

@@ -126,6 +126,21 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
       let unknownRoute = 0;
       let totalDuration = 0;
       let durationCount = 0;
+      const setupToConnectedSamples: number[] = [];
+      const setupToFirstMediaSamples: number[] = [];
+
+      const addTimingSample = (samples: number[], value: unknown) => {
+        if (typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 120_000) {
+          samples.push(value);
+        }
+      };
+      const percentile = (samples: number[], percentage: number) => {
+        if (!samples.length) return 0;
+        const sorted = [...samples].sort((a, b) => a - b);
+        return Math.round(
+          sorted[Math.min(sorted.length - 1, Math.ceil(sorted.length * percentage) - 1)]!
+        );
+      };
 
       for (const session of sessions) {
         const metadata =
@@ -173,6 +188,8 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
           totalDuration += session.durationSeconds;
           durationCount += 1;
         }
+        addTimingSample(setupToConnectedSamples, metadata['setupToConnectedMs']);
+        addTimingSample(setupToFirstMediaSamples, metadata['setupToFirstMediaMs']);
 
         const providerId = session.consultation.assignedDoctor?.id ?? 'unassigned';
         const existing = providerCounts.get(providerId) ?? {
@@ -214,7 +231,11 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
           answerRate: total ? Math.round((answered / total) * 100) : 0,
           failureRate: total ? Math.round((failed / total) * 100) : 0,
           turnRelayRate: total ? Math.round((turnRelay / total) * 100) : 0,
-          averageDurationSeconds: durationCount ? Math.round(totalDuration / durationCount) : 0
+          averageDurationSeconds: durationCount ? Math.round(totalDuration / durationCount) : 0,
+          medianConnectMs: percentile(setupToConnectedSamples, 0.5),
+          p95ConnectMs: percentile(setupToConnectedSamples, 0.95),
+          medianFirstMediaMs: percentile(setupToFirstMediaSamples, 0.5),
+          p95FirstMediaMs: percentile(setupToFirstMediaSamples, 0.95)
         },
         byReason: toRows(reasonCounts),
         byMode: toRows(modeCounts),
@@ -248,6 +269,14 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
             averageRttMs: session.averageRttMs,
             packetLossPercent: session.packetLossPercent,
             maxJitterMs: session.maxJitterMs,
+            setupToConnectedMs:
+              typeof metadata['setupToConnectedMs'] === 'number'
+                ? metadata['setupToConnectedMs']
+                : null,
+            setupToFirstMediaMs:
+              typeof metadata['setupToFirstMediaMs'] === 'number'
+                ? metadata['setupToFirstMediaMs']
+                : null,
             consultation: session.consultation
           };
         })

@@ -60,6 +60,10 @@ type CallHealthReport = {
     failureRate: number;
     turnRelayRate: number;
     averageDurationSeconds: number;
+    medianConnectMs: number;
+    p95ConnectMs: number;
+    medianFirstMediaMs: number;
+    p95FirstMediaMs: number;
   };
   byReason: CallHealthRow[];
   byMode: CallHealthRow[];
@@ -89,6 +93,8 @@ type CallHealthReport = {
     averageRttMs?: number | null;
     packetLossPercent?: number | null;
     maxJitterMs?: number | null;
+    setupToConnectedMs?: number | null;
+    setupToFirstMediaMs?: number | null;
     consultation: {
       status: string;
       patient?: {
@@ -162,6 +168,11 @@ export class CallHealthPage {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return mins ? `${mins}m ${secs}s` : `${secs}s`;
+  }
+
+  milliseconds(value?: number | null): string {
+    if (!value) return 'No data';
+    return value < 1_000 ? `${value} ms` : `${(value / 1_000).toFixed(1)} s`;
   }
 
   dateTime(value?: string | null): string {

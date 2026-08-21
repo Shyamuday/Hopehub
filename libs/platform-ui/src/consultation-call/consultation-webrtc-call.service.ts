@@ -28,6 +28,8 @@ const OFFER_RETRY_INTERVAL_MS = 3_000;
 const CALL_DEVICE_PREFERENCES_KEY = 'hopehub:call-device-preferences';
 const CALL_CONNECTIVITY_CACHE_KEY = 'hopehub:call-connectivity-preflight';
 const CALL_CONNECTIVITY_CACHE_TTL_MS = 5 * 60 * 1000;
+const POOR_SAMPLES_BEFORE_VIDEO_PAUSE = 3;
+const GOOD_SAMPLES_BEFORE_VIDEO_RESTORE = 5;
 
 type ConnectivityResult = { ok: boolean; relay: boolean; message: string };
 type CachedConnectivityResult = {
@@ -64,11 +66,14 @@ export type CallSummary = {
   endedAt: number;
 };
 export type RecoverableCall = {
+  callId?: string;
   consultationId: string;
   targetUserId: string;
   mode: CallMode;
   participant: CallParticipant;
   privacyRelay: boolean;
+  isInitiator?: boolean;
+  signalSequence?: number;
   savedAt: number;
 };
 
@@ -235,6 +240,9 @@ export class ConsultationWebrtcCallService {
   readonly backgroundBlurSupported = signal(false);
   readonly deviceRecoveryMessage = signal('');
   readonly diagnosticReported = signal(false);
+  readonly videoPausedForNetwork = signal(false);
+  readonly remoteVideoPausedForNetwork = signal(false);
+  readonly signalingInterrupted = signal(false);
 
   private pc: RTCPeerConnection | null = null;
   private socket: CallSignalingSocket | null = null;
@@ -275,12 +283,25 @@ export class ConsultationWebrtcCallService {
     averageRttMs: 0
   };
   private consecutivePoorSamples = 0;
+  private consecutiveGoodSamples = 0;
+  private cameraWasEnabledBeforeNetworkPause = false;
+  private previousInboundPacketsLost = 0;
+  private previousInboundPacketsReceived = 0;
+  private callStartedAt = 0;
+  private ringAcknowledgedAt = 0;
+  private answerReceivedAt = 0;
+  private firstRemoteMediaAt = 0;
+  private connectedAt = 0;
   private manualLowDataMode = false;
   private readonly connectivityChecks = new Map<string, Promise<ConnectivityResult>>();
   private connectivityPreflightSource = 'none';
   private connectivityCheckMs = 0;
   private mediaAcquisitionMs = 0;
   private preparedStreamReused = false;
+  private pendingRecoveryRestart: {
+    recovery: RecoverableCall;
+    iceServers: IceServerConfig[];
+  } | null = null;
   private readonly callTabId =
     typeof crypto !== 'undefined' && 'randomUUID' in crypto
       ? crypto.randomUUID()
@@ -333,6 +354,12 @@ export class ConsultationWebrtcCallService {
   private readonly handleVisibilityChange = () => {
     if (typeof document === 'undefined' || document.visibilityState !== 'visible') return;
     if (this.state() === 'connected') void this.acquireWakeLock();
+    if (this.callContext && this.activeCallId) {
+      this.emitSignal(CALL_SOCKET_EVENTS.SYNC, {
+        ...this.callContext,
+        mode: this.callMode()
+      });
+    }
     if (this.state() === 'reconnecting') void this.attemptIceRestart(true);
   };
   private observedCallLockKey = '';
@@ -381,6 +408,10 @@ export class ConsultationWebrtcCallService {
     }
 
     socket.on('connect', () => {
+      this.signalingInterrupted.set(false);
+      if (this.deviceRecoveryMessage().includes('service update')) {
+        this.deviceRecoveryMessage.set('');
+      }
       if (!this.callContext || !this.activeCallId) return;
       this.emitSignal(CALL_SOCKET_EVENTS.SYNC, {
         ...this.callContext,
@@ -390,14 +421,70 @@ export class ConsultationWebrtcCallService {
 
     socket.on('disconnect', () => {
       if (!this.callContext || this.state() === 'ended') return;
+      this.signalingInterrupted.set(true);
+      if (
+        this.pc?.connectionState === 'connected' ||
+        this.pc?.iceConnectionState === 'connected' ||
+        this.pc?.iceConnectionState === 'completed'
+      ) {
+        this.deviceRecoveryMessage.set(
+          'Hope Hub is reconnecting call controls after a brief service update. Your audio and video can continue.'
+        );
+        return;
+      }
       this.state.set('reconnecting');
       this.startReconnectTimeout();
     });
 
+    socket.on(CALL_SOCKET_EVENTS.SERVER_DRAINING, () => {
+      if (!this.callContext) return;
+      this.signalingInterrupted.set(true);
+      this.deviceRecoveryMessage.set(
+        'Hope Hub is applying a brief service update. Keep this call open; call controls will reconnect automatically.'
+      );
+    });
+
     socket.on(CALL_SOCKET_EVENTS.STATE, (raw: unknown) => {
-      const payload = raw as { active?: boolean; callId?: string };
-      if (!this.callContext || !payload.active) return;
+      const payload = raw as {
+        active?: boolean;
+        callId?: string;
+        lastAcceptedSequence?: number;
+        reason?: string;
+      };
+      if (!this.callContext) return;
       if (payload.callId && payload.callId !== this.activeCallId) return;
+      if (typeof payload.lastAcceptedSequence === 'number') {
+        this.signalSequence = Math.max(this.signalSequence, payload.lastAcceptedSequence);
+      }
+      if (!payload.active) {
+        if (this.state() === 'reconnecting') {
+          const restart = this.pendingRecoveryRestart;
+          this.pendingRecoveryRestart = null;
+          this.clearRecoveryContext();
+          this.cleanup(restart ? 'idle' : 'ended');
+          if (restart && this.socket) {
+            this.setParticipant(restart.recovery.participant);
+            void this.startCall({
+              socket: this.socket,
+              consultationId: restart.recovery.consultationId,
+              targetUserId: restart.recovery.targetUserId,
+              mode: restart.recovery.mode,
+              iceServers: restart.iceServers,
+              privacyRelay: restart.recovery.privacyRelay
+            }).catch((error) => {
+              this.recoverableCall.set(restart.recovery);
+              this.error.set(
+                error instanceof Error ? error.message : 'Could not restore this call.'
+              );
+            });
+          } else {
+            this.error.set(callReasonMessage(payload.reason || 'call_not_active'));
+          }
+        }
+        return;
+      }
+      this.pendingRecoveryRestart = null;
+      this.persistRecoveryContext();
       void this.attemptIceRestart(true);
     });
 
@@ -445,6 +532,7 @@ export class ConsultationWebrtcCallService {
       this.clearOfferRetry();
       this.receiverUnavailable.set(false);
       this.remoteRinging.set(true);
+      if (!this.ringAcknowledgedAt) this.ringAcknowledgedAt = Date.now();
     });
 
     socket.on(CALL_SOCKET_EVENTS.OFFER, (raw: unknown) => {
@@ -457,6 +545,17 @@ export class ConsultationWebrtcCallService {
 
     socket.on(CALL_SOCKET_EVENTS.ICE, (raw: unknown) => {
       void this.onRemoteIce(raw);
+    });
+
+    socket.on(CALL_SOCKET_EVENTS.MEDIA_STATE, (raw: unknown) => {
+      const payload = raw as {
+        consultationId?: string;
+        fromUserId?: string;
+        callId?: string;
+        metadata?: Record<string, unknown>;
+      };
+      if (!this.matchesCallContext(payload)) return;
+      this.remoteVideoPausedForNetwork.set(payload.metadata?.['videoPausedForNetwork'] === true);
     });
 
     socket.on(CALL_SOCKET_EVENTS.END, (raw: unknown) => this.onRemoteCallClosed(raw));
@@ -679,6 +778,7 @@ export class ConsultationWebrtcCallService {
     this.stopIncomingAlert();
     this.isInitiator = true;
     this.activeCallId = this.newCallId();
+    this.callStartedAt = Date.now();
     this.connectedToneCallId = '';
     this.signalSequence = 0;
     this.iceRestartAttempts = 0;
@@ -772,6 +872,7 @@ export class ConsultationWebrtcCallService {
     }
 
     this.activeCallId = offer.callId;
+    this.callStartedAt = Date.now();
     this.connectedToneCallId = '';
     // Keep the sequence established by the incoming RING/OFFER acknowledgements.
     // Resetting it here causes ANSWER/ICE to reuse an earlier sequence number, so
@@ -917,6 +1018,42 @@ export class ConsultationWebrtcCallService {
     if (!recovery || !this.socket) return;
     this.setParticipant(recovery.participant);
     this.recoverableCall.set(null);
+    if (recovery.callId) {
+      if (!this.acquireCallLock(recovery.consultationId)) {
+        this.recoverableCall.set(recovery);
+        throw new Error('This call is already open in another browser tab.');
+      }
+      this.callContext = {
+        consultationId: recovery.consultationId,
+        targetUserId: recovery.targetUserId
+      };
+      this.activeCallId = recovery.callId;
+      this.signalSequence = Math.max(0, Number(recovery.signalSequence || 0));
+      this.isInitiator = recovery.isInitiator === true;
+      this.activeConsultationId.set(recovery.consultationId);
+      this.activeTargetUserId.set(recovery.targetUserId);
+      this.callMode.set(recovery.mode);
+      this.privacyRelay.set(recovery.privacyRelay);
+      this.callStartedAt = recovery.savedAt;
+      this.pendingRecoveryRestart = { recovery, iceServers };
+      this.error.set('');
+      try {
+        await this.ensurePeer(recovery.mode, iceServers, recovery.privacyRelay);
+        this.state.set('reconnecting');
+        this.startReconnectTimeout();
+        this.persistRecoveryContext();
+        this.emitSignal(CALL_SOCKET_EVENTS.SYNC, {
+          consultationId: recovery.consultationId,
+          targetUserId: recovery.targetUserId,
+          mode: recovery.mode
+        });
+        return;
+      } catch (error) {
+        this.cleanup('error');
+        this.recoverableCall.set(recovery);
+        throw error;
+      }
+    }
     try {
       await this.startCall({
         socket: this.socket,
@@ -946,6 +1083,14 @@ export class ConsultationWebrtcCallService {
   }
 
   setCameraEnabled(enabled: boolean) {
+    if (enabled && this.videoPausedForNetwork()) {
+      this.cameraWasEnabledBeforeNetworkPause = true;
+      this.deviceRecoveryMessage.set(
+        'Video will return automatically when the network is stable. Voice remains connected.'
+      );
+      return;
+    }
+    if (!enabled && this.videoPausedForNetwork()) this.cameraWasEnabledBeforeNetworkPause = false;
     this.cameraEnabled.set(enabled);
     this.localStream()
       ?.getVideoTracks()
@@ -997,10 +1142,23 @@ export class ConsultationWebrtcCallService {
       averageRttMs: 0
     };
     this.consecutivePoorSamples = 0;
+    this.consecutiveGoodSamples = 0;
+    this.cameraWasEnabledBeforeNetworkPause = false;
+    this.previousInboundPacketsLost = 0;
+    this.previousInboundPacketsReceived = 0;
+    this.callStartedAt = 0;
+    this.ringAcknowledgedAt = 0;
+    this.answerReceivedAt = 0;
+    this.firstRemoteMediaAt = 0;
+    this.connectedAt = 0;
+    this.pendingRecoveryRestart = null;
     this.networkQuality.set('unknown');
     this.voiceFallbackSuggested.set(false);
     this.lowDataMode.set(false);
     this.manualLowDataMode = false;
+    this.videoPausedForNetwork.set(false);
+    this.remoteVideoPausedForNetwork.set(false);
+    this.signalingInterrupted.set(false);
     this.backgroundBlurEnabled.set(false);
     this.deviceRecoveryMessage.set('');
     this.micEnabled.set(true);
@@ -1126,6 +1284,7 @@ export class ConsultationWebrtcCallService {
     this.clearOfferRetry();
     this.receiverUnavailable.set(false);
     this.clearAnswerTimeout();
+    if (!this.answerReceivedAt) this.answerReceivedAt = Date.now();
     this.isSettingRemoteAnswerPending = true;
     try {
       await this.pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
@@ -1253,13 +1412,21 @@ export class ConsultationWebrtcCallService {
     void this.refreshMediaDevices();
 
     for (const track of stream.getTracks()) {
-      this.pc.addTrack(track, stream);
+      if (track.kind === 'audio' && 'contentHint' in track) track.contentHint = 'speech';
+      const sender = this.pc.addTrack(track, stream);
+      this.configureCodecPreferences(sender, track.kind);
     }
     if (mode === 'video') await this.applyVideoProfile('balanced');
 
     this.pc.ontrack = (event) => {
       const [remote] = event.streams;
       if (remote) {
+        const markFirstMedia = () => {
+          if (!this.firstRemoteMediaAt) this.firstRemoteMediaAt = Date.now();
+        };
+        if (event.track.muted)
+          event.track.addEventListener('unmute', markFirstMedia, { once: true });
+        else markFirstMedia();
         this.remoteStream.set(remote);
         this.stopSpeakingMeter();
         this.startSpeakingMeter();
@@ -1487,6 +1654,7 @@ export class ConsultationWebrtcCallService {
       this.clearMediaTimeout();
       this.clearReconnectTimeout();
       this.state.set('connected');
+      if (!this.connectedAt) this.connectedAt = Date.now();
       this.stopIncomingAlert();
       if (this.activeCallId && this.connectedToneCallId !== this.activeCallId) {
         this.connectedToneCallId = this.activeCallId;
@@ -1646,13 +1814,21 @@ export class ConsultationWebrtcCallService {
           packetsReceived += Number(report.packetsReceived || 0);
           jitter = Math.max(jitter, Number(report.jitter || 0));
         }
-        if (report.type === 'candidate-pair' && report.state === 'succeeded') {
+        if (
+          report.type === 'candidate-pair' &&
+          report.state === 'succeeded' &&
+          (report.selected === true || report.nominated === true)
+        ) {
           roundTripTime = Math.max(roundTripTime, Number(report.currentRoundTripTime || 0));
         }
       });
 
-      const totalPackets = packetsLost + packetsReceived;
-      const lossPercent = totalPackets > 0 ? (packetsLost / totalPackets) * 100 : 0;
+      const lostDelta = Math.max(0, packetsLost - this.previousInboundPacketsLost);
+      const receivedDelta = Math.max(0, packetsReceived - this.previousInboundPacketsReceived);
+      this.previousInboundPacketsLost = packetsLost;
+      this.previousInboundPacketsReceived = packetsReceived;
+      const intervalPackets = lostDelta + receivedDelta;
+      const lossPercent = intervalPackets > 0 ? (lostDelta / intervalPackets) * 100 : 0;
       this.latestNetworkMetrics = {
         packetLossPercent: Math.round(lossPercent * 100) / 100,
         maxJitterMs: Math.round(jitter * 1_000),
@@ -1661,14 +1837,19 @@ export class ConsultationWebrtcCallService {
       if (lossPercent >= 8 || jitter >= 0.08 || roundTripTime >= 0.6) {
         this.networkQuality.set('poor');
         this.consecutivePoorSamples += 1;
+        this.consecutiveGoodSamples = 0;
         if (this.callMode() === 'video') {
           this.lowDataMode.set(true);
           void this.applyVideoProfile('low');
-          if (this.consecutivePoorSamples >= 3) this.voiceFallbackSuggested.set(true);
+          if (this.consecutivePoorSamples >= POOR_SAMPLES_BEFORE_VIDEO_PAUSE) {
+            this.voiceFallbackSuggested.set(true);
+            void this.pauseVideoForNetwork();
+          }
         }
       } else if (lossPercent >= 3 || jitter >= 0.03 || roundTripTime >= 0.25) {
         this.networkQuality.set('unstable');
         this.consecutivePoorSamples = 0;
+        this.consecutiveGoodSamples = 0;
         if (this.callMode() === 'video') {
           this.lowDataMode.set(true);
           void this.applyVideoProfile('low');
@@ -1676,10 +1857,17 @@ export class ConsultationWebrtcCallService {
       } else {
         this.networkQuality.set('good');
         this.consecutivePoorSamples = 0;
+        this.consecutiveGoodSamples += 1;
         this.voiceFallbackSuggested.set(false);
         this.lowDataMode.set(this.manualLowDataMode);
         if (this.callMode() === 'video')
           void this.applyVideoProfile(this.manualLowDataMode ? 'low' : 'balanced');
+        if (
+          this.videoPausedForNetwork() &&
+          this.consecutiveGoodSamples >= GOOD_SAMPLES_BEFORE_VIDEO_RESTORE
+        ) {
+          void this.restoreVideoAfterNetworkRecovery();
+        }
       }
     } catch {
       this.networkQuality.set('unknown');
@@ -1691,6 +1879,9 @@ export class ConsultationWebrtcCallService {
     if (!sender?.track) return;
     try {
       const parameters = sender.getParameters();
+      (
+        parameters as RTCRtpSendParameters & { degradationPreference?: string }
+      ).degradationPreference = 'maintain-framerate';
       parameters.encodings ??= [{}];
       parameters.encodings[0] = {
         ...parameters.encodings[0],
@@ -1706,6 +1897,80 @@ export class ConsultationWebrtcCallService {
       });
     } catch {
       // Browsers may support only part of the sender parameter surface.
+    }
+  }
+
+  private configureCodecPreferences(sender: RTCRtpSender, kind: string) {
+    const transceiver = this.pc?.getTransceivers?.().find((item) => item.sender === sender);
+    if (
+      !transceiver?.setCodecPreferences ||
+      typeof RTCRtpSender === 'undefined' ||
+      !RTCRtpSender.getCapabilities
+    )
+      return;
+    const capabilities = RTCRtpSender.getCapabilities(kind);
+    if (!capabilities?.codecs.length) return;
+    const preferredMimeTypes =
+      kind === 'audio' ? ['audio/opus'] : ['video/VP8', 'video/H264', 'video/VP9', 'video/AV1'];
+    const priority = (mimeType: string) => {
+      const index = preferredMimeTypes.indexOf(mimeType);
+      return index === -1 ? preferredMimeTypes.length : index;
+    };
+    try {
+      transceiver.setCodecPreferences(
+        [...capabilities.codecs].sort((a, b) => priority(a.mimeType) - priority(b.mimeType))
+      );
+    } catch {
+      // The browser's default codec order remains a safe fallback.
+    }
+  }
+
+  private async setVideoEncodingActive(active: boolean) {
+    const sender = this.pc?.getSenders().find((item) => item.track?.kind === 'video');
+    if (!sender) return;
+    const parameters = sender.getParameters();
+    parameters.encodings ??= [{}];
+    parameters.encodings = parameters.encodings.map((encoding) => ({ ...encoding, active }));
+    await sender.setParameters(parameters);
+  }
+
+  private async pauseVideoForNetwork() {
+    if (this.videoPausedForNetwork() || this.callMode() !== 'video') return;
+    this.cameraWasEnabledBeforeNetworkPause = this.cameraEnabled();
+    try {
+      await this.setVideoEncodingActive(false);
+      this.localStream()
+        ?.getVideoTracks()
+        .forEach((track) => (track.enabled = false));
+      this.cameraEnabled.set(false);
+      this.videoPausedForNetwork.set(true);
+      this.emitSignal(CALL_SOCKET_EVENTS.MEDIA_STATE, {
+        ...(this.callContext || {}),
+        metadata: { videoPausedForNetwork: true }
+      });
+    } catch {
+      // Low bitrate mode remains active when pausing an encoding is unsupported.
+    }
+  }
+
+  private async restoreVideoAfterNetworkRecovery() {
+    if (!this.videoPausedForNetwork()) return;
+    try {
+      await this.setVideoEncodingActive(true);
+      if (this.cameraWasEnabledBeforeNetworkPause) {
+        this.localStream()
+          ?.getVideoTracks()
+          .forEach((track) => (track.enabled = true));
+        this.cameraEnabled.set(true);
+      }
+      this.videoPausedForNetwork.set(false);
+      this.cameraWasEnabledBeforeNetworkPause = false;
+      this.emitSignal(CALL_SOCKET_EVENTS.MEDIA_STATE, {
+        ...(this.callContext || {}),
+        metadata: { videoPausedForNetwork: false }
+      });
+    } catch {
+      // Keep audio stable and retry after another healthy sample.
     }
   }
 
@@ -1944,10 +2209,13 @@ export class ConsultationWebrtcCallService {
   private persistRecoveryContext() {
     if (!this.callContext || typeof sessionStorage === 'undefined') return;
     const recovery: RecoverableCall = {
+      callId: this.activeCallId,
       ...this.callContext,
       mode: this.callMode(),
       participant: this.participant(),
       privacyRelay: this.privacyRelay(),
+      isInitiator: this.isInitiator,
+      signalSequence: this.signalSequence,
       savedAt: Date.now()
     };
     try {
@@ -2042,7 +2310,22 @@ export class ConsultationWebrtcCallService {
       connectivityPreflightSource: this.connectivityPreflightSource,
       connectivityCheckMs: this.connectivityCheckMs,
       mediaAcquisitionMs: this.mediaAcquisitionMs,
-      preparedStreamReused: this.preparedStreamReused
+      preparedStreamReused: this.preparedStreamReused,
+      videoPausedForNetwork: this.videoPausedForNetwork(),
+      setupToRingAckMs:
+        this.callStartedAt && this.ringAcknowledgedAt
+          ? this.ringAcknowledgedAt - this.callStartedAt
+          : undefined,
+      setupToAnswerMs:
+        this.callStartedAt && this.answerReceivedAt
+          ? this.answerReceivedAt - this.callStartedAt
+          : undefined,
+      setupToFirstMediaMs:
+        this.callStartedAt && this.firstRemoteMediaAt
+          ? this.firstRemoteMediaAt - this.callStartedAt
+          : undefined,
+      setupToConnectedMs:
+        this.callStartedAt && this.connectedAt ? this.connectedAt - this.callStartedAt : undefined
     };
   }
 
@@ -2339,6 +2622,7 @@ export class ConsultationWebrtcCallService {
       sequence: this.signalSequence,
       clientTimestamp: new Date().toISOString()
     });
+    if (this.callContext && event !== CALL_SOCKET_EVENTS.ICE) this.persistRecoveryContext();
   }
 
   private newCallId() {

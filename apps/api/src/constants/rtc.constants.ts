@@ -78,6 +78,12 @@ export function getPublicIceServers(): IceServerConfig[] {
 export function getRtcConfigurationStatus() {
   const urls = turnUrls();
   const normalized = urls.map((url) => url.toLowerCase());
+  const relayHosts = new Set(
+    normalized.flatMap((url) => {
+      const match = url.match(/^turns?:\/?\/?(\[[^\]]+\]|[^:/?]+)/i);
+      return match?.[1] ? [match[1]] : [];
+    })
+  );
   return {
     stunConfigured: PUBLIC_STUN_SERVERS.length > 0,
     turnConfigured:
@@ -91,6 +97,8 @@ export function getRtcConfigurationStatus() {
       tcp: normalized.some((url) => url.includes('transport=tcp')),
       tls443: normalized.some((url) => url.startsWith('turns:') && /:443(?:\?|$)/.test(url))
     },
-    credentialMode: turnCredentialMode()
+    credentialMode: turnCredentialMode(),
+    relayHostCount: relayHosts.size,
+    redundant: relayHosts.size >= 2
   };
 }

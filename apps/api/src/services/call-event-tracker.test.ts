@@ -13,6 +13,8 @@ test('call event tracker keeps useful diagnostics and strips signaling/media sec
       connectionState: 'failed',
       usedTurnRelay: true,
       packetLossPercent: 8.2,
+      setupToConnectedMs: 1750,
+      videoPausedForNetwork: true,
       sdp: 'private-session-description',
       candidate: 'candidate with an IP address',
       authorization: 'secret'
@@ -21,7 +23,9 @@ test('call event tracker keeps useful diagnostics and strips signaling/media sec
       userAgent: 'Mobile Safari',
       connectionState: 'failed',
       usedTurnRelay: true,
-      packetLossPercent: 8.2
+      packetLossPercent: 8.2,
+      setupToConnectedMs: 1750,
+      videoPausedForNetwork: true
     }
   );
   assert.deepEqual(
@@ -45,5 +49,6 @@ test('call event tracker stores lifecycle and rejected events without routine pa
 test('call event tracker groups events into readable diagnostic phases', () => {
   assert.equal(callEventPhase('call:ring'), 'SETUP');
   assert.equal(callEventPhase('call:diagnostic'), 'DIAGNOSTIC');
+  assert.equal(callEventPhase('call:media-state'), 'MEDIA');
   assert.equal(callEventPhase('call:end'), 'TEARDOWN');
 });

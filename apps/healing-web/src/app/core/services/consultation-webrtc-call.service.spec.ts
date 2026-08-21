@@ -178,3 +178,68 @@ describe('ConsultationWebrtcCallService call preflight', () => {
     expect(mediaRequests).toBe(0);
   });
 });
+
+describe('ConsultationWebrtcCallService resilient signaling', () => {
+  it('keeps connected peer media active during a signaling-server restart', () => {
+    const handlers = new Map<string, (...args: unknown[]) => void>();
+    const socket: CallSignalingSocket = {
+      emit: () => undefined,
+      on: (event, handler) => handlers.set(event, handler),
+      off: () => undefined,
+    };
+    const service = new ConsultationWebrtcCallService();
+    const internals = service as unknown as {
+      callContext: { consultationId: string; targetUserId: string } | null;
+      activeCallId: string;
+      pc: { connectionState: string; iceConnectionState: string } | null;
+    };
+    internals.callContext = { consultationId: 'consultation-1', targetUserId: 'provider-1' };
+    internals.activeCallId = 'call-1';
+    internals.pc = { connectionState: 'connected', iceConnectionState: 'connected' };
+    service.state.set('connected');
+    service.bindSocket(socket);
+
+    handlers.get('disconnect')?.('transport close');
+
+    expect(service.state()).toBe('connected');
+    expect(service.signalingInterrupted()).toBe(true);
+    expect(service.deviceRecoveryMessage()).toContain('service update');
+  });
+
+  it('uses the server sequence checkpoint before sending recovery signals', () => {
+    const handlers = new Map<string, (...args: unknown[]) => void>();
+    const emitted: Array<{ event: string; payload: unknown }> = [];
+    const socket: CallSignalingSocket = {
+      emit: (event, payload) => emitted.push({ event, payload }),
+      on: (event, handler) => handlers.set(event, handler),
+      off: () => undefined,
+    };
+    const service = new ConsultationWebrtcCallService();
+    const internals = service as unknown as {
+      callContext: { consultationId: string; targetUserId: string } | null;
+      activeCallId: string;
+      signalSequence: number;
+      attemptIceRestart: () => Promise<void>;
+    };
+    internals.callContext = { consultationId: 'consultation-1', targetUserId: 'provider-1' };
+    internals.activeCallId = 'call-1';
+    internals.signalSequence = 2;
+    internals.attemptIceRestart = async () => undefined;
+    service.state.set('reconnecting');
+    service.bindSocket(socket);
+
+    handlers.get(CALL_SOCKET_EVENTS.STATE)?.({
+      active: true,
+      callId: 'call-1',
+      lastAcceptedSequence: 12,
+    });
+
+    expect(internals.signalSequence).toBe(12);
+    const stored = JSON.parse(sessionStorage.getItem('hopehub:recoverable-call') || '{}') as {
+      signalSequence?: number;
+    };
+    expect(stored.signalSequence).toBe(12);
+    expect(emitted).toEqual([]);
+    sessionStorage.removeItem('hopehub:recoverable-call');
+  });
+});

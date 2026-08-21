@@ -25,6 +25,8 @@ test('RTC status reports UDP, TCP, and TLS 443 TURN coverage without exposing cr
     assert.equal(status.turnConfigured, true);
     assert.deepEqual(status.transports, { udp: true, tcp: true, tls443: true });
     assert.equal(status.credentialMode, 'temporary');
+    assert.equal(status.relayHostCount, 1);
+    assert.equal(status.redundant, false);
     assert.equal(JSON.stringify(status).includes('test-only-secret'), false);
   } finally {
     if (original.urls === undefined) delete process.env.TURN_URLS;
@@ -37,6 +39,30 @@ test('RTC status reports UDP, TCP, and TLS 443 TURN coverage without exposing cr
     else process.env.TURN_SHARED_SECRET = original.secret;
     if (original.mode === undefined) delete process.env.TURN_CREDENTIAL_MODE;
     else process.env.TURN_CREDENTIAL_MODE = original.mode;
+  }
+});
+
+test('RTC status detects independent TURN hosts for relay failover', () => {
+  const originalUrls = process.env.TURN_URLS;
+  const originalUsername = process.env.TURN_USERNAME;
+  const originalCredential = process.env.TURN_CREDENTIAL;
+  process.env.TURN_URLS = [
+    'turn:turn-a.hopehub.in:3478?transport=udp',
+    'turns:turn-b.hopehub.in:443?transport=tcp'
+  ].join(',');
+  process.env.TURN_USERNAME = 'test';
+  process.env.TURN_CREDENTIAL = 'test';
+  try {
+    const status = getRtcConfigurationStatus();
+    assert.equal(status.relayHostCount, 2);
+    assert.equal(status.redundant, true);
+  } finally {
+    if (originalUrls === undefined) delete process.env.TURN_URLS;
+    else process.env.TURN_URLS = originalUrls;
+    if (originalUsername === undefined) delete process.env.TURN_USERNAME;
+    else process.env.TURN_USERNAME = originalUsername;
+    if (originalCredential === undefined) delete process.env.TURN_CREDENTIAL;
+    else process.env.TURN_CREDENTIAL = originalCredential;
   }
 });
 

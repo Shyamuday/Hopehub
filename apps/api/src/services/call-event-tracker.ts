@@ -46,7 +46,11 @@ const NUMBER_METADATA_KEYS = [
   'maxJitterMs',
   'reconnectCount',
   'connectivityCheckMs',
-  'mediaAcquisitionMs'
+  'mediaAcquisitionMs',
+  'setupToRingAckMs',
+  'setupToAnswerMs',
+  'setupToFirstMediaMs',
+  'setupToConnectedMs'
 ] as const;
 
 const BOOLEAN_METADATA_KEYS = [
@@ -59,7 +63,8 @@ const BOOLEAN_METADATA_KEYS = [
   'networkSaveData',
   'relayRequiredByNetwork',
   'deliveryRetry',
-  'preparedStreamReused'
+  'preparedStreamReused',
+  'videoPausedForNetwork'
 ] as const;
 
 export function safeCallEventMetadata(metadata: unknown): Record<string, unknown> {
@@ -94,6 +99,7 @@ export function callEventPhase(event: string): string {
   if (event === SOCKET_EVENTS.CALL_ICE || event === SOCKET_EVENTS.CALL_HEARTBEAT) {
     return 'CONNECTIVITY';
   }
+  if (event === SOCKET_EVENTS.CALL_MEDIA_STATE) return 'MEDIA';
   if (event === SOCKET_EVENTS.CALL_END || event === SOCKET_EVENTS.CALL_REJECT) {
     return 'TEARDOWN';
   }

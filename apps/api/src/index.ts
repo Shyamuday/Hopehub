@@ -120,9 +120,10 @@ import {
   callMaintenanceIntervalMs,
   runCallSessionMaintenance
 } from './services/call-session-maintenance.js';
-import { getRuntimeReadiness } from './services/runtime-health.js';
+import { getRuntimeReadiness, setRuntimeDraining } from './services/runtime-health.js';
 import { retryFailedTelegramWebhookUpdates } from './services/telegram-webhook-retries.js';
 import { monitorHopeHubCommunityWebhook } from './services/telegram-community-webhook-health.js';
+import { configureSocketScaling } from './services/socket-scaling.js';
 
 // ── App & HTTP server ──────────────────────────────────────────────────────────
 
@@ -169,6 +170,7 @@ const socketOrigins = SERVER_CONFIG.CORS_ORIGINS;
 const io = new SocketIoServer(httpServer, {
   cors: { origin: socketOrigins, credentials: true }
 });
+const socketScaling = await configureSocketScaling(io);
 
 setNotificationSocket(io);
 setHopeHubLiveGroupSocket(io);
@@ -544,3 +546,41 @@ httpServer.listen(port, bindHost, () => {
   }, SCHEDULER_CONFIG.LEAVE_RESTORE_MS);
   leaveTimer.unref();
 });
+
+let shutdownStarted = false;
+
+async function gracefulShutdown(signal: string) {
+  if (shutdownStarted) return;
+  shutdownStarted = true;
+  setRuntimeDraining(true);
+  console.info(`[shutdown] ${signal} received; draining API and realtime connections.`);
+
+  io.emit(SOCKET_EVENTS.SERVER_DRAINING, {
+    reason: 'service_update',
+    reconnectAfterMs: 2_000
+  });
+
+  const forceTimer = setTimeout(() => {
+    console.error('[shutdown] Grace period expired; exiting.');
+    process.exit(1);
+  }, 30_000);
+
+  try {
+    const httpClosed = new Promise<void>((resolve) => httpServer.close(() => resolve()));
+    await new Promise<void>((resolve) => setTimeout(resolve, 1_500));
+    await new Promise<void>((resolve) => io.close(() => resolve()));
+    await httpClosed;
+    await socketScaling.close();
+    await prisma.$disconnect();
+    clearTimeout(forceTimer);
+    console.info('[shutdown] API stopped cleanly.');
+    process.exit(0);
+  } catch (error) {
+    clearTimeout(forceTimer);
+    console.error('[shutdown] Graceful shutdown failed.', error);
+    process.exit(1);
+  }
+}
+
+process.once('SIGTERM', () => void gracefulShutdown('SIGTERM'));
+process.once('SIGINT', () => void gracefulShutdown('SIGINT'));

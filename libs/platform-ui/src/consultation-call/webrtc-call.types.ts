@@ -45,5 +45,7 @@ export const CALL_SOCKET_EVENTS = {
   SYNC: 'call:sync',
   STATE: 'call:state',
   HEARTBEAT: 'call:heartbeat',
+  MEDIA_STATE: 'call:media-state',
+  SERVER_DRAINING: 'server:draining',
   DIAGNOSTIC: 'call:diagnostic'
 } as const;
