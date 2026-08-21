@@ -5,7 +5,11 @@ import {
   type GroupHelpConfigField
 } from '../constants/group-help-config.constants.js';
 import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
-import { answerCommunityCallback, sendCommunityMessage } from './telegram-community-bots.client.js';
+import {
+  answerCommunityCallback,
+  callCommunityTelegramApi,
+  sendCommunityMessage
+} from './telegram-community-bots.client.js';
 import { sendGroupHelpActivityLog } from './telegram-group-help.actions.js';
 import { groupHelpConfig } from './telegram-group-help.config.js';
 import { telegramPersonLogLabel } from './telegram-group-help.people.js';
@@ -20,6 +24,7 @@ import {
 } from './telegram-group-help.staff-permissions.js';
 import type {
   CommunityTelegramMessage,
+  CommunityTelegramUser,
   CommunityTelegramUpdate,
   TelegramKeyboard
 } from './telegram-community-bots.types.js';
@@ -31,6 +36,20 @@ const SETTINGS_SESSION_STATE = 'group-help:settings-session';
 const SETTINGS_DRAFT_STATE = 'group-help:settings-draft';
 
 type SettingsDraft = { key: string; value?: string };
+
+type TelegramGroupAdministrator = {
+  user: CommunityTelegramUser;
+  status: string;
+  can_manage_chat?: boolean;
+  can_delete_messages?: boolean;
+  can_restrict_members?: boolean;
+  can_promote_members?: boolean;
+  can_change_info?: boolean;
+  can_invite_users?: boolean;
+  can_pin_messages?: boolean;
+  is_anonymous?: boolean;
+  custom_title?: string;
+};
 
 function draftKey(chatId: string, userId: number) {
   return `${chatId}:${userId}`;
@@ -69,7 +88,7 @@ function sectionKeyboard(): TelegramKeyboard {
           button(section[0].toUpperCase() + section.slice(1), `${PREFIX}section:${section}`)
         )
       ),
-      [button('Staff permissions', `${PREFIX}staff`), button('← Settings home', `${PREFIX}home`)]
+      [button('People & access', `${PREFIX}staff`), button('← Settings home', `${PREFIX}home`)]
     ]
   };
 }
@@ -156,6 +175,59 @@ function staffMemberLabel(member: {
   return (name || (member.username ? `@${member.username}` : member.telegramUserId)).slice(0, 48);
 }
 
+function personButtonLabel(member: {
+  telegramUserId?: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  username?: string | null;
+}) {
+  const name = [member.firstName, member.lastName].filter(Boolean).join(' ').trim();
+  const username = member.username ? `@${member.username}` : '';
+  return [name || member.telegramUserId || 'Unknown member', username]
+    .filter(Boolean)
+    .join(' · ')
+    .slice(0, 64);
+}
+
+function telegramAdminCapabilities(admin: TelegramGroupAdministrator) {
+  if (['creator', 'owner'].includes(admin.status)) return ['Owner — all Telegram admin powers'];
+  const capabilities = [
+    admin.can_manage_chat && 'manage chat',
+    admin.can_delete_messages && 'delete messages',
+    admin.can_restrict_members && 'restrict members',
+    admin.can_pin_messages && 'pin messages',
+    admin.can_invite_users && 'invite members',
+    admin.can_promote_members && 'promote admins',
+    admin.can_change_info && 'change group info'
+  ].filter((value): value is string => Boolean(value));
+  return capabilities.length ? capabilities : ['Telegram administrator'];
+}
+
+async function groupAdministrators(chatId: string) {
+  return callCommunityTelegramApi<TelegramGroupAdministrator[]>(
+    GROUP_HELP_BOT_SLUG,
+    'getChatAdministrators',
+    { chat_id: chatId }
+  ).catch(() => []);
+}
+
+function staffAccessSummary(permissions: string[], fullAdmin: boolean) {
+  if (fullAdmin) {
+    return {
+      enabled: ['All Hope Hub bot actions'],
+      disabled: [] as string[]
+    };
+  }
+  const selected = new Set(permissions);
+  const enabled = GROUP_HELP_STAFF_PERMISSION_GROUPS.filter((group) =>
+    group.commands.every((command) => selected.has(command))
+  ).map((group) => group.label);
+  const disabled = GROUP_HELP_STAFF_PERMISSION_GROUPS.filter(
+    (group) => !group.commands.every((command) => selected.has(command))
+  ).map((group) => group.label);
+  return { enabled, disabled };
+}
+
 function staffPermissionsKeyboard(
   telegramUserId: string,
   permissions: string[],
@@ -208,17 +280,22 @@ async function sendPrivateStaffEditor(
     return false;
   }
   const access = await groupHelpStaffPermissions(mainGroupId, telegramUserId);
+  const summary = staffAccessSummary(access.permissions, access.fullAdmin);
   await sendCommunityMessage(
     GROUP_HELP_BOT_SLUG,
     replyChatId,
     [
       `Staff permissions — ${staffMemberLabel(member)}`,
-      member.username ? `@${member.username}` : '',
+      `Name: ${[member.firstName, member.lastName].filter(Boolean).join(' ') || 'Not available'}`,
+      `Username: ${member.username ? `@${member.username}` : 'Not set'}`,
       `Telegram ID: ${telegramUserId}`,
+      'Private staff group: active',
       '',
       access.fullAdmin
         ? 'Full bot administrator access is enabled.'
-        : 'Choose the daily and sensitive actions this member may use.'
+        : 'Choose the daily and sensitive actions this member may use.',
+      `Enabled: ${summary.enabled.length ? summary.enabled.join(', ') : 'No delegated bot powers'}`,
+      `Not enabled: ${summary.disabled.length ? summary.disabled.join(', ') : 'None'}`
     ]
       .filter((line) => line !== '')
       .join('\n'),
@@ -385,7 +462,7 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
   }
 
   const action = callback.data.slice(PREFIX.length);
-  if (action === 'staff' || action.startsWith('staff-')) {
+  if (action === 'staff' || action.startsWith('staff-') || action.startsWith('admin-user:')) {
     if (
       !(await canEditGroupSettings(chatId, callback.from, callback.message.message_id, '/helper'))
     ) {
@@ -407,16 +484,30 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
       return true;
     }
     if (action === 'staff') {
-      const members = await prisma.telegramCommunityMember.findMany({
-        where: { chatId: staffGroupId, leftAt: null },
-        orderBy: [{ firstName: 'asc' }, { updatedAt: 'desc' }],
-        take: 50
-      });
+      const [members, administrators] = await Promise.all([
+        prisma.telegramCommunityMember.findMany({
+          where: { chatId: staffGroupId, leftAt: null },
+          orderBy: [{ firstName: 'asc' }, { updatedAt: 'desc' }],
+          take: 50
+        }),
+        groupAdministrators(chatId)
+      ]);
+      const staffIds = new Set(members.map((member) => member.telegramUserId));
+      const mainGroupOnlyAdmins = administrators.filter(
+        (administrator) => !staffIds.has(String(administrator.user.id))
+      );
       await sendCommunityMessage(
         GROUP_HELP_BOT_SLUG,
         replyChatId,
         members.length
-          ? 'Choose a private staff member to review their bot permissions.'
+          ? [
+              'Choose a person to review their access.',
+              '',
+              'Private staff members can have their Hope Hub bot powers changed here.',
+              'Main-group administrators already have full bot access through their Telegram role; open one to see their Telegram permissions and identity.',
+              '',
+              `Private staff: ${members.length} · Main-group admins: ${administrators.length}`
+            ].join('\n')
           : 'No private staff members have been detected yet. Ask them to send one message in the staff group.',
         {
           reply_markup: {
@@ -424,6 +515,20 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
               ...twoColumnRows(
                 members.map((member) =>
                   button(staffMemberLabel(member), `${PREFIX}staff-user:${member.telegramUserId}`)
+                )
+              ),
+              ...twoColumnRows(
+                mainGroupOnlyAdmins.map((administrator) =>
+                  button(
+                    personButtonLabel({
+                      telegramUserId: String(administrator.user.id),
+                      firstName: administrator.user.first_name,
+                      lastName: administrator.user.last_name,
+                      username: administrator.user.username
+                    }),
+                    `${PREFIX}admin-user:${administrator.user.id}`,
+                    'primary'
+                  )
                 )
               ),
               [button('← Settings home', `${PREFIX}home`)]
@@ -443,6 +548,46 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
         callback.id,
         'That staff member is unavailable.'
       );
+      return true;
+    }
+    if (staffAction === 'admin-user') {
+      const administrator = (await groupAdministrators(chatId)).find(
+        (entry) => String(entry.user.id) === telegramUserId
+      );
+      if (!administrator) {
+        await answerCommunityCallback(
+          GROUP_HELP_BOT_SLUG,
+          callback.id,
+          'That administrator is no longer available. Refresh the list.'
+        );
+        return true;
+      }
+      const name =
+        [administrator.user.first_name, administrator.user.last_name].filter(Boolean).join(' ') ||
+        'Not available';
+      await sendCommunityMessage(
+        GROUP_HELP_BOT_SLUG,
+        replyChatId,
+        [
+          'Main group administrator',
+          '',
+          `Name: ${name}`,
+          `Username: ${administrator.user.username ? `@${administrator.user.username}` : 'Not set'}`,
+          `Telegram ID: ${telegramUserId}`,
+          `Telegram role: ${['creator', 'owner'].includes(administrator.status) ? 'Owner' : 'Administrator'}`,
+          administrator.custom_title ? `Admin title: ${administrator.custom_title}` : '',
+          administrator.is_anonymous ? 'Anonymous admin: yes' : 'Anonymous admin: no',
+          '',
+          'Hope Hub bot access: full through their Telegram main-group administrator role.',
+          `Telegram abilities: ${telegramAdminCapabilities(administrator).join(', ')}`,
+          '',
+          'To manage separate delegated staff powers, add this person to the private staff group.'
+        ]
+          .filter(Boolean)
+          .join('\n'),
+        { reply_markup: { inline_keyboard: [[button('← People & access', `${PREFIX}staff`)]] } }
+      );
+      await answerCommunityCallback(GROUP_HELP_BOT_SLUG, callback.id);
       return true;
     }
     if (staffAction === 'staff-user') {
