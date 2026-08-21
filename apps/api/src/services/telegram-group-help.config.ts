@@ -33,6 +33,8 @@ export const GROUP_HELP_CONFIG_KEYS = [
   'telegramGroupHelpAutoDeleteSeconds',
   'telegramGroupHelpMaxMessageLength',
   'telegramGroupHelpAdminWhitelist',
+  'telegramGroupHelpBanAuthorityUserIds',
+  'telegramGroupHelpBanCooldownSeconds',
   'telegramGroupHelpReportsMode',
   'telegramGroupHelpIdentityChangeAlerts',
   'telegramGroupHelpIdentityAlertDeleteHours',

@@ -230,16 +230,36 @@ export async function canUseGroupHelpAdminCommand(
  * Neither a Telegram administrator, a whitelist entry, nor a custom bot role
  * can grant this authority.
  */
-export function isGroupHelpBanAuthority(username: string | undefined, status: string | undefined) {
-  const normalizedUsername = username?.trim().replace(/^@/, '').toLowerCase() || '';
-  return (
-    status === 'creator' ||
-    status === 'owner' ||
-    GROUP_HELP_AUTOMATIC_FULL_ADMIN_USERNAMES.some((candidate) => candidate === normalizedUsername)
+export function groupHelpBanAuthorityUserIds(value: string | undefined) {
+  return new Set(
+    (value || '')
+      .split(/[\n,\s]+/)
+      .map((item) => item.trim())
+      .filter((item) => /^\d+$/.test(item))
   );
 }
 
-export async function canUseGroupHelpBanCommand(message: CommunityTelegramMessage) {
+export function isGroupHelpBanAuthority(input: {
+  telegramUserId: string;
+  username?: string;
+  status?: string;
+  configuredUserIds?: ReadonlySet<string>;
+}) {
+  const { telegramUserId, username, status, configuredUserIds } = input;
+  const normalizedUsername = username?.trim().replace(/^@/, '').toLowerCase() || '';
+  if (status === 'creator' || status === 'owner') return true;
+  // The ID list is the secure, persistent source of authority. Keep the known
+  // account-name fallback only until the owner adds its Telegram ID in Admin.
+  if (configuredUserIds?.size) return configuredUserIds.has(telegramUserId);
+  return GROUP_HELP_AUTOMATIC_FULL_ADMIN_USERNAMES.some(
+    (candidate) => candidate === normalizedUsername
+  );
+}
+
+export async function canUseGroupHelpBanCommand(
+  message: CommunityTelegramMessage,
+  values: Record<string, string>
+) {
   if (!message.from) return false;
   const membership = await callCommunityTelegramApi<{ status?: string }>(
     GROUP_HELP_BOT_SLUG,
@@ -249,5 +269,10 @@ export async function canUseGroupHelpBanCommand(message: CommunityTelegramMessag
       user_id: message.from.id
     }
   ).catch(() => undefined);
-  return isGroupHelpBanAuthority(message.from.username, membership?.status);
+  return isGroupHelpBanAuthority({
+    telegramUserId: String(message.from.id),
+    username: message.from.username,
+    status: membership?.status,
+    configuredUserIds: groupHelpBanAuthorityUserIds(values.telegramGroupHelpBanAuthorityUserIds)
+  });
 }

@@ -30,6 +30,12 @@ import {
 import { requestGroupHelpCommandConfirmation } from './telegram-group-help.command-confirmation.js';
 import { groupHelpAdminMentionReplyTarget } from './telegram-group-help.admin-mentions.js';
 import { telegramPersonLogLabel } from './telegram-group-help.people.js';
+import {
+  groupHelpBanCooldownRemainingSeconds,
+  groupHelpBanCooldownSeconds,
+  recordGroupHelpBanCooldown
+} from './telegram-group-help.ban-guard.js';
+import { recordGroupHelpCommandAudit } from './telegram-group-help.command-audit.js';
 
 export async function handleGroupHelpStaffCommand(
   message: CommunityTelegramMessage,
@@ -116,7 +122,7 @@ export async function handleGroupHelpStaffCommand(
 
     const banCommand = ['ban', 'delban'].includes(commandName);
     const permitted = banCommand
-      ? await canUseGroupHelpBanCommand(permissionMessage)
+      ? await canUseGroupHelpBanCommand(permissionMessage, values)
       : await canUseGroupHelpCommand(permissionMessage, values, `/${canonicalName}`, requiredRole);
     if (!permitted) {
       await sendGroupHelpPermissionDenied(
@@ -245,6 +251,31 @@ export async function handleGroupHelpStaffCommand(
     const reason =
       parts.slice(reasonStart).join(' ').trim() || `Manual ${canonicalName} by community staff`;
 
+    if (banCommand && message.from) {
+      const remainingSeconds = await groupHelpBanCooldownRemainingSeconds({
+        targetChatId,
+        actorUserId: String(message.from.id),
+        targetUserId: String(target.id)
+      });
+      if (remainingSeconds > 0) {
+        const detail = `Duplicate ban blocked for ${target.id}; retry in ${remainingSeconds} seconds.`;
+        await recordGroupHelpCommandAudit({
+          message,
+          targetChatId,
+          status: 'DENIED',
+          detail,
+          logChatId: values.telegramGroupHelpLogChannelId
+        });
+        message._groupHelpAuditRecorded = true;
+        await sendCommunityMessage(
+          GROUP_HELP_BOT_SLUG,
+          chatId,
+          `No action was applied. This member was already banned by you recently; try again in ${remainingSeconds} seconds.`
+        );
+        return true;
+      }
+    }
+
     if (deleteFirst) {
       const messageId = isCrossGroup
         ? crossGroupMessageId
@@ -312,6 +343,26 @@ export async function handleGroupHelpStaffCommand(
         effectiveAction,
         Number(values.telegramGroupHelpMuteMinutes || 60)
       );
+    }
+
+    if (banCommand && message.from) {
+      const cooldownSeconds = groupHelpBanCooldownSeconds(
+        values.telegramGroupHelpBanCooldownSeconds
+      );
+      await recordGroupHelpBanCooldown({
+        targetChatId,
+        actorUserId: String(message.from.id),
+        targetUserId: String(target.id),
+        seconds: cooldownSeconds
+      });
+      await recordGroupHelpCommandAudit({
+        message,
+        targetChatId,
+        status: 'HANDLED',
+        detail: `Ban applied to ${target.first_name || 'Telegram member'} (${target.id}). Reason: ${reason}. Duplicate protection: ${cooldownSeconds}s.`,
+        logChatId: values.telegramGroupHelpLogChannelId
+      });
+      message._groupHelpAuditRecorded = true;
     }
 
     if (isCrossGroup) {

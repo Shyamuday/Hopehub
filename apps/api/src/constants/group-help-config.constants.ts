@@ -831,6 +831,27 @@ contact me for`
     defaultValue: ''
   },
   {
+    key: 'telegramGroupHelpBanAuthorityUserIds',
+    label: 'Ban authority Telegram IDs',
+    description:
+      'Only these Telegram user IDs and the actual Telegram group owner may use /ban or /delban. One ID per line. Once this list is set, usernames never grant ban power.',
+    section: 'people',
+    type: 'textarea',
+    maxLength: 500,
+    placeholder: '7217536617',
+    defaultValue: ''
+  },
+  {
+    key: 'telegramGroupHelpBanCooldownSeconds',
+    label: 'Ban command repeat protection',
+    description:
+      'Minimum seconds before the same authorised person can ban the same member again. Set 0 only if you intentionally want no duplicate protection.',
+    section: 'people',
+    type: 'number',
+    maxLength: 4,
+    defaultValue: '60'
+  },
+  {
     key: 'telegramGroupHelpWelcomeCommandTemplate',
     label: 'Welcome command template',
     description: 'Command copied into Telegram. Use {message} and optional {imageUrl}.',
