@@ -119,10 +119,6 @@
             ><span>Event RSVPs</span>
           </div>
           <div>
-            <strong>{{ stats.pendingConfessions }}</strong
-            ><span>Awaiting review</span>
-          </div>
-          <div>
             <strong>{{ stats.failedFollowUps }}</strong
             ><span>Follow-ups blocked</span>
           </div>
@@ -660,68 +656,6 @@
         </div>
       </div>
     </section>
-
-    @if (pendingConfessions().length) {
-      <section
-        class="panel confession-review-panel"
-        [class.workspace-hidden]="activeWorkspaceSection() !== 'confessions'"
-      >
-        <div class="panel-head">
-          <div>
-            <p class="eyebrow">Private review</p>
-            <h2>Anonymous posts awaiting approval</h2>
-            <p>Identity remains hidden. Review the content before publishing it to the group.</p>
-          </div>
-        </div>
-        <div class="confession-review-list">
-          @for (submission of pendingConfessions(); track submission.id) {
-            <article>
-              <p>{{ submission.text }}</p>
-              <div class="confession-sender">
-                <strong>Admin-only sender</strong>
-                <span>
-                  {{ submission.firstName || 'Telegram user' }}
-                  @if (submission.username) {
-                    · {{ '@' + submission.username.replace('@', '') }}
-                  }
-                  · ID {{ submission.userChatId }}
-                </span>
-              </div>
-              <small>{{ submission.createdAt | date: 'medium' }}</small>
-              <div class="campaign-card__actions">
-                <button
-                  type="button"
-                  class="primary"
-                  [disabled]="campaignBusyId() === submission.reference"
-                  (click)="reviewConfession(submission, 'APPROVE')"
-                >
-                  Approve and publish
-                </button>
-                <button
-                  type="button"
-                  class="danger-text"
-                  [disabled]="campaignBusyId() === submission.reference"
-                  (click)="reviewConfession(submission, 'REJECT')"
-                >
-                  Reject
-                </button>
-              </div>
-            </article>
-          }
-        </div>
-      </section>
-    }
-
-    @if (!pendingConfessions().length) {
-      <section
-        class="panel empty-review-panel"
-        [class.workspace-hidden]="activeWorkspaceSection() !== 'confessions'"
-      >
-        <p class="eyebrow">Private review</p>
-        <h2>No posts waiting</h2>
-        <p>New anonymous submissions will appear here for approval.</p>
-      </section>
-    }
 
     <app-unsaved-changes-bar
       [class.workspace-hidden]="activeWorkspaceSection() !== 'settings'"
@@ -1625,13 +1559,6 @@
         Send announcement
       </button>
       <button type="button" (click)="openWorkspaceSection('events')">Create event</button>
-      @if (pendingConfessions().length) {
-        <button type="button" class="review-action" (click)="openWorkspaceSection('confessions')">
-          Review {{ pendingConfessions().length }} submission{{
-            pendingConfessions().length === 1 ? '' : 's'
-          }}
-        </button>
-      }
       <button type="button" (click)="openWorkspaceSection('settings')">Open bot settings</button>
     </section>
 

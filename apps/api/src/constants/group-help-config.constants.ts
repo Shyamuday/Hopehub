@@ -56,26 +56,23 @@ export const HOPEHUB_COMMUNITY_WELCOME_MEDIA_URL =
 export const HOPEHUB_COMMUNITY_WELCOME_BUTTONS = `Talk | https://hopehub.in/#live-connect | success && Confess | ${TELEGRAM_BOT_URLS.CONFESSION} | success && Channel | https://t.me/HopeHubGlobal | success
 Website | https://hopehub.in/ | success && Earn | https://earn.hopehub.in/ | success && Rules | ${TELEGRAM_BOT_URLS.RULES} | success`;
 
-export const HOPEHUB_COMMUNITY_ABOUT_MESSAGE = `About Hope Hub
+export const HOPEHUB_COMMUNITY_ABOUT_MESSAGE = `HopeHub.in — What We Do
 
-This group is part of Hope Hub, an India-based emotional wellbeing and support startup. Hope Hub was founded by passionate people who have been working in this space for more than five years.
+A platform connecting people who need support with people who provide support.
 
-Our purpose is simple: help people feel heard sooner, find the right kind of support, and take one steady step at a time. You never have to share more than you are comfortable with.
+Venting & emotional support for everyday struggles.
 
-What you can find in this group
-• A kind peer-support community where you can listen, speak, or simply stay present.
-• Daily conversations, check-ins, and voice chats when they are scheduled.
-• Support for stress, anxiety, loneliness, breakups, low mood, and everyday overwhelm.
-• Private ways to talk when you need a more personal conversation.
-• Hope Hub resources, self-checks, wellbeing activities, and routes to professional support.
+Free Talk Every Day — a space to talk openly and be heard.
 
-How to keep this space safe
-• Take your time; quiet members are welcome too.
-• Be kind, protect privacy, and do not pressure anyone to share.
-• Do not send unwanted DMs, spam, hate, bullying, or medical diagnoses.
-• Use the group tools to report something that feels unsafe or inappropriate.
+Non-professional peer support from peer supporters and trained listeners.
 
-Hope Hub is a community space and not an emergency service. If you or someone else is in immediate danger, contact local emergency services or a crisis helpline right away.`;
+Professional support from psychologists, counsellors and therapists.
+
+Life coaches for guidance, motivation and personal growth.
+
+A place for healing, connection, listening and emotional guidance.
+
+Our goal is to make support more accessible, human and available when people need someone to talk to.`;
 
 export type GroupHelpConfigField = {
   key: string;

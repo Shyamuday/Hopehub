@@ -1,4 +1,5 @@
 import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
+import { HOPEHUB_COMMUNITY_ABOUT_MESSAGE } from '../constants/group-help-config.constants.js';
 import {
   handleTelegramCommunityEventCallback,
   handleTelegramCommunityJoinVerificationCallback
@@ -89,8 +90,7 @@ export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
   if (callback.data === 'hh_welcome_about') {
     const values = await groupHelpConfig(chatId);
     const aboutMessage =
-      values.telegramGroupHelpAboutMessage?.trim() ||
-      'About Hope Hub\n\nHope Hub is an India-based emotional wellbeing and support startup. This community is a calm place to listen, share at your own pace, join group conversations and voice chats, explore private support, and find wellbeing tools.\n\nPlease be kind, protect privacy, and do not pressure anyone to share. Hope Hub is not an emergency service; contact local emergency services or a crisis helpline if someone is in immediate danger.';
+      values.telegramGroupHelpAboutMessage?.trim() || HOPEHUB_COMMUNITY_ABOUT_MESSAGE;
     await sendTemporaryGroupHelpMessage(chatId, aboutMessage, values, {
       reply_to_message_id: callback.message.message_id
     });

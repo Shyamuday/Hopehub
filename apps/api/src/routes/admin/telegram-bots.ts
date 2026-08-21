@@ -53,7 +53,6 @@ import {
   sendCommunityMessage
 } from '../../services/telegram-community-bots.client.js';
 import { configuredUrlKeyboard } from '../../services/telegram-keyboard-config.js';
-import { publishApprovedConfession } from '../../services/telegram-confession-bot.js';
 import {
   applyTelegramCommunityAnnouncementPin,
   announceTelegramCommunityEvent,
@@ -298,8 +297,6 @@ const communityEventSchema = z.object({
   recurrence: z.enum(['ONCE', 'DAILY', 'WEEKDAYS', 'WEEKLY']).default('ONCE'),
   occurrences: z.number().int().min(1).max(90).default(1)
 });
-
-const confessionReviewSchema = z.object({ action: z.enum(['APPROVE', 'REJECT']) });
 
 const GROUP_HELP_MEDIA_MIME_TYPES = new Set([
   'image/jpeg',
@@ -2393,95 +2390,22 @@ export function registerAdminTelegramBotRoutes(router: Router) {
   router.get(
     '/admin/telegram-bots/group-help/confessions',
     authRequired,
-    allowRoles(Role.ADMIN, Role.HR),
-    asyncRoute(async (_req, res) => {
-      const submissions = await prisma.telegramCommunitySubmission.findMany({
-        where: { bot: COMMUNITY_BOT_SLUGS.CONFESSION, status: 'pending' },
-        select: {
-          id: true,
-          reference: true,
-          serial: true,
-          category: true,
-          text: true,
-          status: true,
-          userChatId: true,
-          firstName: true,
-          username: true,
-          createdAt: true
-        },
-        orderBy: { createdAt: 'asc' },
-        take: 100
-      });
-      res.json({
-        submissions: submissions.map((item) => ({ ...item, serial: item.serial.toString() }))
-      });
-    })
+    asyncRoute(async (_req, res) =>
+      res.status(403).json({
+        message:
+          'Confession content and sender identity are available only in the private Confession bot review inbox.'
+      })
+    )
   );
 
   router.post(
     '/admin/telegram-bots/group-help/confessions/:reference/review',
     authRequired,
-    allowRoles(Role.ADMIN, Role.HR),
-    asyncRoute(async (req, res) => {
-      const reference = routeParam(req, 'reference');
-      const parsed = confessionReviewSchema.safeParse(req.body ?? {});
-      if (!parsed.success) return res.status(400).json({ message: 'Choose approve or reject.' });
-      const submission = await prisma.telegramCommunitySubmission.findUnique({
-        where: { reference }
-      });
-      if (
-        !submission ||
-        submission.bot !== COMMUNITY_BOT_SLUGS.CONFESSION ||
-        submission.status !== 'pending'
-      ) {
-        return res.status(404).json({ message: 'Pending confession not found.' });
-      }
-      const approved = parsed.data.action === 'APPROVE';
-      let destinationNames: string[] = [];
-      if (approved) {
-        destinationNames = await publishApprovedConfession({
-          text: submission.text,
-          serial: submission.serial
-        });
-      }
-      const updated = await prisma.telegramCommunitySubmission.update({
-        where: { reference },
-        data: { status: approved ? 'approved' : 'rejected' }
-      });
-      try {
-        await sendCommunityMessage(
-          COMMUNITY_BOT_SLUGS.CONFESSION,
-          submission.userChatId,
-          approved
-            ? `💙 Your anonymous submission was approved${destinationNames.length ? ` and published in ${destinationNames.join(' and ')}` : ''}.`
-            : 'Your submission was not approved for publication at this time.'
-        );
-      } catch {
-        /* The member may have blocked the bot. */
-      }
-      await writeAuditLog({
-        actorId: req.user!.id,
-        actorRole: req.user!.role,
-        action: approved ? 'telegram_confession.approve' : 'telegram_confession.reject',
-        targetType: 'telegram_community_submission',
-        targetId: submission.id,
-        summary: `${approved ? 'Approved' : 'Rejected'} an anonymous Telegram submission.`
-      });
-      res.json({
-        submission: {
-          id: updated.id,
-          reference: updated.reference,
-          serial: updated.serial.toString(),
-          category: updated.category,
-          text: updated.text,
-          status: updated.status,
-          userChatId: updated.userChatId,
-          firstName: updated.firstName,
-          username: updated.username,
-          createdAt: updated.createdAt
-        }
-      });
-    })
+    asyncRoute(async (_req, res) =>
+      res.status(403).json({
+        message: 'Confession approval is restricted to the private Confession bot review inbox.'
+      })
+    )
   );
 
   router.get(
@@ -2490,29 +2414,18 @@ export function registerAdminTelegramBotRoutes(router: Router) {
     allowRoles(Role.ADMIN, Role.HR, Role.MARKETING),
     asyncRoute(async (_req, res) => {
       const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-      const [
-        activeCampaigns,
-        posts,
-        pollVotes,
-        reactions,
-        newMembers,
-        rsvps,
-        pendingConfessions,
-        failedFollowUps
-      ] = await Promise.all([
-        prisma.telegramCampaign.count({ where: { isActive: true } }),
-        prisma.telegramCampaignDelivery.count({
-          where: { status: { in: ['SENT', 'CLOSED'] }, sentAt: { gte: since } }
-        }),
-        prisma.telegramPollVote.count({ where: { votedAt: { gte: since } } }),
-        prisma.telegramCommunityReaction.count({ where: { reactedAt: { gte: since } } }),
-        prisma.telegramCommunityMember.count({ where: { joinedAt: { gte: since } } }),
-        prisma.telegramCommunityEventRsvp.count({ where: { createdAt: { gte: since } } }),
-        prisma.telegramCommunitySubmission.count({
-          where: { bot: COMMUNITY_BOT_SLUGS.CONFESSION, status: 'pending' }
-        }),
-        prisma.telegramPollVote.count({ where: { followUpError: { not: null } } })
-      ]);
+      const [activeCampaigns, posts, pollVotes, reactions, newMembers, rsvps, failedFollowUps] =
+        await Promise.all([
+          prisma.telegramCampaign.count({ where: { isActive: true } }),
+          prisma.telegramCampaignDelivery.count({
+            where: { status: { in: ['SENT', 'CLOSED'] }, sentAt: { gte: since } }
+          }),
+          prisma.telegramPollVote.count({ where: { votedAt: { gte: since } } }),
+          prisma.telegramCommunityReaction.count({ where: { reactedAt: { gte: since } } }),
+          prisma.telegramCommunityMember.count({ where: { joinedAt: { gte: since } } }),
+          prisma.telegramCommunityEventRsvp.count({ where: { createdAt: { gte: since } } }),
+          prisma.telegramPollVote.count({ where: { followUpError: { not: null } } })
+        ]);
       res.json({
         periodDays: 7,
         activeCampaigns,
@@ -2521,7 +2434,6 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         reactions,
         newMembers,
         rsvps,
-        pendingConfessions,
         failedFollowUps
       });
     })

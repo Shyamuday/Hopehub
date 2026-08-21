@@ -57,14 +57,7 @@ type CampaignItemDraft = {
 };
 
 type GroupHelpWorkspaceSection =
-  | 'overview'
-  | 'campaigns'
-  | 'events'
-  | 'confessions'
-  | 'announcements'
-  | 'moderation'
-  | 'settings'
-  | 'activity';
+  'overview' | 'campaigns' | 'events' | 'announcements' | 'moderation' | 'settings' | 'activity';
 
 const emptyCampaignItem = (kind: 'TEXT' | 'POLL' | 'SUMMARY'): CampaignItemDraft => ({
   kind,
@@ -118,7 +111,6 @@ export class GroupHelpPage {
     { id: 'overview', label: 'Overview', description: 'Status and recent activity' },
     { id: 'campaigns', label: 'Posts & polls', description: 'Scheduled community content' },
     { id: 'events', label: 'Events', description: 'Voice circles and reminders' },
-    { id: 'confessions', label: 'Review', description: 'Anonymous submissions' },
     { id: 'announcements', label: 'Announcements', description: 'Messages and pinned posts' },
     { id: 'moderation', label: 'Moderation', description: 'Member actions' },
     { id: 'settings', label: 'Bot settings', description: 'Messages, rules and behaviour' },
@@ -188,7 +180,6 @@ export class GroupHelpPage {
   readonly campaignItems = signal<CampaignItemDraft[]>([emptyCampaignItem('TEXT')]);
   readonly engagement = signal<any>(null);
   readonly communityEvents = signal<any[]>([]);
-  readonly pendingConfessions = signal<any[]>([]);
   readonly eventSaving = signal(false);
   readonly editingEventId = signal('');
   readonly eventTitle = signal('');
@@ -338,7 +329,6 @@ export class GroupHelpPage {
   }
 
   workspaceBadge(section: GroupHelpWorkspaceSection) {
-    if (section === 'confessions') return this.pendingConfessions().length;
     if (section === 'campaigns')
       return this.campaigns().filter((campaign) => campaign.isActive).length;
     if (section === 'events') {
@@ -644,12 +634,6 @@ export class GroupHelpPage {
     this.campaignBotConfigured.set(campaignResponse.botConfigured);
     this.communityEvents.set(eventResponse.events || []);
     this.engagement.set(engagementResponse);
-    try {
-      const confessionResponse = await this.api.getTelegramPendingConfessions();
-      this.pendingConfessions.set(confessionResponse.submissions || []);
-    } catch {
-      this.pendingConfessions.set([]);
-    }
   }
 
   addCampaignItem(kind: 'TEXT' | 'POLL' | 'SUMMARY') {
@@ -926,19 +910,6 @@ export class GroupHelpPage {
     if (!window.confirm(`Delete “${event.title}”?`)) return;
     await this.api.deleteTelegramCommunityEvent(event.id);
     await this.loadCampaigns();
-  }
-
-  async reviewConfession(submission: any, action: 'APPROVE' | 'REJECT') {
-    this.campaignBusyId.set(submission.reference);
-    try {
-      await this.api.reviewTelegramConfession(submission.reference, action);
-      await this.loadCampaigns();
-      this.message.set(action === 'APPROVE' ? 'Anonymous post published.' : 'Submission rejected.');
-    } catch (error: any) {
-      this.error.set(error?.error?.message || 'Could not review submission.');
-    } finally {
-      this.campaignBusyId.set('');
-    }
   }
 
   fieldsFor(section: GroupHelpConfigEntry['section']) {

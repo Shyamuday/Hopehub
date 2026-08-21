@@ -14,7 +14,11 @@ import {
   setCommunityState,
   updateCommunitySubmission
 } from './telegram-community-bots.store.js';
-import type { CommunityTelegramUpdate, TelegramKeyboard } from './telegram-community-bots.types.js';
+import type {
+  CommunityTelegramUpdate,
+  CommunityTelegramUser,
+  TelegramKeyboard
+} from './telegram-community-bots.types.js';
 import {
   controlBoolean,
   controlNumber,
@@ -29,20 +33,17 @@ import {
 import { prisma } from '../db.js';
 
 const slug = COMMUNITY_BOT_SLUGS.CONFESSION;
+const CONFESSION_REVIEWER_TELEGRAM_USER_ID = '7217536617';
 const keyOf = (value: string | number) => String(value);
 const isCommand = (text: string, command: string) =>
   new RegExp(`^/${command}(?:@[A-Za-z0-9_]+)?(?:\\s|$)`, 'i').test(text.trim());
 
 function confessionRouting(controls: TelegramBotControls) {
   return {
-    adminChatId:
-      controls.telegramConfessionAdminChatId.trim() ||
-      process.env.TELEGRAM_CONFESSION_ADMIN_CHAT_ID?.trim() ||
-      '',
-    approvalGroupId:
-      controls.telegramConfessionApprovalGroupId.trim() ||
-      process.env.TELEGRAM_CONFESSION_APPROVAL_GROUP_ID?.trim() ||
-      '',
+    // Sender identity and the pending text are sensitive. These must never be
+    // redirected by a general admin setting to another person or group.
+    adminChatId: CONFESSION_REVIEWER_TELEGRAM_USER_ID,
+    approvalGroupId: '',
     channelId:
       controls.telegramConfessionChannelId.trim() ||
       process.env.TELEGRAM_CONFESSION_CHANNEL_ID?.trim() ||
@@ -220,9 +221,14 @@ async function showStart(chatId: string | number) {
 const POSSIBLE_IMMEDIATE_RISK =
   /\b(suicid(?:e|al)|kill myself|end my life|self[- ]?harm|hurt myself|overdose|cannot stay safe|can't stay safe)\b/i;
 
-function isAdmin(chatId: string | number, controls: TelegramBotControls) {
+function isConfessionReviewInbox(chatId: string | number, controls: TelegramBotControls) {
   const routing = confessionRouting(controls);
   return keyOf(chatId) === routing.adminChatId || keyOf(chatId) === routing.approvalGroupId;
+}
+
+/** Confession content and sender identity are restricted to this named reviewer. */
+export function isConfessionReviewer(user: CommunityTelegramUser | undefined) {
+  return String(user?.id || '') === CONFESSION_REVIEWER_TELEGRAM_USER_ID;
 }
 
 export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate) {
@@ -322,7 +328,14 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
       return;
     }
     if (data.startsWith('approve_') || data.startsWith('reject_')) {
-      if (!isAdmin(chatId, controls)) return;
+      if (!isConfessionReviewInbox(chatId, controls) || !isConfessionReviewer(callback.from)) {
+        await answerCommunityCallback(
+          slug,
+          callback.id,
+          'Only the private Confession reviewer can approve or reject submissions.'
+        );
+        return;
+      }
       const approved = data.startsWith('approve_');
       const id = data.slice(approved ? 'approve_'.length : 'reject_'.length);
       const confession = await findCommunitySubmission(id);
