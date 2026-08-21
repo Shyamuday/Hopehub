@@ -212,7 +212,12 @@ const groupHelpApplySchema = z.object({
 
 const campaignItemSchema = z
   .object({
-    kind: z.enum(['TEXT', 'POLL', 'SUMMARY']),
+    kind: z.enum(['TEXT', 'IMAGE_QUOTE', 'POLL', 'WELLBEING_POLL', 'SUMMARY']),
+    contentCategory: z.string().trim().max(80).optional(),
+    sourceUrl: z.preprocess(
+      (value) => (typeof value === 'string' && !value.trim() ? undefined : value),
+      z.string().trim().url().optional()
+    ),
     text: z.string().trim().max(4096).optional(),
     imageUrl: z.preprocess(
       (value) => (typeof value === 'string' && !value.trim() ? undefined : value),
@@ -241,10 +246,20 @@ const campaignItemSchema = z
     followUpMessage: z.string().trim().max(1200).optional()
   })
   .superRefine((item, context) => {
-    if (['TEXT', 'SUMMARY'].includes(item.kind) && !item.text) {
+    if (['TEXT', 'IMAGE_QUOTE', 'SUMMARY'].includes(item.kind) && !item.text) {
       context.addIssue({ code: 'custom', path: ['text'], message: 'Message text is required.' });
     }
-    if (item.kind === 'POLL' && (!item.pollQuestion || !item.pollOptions?.length)) {
+    if (item.kind === 'IMAGE_QUOTE' && !item.imageUrl) {
+      context.addIssue({
+        code: 'custom',
+        path: ['imageUrl'],
+        message: 'An image quote requires uploaded media or an image URL.'
+      });
+    }
+    if (
+      ['POLL', 'WELLBEING_POLL'].includes(item.kind) &&
+      (!item.pollQuestion || !item.pollOptions?.length)
+    ) {
       context.addIssue({
         code: 'custom',
         path: ['pollQuestion'],
@@ -618,6 +633,8 @@ function campaignItemData(
   return {
     sortOrder,
     kind: item.kind,
+    contentCategory: item.contentCategory,
+    sourceUrl: item.sourceUrl,
     text: item.text,
     imageUrl: item.imageUrl,
     buttons: item.buttons as Prisma.InputJsonValue | undefined,

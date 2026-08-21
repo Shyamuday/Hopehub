@@ -14,6 +14,7 @@ import {
 import { TELEGRAM_COMMUNITY_ENGAGEMENT_ITEMS } from '../src/constants/telegram-community-content.constants.js';
 import {
   GROUP_HELP_BOT_SLUG,
+  TELEGRAM_BOT_URLS,
   TELEGRAM_BOT_USERNAMES
 } from '../src/constants/telegram-community-bot.constants.js';
 import { colorizeTelegramPayload } from '../src/services/telegram-button-styles.js';
@@ -226,6 +227,67 @@ const campaigns = (chatId: string) =>
       ]
     },
     {
+      id: 'seed_telegram_support_safety_awareness',
+      name: 'Private support safety awareness',
+      templateVersion: 1,
+      intervalMinutes: 480,
+      nextRunAt: nextAt(12),
+      items: [
+        {
+          kind: 'TEXT',
+          contentCategory: 'community safety',
+          text: [
+            '⚠️ Important awareness',
+            '',
+            'Please be careful if someone privately messages you with lines such as “I am here to listen” or “Does anyone want to share?”',
+            '',
+            'Not everyone who offers emotional support has good intentions. Hope Hub does not approve unsolicited private support or people representing the community without registration.',
+            '',
+            'If you genuinely want to support others, please register through Hope Hub so we can guide you safely.',
+            '',
+            'If anything feels suspicious: block the person, keep a screenshot if safe, and report it to the admins.'
+          ].join('\n'),
+          buttons: [
+            {
+              text: 'Register to help',
+              url: 'https://earn.hopehub.in/',
+              style: 'success'
+            },
+            {
+              text: 'Report a concern',
+              url: TELEGRAM_BOT_URLS.CONTACT,
+              style: 'danger'
+            }
+          ]
+        },
+        {
+          kind: 'TEXT',
+          contentCategory: 'community safety',
+          text: [
+            '⚠️ A reminder about private messages',
+            '',
+            'A kind message can be genuine, but please do not share personal details, photos, money, passwords, OTPs, or move to another app because someone says they can support you.',
+            '',
+            'Hope Hub support should happen through the community’s verified options. Anyone wishing to help can register first.',
+            '',
+            'If a message makes you uncomfortable, block and report it. You will not get in trouble for asking admins to check.'
+          ].join('\n'),
+          buttons: [
+            {
+              text: 'Verified ways to help',
+              url: 'https://earn.hopehub.in/',
+              style: 'success'
+            },
+            {
+              text: 'Report a concern',
+              url: TELEGRAM_BOT_URLS.CONTACT,
+              style: 'danger'
+            }
+          ]
+        }
+      ]
+    },
+    {
       id: 'seed_telegram_evening_prompt',
       name: 'Evening community prompt',
       intervalMinutes: 1440,
@@ -402,6 +464,19 @@ const campaigns = (chatId: string) =>
     }
   ].map((campaign) => ({
     ...campaign,
+    items: campaign.items.map((item) => {
+      const kind = item.kind === 'MESSAGE' ? 'TEXT' : item.kind;
+      return {
+        ...item,
+        kind,
+        contentCategory:
+          'contentCategory' in item && typeof item.contentCategory === 'string'
+            ? item.contentCategory
+            : kind === 'POLL'
+              ? 'wellbeing check-in'
+              : 'community support'
+      };
+    }),
     chatId,
     source: 'SYSTEM' as const,
     templateVersion: 'templateVersion' in campaign ? campaign.templateVersion : 1

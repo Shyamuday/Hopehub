@@ -99,6 +99,8 @@ model TelegramCampaignItem {
   campaign          TelegramCampaign           @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   sortOrder         Int
   kind              String
+  contentCategory   String?
+  sourceUrl         String?
   text              String?                    @db.Text
   imageUrl          String?
   buttons           Json?

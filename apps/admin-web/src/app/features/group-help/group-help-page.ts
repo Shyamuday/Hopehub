@@ -39,7 +39,9 @@ type CommandItem = {
 };
 
 type CampaignItemDraft = {
-  kind: 'TEXT' | 'POLL' | 'SUMMARY';
+  kind: 'TEXT' | 'IMAGE_QUOTE' | 'POLL' | 'WELLBEING_POLL' | 'SUMMARY';
+  contentCategory: string;
+  sourceUrl: string;
   text: string;
   imageUrl: string;
   buttonsText: string;
@@ -59,8 +61,12 @@ type CampaignItemDraft = {
 type GroupHelpWorkspaceSection =
   'overview' | 'campaigns' | 'events' | 'announcements' | 'moderation' | 'settings' | 'activity';
 
-const emptyCampaignItem = (kind: 'TEXT' | 'POLL' | 'SUMMARY'): CampaignItemDraft => ({
+const emptyCampaignItem = (
+  kind: 'TEXT' | 'IMAGE_QUOTE' | 'POLL' | 'WELLBEING_POLL' | 'SUMMARY',
+): CampaignItemDraft => ({
   kind,
+  contentCategory: '',
+  sourceUrl: '',
   text: '',
   imageUrl: '',
   buttonsText: '',
@@ -76,6 +82,13 @@ const emptyCampaignItem = (kind: 'TEXT' | 'POLL' | 'SUMMARY'): CampaignItemDraft
   followUpOptionIdsText: '',
   followUpMessage: '',
 });
+
+function campaignItemKind(value: unknown): CampaignItemDraft['kind'] {
+  if (value === 'MESSAGE') return 'TEXT';
+  return ['TEXT', 'IMAGE_QUOTE', 'POLL', 'WELLBEING_POLL', 'SUMMARY'].includes(String(value))
+    ? (value as CampaignItemDraft['kind'])
+    : 'TEXT';
+}
 
 const SECTION_LABELS: Record<GroupHelpConfigEntry['section'], string> = {
   connection: 'Connection',
@@ -636,7 +649,7 @@ export class GroupHelpPage {
     this.engagement.set(engagementResponse);
   }
 
-  addCampaignItem(kind: 'TEXT' | 'POLL' | 'SUMMARY') {
+  addCampaignItem(kind: 'TEXT' | 'IMAGE_QUOTE' | 'POLL' | 'WELLBEING_POLL' | 'SUMMARY') {
     this.campaignItems.update((items) => [...items, emptyCampaignItem(kind)]);
   }
 
@@ -662,11 +675,19 @@ export class GroupHelpPage {
       repeat: this.campaignRepeat(),
       isActive: this.campaignActive(),
       items: this.campaignItems().map((item) => ({
-        kind: item.kind,
-        text: item.kind === 'TEXT' || item.kind === 'SUMMARY' ? item.text.trim() : undefined,
-        imageUrl: item.kind === 'TEXT' && item.imageUrl.trim() ? item.imageUrl.trim() : undefined,
+        kind: campaignItemKind(item.kind),
+        contentCategory: item.contentCategory.trim() || undefined,
+        sourceUrl: item.sourceUrl.trim() || undefined,
+        text:
+          item.kind === 'TEXT' || item.kind === 'IMAGE_QUOTE' || item.kind === 'SUMMARY'
+            ? item.text.trim()
+            : undefined,
+        imageUrl:
+          (item.kind === 'TEXT' || item.kind === 'IMAGE_QUOTE') && item.imageUrl.trim()
+            ? item.imageUrl.trim()
+            : undefined,
         buttons:
-          item.kind === 'TEXT'
+          item.kind === 'TEXT' || item.kind === 'IMAGE_QUOTE'
             ? item.buttonsText
                 .split(/\r?\n/)
                 .map((line) => line.split('|').map((part) => part.trim()))
@@ -680,9 +701,12 @@ export class GroupHelpPage {
                     : {}),
                 }))
             : undefined,
-        pollQuestion: item.kind === 'POLL' ? item.pollQuestion.trim() : undefined,
+        pollQuestion:
+          item.kind === 'POLL' || item.kind === 'WELLBEING_POLL'
+            ? item.pollQuestion.trim()
+            : undefined,
         pollOptions:
-          item.kind === 'POLL'
+          item.kind === 'POLL' || item.kind === 'WELLBEING_POLL'
             ? item.pollOptionsText
                 .split('\n')
                 .map((option) => option.trim())
@@ -692,24 +716,28 @@ export class GroupHelpPage {
         pollMultiple: item.pollMultiple,
         pollQuiz: item.pollQuiz,
         correctOptionIds:
-          item.kind === 'POLL' && item.pollQuiz && item.correctOptionId != null
+          (item.kind === 'POLL' || item.kind === 'WELLBEING_POLL') &&
+          item.pollQuiz &&
+          item.correctOptionId != null
             ? [item.correctOptionId - 1]
             : undefined,
         pollExplanation:
-          item.kind === 'POLL' && item.pollQuiz && item.pollExplanation.trim()
+          (item.kind === 'POLL' || item.kind === 'WELLBEING_POLL') &&
+          item.pollQuiz &&
+          item.pollExplanation.trim()
             ? item.pollExplanation.trim()
             : undefined,
         closeAfterMinutes: item.closeAfterMinutes || undefined,
         messageThreadId: item.messageThreadId || undefined,
         followUpOptionIds:
-          item.kind === 'POLL'
+          item.kind === 'POLL' || item.kind === 'WELLBEING_POLL'
             ? item.followUpOptionIdsText
                 .split(',')
                 .map((value) => Number(value.trim()) - 1)
                 .filter((value) => Number.isInteger(value) && value >= 0)
             : undefined,
         followUpMessage:
-          item.kind === 'POLL' && item.followUpMessage.trim()
+          (item.kind === 'POLL' || item.kind === 'WELLBEING_POLL') && item.followUpMessage.trim()
             ? item.followUpMessage.trim()
             : undefined,
       })),
@@ -737,6 +765,8 @@ export class GroupHelpPage {
     this.campaignItems.set(
       (campaign.items || []).map((item: any) => ({
         kind: item.kind,
+        contentCategory: item.contentCategory || '',
+        sourceUrl: item.sourceUrl || '',
         text: item.text || '',
         imageUrl: item.imageUrl || '',
         buttonsText: Array.isArray(item.buttons)

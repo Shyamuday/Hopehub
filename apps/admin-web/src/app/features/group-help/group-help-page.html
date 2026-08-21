@@ -180,18 +180,20 @@
                   <strong>
                     {{ itemIndex + 1 }}.
                     {{
-                      item.kind === 'POLL'
+                      item.kind === 'POLL' || item.kind === 'WELLBEING_POLL'
                         ? item.pollQuiz
                           ? 'Wellbeing quiz'
                           : 'Poll'
                         : item.kind === 'SUMMARY'
                           ? 'Weekly summary'
+                          : item.kind === 'IMAGE_QUOTE'
+                            ? 'Image quote'
                           : 'Message'
                     }}
                   </strong>
                   <span>{{
-                    item.kind === 'POLL'
-                      ? item.pollQuestion || 'Untitled poll'
+                    item.kind === 'POLL' || item.kind === 'WELLBEING_POLL'
+                      ? item.pollQuestion || 'Untitled wellbeing poll'
                       : item.text || 'Untitled message'
                   }}</span>
                 </summary>
@@ -199,10 +201,12 @@
                   <strong>
                     {{ itemIndex + 1 }}.
                     {{
-                      item.kind === 'POLL'
+                      item.kind === 'POLL' || item.kind === 'WELLBEING_POLL'
                         ? 'Poll'
                         : item.kind === 'SUMMARY'
                           ? 'Weekly summary'
+                          : item.kind === 'IMAGE_QUOTE'
+                            ? 'Image quote'
                           : 'Message'
                     }}
                   </strong>
@@ -217,9 +221,9 @@
                   }
                 </div>
 
-                @if (item.kind === 'TEXT') {
+                @if (item.kind === 'TEXT' || item.kind === 'IMAGE_QUOTE') {
                   <label>
-                    Message
+                    {{ item.kind === 'IMAGE_QUOTE' ? 'Quote caption' : 'Message' }}
                     <textarea
                       rows="4"
                       maxlength="4096"
@@ -230,7 +234,11 @@
                   </label>
                   <app-media-url-field
                     label="Post media"
-                    help="Optional image, GIF, or short video. Uploading fills the URL automatically."
+                    [help]="
+                      item.kind === 'IMAGE_QUOTE'
+                        ? 'Required image, GIF, or short video. Uploading fills the URL automatically.'
+                        : 'Optional image, GIF, or short video. Uploading fills the URL automatically.'
+                    "
                     [value]="item.imageUrl"
                     [uploadFile]="uploadBotMedia"
                     (valueChange)="updateCampaignItem(itemIndex, { imageUrl: $event })"
@@ -408,6 +416,30 @@
                     </p>
                   }
                 }
+                <div class="campaign-basics">
+                  <label>
+                    Content category <small>Optional</small>
+                    <input
+                      type="text"
+                      maxlength="80"
+                      placeholder="For example: daily check-in, sleep, peer support"
+                      [value]="item.contentCategory"
+                      (input)="
+                        updateCampaignItem(itemIndex, { contentCategory: $any($event.target).value })
+                      "
+                    />
+                  </label>
+                  <label>
+                    Trusted source <small>Optional · stored for review</small>
+                    <input
+                      type="url"
+                      maxlength="1000"
+                      placeholder="https://www.who.int/..."
+                      [value]="item.sourceUrl"
+                      (input)="updateCampaignItem(itemIndex, { sourceUrl: $any($event.target).value })"
+                    />
+                  </label>
+                </div>
                 <label>
                   Telegram topic ID <small>Optional</small>
                   <input
@@ -428,7 +460,11 @@
 
           <div class="campaign-add-actions">
             <button type="button" (click)="addCampaignItem('TEXT')">+ Add message</button>
+            <button type="button" (click)="addCampaignItem('IMAGE_QUOTE')">+ Add image quote</button>
             <button type="button" (click)="addCampaignItem('POLL')">+ Add poll</button>
+            <button type="button" (click)="addCampaignItem('WELLBEING_POLL')">
+              + Add wellbeing poll
+            </button>
             <button type="button" (click)="addCampaignItem('SUMMARY')">+ Add weekly summary</button>
           </div>
 

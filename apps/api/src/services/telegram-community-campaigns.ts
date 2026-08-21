@@ -599,7 +599,7 @@ async function performCampaignDelivery(input: {
   });
   try {
     let sent: SentTelegramMessage;
-    if (item.kind === 'POLL') {
+    if (item.kind === 'POLL' || item.kind === 'WELLBEING_POLL') {
       const options = jsonArray(item.pollOptions)
         .map((option) => String(option).trim())
         .filter(Boolean);
