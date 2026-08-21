@@ -257,6 +257,11 @@ const campaigns = (chatId: string) =>
               text: 'Report a concern',
               url: TELEGRAM_BOT_URLS.CONTACT,
               style: 'danger'
+            },
+            {
+              text: 'Book paid live help',
+              url: 'https://hopehub.in/#live-connect',
+              style: 'success'
             }
           ]
         },
@@ -282,6 +287,11 @@ const campaigns = (chatId: string) =>
               text: 'Report a concern',
               url: TELEGRAM_BOT_URLS.CONTACT,
               style: 'danger'
+            },
+            {
+              text: 'Book paid live help',
+              url: 'https://hopehub.in/#live-connect',
+              style: 'success'
             }
           ]
         }
