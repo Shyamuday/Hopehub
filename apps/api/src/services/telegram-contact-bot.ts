@@ -16,7 +16,11 @@ import {
   submissionForGroupMessage,
   updateCommunitySubmission
 } from './telegram-community-bots.store.js';
-import type { CommunityTelegramUpdate, TelegramKeyboard } from './telegram-community-bots.types.js';
+import type {
+  CommunityTelegramUpdate,
+  CommunityTelegramUser,
+  TelegramKeyboard
+} from './telegram-community-bots.types.js';
 import {
   clearTelegramBotControlsCache,
   controlNumber,
@@ -31,6 +35,7 @@ const slug = COMMUNITY_BOT_SLUGS.CONTACT;
 const SUPPORT_GROUP_CONFIG_KEY = 'telegramContactSupportGroupId';
 const COMMUNITY_GROUP_CONFIG_KEY = 'telegramGroupHelpGroupChatId';
 const MAX_CONTACT_ATTACHMENT_BYTES = 20 * 1024 * 1024;
+const CONTACT_BOT_TRUSTED_RESPONDER_USERNAME = 'spiritualspirirt';
 
 async function supportGroupId() {
   const saved = (await getSiteConfigValue(SUPPORT_GROUP_CONFIG_KEY)).trim();
@@ -48,12 +53,23 @@ async function communityGroupId() {
   return (await getSiteConfigValue(COMMUNITY_GROUP_CONFIG_KEY)).trim();
 }
 
-async function isSupportGroupAdmin(chatId: string | number, userId: number) {
+export function isContactBotTrustedResponder(username: string | undefined) {
+  return (
+    username?.trim().replace(/^@/, '').toLowerCase() === CONTACT_BOT_TRUSTED_RESPONDER_USERNAME
+  );
+}
+
+async function canManageSupportInbox(chatId: string | number, user: CommunityTelegramUser) {
   const member = await callCommunityTelegramApi<{ status?: string }>(slug, 'getChatMember', {
     chat_id: chatId,
-    user_id: userId
+    user_id: user.id
   });
-  return ['creator', 'administrator'].includes(member.status || '');
+  const status = member.status || '';
+  return (
+    status === 'creator' ||
+    (isContactBotTrustedResponder(user.username) &&
+      ['administrator', 'member', 'restricted'].includes(status))
+  );
 }
 
 type TicketAccessAction = 'ban' | 'kick' | 'mute' | 'unban' | 'unmute';
@@ -149,7 +165,7 @@ function ticketModerationKeyboard(ticket: {
 
 async function applyTicketModerationAction(input: {
   chatId: string | number;
-  actorId: number;
+  actor: CommunityTelegramUser;
   reference: string;
   action: TicketAccessAction;
   muteMinutes?: number;
@@ -159,8 +175,10 @@ async function applyTicketModerationAction(input: {
   if (String(input.chatId) !== groupId) {
     throw new Error('Use this action from the private Hope Hub support group.');
   }
-  if (!(await isSupportGroupAdmin(input.chatId, input.actorId))) {
-    throw new Error('Only a support-group administrator can change a member’s access.');
+  if (!(await canManageSupportInbox(input.chatId, input.actor))) {
+    throw new Error(
+      'Only the support inbox owner or @spiritualspirirt can change a member’s access.'
+    );
   }
   const ticket = await findCommunitySubmission(input.reference);
   if (!ticket || ticket.bot !== slug || String(ticket.groupChatId) !== groupId) {
@@ -203,6 +221,7 @@ async function autoLinkPromotedSupportGroup(update: CommunityTelegramUpdate) {
   if (!membership || !['group', 'supergroup'].includes(membership.chat.type || '')) return false;
   if (membership.new_chat_member.status !== 'administrator') return false;
   if (await supportGroupId()) return false;
+  if (!(await canManageSupportInbox(membership.chat.id, membership.from))) return false;
   await saveSupportGroup(membership.chat);
   await sendCommunityMessage(
     slug,
@@ -214,26 +233,21 @@ async function autoLinkPromotedSupportGroup(update: CommunityTelegramUpdate) {
 
 async function linkSupportGroup(message: NonNullable<CommunityTelegramUpdate['message']>) {
   if (!message.from || !['group', 'supergroup'].includes(message.chat.type || '')) return false;
-  let membership: { status?: string } | null = null;
   try {
-    membership = await callCommunityTelegramApi<{ status?: string }>(slug, 'getChatMember', {
-      chat_id: message.chat.id,
-      user_id: message.from.id
-    });
+    if (!(await canManageSupportInbox(message.chat.id, message.from))) {
+      await sendCommunityMessage(
+        slug,
+        message.chat.id,
+        'Only the support inbox owner or @spiritualspirirt can connect this support inbox.'
+      );
+      return true;
+    }
   } catch (error) {
-    console.error('[telegram-contact] Could not verify support-group administrator.', error);
+    console.error('[telegram-contact] Could not verify support-inbox owner.', error);
     await sendCommunityMessage(
       slug,
       message.chat.id,
       'I could not verify the group administrator. Make the Contact Bot an admin, then send /setsupport again.'
-    );
-    return true;
-  }
-  if (!membership || !['creator', 'administrator'].includes(membership.status || '')) {
-    await sendCommunityMessage(
-      slug,
-      message.chat.id,
-      'Only a Telegram group administrator can connect this support inbox.'
     );
     return true;
   }
@@ -342,7 +356,7 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
       try {
         await applyTicketModerationAction({
           chatId,
-          actorId: callback.from.id,
+          actor: callback.from,
           reference: moderationMatch[2],
           action: moderationMatch[1] as 'unban' | 'unmute',
           replyToMessageId: callback.message.message_id
@@ -501,7 +515,7 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
     try {
       await applyTicketModerationAction({
         chatId,
-        actorId: message.from.id,
+        actor: message.from,
         reference: ticket.reference,
         action: moderationCommand[1].toLowerCase() as TicketAccessAction,
         muteMinutes: moderationCommand[2] ? Number(moderationCommand[2]) : undefined,
@@ -520,6 +534,15 @@ export async function handleContactBotUpdate(update: CommunityTelegramUpdate) {
     return;
   }
   if (keyOf(chatId) === groupId && message.reply_to_message) {
+    if (!message.from || !(await canManageSupportInbox(chatId, message.from))) {
+      await sendCommunityMessage(
+        slug,
+        chatId,
+        '⚠️ Only the support inbox owner or @spiritualspirirt can reply to Contact bot tickets.',
+        { reply_to_message_id: message.message_id }
+      );
+      return;
+    }
     const ticket = await submissionForGroupMessage(
       slug,
       stateKey,
