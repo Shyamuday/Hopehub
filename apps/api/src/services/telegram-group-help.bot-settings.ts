@@ -52,15 +52,24 @@ function button(
   return { text, callback_data, style };
 }
 
+function twoColumnRows<T>(items: readonly T[]): T[][] {
+  const rows: T[][] = [];
+  for (let index = 0; index < items.length; index += 2) {
+    rows.push([...items.slice(index, index + 2)]);
+  }
+  return rows;
+}
+
 function sectionKeyboard(): TelegramKeyboard {
   const sections = Array.from(new Set(GROUP_HELP_CONFIG_FIELDS.map((field) => field.section)));
   return {
     inline_keyboard: [
-      ...sections.map((section) => [
-        button(section[0].toUpperCase() + section.slice(1), `${PREFIX}section:${section}`)
-      ]),
-      [button('Staff permissions', `${PREFIX}staff`)],
-      [button('← Settings home', `${PREFIX}home`)]
+      ...twoColumnRows(
+        sections.map((section) =>
+          button(section[0].toUpperCase() + section.slice(1), `${PREFIX}section:${section}`)
+        )
+      ),
+      [button('Staff permissions', `${PREFIX}staff`), button('← Settings home', `${PREFIX}home`)]
     ]
   };
 }
@@ -68,9 +77,9 @@ function sectionKeyboard(): TelegramKeyboard {
 function fieldsKeyboard(section: GroupHelpConfigField['section']): TelegramKeyboard {
   return {
     inline_keyboard: [
-      ...sectionFields(section).map((field) => [
-        button(field.label, `${PREFIX}field:${field.key}`)
-      ]),
+      ...twoColumnRows(
+        sectionFields(section).map((field) => button(field.label, `${PREFIX}field:${field.key}`))
+      ),
       [button('← All sections', `${PREFIX}home`)]
     ]
   };
@@ -80,21 +89,25 @@ function fieldKeyboard(field: GroupHelpConfigField, currentValue: string): Teleg
   if (field.type === 'select' && field.options?.length) {
     return {
       inline_keyboard: [
-        ...field.options.map((option, index) => [
-          button(
-            `${option === currentValue ? '✓ ' : ''}${option}`,
-            `${PREFIX}set:${field.key}:${index}`,
-            'success'
+        ...twoColumnRows(
+          field.options.map((option, index) =>
+            button(
+              `${option === currentValue ? '✓ ' : ''}${option}`,
+              `${PREFIX}set:${field.key}:${index}`,
+              'success'
+            )
           )
-        ]),
+        ),
         [button('← Back', `${PREFIX}section:${field.section}`)]
       ]
     };
   }
   return {
     inline_keyboard: [
-      [button('Send new value', `${PREFIX}input:${field.key}`, 'success')],
-      [button('← Back', `${PREFIX}section:${field.section}`)]
+      [
+        button('Send new value', `${PREFIX}input:${field.key}`, 'success'),
+        button('← Back', `${PREFIX}section:${field.section}`)
+      ]
     ]
   };
 }
@@ -158,16 +171,16 @@ function staffPermissionsKeyboard(
           fullAdmin ? 'success' : 'danger'
         )
       ],
-      ...GROUP_HELP_STAFF_PERMISSION_GROUPS.map((group, index) => {
-        const enabled = fullAdmin || group.commands.every((command) => selected.has(command));
-        return [
-          button(
+      ...twoColumnRows(
+        GROUP_HELP_STAFF_PERMISSION_GROUPS.map((group, index) => {
+          const enabled = fullAdmin || group.commands.every((command) => selected.has(command));
+          return button(
             `${enabled ? '✓ ' : ''}${group.label}`,
             `${PREFIX}staff-toggle:${telegramUserId}:${index}`,
             enabled ? 'success' : 'primary'
-          )
-        ];
-      }),
+          );
+        })
+      ),
       [
         button('Restore daily defaults', `${PREFIX}staff-daily:${telegramUserId}`),
         button('Remove all access', `${PREFIX}staff-none:${telegramUserId}`, 'danger')
@@ -408,9 +421,11 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
         {
           reply_markup: {
             inline_keyboard: [
-              ...members.map((member) => [
-                button(staffMemberLabel(member), `${PREFIX}staff-user:${member.telegramUserId}`)
-              ]),
+              ...twoColumnRows(
+                members.map((member) =>
+                  button(staffMemberLabel(member), `${PREFIX}staff-user:${member.telegramUserId}`)
+                )
+              ),
               [button('← Settings home', `${PREFIX}home`)]
             ]
           }
