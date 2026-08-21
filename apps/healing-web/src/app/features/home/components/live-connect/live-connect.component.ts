@@ -87,6 +87,15 @@ const HOME_PROVIDER_SECTIONS: ReadonlyArray<Omit<HomeProviderSection, 'providers
     },
   ];
 
+// A provider can be qualified for more than one support path. On the home page we
+// show them once, under their highest-acuity path, so a psychologist is not also
+// repeated in the coach or listener carousel.
+const HOME_PROVIDER_SECTION_PRIORITY: readonly ConsumerSupportPath[] = [
+  'PROFESSIONAL_CARE',
+  'COACH_MENTOR',
+  'EMOTIONAL_LISTENER',
+];
+
 @Component({
   selector: 'app-live-connect',
   standalone: true,
@@ -883,7 +892,9 @@ export class LiveConnectComponent implements OnInit {
       ]);
       if (requestVersion !== this.providerRequestVersion) return;
 
-      const sections = HOME_PROVIDER_SECTIONS.map((section, index): HomeProviderSection => {
+      const candidatesByRoleGroup = new Map<ConsumerSupportPath, HopeHubProvider[]>();
+
+      HOME_PROVIDER_SECTIONS.forEach((section, index) => {
         const liveProviders = liveResponse.providers
           .filter((provider) => supportPathForProvider(provider) === section.roleGroup)
           .map((provider) => ({ ...provider, quickTalkAvailable: true }));
@@ -891,11 +902,25 @@ export class LiveConnectComponent implements OnInit {
         const bookableProviders = (directoryResponses[index]?.providers || [])
           .filter((provider) => provider.acceptingNewUsers !== false && !seen.has(provider.id))
           .map((provider) => ({ ...provider, quickTalkAvailable: false }));
-        const providers = [...liveProviders, ...bookableProviders].slice(0, 5);
+        candidatesByRoleGroup.set(section.roleGroup, [...liveProviders, ...bookableProviders]);
+      });
+
+      const claimedProviderIds = new Set<string>();
+      const providersByRoleGroup = new Map<ConsumerSupportPath, HopeHubProvider[]>();
+      HOME_PROVIDER_SECTION_PRIORITY.forEach((roleGroup) => {
+        const providers = (candidatesByRoleGroup.get(roleGroup) || [])
+          .filter((provider) => !claimedProviderIds.has(provider.id))
+          .slice(0, 5);
+        providers.forEach((provider) => claimedProviderIds.add(provider.id));
+        providersByRoleGroup.set(roleGroup, providers);
+      });
+
+      const sections = HOME_PROVIDER_SECTIONS.map((section): HomeProviderSection => {
+        const providers = providersByRoleGroup.get(section.roleGroup) || [];
         return {
           ...section,
           providers,
-          liveCount: Math.min(liveProviders.length, providers.length),
+          liveCount: providers.filter((provider) => provider.quickTalkAvailable).length,
         };
       });
       const providers = sections.flatMap((section) => section.providers);
