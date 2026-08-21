@@ -18,6 +18,10 @@ const MINIMUM_LEAD_TIME_MS = 5 * 60 * 1000;
 const HOST_REMINDER_LEAD_TIME_MS = 5 * 60 * 1000;
 const RETRY_DELAY_MS = 10 * 60 * 1000;
 const SCHEDULED_CALL_RECHECK_DELAY_MS = 60 * 1000;
+// Telegram does not send a reliable bot update when an administrator discards
+// a *scheduled* VC. Reconcile the one tracked scheduled call every 15 minutes
+// so an intentional removal does not leave the group's schedule stuck.
+const SCHEDULED_VOICE_HEALTH_CHECK_MS = 15 * 60 * 1000;
 // Telegram update events handle normal starts and ends. This is only a
 // low-frequency fallback when an update was missed or the server restarted.
 const ACTIVE_VOICE_FALLBACK_CHECK_MS = 15 * 60 * 1000;
@@ -35,6 +39,9 @@ type NativeVoiceSchedulerState = {
   startedEarly?: boolean;
   endedAt?: string;
   recoveryAfter?: string;
+  healthCheckedAt?: string;
+  reason?: string;
+  error?: string;
 };
 
 type VoiceEventNotification = {
@@ -166,6 +173,125 @@ async function retainActiveVoiceState(
       state: 'NATIVE_VOICE_ACTIVE',
       payload,
       expiresAt: new Date(now.getTime() + ACTIVE_VOICE_FALLBACK_CHECK_MS)
+    }
+  });
+}
+
+async function retainScheduledVoiceState(
+  chatId: string,
+  event: Pick<VoiceEventNotification, 'id' | 'startsAt'>,
+  payload: NativeVoiceSchedulerState,
+  currentCall: NativeGroupCallStatus,
+  now: Date
+) {
+  const key = { bot_chatId: { bot: STATE_BOT, chatId } };
+  const nextCheckAt = new Date(now.getTime() + SCHEDULED_VOICE_HEALTH_CHECK_MS);
+  await prisma.telegramCommunityState.upsert({
+    where: key,
+    create: {
+      bot: STATE_BOT,
+      chatId,
+      state: 'NATIVE_VOICE_SCHEDULED',
+      payload: {
+        ...payload,
+        eventId: event.id,
+        startsAt: event.startsAt.toISOString(),
+        nativeCallId: currentCall.id,
+        nativeCallAccessHash: currentCall.accessHash,
+        healthCheckedAt: now.toISOString()
+      },
+      expiresAt: nextCheckAt
+    },
+    update: {
+      state: 'NATIVE_VOICE_SCHEDULED',
+      payload: {
+        ...payload,
+        eventId: event.id,
+        startsAt: event.startsAt.toISOString(),
+        nativeCallId: currentCall.id,
+        nativeCallAccessHash: currentCall.accessHash,
+        healthCheckedAt: now.toISOString()
+      },
+      expiresAt: nextCheckAt
+    }
+  });
+}
+
+function isTrackedScheduledVoiceCall(
+  event: Pick<VoiceEventNotification, 'id' | 'startsAt'>,
+  payload: NativeVoiceSchedulerState,
+  currentCall: NativeGroupCallStatus
+) {
+  if (!currentCall.scheduled) return false;
+  if (payload.eventId === event.id && payload.nativeCallId === currentCall.id) return true;
+  return (
+    currentCall.scheduleDate != null &&
+    Math.abs(currentCall.scheduleDate * 1000 - event.startsAt.getTime()) < 60_000
+  );
+}
+
+async function markVoiceEventCancelledByAdmin(
+  event: Pick<VoiceEventNotification, 'id' | 'title' | 'description' | 'startsAt'> & {
+    chatId: string;
+    telegramMessageId: number | null;
+  },
+  reason: string
+) {
+  const result = await prisma.telegramCommunityEvent.updateMany({
+    where: { id: event.id, status: 'SCHEDULED' },
+    data: { status: 'CANCELLED' }
+  });
+  if (!result.count) return false;
+
+  await removeTelegramCommunityEventAnnouncement(event);
+  await prisma.telegramCommunityState
+    .delete({ where: { bot_chatId: { bot: STATE_BOT, chatId: event.chatId } } })
+    .catch(() => null);
+  await notifyVoiceOperations(
+    [
+      'ℹ️ Scheduled VC removed',
+      '',
+      event.title,
+      `Scheduled time: ${indiaDateTime(event.startsAt)} IST`,
+      `Host: ${assignedHost(event)}`,
+      `Reason: ${reason}`,
+      '',
+      'The removed slot was recorded as cancelled and will not be recreated. The next upcoming VC will be scheduled automatically.'
+    ].join('\n')
+  );
+  console.log(`Marked Telegram voice chat ${event.id} as cancelled: ${reason}`);
+  return true;
+}
+
+async function notifyVoiceScheduleFailure(
+  event: Pick<VoiceEventNotification, 'id' | 'title' | 'startsAt'> & { chatId: string },
+  message: string
+) {
+  const alertKey = {
+    bot_chatId: { bot: 'TELEGRAM_NATIVE_VOICE_SCHEDULER_ALERT', chatId: event.id }
+  };
+  const alreadyAlerted = await prisma.telegramCommunityState.findUnique({ where: alertKey });
+  if (alreadyAlerted) return;
+
+  const sent = await notifyVoiceOperations(
+    [
+      '⚠️ VC could not be scheduled',
+      '',
+      event.title,
+      `Time: ${indiaDateTime(event.startsAt)} IST`,
+      `Reason: ${message.slice(0, 500)}`,
+      '',
+      'Check that the Telegram scheduler account is still a group administrator with Manage video chats permission.'
+    ].join('\n')
+  );
+  if (!sent) return;
+  await prisma.telegramCommunityState.create({
+    data: {
+      bot: 'TELEGRAM_NATIVE_VOICE_SCHEDULER_ALERT',
+      chatId: event.id,
+      state: 'SENT',
+      payload: { message: message.slice(0, 500), notifiedAt: new Date().toISOString() },
+      expiresAt: new Date(event.startsAt.getTime() + 24 * 60 * 60 * 1000)
     }
   });
 }
@@ -466,11 +592,20 @@ async function main() {
       const payload = statePayload(state?.payload);
 
       // Normal operation is event-first: Telegram's video_chat_started and
-      // video_chat_ended updates move the state. Do not query Telegram every
-      // minute while a native VC is already scheduled, live, or in its
-      // 15-minute post-end handover window.
+      // video_chat_ended updates move the state. A scheduled VC gets one
+      // small health check every 15 minutes because Telegram does not notify
+      // bots when an administrator discards it before it starts.
+      const scheduledStateIsFresh = Boolean(
+        state &&
+        state.state === 'NATIVE_VOICE_SCHEDULED' &&
+        payload.eventId === event.id &&
+        Math.min(
+          state.expiresAt.getTime(),
+          state.updatedAt.getTime() + SCHEDULED_VOICE_HEALTH_CHECK_MS
+        ) > now.getTime()
+      );
       if (
-        (state?.state === 'NATIVE_VOICE_SCHEDULED' && payload.eventId === event.id) ||
+        scheduledStateIsFresh ||
         ((state?.state === 'NATIVE_VOICE_ACTIVE' || state?.state === 'NATIVE_VOICE_RECOVERY') &&
           state.expiresAt > now) ||
         (state?.state === 'NATIVE_VOICE_RETRY' && state.expiresAt > now)
@@ -488,6 +623,16 @@ async function main() {
           continue;
         }
         if (currentCall?.scheduled) {
+          if (isTrackedScheduledVoiceCall(event, payload, currentCall)) {
+            await retainScheduledVoiceState(event.chatId, event, payload, currentCall, now);
+            continue;
+          }
+          if (payload.eventId === event.id) {
+            await markVoiceEventCancelledByAdmin(
+              event,
+              'A different scheduled Telegram VC replaced this slot'
+            );
+          }
           let releasedStaleCall = false;
           if (payload.eventId && payload.nativeCallId === currentCall.id) {
             const prior = await prisma.telegramCommunityEvent.findUnique({
@@ -518,6 +663,15 @@ async function main() {
               ? 'Waiting for Telegram to clear released scheduled VC'
               : 'Another scheduled Telegram VC is still present'
           );
+          continue;
+        }
+        if (state?.state === 'NATIVE_VOICE_SCHEDULED' && payload.eventId === event.id) {
+          await markVoiceEventCancelledByAdmin(
+            event,
+            'Telegram no longer has the tracked scheduled VC'
+          );
+          // Do not recreate a slot an administrator deliberately removed.
+          // The next timer pass schedules the next eligible event instead.
           continue;
         }
       } catch (error) {
@@ -584,7 +738,7 @@ async function main() {
                   }
                 : {})
             },
-            expiresAt: new Date(event.startsAt.getTime() + 36 * 60 * 60 * 1000)
+            expiresAt: new Date(now.getTime() + SCHEDULED_VOICE_HEALTH_CHECK_MS)
           },
           update: {
             state: 'NATIVE_VOICE_SCHEDULED',
@@ -598,7 +752,7 @@ async function main() {
                   }
                 : {})
             },
-            expiresAt: new Date(event.startsAt.getTime() + 36 * 60 * 60 * 1000)
+            expiresAt: new Date(now.getTime() + SCHEDULED_VOICE_HEALTH_CHECK_MS)
           }
         });
         console.log(
@@ -624,6 +778,7 @@ async function main() {
         console.error(
           `Could not schedule native Telegram voice chat for ${event.chatId}: ${message}`
         );
+        await notifyVoiceScheduleFailure(event, message);
       }
     }
   } finally {
