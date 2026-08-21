@@ -1,0 +1,51 @@
+<section class="home-faq hope-section" aria-labelledby="home-faq-title">
+  <div class="hope-section-inner home-faq__inner">
+    <div class="home-faq__intro">
+      <app-page-header
+        align="left"
+        eyebrow="Answers before you begin"
+        title="Support should feel clear, not confusing"
+        description="Everything you need to know about choosing support, booking with confidence, and staying safe while you use Hope Hub."
+      />
+
+      <div class="home-faq__assurance" aria-label="Hope Hub support assurances">
+        <span>Private at your pace</span>
+        <span>Clear prices before booking</span>
+        <span>Verified support routes</span>
+      </div>
+    </div>
+
+    <div class="home-faq__list">
+      @for (faq of visibleFaqs; track faq.question; let index = $index) {
+        <details class="home-faq__item" [open]="index === 0">
+          <summary>
+            <span class="home-faq__number">{{ (index + 1).toString().padStart(2, '0') }}</span>
+            <span class="home-faq__question">
+              <small>{{ faq.category }}</small>
+              <strong>{{ faq.question }}</strong>
+            </span>
+            <span class="home-faq__toggle" aria-hidden="true"></span>
+          </summary>
+          <div class="home-faq__answer">
+            <p>{{ faq.answer }}</p>
+          </div>
+        </details>
+      }
+    </div>
+
+    <aside class="home-faq__cta" aria-label="Choose a Hope Hub support option">
+      <div>
+        <p class="hope-eyebrow">Still unsure?</p>
+        <h3>Start with the option that feels easiest today.</h3>
+        <p>You can explore privately first, speak to someone, or book a time that works for you.</p>
+      </div>
+      <div class="home-faq__actions">
+        @if (showAllLink) {
+          <app-button [routerLink]="routes.links.faq" variant="outline">See all FAQs</app-button>
+        }
+        <app-button [routerLink]="routes.links.support" variant="secondary">Explore support</app-button>
+        <app-button [routerLink]="routes.links.bookSupport">Book live help</app-button>
+      </div>
+    </aside>
+  </div>
+</section>

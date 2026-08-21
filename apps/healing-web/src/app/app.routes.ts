@@ -282,6 +282,17 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'faq',
+    loadComponent: () =>
+      import('./features/faq/faq-page.component').then((m) => m.FaqPageComponent),
+    title: 'Frequently Asked Questions - Hope Hub',
+    data: {
+      breadcrumb: 'FAQs',
+      description: 'Answers about Hope Hub support, bookings, privacy, safety, and payments',
+      keywords: 'Hope Hub FAQ, mental wellness support, booking, privacy, counselling questions',
+    },
+  },
+  {
     path: 'careers',
     loadComponent: () =>
       import('./features/careers/careers.component').then((m) => m.CareersComponent),
