@@ -9,6 +9,7 @@ import {
 } from '../services/online-doctor-presence.js';
 import { sendIncomingCallPush } from '../services/push-devices.js';
 import { callQualitySnapshot } from '../services/call-session-quality.js';
+import { recordCallTimelineEvent, safeCallEventMetadata } from '../services/call-event-tracker.js';
 
 type CallSignalPayload = {
   callId?: string;
@@ -20,6 +21,7 @@ type CallSignalPayload = {
   sdp?: unknown;
   candidate?: unknown;
   metadata?: Record<string, unknown>;
+  clientTimestamp?: string;
 };
 
 const ACTIVE_CALL_STATUSES = ['RINGING', 'CONNECTING', 'CONNECTED', 'RECONNECTING'] as const;
@@ -67,41 +69,6 @@ function consumeSignalQuota(userId: string, event: string): boolean {
 
 function isUniqueConstraintError(error: unknown): boolean {
   return Boolean(error && typeof error === 'object' && 'code' in error && error.code === 'P2002');
-}
-
-function safeCallMetadata(metadata: unknown): Record<string, unknown> {
-  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) return {};
-  const source = metadata as Record<string, unknown>;
-  const safe: Record<string, unknown> = {};
-  const stringKeys = [
-    'userAgent',
-    'platform',
-    'connectionState',
-    'iceConnectionState',
-    'mode',
-    'selectedCandidatePairId',
-    'localCandidateType',
-    'remoteCandidateType',
-    'transportProtocol',
-    'networkType',
-    'diagnosticReason'
-  ];
-  const numberKeys = ['attempt', 'currentRoundTripTime', 'bytesSent', 'bytesReceived'];
-  for (const key of stringKeys) {
-    if (typeof source[key] === 'string') safe[key] = source[key].slice(0, 300);
-  }
-  for (const key of numberKeys) {
-    if (typeof source[key] === 'number' && Number.isFinite(source[key])) safe[key] = source[key];
-  }
-  if (source['iceRestart'] === true) safe['iceRestart'] = true;
-  if (source['usedTurnRelay'] === true) safe['usedTurnRelay'] = true;
-  if (source['privacyRelay'] === true) safe['privacyRelay'] = true;
-  if (source['lowDataMode'] === true) safe['lowDataMode'] = true;
-  if (source['backgroundBlurEnabled'] === true) safe['backgroundBlurEnabled'] = true;
-  if (source['userReportedIssue'] === true) safe['userReportedIssue'] = true;
-  const quality = callQualitySnapshot(source).qualitySummary;
-  if (quality) safe['qualitySummary'] = quality;
-  return safe;
 }
 
 async function validateCallSignalAccess(fromUserId: string, payload: CallSignalPayload) {
@@ -260,7 +227,7 @@ async function recordCallSignal(
   fromUserId: string,
   event: string,
   payload: CallSignalPayload
-): Promise<{ relay: boolean; reason?: string }> {
+): Promise<{ relay: boolean; reason?: string; sessionId?: string }> {
   if (!payload.callId || payload.callId.length > 100) {
     return { relay: false, reason: 'invalid_call_id' };
   }
@@ -268,7 +235,10 @@ async function recordCallSignal(
   // Socket.IO delivers events in order, but the database access check below is asynchronous.
   // Claim the sequence synchronously so a later ICE candidate cannot overtake the offer and
   // make the valid offer look stale.
-  if (typeof payload.sequence === 'number') {
+  // A diagnostic may be submitted after local cleanup reset the sender's sequence. Diagnostics
+  // never mutate call state, so keep them observable without allowing them to block lifecycle
+  // signaling.
+  if (event !== SOCKET_EVENTS.CALL_DIAGNOSTIC && typeof payload.sequence === 'number') {
     const sequenceKey = `${payload.callId}:${fromUserId}`;
     const previous = lastSignalSequences.get(sequenceKey) ?? 0;
     if (!Number.isSafeInteger(payload.sequence) || payload.sequence <= previous) {
@@ -297,19 +267,51 @@ async function recordCallSignal(
         String(((item.metadata as Record<string, unknown> | null) || {})['callId'] || '') ===
         payload.callId
     );
-    if (!session) return { relay: false, reason: 'call_not_found' };
+    // Pre-call failures (for example denied camera/microphone access) can be reported before a
+    // session row exists. Create a closed attempt so it remains visible in Call health.
+    if (!session) {
+      const diagnosticReason = safeCallReason(
+        payload.metadata?.['diagnosticReason'] || payload.reason,
+        'client_diagnostic'
+      );
+      if (
+        diagnosticReason === 'media_initialization_failed' ||
+        diagnosticReason === 'incoming_media_initialization_failed'
+      ) {
+        const failedSession = await prisma.consultationCallSession.create({
+          data: {
+            consultationId: payload.consultationId,
+            initiatedByUserId: fromUserId,
+            targetUserId: payload.targetUserId,
+            mode: payload.mode || 'audio',
+            status: 'FAILED',
+            endedAt: new Date(),
+            durationSeconds: 0,
+            endReason: diagnosticReason,
+            lastSignalEvent: event,
+            metadata: {
+              callId: payload.callId,
+              diagnosticReportedByUserId: fromUserId,
+              ...safeCallEventMetadata(payload.metadata)
+            }
+          }
+        });
+        return { relay: true, sessionId: failedSession.id };
+      }
+      return { relay: true };
+    }
     await prisma.consultationCallSession.update({
       where: { id: session.id },
       data: {
         metadata: {
           ...((session.metadata as Record<string, unknown> | null) || {}),
-          ...safeCallMetadata(payload.metadata),
+          ...safeCallEventMetadata(payload.metadata),
           diagnosticReportedAt: new Date().toISOString(),
           diagnosticReportedByUserId: fromUserId
         }
       }
     });
-    return { relay: true };
+    return { relay: true, sessionId: session.id };
   }
 
   if (event === SOCKET_EVENTS.CALL_RING || event === SOCKET_EVENTS.CALL_OFFER) {
@@ -325,13 +327,13 @@ async function recordCallSignal(
         ((existing.metadata as Record<string, unknown> | null) || {})['callId'] || ''
       );
       if (existingCallId && existingCallId !== payload.callId) {
-        return { relay: false, reason: 'active_call_exists' };
+        return { relay: false, reason: 'active_call_exists', sessionId: existing.id };
       }
       const isSameInitiator = existing.initiatedByUserId === fromUserId;
       const isIceRestart =
         event === SOCKET_EVENTS.CALL_OFFER && payload.metadata?.['iceRestart'] === true;
       if (!isSameInitiator && !isIceRestart) {
-        return { relay: false, reason: 'active_call_exists' };
+        return { relay: false, reason: 'active_call_exists', sessionId: existing.id };
       }
       await prisma.consultationCallSession.update({
         where: { id: existing.id },
@@ -346,24 +348,28 @@ async function recordCallSignal(
           ...(isIceRestart ? { reconnectCount: { increment: 1 } } : {}),
           metadata: {
             ...((existing.metadata as Record<string, unknown> | null) || {}),
-            ...safeCallMetadata(payload.metadata),
+            ...safeCallEventMetadata(payload.metadata),
             callId: payload.callId,
             lastSignalFromUserId: fromUserId
           }
         }
       });
-      return { relay: true };
+      return { relay: true, sessionId: existing.id };
     }
 
     const consultationActive = await findActiveCallSession({
       consultationId: payload.consultationId
     });
     if (consultationActive) {
-      return { relay: false, reason: 'consultation_call_already_active' };
+      return {
+        relay: false,
+        reason: 'consultation_call_already_active',
+        sessionId: consultationActive.id
+      };
     }
 
     try {
-      await prisma.consultationCallSession.create({
+      const created = await prisma.consultationCallSession.create({
         data: {
           consultationId: payload.consultationId,
           activeKey: payload.consultationId,
@@ -376,10 +382,11 @@ async function recordCallSignal(
             startedByUserId: fromUserId,
             targetUserId: payload.targetUserId,
             callId: payload.callId,
-            ...safeCallMetadata(payload.metadata)
+            ...safeCallEventMetadata(payload.metadata)
           }
         }
       });
+      return { relay: true, sessionId: created.id };
     } catch (error) {
       if (!isUniqueConstraintError(error)) throw error;
       const concurrent = await findActiveCallSession({
@@ -388,10 +395,13 @@ async function recordCallSignal(
         userB: payload.targetUserId
       });
       return concurrent?.initiatedByUserId === fromUserId
-        ? { relay: true }
-        : { relay: false, reason: 'consultation_call_already_active' };
+        ? { relay: true, sessionId: concurrent.id }
+        : {
+            relay: false,
+            reason: 'consultation_call_already_active',
+            sessionId: concurrent?.id
+          };
     }
-    return { relay: true };
   }
 
   if (event === SOCKET_EVENTS.CALL_ANSWER) {
@@ -405,7 +415,7 @@ async function recordCallSignal(
       ((existing.metadata as Record<string, unknown> | null) || {})['callId'] || ''
     );
     if (existingCallId && existingCallId !== payload.callId) {
-      return { relay: false, reason: 'stale_call_signal' };
+      return { relay: false, reason: 'stale_call_signal', sessionId: existing.id };
     }
     await prisma.consultationCallSession.update({
       where: { id: existing.id },
@@ -419,7 +429,7 @@ async function recordCallSignal(
         }
       }
     });
-    return { relay: true };
+    return { relay: true, sessionId: existing.id };
   }
 
   if (event === SOCKET_EVENTS.CALL_HEARTBEAT) {
@@ -433,13 +443,13 @@ async function recordCallSignal(
       ((existing.metadata as Record<string, unknown> | null) || {})['callId'] || ''
     );
     if (existingCallId && existingCallId !== payload.callId) {
-      return { relay: false, reason: 'stale_call_signal' };
+      return { relay: false, reason: 'stale_call_signal', sessionId: existing.id };
     }
     await prisma.consultationCallSession.update({
       where: { id: existing.id },
       data: { lastSignalEvent: event }
     });
-    return { relay: true };
+    return { relay: true, sessionId: existing.id };
   }
 
   if (event === SOCKET_EVENTS.CALL_END || event === SOCKET_EVENTS.CALL_REJECT) {
@@ -453,7 +463,7 @@ async function recordCallSignal(
       ((existing.metadata as Record<string, unknown> | null) || {})['callId'] || ''
     );
     if (existingCallId && existingCallId !== payload.callId) {
-      return { relay: false, reason: 'stale_call_signal' };
+      return { relay: false, reason: 'stale_call_signal', sessionId: existing.id };
     }
     const endedAt = new Date();
     const startedFrom = existing.answeredAt ?? existing.startedAt;
@@ -487,13 +497,22 @@ async function recordCallSignal(
         metadata: {
           ...((existing.metadata as Record<string, unknown> | null) || {}),
           endedByUserId: fromUserId,
-          ...safeCallMetadata(payload.metadata)
+          ...safeCallEventMetadata(payload.metadata)
         }
       }
     });
     lastSignalSequences.delete(`${payload.callId}:${fromUserId}`);
     lastSignalSequences.delete(`${payload.callId}:${payload.targetUserId}`);
-    return { relay: true };
+    return { relay: true, sessionId: existing.id };
+  }
+
+  if (event === SOCKET_EVENTS.CALL_RING_ACK) {
+    const existing = await findActiveCallSession({
+      consultationId: payload.consultationId,
+      userA: fromUserId,
+      userB: payload.targetUserId
+    });
+    return { relay: true, sessionId: existing?.id };
   }
 
   return { relay: true };
@@ -501,6 +520,27 @@ async function recordCallSignal(
 
 export function registerOnlineDoctorSockets(io: SocketIoServer, socket: Socket, userId?: string) {
   if (!userId) return;
+
+  const trackCallEvent = (
+    payload: CallSignalPayload,
+    event: string,
+    outcome: 'ACCEPTED' | 'REJECTED' | 'OBSERVED' | 'ERROR',
+    options: { reason?: string; sessionId?: string } = {}
+  ) => {
+    void recordCallTimelineEvent({
+      sessionId: options.sessionId,
+      consultationId: payload.consultationId,
+      callId: payload.callId,
+      actorUserId: userId,
+      targetUserId: payload.targetUserId,
+      event,
+      outcome,
+      reason: options.reason || payload.reason,
+      sequence: payload.sequence,
+      clientTimestamp: payload.clientTimestamp,
+      metadata: payload.metadata
+    }).catch((error) => console.error('[call-timeline] Could not record call event', error));
+  };
 
   socket.on(SOCKET_EVENTS.SUBSCRIBE_ONLINE_DOCTORS, () => {
     void socket.join(SOCKET_ROOM_PREFIXES.ONLINE_DOCTORS_WATCHERS);
@@ -532,6 +572,9 @@ export function registerOnlineDoctorSockets(io: SocketIoServer, socket: Socket, 
     void validateCallSignalAccess(userId, payload)
       .then(async (access) => {
         if (!access.allowed) {
+          trackCallEvent(payload, SOCKET_EVENTS.CALL_SYNC, 'REJECTED', {
+            reason: access.reason
+          });
           socket.emit(SOCKET_EVENTS.CALL_STATE, {
             consultationId: payload.consultationId,
             callId: payload.callId,
@@ -554,8 +597,16 @@ export function registerOnlineDoctorSockets(io: SocketIoServer, socket: Socket, 
           active: Boolean(session && (!storedCallId || storedCallId === payload.callId)),
           status: session?.status || null
         });
+        trackCallEvent(payload, SOCKET_EVENTS.CALL_SYNC, 'ACCEPTED', {
+          sessionId: session?.id
+        });
       })
-      .catch((error) => console.error('[call-sync] Could not restore call state', error));
+      .catch((error) => {
+        trackCallEvent(payload, SOCKET_EVENTS.CALL_SYNC, 'ERROR', {
+          reason: 'server_processing_error'
+        });
+        console.error('[call-sync] Could not restore call state', error);
+      });
   });
 
   const callEvents: Array<{ event: string; relay: string }> = [
@@ -577,6 +628,7 @@ export function registerOnlineDoctorSockets(io: SocketIoServer, socket: Socket, 
       if (typeof payload.consultationId !== 'string' || typeof payload.targetUserId !== 'string')
         return;
       if (!consumeSignalQuota(userId, event)) {
+        trackCallEvent(payload, event, 'REJECTED', { reason: 'rate_limited' });
         socket.emit(SOCKET_EVENTS.CALL_REJECT, {
           consultationId: payload.consultationId,
           targetUserId: payload.targetUserId,
@@ -587,6 +639,16 @@ export function registerOnlineDoctorSockets(io: SocketIoServer, socket: Socket, 
       }
       void recordCallSignal(userId, event, payload)
         .then(async (result) => {
+          trackCallEvent(
+            payload,
+            event,
+            event === SOCKET_EVENTS.CALL_DIAGNOSTIC
+              ? 'OBSERVED'
+              : result.relay
+                ? 'ACCEPTED'
+                : 'REJECTED',
+            { reason: result.reason, sessionId: result.sessionId }
+          );
           if (!result.relay) {
             socket.emit(SOCKET_EVENTS.CALL_REJECT, {
               consultationId: payload.consultationId,
@@ -616,7 +678,17 @@ export function registerOnlineDoctorSockets(io: SocketIoServer, socket: Socket, 
           }
           relayCallSignal(io, userId, relay, payload, sender ?? undefined);
         })
-        .catch((error) => console.error('[call-signal] Could not process signal', error));
+        .catch((error) => {
+          trackCallEvent(payload, event, 'ERROR', { reason: 'server_processing_error' });
+          socket.emit(SOCKET_EVENTS.CALL_REJECT, {
+            consultationId: payload.consultationId,
+            targetUserId: payload.targetUserId,
+            fromUserId: payload.targetUserId,
+            callId: payload.callId,
+            reason: 'server_processing_error'
+          });
+          console.error('[call-signal] Could not process signal', error);
+        });
     });
   }
 }

@@ -147,12 +147,14 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
             'CONNECTION_FAILED',
             'RECONNECT_TIMEOUT'
           ].includes(reasonKey);
-        const usedTurn = metadata['usedTurnRelay'] === true;
+        const usedTurn = session.usedTurnRelay === true || metadata['usedTurnRelay'] === true;
         const candidateTypes = Array.isArray(metadata['candidateTypes'])
           ? (metadata['candidateTypes'] as unknown[])
           : [];
         const routeKnown =
-          typeof metadata['usedTurnRelay'] === 'boolean' || candidateTypes.length > 0;
+          typeof session.usedTurnRelay === 'boolean' ||
+          typeof metadata['usedTurnRelay'] === 'boolean' ||
+          candidateTypes.length > 0;
 
         reasonCounts.set(reasonKey, (reasonCounts.get(reasonKey) ?? 0) + 1);
         modeCounts.set(modeKey, (modeCounts.get(modeKey) ?? 0) + 1);
@@ -237,15 +239,103 @@ export function registerAdminConsultationRoutes(router: Router, io: SocketIoServ
             answeredAt: session.answeredAt,
             endedAt: session.endedAt,
             lastSignalEvent: session.lastSignalEvent,
-            usedTurnRelay: metadata['usedTurnRelay'] === true,
+            callId: typeof metadata['callId'] === 'string' ? metadata['callId'] : null,
+            reconnectCount: session.reconnectCount,
+            usedTurnRelay: session.usedTurnRelay === true || metadata['usedTurnRelay'] === true,
             candidateTypes: Array.isArray(metadata['candidateTypes'])
               ? metadata['candidateTypes']
               : [],
-            averageRttMs:
-              typeof metadata['averageRttMs'] === 'number' ? metadata['averageRttMs'] : null,
+            averageRttMs: session.averageRttMs,
+            packetLossPercent: session.packetLossPercent,
+            maxJitterMs: session.maxJitterMs,
             consultation: session.consultation
           };
         })
+      });
+    })
+  );
+
+  router.get(
+    '/admin/call-health/:sessionId/events',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (req, res) => {
+      const workspace = getAuthorizedAdminWorkspace(req, res);
+      if (workspace === null) return;
+      const sessionId = routeParam(req, 'sessionId');
+      const session = await prisma.consultationCallSession.findFirst({
+        where: {
+          id: sessionId,
+          consultation: consultationWorkspaceWhere(workspace)
+        },
+        include: {
+          consultation: {
+            select: {
+              id: true,
+              status: true,
+              patient: { select: { id: true, name: true, patientCode: true } },
+              assignedDoctor: { select: { id: true, name: true } }
+            }
+          },
+          events: { orderBy: { createdAt: 'asc' }, take: 500 }
+        }
+      });
+      if (!session) return res.status(404).json({ message: 'Call session not found' });
+
+      const actorIds = Array.from(
+        new Set(
+          session.events
+            .flatMap((event) => [event.actorUserId, event.targetUserId])
+            .filter((id): id is string => Boolean(id))
+        )
+      );
+      const actors = actorIds.length
+        ? await prisma.user.findMany({
+            where: { id: { in: actorIds } },
+            select: { id: true, name: true, role: true }
+          })
+        : [];
+      const actorById = new Map(actors.map((actor) => [actor.id, actor]));
+
+      res.json({
+        session: {
+          id: session.id,
+          consultationId: session.consultationId,
+          callId:
+            typeof (session.metadata as Record<string, unknown> | null)?.['callId'] === 'string'
+              ? (session.metadata as Record<string, unknown>)['callId']
+              : null,
+          mode: session.mode,
+          status: session.status,
+          endReason: session.endReason,
+          startedAt: session.startedAt,
+          answeredAt: session.answeredAt,
+          endedAt: session.endedAt,
+          durationSeconds: session.durationSeconds,
+          reconnectCount: session.reconnectCount,
+          usedTurnRelay: session.usedTurnRelay,
+          averageRttMs: session.averageRttMs,
+          packetLossPercent: session.packetLossPercent,
+          maxJitterMs: session.maxJitterMs,
+          consultation: session.consultation
+        },
+        events: session.events.map((event) => ({
+          id: event.id,
+          event: event.event,
+          phase: event.phase,
+          outcome: event.outcome,
+          reason: event.reason,
+          sequence: event.sequence,
+          clientOccurredAt: event.clientOccurredAt,
+          serverReceivedAt: event.createdAt,
+          actor: event.actorUserId
+            ? actorById.get(event.actorUserId) || { id: event.actorUserId, name: 'Unknown user' }
+            : null,
+          target: event.targetUserId
+            ? actorById.get(event.targetUserId) || { id: event.targetUserId, name: 'Unknown user' }
+            : null,
+          metadata: event.metadata
+        }))
       });
     })
   );

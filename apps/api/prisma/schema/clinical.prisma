@@ -140,6 +140,7 @@ model ConsultationCallSession {
   packetLossPercent Float?
   maxJitterMs       Int?
   consultation      Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  events            ConsultationCallEvent[]
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 
@@ -148,6 +149,31 @@ model ConsultationCallSession {
   @@index([targetUserId, startedAt])
   @@index([status])
   @@index([endedAt])
+}
+
+model ConsultationCallEvent {
+  id               String                   @id @default(cuid())
+  sessionId        String?
+  consultationId   String
+  callId            String?
+  actorUserId       String?
+  targetUserId      String?
+  event             String
+  phase             String
+  outcome           String
+  reason            String?
+  sequence          Int?
+  clientOccurredAt  DateTime?
+  metadata          Json?
+  createdAt         DateTime                 @default(now())
+  session           ConsultationCallSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@index([sessionId, createdAt])
+  @@index([consultationId, createdAt])
+  @@index([callId, createdAt])
+  @@index([event, createdAt])
+  @@index([outcome, createdAt])
+  @@index([createdAt])
 }
 
 model Payment {

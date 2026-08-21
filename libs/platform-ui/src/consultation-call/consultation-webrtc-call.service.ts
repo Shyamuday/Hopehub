@@ -415,7 +415,8 @@ export class ConsultationWebrtcCallService {
         this.emitSignal(CALL_SOCKET_EVENTS.RING_ACK, {
           consultationId: payload.consultationId,
           targetUserId: payload.fromUserId,
-          mode: payload.mode ?? this.callMode()
+          mode: payload.mode ?? this.callMode(),
+          metadata: this.callMetadata()
         });
       }
     });
@@ -704,6 +705,17 @@ export class ConsultationWebrtcCallService {
       this.makingOffer = false;
       const message =
         this.error() || (error instanceof Error ? error.message : 'Could not start call.');
+      this.emitSignal(CALL_SOCKET_EVENTS.DIAGNOSTIC, {
+        consultationId: params.consultationId,
+        targetUserId: params.targetUserId,
+        reason: 'media_initialization_failed',
+        metadata: {
+          ...this.callMetadata(),
+          diagnosticReason: 'media_initialization_failed',
+          errorName:
+            error && typeof error === 'object' && 'name' in error ? String(error.name) : 'Error'
+        }
+      });
       this.cleanup('error');
       this.error.set(message);
       throw error;
@@ -767,13 +779,24 @@ export class ConsultationWebrtcCallService {
       this.emitSignal(CALL_SOCKET_EVENTS.ANSWER, {
         consultationId: offer.consultationId,
         targetUserId: offer.fromUserId,
-        sdp: answer
+        sdp: answer,
+        metadata: this.callMetadata()
       });
       this.pendingOffer.set(null);
       this.answerRequested.set(false);
       this.queuedAcceptIceServers = null;
       this.startMediaTimeout();
     } catch (err) {
+      this.emitSignal(CALL_SOCKET_EVENTS.DIAGNOSTIC, {
+        consultationId: offer.consultationId,
+        targetUserId: offer.fromUserId,
+        reason: 'incoming_media_initialization_failed',
+        metadata: {
+          ...this.callMetadata(),
+          diagnosticReason: 'incoming_media_initialization_failed',
+          errorName: err && typeof err === 'object' && 'name' in err ? String(err.name) : 'Error'
+        }
+      });
       this.releaseCallLock();
       this.resetIncomingAcceptance(offer);
       this.error.set(
@@ -1052,7 +1075,8 @@ export class ConsultationWebrtcCallService {
     this.emitSignal(CALL_SOCKET_EVENTS.RING_ACK, {
       consultationId: payload.consultationId,
       targetUserId: payload.fromUserId,
-      mode
+      mode,
+      metadata: this.callMetadata()
     });
     const queuedIceServers = this.queuedAcceptIceServers;
     if (queuedIceServers) {
@@ -1422,6 +1446,7 @@ export class ConsultationWebrtcCallService {
 
     const connectionState = pc.connectionState;
     const iceState = pc.iceConnectionState;
+    const previousState = this.state();
     if (connectionState === 'connected' || iceState === 'connected' || iceState === 'completed') {
       this.clearMediaTimeout();
       this.clearReconnectTimeout();
@@ -1430,6 +1455,13 @@ export class ConsultationWebrtcCallService {
       if (this.activeCallId && this.connectedToneCallId !== this.activeCallId) {
         this.connectedToneCallId = this.activeCallId;
         void this.playStatusTone('connected');
+        if (this.callContext) {
+          this.emitSignal(CALL_SOCKET_EVENTS.DIAGNOSTIC, {
+            ...this.callContext,
+            reason: 'peer_connected',
+            metadata: { ...this.callMetadata(), diagnosticReason: 'peer_connected' }
+          });
+        }
       }
       this.iceRestartAttempts = 0;
       this.iceRestartInProgress = false;
@@ -1442,6 +1474,13 @@ export class ConsultationWebrtcCallService {
     }
 
     if (connectionState === 'failed' || iceState === 'failed') {
+      if (previousState !== 'reconnecting' && this.callContext) {
+        this.emitSignal(CALL_SOCKET_EVENTS.DIAGNOSTIC, {
+          ...this.callContext,
+          reason: 'peer_connection_failed',
+          metadata: { ...this.callMetadata(), diagnosticReason: 'peer_connection_failed' }
+        });
+      }
       this.state.set('reconnecting');
       this.startReconnectTimeout();
       void this.attemptIceRestart();
@@ -1449,6 +1488,13 @@ export class ConsultationWebrtcCallService {
     }
 
     if (connectionState === 'disconnected' || iceState === 'disconnected') {
+      if (previousState === 'connected' && this.callContext) {
+        this.emitSignal(CALL_SOCKET_EVENTS.DIAGNOSTIC, {
+          ...this.callContext,
+          reason: 'peer_disconnected',
+          metadata: { ...this.callMetadata(), diagnosticReason: 'peer_disconnected' }
+        });
+      }
       if (this.state() === 'connected') this.state.set('reconnecting');
       this.startReconnectTimeout();
       this.scheduleIceRestart();
@@ -2130,7 +2176,8 @@ export class ConsultationWebrtcCallService {
     this.socket.emit(event, {
       ...payload,
       callId: this.activeCallId,
-      sequence: this.signalSequence
+      sequence: this.signalSequence,
+      clientTimestamp: new Date().toISOString()
     });
   }
 

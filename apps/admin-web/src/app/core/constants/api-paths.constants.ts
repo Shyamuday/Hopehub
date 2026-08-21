@@ -66,6 +66,7 @@ export const API_PATHS = {
       `/admin/telegram-bots/group-help/confessions/${reference}/review`,
     TELEGRAM_GROUP_HELP_ENGAGEMENT: '/admin/telegram-bots/group-help/engagement',
     CALL_HEALTH: '/admin/call-health',
+    CALL_HEALTH_EVENTS: (sessionId: string) => `/admin/call-health/${sessionId}/events`,
     CONSULTATION_STATUS: (id: string) => `/admin/consultations/${id}/status`,
     SAFETY_FLAGS: '/admin/safety-flags',
     SAFETY_FLAG_NOTE: (consultationId: string) => `/admin/safety-flags/${consultationId}/notes`,

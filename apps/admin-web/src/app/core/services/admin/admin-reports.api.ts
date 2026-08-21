@@ -184,6 +184,14 @@ export class AdminReportsApi extends AdminApiBase {
     );
   }
 
+  getCallHealthEvents(sessionId: string) {
+    return firstValueFrom(
+      this.http.get<any>(
+        `${this.apiBase}${API_PATHS.ADMIN.CALL_HEALTH_EVENTS(encodeURIComponent(sessionId))}`,
+      ),
+    );
+  }
+
   getPayments(params: {
     page?: number;
     pageSize?: number;

@@ -4,8 +4,8 @@
       <p class="eyebrow">Hope Hub calls</p>
       <h2>Call health</h2>
       <p class="muted">
-        Track 1-to-1 chat, voice, and video call reliability: answer rate, failures, TURN usage,
-        and recent failed attempts.
+        Track 1-to-1 chat, voice, and video call reliability: answer rate, failures, TURN usage, and
+        recent failed attempts.
       </p>
     </div>
     <div class="toolbar">
@@ -57,18 +57,32 @@
       <article>
         <h3>Failure watch</h3>
         <div class="mini-stats">
-          <span>No answer <strong>{{ report.summary.noAnswer }}</strong></span>
-          <span>Media issue <strong>{{ report.summary.mediaPermission }}</strong></span>
-          <span>Connection failed <strong>{{ report.summary.connectionFailed }}</strong></span>
-          <span>Reconnect timeout <strong>{{ report.summary.reconnectTimeout }}</strong></span>
+          <span
+            >No answer <strong>{{ report.summary.noAnswer }}</strong></span
+          >
+          <span
+            >Media issue <strong>{{ report.summary.mediaPermission }}</strong></span
+          >
+          <span
+            >Connection failed <strong>{{ report.summary.connectionFailed }}</strong></span
+          >
+          <span
+            >Reconnect timeout <strong>{{ report.summary.reconnectTimeout }}</strong></span
+          >
         </div>
       </article>
       <article>
         <h3>Network route</h3>
         <div class="mini-stats">
-          <span>Direct/STUN <strong>{{ report.summary.direct }}</strong></span>
-          <span>TURN relay <strong>{{ report.summary.turnRelay }}</strong></span>
-          <span>Unknown <strong>{{ report.summary.unknownRoute }}</strong></span>
+          <span
+            >Direct/STUN <strong>{{ report.summary.direct }}</strong></span
+          >
+          <span
+            >TURN relay <strong>{{ report.summary.turnRelay }}</strong></span
+          >
+          <span
+            >Unknown <strong>{{ report.summary.unknownRoute }}</strong></span
+          >
         </div>
       </article>
     </div>
@@ -85,7 +99,10 @@
                   <td class="num">{{ row.count }}</td>
                 </tr>
               } @empty {
-                <tr><td>No call data yet.</td><td></td></tr>
+                <tr>
+                  <td>No call data yet.</td>
+                  <td></td>
+                </tr>
               }
             </tbody>
           </table>
@@ -102,7 +119,10 @@
                   <td class="num">{{ row.count }}</td>
                 </tr>
               } @empty {
-                <tr><td>No call data yet.</td><td></td></tr>
+                <tr>
+                  <td>No call data yet.</td>
+                  <td></td>
+                </tr>
               }
             </tbody>
           </table>
@@ -133,7 +153,9 @@
                 <td class="num">{{ row.turnRelay }}</td>
               </tr>
             } @empty {
-              <tr><td colspan="5">No provider call data yet.</td></tr>
+              <tr>
+                <td colspan="5">No provider call data yet.</td>
+              </tr>
             }
           </tbody>
         </table>
@@ -154,6 +176,7 @@
               <th>Provider</th>
               <th>User</th>
               <th class="num">Duration</th>
+              <th>Timeline</th>
             </tr>
           </thead>
           <tbody>
@@ -162,23 +185,140 @@
                 <td>{{ dateTime(row.startedAt) }}</td>
                 <td>{{ label(row.mode) }}</td>
                 <td>
-                  <span class="pill" [class.bad]="row.status === 'FAILED'">{{ label(row.status) }}</span>
+                  <span class="pill" [class.bad]="row.status === 'FAILED'">{{
+                    label(row.status)
+                  }}</span>
                 </td>
                 <td>{{ label(row.endReason || row.lastSignalEvent) }}</td>
                 <td>{{ routeLabel(row) }}</td>
                 <td>{{ row.consultation.assignedDoctor?.name || 'Unassigned' }}</td>
                 <td>
-                  {{ row.consultation.patient?.name || row.consultation.patient?.patientCode || 'User' }}
+                  {{
+                    row.consultation.patient?.name ||
+                      row.consultation.patient?.patientCode ||
+                      'User'
+                  }}
                 </td>
                 <td class="num">{{ duration(row.durationSeconds) }}</td>
+                <td>
+                  <button
+                    type="button"
+                    class="inspect-btn"
+                    (click)="inspectCall(row.id)"
+                    [disabled]="timelineLoadingId() === row.id"
+                  >
+                    {{ timelineLoadingId() === row.id ? 'Loading…' : 'Inspect' }}
+                  </button>
+                </td>
               </tr>
             } @empty {
-              <tr><td colspan="8">No recent calls in this window.</td></tr>
+              <tr>
+                <td colspan="9">No recent calls in this window.</td>
+              </tr>
             }
           </tbody>
         </table>
       </div>
     </section>
+
+    @if (timelineError()) {
+      <p class="timeline-error">{{ timelineError() }}</p>
+    }
+
+    @if (timeline(); as timeline) {
+      <section class="timeline-panel" aria-live="polite">
+        <div class="timeline-head">
+          <div>
+            <p class="eyebrow">Call diagnosis</p>
+            <h3>
+              {{ timeline.session.consultation.patient?.name || 'User' }} with
+              {{ timeline.session.consultation.assignedDoctor?.name || 'provider' }}
+            </h3>
+            <p class="muted">
+              {{ label(timeline.session.mode) }} · {{ label(timeline.session.status) }} ·
+              {{ dateTime(timeline.session.startedAt) }}
+            </p>
+          </div>
+          <button type="button" class="close-btn" (click)="closeTimeline()">Close</button>
+        </div>
+
+        <div class="diagnostic-summary">
+          <span
+            >Call ID <strong>{{ timeline.session.callId || 'Unavailable' }}</strong></span
+          >
+          <span
+            >Result
+            <strong>{{
+              label(timeline.session.endReason || timeline.session.status)
+            }}</strong></span
+          >
+          <span
+            >Duration <strong>{{ duration(timeline.session.durationSeconds) }}</strong></span
+          >
+          <span
+            >Reconnects <strong>{{ timeline.session.reconnectCount }}</strong></span
+          >
+          <span
+            >Route
+            <strong>{{
+              timeline.session.usedTurnRelay ? 'TURN relay' : 'Direct / unknown'
+            }}</strong></span
+          >
+          <span
+            >RTT
+            <strong
+              >{{ timeline.session.averageRttMs ?? '—'
+              }}{{ timeline.session.averageRttMs != null ? ' ms' : '' }}</strong
+            ></span
+          >
+          <span
+            >Packet loss
+            <strong
+              >{{ timeline.session.packetLossPercent ?? '—'
+              }}{{ timeline.session.packetLossPercent != null ? '%' : '' }}</strong
+            ></span
+          >
+        </div>
+
+        <ol class="event-timeline">
+          @for (event of timeline.events; track event.id) {
+            <li [class.event-failed]="event.outcome === 'REJECTED' || event.outcome === 'ERROR'">
+              <div class="event-marker"></div>
+              <article>
+                <div class="event-head">
+                  <strong>{{ eventTitle(event.event) }}</strong>
+                  <span class="event-outcome">{{ label(event.outcome) }}</span>
+                  <time>{{ dateTime(event.serverReceivedAt) }}</time>
+                </div>
+                <p>
+                  {{ event.actor?.name || 'System' }}
+                  @if (event.target?.name) {
+                    → {{ event.target?.name }}
+                  }
+                  @if (event.sequence != null) {
+                    · sequence {{ event.sequence }}
+                  }
+                </p>
+                @if (event.reason) {
+                  <p class="event-reason">Reason: {{ label(event.reason) }}</p>
+                }
+                @if (metadataSummary(event.metadata); as details) {
+                  @if (details.length) {
+                    <div class="event-details">
+                      @for (detail of details; track detail) {
+                        <span>{{ detail }}</span>
+                      }
+                    </div>
+                  }
+                }
+              </article>
+            </li>
+          } @empty {
+            <li class="empty-event">No timeline events were retained for this older call.</li>
+          }
+        </ol>
+      </section>
+    }
   } @else {
     <p class="muted">No report loaded.</p>
   }

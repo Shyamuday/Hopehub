@@ -4,6 +4,43 @@ import { AdminApi } from '../../core/services/admin-api';
 
 type CallHealthRow = { key: string; count: number };
 
+type CallHealthTimeline = {
+  session: {
+    id: string;
+    consultationId: string;
+    callId?: string | null;
+    mode: string;
+    status: string;
+    endReason?: string | null;
+    startedAt: string;
+    answeredAt?: string | null;
+    endedAt?: string | null;
+    durationSeconds?: number | null;
+    reconnectCount: number;
+    usedTurnRelay?: boolean | null;
+    averageRttMs?: number | null;
+    packetLossPercent?: number | null;
+    maxJitterMs?: number | null;
+    consultation: {
+      patient?: { name?: string | null; patientCode?: string | null } | null;
+      assignedDoctor?: { name?: string | null } | null;
+    };
+  };
+  events: Array<{
+    id: string;
+    event: string;
+    phase: string;
+    outcome: string;
+    reason?: string | null;
+    sequence?: number | null;
+    clientOccurredAt?: string | null;
+    serverReceivedAt: string;
+    actor?: { id: string; name?: string | null; role?: string | null } | null;
+    target?: { id: string; name?: string | null; role?: string | null } | null;
+    metadata?: Record<string, unknown> | null;
+  }>;
+};
+
 type CallHealthReport = {
   windowDays: number;
   from: string;
@@ -45,9 +82,13 @@ type CallHealthReport = {
     answeredAt?: string | null;
     endedAt?: string | null;
     lastSignalEvent?: string | null;
+    callId?: string | null;
+    reconnectCount: number;
     usedTurnRelay: boolean;
     candidateTypes: unknown[];
     averageRttMs?: number | null;
+    packetLossPercent?: number | null;
+    maxJitterMs?: number | null;
     consultation: {
       status: string;
       patient?: {
@@ -78,6 +119,9 @@ export class CallHealthPage {
   readonly report = signal<CallHealthReport | null>(null);
   readonly loading = signal(false);
   readonly error = signal('');
+  readonly timeline = signal<CallHealthTimeline | null>(null);
+  readonly timelineLoadingId = signal('');
+  readonly timelineError = signal('');
 
   constructor(private readonly api: AdminApi) {
     void this.load();
@@ -132,5 +176,62 @@ export class CallHealthPage {
     if (row.usedTurnRelay) return 'TURN relay';
     if (row.candidateTypes?.length) return 'Direct/STUN';
     return 'Unknown';
+  }
+
+  async inspectCall(sessionId: string) {
+    if (this.timeline()?.session.id === sessionId) {
+      this.timeline.set(null);
+      return;
+    }
+    this.timelineLoadingId.set(sessionId);
+    this.timelineError.set('');
+    try {
+      this.timeline.set((await this.api.getCallHealthEvents(sessionId)) as CallHealthTimeline);
+    } catch {
+      this.timeline.set(null);
+      this.timelineError.set('Could not load this call timeline.');
+    } finally {
+      this.timelineLoadingId.set('');
+    }
+  }
+
+  closeTimeline() {
+    this.timeline.set(null);
+    this.timelineError.set('');
+  }
+
+  eventTitle(event: string): string {
+    return this.label(event.replace(/^call:/, ''));
+  }
+
+  metadataSummary(metadata?: Record<string, unknown> | null): string[] {
+    if (!metadata) return [];
+    const labels: Record<string, string> = {
+      networkType: 'Network',
+      networkEffectiveType: 'Speed',
+      connectionState: 'Peer',
+      iceConnectionState: 'ICE',
+      localCandidateType: 'Local route',
+      remoteCandidateType: 'Remote route',
+      transportProtocol: 'Transport',
+      usedTurnRelay: 'TURN',
+      relayRequiredByNetwork: 'Relay needed',
+      averageRttMs: 'RTT',
+      packetLossPercent: 'Packet loss',
+      maxJitterMs: 'Jitter',
+      errorName: 'Browser error',
+      attempt: 'Attempt',
+    };
+    return Object.entries(labels).flatMap(([key, display]) => {
+      const value = metadata[key];
+      if (value === undefined || value === null || value === '') return [];
+      const suffix =
+        key === 'averageRttMs' || key === 'maxJitterMs'
+          ? ' ms'
+          : key === 'packetLossPercent'
+            ? '%'
+            : '';
+      return [`${display}: ${String(value)}${suffix}`];
+    });
   }
 }

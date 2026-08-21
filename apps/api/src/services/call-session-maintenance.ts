@@ -56,8 +56,9 @@ export async function runCallSessionMaintenance() {
 
   const metadataDays = positiveDays(process.env.CALL_METADATA_RETENTION_DAYS, 30);
   const qualityDays = positiveDays(process.env.CALL_QUALITY_RETENTION_DAYS, 180);
+  const eventDays = positiveDays(process.env.CALL_EVENT_RETENTION_DAYS, 90);
   const pushDays = positiveDays(process.env.PUSH_DEVICE_RETENTION_DAYS, 90);
-  const [metadata, quality, pushDevices] = await Promise.all([
+  const [metadata, quality, events, pushDevices] = await Promise.all([
     prisma.consultationCallSession.updateMany({
       where: {
         endedAt: { lt: new Date(now.getTime() - metadataDays * 86_400_000) },
@@ -72,14 +73,18 @@ export async function runCallSessionMaintenance() {
       },
       data: { qualitySummary: Prisma.DbNull }
     }),
+    prisma.consultationCallEvent.deleteMany({
+      where: { createdAt: { lt: new Date(now.getTime() - eventDays * 86_400_000) } }
+    }),
     cleanupInactivePushDevices(pushDays)
   ]);
 
-  if (stale.length || metadata.count || quality.count || pushDevices.count) {
+  if (stale.length || metadata.count || quality.count || events.count || pushDevices.count) {
     console.info('[call-maintenance] Cleanup complete', {
       staleCalls: stale.length,
       metadataCleared: metadata.count,
       qualityCleared: quality.count,
+      callEventsDeleted: events.count,
       pushDevicesDeleted: pushDevices.count
     });
   }

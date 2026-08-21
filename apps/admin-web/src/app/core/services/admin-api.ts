@@ -43,6 +43,11 @@ export class AdminApi {
   getCallHealth(...args: Parameters<AdminReportsApi['getCallHealth']>) {
     return this.reports.getCallHealth(...(args as Parameters<AdminReportsApi['getCallHealth']>));
   }
+  getCallHealthEvents(...args: Parameters<AdminReportsApi['getCallHealthEvents']>) {
+    return this.reports.getCallHealthEvents(
+      ...(args as Parameters<AdminReportsApi['getCallHealthEvents']>),
+    );
+  }
   getPayments(...args: Parameters<AdminReportsApi['getPayments']>) {
     return this.reports.getPayments(...(args as Parameters<AdminReportsApi['getPayments']>));
   }
