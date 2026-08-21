@@ -1,5 +1,8 @@
 import { prisma } from '../db.js';
-import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
+import {
+  GROUP_HELP_AUTOMATIC_FULL_ADMIN_USERNAMES,
+  GROUP_HELP_BOT_SLUG
+} from '../constants/telegram-community-bot.constants.js';
 import {
   callCommunityTelegramApi,
   sendCommunityMessage
@@ -66,16 +69,18 @@ export async function isModerationExempt(
 
 export async function sendGroupHelpPermissionDenied(
   message: CommunityTelegramMessage,
-  requiredRole: 'HELPER' | 'MODERATOR' | 'ADMIN',
+  requiredRole: 'HELPER' | 'MODERATOR' | 'ADMIN' | 'BAN_AUTHORITY',
   replyChatId = String(message.chat.id),
   values?: Record<string, string>
 ) {
   const label =
-    requiredRole === 'ADMIN'
-      ? 'a Telegram administrator of the main group'
-      : requiredRole === 'MODERATOR'
-        ? 'a Hope Hub Moderator or main-group administrator'
-        : 'a Hope Hub Helper, Moderator, or main-group administrator';
+    requiredRole === 'BAN_AUTHORITY'
+      ? 'the main-group owner or the authorised Hope Hub owner account'
+      : requiredRole === 'ADMIN'
+        ? 'a Telegram administrator of the main group'
+        : requiredRole === 'MODERATOR'
+          ? 'a Hope Hub Moderator or main-group administrator'
+          : 'a Hope Hub Helper, Moderator, or main-group administrator';
   await sendCommunityMessage(
     GROUP_HELP_BOT_SLUG,
     replyChatId,
@@ -216,4 +221,33 @@ export async function canUseGroupHelpAdminCommand(
       typeof permission === 'string' &&
       (permission === '*' || permission.toLowerCase() === normalized)
   );
+}
+
+/**
+ * Ban commands are deliberately narrower than normal moderation powers.
+ * A Telegram owner can always protect their own community; the two known
+ * spellings preserve access for the established Hope Hub owner account.
+ * Neither a Telegram administrator, a whitelist entry, nor a custom bot role
+ * can grant this authority.
+ */
+export function isGroupHelpBanAuthority(username: string | undefined, status: string | undefined) {
+  const normalizedUsername = username?.trim().replace(/^@/, '').toLowerCase() || '';
+  return (
+    status === 'creator' ||
+    status === 'owner' ||
+    GROUP_HELP_AUTOMATIC_FULL_ADMIN_USERNAMES.some((candidate) => candidate === normalizedUsername)
+  );
+}
+
+export async function canUseGroupHelpBanCommand(message: CommunityTelegramMessage) {
+  if (!message.from) return false;
+  const membership = await callCommunityTelegramApi<{ status?: string }>(
+    GROUP_HELP_BOT_SLUG,
+    'getChatMember',
+    {
+      chat_id: String(message.chat.id),
+      user_id: message.from.id
+    }
+  ).catch(() => undefined);
+  return isGroupHelpBanAuthority(message.from.username, membership?.status);
 }

@@ -19,6 +19,7 @@ import {
 import {
   canUseGroupHelpCommand,
   canUseGroupHelpAdminCommand,
+  canUseGroupHelpBanCommand,
   sendGroupHelpPermissionDenied
 } from './telegram-group-help.permissions.js';
 import {
@@ -113,10 +114,17 @@ export async function handleGroupHelpStaffCommand(
       ? 'MODERATOR'
       : 'HELPER';
 
-    if (
-      !(await canUseGroupHelpCommand(permissionMessage, values, `/${canonicalName}`, requiredRole))
-    ) {
-      await sendGroupHelpPermissionDenied(message, requiredRole, chatId, values);
+    const banCommand = ['ban', 'delban'].includes(commandName);
+    const permitted = banCommand
+      ? await canUseGroupHelpBanCommand(permissionMessage)
+      : await canUseGroupHelpCommand(permissionMessage, values, `/${canonicalName}`, requiredRole);
+    if (!permitted) {
+      await sendGroupHelpPermissionDenied(
+        message,
+        banCommand ? 'BAN_AUTHORITY' : requiredRole,
+        chatId,
+        values
+      );
       return true;
     }
     if (
