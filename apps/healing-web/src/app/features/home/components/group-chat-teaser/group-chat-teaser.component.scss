@@ -317,6 +317,8 @@
   }
 
   .chat-teaser {
+    background: #ffffff;
+    backdrop-filter: none;
     bottom: 0;
     z-index: 70;
     height: min(38rem, calc(100dvh - 4.5rem));
@@ -341,12 +343,14 @@
   }
 
   .chat-teaser__messages {
+    -webkit-overflow-scrolling: touch;
     gap: 0.55rem;
+    overscroll-behavior: contain;
     padding: 0.2rem 0.9rem 0.65rem;
   }
 
   .chat-teaser-pill {
-    bottom: calc(5.65rem + env(safe-area-inset-bottom));
-    right: 0.75rem;
+    bottom: calc(4.25rem + env(safe-area-inset-bottom));
+    right: 0.65rem;
   }
 }

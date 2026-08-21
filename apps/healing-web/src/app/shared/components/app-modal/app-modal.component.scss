@@ -102,6 +102,7 @@
   }
 
   .app-modal__panel {
+    -webkit-overflow-scrolling: touch;
     width: 100%;
     max-width: 100%;
     max-height: calc(100dvh - max(0.75rem, env(safe-area-inset-top)));

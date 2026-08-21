@@ -838,7 +838,9 @@ a:focus-visible {
     overscroll-behavior-inline: contain;
     scroll-padding-inline: 1rem;
     scrollbar-width: none;
-    touch-action: pan-x;
+    /* A vertical page swipe often starts on a carousel card. Restricting these
+       large surfaces to pan-x made the whole page feel stuck on mobile. */
+    touch-action: pan-x pan-y pinch-zoom;
   }
 
   :is(

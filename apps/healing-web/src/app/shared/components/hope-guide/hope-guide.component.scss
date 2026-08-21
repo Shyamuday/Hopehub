@@ -175,8 +175,8 @@
 
 @media (max-width: 640px) {
   .hope-guide {
-    bottom: calc(5.65rem + env(safe-area-inset-bottom));
-    right: 0.75rem;
+    bottom: calc(4.25rem + env(safe-area-inset-bottom));
+    right: 0.65rem;
   }
 
   .hope-guide__text {
@@ -184,9 +184,15 @@
   }
 
   .hope-guide__toggle {
-    width: 3.2rem;
-    height: 3.2rem;
+    width: 2.5rem;
+    height: 2.5rem;
     justify-content: center;
-    padding: 0.45rem;
+    min-height: 2.5rem;
+    padding: 0.3rem;
+  }
+
+  .hope-guide__spark {
+    width: 1.8rem;
+    height: 1.8rem;
   }
 }
