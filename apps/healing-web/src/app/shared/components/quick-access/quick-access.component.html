@@ -49,6 +49,7 @@
 
 </div>
 
+@if (showBottomQuickActions) {
 <nav class="quick-action-bar" aria-label="Quick support actions">
   <a
     [routerLink]="ROUTES.links.home"
@@ -101,3 +102,4 @@
     <strong>Group</strong>
   </a>
 </nav>
+}

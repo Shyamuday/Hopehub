@@ -195,8 +195,14 @@
   }
 
   .home-hero__actions > :first-child,
+  .home-hero__book-time,
   .home-hero__self-check {
     grid-column: 1 / -1;
+  }
+
+  .home-hero__book-time {
+    justify-self: center;
+    width: min(100%, 15rem);
   }
 
   .home-hero__self-check {

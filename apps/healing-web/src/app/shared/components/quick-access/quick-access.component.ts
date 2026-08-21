@@ -17,6 +17,9 @@ export class QuickAccessComponent {
   readonly APP_CONSTANTS = APP_CONSTANTS;
   readonly UX = CONSUMER_UX_COPY;
   readonly ROUTES = CONSUMER_ROUTES;
+  // The four-item mobile bar is intentionally paused while the main home actions
+  // are being simplified. Keep the switch so it can be restored without markup changes.
+  readonly showBottomQuickActions = false;
   private readonly groupChatTeaser = inject(GroupChatTeaserService);
   private readonly router = inject(Router);
   readonly unreadCount = this.groupChatTeaser.unreadCount;
