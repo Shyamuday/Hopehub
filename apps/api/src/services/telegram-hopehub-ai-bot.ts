@@ -76,6 +76,7 @@ import {
 } from './telegram-community-member-identity.js';
 import { publicIdentityChangeAlert } from './telegram-group-help.identity-alert.js';
 import { notifyTelegramBotFailure } from './telegram-bot-failure-alerts.js';
+import { forwardGroupHelpAdminMention } from './telegram-group-help.admin-mentions.js';
 
 const BOT = GROUP_HELP_BOT_SLUG;
 
@@ -328,6 +329,16 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
       message.date ? new Date(message.date * 1000) : undefined
     );
     await ingestTelegramLiveChatMessage(message);
+    return;
+  }
+
+  if (await forwardGroupHelpAdminMention(message, values)) {
+    await sendTemporaryMessage(
+      chatId,
+      'Your message has been shared with the Hope Hub community team.',
+      values,
+      { reply_to_message_id: message.message_id, message_thread_id: message.message_thread_id }
+    );
     return;
   }
 

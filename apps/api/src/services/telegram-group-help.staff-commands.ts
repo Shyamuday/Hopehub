@@ -27,6 +27,7 @@ import {
   resolveGroupHelpCommandContext
 } from './telegram-group-help.command-context.js';
 import { requestGroupHelpCommandConfirmation } from './telegram-group-help.command-confirmation.js';
+import { groupHelpAdminMentionReplyTarget } from './telegram-group-help.admin-mentions.js';
 import { telegramPersonLogLabel } from './telegram-group-help.people.js';
 
 export async function handleGroupHelpStaffCommand(
@@ -42,6 +43,48 @@ export async function handleGroupHelpStaffCommand(
   const targetChatId = context.targetChatId;
   const isCrossGroup = context.isControlGroup;
   const permissionMessage = messageForGroupHelpTarget(message, targetChatId);
+
+  if (command === '/send') {
+    if (!message.from || !(await canUseGroupHelpAdminCommand(permissionMessage, values, '/send'))) {
+      await sendGroupHelpPermissionDenied(message, 'ADMIN', chatId, values);
+      return true;
+    }
+    const textToSend = parts.slice(1).join(' ').trim();
+    if (!textToSend) {
+      await sendCommunityMessage(
+        GROUP_HELP_BOT_SLUG,
+        chatId,
+        'Usage: reply to an Administrator request with /send <message>, or use /send <message> to post in the main group as Hope Hub bot.'
+      );
+      return true;
+    }
+    const replyTarget = isCrossGroup
+      ? await groupHelpAdminMentionReplyTarget(chatId, message.reply_to_message?.message_id)
+      : null;
+    const destinationChatId = replyTarget?.targetChatId || targetChatId;
+    const posted = await sendCommunityMessage(GROUP_HELP_BOT_SLUG, destinationChatId, textToSend, {
+      ...(replyTarget?.targetMessageId ? { reply_to_message_id: replyTarget.targetMessageId } : {}),
+      ...(replyTarget?.messageThreadId
+        ? { message_thread_id: replyTarget.messageThreadId }
+        : message.message_thread_id && !isCrossGroup
+          ? { message_thread_id: message.message_thread_id }
+          : {})
+    });
+    await sendGroupHelpActivityLog(values, 'Administrator response posted', [
+      `Posted by: ${telegramPersonLogLabel(message.from, 'Administrator')}`,
+      `Group: ${destinationChatId}`,
+      replyTarget ? `In reply to: ${replyTarget.memberLabel}` : 'Reply target: main group',
+      `Bot message: ${posted.message_id}`
+    ]);
+    if (isCrossGroup) {
+      await sendCommunityMessage(
+        GROUP_HELP_BOT_SLUG,
+        chatId,
+        `Posted in the main group as Hope Hub bot${replyTarget ? ` in reply to ${replyTarget.memberLabel}` : ''}.`
+      );
+    }
+    return true;
+  }
 
   // ── Moderation commands ──────────────────────────────────────────────────
 

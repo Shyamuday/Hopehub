@@ -66,6 +66,7 @@ export const GROUP_HELP_COMMAND_CATALOG = {
     '/unfree'
   ],
   administration: [
+    '/send',
     '/settings',
     '/pin',
     '/unpin',
