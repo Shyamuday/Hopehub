@@ -125,6 +125,7 @@ model TelegramCampaignItem {
 
   @@unique([campaignId, sortOrder])
   @@index([campaignId])
+  @@index([contentCategory])
 }
 
 model TelegramCampaignDelivery {
