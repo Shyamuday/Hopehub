@@ -735,7 +735,9 @@ export class ConsultationWebrtcCallService {
 
     this.activeCallId = offer.callId;
     this.connectedToneCallId = '';
-    this.signalSequence = 0;
+    // Keep the sequence established by the incoming RING/OFFER acknowledgements.
+    // Resetting it here causes ANSWER/ICE to reuse an earlier sequence number, so
+    // the API correctly rejects the fresh signal as stale and the call disconnects.
     this.callContext = {
       consultationId: offer.consultationId,
       targetUserId: offer.fromUserId
