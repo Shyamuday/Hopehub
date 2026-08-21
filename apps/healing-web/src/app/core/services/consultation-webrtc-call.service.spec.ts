@@ -91,3 +91,90 @@ describe('ConsultationWebrtcCallService incoming signaling', () => {
     });
   });
 });
+
+describe('ConsultationWebrtcCallService call preflight', () => {
+  it('reuses a successful connectivity check during its network-aware TTL', async () => {
+    const service = new ConsultationWebrtcCallService();
+    service.invalidateConnectivityCache();
+    let checks = 0;
+    const internals = service as unknown as {
+      runConnectivityTest: () => Promise<{ ok: boolean; relay: boolean; message: string }>;
+    };
+    internals.runConnectivityTest = async () => {
+      checks += 1;
+      return { ok: true, relay: true, message: 'Ready' };
+    };
+    const servers = [
+      {
+        urls: 'turn:turn.hopehub.in:3478?transport=udp',
+        username: 'test-user',
+        credential: 'test-secret',
+      },
+    ];
+
+    await service.testConnectivity(servers, true);
+    await service.testConnectivity(servers, true);
+
+    expect(checks).toBe(1);
+    service.invalidateConnectivityCache();
+  });
+
+  it('adopts a live prepared stream without requesting the devices again', async () => {
+    const service = new ConsultationWebrtcCallService();
+    let permissionChecks = 0;
+    let mediaRequests = 0;
+    const audioTrack = { readyState: 'live', stop: vi.fn() } as unknown as MediaStreamTrack;
+    const stream = {
+      getAudioTracks: () => [audioTrack],
+      getVideoTracks: () => [],
+      getTracks: () => [audioTrack],
+    } as unknown as MediaStream;
+    const internals = service as unknown as {
+      ensureMediaAccess: (() => Promise<{ granted: boolean }>) | null;
+      acquireMediaStream: () => Promise<MediaStream>;
+      ensurePeer: (
+        mode: 'audio' | 'video',
+        iceServers: unknown[],
+        privacyRelay: boolean,
+        preparedStream?: MediaStream,
+      ) => Promise<void>;
+    };
+    internals.ensureMediaAccess = async () => {
+      permissionChecks += 1;
+      return { granted: true };
+    };
+    internals.acquireMediaStream = async () => {
+      mediaRequests += 1;
+      return stream;
+    };
+
+    const originalPeerConnection = globalThis.RTCPeerConnection;
+    Object.defineProperty(globalThis, 'RTCPeerConnection', {
+      configurable: true,
+      value: class {
+        connectionState = 'new';
+        iceConnectionState = 'new';
+        ontrack = null;
+        onicecandidate = null;
+        onconnectionstatechange = null;
+        oniceconnectionstatechange = null;
+        addTrack() {
+          return {};
+        }
+      },
+    });
+
+    try {
+      await internals.ensurePeer('audio', [], false, stream);
+    } finally {
+      Object.defineProperty(globalThis, 'RTCPeerConnection', {
+        configurable: true,
+        value: originalPeerConnection,
+      });
+    }
+
+    expect(service.localStream()).toBe(stream);
+    expect(permissionChecks).toBe(0);
+    expect(mediaRequests).toBe(0);
+  });
+});

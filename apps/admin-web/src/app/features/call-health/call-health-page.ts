@@ -221,12 +221,19 @@ export class CallHealthPage {
       maxJitterMs: 'Jitter',
       errorName: 'Browser error',
       attempt: 'Attempt',
+      connectivityPreflightSource: 'Preflight',
+      connectivityCheckMs: 'Network check',
+      mediaAcquisitionMs: 'Media access',
+      preparedStreamReused: 'Prepared media reused',
     };
     return Object.entries(labels).flatMap(([key, display]) => {
       const value = metadata[key];
       if (value === undefined || value === null || value === '') return [];
       const suffix =
-        key === 'averageRttMs' || key === 'maxJitterMs'
+        key === 'averageRttMs' ||
+        key === 'maxJitterMs' ||
+        key === 'connectivityCheckMs' ||
+        key === 'mediaAcquisitionMs'
           ? ' ms'
           : key === 'packetLossPercent'
             ? '%'

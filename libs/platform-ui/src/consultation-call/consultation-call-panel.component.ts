@@ -125,6 +125,7 @@ export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDest
 
   ngOnInit() {
     void this.call.refreshMediaDevices();
+    this.call.prewarmConnectivity(this.iceServers, this.requiresRelayForThisNetwork());
     if (typeof navigator !== 'undefined') {
       navigator.mediaDevices?.addEventListener?.('devicechange', this.handleDeviceChange);
     }
@@ -136,6 +137,9 @@ export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDest
     }
     if (changes['ensureMediaAccess']?.currentValue) {
       this.call.setMediaAccessHandler(changes['ensureMediaAccess'].currentValue);
+    }
+    if (changes['iceServers']?.currentValue) {
+      this.call.prewarmConnectivity(this.iceServers, this.requiresRelayForThisNetwork());
     }
   }
 
@@ -369,9 +373,18 @@ export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDest
     );
   }
 
-  async start(mode: CallMode) {
-    if ((mode === 'audio' && !this.allowAudio) || (mode === 'video' && !this.allowVideo)) return;
-    if (!this.socket || !this.consultationId || !this.targetUserId || !this.canStartCall()) return;
+  async start(mode: CallMode, preparedStream?: MediaStream) {
+    if (
+      (mode === 'audio' && !this.allowAudio) ||
+      (mode === 'video' && !this.allowVideo) ||
+      !this.socket ||
+      !this.consultationId ||
+      !this.targetUserId ||
+      !this.canStartCall()
+    ) {
+      preparedStream?.getTracks().forEach((track) => track.stop());
+      return;
+    }
     this.call.setParticipant({
       name: this.participantName || 'Hope Hub member',
       imageUrl: this.participantImageUrl || undefined
@@ -384,7 +397,8 @@ export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDest
         targetUserId: this.targetUserId,
         mode,
         iceServers: this.iceServers,
-        privacyRelay: this.call.privacyRelay()
+        privacyRelay: this.call.privacyRelay(),
+        preparedStream
       });
     } catch {
       // service sets error state
@@ -406,20 +420,12 @@ export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDest
     this.preCallNetworkReady.set(false);
     this.preCallMessage.set('Checking your devices and connection…');
     try {
-      if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
-        throw new Error('Calls are not supported in this browser.');
-      }
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: this.call.selectedAudioInputId()
-          ? { deviceId: { exact: this.call.selectedAudioInputId() } }
-          : true,
-        video:
-          mode === 'video'
-            ? this.call.selectedVideoInputId()
-              ? { deviceId: { exact: this.call.selectedVideoInputId() } }
-              : true
-            : false
-      });
+      const connectivityPromise = this.call.testConnectivity(
+        this.iceServers,
+        this.requiresRelayForThisNetwork()
+      );
+      const speakerPromise = this.call.testSpeaker();
+      const stream = await this.call.acquireMediaStream(mode);
       this.preCallStream = stream;
       if (this.preCallVideoElement) {
         this.preCallVideoElement.srcObject = stream;
@@ -427,11 +433,8 @@ export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDest
       }
       this.preCallMicReady.set(stream.getAudioTracks().length > 0);
       this.preCallCameraReady.set(mode === 'audio' || stream.getVideoTracks().length > 0);
-      this.preCallSpeakerReady.set(await this.call.testSpeaker());
-      const connectivity = await this.call.testConnectivity(
-        this.iceServers,
-        this.requiresRelayForThisNetwork()
-      );
+      const [speakerReady, connectivity] = await Promise.all([speakerPromise, connectivityPromise]);
+      this.preCallSpeakerReady.set(speakerReady);
       this.preCallNetworkReady.set(connectivity.ok);
       this.preCallMessage.set(
         connectivity.ok
@@ -459,8 +462,9 @@ export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDest
   async confirmPreparedCall() {
     if (!this.preCallReady() || this.preCallChecking()) return;
     const mode = this.preCallMode();
-    this.closePreCall();
-    await this.start(mode);
+    const preparedStream = this.takePreCallStream();
+    this.preCallOpen.set(false);
+    await this.start(mode, preparedStream ?? undefined);
   }
 
   closePreCall() {
@@ -472,6 +476,13 @@ export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDest
     this.preCallStream?.getTracks().forEach((track) => track.stop());
     this.preCallStream = null;
     if (this.preCallVideoElement) this.preCallVideoElement.srcObject = null;
+  }
+
+  private takePreCallStream(): MediaStream | null {
+    const stream = this.preCallStream;
+    this.preCallStream = null;
+    if (this.preCallVideoElement) this.preCallVideoElement.srcObject = null;
+    return stream;
   }
 
   async tryVoiceFallback() {

@@ -32,7 +32,8 @@ const STRING_METADATA_KEYS = [
   'networkType',
   'networkEffectiveType',
   'diagnosticReason',
-  'errorName'
+  'errorName',
+  'connectivityPreflightSource'
 ] as const;
 
 const NUMBER_METADATA_KEYS = [
@@ -43,7 +44,9 @@ const NUMBER_METADATA_KEYS = [
   'averageRttMs',
   'packetLossPercent',
   'maxJitterMs',
-  'reconnectCount'
+  'reconnectCount',
+  'connectivityCheckMs',
+  'mediaAcquisitionMs'
 ] as const;
 
 const BOOLEAN_METADATA_KEYS = [
@@ -55,7 +58,8 @@ const BOOLEAN_METADATA_KEYS = [
   'userReportedIssue',
   'networkSaveData',
   'relayRequiredByNetwork',
-  'deliveryRetry'
+  'deliveryRetry',
+  'preparedStreamReused'
 ] as const;
 
 export function safeCallEventMetadata(metadata: unknown): Record<string, unknown> {

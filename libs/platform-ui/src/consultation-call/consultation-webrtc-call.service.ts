@@ -26,6 +26,15 @@ const CALL_RECOVERY_MAX_AGE_MS = 5 * 60 * 1000;
 const DELIVERY_ACK_TIMEOUT_MS = 8_000;
 const OFFER_RETRY_INTERVAL_MS = 3_000;
 const CALL_DEVICE_PREFERENCES_KEY = 'hopehub:call-device-preferences';
+const CALL_CONNECTIVITY_CACHE_KEY = 'hopehub:call-connectivity-preflight';
+const CALL_CONNECTIVITY_CACHE_TTL_MS = 5 * 60 * 1000;
+
+type ConnectivityResult = { ok: boolean; relay: boolean; message: string };
+type CachedConnectivityResult = {
+  key: string;
+  expiresAt: number;
+  result: ConnectivityResult;
+};
 
 type BrowserNetworkInformation = EventTarget & {
   type?: string;
@@ -267,6 +276,11 @@ export class ConsultationWebrtcCallService {
   };
   private consecutivePoorSamples = 0;
   private manualLowDataMode = false;
+  private readonly connectivityChecks = new Map<string, Promise<ConnectivityResult>>();
+  private connectivityPreflightSource = 'none';
+  private connectivityCheckMs = 0;
+  private mediaAcquisitionMs = 0;
+  private preparedStreamReused = false;
   private readonly callTabId =
     typeof crypto !== 'undefined' && 'randomUUID' in crypto
       ? crypto.randomUUID()
@@ -281,6 +295,7 @@ export class ConsultationWebrtcCallService {
     this.ringToneUnlockBound = false;
   };
   private readonly handleOnline = () => {
+    this.invalidateConnectivityCache();
     this.connectionOnline.set(true);
     if (this.callContext && this.pc) {
       this.state.set('reconnecting');
@@ -289,6 +304,7 @@ export class ConsultationWebrtcCallService {
     }
   };
   private readonly handleOffline = () => {
+    this.invalidateConnectivityCache();
     this.connectionOnline.set(false);
     if (this.callContext) {
       this.state.set('reconnecting');
@@ -296,6 +312,7 @@ export class ConsultationWebrtcCallService {
     }
   };
   private readonly handleNetworkInformationChange = () => {
+    this.invalidateConnectivityCache();
     this.refreshNetworkProfile();
     if (this.callContext && this.networkProfile().requiresRelay && !this.privacyRelay()) {
       this.deviceRecoveryMessage.set(
@@ -463,23 +480,13 @@ export class ConsultationWebrtcCallService {
   }
 
   private async resolveRelayPolicy(
-    iceServers: IceServerConfig[],
+    _iceServers: IceServerConfig[],
     requestedRelay: boolean,
     mode: CallMode
   ) {
     const profile = this.refreshNetworkProfile();
     const relayRequired = requestedRelay || profile.requiresRelay;
     if (!relayRequired) return false;
-
-    const connectivity = await this.testConnectivity(iceServers, true);
-    if (!connectivity.ok) {
-      const mobileMessage = profile.requiresRelay
-        ? 'Your current network needs the secure call connection, but it is unavailable. Try another network or continue in chat.'
-        : 'The secure call connection is unavailable. Turn it off and try again, or continue in chat.';
-      this.error.set(mobileMessage);
-      this.state.set('error');
-      throw new Error(mobileMessage);
-    }
 
     if (mode === 'video' && profile.requiresRelay) {
       this.lowDataMode.set(true);
@@ -503,6 +510,18 @@ export class ConsultationWebrtcCallService {
       this.keepAvailableDeviceSelection(this.selectedAudioOutputId, audioOutputs);
     } catch {
       // Device enumeration is optional and may be unavailable before permission is granted.
+    }
+  }
+
+  async acquireMediaStream(mode: CallMode): Promise<MediaStream> {
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      throw new Error('MEDIA_NOT_SUPPORTED');
+    }
+    const startedAt = performance.now();
+    try {
+      return await navigator.mediaDevices.getUserMedia(this.mediaConstraints(mode));
+    } finally {
+      this.mediaAcquisitionMs = Math.max(0, Math.round(performance.now() - startedAt));
     }
   }
 
@@ -635,6 +654,7 @@ export class ConsultationWebrtcCallService {
     mode: CallMode;
     iceServers?: IceServerConfig[];
     privacyRelay?: boolean;
+    preparedStream?: MediaStream;
   }) {
     if (this.hasActiveCall()) {
       const message = 'Your current call is already open. Use the active call controls.';
@@ -675,7 +695,12 @@ export class ConsultationWebrtcCallService {
     this.receiverUnavailable.set(false);
 
     try {
-      await this.ensurePeer(params.mode, params.iceServers ?? DEFAULT_STUN, privacyRelay);
+      await this.ensurePeer(
+        params.mode,
+        params.iceServers ?? DEFAULT_STUN,
+        privacyRelay,
+        params.preparedStream
+      );
       this.activeConsultationId.set(params.consultationId);
       this.persistRecoveryContext();
       this.makingOffer = true;
@@ -702,6 +727,7 @@ export class ConsultationWebrtcCallService {
       this.startDeliveryAckTimeout();
       this.startAnswerTimeout();
     } catch (error) {
+      params.preparedStream?.getTracks().forEach((track) => track.stop());
       this.makingOffer = false;
       const message =
         this.error() || (error instanceof Error ? error.message : 'Could not start call.');
@@ -1190,11 +1216,14 @@ export class ConsultationWebrtcCallService {
   private async ensurePeer(
     mode: CallMode,
     iceServers: IceServerConfig[] = DEFAULT_STUN,
-    privacyRelay = false
+    privacyRelay = false,
+    preparedStream?: MediaStream
   ) {
     if (this.pc) return;
 
-    if (this.ensureMediaAccess) {
+    const preparedStreamReady = this.mediaStreamSupportsMode(preparedStream, mode);
+    this.preparedStreamReused = preparedStreamReady;
+    if (!preparedStreamReady && this.ensureMediaAccess) {
       const access = await this.ensureMediaAccess(mode);
       if (!access.granted) {
         this.error.set(access.message ?? 'Camera or microphone permission required.');
@@ -1205,10 +1234,10 @@ export class ConsultationWebrtcCallService {
 
     let stream: MediaStream;
     try {
-      if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
-        throw new Error('MEDIA_NOT_SUPPORTED');
+      if (preparedStream && !preparedStreamReady) {
+        preparedStream.getTracks().forEach((track) => track.stop());
       }
-      stream = await navigator.mediaDevices.getUserMedia(this.mediaConstraints(mode));
+      stream = preparedStreamReady ? preparedStream! : await this.acquireMediaStream(mode);
     } catch (error) {
       const message = mediaAccessErrorMessage(error, mode);
       this.error.set(message);
@@ -1250,6 +1279,13 @@ export class ConsultationWebrtcCallService {
     this.pc.oniceconnectionstatechange = () => this.handlePeerConnectionState();
 
     this.state.set('connecting');
+  }
+
+  private mediaStreamSupportsMode(stream: MediaStream | undefined, mode: CallMode): boolean {
+    if (!stream) return false;
+    const hasLiveAudio = stream.getAudioTracks().some((track) => track.readyState === 'live');
+    const hasLiveVideo = stream.getVideoTracks().some((track) => track.readyState === 'live');
+    return hasLiveAudio && (mode === 'audio' || hasLiveVideo);
   }
 
   private mediaConstraints(mode: CallMode): MediaStreamConstraints {
@@ -2002,7 +2038,11 @@ export class ConsultationWebrtcCallService {
       networkType: this.networkProfile().type,
       networkEffectiveType: this.networkProfile().effectiveType,
       networkSaveData: this.networkProfile().saveData,
-      relayRequiredByNetwork: this.networkProfile().requiresRelay
+      relayRequiredByNetwork: this.networkProfile().requiresRelay,
+      connectivityPreflightSource: this.connectivityPreflightSource,
+      connectivityCheckMs: this.connectivityCheckMs,
+      mediaAcquisitionMs: this.mediaAcquisitionMs,
+      preparedStreamReused: this.preparedStreamReused
     };
   }
 
@@ -2122,8 +2162,55 @@ export class ConsultationWebrtcCallService {
 
   async testConnectivity(
     iceServers: IceServerConfig[],
-    requireRelay = false
-  ): Promise<{ ok: boolean; relay: boolean; message: string }> {
+    requireRelay = false,
+    force = false
+  ): Promise<ConnectivityResult> {
+    const cacheKey = this.connectivityCacheKey(iceServers, requireRelay);
+    if (!force) {
+      const cached = this.readConnectivityCache(cacheKey);
+      if (cached) {
+        this.connectivityPreflightSource = 'cache';
+        this.connectivityCheckMs = 0;
+        return cached;
+      }
+      const inFlight = this.connectivityChecks.get(cacheKey);
+      if (inFlight) {
+        this.connectivityPreflightSource = 'shared';
+        return inFlight;
+      }
+    }
+
+    const startedAt = performance.now();
+    const check = this.runConnectivityTest(iceServers, requireRelay)
+      .then((result) => {
+        this.connectivityPreflightSource = 'network';
+        this.connectivityCheckMs = Math.max(0, Math.round(performance.now() - startedAt));
+        if (result.ok) this.writeConnectivityCache(cacheKey, result);
+        return result;
+      })
+      .finally(() => this.connectivityChecks.delete(cacheKey));
+    this.connectivityChecks.set(cacheKey, check);
+    return check;
+  }
+
+  prewarmConnectivity(iceServers: IceServerConfig[], requireRelay = false): void {
+    void this.testConnectivity(iceServers, requireRelay).catch(() => undefined);
+  }
+
+  invalidateConnectivityCache() {
+    this.connectivityChecks.clear();
+    if (typeof localStorage === 'undefined') return;
+    try {
+      localStorage.removeItem(CALL_CONNECTIVITY_CACHE_KEY);
+    } catch {
+      // Connectivity caching is optional when browser storage is blocked.
+    }
+  }
+
+  private async runConnectivityTest(
+    iceServers: IceServerConfig[],
+    requireRelay: boolean
+  ): Promise<ConnectivityResult> {
     if (typeof RTCPeerConnection === 'undefined') {
       return { ok: false, relay: false, message: 'Calls are not supported in this browser.' };
     }
@@ -2135,22 +2222,36 @@ export class ConsultationWebrtcCallService {
     let foundRelay = false;
     try {
       pc.createDataChannel('hopehub-connectivity-test');
+      let finishGathering: () => void = () => undefined;
+      const gathering = new Promise<void>((resolve) => {
+        let finished = false;
+        let timeout: ReturnType<typeof setTimeout> | null = null;
+        const finish = () => {
+          if (finished) return;
+          finished = true;
+          if (timeout) clearTimeout(timeout);
+          resolve();
+        };
+        timeout = setTimeout(finish, 6_000);
+        finishGathering = finish;
+      });
       pc.onicecandidate = (event) => {
-        if (!event.candidate) return;
+        if (!event.candidate) {
+          finishGathering();
+          return;
+        }
         foundCandidate = true;
         if (event.candidate.type === 'relay' || / typ relay /i.test(event.candidate.candidate)) {
           foundRelay = true;
         }
+        if ((!requireRelay && foundCandidate) || (requireRelay && foundRelay)) finishGathering();
       };
       await pc.setLocalDescription(await pc.createOffer());
-      await new Promise<void>((resolve) => {
-        const timeout = setTimeout(resolve, 6_000);
-        pc.onicegatheringstatechange = () => {
-          if (pc.iceGatheringState !== 'complete') return;
-          clearTimeout(timeout);
-          resolve();
-        };
-      });
+      pc.onicegatheringstatechange = () => {
+        if (pc.iceGatheringState === 'complete') finishGathering();
+      };
+      if (pc.iceGatheringState === 'complete') finishGathering();
+      await gathering;
       const ok = requireRelay ? foundRelay : foundCandidate;
       return {
         ok,
@@ -2167,6 +2268,65 @@ export class ConsultationWebrtcCallService {
       return { ok: false, relay: false, message: 'Could not complete the connection test.' };
     } finally {
       pc.close();
+    }
+  }
+
+  private connectivityCacheKey(iceServers: IceServerConfig[], requireRelay: boolean): string {
+    const profile = this.refreshNetworkProfile();
+    const servers = iceServers
+      .flatMap((server) => (Array.isArray(server.urls) ? server.urls : [server.urls]))
+      .map((url) => url.trim().toLowerCase())
+      .sort();
+    const credentials = iceServers
+      .map((server) => `${server.username || ''}:${server.credential || ''}`)
+      .join('|');
+    return JSON.stringify({
+      servers,
+      credentialFingerprint: this.shortFingerprint(credentials),
+      requireRelay,
+      networkType: profile.type,
+      effectiveType: profile.effectiveType,
+      saveData: profile.saveData,
+      online: this.connectionOnline()
+    });
+  }
+
+  private shortFingerprint(value: string): string {
+    let hash = 2166136261;
+    for (let index = 0; index < value.length; index += 1) {
+      hash ^= value.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    return (hash >>> 0).toString(36);
+  }
+
+  private readConnectivityCache(key: string): ConnectivityResult | null {
+    if (typeof localStorage === 'undefined') return null;
+    try {
+      const cached = JSON.parse(
+        localStorage.getItem(CALL_CONNECTIVITY_CACHE_KEY) || 'null'
+      ) as CachedConnectivityResult | null;
+      if (!cached || cached.key !== key || cached.expiresAt <= Date.now() || !cached.result?.ok) {
+        return null;
+      }
+      return cached.result;
+    } catch {
+      localStorage.removeItem(CALL_CONNECTIVITY_CACHE_KEY);
+      return null;
+    }
+  }
+
+  private writeConnectivityCache(key: string, result: ConnectivityResult) {
+    if (typeof localStorage === 'undefined') return;
+    try {
+      const cached: CachedConnectivityResult = {
+        key,
+        expiresAt: Date.now() + CALL_CONNECTIVITY_CACHE_TTL_MS,
+        result
+      };
+      localStorage.setItem(CALL_CONNECTIVITY_CACHE_KEY, JSON.stringify(cached));
+    } catch {
+      // Connectivity caching is optional when browser storage is blocked.
     }
   }
 
