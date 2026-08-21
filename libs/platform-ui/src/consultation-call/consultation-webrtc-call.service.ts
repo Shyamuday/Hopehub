@@ -216,6 +216,7 @@ export class ConsultationWebrtcCallService {
     mode: CallMode;
     status: string;
   } | null>(null);
+  readonly callUiRestoreRequest = signal(0);
   readonly selectedAudioInputId = signal('');
   readonly selectedVideoInputId = signal('');
   readonly selectedAudioOutputId = signal('');
@@ -269,6 +270,7 @@ export class ConsultationWebrtcCallService {
   private ringtoneTimer: ReturnType<typeof setInterval> | null = null;
   private ringtoneContext: AudioContext | null = null;
   private incomingNotification: Notification | null = null;
+  private ongoingCallNotification: Notification | null = null;
   private speakingMeterTimer: ReturnType<typeof setInterval> | null = null;
   private speakingMeterContext: AudioContext | null = null;
   private localAnalyser: AnalyserNode | null = null;
@@ -359,7 +361,12 @@ export class ConsultationWebrtcCallService {
     this.releaseCallLock();
   };
   private readonly handleVisibilityChange = () => {
-    if (typeof document === 'undefined' || document.visibilityState !== 'visible') return;
+    if (typeof document === 'undefined') return;
+    if (document.visibilityState !== 'visible') {
+      if (this.hasActiveCall() && !this.incomingCall()) this.showOngoingCallNotification();
+      return;
+    }
+    this.closeOngoingCallNotification();
     if (this.state() === 'connected') void this.acquireWakeLock();
     if (this.callContext && this.activeCallId) {
       this.emitSignal(CALL_SOCKET_EVENTS.SYNC, {
@@ -614,6 +621,10 @@ export class ConsultationWebrtcCallService {
 
   dismissActiveCallElsewhere() {
     this.activeCallElsewhere.set(null);
+  }
+
+  requestCallUiRestore() {
+    this.callUiRestoreRequest.update((value) => value + 1);
   }
 
   refreshNetworkProfile() {
@@ -1158,6 +1169,8 @@ export class ConsultationWebrtcCallService {
   cleanup(state: CallState = 'idle') {
     this.clearCallTimers();
     this.stopIncomingAlert();
+    this.closeOngoingCallNotification();
+    this.clearMediaSessionCallState();
     this.stopNetworkSampling();
     this.stopSpeakingMeter();
     this.stopCallHeartbeat();
@@ -1882,6 +1895,10 @@ export class ConsultationWebrtcCallService {
       this.startSpeakingMeter();
       this.startCallHeartbeat();
       void this.acquireWakeLock();
+      this.updateMediaSessionCallState();
+      if (typeof document !== 'undefined' && document.hidden) {
+        this.showOngoingCallNotification();
+      }
       return;
     }
 
@@ -2218,6 +2235,36 @@ export class ConsultationWebrtcCallService {
     this.ringtoneTimer = null;
     this.incomingNotification?.close();
     this.incomingNotification = null;
+  }
+
+  private showOngoingCallNotification() {
+    if (
+      typeof window === 'undefined' ||
+      typeof Notification === 'undefined' ||
+      Notification.permission !== 'granted' ||
+      !this.hasActiveCall()
+    ) {
+      return;
+    }
+    this.ongoingCallNotification?.close();
+    this.ongoingCallNotification = new Notification(`Call with ${this.participant().name}`, {
+      body: `${this.callMode() === 'video' ? 'Video' : 'Voice'} call active · Tap to return to call controls.`,
+      icon: this.participant().imageUrl || '/icons/icon-192x192.png',
+      tag: 'hopehub-active-call',
+      requireInteraction: true,
+      silent: true
+    });
+    this.ongoingCallNotification.onclick = () => {
+      window.focus();
+      this.requestCallUiRestore();
+      this.ongoingCallNotification?.close();
+      this.ongoingCallNotification = null;
+    };
+  }
+
+  private closeOngoingCallNotification() {
+    this.ongoingCallNotification?.close();
+    this.ongoingCallNotification = null;
   }
 
   private async playRingTone() {
@@ -2592,6 +2639,36 @@ export class ConsultationWebrtcCallService {
     register('hangup', () => void this.endCurrentCall());
     register('togglemicrophone', () => this.setMicEnabled(!this.micEnabled()));
     register('togglecamera', () => this.setCameraEnabled(!this.cameraEnabled()));
+  }
+
+  private updateMediaSessionCallState() {
+    if (typeof navigator === 'undefined' || !navigator.mediaSession) return;
+    try {
+      if (typeof MediaMetadata !== 'undefined') {
+        const participantImageUrl = this.participant().imageUrl;
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: this.participant().name,
+          artist: `Hope Hub ${this.callMode() === 'video' ? 'video' : 'voice'} call`,
+          album: 'Private 1:1 support',
+          artwork: participantImageUrl
+            ? [{ src: participantImageUrl }]
+            : [{ src: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' }]
+        });
+      }
+      navigator.mediaSession.playbackState = 'playing';
+    } catch {
+      // Lock-screen call metadata is an optional progressive enhancement.
+    }
+  }
+
+  private clearMediaSessionCallState() {
+    if (typeof navigator === 'undefined' || !navigator.mediaSession) return;
+    try {
+      navigator.mediaSession.metadata = null;
+      navigator.mediaSession.playbackState = 'none';
+    } catch {
+      // Ignore browsers with a partial Media Session implementation.
+    }
   }
 
   private startSpeakingMeter() {

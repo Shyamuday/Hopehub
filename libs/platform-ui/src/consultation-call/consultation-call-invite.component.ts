@@ -47,6 +47,7 @@ export class ConsultationCallInviteComponent implements OnDestroy {
   private controlsTimer: ReturnType<typeof setTimeout> | null = null;
   private actionMessageTimer: ReturnType<typeof setTimeout> | null = null;
   private lastSpeakerOutputId = '';
+  private handledRestoreRequest = 0;
   private surfaceSwipe: { pointerId: number; startY: number } | null = null;
   private previewDrag: {
     pointerId: number;
@@ -122,6 +123,14 @@ export class ConsultationCallInviteComponent implements OnDestroy {
         this.controlsHidden.set(false);
         this.previewOffset.set({ x: 0, y: 0 });
       }
+    });
+    effect(() => {
+      const request = this.call.callUiRestoreRequest();
+      if (!request || request === this.handledRestoreRequest) return;
+      this.handledRestoreRequest = request;
+      this.minimized.set(false);
+      this.controlsHidden.set(false);
+      this.showControls();
     });
   }
 
@@ -249,6 +258,12 @@ export class ConsultationCallInviteComponent implements OnDestroy {
   toggleMinimized() {
     this.minimized.update((value) => !value);
     this.surfaceSwipeY.set(0);
+  }
+
+  restoreCall() {
+    this.minimized.set(false);
+    this.controlsHidden.set(false);
+    this.showControls();
   }
 
   async openSettings() {
