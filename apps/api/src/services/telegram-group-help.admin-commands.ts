@@ -21,6 +21,7 @@ import {
 } from './telegram-group-help.command-context.js';
 import { sendGroupHelpPermissionDenied } from './telegram-group-help.permissions.js';
 import { requestGroupHelpCommandConfirmation } from './telegram-group-help.command-confirmation.js';
+import { telegramPersonLogLabel } from './telegram-group-help.people.js';
 
 export async function handleGroupHelpAdminCommand(
   message: CommunityTelegramMessage,
@@ -196,7 +197,7 @@ export async function handleGroupHelpAdminCommand(
     await sendGroupHelpActivityLog(values, 'Member promoted to admin', [
       `Group ID: ${targetChatId}`,
       `Member: ${target.first_name || 'Telegram member'} (${target.id})`,
-      `By: ${message.from.first_name || 'Administrator'} (${message.from.id})`
+      `By: ${telegramPersonLogLabel(message.from, 'Administrator')}`
     ]);
     return true;
   }
@@ -233,7 +234,7 @@ export async function handleGroupHelpAdminCommand(
     await sendGroupHelpActivityLog(values, 'Member demoted from admin', [
       `Group ID: ${targetChatId}`,
       `Member: ${target.first_name || 'Telegram member'} (${target.id})`,
-      `By: ${message.from.first_name || 'Administrator'} (${message.from.id})`
+      `By: ${telegramPersonLogLabel(message.from, 'Administrator')}`
     ]);
     return true;
   }
@@ -390,7 +391,7 @@ export async function handleGroupHelpAdminCommand(
     await sendGroupHelpActivityLog(values, 'Chat locked', [
       `Group ID: ${targetChatId}`,
       `Duration: ${minutes} minutes`,
-      `By: ${message.from.first_name || 'Administrator'} (${message.from.id})`
+      `By: ${telegramPersonLogLabel(message.from, 'Administrator')}`
     ]);
     return true;
   }
@@ -410,7 +411,7 @@ export async function handleGroupHelpAdminCommand(
   await sendTemporaryGroupHelpMessage(chatId, '🔓 Chat unlocked.', values);
   await sendGroupHelpActivityLog(values, 'Chat unlocked', [
     `Group ID: ${targetChatId}`,
-    `By: ${message.from.first_name || 'Administrator'} (${message.from.id})`
+    `By: ${telegramPersonLogLabel(message.from, 'Administrator')}`
   ]);
   return true;
 }

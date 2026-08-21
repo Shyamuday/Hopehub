@@ -17,6 +17,7 @@ import {
   observeTelegramCommunityMember,
   telegramDisplayName
 } from './telegram-community-member-identity.js';
+import { telegramPersonLogLabel } from './telegram-group-help.people.js';
 const AUTOMATIC_ROLE_ACTOR = 'telegram-private-staff-auto';
 const STAFF_STATUS_TTL_MS = 6 * 60 * 60_000;
 const staffStatusCache = new Map<string, { status: string; expiresAt: number }>();
@@ -151,7 +152,7 @@ async function upsertActiveMember(
   if (granted) {
     await sendStaffAccessLog(logChatId, [
       'Private staff access granted',
-      `Member: ${member.first_name || 'Telegram member'}${member.username ? ` (@${member.username})` : ''} [${member.id}]`,
+      `Member: ${telegramPersonLogLabel(member)}`,
       `Access: ${granted === 'FULL_ADMIN' ? 'full bot administrator' : 'daily moderation permissions'}`,
       `Main group: ${mainGroupId}`
     ]);
@@ -184,7 +185,7 @@ export async function recordGroupHelpStaffGroupMember(
       });
       await sendStaffAccessLog(logChatId, [
         'Private staff access revoked',
-        `Member: ${member.first_name || 'Telegram member'}${member.username ? ` (@${member.username})` : ''} [${member.id}]`,
+        `Member: ${telegramPersonLogLabel(member)}`,
         'Reason: member left or was removed from the private staff group.',
         `Main group: ${mainGroupId}`
       ]);
@@ -208,7 +209,7 @@ export async function recordGroupHelpStaffGroupMember(
     });
     await sendStaffAccessLog(logChatId, [
       'Private staff access revoked',
-      `Member: ${message.left_chat_member.first_name || 'Telegram member'}${message.left_chat_member.username ? ` (@${message.left_chat_member.username})` : ''} [${message.left_chat_member.id}]`,
+      `Member: ${telegramPersonLogLabel(message.left_chat_member)}`,
       'Reason: member left or was removed from the private staff group.',
       `Main group: ${mainGroupId}`
     ]);

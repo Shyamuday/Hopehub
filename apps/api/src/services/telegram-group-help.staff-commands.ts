@@ -27,6 +27,7 @@ import {
   resolveGroupHelpCommandContext
 } from './telegram-group-help.command-context.js';
 import { requestGroupHelpCommandConfirmation } from './telegram-group-help.command-confirmation.js';
+import { telegramPersonLogLabel } from './telegram-group-help.people.js';
 
 export async function handleGroupHelpStaffCommand(
   message: CommunityTelegramMessage,
@@ -110,7 +111,7 @@ export async function handleGroupHelpStaffCommand(
         `Group ID: ${targetChatId}`,
         `Message ID: ${messageId}`,
         `Reason: ${reason}`,
-        `By: ${message.from?.first_name || 'Administrator'} (${message.from?.id || 'anonymous'})`
+        `By: ${telegramPersonLogLabel(message.from, 'Administrator')}`
       ]);
       await sendCommunityMessage(
         GROUP_HELP_BOT_SLUG,
@@ -268,7 +269,7 @@ export async function handleGroupHelpStaffCommand(
         `Main group ID: ${targetChatId}`,
         `Member: ${target.first_name || 'Telegram member'} (${target.id})`,
         `Reason: ${reason}`,
-        `By: ${message.from?.first_name || 'Administrator'} (${message.from?.id || 'anonymous'})`
+        `By: ${telegramPersonLogLabel(message.from, 'Administrator')}`
       ]);
     } else {
       await sendModerationLog(
@@ -379,7 +380,7 @@ export async function handleGroupHelpStaffCommand(
     `Group ID: ${targetChatId}`,
     `Member: ${target.first_name || 'Telegram member'} (${target.id})`,
     `Role: ${roleCommandName.startsWith('un') ? 'removed' : 'assigned'} ${role.toLowerCase()}`,
-    `By: ${message.from.first_name || 'Administrator'} (${message.from.id})`
+    `By: ${telegramPersonLogLabel(message.from, 'Administrator')}`
   ]);
   return true;
 }

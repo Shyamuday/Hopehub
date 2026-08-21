@@ -2,6 +2,7 @@ import { prisma } from '../db.js';
 import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
 import { sendCommunityMessage } from './telegram-community-bots.client.js';
 import type { CommunityTelegramMessage } from './telegram-community-bots.types.js';
+import { telegramPersonLogLabel } from './telegram-group-help.people.js';
 
 export function recordGroupHelpCommandAudit(input: {
   message: CommunityTelegramMessage;
@@ -40,7 +41,7 @@ export function recordGroupHelpCommandAudit(input: {
         'Command activity',
         `Status: ${input.status}`,
         `Command: ${command || 'unknown'}`,
-        `Actor: ${actorName || 'Telegram member'}${actorUsername ? ` (@${actorUsername})` : ''} [${input.message.from?.id || 'anonymous'}]`,
+        `Actor: ${telegramPersonLogLabel(input.message.from)}`,
         `Source group: ${sourceChatId}`,
         `Target group: ${input.targetChatId || input.message.chat.id}`,
         `Source message: ${input.message.message_id || 'not available'}`,

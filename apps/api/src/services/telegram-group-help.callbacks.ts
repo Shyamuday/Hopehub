@@ -27,6 +27,7 @@ import {
   messageForGroupHelpTarget,
   resolveGroupHelpCommandContext
 } from './telegram-group-help.command-context.js';
+import { telegramPersonLogLabel } from './telegram-group-help.people.js';
 import { canUseGroupHelpAdminCommand } from './telegram-group-help.permissions.js';
 
 export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
@@ -140,7 +141,7 @@ export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
       ))
     ) {
       await sendGroupHelpActivityLog(values, 'Private settings access denied', [
-        `By: ${callback.from.first_name || 'Telegram member'}${callback.from.username ? ` (@${callback.from.username})` : ''} [${callback.from.id}]`,
+        `By: ${telegramPersonLogLabel(callback.from)}`,
         `From group: ${chatId}`,
         `Target group: ${context.targetChatId}`,
         'Reason: this member does not have the settings permission.'
@@ -205,7 +206,7 @@ export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
     ))
   ) {
     await sendGroupHelpActivityLog(values, 'Private settings access denied', [
-      `By: ${callback.from.first_name || 'Telegram member'}${callback.from.username ? ` (@${callback.from.username})` : ''} [${callback.from.id}]`,
+      `By: ${telegramPersonLogLabel(callback.from)}`,
       `From group: ${chatId}`,
       `Target group: ${settingsContext.targetChatId}`,
       'Reason: this member does not have the settings permission.'

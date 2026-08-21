@@ -8,6 +8,7 @@ import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constan
 import { answerCommunityCallback, sendCommunityMessage } from './telegram-community-bots.client.js';
 import { sendGroupHelpActivityLog } from './telegram-group-help.actions.js';
 import { groupHelpConfig } from './telegram-group-help.config.js';
+import { telegramPersonLogLabel } from './telegram-group-help.people.js';
 import { canUseGroupHelpAdminCommand } from './telegram-group-help.permissions.js';
 import {
   GROUP_HELP_DEFAULT_STAFF_COMMANDS,
@@ -494,7 +495,7 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
       await sendGroupHelpActivityLog(values, 'Staff permissions changed privately', [
         `Member: ${telegramUserId}`,
         `Change: ${changeLabel}`,
-        `By: ${callback.from.first_name || 'Telegram administrator'}${callback.from.username ? ` (@${callback.from.username})` : ''} [${callback.from.id}]`
+        `By: ${telegramPersonLogLabel(callback.from, 'Telegram administrator')}`
       ]);
       await sendPrivateStaffEditor(replyChatId, chatId, staffGroupId, telegramUserId);
       await answerCommunityCallback(GROUP_HELP_BOT_SLUG, callback.id, 'Permissions updated.');
@@ -620,7 +621,7 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
         field,
         draft.value,
         chatId,
-        `${callback.from.first_name || 'Telegram staff'}${callback.from.username ? ` (@${callback.from.username})` : ''} [${callback.from.id}]`
+        telegramPersonLogLabel(callback.from, 'Telegram staff')
       );
       await clearSettingsDraft(chatId, callback.from.id);
       await sendCommunityMessage(

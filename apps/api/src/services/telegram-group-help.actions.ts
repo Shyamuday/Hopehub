@@ -23,6 +23,7 @@ import type {
   CommunityTelegramMessage,
   CommunityTelegramUpdate
 } from './telegram-community-bots.types.js';
+import { telegramPersonLogLabel } from './telegram-group-help.people.js';
 
 const MODERATION_ACTION_STATE = 'group-moderation-action';
 
@@ -85,7 +86,7 @@ export async function sendModerationLog(
       : normalizedText
     : '[No text — media or service message]';
   const member = message.from
-    ? `${message.from.first_name || 'Telegram member'}${message.from.username ? ` (@${message.from.username})` : ''} (${message.from.id})`
+    ? telegramPersonLogLabel(message.from)
     : message.sender_chat
       ? `${message.sender_chat.title || 'Channel sender'} (${message.sender_chat.id})`
       : 'Unknown sender';
@@ -247,7 +248,7 @@ export async function handleGroupHelpModerationActionCallback(update: CommunityT
   if (!permitted) {
     await sendGroupHelpActivityLog(values, 'Private staff action denied', [
       `Action: ${requestedAction}`,
-      `By: ${callback.from.first_name || 'Telegram member'}${callback.from.username ? ` (@${callback.from.username})` : ''} [${callback.from.id}]`,
+      `By: ${telegramPersonLogLabel(callback.from)}`,
       `From group: ${callbackMessage.chat.id}`,
       `Target group: ${payload.targetChatId}`,
       'Reason: this member does not have the required bot permission.'
@@ -281,8 +282,7 @@ export async function handleGroupHelpModerationActionCallback(update: CommunityT
   } else if (requestedAction === 'repost' && payload.text) {
     const originalSender = [
       payload.targetUserName || 'Telegram member',
-      payload.targetUsername ? `(@${payload.targetUsername.replace(/^@/, '')})` : '',
-      payload.targetUserId ? `· Telegram ID: ${payload.targetUserId}` : ''
+      payload.targetUserId ? `[${payload.targetUserId}]` : ''
     ]
       .filter(Boolean)
       .join(' ');
@@ -310,7 +310,7 @@ export async function handleGroupHelpModerationActionCallback(update: CommunityT
   });
   await sendGroupHelpActivityLog(values, 'Private staff action applied', [
     `Action: ${requestedAction}`,
-    `By: ${callback.from.first_name || 'Telegram staff'}${callback.from.username ? ` (@${callback.from.username})` : ''} [${callback.from.id}]`,
+    `By: ${telegramPersonLogLabel(callback.from, 'Telegram staff')}`,
     `From group: ${callbackMessage.chat.id}`,
     `Target group: ${payload.targetChatId}`,
     payload.targetUserId ? `Target member: ${payload.targetUserId}` : null,
