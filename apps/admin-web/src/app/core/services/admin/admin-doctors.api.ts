@@ -314,6 +314,12 @@ export class AdminDoctorsApi extends AdminApiBase {
     );
   }
 
+  setSiteConfigBulk(entries: Array<{ key: string; value: string }>) {
+    return firstValueFrom(
+      this.http.patch(`${this.apiBase}${API_PATHS.ADMIN.SITE_CONFIG}`, { entries }),
+    );
+  }
+
   restoreSiteConfigDefault(key: string) {
     return firstValueFrom(
       this.http.post(`${this.apiBase}${API_PATHS.ADMIN.SITE_CONFIG}/${key}/restore-default`, {}),

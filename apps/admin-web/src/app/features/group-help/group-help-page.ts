@@ -5,6 +5,7 @@ import { FormDropdownComponent, type FormDropdownOption } from '@hopehub/platfor
 import { AdminApi } from '../../core/services/admin-api';
 import { AppApplyButtonComponent } from '../../shared/ui/app-apply-button.component';
 import { AppMediaUrlFieldComponent } from '../../shared/ui/app-media-url-field.component';
+import { AppUnsavedChangesBarComponent } from '../../shared/ui/app-unsaved-changes-bar.component';
 
 type GroupHelpConfigEntry = {
   key: string;
@@ -102,6 +103,7 @@ const SECTION_LABELS: Record<GroupHelpConfigEntry['section'], string> = {
     FormDropdownComponent,
     AppApplyButtonComponent,
     AppMediaUrlFieldComponent,
+    AppUnsavedChangesBarComponent,
   ],
   templateUrl: './group-help-page.html',
   styleUrl: './group-help-page.scss',
@@ -987,6 +989,14 @@ export class GroupHelpPage {
 
   update(key: string, value: string) {
     this.localValues.update((current) => ({ ...current, [key]: value }));
+  }
+
+  discardConfigChanges() {
+    this.localValues.set(
+      Object.fromEntries(this.config().map((entry) => [entry.key, entry.value])),
+    );
+    this.error.set('');
+    this.message.set('Unsaved Group Help configuration changes discarded.');
   }
 
   async loadConfigRevisions() {

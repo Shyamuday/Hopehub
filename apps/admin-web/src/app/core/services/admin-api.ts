@@ -19,6 +19,10 @@ export class AdminApi {
   private readonly rewards = inject(AdminRewardsApi);
   private readonly clinical = inject(AdminClinicalApi);
 
+  getRuntimeHealth(...args: Parameters<AdminOpsApi['getRuntimeHealth']>) {
+    return this.ops.getRuntimeHealth(...args);
+  }
+
   getReports(...args: Parameters<AdminReportsApi['getReports']>) {
     return this.reports.getReports(...(args as Parameters<AdminReportsApi['getReports']>));
   }
@@ -155,6 +159,11 @@ export class AdminApi {
   }
   setSiteConfig(...args: Parameters<AdminDoctorsApi['setSiteConfig']>) {
     return this.doctors.setSiteConfig(...(args as Parameters<AdminDoctorsApi['setSiteConfig']>));
+  }
+  setSiteConfigBulk(...args: Parameters<AdminDoctorsApi['setSiteConfigBulk']>) {
+    return this.doctors.setSiteConfigBulk(
+      ...(args as Parameters<AdminDoctorsApi['setSiteConfigBulk']>),
+    );
   }
   restoreSiteConfigDefault(...args: Parameters<AdminDoctorsApi['restoreSiteConfigDefault']>) {
     return this.doctors.restoreSiteConfigDefault(

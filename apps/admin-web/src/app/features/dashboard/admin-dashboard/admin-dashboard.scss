@@ -320,6 +320,73 @@
   font-weight: 600;
 }
 
+.operations-health-panel {
+  margin-top: 1rem;
+}
+
+.operations-health-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.65rem;
+}
+
+.operations-health-grid article {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  padding: 0.8rem;
+}
+
+.operations-health-grid article.is-ok {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.operations-health-grid article.is-warning {
+  border-color: #fed7aa;
+  background: #fffaf5;
+}
+
+.operations-health-grid span {
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.operations-health-grid strong { color: #0f172a; }
+
+.operations-health-grid small {
+  overflow-wrap: anywhere;
+  color: #64748b;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.operations-warnings {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+  border-left: 3px solid #f59e0b;
+  background: #fffbeb;
+  padding: 0.6rem 0.75rem;
+}
+
+.operations-warnings p {
+  margin: 0;
+  color: #92400e;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.operations-partial-error {
+  margin-top: 0.75rem;
+}
+
 /* ── Filters ────────────────────────────────────────────────── */
 .filters {
   display: flex;

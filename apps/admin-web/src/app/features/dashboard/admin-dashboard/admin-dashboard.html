@@ -10,6 +10,63 @@
   <hopehub-detail-rows variant="stat" [rows]="dashboardStatRows()" />
 </section>
 
+<section class="panel operations-health-panel" aria-label="Operational health">
+  <div class="panel-header">
+    <div>
+      <p class="eyebrow">System status</p>
+      <h3>Operational health</h3>
+    </div>
+    <button type="button" class="btn-ghost" (click)="loadOperationalHealth()" [disabled]="operationalLoading">
+      {{ operationalLoading ? 'Checking…' : 'Refresh' }}
+    </button>
+  </div>
+
+  @if (runtimeHealth) {
+    <div class="operations-health-grid">
+      <article [class.is-ok]="runtimeHealth.ok && runtimeHealth.database === 'connected'" [class.is-warning]="!runtimeHealth.ok || runtimeHealth.database !== 'connected'">
+        <span>API & database</span>
+        <strong>{{ runtimeHealth.ok && runtimeHealth.database === 'connected' ? 'Healthy' : 'Needs attention' }}</strong>
+        <small>{{ runtimeHealth.database === 'connected' ? (runtimeHealth.dbLatencyMs || 0) + ' ms database latency' : 'Database unavailable' }}</small>
+      </article>
+      <article [class.is-ok]="!(runtimeHealth.configuration?.missing?.length)" [class.is-warning]="!!runtimeHealth.configuration?.missing?.length">
+        <span>Required configuration</span>
+        <strong>{{ runtimeHealth.configuration?.missing?.length ? 'Missing values' : 'Complete' }}</strong>
+        <small>{{ runtimeHealth.configuration?.missing?.length ? runtimeHealth.configuration?.missing?.join(', ') : 'No required values missing' }}</small>
+      </article>
+      @if (telegramHealth; as health) {
+        <article [class.is-ok]="!health.needsAttention" [class.is-warning]="health.needsAttention">
+          <span>Telegram operations</span>
+          <strong>{{ health.needsAttention ? 'Needs attention' : 'Healthy' }}</strong>
+          <small>{{ health.failedWebhookUpdates }} webhook failures · {{ health.failedDeliveries }} failed deliveries · {{ health.overdueCampaigns }} overdue campaigns</small>
+        </article>
+      }
+    </div>
+    @if (runtimeHealth.configuration?.warnings?.length) {
+      <div class="operations-warnings">
+        @for (warning of runtimeHealth.configuration?.warnings || []; track warning) {
+          <p>{{ warning }}</p>
+        }
+      </div>
+    }
+    @if (canAccess('telegram-bots')) {
+      <a class="panel-link" [routerLink]="telegramBotsPath">Open detailed Telegram health</a>
+    }
+    @if (operationalError) {
+      <div class="error-row operations-partial-error">
+        <p class="error">{{ operationalError }}</p>
+        <button type="button" class="btn-ghost" (click)="loadOperationalHealth()">Retry</button>
+      </div>
+    }
+  } @else if (operationalError) {
+    <div class="error-row">
+      <p class="error">{{ operationalError }}</p>
+      <button type="button" class="btn-ghost" (click)="loadOperationalHealth()">Retry</button>
+    </div>
+  } @else {
+    <p class="loading-text">Checking service status…</p>
+  }
+</section>
+
 <section class="panel attention-panel">
   <div class="panel-header">
     <div>

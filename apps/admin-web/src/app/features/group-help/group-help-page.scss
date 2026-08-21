@@ -102,32 +102,11 @@ small {
   gap: 1rem;
 }
 
-.settings-savebar {
-  align-items: center;
-  background: color-mix(in srgb, var(--color-surface) 94%, var(--color-brand));
-  border: 1px solid color-mix(in srgb, var(--color-brand) 25%, var(--color-border));
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  display: flex;
-  gap: 1rem;
-  justify-content: space-between;
+app-unsaved-changes-bar {
   margin-bottom: 1rem;
-  padding: 0.8rem 1rem;
   position: sticky;
   top: 0.75rem;
   z-index: 4;
-}
-
-.settings-savebar span {
-  display: grid;
-  gap: 0.1rem;
-}
-
-@media (max-width: 640px) {
-  .settings-savebar {
-    align-items: stretch;
-    flex-direction: column;
-  }
 }
 
 .config-section summary {

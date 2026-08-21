@@ -1,9 +1,20 @@
 import { CommonModule } from '@angular/common';
-import { Component, signal } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { AdminApi } from '../../../core/services/admin-api';
 import { AdminCanDirective } from '../../../core/directives/admin-can.directive';
 import { ADMIN_PERMISSIONS } from '../../../core/admin-permissions';
+import { AppUnsavedChangesBarComponent } from '../../../shared/ui/app-unsaved-changes-bar.component';
 import type { CarePricingTemplateDto, ProviderRoleDefinitionDto } from '@hopehub/contracts';
+
+const REQUIRED_SITE_CONFIG_KEYS = new Set([
+  'whatsappGroupUrl',
+  'telegramUsername',
+  'telegramUserBotUsername',
+  'telegramDoctorBotUsername',
+  'telegramQrCodePath',
+  'whatsappQrCodePath',
+  'telegramDefaultOfferingSlug',
+]);
 
 type ConfigEntry = {
   key: string;
@@ -46,7 +57,7 @@ const MULTILINE_KEYS = new Set([
 
 @Component({
   selector: 'app-site-config-page',
-  imports: [CommonModule, AdminCanDirective],
+  imports: [CommonModule, AdminCanDirective, AppUnsavedChangesBarComponent],
   templateUrl: './site-config-page.html',
   styleUrl: './site-config-page.scss',
 })
@@ -62,6 +73,9 @@ export class SiteConfigPage {
   readonly message = signal('');
 
   readonly localValues = signal<Record<string, string>>({});
+  readonly hasUnsavedConfigChanges = computed(() =>
+    this.config().some((entry) => (this.localValues()[entry.key] ?? '') !== entry.value),
+  );
   readonly templates = signal<CarePricingTemplate[]>([]);
   readonly providerRoles = signal<ProviderRoleDefinitionDto[]>([]);
   readonly templateDraft = signal<CarePricingTemplate>(emptyTemplate());
@@ -170,17 +184,89 @@ export class SiteConfigPage {
     this.localValues.update((m) => ({ ...m, [key]: value }));
   }
 
-  async save(key: string) {
-    const value = this.localValues()[key];
-    if (!value?.trim()) return;
-    this.saving.set(key);
+  isRequired(key: string) {
+    return REQUIRED_SITE_CONFIG_KEYS.has(key);
+  }
+
+  discardConfigChanges() {
+    this.localValues.set(
+      Object.fromEntries(this.config().map((entry) => [entry.key, entry.value])),
+    );
+    this.error.set('');
+    this.message.set('Unsaved site-setting changes discarded.');
+  }
+
+  async saveAllConfigChanges() {
+    const changes = this.config().filter(
+      (entry) => (this.localValues()[entry.key] ?? '') !== entry.value,
+    );
+    if (!changes.length) return;
+
+    const requiredBlank = changes.find(
+      (entry) => this.isRequired(entry.key) && !(this.localValues()[entry.key] ?? '').trim(),
+    );
+    if (requiredBlank) {
+      this.error.set(`${requiredBlank.label} is required and cannot be cleared.`);
+      return;
+    }
+
+    const clearing = changes.filter((entry) => !(this.localValues()[entry.key] ?? '').trim());
+    if (
+      clearing.length &&
+      !window.confirm(
+        `Clear ${clearing.length} optional site setting${clearing.length === 1 ? '' : 's'}?`,
+      )
+    ) {
+      return;
+    }
+
+    this.saving.set('__all__');
+    this.error.set('');
     this.message.set('');
     try {
-      await this.api.setSiteConfig(key, value.trim());
-      this.message.set(`"${key}" saved.`);
+      await this.api.setSiteConfigBulk(
+        changes.map((entry) => ({
+          key: entry.key,
+          value: (this.localValues()[entry.key] ?? '').trim(),
+        })),
+      );
+      this.message.set(`${changes.length} site setting${changes.length === 1 ? '' : 's'} saved.`);
       await this.load();
-    } catch {
-      this.error.set(`Could not save "${key}".`);
+    } catch (error: any) {
+      this.error.set(
+        error?.error?.message ||
+          'Could not save all site settings. No unsaved values were cleared.',
+      );
+    } finally {
+      this.saving.set(null);
+    }
+  }
+
+  async save(key: string) {
+    const value = (this.localValues()[key] ?? '').trim();
+    if (!value && this.isRequired(key)) {
+      this.error.set(
+        `${this.config().find((entry) => entry.key === key)?.label || key} is required and cannot be cleared.`,
+      );
+      return;
+    }
+    if (
+      !value &&
+      !window.confirm(
+        `Clear ${this.config().find((entry) => entry.key === key)?.label || key} from the public site?`,
+      )
+    ) {
+      return;
+    }
+    this.saving.set(key);
+    this.message.set('');
+    this.error.set('');
+    try {
+      await this.api.setSiteConfig(key, value);
+      this.message.set(value ? `"${key}" saved.` : `"${key}" cleared.`);
+      await this.load();
+    } catch (error: any) {
+      this.error.set(error?.error?.message || `Could not save "${key}".`);
     } finally {
       this.saving.set(null);
     }

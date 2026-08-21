@@ -34,6 +34,7 @@ export class AdminDashboard {
   readonly consultationsPath = adminNavPath(ROUTE_PATHS.CONSULTATIONS);
   readonly safetyFlagsPath = adminNavPath(ROUTE_PATHS.SAFETY_FLAGS);
   readonly providersPath = adminNavPath(ROUTE_PATHS.DOCTORS);
+  readonly telegramBotsPath = adminNavPath(ROUTE_PATHS.TELEGRAM_BOTS);
   readonly workspaceKey = this.workspace.selectedWorkspace;
   readonly workspaceLabel = this.workspace.workspaceLabel;
   readonly providerSingularLabel = this.workspace.providerSingularLabel;
@@ -83,6 +84,23 @@ export class AdminDashboard {
     notInterested: 0,
   };
   private reportsLoaded = false;
+  runtimeHealth: {
+    ok: boolean;
+    service: string;
+    database: 'connected' | 'unavailable';
+    dbLatencyMs?: number;
+    configuration?: { missing?: string[]; warnings?: string[]; turnConfigured?: boolean };
+    timestamp: string;
+  } | null = null;
+  telegramHealth: {
+    failedWebhookUpdates: number;
+    failedGroupHelpCommands: number;
+    failedDeliveries: number;
+    overdueCampaigns: number;
+    needsAttention: boolean;
+  } | null = null;
+  operationalLoading = false;
+  operationalError = '';
 
   readonly paymentFilterModel = signal({
     paymentStatus: PAYMENTS_DEFAULTS.STATUS as PaymentStatus,
@@ -134,8 +152,36 @@ export class AdminDashboard {
     if (this.canAccess(ROUTE_PATHS.CHAT_INBOX)) {
       tasks.push(this.loadVisitorLeadStats());
     }
+    tasks.push(this.loadOperationalHealth());
 
     await Promise.allSettled(tasks);
+  }
+
+  async loadOperationalHealth() {
+    this.operationalLoading = true;
+    this.operationalError = '';
+    try {
+      const runtime = await this.api.getRuntimeHealth();
+      this.runtimeHealth = runtime;
+    } catch {
+      this.operationalError = 'Could not refresh operational health. Try again.';
+      this.runtimeHealth = null;
+    }
+
+    if (this.canAccess(ROUTE_PATHS.TELEGRAM_BOTS)) {
+      try {
+        const telegram = await this.api.getTelegramBots();
+        this.telegramHealth = telegram.health || null;
+      } catch {
+        this.telegramHealth = null;
+        this.operationalError ||=
+          'Service health loaded, but Telegram status could not be refreshed.';
+      }
+    } else {
+      this.telegramHealth = null;
+    }
+
+    this.operationalLoading = false;
   }
 
   onReportsToggle(event: Event) {

@@ -2,6 +2,15 @@
   <h2>Site Settings</h2>
   <p class="page-hint">Changes here appear on the public website immediately after saving.</p>
 
+  <app-unsaved-changes-bar
+    [dirty]="hasUnsavedConfigChanges()"
+    [saving]="saving() !== null"
+    savedHint="The values shown here are already live."
+    dirtyHint="Review the changes, then save them together or discard them."
+    (save)="saveAllConfigChanges()"
+    (discard)="discardConfigChanges()"
+  ></app-unsaved-changes-bar>
+
   @if (loading()) { <p class="loading-text">Loading…</p> }
 
   @for (entry of config(); track entry.key) {
@@ -20,13 +29,13 @@
             rows="2"
             [value]="localValues()[entry.key] ?? entry.value"
             (input)="updateLocal(entry.key, $any($event.target).value)"
-            [disabled]="saving() === entry.key"
+            [disabled]="saving() === entry.key || saving() === '__all__'"
           ></textarea>
         } @else {
           <input
             [value]="localValues()[entry.key] ?? entry.value"
             (input)="updateLocal(entry.key, $any($event.target).value)"
-            [disabled]="saving() === entry.key"
+            [disabled]="saving() === entry.key || saving() === '__all__'"
           />
         }
         <button
@@ -34,7 +43,7 @@
           [adminCan]="managePermissions"
           adminCanMatch="any"
           (click)="save(entry.key)"
-          [disabled]="saving() === entry.key"
+          [disabled]="saving() === entry.key || saving() === '__all__'"
         >
           {{ saving() === entry.key ? 'Saving…' : 'Save' }}
         </button>
@@ -45,7 +54,7 @@
             [adminCan]="managePermissions"
             adminCanMatch="any"
             (click)="restoreDefault(entry.key)"
-            [disabled]="saving() === entry.key"
+            [disabled]="saving() === entry.key || saving() === '__all__'"
           >
             Restore default
           </button>

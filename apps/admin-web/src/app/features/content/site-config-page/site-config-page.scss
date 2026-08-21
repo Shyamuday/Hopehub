@@ -2,6 +2,14 @@
 
 .page-hint { font-size: 0.875rem; color: #6b7280; margin: -0.4rem 0 1rem; }
 
+app-unsaved-changes-bar {
+  display: block;
+  margin: 0 0 1rem;
+  position: sticky;
+  top: 0.75rem;
+  z-index: 3;
+}
+
 .template-list {
   display: grid;
   gap: 0.75rem;

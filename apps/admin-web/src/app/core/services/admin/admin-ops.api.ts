@@ -7,6 +7,23 @@ import { AdminApiBase } from './admin-api-base';
 
 @Service()
 export class AdminOpsApi extends AdminApiBase {
+  getRuntimeHealth() {
+    return firstValueFrom(
+      this.http.get<{
+        ok: boolean;
+        service: string;
+        database: 'connected' | 'unavailable';
+        dbLatencyMs?: number;
+        configuration?: {
+          missing?: string[];
+          warnings?: string[];
+          turnConfigured?: boolean;
+        };
+        timestamp: string;
+      }>(`${this.apiBase}/health/ready`),
+    );
+  }
+
   searchPatients(q: string, params?: { clinicStoreId?: string; scope?: string }) {
     return firstValueFrom(
       this.http.get<{ patients: Array<any>; scopeUsed?: string; hint?: string }>(
