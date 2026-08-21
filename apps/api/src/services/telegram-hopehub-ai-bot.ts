@@ -83,7 +83,7 @@ const BOT = GROUP_HELP_BOT_SLUG;
  * problem. Keep this deliberately narrow so ordinary messages are never
  * redirected unexpectedly.
  */
-function isLiveConnectRequest(text: string) {
+function isLiveConnectRequest(text: string, configuredPhrases = '') {
   const normalized = text
     .normalize('NFKC')
     .toLocaleLowerCase()
@@ -92,7 +92,8 @@ function isLiveConnectRequest(text: string) {
     .trim();
   const asksForSomeone = /\b(?:any\s*one|nayone)\b/.test(normalized);
   const asksToTalk = /\b(?:for|to|foe)\s+(?:talk|chat|speak)\b/.test(normalized);
-  return asksForSomeone && asksToTalk;
+  if (asksForSomeone && asksToTalk) return true;
+  return Boolean(matchedBannedPhrase(text, bannedPhrases(configuredPhrases)));
 }
 
 function forwardedTelegramUserId(message: CommunityTelegramMessage) {
@@ -372,7 +373,7 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
     text,
     bannedPhrases(values.telegramGroupHelpBannedWords)
   );
-  if (isLiveConnectRequest(text)) {
+  if (isLiveConnectRequest(text, values.telegramGroupHelpSupportRedirectPhrases)) {
     const liveConnectUrl = values.telegramCommunitySupportUrl?.trim();
     await sendTemporaryMessage(
       chatId,
@@ -380,6 +381,31 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
       values,
       {
         reply_to_message_id: message.message_id,
+        message_thread_id: message.message_thread_id,
+        ...(liveConnectUrl && /^https:\/\//i.test(liveConnectUrl)
+          ? {
+              reply_markup: {
+                inline_keyboard: [[{ text: 'Talk live', url: liveConnectUrl }]]
+              }
+            }
+          : {})
+      }
+    );
+    return;
+  }
+  const reviewPhrase = matchedBannedPhrase(
+    text,
+    bannedPhrases(values.telegramGroupHelpReviewPhrases)
+  );
+  if (reviewPhrase) {
+    await deleteMessage(chatId, message.message_id);
+    await sendModerationLog(values, message, `Privacy review phrase: “${reviewPhrase}”`, 'delete');
+    const liveConnectUrl = values.telegramCommunitySupportUrl?.trim();
+    await sendTemporaryMessage(
+      chatId,
+      'For everyone’s privacy, direct contact requests are not posted in the group. You can use Hope Hub Live when you would like private support.',
+      values,
+      {
         message_thread_id: message.message_thread_id,
         ...(liveConnectUrl && /^https:\/\//i.test(liveConnectUrl)
           ? {

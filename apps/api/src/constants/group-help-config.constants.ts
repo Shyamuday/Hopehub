@@ -765,11 +765,49 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
   {
     key: 'telegramGroupHelpBannedWords',
     label: 'Banned words / phrases',
-    description: 'One word or phrase per line. Use command template to apply in Group Help.',
+    description:
+      'Immediate safety block: abuse, explicit content, scams, or unsafe links. One word or phrase per line. Do not add ordinary requests for support or conversation here.',
     section: 'moderation',
     type: 'textarea',
     maxLength: 4000,
     defaultValue: ''
+  },
+  {
+    key: 'telegramGroupHelpSupportRedirectPhrases',
+    label: 'Support redirect phrases',
+    description:
+      'Care-seeking phrases that should never warn, mute, or delete a member. The bot replies with the Live Connect button instead. One phrase per line.',
+    section: 'moderation',
+    type: 'textarea',
+    maxLength: 4000,
+    defaultValue: `anyone for talk
+anyone to talk
+anyone up for talk
+anyone wants to talk
+anyone wanna talk
+anyone to chat
+anyone for chat
+anyone to speak`
+  },
+  {
+    key: 'telegramGroupHelpReviewPhrases',
+    label: 'Privacy-review phrases',
+    description:
+      'Direct-contact or self-promotion phrases. The message is removed without a warning and sent to the private staff group for review. One phrase per line.',
+    section: 'moderation',
+    type: 'textarea',
+    maxLength: 4000,
+    defaultValue: `dm me
+msg me
+text me
+ping me
+call me
+call me now
+my number
+my no
+phn no
+whatsapp number
+contact me for`
   },
   {
     key: 'telegramGroupHelpAdminNotes',

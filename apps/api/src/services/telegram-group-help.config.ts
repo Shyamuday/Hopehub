@@ -15,6 +15,8 @@ export const GROUP_HELP_CONFIG_KEYS = [
   'telegramGroupHelpCaptchaPendingMinutes',
   'telegramGroupHelpCaptchaSuccessCleanupMinutes',
   'telegramGroupHelpBannedWords',
+  'telegramGroupHelpSupportRedirectPhrases',
+  'telegramGroupHelpReviewPhrases',
   'telegramGroupHelpLinkPolicy',
   'telegramGroupHelpAntiFloodAction',
   'telegramGroupHelpAntiFloodLimit',
