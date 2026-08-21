@@ -184,6 +184,34 @@ const campaigns = (chatId: string) =>
       ]
     },
     {
+      id: 'seed_telegram_daily_group_boost',
+      source: 'SYSTEM',
+      name: 'Daily Telegram Premium group boost invitation',
+      templateVersion: 1,
+      intervalMinutes: 1440,
+      nextRunAt: nextAt(21),
+      items: [
+        {
+          kind: 'MESSAGE',
+          contentCategory: 'community growth',
+          text: [
+            '💙 Help Hope Hub grow, if this space has felt useful to you.',
+            '',
+            'Telegram Premium members can give Hope Hub a group boost. It helps us unlock useful community features and reach more people who may be quietly looking for a kind place to talk.',
+            '',
+            'There is no pressure—your presence here already matters. Thank you for being part of this community.'
+          ].join('\n'),
+          buttons: [
+            {
+              text: 'Boost Hope Hub',
+              url: 'https://t.me/boost/hopehubindia',
+              style: 'success'
+            }
+          ]
+        }
+      ]
+    },
+    {
       id: 'seed_telegram_daily_checkin',
       name: 'Daily community check-in',
       intervalMinutes: 1440,
@@ -597,6 +625,7 @@ async function seedCampaigns(chatId: string) {
               create: campaign.items.map((item, sortOrder) => ({
                 sortOrder,
                 kind: item.kind,
+                contentCategory: 'contentCategory' in item ? item.contentCategory : undefined,
                 text: 'text' in item ? item.text : undefined,
                 buttons: 'buttons' in item ? (item.buttons as Prisma.InputJsonValue) : undefined,
                 pollQuestion: 'pollQuestion' in item ? item.pollQuestion : undefined,
@@ -637,6 +666,7 @@ async function seedCampaigns(chatId: string) {
           create: campaign.items.map((item, sortOrder) => ({
             sortOrder,
             kind: item.kind,
+            contentCategory: 'contentCategory' in item ? item.contentCategory : undefined,
             text: 'text' in item ? item.text : undefined,
             buttons: 'buttons' in item ? (item.buttons as Prisma.InputJsonValue) : undefined,
             pollQuestion: 'pollQuestion' in item ? item.pollQuestion : undefined,
