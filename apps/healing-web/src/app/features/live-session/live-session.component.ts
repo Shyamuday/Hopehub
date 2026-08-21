@@ -97,6 +97,7 @@ export class LiveSessionComponent implements OnInit, OnDestroy {
 
   private consultationId = '';
   readonly enableBackgroundCallAlerts = () => this.callPush.enable();
+  readonly backgroundCallAlertReadiness = () => this.callPush.readiness();
   private trackedSessionId = '';
   private autoRefreshTimer: ReturnType<typeof setInterval> | null = null;
   private readonly handleIncomingMessage = (raw: unknown) => {

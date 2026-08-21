@@ -14,6 +14,9 @@ test('call event tracker keeps useful diagnostics and strips signaling/media sec
       usedTurnRelay: true,
       packetLossPercent: 8.2,
       setupToConnectedMs: 1750,
+      pushAttempted: 2,
+      pushDelivered: 1,
+      pushDisabled: 1,
       videoPausedForNetwork: true,
       sdp: 'private-session-description',
       candidate: 'candidate with an IP address',
@@ -25,6 +28,9 @@ test('call event tracker keeps useful diagnostics and strips signaling/media sec
       usedTurnRelay: true,
       packetLossPercent: 8.2,
       setupToConnectedMs: 1750,
+      pushAttempted: 2,
+      pushDelivered: 1,
+      pushDisabled: 1,
       videoPausedForNetwork: true
     }
   );

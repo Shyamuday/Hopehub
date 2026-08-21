@@ -531,7 +531,7 @@ export function registerOnlineDoctorSockets(io: SocketIoServer, socket: Socket, 
     payload: CallSignalPayload,
     event: string,
     outcome: 'ACCEPTED' | 'REJECTED' | 'OBSERVED' | 'ERROR',
-    options: { reason?: string; sessionId?: string } = {}
+    options: { reason?: string; sessionId?: string; metadata?: Record<string, unknown> } = {}
   ) => {
     void recordCallTimelineEvent({
       sessionId: options.sessionId,
@@ -544,7 +544,9 @@ export function registerOnlineDoctorSockets(io: SocketIoServer, socket: Socket, 
       reason: options.reason || payload.reason,
       sequence: payload.sequence,
       clientTimestamp: payload.clientTimestamp,
-      metadata: payload.metadata
+      metadata: options.metadata
+        ? { ...(payload.metadata || {}), ...options.metadata }
+        : payload.metadata
     }).catch((error) => console.error('[call-timeline] Could not record call event', error));
   };
 
@@ -685,7 +687,30 @@ export function registerOnlineDoctorSockets(io: SocketIoServer, socket: Socket, 
               consultationId: payload.consultationId,
               fromName: sender?.name,
               mode: payload.mode
-            }).catch((error) => console.warn('[push] Incoming call push failed', error));
+            })
+              .then((delivery) => {
+                const delivered = delivery.delivered > 0;
+                trackCallEvent(payload, 'call:push', delivered ? 'ACCEPTED' : 'OBSERVED', {
+                  sessionId: result.sessionId,
+                  reason: delivered
+                    ? 'push_delivered'
+                    : delivery.attempted > 0
+                      ? 'push_delivery_failed'
+                      : 'no_active_push_device',
+                  metadata: {
+                    pushAttempted: delivery.attempted,
+                    pushDelivered: delivery.delivered,
+                    pushDisabled: delivery.disabled
+                  }
+                });
+              })
+              .catch((error) => {
+                trackCallEvent(payload, 'call:push', 'ERROR', {
+                  sessionId: result.sessionId,
+                  reason: 'push_dispatch_error'
+                });
+                console.warn('[push] Incoming call push failed', error);
+              });
           }
           relayCallSignal(io, userId, relay, payload, sender ?? undefined);
         })

@@ -89,7 +89,8 @@
               </div>
               <h3 class="text-lg font-semibold text-slate-950">You are in the right place</h3>
               <p class="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-600">
-                Keep this room open. Chat and call controls will unlock automatically when the session is ready.
+                Keep this room open. Chat and call controls will unlock automatically when the
+                session is ready.
               </p>
             </div>
           } @else if (isSessionClosed() && !session.messages?.length) {
@@ -101,7 +102,8 @@
               </div>
               <h3 class="text-lg font-semibold text-slate-950">Session closed</h3>
               <p class="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-600">
-                This room is now read-only. You can start another live connect from the home page when needed.
+                This room is now read-only. You can start another live connect from the home page
+                when needed.
               </p>
             </div>
           } @else if (session.messages?.length) {
@@ -126,7 +128,9 @@
             }
           } @else {
             <div class="empty-chat">
-              <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-2xl">
+              <div
+                class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-2xl"
+              >
                 💬
               </div>
               <h3 class="text-lg font-semibold text-slate-950">Start with a simple hello</h3>
@@ -172,29 +176,52 @@
         <details class="side-card">
           <summary class="cursor-pointer text-sm font-bold text-slate-900">Session details</summary>
           <dl class="mt-3 space-y-2 text-sm">
-            <div><dt class="font-bold text-slate-500">Service</dt><dd class="text-slate-950">{{ serviceName() }}</dd></div>
+            <div>
+              <dt class="font-bold text-slate-500">Service</dt>
+              <dd class="text-slate-950">{{ serviceName() }}</dd>
+            </div>
             @if (session.intakeAnswers?.concernCategory; as concernCategory) {
-              <div><dt class="font-bold text-slate-500">Concern</dt><dd class="text-slate-950">{{ concernCategory }}</dd></div>
+              <div>
+                <dt class="font-bold text-slate-500">Concern</dt>
+                <dd class="text-slate-950">{{ concernCategory }}</dd>
+              </div>
             }
-            @if (session.pricingSnapshot?.careTeamPricingLabel || session.intakeAnswers?.careTeamPricingLabel) {
-              <div><dt class="font-bold text-slate-500">Plan</dt><dd class="text-slate-950">{{ session.pricingSnapshot?.careTeamPricingLabel || session.intakeAnswers?.careTeamPricingLabel }}</dd></div>
+            @if (
+              session.pricingSnapshot?.careTeamPricingLabel ||
+              session.intakeAnswers?.careTeamPricingLabel
+            ) {
+              <div>
+                <dt class="font-bold text-slate-500">Plan</dt>
+                <dd class="text-slate-950">
+                  {{
+                    session.pricingSnapshot?.careTeamPricingLabel ||
+                      session.intakeAnswers?.careTeamPricingLabel
+                  }}
+                </dd>
+              </div>
             }
           </dl>
         </details>
 
         <details class="side-card safety-card">
-          <summary class="cursor-pointer text-sm font-bold text-slate-900">Safety and urgent help</summary>
+          <summary class="cursor-pointer text-sm font-bold text-slate-900">
+            Safety and urgent help
+          </summary>
           <div class="mt-3">
             <p class="text-sm leading-6 text-slate-600">
-              If you may hurt yourself or someone else, or you are in immediate danger, contact local
-              emergency services now. This chat is supportive, not emergency care.
+              If you may hurt yourself or someone else, or you are in immediate danger, contact
+              local emergency services now. This chat is supportive, not emergency care.
             </p>
             <div class="safety-actions">
               <button type="button" class="ghost-btn ghost-btn--small" (click)="openSafetyHelp()">
                 Show emergency reminder
               </button>
               @if (canInteract()) {
-                <button type="button" class="ghost-btn ghost-btn--small danger-soft" (click)="reportSafetyConcern()">
+                <button
+                  type="button"
+                  class="ghost-btn ghost-btn--small danger-soft"
+                  (click)="reportSafetyConcern()"
+                >
                   Prepare safety message
                 </button>
               }
@@ -204,7 +231,9 @@
 
         @if (isListenerSupportSession()) {
           <details class="side-card listener-boundary-card">
-            <summary class="cursor-pointer text-sm font-bold text-slate-900">What a listener can help with</summary>
+            <summary class="cursor-pointer text-sm font-bold text-slate-900">
+              What a listener can help with
+            </summary>
             <p class="mt-2 text-sm leading-6 text-slate-600">
               They can listen, reflect, and support you in organizing your thoughts. For clinical
               advice, diagnosis, medication, or urgent risk, please book a qualified professional or
@@ -227,18 +256,21 @@
               [participantName]="session.assignedDoctor?.name || 'Your expert'"
               [participantImageUrl]="session.assignedDoctor?.profileImageUrl || ''"
               [enableBackgroundAlerts]="enableBackgroundCallAlerts"
+              [getBackgroundAlertReadiness]="backgroundCallAlertReadiness"
             ></hopehub-consultation-call-panel>
           </div>
         } @else {
           <div class="side-card">
-            <p class="side-eyebrow">{{ isSessionClosed() ? 'Closed' : showWaitingPanel() ? 'Waiting' : 'Privacy' }}</p>
+            <p class="side-eyebrow">
+              {{ isSessionClosed() ? 'Closed' : showWaitingPanel() ? 'Waiting' : 'Privacy' }}
+            </p>
             <p class="mt-1 text-sm leading-6 text-slate-600">
               {{
                 isSessionClosed()
                   ? 'This room remains available for review, but live chat, voice, and video are disabled after closure.'
                   : showWaitingPanel()
-                  ? 'This room is checking for assignment updates every few seconds.'
-                  : 'This room is tied to your consultation. Keep emergency or crisis needs on phone/local emergency support.'
+                    ? 'This room is checking for assignment updates every few seconds.'
+                    : 'This room is tied to your consultation. Keep emergency or crisis needs on phone/local emergency support.'
               }}
             </p>
           </div>

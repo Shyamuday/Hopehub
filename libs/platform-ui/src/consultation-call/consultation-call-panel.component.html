@@ -391,10 +391,29 @@
           <button type="button" (click)="testSpeaker()">Check speaker</button>
         </div>
 
-        @if (!call.incomingAlertsEnabled()) {
+        @if (!call.incomingAlertsEnabled() || backgroundAlertReadiness()) {
           <div class="call-alert-opt-in">
-            <span>Play a sound for incoming calls.</span>
-            <button type="button" (click)="enableCallAlerts()">Turn on sound</button>
+            <span>
+              <strong>Incoming call alerts</strong>
+              <small>
+                @if (backgroundAlertChecking()) {
+                  Checking this device…
+                } @else if (backgroundAlertReadiness(); as readiness) {
+                  {{ readiness.message }}
+                } @else {
+                  Play a sound for incoming calls while Hope Hub is open.
+                }
+              </small>
+            </span>
+            @if (showEnableAlertsButton()) {
+              <button
+                type="button"
+                (click)="enableCallAlerts()"
+                [disabled]="backgroundAlertChecking()"
+              >
+                {{ backgroundAlertChecking() ? 'Checking…' : 'Turn on alerts' }}
+              </button>
+            }
           </div>
         }
 

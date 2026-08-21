@@ -14,6 +14,7 @@ import {
 } from '@angular/core';
 import { ConsultationWebrtcCallService } from './consultation-webrtc-call.service';
 import type {
+  BackgroundCallAlertReadiness,
   CallMode,
   CallSignalingSocket,
   IceServerConfig,
@@ -59,6 +60,7 @@ export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDest
   @Input() participantImageUrl = '';
   @Input() ensureMediaAccess?: (mode: CallMode) => Promise<MediaAccessResult>;
   @Input() enableBackgroundAlerts?: () => Promise<boolean>;
+  @Input() getBackgroundAlertReadiness?: () => Promise<BackgroundCallAlertReadiness>;
   @Input() globalOverlayEnabled = true;
 
   private localVideoElement: HTMLVideoElement | null = null;
@@ -97,6 +99,8 @@ export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDest
   readonly deviceChanging = signal(false);
   readonly audioPlaybackBlocked = signal(false);
   readonly callAlertMessage = signal('');
+  readonly backgroundAlertReadiness = signal<BackgroundCallAlertReadiness | null>(null);
+  readonly backgroundAlertChecking = signal(false);
   readonly settingsOpen = signal(false);
   readonly preCallOpen = signal(false);
   readonly preCallMode = signal<CallMode>('audio');
@@ -129,6 +133,7 @@ export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDest
     if (typeof navigator !== 'undefined') {
       navigator.mediaDevices?.addEventListener?.('devicechange', this.handleDeviceChange);
     }
+    void this.refreshBackgroundAlertReadiness();
   }
 
   ngOnChanges(changes: SimpleChanges) {
@@ -289,6 +294,7 @@ export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDest
 
   openSettings() {
     this.settingsOpen.set(true);
+    void this.refreshBackgroundAlertReadiness();
   }
 
   closeSettings() {
@@ -311,6 +317,34 @@ export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDest
           ? 'Incoming call sound and background alerts are on.'
           : 'Incoming call sound is on.'
         : 'Browser sound is blocked. Allow sound from the address-bar site settings.'
+    );
+    await this.refreshBackgroundAlertReadiness();
+  }
+
+  async refreshBackgroundAlertReadiness() {
+    if (!this.getBackgroundAlertReadiness || this.backgroundAlertChecking()) return;
+    this.backgroundAlertChecking.set(true);
+    try {
+      this.backgroundAlertReadiness.set(await this.getBackgroundAlertReadiness());
+    } catch {
+      this.backgroundAlertReadiness.set({
+        supported: false,
+        enabled: false,
+        installed: false,
+        native: false,
+        permission: 'unsupported',
+        canEnable: false,
+        message: 'Background call alert status could not be checked on this device.'
+      });
+    } finally {
+      this.backgroundAlertChecking.set(false);
+    }
+  }
+
+  showEnableAlertsButton() {
+    const readiness = this.backgroundAlertReadiness();
+    return (
+      !this.call.incomingAlertsEnabled() || Boolean(readiness?.canEnable && !readiness.enabled)
     );
   }
 

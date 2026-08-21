@@ -7,6 +7,16 @@ export type IceServerConfig = { urls: string | string[]; username?: string; cred
 
 export type MediaAccessResult = { granted: boolean; message?: string };
 
+export type BackgroundCallAlertReadiness = {
+  supported: boolean;
+  enabled: boolean;
+  installed: boolean;
+  native: boolean;
+  permission: 'default' | 'granted' | 'denied' | 'unsupported';
+  canEnable: boolean;
+  message: string;
+};
+
 export type CallNetworkType =
   'wifi' | 'cellular' | 'ethernet' | 'bluetooth' | 'none' | 'other' | 'unknown';
 

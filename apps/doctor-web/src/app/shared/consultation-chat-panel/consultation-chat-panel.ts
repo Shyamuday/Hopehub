@@ -41,7 +41,8 @@ export class ConsultationChatPanelComponent implements OnChanges, OnDestroy {
   readonly iceServers = signal<IceServerConfig[]>([{ urls: 'stun:stun.l.google.com:19302' }]);
   readonly draftModel = signal({ body: '' });
   readonly draftForm = form(this.draftModel);
-  readonly enableBackgroundCallAlerts = () => this.pushNotifications.enableBrowserCalls();
+  readonly enableBackgroundCallAlerts = () => this.pushNotifications.enableCalls();
+  readonly backgroundCallAlertReadiness = () => this.pushNotifications.callAlertReadiness();
   private subscribedConsultationId = '';
   private readonly handleMessage = () => {
     if (this.consultationId) void this.load();

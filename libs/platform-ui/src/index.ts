@@ -54,6 +54,7 @@ export { ConsultationCallPanelComponent } from './consultation-call/consultation
 export { ConsultationCallInviteComponent } from './consultation-call/consultation-call-invite.component';
 export {
   CALL_SOCKET_EVENTS,
+  type BackgroundCallAlertReadiness,
   type CallMode,
   type CallSignalingSocket,
   type IceServerConfig,

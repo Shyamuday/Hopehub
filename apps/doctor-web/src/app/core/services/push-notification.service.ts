@@ -5,6 +5,7 @@ import { PushNotifications } from '@capacitor/push-notifications';
 import { AUTH_TOKEN_KEY } from '../constants/auth.constants';
 import { environment } from '../../../environments/environment';
 import { ConsultationNavigationService } from './consultation-navigation.service';
+import type { BackgroundCallAlertReadiness } from '@hopehub/platform-ui';
 
 @Injectable({ providedIn: 'root' })
 export class PushNotificationService {
@@ -14,11 +15,14 @@ export class PushNotificationService {
   async init(): Promise<void> {
     if (!Capacitor.isNativePlatform()) {
       await this.registerBrowserWorker();
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+        await this.enableBrowserCalls();
+      }
       return;
     }
 
     let permission = await PushNotifications.checkPermissions();
-    if (permission.receive === 'prompt') {
+    if (permission.receive === 'prompt' || permission.receive === 'prompt-with-rationale') {
       permission = await PushNotifications.requestPermissions();
     }
     if (permission.receive !== 'granted') return;
@@ -80,6 +84,85 @@ export class PushNotificationService {
     } catch {
       return false;
     }
+  }
+
+  async enableCalls(): Promise<boolean> {
+    if (!Capacitor.isNativePlatform()) return this.enableBrowserCalls();
+    let permission = await PushNotifications.checkPermissions();
+    if (permission.receive === 'prompt' || permission.receive === 'prompt-with-rationale') {
+      permission = await PushNotifications.requestPermissions();
+    }
+    if (permission.receive !== 'granted') return false;
+    await PushNotifications.register();
+    return true;
+  }
+
+  async callAlertReadiness(): Promise<BackgroundCallAlertReadiness> {
+    if (Capacitor.isNativePlatform()) {
+      const permission = await PushNotifications.checkPermissions();
+      const enabled = permission.receive === 'granted';
+      return {
+        supported: true,
+        enabled,
+        installed: true,
+        native: true,
+        permission: enabled ? 'granted' : permission.receive === 'denied' ? 'denied' : 'default',
+        canEnable: permission.receive !== 'denied',
+        message: enabled
+          ? 'Native background call notifications are ready.'
+          : permission.receive === 'denied'
+            ? 'Call notifications are blocked. Allow them in your phone settings.'
+            : 'Turn on notifications so calls ring while the app is in the background.',
+      };
+    }
+
+    const installed = this.isBrowserInstalled();
+    const supported =
+      typeof navigator !== 'undefined' &&
+      'serviceWorker' in navigator &&
+      typeof window !== 'undefined' &&
+      'PushManager' in window &&
+      typeof Notification !== 'undefined';
+    if (!supported) {
+      return {
+        supported: false,
+        enabled: false,
+        installed,
+        native: false,
+        permission: 'unsupported',
+        canEnable: false,
+        message: 'Background alerts are unavailable in this browser. Keep Hope Hub open for calls.',
+      };
+    }
+
+    const permission = Notification.permission;
+    const registration = await this.registerBrowserWorker();
+    const subscription =
+      permission === 'granted' ? await registration?.pushManager.getSubscription() : null;
+    const enabled = Boolean(subscription);
+    return {
+      supported: true,
+      enabled,
+      installed,
+      native: false,
+      permission,
+      canEnable: permission !== 'denied' && !enabled,
+      message: enabled
+        ? installed
+          ? 'Ready to ring in the background. Keep system notifications enabled.'
+          : 'Background notifications are ready. Installing the app improves mobile reliability.'
+        : permission === 'denied'
+          ? 'Notifications are blocked. Allow them from your browser site settings.'
+          : 'Turn on notifications so calls can alert you outside this page.',
+    };
+  }
+
+  private isBrowserInstalled(): boolean {
+    if (typeof window === 'undefined') return false;
+    return (
+      window.matchMedia?.('(display-mode: standalone)').matches === true ||
+      (window.navigator as Navigator & { standalone?: boolean }).standalone === true
+    );
   }
 
   private async registerBrowserWorker(): Promise<ServiceWorkerRegistration | null> {
