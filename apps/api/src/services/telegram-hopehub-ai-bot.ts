@@ -31,6 +31,7 @@ import {
   bannedPhrases,
   containsLink,
   customReply,
+  customReplyAction,
   floodThreshold,
   groupHelpConfig as config,
   hasMedia,
@@ -367,6 +368,28 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
       warnLimit,
       warnAction
     );
+    return;
+  }
+  const configuredAction = customReplyAction(text, values.telegramGroupHelpCustomReplies || '');
+  if (configuredAction) {
+    await sendTemporaryMessage(chatId, configuredAction.text, values, {
+      reply_to_message_id: message.message_id,
+      message_thread_id: message.message_thread_id,
+      ...(configuredAction.buttonText && configuredAction.buttonUrl
+        ? {
+            reply_markup: {
+              inline_keyboard: [
+                [{ text: configuredAction.buttonText, url: configuredAction.buttonUrl }]
+              ]
+            }
+          }
+        : {})
+    });
+    await recordTelegramCommunityActivity(
+      chatId,
+      message.date ? new Date(message.date * 1000) : undefined
+    );
+    await ingestTelegramLiveChatMessage(message);
     return;
   }
   const blockedPhrase = matchedBannedPhrase(

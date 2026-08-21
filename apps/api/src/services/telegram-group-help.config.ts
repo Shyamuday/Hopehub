@@ -168,3 +168,34 @@ export function customReply(text: string, definitions: string) {
   }
   return '';
 }
+
+export type CustomReplyAction = {
+  trigger: string;
+  text: string;
+  buttonText?: string;
+  buttonUrl?: string;
+};
+
+/**
+ * Parses admin-authored keyword actions. A phrase may occur anywhere in a
+ * message, while an older custom reply still requires an exact message match.
+ *
+ * phrase => reply text => button label => https://destination
+ */
+export function customReplyAction(text: string, definitions: string): CustomReplyAction | null {
+  for (const line of definitions.split(/\r?\n/)) {
+    const [rawTrigger, rawText, rawButtonText, rawButtonUrl, ...extra] = line.split('=>');
+    const trigger = rawTrigger?.trim() || '';
+    const replyText = rawText?.trim() || '';
+    if (!trigger || !replyText || extra.length) continue;
+    if (!matchedBannedPhrase(text, [trigger])) continue;
+
+    const buttonText = rawButtonText?.trim() || '';
+    const buttonUrl = rawButtonUrl?.trim() || '';
+    if (!buttonText || !/^https:\/\//i.test(buttonUrl)) {
+      return { trigger, text: replyText };
+    }
+    return { trigger, text: replyText, buttonText, buttonUrl };
+  }
+  return null;
+}

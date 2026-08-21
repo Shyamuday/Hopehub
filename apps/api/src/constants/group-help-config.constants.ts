@@ -1219,12 +1219,14 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
   },
   {
     key: 'telegramGroupHelpCustomReplies',
-    label: 'Custom replies',
-    description: 'One “trigger => response” definition per line.',
+    label: 'Keyword replies and buttons',
+    description:
+      'One action per line: “phrase => reply text => button label => https://link”. Button fields are optional. Keyword actions take priority over word filters, so use them for care and navigation phrases.',
     section: 'people',
     type: 'textarea',
     maxLength: 4000,
-    placeholder: 'support => Visit https://hopehub.in',
+    placeholder:
+      'anyone for talk => You can find private support through Hope Hub Live. => Talk live => https://hopehub.in/#live-connect',
     defaultValue: ''
   },
   {
