@@ -243,3 +243,241 @@ describe('ConsultationWebrtcCallService resilient signaling', () => {
     sessionStorage.removeItem('hopehub:recoverable-call');
   });
 });
+
+describe('ConsultationWebrtcCallService premium recovery automation', () => {
+  it('forces relay-only ICE when protected calling is selected', async () => {
+    const service = new ConsultationWebrtcCallService();
+    const audioTrack = {
+      kind: 'audio',
+      readyState: 'live',
+      enabled: true,
+      stop: vi.fn(),
+    } as unknown as MediaStreamTrack;
+    const stream = {
+      getAudioTracks: () => [audioTrack],
+      getVideoTracks: () => [],
+      getTracks: () => [audioTrack],
+    } as unknown as MediaStream;
+    let peerConfiguration: RTCConfiguration | undefined;
+    const originalPeerConnection = globalThis.RTCPeerConnection;
+    Object.defineProperty(globalThis, 'RTCPeerConnection', {
+      configurable: true,
+      value: class {
+        connectionState = 'new';
+        iceConnectionState = 'new';
+        ontrack = null;
+        onicecandidate = null;
+        onconnectionstatechange = null;
+        oniceconnectionstatechange = null;
+
+        constructor(configuration: RTCConfiguration) {
+          peerConfiguration = configuration;
+        }
+
+        addTrack() {
+          return { track: audioTrack };
+        }
+
+        close() {}
+      },
+    });
+    const internals = service as unknown as {
+      ensurePeer: (
+        mode: 'audio' | 'video',
+        iceServers: RTCIceServer[],
+        privacyRelay: boolean,
+        preparedStream: MediaStream,
+      ) => Promise<void>;
+    };
+
+    try {
+      await internals.ensurePeer(
+        'audio',
+        [
+          {
+            urls: 'turns:turn.hopehub.in:443?transport=tcp',
+            username: 'temporary-user',
+            credential: 'temporary-secret',
+          },
+        ],
+        true,
+        stream,
+      );
+      expect(peerConfiguration?.iceTransportPolicy).toBe('relay');
+      expect(peerConfiguration?.iceServers).toEqual([
+        {
+          urls: 'turns:turn.hopehub.in:443?transport=tcp',
+          username: 'temporary-user',
+          credential: 'temporary-secret',
+        },
+      ]);
+    } finally {
+      service.cleanup();
+      Object.defineProperty(globalThis, 'RTCPeerConnection', {
+        configurable: true,
+        value: originalPeerConnection,
+      });
+    }
+  });
+
+  it('pauses video after sustained poor quality and restores it only after stable recovery', async () => {
+    const emitted: Array<{ event: string; payload: unknown }> = [];
+    const service = new ConsultationWebrtcCallService();
+    const videoTrack = {
+      kind: 'video',
+      readyState: 'live',
+      enabled: true,
+      stop: vi.fn(),
+      applyConstraints: vi.fn().mockResolvedValue(undefined),
+    } as unknown as MediaStreamTrack;
+    const stream = {
+      getAudioTracks: () => [],
+      getVideoTracks: () => [videoTrack],
+      getTracks: () => [videoTrack],
+    } as unknown as MediaStream;
+    const sender = {
+      track: videoTrack,
+      getParameters: () => ({ encodings: [{}] }),
+      setParameters: vi.fn().mockResolvedValue(undefined),
+    } as unknown as RTCRtpSender;
+    let packetsLost = 0;
+    let packetsReceived = 0;
+    let poor = true;
+    const stats = {
+      forEach(callback: (report: Record<string, unknown>) => void) {
+        packetsLost += poor ? 10 : 0;
+        packetsReceived += poor ? 90 : 100;
+        callback({
+          type: 'inbound-rtp',
+          isRemote: false,
+          packetsLost,
+          packetsReceived,
+          jitter: poor ? 0.09 : 0.005,
+        });
+        callback({
+          type: 'candidate-pair',
+          state: 'succeeded',
+          selected: true,
+          currentRoundTripTime: poor ? 0.7 : 0.04,
+        });
+      },
+    };
+    const internals = service as unknown as {
+      socket: CallSignalingSocket;
+      activeCallId: string;
+      callContext: { consultationId: string; targetUserId: string };
+      pc: {
+        getStats: () => Promise<typeof stats>;
+        getSenders: () => RTCRtpSender[];
+        close: () => void;
+      };
+      sampleNetworkQuality: () => Promise<void>;
+    };
+    internals.socket = {
+      emit: (event, payload) => emitted.push({ event, payload }),
+      on: () => undefined,
+    };
+    internals.activeCallId = 'network-call-1';
+    internals.callContext = {
+      consultationId: 'consultation-1',
+      targetUserId: 'provider-1',
+    };
+    internals.pc = {
+      getStats: async () => stats,
+      getSenders: () => [sender],
+      close: () => undefined,
+    };
+    service.localStream.set(stream);
+    service.callMode.set('video');
+    service.cameraEnabled.set(true);
+    service.state.set('connected');
+
+    for (let sample = 0; sample < 3; sample += 1) await internals.sampleNetworkQuality();
+    await vi.waitFor(() => expect(service.videoPausedForNetwork()).toBe(true));
+    expect(videoTrack.enabled).toBe(false);
+    expect(service.networkQuality()).toBe('poor');
+
+    poor = false;
+    for (let sample = 0; sample < 5; sample += 1) await internals.sampleNetworkQuality();
+    await vi.waitFor(() => expect(service.videoPausedForNetwork()).toBe(false));
+    expect(videoTrack.enabled).toBe(true);
+    expect(service.networkQuality()).toBe('good');
+    expect(
+      emitted
+        .filter(({ event }) => event === CALL_SOCKET_EVENTS.MEDIA_STATE)
+        .map(
+          ({ payload }) =>
+            (payload as { metadata?: { videoPausedForNetwork?: boolean } }).metadata
+              ?.videoPausedForNetwork,
+        ),
+    ).toEqual([true, false]);
+    service.cleanup();
+  });
+
+  it('marks an active call reconnecting offline and starts ICE recovery when online', async () => {
+    const service = new ConsultationWebrtcCallService();
+    const restart = vi.fn().mockResolvedValue(undefined);
+    const internals = service as unknown as {
+      callContext: { consultationId: string; targetUserId: string };
+      pc: { close: () => void };
+      attemptIceRestart: (force?: boolean) => Promise<void>;
+      handleOffline: () => void;
+      handleOnline: () => void;
+    };
+    internals.callContext = {
+      consultationId: 'consultation-1',
+      targetUserId: 'provider-1',
+    };
+    internals.pc = { close: () => undefined };
+    internals.attemptIceRestart = restart;
+    service.state.set('connected');
+
+    internals.handleOffline();
+    expect(service.connectionOnline()).toBe(false);
+    expect(service.state()).toBe('reconnecting');
+
+    internals.handleOnline();
+    expect(service.connectionOnline()).toBe(true);
+    await vi.waitFor(() => expect(restart).toHaveBeenCalledWith(true));
+    service.cleanup();
+  });
+
+  it('asks the server for authoritative call state when the app returns to foreground', () => {
+    const emitted: Array<{ event: string; payload: unknown }> = [];
+    const service = new ConsultationWebrtcCallService();
+    const internals = service as unknown as {
+      socket: CallSignalingSocket;
+      activeCallId: string;
+      callContext: { consultationId: string; targetUserId: string };
+      handleVisibilityChange: () => void;
+    };
+    internals.socket = {
+      emit: (event, payload) => emitted.push({ event, payload }),
+      on: () => undefined,
+    };
+    internals.activeCallId = 'foreground-call-1';
+    internals.callContext = {
+      consultationId: 'consultation-1',
+      targetUserId: 'provider-1',
+    };
+    const visibilityDescriptor = Object.getOwnPropertyDescriptor(document, 'visibilityState');
+    Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'visible' });
+
+    try {
+      internals.handleVisibilityChange();
+      expect(emitted).toContainEqual({
+        event: CALL_SOCKET_EVENTS.SYNC,
+        payload: expect.objectContaining({
+          consultationId: 'consultation-1',
+          targetUserId: 'provider-1',
+          callId: 'foreground-call-1',
+        }),
+      });
+    } finally {
+      if (visibilityDescriptor) {
+        Object.defineProperty(document, 'visibilityState', visibilityDescriptor);
+      }
+      service.cleanup();
+    }
+  });
+});

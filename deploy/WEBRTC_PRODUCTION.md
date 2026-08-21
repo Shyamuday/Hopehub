@@ -30,6 +30,27 @@ After configuration:
 
 Repository changes do not create a certificate, firewall rule, second relay server, or DNS record. Those remain infrastructure operations.
 
+## Call reliability test gate
+
+Run the shared call-service regression suite before releasing either web app:
+
+```text
+npm test --prefix apps/healing-web -- --watch=false --include="**/consultation-webrtc-call.service.spec.ts"
+```
+
+The suite verifies incoming signal sequencing, cached preflight reuse, prepared-media reuse, signaling-server restart recovery, authoritative sequence synchronization, relay-only ICE policy, automatic video pause and restoration, offline/online ICE recovery, and foreground resynchronization.
+
+Browser automation cannot reproduce every mobile radio, operating-system background policy, Bluetooth stack, or carrier NAT. Before a calling release, also complete these physical-device checks and confirm the call timeline contains the expected route and recovery events:
+
+1. Android Chrome to Android Chrome on Wi-Fi.
+2. iPhone Safari or installed PWA to Android Chrome.
+3. Wi-Fi to cellular, then cellular to Wi-Fi during an active call.
+4. 4G to 5G handover during an active call.
+5. Bluetooth headset connect and disconnect during an active call.
+6. Screen lock, background, and return on both participants.
+7. UDP-blocked network using TURN TCP/TLS 443.
+8. Temporary network loss followed by automatic recovery.
+
 ## Multiple API instances
 
 Set `SOCKET_REDIS_URL` to a dedicated Redis endpoint before running more than one API instance. The API then shares Socket.IO rooms and call signals through the Redis adapter. If the variable is configured but Redis cannot connect, startup fails rather than allowing callers and receivers to be silently split across instances.
