@@ -146,6 +146,9 @@ export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDest
     if (changes['iceServers']?.currentValue) {
       this.call.prewarmConnectivity(this.iceServers, this.requiresRelayForThisNetwork());
     }
+    if (this.socket && this.consultationId && this.targetUserId) {
+      this.call.syncCallAvailability(this.socket, this.consultationId, this.targetUserId);
+    }
   }
 
   ngOnDestroy() {
@@ -189,13 +192,16 @@ export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDest
   }
 
   anotherCallIsActive() {
-    return this.call.hasActiveCall() && !this.isThisCall();
+    return (
+      (this.call.hasActiveCall() && !this.isThisCall()) || Boolean(this.call.activeCallElsewhere())
+    );
   }
 
   canStartCall() {
     return (
       this.isThisCall() &&
       !this.call.hasActiveCall() &&
+      !this.call.activeCallElsewhere() &&
       (this.call.state() === 'idle' || this.call.state() === 'ended')
     );
   }
@@ -561,20 +567,7 @@ export class ConsultationCallPanelComponent implements OnInit, OnChanges, OnDest
 
     this.busy.set(true);
     try {
-      await this.call.endCall({
-        consultationId: this.consultationId,
-        targetUserId: this.targetUserId,
-        reason: mode === 'video' ? 'switch_to_video' : 'switch_to_voice'
-      });
-      await new Promise<void>((resolve) => setTimeout(resolve, 200));
-      await this.call.startCall({
-        socket: this.socket,
-        consultationId: this.consultationId,
-        targetUserId: this.targetUserId,
-        mode,
-        iceServers: this.iceServers,
-        privacyRelay: this.call.privacyRelay()
-      });
+      await this.call.switchCurrentCallMode(mode, this.iceServers);
     } catch {
       // service exposes the actionable media/signalling error
     } finally {

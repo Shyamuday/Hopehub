@@ -209,6 +209,13 @@ export class ConsultationWebrtcCallService {
   readonly audioInputs = signal<MediaDeviceInfo[]>([]);
   readonly videoInputs = signal<MediaDeviceInfo[]>([]);
   readonly audioOutputs = signal<MediaDeviceInfo[]>([]);
+  readonly activeCallElsewhere = signal<{
+    consultationId: string;
+    targetUserId: string;
+    callId: string;
+    mode: CallMode;
+    status: string;
+  } | null>(null);
   readonly selectedAudioInputId = signal('');
   readonly selectedVideoInputId = signal('');
   readonly selectedAudioOutputId = signal('');
@@ -446,12 +453,33 @@ export class ConsultationWebrtcCallService {
 
     socket.on(CALL_SOCKET_EVENTS.STATE, (raw: unknown) => {
       const payload = raw as {
+        consultationId?: string;
+        targetUserId?: string;
         active?: boolean;
         callId?: string;
+        mode?: CallMode;
+        status?: string;
         lastAcceptedSequence?: number;
         reason?: string;
       };
-      if (!this.callContext) return;
+      if (!this.callContext) {
+        if (payload.active && payload.consultationId && payload.targetUserId && payload.callId) {
+          this.activeCallElsewhere.set({
+            consultationId: payload.consultationId,
+            targetUserId: payload.targetUserId,
+            callId: payload.callId,
+            mode: payload.mode === 'video' ? 'video' : 'audio',
+            status: payload.status || 'ACTIVE'
+          });
+        } else if (
+          !payload.active &&
+          payload.consultationId &&
+          this.activeCallElsewhere()?.consultationId === payload.consultationId
+        ) {
+          this.activeCallElsewhere.set(null);
+        }
+        return;
+      }
       if (payload.callId && payload.callId !== this.activeCallId) return;
       if (typeof payload.lastAcceptedSequence === 'number') {
         this.signalSequence = Math.max(this.signalSequence, payload.lastAcceptedSequence);
@@ -480,6 +508,13 @@ export class ConsultationWebrtcCallService {
           } else {
             this.error.set(callReasonMessage(payload.reason || 'call_not_active'));
           }
+        } else if (this.hasActiveCall()) {
+          const consultationId = this.activeConsultationId();
+          const message = callReasonMessage(payload.reason || 'ended');
+          if (consultationId) this.setCallSummary(consultationId, 'Call ended', message);
+          this.clearRecoveryContext();
+          this.cleanup('ended');
+          void this.playStatusTone('ended');
         }
         return;
       }
@@ -499,6 +534,7 @@ export class ConsultationWebrtcCallService {
         fromRole?: string;
       };
       if (!payload?.fromUserId) return;
+      this.activeCallElsewhere.set(null);
       if (this.activeCallId && payload.callId && payload.callId !== this.activeCallId) return;
       if (payload.consultationId) {
         this.observedCallLockKey = `${CALL_TAB_LOCK_PREFIX}${payload.consultationId}`;
@@ -558,12 +594,26 @@ export class ConsultationWebrtcCallService {
       this.remoteVideoPausedForNetwork.set(payload.metadata?.['videoPausedForNetwork'] === true);
     });
 
-    socket.on(CALL_SOCKET_EVENTS.END, (raw: unknown) => this.onRemoteCallClosed(raw));
-    socket.on(CALL_SOCKET_EVENTS.REJECT, (raw: unknown) => this.onRemoteCallClosed(raw));
+    socket.on(CALL_SOCKET_EVENTS.END, (raw: unknown) => void this.onRemoteCallClosed(raw));
+    socket.on(CALL_SOCKET_EVENTS.REJECT, (raw: unknown) => void this.onRemoteCallClosed(raw));
   }
 
   setMediaAccessHandler(handler: (mode: CallMode) => Promise<MediaAccessResult>) {
     this.ensureMediaAccess = handler;
+  }
+
+  syncCallAvailability(socket: CallSignalingSocket, consultationId: string, targetUserId: string) {
+    if (!consultationId || !targetUserId || this.hasActiveCall()) return;
+    this.bindSocket(socket);
+    socket.emit(CALL_SOCKET_EVENTS.SYNC, {
+      consultationId,
+      targetUserId,
+      metadata: { discovery: true }
+    });
+  }
+
+  dismissActiveCallElsewhere() {
+    this.activeCallElsewhere.set(null);
   }
 
   refreshNetworkProfile() {
@@ -755,6 +805,11 @@ export class ConsultationWebrtcCallService {
     privacyRelay?: boolean;
     preparedStream?: MediaStream;
   }) {
+    if (this.activeCallElsewhere()) {
+      const message = 'This session already has a call active on another tab or device.';
+      this.error.set(message);
+      throw new Error(message);
+    }
     if (this.hasActiveCall()) {
       const message = 'Your current call is already open. Use the active call controls.';
       this.error.set(message);
@@ -793,6 +848,7 @@ export class ConsultationWebrtcCallService {
     this.lastCallSummary.set(null);
     this.recoverableCall.set(null);
     this.receiverUnavailable.set(false);
+    this.activeCallElsewhere.set(null);
 
     try {
       await this.ensurePeer(
@@ -1178,17 +1234,55 @@ export class ConsultationWebrtcCallService {
     await this.endCall({ consultationId, targetUserId, reason });
   }
 
-  async switchCurrentCallMode(mode: CallMode, iceServers: IceServerConfig[] = DEFAULT_STUN) {
-    if (!this.socket || !this.callContext || this.callMode() === mode) return;
-    const socket = this.socket;
-    const context = { ...this.callContext };
-    const privacyRelay = this.privacyRelay();
-    await this.endCall({
-      ...context,
-      reason: mode === 'video' ? 'switch_to_video' : 'switch_to_voice'
-    });
-    await new Promise<void>((resolve) => setTimeout(resolve, 200));
-    await this.startCall({ socket, ...context, mode, iceServers, privacyRelay });
+  async switchCurrentCallMode(mode: CallMode, _iceServers: IceServerConfig[] = DEFAULT_STUN) {
+    if (!this.socket || !this.callContext || !this.pc || this.callMode() === mode) return;
+    if (!this.hasActiveCall()) throw new Error('The call is no longer active.');
+    if (this.pc.signalingState !== 'stable' || this.makingOffer) {
+      throw new Error('The call is still updating. Try again in a moment.');
+    }
+
+    const previousMode = this.callMode();
+    this.error.set('');
+    try {
+      if (mode === 'video') {
+        await this.addLocalVideoTrack();
+        await this.applyVideoProfile('balanced');
+      } else {
+        await this.removeLocalVideoTrack();
+      }
+
+      this.callMode.set(mode);
+      this.cameraEnabled.set(mode === 'video');
+      this.persistRecoveryContext();
+      this.makingOffer = true;
+      await this.pc.setLocalDescription(await this.pc.createOffer());
+      const offer = this.pc.localDescription;
+      if (!offer) throw new Error('Could not update this call.');
+      this.emitSignal(CALL_SOCKET_EVENTS.OFFER, {
+        ...this.callContext,
+        mode,
+        sdp: offer,
+        metadata: {
+          ...this.callMetadata(),
+          modeSwitch: true,
+          previousMode,
+          privacyRelay: this.privacyRelay()
+        }
+      });
+    } catch (error) {
+      // Adding video must never tear down a healthy voice call. Keep the existing audio session
+      // alive and let the user retry camera access without another ring/hang-up cycle.
+      this.callMode.set(previousMode);
+      if (previousMode === 'audio') await this.removeLocalVideoTrack();
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Could not change the call mode. Voice is still connected.';
+      this.error.set(previousMode === 'audio' ? `${message} Voice is still connected.` : message);
+      throw error;
+    } finally {
+      this.makingOffer = false;
+    }
   }
 
   private async onRemoteOffer(raw: unknown) {
@@ -1218,6 +1312,30 @@ export class ConsultationWebrtcCallService {
       try {
         if (payload.metadata?.['iceRestart'] === true) this.state.set('reconnecting');
         await this.pc.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+        const requestedMode: CallMode =
+          payload.mode === 'audio'
+            ? 'audio'
+            : payload.mode === 'video' || sdpHasVideo(payload.sdp.sdp)
+              ? 'video'
+              : 'audio';
+        if (payload.metadata?.['modeSwitch'] === true) {
+          if (requestedMode === 'video' && !this.localStream()?.getVideoTracks().length) {
+            try {
+              await this.addLocalVideoTrack();
+              await this.applyVideoProfile('balanced');
+            } catch {
+              // Receiving the other person's video does not require our camera. Continue the
+              // voice call and answer recv-only when this device cannot open its camera.
+              this.cameraEnabled.set(false);
+              this.deviceRecoveryMessage.set(
+                'Video is on. Your camera stayed off because it is unavailable or permission was not granted.'
+              );
+            }
+          } else if (requestedMode === 'audio') {
+            await this.removeLocalVideoTrack();
+          }
+          this.callMode.set(requestedMode);
+        }
         await this.pc.setLocalDescription();
         const answer = this.pc.localDescription!;
         await this.flushIceQueue();
@@ -1226,7 +1344,10 @@ export class ConsultationWebrtcCallService {
           targetUserId: payload.fromUserId,
           mode: this.callMode(),
           sdp: answer,
-          metadata: { iceRestart: payload.metadata?.['iceRestart'] === true }
+          metadata: {
+            iceRestart: payload.metadata?.['iceRestart'] === true,
+            modeSwitch: payload.metadata?.['modeSwitch'] === true
+          }
         });
       } catch {
         this.startReconnectTimeout();
@@ -1316,14 +1437,35 @@ export class ConsultationWebrtcCallService {
     }
   }
 
-  private onRemoteCallClosed(raw: unknown) {
+  private async onRemoteCallClosed(raw: unknown) {
     const payload = raw as {
       consultationId?: string;
       fromUserId?: string;
       callId?: string;
       reason?: string;
+      metadata?: Record<string, unknown>;
     };
     if (!this.matchesCallContext(payload)) return;
+    if (payload.metadata?.['modeSwitch'] === true && this.pc) {
+      const previousMode: CallMode =
+        payload.metadata?.['previousMode'] === 'video' ? 'video' : 'audio';
+      if (this.pc.signalingState === 'have-local-offer') {
+        await this.pc.setLocalDescription({ type: 'rollback' }).catch(() => undefined);
+      }
+      if (previousMode === 'audio') {
+        await this.removeLocalVideoTrack();
+      } else if (!this.localStream()?.getVideoTracks().length) {
+        await this.addLocalVideoTrack().catch(() => undefined);
+      }
+      this.callMode.set(previousMode);
+      this.cameraEnabled.set(previousMode === 'video');
+      this.error.set(
+        previousMode === 'audio'
+          ? 'Video could not be enabled. Your voice call is still connected.'
+          : 'Voice-only mode could not be enabled. Your video call is still connected.'
+      );
+      return;
+    }
     const message = callReasonMessage(payload?.reason);
     const switchedMode = Boolean(payload?.reason?.startsWith('switch_to_'));
     const consultationId = payload.consultationId || this.activeConsultationId();
@@ -1571,6 +1713,72 @@ export class ConsultationWebrtcCallService {
       replacementTrack.stop();
       throw error;
     }
+  }
+
+  private async addLocalVideoTrack() {
+    const pc = this.pc;
+    const currentStream = this.localStream();
+    if (!pc || !currentStream) throw new Error('The voice call is not ready yet.');
+    const currentTrack = currentStream
+      .getVideoTracks()
+      .find((track) => track.readyState === 'live');
+    if (currentTrack) {
+      currentTrack.enabled = true;
+      this.cameraEnabled.set(true);
+      return;
+    }
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+      throw new Error('Video calling is not supported on this device.');
+    }
+
+    let videoStream: MediaStream;
+    try {
+      videoStream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: this.mediaConstraints('video').video
+      });
+    } catch (error) {
+      throw new Error(mediaAccessErrorMessage(error, 'video'));
+    }
+    const videoTrack = videoStream.getVideoTracks()[0];
+    if (!videoTrack) {
+      videoStream.getTracks().forEach((track) => track.stop());
+      throw new Error('No camera is available on this device.');
+    }
+
+    try {
+      const reusableSender = pc
+        .getTransceivers()
+        .find(
+          (transceiver) => transceiver.receiver.track.kind === 'video' && !transceiver.sender.track
+        )?.sender;
+      if (reusableSender) {
+        await reusableSender.replaceTrack(videoTrack);
+        this.configureCodecPreferences(reusableSender, 'video');
+      } else {
+        const sender = pc.addTrack(videoTrack, currentStream);
+        this.configureCodecPreferences(sender, 'video');
+      }
+      this.localStream.set(new MediaStream([...currentStream.getAudioTracks(), videoTrack]));
+      this.cameraEnabled.set(true);
+      await this.refreshMediaDevices();
+    } catch (error) {
+      videoTrack.stop();
+      throw error;
+    }
+  }
+
+  private async removeLocalVideoTrack() {
+    const currentStream = this.localStream();
+    if (!currentStream) return;
+    const videoSenders =
+      this.pc?.getSenders().filter((sender) => sender.track?.kind === 'video') ?? [];
+    for (const sender of videoSenders) {
+      await sender.replaceTrack(null).catch(() => undefined);
+    }
+    currentStream.getVideoTracks().forEach((track) => track.stop());
+    this.localStream.set(new MediaStream(currentStream.getAudioTracks()));
+    this.cameraEnabled.set(false);
   }
 
   private acquireCallLock(consultationId: string) {

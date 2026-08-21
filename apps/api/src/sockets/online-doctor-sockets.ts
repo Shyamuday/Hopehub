@@ -333,18 +333,22 @@ async function recordCallSignal(
       const isSameInitiator = existing.initiatedByUserId === fromUserId;
       const isIceRestart =
         event === SOCKET_EVENTS.CALL_OFFER && payload.metadata?.['iceRestart'] === true;
-      if (!isSameInitiator && !isIceRestart) {
+      const isModeSwitch =
+        event === SOCKET_EVENTS.CALL_OFFER && payload.metadata?.['modeSwitch'] === true;
+      if (!isSameInitiator && !isIceRestart && !isModeSwitch) {
         return { relay: false, reason: 'active_call_exists', sessionId: existing.id };
       }
       await prisma.consultationCallSession.update({
         where: { id: existing.id },
         data: {
           mode: payload.mode || existing.mode,
-          status: isIceRestart
-            ? 'RECONNECTING'
-            : event === SOCKET_EVENTS.CALL_OFFER
-              ? 'CONNECTING'
-              : existing.status,
+          status: isModeSwitch
+            ? existing.status
+            : isIceRestart
+              ? 'RECONNECTING'
+              : event === SOCKET_EVENTS.CALL_OFFER
+                ? 'CONNECTING'
+                : existing.status,
           lastSignalEvent: event,
           ...(isIceRestart ? { reconnectCount: { increment: 1 } } : {}),
           metadata: {
@@ -524,6 +528,31 @@ async function recordCallSignal(
   return { relay: true };
 }
 
+// WebRTC emits RING/OFFER/ICE/END in order, but each database check is asynchronous. Without a
+// per-consultation queue, a new RING can finish before the preceding END and leave a ghost active
+// session that blocks every later call. Preserve wire order for the complete signaling stream.
+const callSignalQueues = new Map<string, Promise<void>>();
+
+function recordCallSignalInOrder(
+  fromUserId: string,
+  event: string,
+  payload: CallSignalPayload
+): Promise<{ relay: boolean; reason?: string; sessionId?: string }> {
+  const queueKey = payload.consultationId;
+  const previous = callSignalQueues.get(queueKey) ?? Promise.resolve();
+  const run = previous
+    .catch(() => undefined)
+    .then(() => recordCallSignal(fromUserId, event, payload));
+  const tail = run.then(
+    () => undefined,
+    () => undefined
+  );
+  callSignalQueues.set(queueKey, tail);
+  return run.finally(() => {
+    if (callSignalQueues.get(queueKey) === tail) callSignalQueues.delete(queueKey);
+  });
+}
+
 export function registerOnlineDoctorSockets(io: SocketIoServer, socket: Socket, userId?: string) {
   if (!userId) return;
 
@@ -573,7 +602,7 @@ export function registerOnlineDoctorSockets(io: SocketIoServer, socket: Socket, 
     if (
       typeof payload.consultationId !== 'string' ||
       typeof payload.targetUserId !== 'string' ||
-      typeof payload.callId !== 'string'
+      (payload.callId !== undefined && typeof payload.callId !== 'string')
     ) {
       return;
     }
@@ -599,11 +628,15 @@ export function registerOnlineDoctorSockets(io: SocketIoServer, socket: Socket, 
         const storedCallId = String(
           ((session?.metadata as Record<string, unknown> | null) || {})['callId'] || ''
         );
-        const resolvedCallId = storedCallId || payload.callId;
+        const discovery = payload.metadata?.['discovery'] === true || !payload.callId;
+        const resolvedCallId = storedCallId || payload.callId || '';
         socket.emit(SOCKET_EVENTS.CALL_STATE, {
           consultationId: payload.consultationId,
+          targetUserId: payload.targetUserId,
           callId: resolvedCallId,
-          active: Boolean(session && (!storedCallId || storedCallId === payload.callId)),
+          active: Boolean(
+            session && (discovery || !storedCallId || storedCallId === payload.callId)
+          ),
           status: session?.status || null,
           mode: session?.mode || payload.mode || null,
           lastAcceptedSequence: lastSignalSequences.get(`${resolvedCallId}:${userId}`) ?? 0,
@@ -646,11 +679,17 @@ export function registerOnlineDoctorSockets(io: SocketIoServer, socket: Socket, 
           consultationId: payload.consultationId,
           targetUserId: payload.targetUserId,
           fromUserId: payload.targetUserId,
-          reason: 'rate_limited'
+          callId: payload.callId,
+          reason: 'rate_limited',
+          metadata: {
+            rejectedEvent: event,
+            modeSwitch: payload.metadata?.['modeSwitch'] === true,
+            previousMode: payload.metadata?.['previousMode']
+          }
         });
         return;
       }
-      void recordCallSignal(userId, event, payload)
+      void recordCallSignalInOrder(userId, event, payload)
         .then(async (result) => {
           trackCallEvent(
             payload,
@@ -667,8 +706,39 @@ export function registerOnlineDoctorSockets(io: SocketIoServer, socket: Socket, 
               consultationId: payload.consultationId,
               targetUserId: payload.targetUserId,
               fromUserId: payload.targetUserId,
-              reason: result.reason || 'call_unavailable'
+              callId: payload.callId,
+              reason: result.reason || 'call_unavailable',
+              metadata: {
+                rejectedEvent: event,
+                modeSwitch: payload.metadata?.['modeSwitch'] === true,
+                previousMode: payload.metadata?.['previousMode']
+              }
             });
+            if (
+              result.reason === 'active_call_exists' ||
+              result.reason === 'consultation_call_already_active'
+            ) {
+              const activeSession = result.sessionId
+                ? await prisma.consultationCallSession.findUnique({
+                    where: { id: result.sessionId },
+                    select: { status: true, mode: true, metadata: true }
+                  })
+                : null;
+              const activeCallId = String(
+                ((activeSession?.metadata as Record<string, unknown> | null) || {})['callId'] || ''
+              );
+              if (activeSession && activeCallId) {
+                socket.emit(SOCKET_EVENTS.CALL_STATE, {
+                  consultationId: payload.consultationId,
+                  targetUserId: payload.targetUserId,
+                  callId: activeCallId,
+                  active: true,
+                  status: activeSession.status,
+                  mode: activeSession.mode,
+                  reason: result.reason
+                });
+              }
+            }
             return;
           }
           if (event === SOCKET_EVENTS.CALL_RING || event === SOCKET_EVENTS.CALL_OFFER) {
@@ -713,6 +783,20 @@ export function registerOnlineDoctorSockets(io: SocketIoServer, socket: Socket, 
               });
           }
           relayCallSignal(io, userId, relay, payload, sender ?? undefined);
+          if (event === SOCKET_EVENTS.CALL_END || event === SOCKET_EVENTS.CALL_REJECT) {
+            const state = {
+              consultationId: payload.consultationId,
+              callId: payload.callId,
+              active: false,
+              status: event === SOCKET_EVENTS.CALL_REJECT ? 'REJECTED' : 'ENDED',
+              reason: payload.reason || (event === SOCKET_EVENTS.CALL_REJECT ? 'rejected' : 'ended')
+            };
+            io.to(`${SOCKET_ROOM_PREFIXES.USER}${userId}`).emit(SOCKET_EVENTS.CALL_STATE, state);
+            io.to(`${SOCKET_ROOM_PREFIXES.USER}${payload.targetUserId}`).emit(
+              SOCKET_EVENTS.CALL_STATE,
+              state
+            );
+          }
         })
         .catch((error) => {
           trackCallEvent(payload, event, 'ERROR', { reason: 'server_processing_error' });
@@ -721,7 +805,12 @@ export function registerOnlineDoctorSockets(io: SocketIoServer, socket: Socket, 
             targetUserId: payload.targetUserId,
             fromUserId: payload.targetUserId,
             callId: payload.callId,
-            reason: 'server_processing_error'
+            reason: 'server_processing_error',
+            metadata: {
+              rejectedEvent: event,
+              modeSwitch: payload.metadata?.['modeSwitch'] === true,
+              previousMode: payload.metadata?.['previousMode']
+            }
           });
           console.error('[call-signal] Could not process signal', error);
         });

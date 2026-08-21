@@ -180,6 +180,95 @@ describe('ConsultationWebrtcCallService call preflight', () => {
 });
 
 describe('ConsultationWebrtcCallService resilient signaling', () => {
+  it('upgrades voice to video inside the same call without sending a hang-up', async () => {
+    const emitted: Array<{ event: string; payload: unknown }> = [];
+    const socket: CallSignalingSocket = {
+      emit: (event, payload) => emitted.push({ event, payload }),
+      on: () => undefined,
+    };
+    const service = new ConsultationWebrtcCallService();
+    const localDescription = { type: 'offer', sdp: 'same-call-video-offer' } as const;
+    const internals = service as unknown as {
+      socket: CallSignalingSocket;
+      activeCallId: string;
+      callContext: { consultationId: string; targetUserId: string };
+      pc: {
+        signalingState: RTCSignalingState;
+        localDescription: RTCSessionDescriptionInit | null;
+        createOffer: () => Promise<RTCSessionDescriptionInit>;
+        setLocalDescription: (description: RTCSessionDescriptionInit) => Promise<void>;
+      };
+      addLocalVideoTrack: () => Promise<void>;
+      applyVideoProfile: () => Promise<void>;
+      persistRecoveryContext: () => void;
+    };
+    internals.socket = socket;
+    internals.activeCallId = 'existing-call-1';
+    internals.callContext = { consultationId: 'consultation-1', targetUserId: 'provider-1' };
+    internals.addLocalVideoTrack = vi.fn().mockResolvedValue(undefined);
+    internals.applyVideoProfile = vi.fn().mockResolvedValue(undefined);
+    internals.persistRecoveryContext = vi.fn();
+    internals.pc = {
+      signalingState: 'stable',
+      localDescription: null,
+      createOffer: async () => localDescription,
+      setLocalDescription: async (description) => {
+        internals.pc.localDescription = description;
+      },
+    };
+    service.callMode.set('audio');
+    service.state.set('connected');
+
+    await service.switchCurrentCallMode('video');
+
+    expect(service.state()).toBe('connected');
+    expect(service.callMode()).toBe('video');
+    expect(emitted.some(({ event }) => event === CALL_SOCKET_EVENTS.END)).toBe(false);
+    expect(emitted).toContainEqual({
+      event: CALL_SOCKET_EVENTS.OFFER,
+      payload: expect.objectContaining({
+        callId: 'existing-call-1',
+        mode: 'video',
+        metadata: expect.objectContaining({ modeSwitch: true, previousMode: 'audio' }),
+      }),
+    });
+  });
+
+  it('keeps the voice call connected when camera access fails during an upgrade', async () => {
+    const emitted: Array<{ event: string; payload: unknown }> = [];
+    const service = new ConsultationWebrtcCallService();
+    const internals = service as unknown as {
+      socket: CallSignalingSocket;
+      activeCallId: string;
+      callContext: { consultationId: string; targetUserId: string };
+      pc: { signalingState: RTCSignalingState };
+      addLocalVideoTrack: () => Promise<void>;
+      removeLocalVideoTrack: () => Promise<void>;
+    };
+    internals.socket = {
+      emit: (event, payload) => emitted.push({ event, payload }),
+      on: () => undefined,
+    };
+    internals.activeCallId = 'voice-call-1';
+    internals.callContext = { consultationId: 'consultation-1', targetUserId: 'provider-1' };
+    internals.pc = { signalingState: 'stable' };
+    internals.addLocalVideoTrack = vi
+      .fn()
+      .mockRejectedValue(new Error('Camera permission denied.'));
+    internals.removeLocalVideoTrack = vi.fn().mockResolvedValue(undefined);
+    service.callMode.set('audio');
+    service.state.set('connected');
+
+    await expect(service.switchCurrentCallMode('video')).rejects.toThrow(
+      'Camera permission denied.',
+    );
+
+    expect(service.state()).toBe('connected');
+    expect(service.callMode()).toBe('audio');
+    expect(service.error()).toContain('Voice is still connected');
+    expect(emitted.some(({ event }) => event === CALL_SOCKET_EVENTS.END)).toBe(false);
+  });
+
   it('keeps connected peer media active during a signaling-server restart', () => {
     const handlers = new Map<string, (...args: unknown[]) => void>();
     const socket: CallSignalingSocket = {
@@ -241,6 +330,40 @@ describe('ConsultationWebrtcCallService resilient signaling', () => {
     expect(stored.signalSequence).toBe(12);
     expect(emitted).toEqual([]);
     sessionStorage.removeItem('hopehub:recoverable-call');
+  });
+
+  it('closes the local screen when the server confirms the other side ended the call', () => {
+    const handlers = new Map<string, (...args: unknown[]) => void>();
+    const socket: CallSignalingSocket = {
+      emit: () => undefined,
+      on: (event, handler) => handlers.set(event, handler),
+      off: () => undefined,
+    };
+    const service = new ConsultationWebrtcCallService();
+    const close = vi.fn();
+    const internals = service as unknown as {
+      callContext: { consultationId: string; targetUserId: string } | null;
+      activeCallId: string;
+      pc: { close: () => void } | null;
+    };
+    internals.callContext = { consultationId: 'consultation-1', targetUserId: 'provider-1' };
+    internals.activeCallId = 'call-1';
+    internals.pc = { close };
+    service.activeConsultationId.set('consultation-1');
+    service.activeTargetUserId.set('provider-1');
+    service.state.set('connected');
+    service.bindSocket(socket);
+
+    handlers.get(CALL_SOCKET_EVENTS.STATE)?.({
+      consultationId: 'consultation-1',
+      callId: 'call-1',
+      active: false,
+      reason: 'ended_by_user',
+    });
+
+    expect(close).toHaveBeenCalled();
+    expect(service.state()).toBe('ended');
+    expect(service.lastCallSummary()?.title).toBe('Call ended');
   });
 });
 

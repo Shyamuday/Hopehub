@@ -46,6 +46,7 @@ export class ConsultationCallInviteComponent implements OnDestroy {
   private durationTimer: ReturnType<typeof setInterval> | null = null;
   private controlsTimer: ReturnType<typeof setTimeout> | null = null;
   private actionMessageTimer: ReturnType<typeof setTimeout> | null = null;
+  private lastSpeakerOutputId = '';
   private surfaceSwipe: { pointerId: number; startY: number } | null = null;
   private previewDrag: {
     pointerId: number;
@@ -144,6 +145,7 @@ export class ConsultationCallInviteComponent implements OnDestroy {
   visible() {
     return (
       this.call.hasActiveCall() ||
+      Boolean(this.call.activeCallElsewhere()) ||
       Boolean(this.call.pendingOffer()) ||
       Boolean(this.call.lastCallSummary()) ||
       Boolean(this.call.recoverableCall())
@@ -151,6 +153,7 @@ export class ConsultationCallInviteComponent implements OnDestroy {
   }
 
   statusLabel() {
+    if (this.call.activeCallElsewhere() && !this.call.hasActiveCall()) return 'Call already active';
     if (this.call.recoverableCall() && !this.call.hasActiveCall()) return 'Call interrupted';
     const summary = this.call.lastCallSummary();
     if (summary && !this.call.hasActiveCall()) return summary.title;
@@ -268,6 +271,40 @@ export class ConsultationCallInviteComponent implements OnDestroy {
     this.speakerPickerOpen.set(true);
     this.scheduleControlsHide();
     this.lightHaptic();
+  }
+
+  async toggleSpeakerOutput() {
+    await this.call.refreshMediaDevices();
+    if (!this.supportsSpeakerSelection()) {
+      this.showActionFeedback('Use your phone sound control to change speaker');
+      return;
+    }
+
+    const selectedId = this.call.selectedAudioOutputId();
+    if (selectedId) {
+      this.lastSpeakerOutputId = selectedId;
+      await this.chooseAudioOutput('');
+      this.showActionFeedback('Phone audio');
+      return;
+    }
+
+    const outputs = this.speakerOutputs();
+    const preferred =
+      outputs.find((device) => device.deviceId === this.lastSpeakerOutputId) ??
+      outputs.find((device) => /speaker|loudspeaker|speakerphone/i.test(device.label)) ??
+      outputs.find((device) => !/earpiece|headset|headphone|bluetooth/i.test(device.label)) ??
+      outputs[0];
+    if (!preferred) {
+      this.showActionFeedback('Your phone controls the current speaker');
+      return;
+    }
+    this.lastSpeakerOutputId = preferred.deviceId;
+    await this.chooseAudioOutput(preferred.deviceId);
+    this.showActionFeedback('Speaker on');
+  }
+
+  speakerOutputActive() {
+    return Boolean(this.call.selectedAudioOutputId());
   }
 
   async toggleMore() {
@@ -478,9 +515,10 @@ export class ConsultationCallInviteComponent implements OnDestroy {
     const consultationId =
       this.call.activeConsultationId() || this.call.pendingOffer()?.consultationId || '';
     const recoveryId = this.call.recoverableCall()?.consultationId || '';
-    if (consultationId || recoveryId) {
+    const elsewhereId = this.call.activeCallElsewhere()?.consultationId || '';
+    if (consultationId || recoveryId || elsewhereId) {
       this.moreOpen.set(false);
-      this.opened.emit(consultationId || recoveryId);
+      this.opened.emit(consultationId || recoveryId || elsewhereId);
     }
   }
 

@@ -54,7 +54,16 @@
             call.callMode() === 'video' && !call.incomingCall() && call.hasActiveCall()
           "
         >
-          @if (call.recoverableCall() && !call.hasActiveCall()) {
+          @if (call.activeCallElsewhere() && !call.hasActiveCall()) {
+            <div class="call-surface__avatar call-surface__avatar--recovery">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 8v5h5" />
+                <path d="M6.3 16.5a7 7 0 1 0 .2-9.2L5 9" />
+              </svg>
+            </div>
+            <strong>A call is already running</strong>
+            <span>Continue it on the device where it was answered. New calls are paused.</span>
+          } @else if (call.recoverableCall() && !call.hasActiveCall()) {
             <div class="call-surface__avatar call-surface__avatar--recovery">
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M5 8v5h5" />
@@ -132,11 +141,7 @@
                   : 'Incoming ' + (call.callMode() === 'video' ? 'video' : 'voice') + ' call'
               }}</span>
             } @else if (call.state() === 'connecting' || call.state() === 'reconnecting') {
-              <span>{{
-                call.state() === 'reconnecting'
-                  ? 'Reconnecting…'
-                  : 'Connecting…'
-              }}</span>
+              <span>{{ call.state() === 'reconnecting' ? 'Reconnecting…' : 'Connecting…' }}</span>
             } @else {
               <span>{{
                 call.receiverUnavailable()
@@ -166,7 +171,11 @@
           class="call-surface__controls"
           [class.call-surface__controls--incoming]="call.incomingCall()"
         >
-          @if (call.recoverableCall() && !call.hasActiveCall()) {
+          @if (call.activeCallElsewhere() && !call.hasActiveCall()) {
+            <button type="button" class="summary-action" (click)="openSession()">
+              Open session
+            </button>
+          } @else if (call.recoverableCall() && !call.hasActiveCall()) {
             <button
               type="button"
               class="summary-action summary-action--quiet"
@@ -260,16 +269,16 @@
             <button
               type="button"
               class="control"
-              [class.control--active]="speakerPickerOpen()"
-              [attr.aria-expanded]="speakerPickerOpen()"
-              aria-label="Choose speaker"
-              (click)="openSpeakerPicker()"
+              [class.control--active]="speakerOutputActive()"
+              [attr.aria-pressed]="speakerOutputActive()"
+              [attr.aria-label]="speakerOutputActive() ? 'Use phone audio' : 'Turn speaker on'"
+              (click)="toggleSpeakerOutput()"
             >
               <span aria-hidden="true"
                 ><svg viewBox="0 0 24 24">
                   <path d="M5 9.25h3.25L13 5.5v13l-4.75-3.75H5a2 2 0 0 1-2-2v-1.5a2 2 0 0 1 2-2Z" />
                   <path d="M16 9a4.25 4.25 0 0 1 0 6M18.5 6.5a7.75 7.75 0 0 1 0 11" /></svg></span
-              >Speaker
+              >{{ speakerOutputActive() ? 'Speaker on' : 'Speaker' }}
             </button>
             @if (call.callMode() === 'video') {
               <button
