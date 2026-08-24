@@ -20,10 +20,12 @@
   </div>
 
   @if (selectedDate()) {
-    <div class="slot-summary">
+    <div class="slot-summary" aria-live="polite">
       <span>{{ selectedDate()!.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) }}</span>
       @if (selectedTime()) {
         <strong>{{ selectedTime() }}</strong>
+      } @else {
+        <strong>Choose a time</strong>
       }
     </div>
   }

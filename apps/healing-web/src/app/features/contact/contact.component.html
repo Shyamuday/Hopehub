@@ -47,15 +47,55 @@
         <p data-booking-step="1" tabindex="-1" class="mb-3 mt-6 text-sm font-semibold text-primary-800">Choose the support that feels right</p>
         <div class="form-grid">
           <div>
-            <label for="serviceInterest" class="form-label">Service</label>
+            <label for="serviceInterest" class="form-label">Support service</label>
             <app-form-dropdown
               formControlName="serviceInterest"
-              placeholder="Select a service"
+              placeholder="Choose the type of support you want"
               [options]="serviceOptions"
               [panelMaxHeight]="'18rem'"
             ></app-form-dropdown>
           </div>
         </div>
+
+        @if (contactForm.get('serviceInterest')?.value || prefilledData().serviceName || prefilledData().service) {
+          <section class="selected-session" aria-live="polite">
+            <div class="selected-session__head">
+              <div>
+                <p>Selected session</p>
+                <h2>{{ selectedSessionTitle() }}</h2>
+                @if (selectedSessionProvider()) {
+                  <span>with {{ selectedSessionProvider() }}</span>
+                }
+              </div>
+              <strong>{{ selectedSessionPriceLabel() }}</strong>
+            </div>
+            <div class="selected-session__facts">
+              <span>{{ selectedSessionDurationLabel() }}</span>
+              <span>{{ sessionModeLabel() }}</span>
+            </div>
+            <small>{{ selectedSessionPriceHint() }}</small>
+          </section>
+
+          <section class="session-mode-panel" aria-label="Choose session mode">
+            <div>
+              <p>How would you like to connect?</p>
+              <span>Choose a comfortable mode now. You will select a time next.</span>
+            </div>
+            <div class="contact-methods contact-methods--modes">
+              @for (mode of availableSessionModes(); track mode) {
+                <label>
+                  <input
+                    type="radio"
+                    formControlName="sessionMode"
+                    [value]="sessionModeForLiveConnectMode(mode)"
+                    (change)="selectSessionMode(mode)"
+                  />
+                  <span>{{ sessionModeLabel(mode) }}</span>
+                </label>
+              }
+            </div>
+          </section>
+        }
 
         <section class="support-path-panel" [attr.aria-label]="UX.supportPath.chooserAria">
           <div class="support-path-panel__head">
@@ -149,11 +189,13 @@
 
         @if (contactForm.get('serviceInterest')?.value) {
           <p class="mb-3 mt-6 text-sm font-semibold text-primary-800">Choose a time</p>
+          <p class="slot-intro">Pick a time that works for you. A slot is not reserved until you review and confirm.</p>
           <div class="slot-panel">
             <app-appointment-calendar
               [selectedService]="contactForm.get('serviceInterest')?.value"
               [providerId]="activeProviderId() || undefined"
               [careTeamServiceId]="prefilledData().careTeamServiceId || undefined"
+              [daysToShow]="7"
               (appointmentSelected)="onAppointmentSelected($event)"
             ></app-appointment-calendar>
           </div>
@@ -235,14 +277,6 @@
             (apply)="applyPromoCode()"
             (clear)="clearPromoCode()"
             (suggestedApply)="applySuggestedPromoCode($event)"
-          />
-
-          <app-checkout-summary
-            [showSummary]="false"
-            [title]="''"
-            [rows]="[]"
-            [notices]="[]"
-            [includes]="[]"
           />
         }
 

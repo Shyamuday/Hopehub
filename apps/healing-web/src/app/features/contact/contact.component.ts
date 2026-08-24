@@ -161,7 +161,7 @@ export class ContactComponent implements OnInit {
     return [...CONSUMER_ROUTES.links.careTeam, provider.slug || provider.id];
   }
   services: HopeHubService[] = [];
-  serviceOptions: FormDropdownOption[] = [{ value: '', label: 'Select a service (optional)' }];
+  serviceOptions: FormDropdownOption[] = [{ value: '', label: 'Select a support service' }];
   urgencyOptions: FormDropdownOption[] = CONSUMER_URGENCY_OPTIONS;
   concernCategoryOptions: FormDropdownOption[] = CONSUMER_CONCERN_CATEGORY_OPTIONS;
   expertTypeOptions: FormDropdownOption[] = CONSUMER_EXPERT_TYPE_OPTIONS;
@@ -394,6 +394,100 @@ export class ContactComponent implements OnInit {
     return 'chat';
   }
 
+  availableSessionModes(): LiveConnectMode[] {
+    const provider = this.matchedProvider();
+    const supported = provider?.sessionTypes || [];
+    const modes: LiveConnectMode[] = ['chat', 'voice', 'video'];
+    if (!supported.length) return modes;
+
+    const available = modes.filter((mode) =>
+      supported.some((sessionType) => consumerModeMatchesText(mode, sessionType)),
+    );
+    return available.length ? available : modes;
+  }
+
+  sessionModeLabel(mode: LiveConnectMode = this.requestedLiveMode()): string {
+    if (mode === 'video') return 'Video call';
+    if (mode === 'voice') return 'Voice call';
+    return 'Private chat';
+  }
+
+  selectSessionMode(mode: LiveConnectMode): void {
+    if (!this.contactForm) return;
+    this.contactForm.patchValue({ sessionMode: this.sessionModeForLiveConnectMode(mode) });
+    this.selectedAppointment.set(null);
+    this.bookingStepError.set('');
+  }
+
+  selectedSessionTitle(): string {
+    return (
+      this.careTeamServiceQuote()?.service.title ||
+      this.selectedOffering()?.title ||
+      this.prefilledData().serviceName ||
+      this.prefilledData().service ||
+      this.contactForm?.get('serviceInterest')?.value ||
+      'Hope Hub support session'
+    );
+  }
+
+  selectedSessionProvider(): string {
+    return (
+      this.careTeamServiceQuote()?.service.providerName ||
+      this.prefilledData().consultant ||
+      this.matchedProvider()?.name ||
+      ''
+    );
+  }
+
+  selectedSessionDurationMinutes(): number | null {
+    const quotedDuration = this.careTeamServiceQuote()?.service.durationMinutes;
+    if (quotedDuration && quotedDuration > 0) return quotedDuration;
+
+    const selectedServiceId = this.prefilledData().careTeamServiceId;
+    const matchedService = this.matchedProvider()?.services?.find(
+      (service) => service.id === selectedServiceId,
+    );
+    if (matchedService?.durationMinutes) return matchedService.durationMinutes;
+
+    const durationFromLink = Number.parseInt(String(this.prefilledData().duration || ''), 10);
+    if (Number.isFinite(durationFromLink) && durationFromLink > 0) return durationFromLink;
+    return this.matchedProvider()?.sessionDurationMinutes || null;
+  }
+
+  selectedSessionDurationLabel(): string {
+    const duration = this.selectedSessionDurationMinutes();
+    return duration ? `${duration} min session` : 'Session duration confirmed before payment';
+  }
+
+  selectedSessionPriceLabel(): string {
+    if (this.careTeamServiceQuoteLoading()) return 'Checking exact price…';
+    const serviceQuote = this.careTeamServiceQuote();
+    if (serviceQuote) return this.formatPaise(serviceQuote.quote.amountInPaise);
+
+    const quotedPrice = Number(this.prefilledData().price);
+    if (Number.isFinite(quotedPrice) && quotedPrice >= 0) {
+      return this.formatPaise(Math.round(quotedPrice * 100));
+    }
+
+    const offer = this.selectedOffering();
+    if (offer) return this.formatPaise(this.offerFinalInPaise());
+    const defaultOffer = this.defaultSessionOffer();
+    const defaultQuote = this.defaultSessionQuote();
+    if (defaultOffer && defaultQuote) {
+      return this.formatPaise(defaultQuote.payableInPaise ?? defaultOffer.priceInPaise ?? 0);
+    }
+    return 'Price confirmed before payment';
+  }
+
+  selectedSessionPriceHint(): string {
+    if (this.careTeamServiceQuoteError()) return this.careTeamServiceQuoteError();
+    if (this.careTeamServiceQuote()) return this.careTeamServiceQuote()!.quote.label;
+    if (this.prefilledData().careTeamServiceId && !this.currentUser()) {
+      return 'Sign in to check your exact first-session, follow-up, or package price.';
+    }
+    return 'No charge is made until you review and confirm your booking.';
+  }
+
   liveConnectHeroTitle(): string {
     if (!this.isLiveConnectFallback()) return CONSUMER_UX_COPY.booking.pageTitle;
     return 'Book private support';
@@ -496,7 +590,7 @@ export class ContactComponent implements OnInit {
         next: ({ services, singleSessionQuote }) => {
           this.services = services;
           this.serviceOptions = [
-            { value: '', label: 'Select a service (optional)' },
+            { value: '', label: 'Select a support service' },
             ...services.map((service) => ({ value: service.name, label: service.name })),
           ];
           this.defaultSessionOffer.set(singleSessionQuote?.offering ?? null);
@@ -1143,7 +1237,7 @@ export class ContactComponent implements OnInit {
     if (offer && this.offerDiscountInPaise() > 0 && offer.type === 'INDIVIDUAL_SESSION') {
       notices.push({
         title: `${offer.discountPercent || 50}% off first session`,
-        message: '30 min private support + 15 min follow-up included.',
+        message: `${this.selectedSessionDurationLabel()} with ${this.sessionModeLabel().toLowerCase()}.`,
       });
     }
     if (!offer && this.careTeamServiceQuoteLoading()) {
@@ -1213,9 +1307,17 @@ export class ContactComponent implements OnInit {
   }
 
   checkoutIncludes(): string[] {
-    return this.selectedOffering()?.type === 'INDIVIDUAL_SESSION'
-      ? ['30 min private session', '15 min follow-up', 'Online audio by default']
-      : [];
+    const duration = this.selectedSessionDurationMinutes();
+    const includes = [
+      duration ? `${duration} min private session` : 'Private support session',
+      this.sessionModeLabel(),
+      'Secure checkout before the session is confirmed',
+    ];
+    const packageBalance = this.careTeamServiceQuote()?.quote.packageBalance;
+    if (packageBalance) {
+      includes.unshift(`${packageBalance.remainingSessions} package sessions available`);
+    }
+    return includes;
   }
 
   checkoutPromoCode(): string {
@@ -1600,7 +1702,7 @@ export class ContactComponent implements OnInit {
     return matched || services[0] || null;
   }
 
-  private sessionModeForLiveConnectMode(mode: LiveConnectMode): string {
+  sessionModeForLiveConnectMode(mode: LiveConnectMode): string {
     return consumerSessionModeFor(mode);
   }
 

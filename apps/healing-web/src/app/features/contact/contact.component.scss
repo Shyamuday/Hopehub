@@ -274,6 +274,89 @@ form {
   line-height: 1.5;
 }
 
+.selected-session,
+.session-mode-panel {
+  display: grid;
+  gap: 0.8rem;
+  border: 1px solid rgba(16, 185, 129, 0.28);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(16, 185, 129, 0.12), transparent 11rem),
+    #ffffff;
+  padding: 1rem;
+}
+
+.selected-session__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.selected-session__head p,
+.session-mode-panel p {
+  margin: 0;
+  color: var(--brand-primary);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.selected-session__head h2 {
+  margin: 0.22rem 0 0;
+  color: var(--text-primary);
+  font-size: 1.02rem;
+  font-weight: 900;
+}
+
+.selected-session__head span,
+.session-mode-panel > div > span,
+.selected-session small {
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.selected-session__head strong {
+  flex: 0 0 auto;
+  color: var(--surface-green-text);
+  font-size: 1rem;
+  font-weight: 900;
+  text-align: right;
+}
+
+.selected-session__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.selected-session__facts span {
+  border-radius: 999px;
+  background: var(--hope-selected-pill-bg);
+  color: var(--hope-selected-text);
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 0.32rem 0.58rem;
+}
+
+.session-mode-panel {
+  border-color: var(--color-primary-100);
+  background: var(--brand-surface);
+}
+
+.contact-methods--modes {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.slot-intro {
+  margin: -0.35rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
 .optional-panel {
   border: 1px solid var(--color-primary-100);
   border-radius: 8px;
@@ -419,6 +502,15 @@ form {
 
   .live-handoff-card {
     grid-template-columns: 1fr;
+  }
+
+  .selected-session__head {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .selected-session__head strong {
+    text-align: left;
   }
 
   .form-grid.two,

@@ -407,25 +407,39 @@
 
     @if (isPsychologist && activeSetupStep() === 'services') {
       <section class="mental-profile-section">
-        <p class="section-hint">Start with one service. You can change or add more later.</p>
+        <section class="services-setup-guide" aria-label="How to set up your services">
+          <div>
+            <span>Simple setup</span>
+            <strong>Start with one service people can understand at a glance.</strong>
+            <p>Choose a plan, set a price and duration, then add offers only if you need them. You can edit everything later.</p>
+          </div>
+          <ol>
+            <li><b>1</b> Choose a plan</li>
+            <li><b>2</b> Set price and time</li>
+            <li><b>3</b> Review the client preview</li>
+          </ol>
+        </section>
         @if (!careServices().length && recommendedService(); as recommended) {
           <article class="recommended-service">
             <div>
-              <small>Recommended for {{ recommended.subtype }}</small>
+              <small>Quick start · recommended for {{ recommended.subtype }}</small>
               <strong>{{ recommended.title }}</strong>
               <span>
                 {{ recommended.durationMinutes }} min ·
                 {{ recommended.isFree ? 'Free' : '₹' + rupees(recommended.priceInPaise) }}
               </span>
             </div>
-            <button type="button" (click)="addRecommendedService()">Use this service</button>
+            <button type="button" (click)="addRecommendedService()">Use this plan</button>
           </article>
         }
         <div class="service-editor">
           @for (service of careServices(); track $index) {
             <article class="service-editor-card">
               <div class="service-editor-heading">
-                <strong>Service {{ $index + 1 }}</strong>
+                <div>
+                  <small>Service {{ $index + 1 }}</small>
+                  <strong>{{ service.title || 'New service' }}</strong>
+                </div>
                 <span>{{ servicePricingSummary(service) }}</span>
               </div>
               @if (service.approvalStatus === 'PENDING') {
@@ -444,27 +458,43 @@
                   }
                 </select>
               }
-              <input
-                [value]="service.title"
-                placeholder="Service title"
-                (input)="updateCareService($index, 'title', $any($event.target).value)"
-              />
+              <label class="service-field service-field--wide">
+                What should clients call this service?
+                <input
+                  [value]="service.title"
+                  placeholder="For example: Individual counselling session"
+                  (input)="updateCareService($index, 'title', $any($event.target).value)"
+                />
+              </label>
               <div class="template-row">
-                <select #serviceTemplate>
-                  <option value="">Choose a ready plan (optional)</option>
-                  @for (template of pricingTemplatesForRole(service.providerRole); track template.id) {
-                    <option [value]="template.id">{{ template.title }}</option>
-                  }
-                </select>
+                <label>
+                  Start from a ready plan (optional)
+                  <select #serviceTemplate>
+                    <option value="">Choose a ready plan</option>
+                    @for (template of pricingTemplatesForRole(service.providerRole); track template.id) {
+                      <option [value]="template.id">{{ template.title }}</option>
+                    }
+                  </select>
+                </label>
                 <button type="button" (click)="applyPricingTemplate($index, serviceTemplate.value)">
-                  Use plan
+                  Apply plan
                 </button>
               </div>
               <p class="service-editor-note">
-                A ready plan is only a starting point. Change the price or duration below, or create
-                a completely custom service.
+                A ready plan fills the fields below. You remain in control of every price and duration.
               </p>
               <div class="service-core-fields">
+                <label>
+                  Pricing style
+                  <select
+                    [value]="service.pricingMode || 'FIXED'"
+                    (change)="updateCareService($index, 'pricingMode', $any($event.target).value)"
+                  >
+                    @for (mode of servicePricingModeOptions; track mode.value) {
+                      <option [value]="mode.value">{{ mode.label }}</option>
+                    }
+                  </select>
+                </label>
                 @if (
                   service.pricingMode !== 'FREE_VOLUNTEER' &&
                   service.pricingMode !== 'PER_MINUTE'
@@ -506,18 +536,21 @@
                   </label>
                 }
               </div>
-              <details class="advanced-service-settings">
-                <summary>More pricing options and details</summary>
+              <section class="service-customer-preview" aria-label="Client price preview">
                 <div>
-                  <label>Pricing</label>
-                  <select
-                    [value]="service.pricingMode || 'FIXED'"
-                    (change)="updateCareService($index, 'pricingMode', $any($event.target).value)"
-                  >
-                    @for (mode of servicePricingModeOptions; track mode.value) {
-                      <option [value]="mode.value">{{ mode.label }}</option>
-                    }
-                  </select>
+                  <span>Client preview</span>
+                  <strong>{{ service.title || 'Your service title' }}</strong>
+                  <small>{{ servicePricingSummary(service) }}</small>
+                </div>
+                <div>
+                  <span>Your estimated earning</span>
+                  <strong>{{ servicePayoutPreview(service) }}</strong>
+                  <small>{{ providerIncomeRuleLabel() }}</small>
+                </div>
+              </section>
+              <details class="advanced-service-settings">
+                <summary>Optional: offers, follow-up prices, packages and description</summary>
+                <div>
                   @if (showFirstPrice(service)) {
                     <label>
                       Offer discount (%)
@@ -582,11 +615,7 @@
                     <input type="number" [value]="rupees(service.pricePerMinuteInPaise)" placeholder="₹ per minute" (input)="updateCareService($index, 'pricePerMinuteInPaise', $any($event.target).value)" />
                   }
                   <input [value]="service.description || ''" placeholder="Description" (input)="updateCareService($index, 'description', $any($event.target).value)" />
-                  <small class="service-payout-preview">
-                    Your estimated share: {{ servicePayoutPreview(service) }}
-                    ({{ providerIncomeRuleLabel() }}, before coupons, taxes, or refunds)
-                  </small>
-                  <label><input type="checkbox" [checked]="service.isActive !== false" (change)="updateCareService($index, 'isActive', $any($event.target).checked)" /> Active</label>
+                  <label class="checkbox"><input type="checkbox" [checked]="service.isActive !== false" (change)="updateCareService($index, 'isActive', $any($event.target).checked)" /> Show this service to clients</label>
                   <button type="button" class="remove-service" (click)="removeCareService($index)">Remove service</button>
                 </div>
               </details>
