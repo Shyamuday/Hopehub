@@ -18,6 +18,7 @@ import {
   telegramDisplayName
 } from './telegram-community-member-identity.js';
 import { telegramPersonLogLabel } from './telegram-group-help.people.js';
+import { replaceTelegramCommunityRoleAssignment } from './telegram-group-help.role-assignments.js';
 const AUTOMATIC_ROLE_ACTOR = 'telegram-private-staff-auto';
 const STAFF_STATUS_TTL_MS = 6 * 60 * 60_000;
 const staffStatusCache = new Map<string, { status: string; expiresAt: number }>();
@@ -105,20 +106,13 @@ async function ensureDailyStaffPermissions(
     },
     update: fullAdmin ? { permissions: ['*'], createdById: AUTOMATIC_ROLE_ACTOR } : {}
   });
-  await prisma.$transaction([
-    prisma.telegramCommunityRoleAssignment.deleteMany({
-      where: { chatId: mainGroupId, telegramUserId }
-    }),
-    prisma.telegramCommunityRoleAssignment.create({
-      data: {
-        chatId: mainGroupId,
-        telegramUserId,
-        role: 'CUSTOM',
-        customRoleId: role.id,
-        assignedById: AUTOMATIC_ROLE_ACTOR
-      }
-    })
-  ]);
+  await replaceTelegramCommunityRoleAssignment({
+    chatId: mainGroupId,
+    telegramUserId,
+    role: 'CUSTOM',
+    customRoleId: role.id,
+    assignedById: AUTOMATIC_ROLE_ACTOR
+  });
   return fullAdmin ? 'FULL_ADMIN' : 'DAILY';
 }
 

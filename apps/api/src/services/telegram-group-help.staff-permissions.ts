@@ -3,6 +3,7 @@ import {
   GROUP_HELP_COMMAND_DEFINITIONS,
   GROUP_HELP_STAFF_PERMISSION_GROUPS
 } from './telegram-group-help.commands.js';
+import { replaceTelegramCommunityRoleAssignment } from './telegram-group-help.role-assignments.js';
 
 export class GroupHelpStaffPermissionError extends Error {}
 
@@ -75,19 +76,12 @@ export async function saveGroupHelpStaffPermissions(input: {
     },
     update: { permissions, createdById: input.actorId }
   });
-  await prisma.$transaction([
-    prisma.telegramCommunityRoleAssignment.deleteMany({
-      where: { chatId: input.mainGroupId, telegramUserId: input.telegramUserId }
-    }),
-    prisma.telegramCommunityRoleAssignment.create({
-      data: {
-        chatId: input.mainGroupId,
-        telegramUserId: input.telegramUserId,
-        role: 'CUSTOM',
-        customRoleId: role.id,
-        assignedById: input.actorId
-      }
-    })
-  ]);
+  await replaceTelegramCommunityRoleAssignment({
+    chatId: input.mainGroupId,
+    telegramUserId: input.telegramUserId,
+    role: 'CUSTOM',
+    customRoleId: role.id,
+    assignedById: input.actorId
+  });
   return permissions;
 }

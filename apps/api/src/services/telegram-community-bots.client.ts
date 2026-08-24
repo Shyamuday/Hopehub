@@ -198,17 +198,30 @@ export function answerCommunityCallback(
   });
 }
 
-export function editCommunityReplyMarkup(
+export function isTelegramMessageNotModifiedError(error: unknown) {
+  const detail = error instanceof Error ? error.message : String(error);
+  return /message is not modified/i.test(detail);
+}
+
+export async function editCommunityReplyMarkup(
   slug: CommunityBotSlug,
   chatId: string | number,
   messageId: number,
   replyMarkup: TelegramKeyboard
 ) {
-  return callCommunityTelegramApi(slug, 'editMessageReplyMarkup', {
-    chat_id: chatId,
-    message_id: messageId,
-    reply_markup: colorizeTelegramKeyboard(replyMarkup)
-  });
+  try {
+    return await callCommunityTelegramApi(slug, 'editMessageReplyMarkup', {
+      chat_id: chatId,
+      message_id: messageId,
+      reply_markup: colorizeTelegramKeyboard(replyMarkup)
+    });
+  } catch (error) {
+    // An RSVP can be delivered twice or tapped simultaneously. Telegram
+    // already has the requested keyboard in that case, so this is success,
+    // not a failed webhook update that should be retried or alerted.
+    if (isTelegramMessageNotModifiedError(error)) return null;
+    throw error;
+  }
 }
 
 export function getCommunityWebhookInfo(slug: CommunityBotSlug) {

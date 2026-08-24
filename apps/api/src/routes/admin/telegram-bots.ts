@@ -80,6 +80,7 @@ import {
   GroupHelpStaffPermissionError,
   saveGroupHelpStaffPermissions
 } from '../../services/telegram-group-help.staff-permissions.js';
+import { replaceTelegramCommunityRoleAssignment } from '../../services/telegram-group-help.role-assignments.js';
 
 const setupSchema = z.object({
   dropPendingUpdates: z.boolean().optional(),
@@ -1655,23 +1656,13 @@ export function registerAdminTelegramBotRoutes(router: Router) {
           .status(400)
           .json({ message: 'That custom role is not available in this group.' });
       const role = parsed.data.role || 'CUSTOM';
-      const [, assignment] = await prisma.$transaction([
-        prisma.telegramCommunityRoleAssignment.deleteMany({
-          where: {
-            chatId,
-            telegramUserId: parsed.data.telegramUserId
-          }
-        }),
-        prisma.telegramCommunityRoleAssignment.create({
-          data: {
-            chatId,
-            telegramUserId: parsed.data.telegramUserId,
-            role,
-            customRoleId: customRole?.id,
-            assignedById: req.user!.id
-          }
-        })
-      ]);
+      const assignment = await replaceTelegramCommunityRoleAssignment({
+        chatId,
+        telegramUserId: parsed.data.telegramUserId,
+        role,
+        customRoleId: customRole?.id,
+        assignedById: req.user!.id
+      });
       await writeAuditLog({
         actorId: req.user!.id,
         actorRole: req.user!.role,
