@@ -1,5 +1,5 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminApi } from '../../core/services/admin-api';
 
@@ -76,6 +76,13 @@ export class TelegramContentNetworkPage implements OnInit {
 
   readonly channels = signal<Channel[]>([]);
   readonly items = signal<ContentItem[]>([]);
+  readonly selectedChannelId = signal('');
+  readonly selectedChannel = computed(
+    () => this.channels().find((channel) => channel.id === this.selectedChannelId()) || null,
+  );
+  readonly selectedItems = computed(() =>
+    this.items().filter((item) => item.channel.id === this.selectedChannelId()),
+  );
   readonly loading = signal(true);
   readonly busy = signal('');
   readonly message = signal('');
@@ -96,8 +103,11 @@ export class TelegramContentNetworkPage implements OnInit {
       const response = await this.api.getTelegramContentNetwork();
       this.channels.set(response.channels as Channel[]);
       this.items.set(response.items as ContentItem[]);
-      if (!this.sourceForm.channelId && response.channels.length) {
-        this.sourceForm.channelId = response.channels[0].id;
+      const selected = response.channels.find((channel) => channel.id === this.selectedChannelId());
+      const current = selected || response.channels[0];
+      if (current) {
+        this.selectedChannelId.set(current.id);
+        if (!this.sourceForm.channelId) this.sourceForm.channelId = current.id;
       }
     } catch (error) {
       this.error.set(this.errorMessage(error));
@@ -107,6 +117,7 @@ export class TelegramContentNetworkPage implements OnInit {
   }
 
   editChannel(channel: Channel): void {
+    this.selectedChannelId.set(channel.id);
     this.channelForm = {
       id: channel.id,
       slug: channel.slug,
@@ -123,7 +134,20 @@ export class TelegramContentNetworkPage implements OnInit {
     this.channelForm = emptyChannel();
   }
 
+  selectChannel(channel: Channel): void {
+    this.selectedChannelId.set(channel.id);
+    this.sourceForm = { ...emptySource(), channelId: channel.id };
+    this.editChannel(channel);
+  }
+
+  addChannel(): void {
+    this.selectedChannelId.set('');
+    this.channelForm = emptyChannel();
+    this.sourceForm = emptySource();
+  }
+
   editSource(source: Source): void {
+    this.selectedChannelId.set(source.channelId);
     this.sourceForm = {
       id: source.id,
       channelId: source.channelId,
@@ -137,7 +161,7 @@ export class TelegramContentNetworkPage implements OnInit {
   }
 
   resetSource(): void {
-    const selectedChannelId = this.channels()[0]?.id || '';
+    const selectedChannelId = this.selectedChannelId() || this.channels()[0]?.id || '';
     this.sourceForm = { ...emptySource(), channelId: selectedChannelId };
   }
 
@@ -153,8 +177,12 @@ export class TelegramContentNetworkPage implements OnInit {
     }
     await this.run('channel', async () => {
       const { id, ...payload } = this.channelForm;
-      if (id) await this.api.updateTelegramContentChannel(id, payload);
-      else await this.api.createTelegramContentChannel(payload);
+      if (id) {
+        await this.api.updateTelegramContentChannel(id, payload);
+      } else {
+        const created = await this.api.createTelegramContentChannel(payload);
+        this.selectedChannelId.set(created.channel.id);
+      }
       this.message.set(
         id ? 'Channel saved.' : 'Channel added. Add one or more public RSS sources next.',
       );
