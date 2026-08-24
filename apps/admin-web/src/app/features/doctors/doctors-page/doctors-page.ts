@@ -952,7 +952,11 @@ export class DoctorsPage {
     const isClinical = !types.length || providerHasRoleCategory(types, 'PROFESSIONAL_CARE');
     const activeServices = mental?.services?.filter((service) => service.isActive !== false) ?? [];
     const issues = [
-      profile?.suspendedAt ? 'account suspended' : '',
+      profile?.suspendedAt
+        ? this.isCredentialReviewPending(doctor)
+          ? 'credential review pending'
+          : 'account suspended'
+        : '',
       !doctor.isActive ? 'account inactive' : '',
       !profile ? 'provider profile missing' : '',
       !doctor.mobile ? 'mobile missing' : '',
@@ -974,7 +978,11 @@ export class DoctorsPage {
     const hidden = !doctor.doctorProfile?.showOnWebsite;
     const badges: Array<{ label: string; tone: 'good' | 'warn' | 'muted' | 'danger' }> = [];
     if (doctor.doctorProfile?.suspendedAt) {
-      badges.push({ label: 'Suspended', tone: 'danger' });
+      badges.push(
+        this.isCredentialReviewPending(doctor)
+          ? { label: 'Credential review', tone: 'warn' }
+          : { label: 'Suspended', tone: 'danger' },
+      );
     }
     badges.push(
       doctor.isActive
@@ -997,6 +1005,16 @@ export class DoctorsPage {
       badges.push({ label: 'Setup ready', tone: 'good' });
     }
     return badges;
+  }
+
+  isCredentialReviewPending(doctor: Doctor): boolean {
+    return Boolean(
+      doctor.doctorProfile?.suspendedAt &&
+      doctor.doctorProfile?.suspendedReason
+        ?.trim()
+        .toLowerCase()
+        .startsWith('awaiting homeopathy credential verification'),
+    );
   }
 
   providerReadinessSummary(doctor: Doctor) {

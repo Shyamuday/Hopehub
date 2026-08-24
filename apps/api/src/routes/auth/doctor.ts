@@ -7,6 +7,7 @@ import {
   HomeopathicDoctorType,
   PatientGender,
   Prisma,
+  ProviderDomain,
   Role
 } from '@prisma/client';
 import bcrypt from 'bcryptjs';
@@ -398,10 +399,28 @@ export function registerAuthDoctorRoutes(router: Router) {
           email: z.string().email(),
           mobile: indianMobileSchema,
           password: providerPasswordSchema,
+          providerDomain: z.nativeEnum(ProviderDomain).optional().default(ProviderDomain.HOPE_HUB),
           specialty: z.string().min(2).optional(),
-          registrationNo: z.string().optional(),
+          registrationNo: z.string().trim().optional(),
           careTeamType: z.nativeEnum(CareTeamMemberType).optional(),
           careTeamTypes: z.array(z.nativeEnum(CareTeamMemberType)).max(12).optional()
+        })
+        .superRefine((value, ctx) => {
+          if (value.providerDomain !== ProviderDomain.HOMEOPATHY) return;
+          if (!value.specialty?.trim()) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ['specialty'],
+              message: 'Homeopathy specialty is required.'
+            });
+          }
+          if (!value.registrationNo || value.registrationNo.length < 3) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ['registrationNo'],
+              message: 'A valid professional registration number is required.'
+            });
+          }
         })
         .parse(req.body);
 
@@ -409,10 +428,13 @@ export function registerAuthDoctorRoutes(router: Router) {
       // A new provider starts with a simple account only. Their support path is selected
       // in the guided onboarding conversation after their first sign-in.
       const careTeamTypes = normalizeCareTeamTypes(body.careTeamType, body.careTeamTypes);
-      const isHopeHubProvider = true;
+      const isHopeHubProvider = body.providerDomain === ProviderDomain.HOPE_HUB;
       const primaryCareTeamType = careTeamTypes[0];
-      const inferredDoctorType = HomeopathicDoctorType.PSYCHOLOGIST;
-      const specialty = body.specialty || 'Hope Hub Support';
+      const inferredDoctorType = isHopeHubProvider
+        ? HomeopathicDoctorType.PSYCHOLOGIST
+        : HomeopathicDoctorType.JUNIOR_DOCTOR;
+      const specialty = body.specialty || (isHopeHubProvider ? 'Hope Hub Support' : 'Homeopathy');
+      const requiresCredentialApproval = !isHopeHubProvider;
       const doctor = await prisma.user.create({
         data: {
           name: body.name,
@@ -428,6 +450,16 @@ export function registerAuthDoctorRoutes(router: Router) {
                 specialty,
                 registrationNo: body.registrationNo
               }),
+              providerDomain: body.providerDomain,
+              isAvailable: !requiresCredentialApproval,
+              ...(requiresCredentialApproval
+                ? {
+                    suspendedAt: new Date(),
+                    suspendedReason: 'Awaiting homeopathy credential verification.',
+                    showOnWebsite: false,
+                    isOnline: false
+                  }
+                : {}),
               ...(isHopeHubProvider
                 ? {
                     mentalHealthProfile: {
@@ -452,7 +484,8 @@ export function registerAuthDoctorRoutes(router: Router) {
         email: body.email,
         mobile: doctor.mobile,
         specialty,
-        registrationNo: body.registrationNo || null
+        registrationNo: body.registrationNo || null,
+        requiresCredentialApproval
       });
 
       const verification = await createEmailVerificationToken({
@@ -470,18 +503,21 @@ export function registerAuthDoctorRoutes(router: Router) {
         metadata: {
           userId: doctor.id,
           careTeamTypes,
+          providerDomain: body.providerDomain,
+          requiresCredentialApproval,
           emailVerificationSent: verification.sent
         }
       });
 
       res.status(201).json({
         doctor,
-        approvalStatus: 'ACTIVE',
+        approvalStatus: requiresCredentialApproval ? 'PENDING_REVIEW' : 'ACTIVE',
         emailVerificationRequired: true,
         emailVerificationSent: verification.sent,
         ...(verification.devVerifyUrl ? { devVerifyUrl: verification.devVerifyUrl } : {}),
-        message:
-          'Provider account created. Log in to complete your setup before appearing on Hope Hub.'
+        message: requiresCredentialApproval
+          ? 'Application received. Hope Hub will verify your professional registration before you can sign in and use clinical tools.'
+          : 'Provider account created. Log in to complete your setup before appearing on Hope Hub.'
       });
     })
   );
@@ -857,6 +893,10 @@ export function registerAuthDoctorRoutes(router: Router) {
         if (body.gender !== undefined) userData.gender = body.gender;
         if (body.mobile !== undefined) userData.mobile = body.mobile || null;
         if (body.isAvailable !== undefined) doctorData.isAvailable = body.isAvailable;
+        if (body.specialty !== undefined) doctorData.specialty = body.specialty;
+        if (body.registrationNo !== undefined) {
+          doctorData.registrationNo = body.registrationNo || null;
+        }
         if (body.defaultMethodOptionId !== undefined) {
           doctorData.defaultMethodOptionId = body.defaultMethodOptionId;
         }

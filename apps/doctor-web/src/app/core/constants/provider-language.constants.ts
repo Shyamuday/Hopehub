@@ -25,9 +25,9 @@ export const PH_PROVIDER_LANGUAGE: ProviderAppLanguage = {
 };
 
 export const HOMEOPATHY_PROVIDER_LANGUAGE: ProviderAppLanguage = {
-  workspaceTitle: 'Homeopathy Provider Console',
-  providerTitle: 'Homeopathy Provider',
-  providerLower: 'homeopathy provider',
+  workspaceTitle: 'Homeopathy Doctor Console',
+  providerTitle: 'Homeopathy Doctor',
+  providerLower: 'homeopathy doctor',
   userTitle: 'Patient',
   userLower: 'patient',
   sessionTitle: 'Consultation',

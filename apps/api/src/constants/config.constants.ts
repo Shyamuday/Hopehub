@@ -34,6 +34,7 @@ const productionCorsOrigins = [
   'https://www.hopehub.in',
   'https://admin.hopehub.in',
   'https://earn.hopehub.in',
+  'https://doctor.hopehub.in',
   'https://ops.hopehub.in',
   'https://support.hopehub.in'
 ];

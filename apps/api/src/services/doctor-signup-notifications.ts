@@ -11,6 +11,7 @@ export async function notifyAdminsAboutDoctorSignup(doctor: {
   mobile?: string | null;
   specialty: string;
   registrationNo?: string | null;
+  requiresCredentialApproval?: boolean;
 }) {
   const adminSessions = await prisma.telegramBotSession.findMany({
     where: {
@@ -35,7 +36,9 @@ export async function notifyAdminsAboutDoctorSignup(doctor: {
           `Registration: ${escapeHtml(doctor.registrationNo || 'Not provided')}`,
           `Provider: ${escapeHtml(doctor.id.slice(-8))}`,
           '',
-          'This provider can log in now. Review profile readiness and website visibility when needed.'
+          doctor.requiresCredentialApproval
+            ? 'Credential review required. Verify the registration, then remove the provider suspension to enable sign-in and clinical tools.'
+            : 'This provider can log in now. Review profile readiness and website visibility when needed.'
         ].join('\n'),
         parse_mode: 'HTML',
         reply_markup: {

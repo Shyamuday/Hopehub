@@ -147,6 +147,7 @@ export class Auth {
     email: string;
     mobile?: string;
     password: string;
+    providerDomain?: 'HOMEOPATHY' | 'HOPE_HUB';
     specialty?: string;
     registrationNo?: string;
     careTeamType?: string;

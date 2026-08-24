@@ -893,7 +893,13 @@
         >
           @if (selectedDoctor.doctorProfile?.suspendedAt) {
             <div>
-              <strong>Provider suspended</strong>
+              <strong>
+                {{
+                  isCredentialReviewPending(selectedDoctor)
+                    ? 'Homeopathy credentials awaiting review'
+                    : 'Provider suspended'
+                }}
+              </strong>
               <p>
                 {{ selectedDoctor.doctorProfile?.suspendedReason || 'No reason recorded.' }}
               </p>
@@ -904,7 +910,13 @@
               (click)="setDoctorSuspension(selectedDoctor.id, false)"
               [disabled]="mutating()"
             >
-              {{ mutating() ? '...' : 'Remove suspension' }}
+              {{
+                mutating()
+                  ? '...'
+                  : isCredentialReviewPending(selectedDoctor)
+                    ? 'Approve credentials & enable sign-in'
+                    : 'Remove suspension'
+              }}
             </button>
           } @else {
             <div class="field suspension-field">

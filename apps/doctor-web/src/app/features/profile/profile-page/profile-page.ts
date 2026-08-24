@@ -632,6 +632,7 @@ export class ProfilePage implements OnDestroy {
       !indianMobileE164(form.mobile) ? 'valid 10-digit Indian mobile number' : '',
       !form.gender ? 'gender' : '',
       !form.specialty.trim() && !this.isPsychologist ? 'specialty/focus' : '',
+      !form.registrationNo.trim() && !this.isPsychologist ? 'professional registration number' : '',
     ].filter(Boolean);
     const publicMissing = [
       form.bio.trim().length < 80 ? 'bio of at least 80 characters' : '',
@@ -670,7 +671,8 @@ export class ProfilePage implements OnDestroy {
           isProviderDisplayName(form.name) &&
           Boolean(indianMobileE164(form.mobile)) &&
           Boolean(form.gender) &&
-          Boolean(form.specialty.trim() || this.isPsychologist),
+          Boolean(form.specialty.trim() || this.isPsychologist) &&
+          Boolean(form.registrationNo.trim() || this.isPsychologist),
         missing: identityMissing,
       },
       {
@@ -1214,6 +1216,12 @@ export class ProfilePage implements OnDestroy {
         gender: form.gender || null,
         mobile: indianMobileE164(form.mobile) || form.mobile,
         isAvailable: form.isAvailable,
+        ...(!this.isPsychologist
+          ? {
+              specialty: this.specialtyForProfileSave(form),
+              registrationNo: form.registrationNo.trim(),
+            }
+          : {}),
         ...(this.canPrescribe ? { defaultMethodOptionId: form.defaultMethodOptionId || null } : {}),
       };
     }

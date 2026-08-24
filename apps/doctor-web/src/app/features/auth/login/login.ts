@@ -1,4 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
+import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { form, FormField, required } from '@angular/forms/signals';
 import { DEFAULT_AUTHED_ROUTE, ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
@@ -6,7 +7,7 @@ import {
   buildProviderOnboardingStatus,
   needsProviderPathSelection,
 } from '../../../core/constants/provider-onboarding.constants';
-import { PH_PROVIDER_LANGUAGE } from '../../../core/constants/provider-language.constants';
+import { providerPortalForHost } from '../../../core/constants/provider-portal.constants';
 import { Auth } from '../../../core/services/auth';
 import { DoctorSessionService } from '../../../core/services/doctor-session';
 import { AppButtonComponent } from '../../../shared/ui/app-button.component';
@@ -30,6 +31,14 @@ export class Login {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly session = inject(DoctorSessionService);
+  private readonly title = inject(Title);
+
+  readonly portal = providerPortalForHost(
+    typeof window === 'undefined' ? '' : window.location.hostname,
+    this.route.snapshot.queryParamMap.get('portal'),
+  );
+  readonly providerLanguage = this.portal.language;
+  readonly isHomeopathyPortal = this.portal.id === 'HOMEOPATHY';
 
   mode = signal<'signin' | 'signup'>('signup');
   signupStep = signal<1 | 2>(1);
@@ -52,6 +61,8 @@ export class Login {
   readonly enrollModel = signal({
     name: '',
     mobile: indianMobileDisplay(''),
+    specialty: '',
+    registrationNo: '',
     confirmPassword: '',
   });
   readonly enrollForm = form(this.enrollModel, (schema) => {
@@ -65,7 +76,10 @@ export class Login {
   /** Keeps the OTP controls honest: only the action being performed spins. */
   sendingOtp = signal(false);
   verifyingOtp = signal(false);
-  readonly phLanguage = PH_PROVIDER_LANGUAGE;
+
+  constructor() {
+    this.title.setTitle(this.portal.pageTitle);
+  }
 
   setMode(mode: 'signin' | 'signup'): void {
     this.mode.set(mode);
@@ -93,6 +107,8 @@ export class Login {
       !this.enrollForm().invalid() &&
       Boolean(indianMobileE164(enroll.mobile)) &&
       isProviderDisplayName(enroll.name) &&
+      (!this.isHomeopathyPortal ||
+        (enroll.specialty.trim().length >= 2 && enroll.registrationNo.trim().length >= 3)) &&
       isStrongProviderPassword(password) &&
       password === enroll.confirmPassword
     );
@@ -100,18 +116,22 @@ export class Login {
 
   canContinueSignup(): boolean {
     const email = this.signInModel().email.trim();
-    const { name, mobile } = this.enrollModel();
+    const { name, mobile, specialty, registrationNo } = this.enrollModel();
     return (
       isProviderDisplayName(name) &&
       /^\S+@\S+\.\S+$/.test(email) &&
-      Boolean(indianMobileE164(mobile))
+      Boolean(indianMobileE164(mobile)) &&
+      (!this.isHomeopathyPortal ||
+        (specialty.trim().length >= 2 && registrationNo.trim().length >= 3))
     );
   }
 
   continueSignup(): void {
     if (!this.canContinueSignup()) {
       this.error.set(
-        'Add your name, a valid email, and a valid 10-digit Indian mobile number to continue.',
+        this.isHomeopathyPortal
+          ? 'Add your name, valid contact details, specialty, and professional registration number to continue.'
+          : 'Add your name, a valid email, and a valid 10-digit Indian mobile number to continue.',
       );
       return;
     }
@@ -266,7 +286,7 @@ export class Login {
       return;
     }
     const { email, password } = this.signInModel();
-    const { name, mobile } = this.enrollModel();
+    const { name, mobile, specialty, registrationNo } = this.enrollModel();
     const normalizedMobile = indianMobileE164(mobile);
     if (!normalizedMobile) {
       this.error.set('Enter a valid 10-digit Indian mobile number.');
@@ -281,7 +301,9 @@ export class Login {
         email,
         mobile: normalizedMobile,
         password,
-        registrationNo: undefined,
+        providerDomain: this.portal.id,
+        specialty: this.isHomeopathyPortal ? specialty.trim() : undefined,
+        registrationNo: this.isHomeopathyPortal ? registrationNo.trim() : undefined,
       });
 
       if (!result.ok) {
@@ -289,9 +311,15 @@ export class Login {
         return;
       }
 
+      if (this.isHomeopathyPortal) {
+        this.setMode('signin');
+        this.message.set(result.message);
+        return;
+      }
+
       const login = await this.auth.login(email, password);
       if (login.ok) {
-        await this.router.navigate(['/welcome']);
+        await this.navigateAfterLogin();
         return;
       }
       this.setMode('signin');
