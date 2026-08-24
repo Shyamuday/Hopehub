@@ -1023,6 +1023,33 @@ export class AdminApi {
   ) {
     return this.ops.getTelegramCommunityEngagement(...args);
   }
+  getTelegramContentNetwork(...args: Parameters<AdminOpsApi['getTelegramContentNetwork']>) {
+    return this.ops.getTelegramContentNetwork(...args);
+  }
+  createTelegramContentChannel(...args: Parameters<AdminOpsApi['createTelegramContentChannel']>) {
+    return this.ops.createTelegramContentChannel(...args);
+  }
+  updateTelegramContentChannel(...args: Parameters<AdminOpsApi['updateTelegramContentChannel']>) {
+    return this.ops.updateTelegramContentChannel(...args);
+  }
+  deleteTelegramContentChannel(...args: Parameters<AdminOpsApi['deleteTelegramContentChannel']>) {
+    return this.ops.deleteTelegramContentChannel(...args);
+  }
+  createTelegramContentSource(...args: Parameters<AdminOpsApi['createTelegramContentSource']>) {
+    return this.ops.createTelegramContentSource(...args);
+  }
+  updateTelegramContentSource(...args: Parameters<AdminOpsApi['updateTelegramContentSource']>) {
+    return this.ops.updateTelegramContentSource(...args);
+  }
+  deleteTelegramContentSource(...args: Parameters<AdminOpsApi['deleteTelegramContentSource']>) {
+    return this.ops.deleteTelegramContentSource(...args);
+  }
+  refreshTelegramContentSource(...args: Parameters<AdminOpsApi['refreshTelegramContentSource']>) {
+    return this.ops.refreshTelegramContentSource(...args);
+  }
+  reviewTelegramContentItem(...args: Parameters<AdminOpsApi['reviewTelegramContentItem']>) {
+    return this.ops.reviewTelegramContentItem(...args);
+  }
   updateConsultationStatus(...args: Parameters<AdminOpsApi['updateConsultationStatus']>) {
     return this.ops.updateConsultationStatus(
       ...(args as Parameters<AdminOpsApi['updateConsultationStatus']>),

@@ -1,0 +1,84 @@
+<section class="hero">
+  <div>
+    <p class="eyebrow">Telegram publishing</p>
+    <h1>Content Network</h1>
+    <p>Use public RSS/Atom feeds, review every draft, then publish trusted mental-health resources to each channel.</p>
+  </div>
+  <div class="hero__facts">
+    <strong>{{ channels().length }}</strong><span>channels configured</span>
+    <strong>{{ items().length }}</strong><span>recent drafts</span>
+  </div>
+</section>
+
+@if (message()) { <p class="feedback feedback--success">{{ message() }}</p> }
+@if (error()) { <p class="feedback feedback--error">{{ error() }}</p> }
+
+<section class="notice">
+  <strong>Free and safe by design.</strong>
+  Add only public HTTPS RSS or Atom feeds from organisations you trust. Content stays as a draft until approved unless you deliberately switch off approval for a channel.
+</section>
+
+<div class="layout">
+  <section class="panel form-panel">
+    <div class="panel__heading"><div><h2>{{ channelForm.id ? 'Edit channel' : 'Add channel' }}</h2><p>Give the bot an admin role with permission to post in this Telegram channel.</p></div></div>
+    <div class="form-grid">
+      <label>Channel name<input [(ngModel)]="channelForm.name" placeholder="HopeHub: Anxiety support" /></label>
+      <label>Short slug<input [(ngModel)]="channelForm.slug" placeholder="anxiety-support" /></label>
+      <label>Category<input [(ngModel)]="channelForm.category" placeholder="Anxiety and stress" /></label>
+      <label>Telegram chat ID or @channel<input [(ngModel)]="channelForm.chatId" placeholder="-1001234567890" /></label>
+      <label>Minimum gap between posts (minutes)<input type="number" min="15" [(ngModel)]="channelForm.minimumPostGapMinutes" /></label>
+    </div>
+    <div class="checks">
+      <label><input type="checkbox" [(ngModel)]="channelForm.isActive" /> Enable publishing</label>
+      <label><input type="checkbox" [(ngModel)]="channelForm.requireApproval" /> Require review before publishing</label>
+    </div>
+    <div class="actions"><button type="button" class="button button--primary" (click)="saveChannel()" [disabled]="isBusy('channel')">{{ isBusy('channel') ? 'Saving…' : channelForm.id ? 'Save channel' : 'Add channel' }}</button><button type="button" class="button button--quiet" (click)="resetChannel()">Clear</button></div>
+  </section>
+
+  <section class="panel form-panel">
+    <div class="panel__heading"><div><h2>{{ sourceForm.id ? 'Edit source' : 'Add source' }}</h2><p>RSS or Atom only. A fetch never posts directly when review is enabled.</p></div></div>
+    <div class="form-grid">
+      <label>Channel<select [(ngModel)]="sourceForm.channelId"><option value="">Choose channel</option>@for (channel of channels(); track channel.id) { <option [value]="channel.id">{{ channel.name }}</option> }</select></label>
+      <label>Source name<input [(ngModel)]="sourceForm.name" placeholder="WHO mental health" /></label>
+      <label class="span-2">Public HTTPS RSS/Atom URL<input [(ngModel)]="sourceForm.feedUrl" placeholder="https://example.org/feed.xml" /></label>
+      <label>Attribution<input [(ngModel)]="sourceForm.attribution" placeholder="Source: WHO" /></label>
+      <label>Refresh interval (minutes)<input type="number" min="30" [(ngModel)]="sourceForm.fetchIntervalMinutes" /></label>
+    </div>
+    <div class="checks"><label><input type="checkbox" [(ngModel)]="sourceForm.isActive" /> Enable fetching</label><label><input type="checkbox" [(ngModel)]="sourceForm.autoApprove" /> Auto-approve only when the channel allows it</label></div>
+    <div class="actions"><button type="button" class="button button--primary" (click)="saveSource()" [disabled]="isBusy('source')">{{ isBusy('source') ? 'Saving…' : sourceForm.id ? 'Save source' : 'Add source' }}</button><button type="button" class="button button--quiet" (click)="resetSource()">Clear</button></div>
+  </section>
+</div>
+
+<section class="panel">
+  <div class="panel__heading"><div><h2>Channels and sources</h2><p>Channel posting is independently switchable. Failed source refreshes show their most recent error here.</p></div><button type="button" class="button button--quiet" (click)="load()" [disabled]="loading()">Refresh</button></div>
+  @if (loading()) { <p>Loading content network…</p> }
+  @if (!loading() && !channels().length) { <p class="empty">No channels yet. Add a channel, make HopeHub AI an admin there, and then connect a source.</p> }
+  <div class="channel-list">
+    @for (channel of channels(); track channel.id) {
+      <article class="channel-card">
+        <header><div><h3>{{ channel.name }}</h3><p>{{ channel.category }} · {{ channel.chatId }}</p></div><span class="status" [class.status--active]="channel.isActive">{{ channel.isActive ? 'Publishing on' : 'Paused' }}</span></header>
+        <p class="muted">{{ channel.requireApproval ? 'Review required' : 'Approved source posts may publish automatically' }} · {{ channel.minimumPostGapMinutes }} min post gap · {{ channel._count?.items || 0 }} stored items</p>
+        @for (source of channel.sources || []; track source.id) {
+          <div class="source-row"><div><strong>{{ source.name }}</strong><small>{{ source.feedUrl }}</small>@if (source.lastError) { <small class="error-text">Last fetch: {{ source.lastError }}</small> }</div><div class="row-actions"><button type="button" class="button button--quiet" (click)="refreshSource(source)" [disabled]="isBusy('refresh:' + source.id)">{{ isBusy('refresh:' + source.id) ? 'Fetching…' : 'Fetch' }}</button><button type="button" class="link-button" (click)="editSource(source)">Edit</button><button type="button" class="link-button link-button--danger" (click)="removeSource(source)">Remove</button></div></div>
+        }
+        @if (!(channel.sources || []).length) { <p class="empty">No source connected yet.</p> }
+        <footer><button type="button" class="link-button" (click)="editChannel(channel)">Edit channel</button><button type="button" class="link-button link-button--danger" (click)="removeChannel(channel)">Remove channel</button></footer>
+      </article>
+    }
+  </div>
+</section>
+
+<section class="panel">
+  <div class="panel__heading"><div><h2>Review queue</h2><p>Approve now or choose a future publishing time. Published items remain visible as an audit trail.</p></div><label class="schedule">Optional schedule<input type="datetime-local" [(ngModel)]="reviewSchedule" /></label></div>
+  @if (!items().length) { <p class="empty">No drafts yet. Fetch a source to create a review queue.</p> }
+  <div class="item-list">
+    @for (item of items(); track item.id) {
+      <article class="item-card">
+        <header><span class="status" [class.status--active]="item.status === 'PUBLISHED' || item.status === 'APPROVED'">{{ item.status }}</span><small>{{ item.channel.name }} · {{ item.source.attribution || item.source.name }} · {{ item.createdAt | date:'medium' }}</small></header>
+        <h3>{{ item.title }}</h3><p>{{ item.summary || item.postText }}</p><a [href]="item.sourceUrl" target="_blank" rel="noopener">Open source</a>
+        @if (item.error) { <p class="error-text">{{ item.error }}</p> }
+        @if (item.status === 'PENDING') { <div class="actions"><button type="button" class="button button--primary" (click)="review(item, 'APPROVED')" [disabled]="isBusy('review:' + item.id)">Approve</button><button type="button" class="button button--danger" (click)="review(item, 'REJECTED')" [disabled]="isBusy('review:' + item.id)">Reject</button></div> }
+      </article>
+    }
+  </div>
+</section>

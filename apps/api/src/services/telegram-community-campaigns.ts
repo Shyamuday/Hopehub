@@ -20,6 +20,7 @@ import {
 import { sendGroupHelpActivityLog } from './telegram-group-help.actions.js';
 import { observeTelegramCommunityMember } from './telegram-community-member-identity.js';
 import { telegramPersonLogLabel } from './telegram-group-help.people.js';
+import { runTelegramContentNetworkScheduler } from './telegram-content-network.js';
 import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
 import { TELEGRAM_BOT_URLS } from '../constants/telegram-community-bot.constants.js';
 import {
@@ -764,6 +765,7 @@ export async function runTelegramCampaignScheduler(now = new Date()) {
   await runCommunityDataRetentionCleanupHourly(now);
   await restoreExpiredCommunityLockdowns(now);
   if (!telegramCampaignSweepEnabled) return;
+  await runTelegramContentNetworkScheduler(now);
   await runTelegramCommunityEventScheduler(now);
   await closeExpiredPolls(now);
   const retries = await prisma.telegramCampaignDelivery.findMany({

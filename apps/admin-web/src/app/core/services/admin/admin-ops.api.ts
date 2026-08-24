@@ -744,6 +744,87 @@ export class AdminOpsApi extends AdminApiBase {
     );
   }
 
+  getTelegramContentNetwork() {
+    return firstValueFrom(
+      this.http.get<{ channels: any[]; items: any[] }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_CONTENT_NETWORK}`,
+      ),
+    );
+  }
+
+  createTelegramContentChannel(payload: any) {
+    return firstValueFrom(
+      this.http.post<{ channel: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_CONTENT_NETWORK}`,
+        payload,
+      ),
+    );
+  }
+
+  updateTelegramContentChannel(id: string, payload: any) {
+    return firstValueFrom(
+      this.http.put<{ channel: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_CONTENT_NETWORK_CHANNEL(id)}`,
+        payload,
+      ),
+    );
+  }
+
+  deleteTelegramContentChannel(id: string) {
+    return firstValueFrom(
+      this.http.delete<{ ok: boolean }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_CONTENT_NETWORK_CHANNEL(id)}`,
+      ),
+    );
+  }
+
+  createTelegramContentSource(payload: any) {
+    return firstValueFrom(
+      this.http.post<{ source: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_CONTENT_NETWORK_SOURCES}`,
+        payload,
+      ),
+    );
+  }
+
+  updateTelegramContentSource(id: string, payload: any) {
+    return firstValueFrom(
+      this.http.put<{ source: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_CONTENT_NETWORK_SOURCE(id)}`,
+        payload,
+      ),
+    );
+  }
+
+  deleteTelegramContentSource(id: string) {
+    return firstValueFrom(
+      this.http.delete<{ ok: boolean }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_CONTENT_NETWORK_SOURCE(id)}`,
+      ),
+    );
+  }
+
+  refreshTelegramContentSource(id: string) {
+    return firstValueFrom(
+      this.http.post<{ result: { created: number; found: number } }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_CONTENT_NETWORK_SOURCE_REFRESH(id)}`,
+        {},
+      ),
+    );
+  }
+
+  reviewTelegramContentItem(
+    id: string,
+    payload: { status: 'APPROVED' | 'REJECTED'; scheduledFor?: string },
+  ) {
+    return firstValueFrom(
+      this.http.post<{ item: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_CONTENT_NETWORK_ITEM_REVIEW(id)}`,
+        payload,
+      ),
+    );
+  }
+
   updateConsultationStatus(
     consultationId: string,
     status: string,

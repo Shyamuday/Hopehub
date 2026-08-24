@@ -65,6 +65,16 @@ export const API_PATHS = {
     TELEGRAM_GROUP_HELP_CONFESSION_REVIEW: (reference: string) =>
       `/admin/telegram-bots/group-help/confessions/${reference}/review`,
     TELEGRAM_GROUP_HELP_ENGAGEMENT: '/admin/telegram-bots/group-help/engagement',
+    TELEGRAM_CONTENT_NETWORK: '/admin/telegram-bots/content-network',
+    TELEGRAM_CONTENT_NETWORK_CHANNEL: (id: string) =>
+      `/admin/telegram-bots/content-network/channels/${id}`,
+    TELEGRAM_CONTENT_NETWORK_SOURCES: '/admin/telegram-bots/content-network/sources',
+    TELEGRAM_CONTENT_NETWORK_SOURCE: (id: string) =>
+      `/admin/telegram-bots/content-network/sources/${id}`,
+    TELEGRAM_CONTENT_NETWORK_SOURCE_REFRESH: (id: string) =>
+      `/admin/telegram-bots/content-network/sources/${id}/refresh`,
+    TELEGRAM_CONTENT_NETWORK_ITEM_REVIEW: (id: string) =>
+      `/admin/telegram-bots/content-network/items/${id}/review`,
     CALL_HEALTH: '/admin/call-health',
     CALL_HEALTH_EVENTS: (sessionId: string) => `/admin/call-health/${sessionId}/events`,
     CONSULTATION_STATUS: (id: string) => `/admin/consultations/${id}/status`,

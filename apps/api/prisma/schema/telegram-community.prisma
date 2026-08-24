@@ -153,6 +153,85 @@ model TelegramCampaignDelivery {
   @@index([status, nextRetryAt])
 }
 
+/// A destination in the free Telegram content network. A channel remains
+/// inactive until an administrator adds its Telegram chat ID and explicitly
+/// enables it.
+model TelegramContentChannel {
+  id                    String                  @id @default(cuid())
+  slug                  String                  @unique
+  name                  String
+  category              String
+  chatId                String                  @unique
+  bot                   String                  @default("hopehubai")
+  timezone              String                  @default("Asia/Kolkata")
+  isActive              Boolean                 @default(false)
+  requireApproval       Boolean                 @default(true)
+  minimumPostGapMinutes Int                     @default(120)
+  sources               TelegramContentSource[]
+  items                 TelegramContentItem[]
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+
+  @@index([isActive])
+  @@index([category])
+}
+
+/// An administrator-approved RSS or Atom feed. Only HTTPS feeds are accepted
+/// by the API; feed items are queued as short attributed drafts instead of
+/// copying source articles.
+model TelegramContentSource {
+  id                   String                 @id @default(cuid())
+  channelId            String
+  channel              TelegramContentChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  name                 String
+  feedUrl              String
+  attribution          String
+  isActive             Boolean                @default(true)
+  autoApprove          Boolean                @default(false)
+  fetchIntervalMinutes Int                    @default(180)
+  nextFetchAt          DateTime?
+  lastFetchedAt        DateTime?
+  lastError            String?                @db.Text
+  items                TelegramContentItem[]
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+
+  @@index([isActive, nextFetchAt])
+  @@index([channelId])
+  @@unique([channelId, feedUrl])
+}
+
+/// A compact, attributed post candidate. PENDING items require a human review
+/// by default; APPROVED items are delivered by the same backend scheduler that
+/// already powers Group Help campaigns.
+model TelegramContentItem {
+  id                String                 @id @default(cuid())
+  channelId         String
+  channel           TelegramContentChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  sourceId          String?
+  source            TelegramContentSource? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  contentKey        String                 @unique
+  title             String
+  summary           String?                @db.Text
+  postText          String                 @db.Text
+  sourceUrl         String
+  imageUrl          String?
+  publishedSourceAt DateTime?
+  status            String                 @default("PENDING")
+  scheduledFor      DateTime?
+  reviewedAt        DateTime?
+  reviewedById      String?
+  publishedAt       DateTime?
+  telegramMessageId Int?
+  error             String?                @db.Text
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  @@index([channelId, status, scheduledFor])
+  @@index([sourceId, createdAt])
+  @@index([status, updatedAt])
+}
+
 model TelegramPollVote {
   id             String                   @id @default(cuid())
   deliveryId     String

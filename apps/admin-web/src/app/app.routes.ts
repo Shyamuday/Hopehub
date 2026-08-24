@@ -229,6 +229,14 @@ export const routes: Routes = [
         canActivate: guard,
       },
       {
+        path: ROUTE_PATHS.TELEGRAM_CONTENT_NETWORK,
+        loadComponent: () =>
+          import('./features/telegram-content-network/telegram-content-network-page').then(
+            (m) => m.TelegramContentNetworkPage,
+          ),
+        canActivate: guard,
+      },
+      {
         path: ROUTE_PATHS.ADMIN_USERS,
         loadComponent: () =>
           import('./features/admin-users/admin-users-page/admin-users-page').then(

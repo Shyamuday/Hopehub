@@ -33,6 +33,7 @@ export const ROUTE_PATHS = {
   ADMIN_USERS: 'admin-users',
   TELEGRAM_BOTS: 'telegram-bots',
   GROUP_HELP: 'group-help',
+  TELEGRAM_CONTENT_NETWORK: 'telegram-content-network',
   SUPPLIERS: 'suppliers',
   MEDICINES: 'medicines',
   INVENTORY: 'inventory',
@@ -219,6 +220,11 @@ export const NAV_ITEMS = [
   {
     path: adminNavPath(ROUTE_PATHS.GROUP_HELP),
     label: '🛡️ Group Help',
+    workspaces: ['hope-hub'],
+  },
+  {
+    path: adminNavPath(ROUTE_PATHS.TELEGRAM_CONTENT_NETWORK),
+    label: '🗞️ Telegram Content',
     workspaces: ['hope-hub'],
   },
   { path: adminNavPath(ROUTE_PATHS.ADMIN_USERS), label: '🔐 Admin Users', workspaces: ['shared'] },

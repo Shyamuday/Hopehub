@@ -60,6 +60,11 @@ import {
   refreshTelegramCommunityEventAnnouncement,
   retryTelegramCampaignDelivery
 } from '../../services/telegram-community-campaigns.js';
+import {
+  refreshTelegramContentSource,
+  reviewTelegramContentItem,
+  validPublicHttpsUrl
+} from '../../services/telegram-content-network.js';
 import { approveGroupHelpMemberFirstMessage } from '../../services/telegram-group-help.approval.js';
 import { sendGroupHelpActivityLog } from '../../services/telegram-group-help.actions.js';
 import {
@@ -301,6 +306,38 @@ const campaignSaveSchema = z.object({
 });
 
 const campaignToggleSchema = z.object({ isActive: z.boolean() });
+
+const contentNetworkChannelSchema = z.object({
+  slug: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .regex(/^[a-z0-9-]{3,48}$/),
+  name: z.string().trim().min(2).max(80),
+  category: z.string().trim().min(2).max(80),
+  chatId: z
+    .string()
+    .trim()
+    .regex(/^(?:-?\d+|@[A-Za-z][A-Za-z0-9_]{4,31})$/),
+  isActive: z.boolean().default(false),
+  requireApproval: z.boolean().default(true),
+  minimumPostGapMinutes: z.number().int().min(15).max(1_440).default(120)
+});
+
+const contentNetworkSourceSchema = z.object({
+  channelId: z.string().trim().min(1).max(64),
+  name: z.string().trim().min(2).max(120),
+  feedUrl: z.string().trim().url().max(1_500),
+  attribution: z.string().trim().min(2).max(160),
+  isActive: z.boolean().default(true),
+  autoApprove: z.boolean().default(false),
+  fetchIntervalMinutes: z.number().int().min(30).max(10_080).default(180)
+});
+
+const contentNetworkReviewSchema = z.object({
+  status: z.enum(['APPROVED', 'REJECTED']),
+  scheduledFor: z.coerce.date().optional()
+});
 
 const communityEventSchema = z.object({
   title: z.string().trim().min(2).max(160),
@@ -2030,6 +2067,176 @@ export function registerAdminTelegramBotRoutes(router: Router) {
       });
 
       res.json({ ok: true, message: sent, pinned });
+    })
+  );
+
+  router.get(
+    '/admin/telegram-bots/content-network',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR, Role.MARKETING),
+    asyncRoute(async (_req, res) => {
+      const [channels, pending, failed] = await Promise.all([
+        prisma.telegramContentChannel.findMany({
+          include: {
+            sources: { orderBy: { name: 'asc' } },
+            _count: { select: { items: true } }
+          },
+          orderBy: { name: 'asc' }
+        }),
+        prisma.telegramContentItem.count({ where: { status: 'PENDING' } }),
+        prisma.telegramContentItem.count({ where: { status: 'FAILED' } })
+      ]);
+      const items = await prisma.telegramContentItem.findMany({
+        include: {
+          channel: { select: { name: true, slug: true } },
+          source: { select: { name: true, attribution: true } }
+        },
+        where: { status: { in: ['PENDING', 'APPROVED', 'FAILED'] } },
+        orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
+        take: 100
+      });
+      res.json({ channels, items, counts: { pending, failed } });
+    })
+  );
+
+  router.post(
+    '/admin/telegram-bots/content-network/channels',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR, Role.MARKETING),
+    asyncRoute(async (req, res) => {
+      const parsed = contentNetworkChannelSchema.safeParse(req.body ?? {});
+      if (!parsed.success) return res.status(400).json({ message: 'Invalid content channel.' });
+      const channel = await prisma.telegramContentChannel.create({
+        data: { ...parsed.data, bot: GROUP_HELP_BOT_SLUG }
+      });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'telegram_content_channel.create',
+        targetType: 'telegram_content_channel',
+        targetId: channel.id,
+        summary: `Created Telegram content channel “${channel.name}”.`
+      });
+      res.status(201).json({ channel });
+    })
+  );
+
+  router.put(
+    '/admin/telegram-bots/content-network/channels/:id',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR, Role.MARKETING),
+    asyncRoute(async (req, res) => {
+      const parsed = contentNetworkChannelSchema.safeParse(req.body ?? {});
+      if (!parsed.success) return res.status(400).json({ message: 'Invalid content channel.' });
+      const channel = await prisma.telegramContentChannel.update({
+        where: { id: routeParam(req, 'id') },
+        data: parsed.data
+      });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'telegram_content_channel.update',
+        targetType: 'telegram_content_channel',
+        targetId: channel.id,
+        summary: `Updated Telegram content channel “${channel.name}”.`
+      });
+      res.json({ channel });
+    })
+  );
+
+  router.delete(
+    '/admin/telegram-bots/content-network/channels/:id',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      await prisma.telegramContentChannel.delete({ where: { id: routeParam(req, 'id') } });
+      res.json({ ok: true });
+    })
+  );
+
+  router.post(
+    '/admin/telegram-bots/content-network/sources',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR, Role.MARKETING),
+    asyncRoute(async (req, res) => {
+      const parsed = contentNetworkSourceSchema.safeParse(req.body ?? {});
+      if (!parsed.success || !validPublicHttpsUrl(parsed.data?.feedUrl)) {
+        return res.status(400).json({ message: 'Use a public HTTPS RSS or Atom feed URL.' });
+      }
+      const source = await prisma.telegramContentSource.create({
+        data: { ...parsed.data, nextFetchAt: new Date() }
+      });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'telegram_content_source.create',
+        targetType: 'telegram_content_source',
+        targetId: source.id,
+        summary: `Added RSS source “${source.name}”.`
+      });
+      res.status(201).json({ source });
+    })
+  );
+
+  router.put(
+    '/admin/telegram-bots/content-network/sources/:id',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR, Role.MARKETING),
+    asyncRoute(async (req, res) => {
+      const parsed = contentNetworkSourceSchema.safeParse(req.body ?? {});
+      if (!parsed.success || !validPublicHttpsUrl(parsed.data?.feedUrl)) {
+        return res.status(400).json({ message: 'Use a public HTTPS RSS or Atom feed URL.' });
+      }
+      const source = await prisma.telegramContentSource.update({
+        where: { id: routeParam(req, 'id') },
+        data: { ...parsed.data, nextFetchAt: new Date(), lastError: null }
+      });
+      res.json({ source });
+    })
+  );
+
+  router.delete(
+    '/admin/telegram-bots/content-network/sources/:id',
+    authRequired,
+    allowRoles(Role.ADMIN),
+    asyncRoute(async (req, res) => {
+      await prisma.telegramContentSource.delete({ where: { id: routeParam(req, 'id') } });
+      res.json({ ok: true });
+    })
+  );
+
+  router.post(
+    '/admin/telegram-bots/content-network/sources/:id/refresh',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR, Role.MARKETING),
+    asyncRoute(async (req, res) => {
+      const result = await refreshTelegramContentSource(routeParam(req, 'id'));
+      res.json({ result });
+    })
+  );
+
+  router.post(
+    '/admin/telegram-bots/content-network/items/:id/review',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR, Role.MARKETING),
+    asyncRoute(async (req, res) => {
+      const parsed = contentNetworkReviewSchema.safeParse(req.body ?? {});
+      if (!parsed.success) return res.status(400).json({ message: 'Choose approve or reject.' });
+      const item = await reviewTelegramContentItem({
+        itemId: routeParam(req, 'id'),
+        status: parsed.data.status,
+        scheduledFor: parsed.data.scheduledFor,
+        reviewerId: req.user!.id
+      });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: `telegram_content_item.${parsed.data.status.toLowerCase()}`,
+        targetType: 'telegram_content_item',
+        targetId: item.id,
+        summary: `${parsed.data.status === 'APPROVED' ? 'Approved' : 'Rejected'} content candidate “${item.title}”.`
+      });
+      res.json({ item });
     })
   );
 
