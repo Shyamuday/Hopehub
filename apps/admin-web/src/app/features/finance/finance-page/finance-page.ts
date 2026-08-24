@@ -1,9 +1,10 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, computed, HostListener, inject, signal, OnInit } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { DatePipe } from '@angular/common';
 import { AdminApi } from '../../../core/services/admin-api';
 import { AdminWorkspaceService } from '../../../core/services/admin-workspace.service';
 import { AppApplyButtonComponent } from '../../../shared/ui/app-apply-button.component';
+import { AdminPageHeaderComponent } from '../../../shared/ui/admin-page-header.component';
 import {
   EMPTY_EXPENSE_FORM,
   EXPENSE_CATEGORIES,
@@ -20,7 +21,7 @@ import {
 
 @Component({
   selector: 'app-finance-page',
-  imports: [FormField, DatePipe, AppApplyButtonComponent],
+  imports: [FormField, DatePipe, AppApplyButtonComponent, AdminPageHeaderComponent],
   templateUrl: './finance-page.html',
   styleUrl: './finance-page.scss',
 })
@@ -64,9 +65,29 @@ export class FinancePage implements OnInit {
   providerCompensation = signal<any[]>([]);
   compensationAudits = signal<any[]>([]);
   compensationDrafts = signal<Record<string, any>>({});
+  private compensationBaseline = '{}';
   compensationSavingId = signal('');
   compensationPreviewRupees = signal(1000);
   stores = signal<any[]>([]);
+  readonly headerMetrics = computed(() => {
+    const period = this.periodReport()?.totals;
+    const summary = this.summary();
+    const revenue = period?.consultationRevenueInPaise ?? summary?.consultationRevenueInPaise ?? 0;
+    const net = period?.netEstimateInPaise ?? summary?.netEstimateInPaise ?? 0;
+    return [
+      { label: 'Revenue', value: this.formatPaise(revenue), tone: 'success' as const },
+      {
+        label: 'Net estimate',
+        value: this.formatPaise(net),
+        tone: net < 0 ? ('danger' as const) : ('success' as const),
+      },
+      {
+        label: 'Outstanding',
+        value: this.outstanding().length,
+        tone: this.outstanding().length ? ('warning' as const) : ('default' as const),
+      },
+    ];
+  });
 
   expenseModal = signal(false);
   editingExpense = signal<any | null>(null);
@@ -416,6 +437,17 @@ export class FinancePage implements OnInit {
     this.compensationDrafts.set(
       Object.fromEntries(providers.map((provider) => [provider.id, { ...provider.rule }])),
     );
+    this.compensationBaseline = JSON.stringify(this.compensationDrafts());
+  }
+
+  hasUnsavedChanges(): boolean {
+    return JSON.stringify(this.compensationDrafts()) !== this.compensationBaseline;
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  protectUnsavedChanges(event: BeforeUnloadEvent): void {
+    if (!this.hasUnsavedChanges()) return;
+    event.preventDefault();
   }
 
   compensationDraft(providerId: string): any {

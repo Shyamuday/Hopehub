@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, HostListener, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminApi } from '../../../core/services/admin-api';
 import { TOAST_DURATION_MS } from '../../../core/constants/timing.constants';
@@ -9,10 +9,17 @@ import {
   AdminFormDrawerComponent,
   type AdminFormStep,
 } from '../../../shared/ui/admin-form-drawer.component';
+import { AdminPageHeaderComponent } from '../../../shared/ui/admin-page-header.component';
 
 @Component({
   selector: 'app-telegram-bots-page',
-  imports: [DatePipe, FormsModule, AdminCanDirective, AdminFormDrawerComponent],
+  imports: [
+    DatePipe,
+    FormsModule,
+    AdminCanDirective,
+    AdminFormDrawerComponent,
+    AdminPageHeaderComponent,
+  ],
   templateUrl: './telegram-bots-page.html',
   styleUrl: './telegram-bots-page.scss',
 })
@@ -33,6 +40,8 @@ export class TelegramBotsPage implements OnInit {
   toast = signal('');
   dropPendingUpdates = signal(false);
   refreshConnections = signal(false);
+  sessionSearch = signal('');
+  eventSearch = signal('');
   publicApiUrl = signal('');
   configurationOpen = signal(false);
   configurationStep = signal(0);
@@ -50,6 +59,52 @@ export class TelegramBotsPage implements OnInit {
 
   linkedSessions = computed(() => this.sessions().filter((session) => session.linkedUserId).length);
   unlinkedSessions = computed(() => this.sessions().length - this.linkedSessions());
+  visibleSessions = computed(() => {
+    const query = this.sessionSearch().trim().toLocaleLowerCase();
+    if (!query) return this.sessions();
+    return this.sessions().filter((session) =>
+      [
+        session.displayName,
+        session.username,
+        session.chatId,
+        session.botKind,
+        session.linkedUser?.name,
+        session.linkedUser?.email,
+        session.linkedUser?.mobile,
+      ].some((value) =>
+        String(value || '')
+          .toLocaleLowerCase()
+          .includes(query),
+      ),
+    );
+  });
+  visibleEvents = computed(() => {
+    const query = this.eventSearch().trim().toLocaleLowerCase();
+    if (!query) return this.events();
+    return this.events().filter((event) =>
+      [event.eventType, event.botKind, event.chatId, event.updateId]
+        .map((value) => String(value || '').toLocaleLowerCase())
+        .some((value) => value.includes(query)),
+    );
+  });
+  headerMetrics = computed(() => [
+    {
+      label: 'Configured',
+      value: `${this.bots().filter((bot) => bot.configured).length}/${this.bots().length}`,
+      tone: this.bots().every((bot) => bot.configured)
+        ? ('success' as const)
+        : ('warning' as const),
+    },
+    { label: 'Linked', value: this.linkedSessions(), tone: 'success' as const },
+    {
+      label: 'Failures',
+      value:
+        Number(this.health()?.failedWebhookUpdates || 0) +
+        Number(this.health()?.failedGroupHelpCommands || 0) +
+        Number(this.health()?.failedDeliveries || 0),
+      tone: this.health()?.needsAttention ? ('danger' as const) : ('default' as const),
+    },
+  ]);
   controlGroups = computed(() =>
     ['Protection', 'Shared links', 'Confession bot', 'Contact bot', 'Rules bot']
       .map((name) => ({
@@ -160,6 +215,11 @@ export class TelegramBotsPage implements OnInit {
 
   closeConfiguration() {
     if (this.configurationBusy()) return;
+    if (
+      this.hasUnsavedChanges() &&
+      !confirm('Discard the unsaved Telegram bot configuration changes?')
+    )
+      return;
     if (this.configurationSnapshot) {
       this.controlValues.set({ ...this.configurationSnapshot.controls });
       this.publicApiUrl.set(this.configurationSnapshot.publicApiUrl);
@@ -295,6 +355,22 @@ export class TelegramBotsPage implements OnInit {
         this.controlValue(control.key) !==
         (this.configurationSnapshot?.controls[control.key] ?? ''),
     ).length;
+  }
+
+  hasUnsavedChanges() {
+    if (!this.configurationOpen() || !this.configurationSnapshot) return false;
+    return (
+      this.changedControlCount() > 0 ||
+      this.publicApiUrl() !== this.configurationSnapshot.publicApiUrl ||
+      this.dropPendingUpdates() !== this.configurationSnapshot.dropPendingUpdates ||
+      this.refreshConnections() !== this.configurationSnapshot.refreshConnections
+    );
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  protectUnsavedChanges(event: BeforeUnloadEvent) {
+    if (!this.hasUnsavedChanges()) return;
+    event.preventDefault();
   }
 
   canPreviewGroup(name: string) {

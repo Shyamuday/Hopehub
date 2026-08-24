@@ -1,13 +1,15 @@
 
 <div class="page">
-  <div class="page-header">
-    <div>
-      <h2>Security & compliance</h2>
-      <p class="muted">Role capability matrix and audit log retention</p>
-    </div>
-  </div>
+  <app-admin-page-header
+    eyebrow="Administration"
+    title="Security & compliance"
+    description="Review role capabilities, authentication activity, active sessions, and audit retention from one workspace."
+    [metrics]="headerMetrics()"
+  >
+    <button adminPageActions type="button" (click)="load()" [disabled]="loading()">Refresh</button>
+  </app-admin-page-header>
 
-  <div class="tabs">
+  <div class="tabs tabs--sticky">
     <button type="button" [class.active]="tab() === 'rbac'" (click)="tab.set('rbac')">RBAC matrix</button>
     <button type="button" [class.active]="tab() === 'retention'" (click)="tab.set('retention')">Audit retention</button>
     <button type="button" [class.active]="tab() === 'auth'" (click)="openAuthLogs()">Auth logs</button>

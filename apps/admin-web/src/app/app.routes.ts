@@ -38,6 +38,7 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/doctors/doctors-page/doctors-page').then((m) => m.DoctorsPage),
         canActivate: guard,
+        canDeactivate: [unsavedChangesGuard],
       },
       {
         path: ROUTE_PATHS.CONSUMERS,
@@ -72,6 +73,7 @@ export const routes: Routes = [
             (m) => m.HopeHubOffersPage,
           ),
         canActivate: guard,
+        canDeactivate: [unsavedChangesGuard],
       },
       {
         path: ROUTE_PATHS.CONSUMER_FLOWS,
@@ -86,6 +88,7 @@ export const routes: Routes = [
             (m) => m.ListenerScreeningPage,
           ),
         canActivate: guard,
+        canDeactivate: [unsavedChangesGuard],
       },
       {
         path: ROUTE_PATHS.PROVIDER_ROLES,
@@ -222,6 +225,7 @@ export const routes: Routes = [
             (m) => m.TelegramBotsPage,
           ),
         canActivate: guard,
+        canDeactivate: [unsavedChangesGuard],
       },
       {
         path: ROUTE_PATHS.GROUP_HELP,
@@ -237,6 +241,7 @@ export const routes: Routes = [
             (m) => m.TelegramContentNetworkPage,
           ),
         canActivate: guard,
+        canDeactivate: [unsavedChangesGuard],
       },
       {
         path: ROUTE_PATHS.ADMIN_USERS,
@@ -335,6 +340,7 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/finance/finance-page/finance-page').then((m) => m.FinancePage),
         canActivate: guard,
+        canDeactivate: [unsavedChangesGuard],
       },
       {
         path: ROUTE_PATHS.PAYROLL,

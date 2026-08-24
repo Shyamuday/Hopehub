@@ -1,10 +1,11 @@
 <div class="fin-page">
-  <div class="fin-hdr">
-    <div>
-      <h2>Finance</h2>
-      <p>Revenue, payroll cost, expenses, and net estimate</p>
-    </div>
-    <div class="fin-actions">
+  <app-admin-page-header
+    eyebrow="Operations"
+    title="Finance"
+    description="Review revenue, provider payouts, payroll cost, expenses, outstanding payments, and net estimates."
+    [metrics]="headerMetrics()"
+  >
+    <div adminPageActions class="fin-actions">
       <select [formField]="exportFilterForm.branchExportFilter" class="branch-filter" title="Optional branch filter for export">
         <option value="">All branches</option>
         <option value="CLINIC">Clinic (online / unallocated)</option>
@@ -17,9 +18,9 @@
       </button>
       <input type="month" [formField]="monthForm.selectedMonth" (change)="loadAll()" class="month-inp" />
     </div>
-  </div>
+  </app-admin-page-header>
 
-  <div class="tabs">
+  <div class="tabs tabs--sticky">
     @for (t of tabs; track t.id) {
       <button class="tab" [class.active]="tab() === t.id" (click)="setTab(t.id)">{{ t.label }}</button>
     }

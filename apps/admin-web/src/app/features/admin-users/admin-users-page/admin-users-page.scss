@@ -1,4 +1,4 @@
-.page { padding: 0.5rem; display: grid; gap: 1rem; }
+.page { padding: 0.5rem; display: grid; gap: 1rem; max-width: 1600px; margin: 0 auto; }
 .page-header, .section-header, .table-head, .pager { display: flex; justify-content: space-between; gap: 1rem; align-items: center; }
 .muted { color: #64748b; margin: 0.25rem 0 0; }
 .directory, .admin-section { display: grid; gap: 0.85rem; }
@@ -10,6 +10,7 @@
 table { width: 100%; border-collapse: collapse; min-width: 820px; }
 th, td { padding: 0.65rem 0.75rem; text-align: left; border-bottom: 1px solid #e5e7eb; vertical-align: top; }
 th { background: #f8fafc; color: #475569; font-size: 0.75rem; text-transform: uppercase; }
+thead th { position: sticky; top: 0; z-index: 1; }
 td strong, td span { display: block; }
 td span { color: #64748b; font-size: 0.78rem; margin-top: 0.12rem; }
 .role-pill { display: inline-block; color: #1d4ed8; font-weight: 800; margin: 0; }

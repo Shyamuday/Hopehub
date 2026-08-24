@@ -18,6 +18,7 @@ import {
   CONSULTATION_STATUS_FALLBACK_STYLE,
   CONSULTATION_STATUS_STYLES,
 } from '../constants/consultation-status.constants';
+import { AdminPageHeaderComponent } from '../../../shared/ui/admin-page-header.component';
 
 type ConsultationQualitySummary = {
   totalClosed: number;
@@ -34,7 +35,7 @@ type ConsultationQualitySummary = {
 
 @Component({
   selector: 'app-consultations-page',
-  imports: [FormField, DatePipe, RouterLink],
+  imports: [FormField, DatePipe, RouterLink, AdminPageHeaderComponent],
   templateUrl: './consultations-page.html',
   styleUrl: './consultations-page.scss',
 })
@@ -71,6 +72,19 @@ export class ConsultationsPage implements OnInit {
   page = signal(1);
   pageSize = 20;
   unassignedCount = signal(0);
+  readonly headerMetrics = computed(() => [
+    { label: 'Total', value: this.total() },
+    {
+      label: 'Unassigned',
+      value: this.unassignedCount(),
+      tone: this.unassignedCount() ? ('warning' as const) : ('default' as const),
+    },
+    {
+      label: 'Visible',
+      value: this.consultations().length,
+      tone: 'success' as const,
+    },
+  ]);
   qualitySummary = signal<ConsultationQualitySummary | null>(null);
   qualityDays = signal(30);
   private qualityLoaded = false;

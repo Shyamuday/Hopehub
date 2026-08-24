@@ -1,7 +1,8 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminApi } from '../../core/services/admin-api';
+import { AdminPageHeaderComponent } from '../../shared/ui/admin-page-header.component';
 
 type Channel = {
   id: string;
@@ -67,7 +68,7 @@ const emptySource = () => ({
 
 @Component({
   selector: 'app-telegram-content-network-page',
-  imports: [CommonModule, DatePipe, FormsModule],
+  imports: [CommonModule, DatePipe, FormsModule, AdminPageHeaderComponent],
   templateUrl: './telegram-content-network-page.html',
   styleUrl: './telegram-content-network-page.scss',
 })
@@ -83,6 +84,29 @@ export class TelegramContentNetworkPage implements OnInit {
   readonly selectedItems = computed(() =>
     this.items().filter((item) => item.channel.id === this.selectedChannelId()),
   );
+  readonly channelSearch = signal('');
+  readonly visibleChannels = computed(() => {
+    const query = this.channelSearch().trim().toLocaleLowerCase();
+    if (!query) return this.channels();
+    return this.channels().filter((channel) =>
+      [channel.name, channel.category, channel.slug, channel.chatId].some((value) =>
+        value.toLocaleLowerCase().includes(query),
+      ),
+    );
+  });
+  readonly headerMetrics = computed(() => [
+    { label: 'Channels', value: this.channels().length },
+    {
+      label: 'Live',
+      value: this.channels().filter((channel) => channel.isActive).length,
+      tone: 'success' as const,
+    },
+    {
+      label: 'Needs review',
+      value: this.items().filter((item) => item.status === 'PENDING').length,
+      tone: 'warning' as const,
+    },
+  ]);
   readonly loading = signal(true);
   readonly busy = signal('');
   readonly message = signal('');
@@ -91,6 +115,8 @@ export class TelegramContentNetworkPage implements OnInit {
   channelForm = emptyChannel();
   sourceForm = emptySource();
   reviewSchedule = '';
+  private channelBaseline = JSON.stringify(this.channelForm);
+  private sourceBaseline = JSON.stringify(this.sourceForm);
 
   ngOnInit(): void {
     void this.load();
@@ -107,7 +133,10 @@ export class TelegramContentNetworkPage implements OnInit {
       const current = selected || response.channels[0];
       if (current) {
         this.selectedChannelId.set(current.id);
-        if (!this.sourceForm.channelId) this.sourceForm.channelId = current.id;
+        if (!this.sourceForm.channelId) {
+          this.sourceForm.channelId = current.id;
+          this.sourceBaseline = JSON.stringify(this.sourceForm);
+        }
       }
     } catch (error) {
       this.error.set(this.errorMessage(error));
@@ -128,15 +157,18 @@ export class TelegramContentNetworkPage implements OnInit {
       requireApproval: channel.requireApproval,
       minimumPostGapMinutes: channel.minimumPostGapMinutes,
     };
+    this.channelBaseline = JSON.stringify(this.channelForm);
   }
 
   resetChannel(): void {
     this.channelForm = emptyChannel();
+    this.channelBaseline = JSON.stringify(this.channelForm);
   }
 
   selectChannel(channel: Channel): void {
     this.selectedChannelId.set(channel.id);
     this.sourceForm = { ...emptySource(), channelId: channel.id };
+    this.sourceBaseline = JSON.stringify(this.sourceForm);
     this.editChannel(channel);
   }
 
@@ -144,6 +176,8 @@ export class TelegramContentNetworkPage implements OnInit {
     this.selectedChannelId.set('');
     this.channelForm = emptyChannel();
     this.sourceForm = emptySource();
+    this.channelBaseline = JSON.stringify(this.channelForm);
+    this.sourceBaseline = JSON.stringify(this.sourceForm);
   }
 
   editSource(source: Source): void {
@@ -158,11 +192,26 @@ export class TelegramContentNetworkPage implements OnInit {
       autoApprove: source.autoApprove,
       fetchIntervalMinutes: source.fetchIntervalMinutes,
     };
+    this.sourceBaseline = JSON.stringify(this.sourceForm);
   }
 
   resetSource(): void {
     const selectedChannelId = this.selectedChannelId() || this.channels()[0]?.id || '';
     this.sourceForm = { ...emptySource(), channelId: selectedChannelId };
+    this.sourceBaseline = JSON.stringify(this.sourceForm);
+  }
+
+  hasUnsavedChanges(): boolean {
+    return (
+      JSON.stringify(this.channelForm) !== this.channelBaseline ||
+      JSON.stringify(this.sourceForm) !== this.sourceBaseline
+    );
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  protectUnsavedChanges(event: BeforeUnloadEvent): void {
+    if (!this.hasUnsavedChanges()) return;
+    event.preventDefault();
   }
 
   async saveChannel(): Promise<void> {

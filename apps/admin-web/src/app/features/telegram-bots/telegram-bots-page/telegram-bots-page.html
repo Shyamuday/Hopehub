@@ -1,22 +1,22 @@
 <div class="page">
-  <div class="page-header">
-    <div>
-      <h2>Telegram bots</h2>
-      <p class="muted">Monitor all Hope Hub Telegram bots without exposing tokens.</p>
-    </div>
-    <div class="header-actions">
-      <button type="button" class="btn-sec" (click)="load()" [disabled]="loading()">Refresh</button>
-      <button
-        type="button"
-        class="btn-primary"
-        [adminCan]="managePermission"
-        (click)="openConfiguration()"
-        [disabled]="loading()"
-      >
-        Configure bots
-      </button>
-    </div>
-  </div>
+  <app-admin-page-header
+    eyebrow="Telegram operations"
+    title="Telegram bots"
+    description="Monitor connections, linked accounts, delivery health, and managed bot settings without exposing tokens."
+    [metrics]="headerMetrics()"
+  >
+    <button adminPageActions type="button" class="btn-sec" (click)="load()" [disabled]="loading()">Refresh</button>
+    <button
+      adminPageActions
+      type="button"
+      class="btn-primary"
+      [adminCan]="managePermission"
+      (click)="openConfiguration()"
+      [disabled]="loading()"
+    >
+      Configure bots
+    </button>
+  </app-admin-page-header>
 
   @if (loading()) {
     <p class="loading-text">Loading Telegram status...</p>
@@ -135,11 +135,12 @@
       <div class="section-header">
         <div>
           <h3>Linked Telegram sessions</h3>
-          <p class="muted">Use unlink when a person connected the wrong bot/account.</p>
+          <p class="muted">{{ visibleSessions().length }} shown · use unlink when a person connected the wrong bot/account.</p>
         </div>
+        <input class="panel-search" type="search" [ngModel]="sessionSearch()" (ngModelChange)="sessionSearch.set($event)" placeholder="Search person, account, bot…" />
       </div>
 
-      @if (!sessions().length) {
+      @if (!visibleSessions().length) {
         <p class="empty">No Telegram sessions yet.</p>
       } @else {
         <div class="table-wrap">
@@ -155,7 +156,7 @@
               </tr>
             </thead>
             <tbody>
-              @for (session of sessions(); track session.id) {
+          @for (session of visibleSessions(); track session.id) {
                 <tr>
                   <td>
                     <strong>{{ session.displayName }}</strong>
@@ -206,15 +207,16 @@
       <div class="section-header">
         <div>
           <h3>Recent bot events</h3>
-          <p class="muted">Latest activity received from Telegram.</p>
+          <p class="muted">{{ visibleEvents().length }} shown · latest activity received from Telegram.</p>
         </div>
+        <input class="panel-search" type="search" [ngModel]="eventSearch()" (ngModelChange)="eventSearch.set($event)" placeholder="Search event, bot, chat…" />
       </div>
 
-      @if (!events().length) {
+      @if (!visibleEvents().length) {
         <p class="empty">No bot events yet.</p>
       } @else {
         <div class="event-list">
-          @for (event of events(); track event.id) {
+          @for (event of visibleEvents(); track event.id) {
             <article>
               <strong>{{ event.eventType }}</strong>
               <span

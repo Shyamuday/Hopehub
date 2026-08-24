@@ -1,20 +1,27 @@
 <div class="offers-page">
-  <header class="page-head">
-    <div>
-      <p>Healing Hub</p>
-      <h2>Offers, Banners & Organisation Leads</h2>
-    </div>
-  </header>
+  <app-admin-page-header
+    eyebrow="Healing Hub"
+    title="Offers, banners & organisation leads"
+    description="Manage what users see, what they pay, and the organisation enquiries that need follow-up."
+    [metrics]="headerMetrics()"
+  >
+    <button adminPageActions type="button" (click)="load()" [disabled]="loading()">Refresh</button>
+    @if (tab() === 'offers') {
+      <button adminPageActions type="button" class="primary" [adminCan]="managePermission" (click)="newOffer()">Create offer</button>
+    } @else if (tab() === 'banners') {
+      <button adminPageActions type="button" class="primary" [adminCan]="managePermission" (click)="newBanner()">Create banner</button>
+    }
+  </app-admin-page-header>
 
-  <nav class="tabs" aria-label="Healing Hub offer sections">
+  <nav class="tabs tabs--sticky" aria-label="Healing Hub offer sections">
     <button type="button" [class.active]="tab() === 'offers'" (click)="setTab('offers')">
-      Offers
+      Offers <span>{{ offerings().length }}</span>
     </button>
     <button type="button" [class.active]="tab() === 'banners'" (click)="setTab('banners')">
-      Home banners
+      Home banners <span>{{ banners().length }}</span>
     </button>
     <button type="button" [class.active]="tab() === 'leads'" (click)="setTab('leads')">
-      Organisation leads
+      Organisation leads <span>{{ leads().length }}</span>
     </button>
   </nav>
 

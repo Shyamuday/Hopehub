@@ -1,14 +1,14 @@
-<section class="hero">
-  <div>
-    <p class="eyebrow">Telegram publishing</p>
-    <h1>Content Network</h1>
-    <p>Select a channel and manage its publishing settings, sources, review queue, and delivery readiness in one place.</p>
-  </div>
-  <div class="hero__facts">
-    <strong>{{ channels().length }}</strong><span>channels configured</span>
-    <strong>{{ items().length }}</strong><span>reviewable items</span>
-  </div>
-</section>
+<app-admin-page-header
+  eyebrow="Telegram publishing"
+  title="Content Network"
+  description="Select a channel and manage publishing settings, trusted sources, review queue, and delivery readiness in one place."
+  [metrics]="headerMetrics()"
+>
+  <button adminPageActions type="button" class="button button--quiet" (click)="load()" [disabled]="loading()">
+    {{ loading() ? 'Refreshing…' : 'Refresh data' }}
+  </button>
+  <button adminPageActions type="button" class="button button--primary" (click)="addChannel()">Add channel</button>
+</app-admin-page-header>
 
 @if (message()) { <p class="feedback feedback--success">{{ message() }}</p> }
 @if (error()) { <p class="feedback feedback--error">{{ error() }}</p> }
@@ -20,14 +20,21 @@
 
 <div class="workspace">
   <aside class="channel-nav" aria-label="Content channels">
-    <div class="channel-nav__heading"><strong>Channels</strong><button type="button" class="button button--quiet" (click)="addChannel()">Add channel</button></div>
+    <div class="channel-nav__heading"><strong>Channels</strong><span>{{ visibleChannels().length }}/{{ channels().length }}</span></div>
+    <label class="channel-search">
+      <span class="sr-only">Search channels</span>
+      <input type="search" [ngModel]="channelSearch()" (ngModelChange)="channelSearch.set($event)" placeholder="Search channels…" />
+    </label>
     @if (loading()) { <p class="empty">Loading channels…</p> }
     @if (!loading() && !channels().length) { <p class="empty">Create the first channel, then add its trusted content sources.</p> }
-    @for (channel of channels(); track channel.id) {
+    @for (channel of visibleChannels(); track channel.id) {
       <button type="button" class="channel-nav__item" [class.channel-nav__item--active]="selectedChannelId() === channel.id" (click)="selectChannel(channel)">
         <span><strong>{{ channel.name }}</strong><small>{{ channel.category }}</small></span>
         <em [class.channel-nav__state--live]="channel.isActive">{{ channel.isActive ? 'Live' : 'Draft' }}</em>
       </button>
+    }
+    @if (!loading() && channels().length && !visibleChannels().length) {
+      <p class="empty">No channel matches “{{ channelSearch() }}”.</p>
     }
   </aside>
 

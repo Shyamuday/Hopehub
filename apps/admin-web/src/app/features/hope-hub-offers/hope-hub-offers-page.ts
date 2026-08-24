@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminApi } from '../../core/services/admin-api';
 import { AdminCanDirective } from '../../core/directives/admin-can.directive';
@@ -7,6 +7,7 @@ import {
   AdminFormDrawerComponent,
   type AdminFormStep,
 } from '../../shared/ui/admin-form-drawer.component';
+import { AdminPageHeaderComponent } from '../../shared/ui/admin-page-header.component';
 
 type Tab = 'offers' | 'banners' | 'leads';
 
@@ -43,7 +44,7 @@ const MEDIA_ACCESS_MODES = ['PUBLIC', 'LOGIN_REQUIRED', 'PAID_ONLY'];
 @Component({
   selector: 'app-hope-hub-offers-page',
   standalone: true,
-  imports: [FormsModule, AdminCanDirective, AdminFormDrawerComponent],
+  imports: [FormsModule, AdminCanDirective, AdminFormDrawerComponent, AdminPageHeaderComponent],
   templateUrl: './hope-hub-offers-page.html',
   styleUrl: './hope-hub-offers-page.scss',
 })
@@ -65,6 +66,19 @@ export class HopeHubOffersPage implements OnInit {
   readonly partialPaymentTypes = PARTIAL_PAYMENT_TYPES;
   readonly leadStatuses = LEAD_STATUSES;
   readonly mediaAccessModes = MEDIA_ACCESS_MODES;
+  readonly headerMetrics = computed(() => [
+    {
+      label: 'Live offers',
+      value: this.offerings().filter((offer) => offer.isActive).length,
+      tone: 'success' as const,
+    },
+    { label: 'Banners', value: this.banners().length },
+    {
+      label: 'New leads',
+      value: this.leads().filter((lead) => lead.status === 'NEW').length,
+      tone: 'warning' as const,
+    },
+  ]);
 
   readonly offerForm = signal(this.emptyOffer());
   readonly bannerForm = signal(this.emptyBanner());
@@ -72,6 +86,8 @@ export class HopeHubOffersPage implements OnInit {
   readonly offerStep = signal(0);
   readonly bannerEditorOpen = signal(false);
   readonly bannerStep = signal(0);
+  private offerBaseline = '';
+  private bannerBaseline = '';
   readonly offerSteps: readonly AdminFormStep[] = [
     { id: 'basics', label: 'Basics' },
     { id: 'pricing', label: 'Pricing' },
@@ -130,11 +146,16 @@ export class HopeHubOffersPage implements OnInit {
   }
 
   setTab(tab: Tab): void {
+    if (this.hasUnsavedChanges() && !confirm('Discard the unsaved editor changes?')) return;
     this.tab.set(tab);
     this.offerEditorOpen.set(false);
     this.offerStep.set(0);
+    this.offerForm.set(this.emptyOffer());
+    this.offerBaseline = '';
     this.bannerEditorOpen.set(false);
     this.bannerStep.set(0);
+    this.bannerForm.set(this.emptyBanner());
+    this.bannerBaseline = '';
   }
 
   editOffer(offer: any): void {
@@ -170,19 +191,23 @@ export class HopeHubOffersPage implements OnInit {
     this.tab.set('offers');
     this.offerStep.set(0);
     this.offerEditorOpen.set(true);
+    this.offerBaseline = JSON.stringify(this.offerForm());
   }
 
   newOffer(): void {
     this.offerForm.set(this.emptyOffer());
     this.offerStep.set(0);
     this.offerEditorOpen.set(true);
+    this.offerBaseline = JSON.stringify(this.offerForm());
   }
 
   closeOfferEditor(): void {
     if (this.saving()) return;
+    if (this.offerHasUnsavedChanges() && !confirm('Discard the unsaved offer changes?')) return;
     this.offerEditorOpen.set(false);
     this.offerStep.set(0);
     this.offerForm.set(this.emptyOffer());
+    this.offerBaseline = '';
   }
 
   nextOfferStep(): void {
@@ -210,19 +235,41 @@ export class HopeHubOffersPage implements OnInit {
     this.tab.set('banners');
     this.bannerStep.set(0);
     this.bannerEditorOpen.set(true);
+    this.bannerBaseline = JSON.stringify(this.bannerForm());
   }
 
   newBanner(): void {
     this.bannerForm.set(this.emptyBanner());
     this.bannerStep.set(0);
     this.bannerEditorOpen.set(true);
+    this.bannerBaseline = JSON.stringify(this.bannerForm());
   }
 
   closeBannerEditor(): void {
     if (this.saving()) return;
+    if (this.bannerHasUnsavedChanges() && !confirm('Discard the unsaved banner changes?')) return;
     this.bannerEditorOpen.set(false);
     this.bannerStep.set(0);
     this.bannerForm.set(this.emptyBanner());
+    this.bannerBaseline = '';
+  }
+
+  offerHasUnsavedChanges(): boolean {
+    return this.offerEditorOpen() && JSON.stringify(this.offerForm()) !== this.offerBaseline;
+  }
+
+  bannerHasUnsavedChanges(): boolean {
+    return this.bannerEditorOpen() && JSON.stringify(this.bannerForm()) !== this.bannerBaseline;
+  }
+
+  hasUnsavedChanges(): boolean {
+    return this.offerHasUnsavedChanges() || this.bannerHasUnsavedChanges();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  protectUnsavedChanges(event: BeforeUnloadEvent): void {
+    if (!this.hasUnsavedChanges()) return;
+    event.preventDefault();
   }
 
   nextBannerStep(): void {
@@ -301,6 +348,7 @@ export class HopeHubOffersPage implements OnInit {
         await this.api.createHopeHubOffering(payload);
       }
       this.offerForm.set(this.emptyOffer());
+      this.offerBaseline = '';
       this.offerEditorOpen.set(false);
       this.offerStep.set(0);
       await this.load();
@@ -337,6 +385,7 @@ export class HopeHubOffersPage implements OnInit {
         await this.api.createHopeHubBanner(payload);
       }
       this.bannerForm.set(this.emptyBanner());
+      this.bannerBaseline = '';
       this.bannerEditorOpen.set(false);
       this.bannerStep.set(0);
       await this.load();

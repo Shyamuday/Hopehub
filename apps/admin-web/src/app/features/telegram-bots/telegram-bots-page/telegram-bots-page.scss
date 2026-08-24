@@ -2,6 +2,8 @@
   padding: 0.5rem;
   display: grid;
   gap: 1rem;
+  max-width: 1600px;
+  margin: 0 auto;
 }
 .page-header,
 .section-header,
@@ -62,6 +64,15 @@ p {
 }
 .header-actions {
   justify-content: flex-end;
+}
+.panel-search {
+  width: min(100%, 22rem);
+  min-height: 2.45rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  background: #fff;
+  color: #0f172a;
+  padding: .5rem .65rem;
 }
 .bot-grid {
   display: grid;
@@ -155,6 +166,7 @@ table {
   border-collapse: collapse;
   min-width: 920px;
 }
+thead th { position: sticky; top: 0; z-index: 1; }
 th,
 td {
   padding: 0.7rem 0.8rem;

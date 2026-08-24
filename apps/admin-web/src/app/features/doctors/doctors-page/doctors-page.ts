@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, HostListener, inject, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { RouterLink } from '@angular/router';
 import { buildDetailRows, DetailRowsComponent, MultiSelectComponent } from '@hopehub/platform-ui';
@@ -365,6 +365,8 @@ export class DoctorsPage {
   readonly showSetupReview = signal(false);
   readonly showCreateProviderForm = signal(false);
   readonly createProviderStep = signal(0);
+  private editBaseline = '';
+  private createBaseline = '';
   readonly createProviderSteps: readonly AdminFormStep[] = [
     { id: 'account', label: 'Account' },
     { id: 'role', label: 'Role' },
@@ -446,6 +448,10 @@ export class DoctorsPage {
   }
 
   onListFilterChange() {
+    if (this.editHasUnsavedChanges()) {
+      this.error.set('Save the open provider profile before applying different list filters.');
+      return;
+    }
     void this.setDoctorsPage(1);
   }
 
@@ -739,14 +745,21 @@ export class DoctorsPage {
   }
 
   openCreateProvider(): void {
+    this.createModel.set(emptyCreateModel());
+    this.createCareServices.set([]);
     this.createProviderStep.set(0);
     this.showCreateProviderForm.set(true);
+    this.createBaseline = this.createDraftSnapshot();
   }
 
   closeCreateProvider(): void {
     if (this.mutating()) return;
+    if (this.createHasUnsavedChanges() && !confirm('Discard the unsaved provider details?')) return;
     this.showCreateProviderForm.set(false);
     this.createProviderStep.set(0);
+    this.createModel.set(emptyCreateModel());
+    this.createCareServices.set([]);
+    this.createBaseline = '';
   }
 
   nextCreateProviderStep(): void {
@@ -1060,6 +1073,9 @@ export class DoctorsPage {
   }
 
   setSelectedDoctor(doctorId: string) {
+    if (doctorId === this.selectedDoctorId) return;
+    if (this.editHasUnsavedChanges() && !confirm('Discard the unsaved provider profile changes?'))
+      return;
     this.selectedDoctorId = doctorId;
     this.suspensionReason.set('');
     this.syncEditFormFromSelectedDoctor();
@@ -1182,6 +1198,36 @@ export class DoctorsPage {
     this.editCareServices.set(
       this.normalizeServiceList(selected.doctorProfile?.mentalHealthProfile?.services ?? []),
     );
+    this.editBaseline = this.editDraftSnapshot();
+  }
+
+  editHasUnsavedChanges(): boolean {
+    return (
+      Boolean(this.selectedDoctorId && this.editBaseline) &&
+      this.editDraftSnapshot() !== this.editBaseline
+    );
+  }
+
+  createHasUnsavedChanges(): boolean {
+    return this.showCreateProviderForm() && this.createDraftSnapshot() !== this.createBaseline;
+  }
+
+  hasUnsavedChanges(): boolean {
+    return this.editHasUnsavedChanges() || this.createHasUnsavedChanges();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  protectUnsavedChanges(event: BeforeUnloadEvent): void {
+    if (!this.hasUnsavedChanges()) return;
+    event.preventDefault();
+  }
+
+  private editDraftSnapshot(): string {
+    return JSON.stringify({ profile: this.editModel(), services: this.editCareServices() });
+  }
+
+  private createDraftSnapshot(): string {
+    return JSON.stringify({ profile: this.createModel(), services: this.createCareServices() });
   }
 
   addCareService(target: 'create' | 'edit') {
