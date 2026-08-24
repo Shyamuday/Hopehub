@@ -107,9 +107,9 @@ export class SEOService {
   /**
    * Add structured data (JSON-LD) to the page
    */
-  addStructuredData(data: any): void {
-    // Remove existing structured data script
-    const existingScript = this.document.querySelector('script[type="application/ld+json"]');
+  addStructuredData(data: any, key = 'page'): void {
+    const selector = `script[type="application/ld+json"][data-hopehub-schema="${key}"]`;
+    const existingScript = this.document.querySelector(selector);
     if (existingScript) {
       existingScript.remove();
     }
@@ -117,6 +117,7 @@ export class SEOService {
     // Add new structured data
     const script = this.document.createElement('script');
     script.type = 'application/ld+json';
+    script.setAttribute('data-hopehub-schema', key);
     script.text = JSON.stringify(data);
     this.document.head.appendChild(script);
   }
@@ -145,7 +146,7 @@ export class SEOService {
       },
     };
 
-    this.addStructuredData(organizationData);
+    this.addStructuredData(organizationData, 'organization');
   }
 
   /**
@@ -173,7 +174,7 @@ export class SEOService {
       url: `${this.siteUrl}/services/${service.name.toLowerCase().replace(/\s+/g, '-')}`,
     };
 
-    this.addStructuredData(serviceData);
+    this.addStructuredData(serviceData, 'service');
   }
 
   /**
@@ -187,6 +188,7 @@ export class SEOService {
     datePublished: string;
     dateModified?: string;
     articleSection?: string;
+    url?: string;
   }): void {
     const articleData = {
       '@context': 'https://schema.org',
@@ -194,10 +196,9 @@ export class SEOService {
       headline: article.headline,
       description: article.description,
       image: article.image ? this.getAbsoluteUrl(article.image) : this.defaultImage,
-      author: {
-        '@type': 'Person',
-        name: article.author,
-      },
+      author: article.author.includes('Editorial Team')
+        ? { '@type': 'Organization', name: article.author, url: `${this.siteUrl}/editorial-policy` }
+        : { '@type': 'Person', name: article.author },
       publisher: {
         '@type': 'Organization',
         name: 'Hope Hub',
@@ -211,11 +212,12 @@ export class SEOService {
       articleSection: article.articleSection || 'Mental Health',
       mainEntityOfPage: {
         '@type': 'WebPage',
-        '@id': isPlatformBrowser(this.platformId) ? window.location.href : this.siteUrl,
+        '@id':
+          article.url || (isPlatformBrowser(this.platformId) ? window.location.href : this.siteUrl),
       },
     };
 
-    this.addStructuredData(articleData);
+    this.addStructuredData(articleData, 'article');
   }
 
   /**
@@ -233,7 +235,7 @@ export class SEOService {
       })),
     };
 
-    this.addStructuredData(breadcrumbData);
+    this.addStructuredData(breadcrumbData, 'breadcrumb');
   }
 
   /**
@@ -253,7 +255,7 @@ export class SEOService {
       })),
     };
 
-    this.addStructuredData(faqData);
+    this.addStructuredData(faqData, 'faq');
   }
 
   /**
@@ -316,6 +318,13 @@ export class SEOService {
    */
   clearStructuredData(): void {
     const scripts = this.document.querySelectorAll('script[type="application/ld+json"]');
+    scripts.forEach((script) => script.remove());
+  }
+
+  clearPageStructuredData(): void {
+    const scripts = this.document.querySelectorAll(
+      'script[type="application/ld+json"][data-hopehub-schema]',
+    );
     scripts.forEach((script) => script.remove());
   }
 }

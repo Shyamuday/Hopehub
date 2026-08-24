@@ -155,7 +155,7 @@ export const SELF_CARE_ARTICLES: Article[] = [
     sources: [
       'American Psychological Association. (2023). The Importance of Self-Care.',
       'National Alliance on Mental Illness. (2023). Self-Care Strategies.',
-      'World Health Organization. (2023). Mental Health and Well-being.',
+      'World Health Organization. World mental health report. https://www.who.int/publications/i/item/9789240049338',
     ],
 
     relatedArticles: ['building-healthy-boundaries', 'mindfulness-daily-life'],
@@ -173,7 +173,7 @@ export const SELF_CARE_ARTICLES: Article[] = [
     category: [ArticleCategory.SELF_CARE, ArticleCategory.RELATIONSHIPS],
     difficulty: ArticleDifficulty.INTERMEDIATE,
     readingTime: '10 min read',
-    author: 'Dr. Jennifer Adams, Relationship Therapist',
+    author: 'Hope Hub Editorial Team',
     publishedDate: new Date('2024-03-15'),
     tags: ['boundaries', 'relationships', 'self-care', 'communication', 'well-being'],
 
@@ -276,6 +276,11 @@ export const SELF_CARE_ARTICLES: Article[] = [
 
     conclusion:
       'Setting healthy boundaries is an act of self-respect and self-care. It may feel uncomfortable at first, but with practice, it becomes easier and more natural. Remember, you have the right to protect your well-being.',
+
+    sources: [
+      'National Health Service. Maintaining healthy relationships and mental wellbeing. https://www.nhs.uk/every-mind-matters/lifes-challenges/maintaining-healthy-relationships-and-mental-wellbeing/',
+      'World Health Organization. World mental health report. https://www.who.int/publications/i/item/9789240049338',
+    ],
 
     relatedArticles: ['self-care-basics-guide', 'communication-skills-relationships'],
   },

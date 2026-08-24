@@ -88,6 +88,37 @@ import { AppButtonComponent } from '../../shared/components';
           </div>
         </div>
 
+        <section class="mt-8 rounded-lg border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
+          <h2 class="text-2xl font-semibold text-gray-950">Clear roles, safer decisions</h2>
+          <div class="mt-5 grid gap-5 md:grid-cols-3">
+            <div>
+              <h3 class="font-semibold text-gray-950">Peer supporters and listeners</h3>
+              <p class="mt-2 text-sm leading-6 text-gray-700">
+                Offer listening, encouragement, and lived-experience support. They do not diagnose,
+                prescribe, or represent themselves as clinicians.
+              </p>
+            </div>
+            <div>
+              <h3 class="font-semibold text-gray-950">Professional care providers</h3>
+              <p class="mt-2 text-sm leading-6 text-gray-700">
+                Provider profiles identify the role and information available to Hope Hub. Users
+                should review a provider’s qualifications and choose care appropriate to their need.
+              </p>
+            </div>
+            <div>
+              <h3 class="font-semibold text-gray-950">Educational content</h3>
+              <p class="mt-2 text-sm leading-6 text-gray-700">
+                Articles explain general mental wellness topics and link to supporting sources. Read
+                our
+                <a class="font-semibold text-primary-700 underline" routerLink="/editorial-policy"
+                  >editorial policy</a
+                >
+                for authorship, review, corrections, and safety standards.
+              </p>
+            </div>
+          </div>
+        </section>
+
         <div
           class="mt-8 rounded-lg border border-gray-200 bg-white p-6 text-center shadow-sm sm:p-8"
         >

@@ -192,6 +192,7 @@ export class FooterComponent {
       title: 'Company & legal',
       links: [
         { label: 'About Hope Hub', routerLink: '/about' },
+        { label: 'Editorial policy', routerLink: '/editorial-policy' },
         { label: 'Share feedback', routerLink: '/feedback' },
         { label: 'Privacy policy', routerLink: '/privacy' },
         { label: 'Terms of service', routerLink: '/terms' },
@@ -210,6 +211,7 @@ export class FooterComponent {
   readonly bottomLinks: FooterLink[] = [
     { label: 'Telegram', routerLink: '/telegram' },
     { label: 'About', routerLink: '/about' },
+    { label: 'Editorial policy', routerLink: '/editorial-policy' },
     { label: 'Careers', routerLink: '/careers' },
     { label: 'Listener guidelines', routerLink: '/listener-guidelines' },
     { label: 'Listener training', routerLink: '/listener-training' },

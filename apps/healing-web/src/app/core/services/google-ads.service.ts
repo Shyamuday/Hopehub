@@ -50,7 +50,10 @@ export class GoogleAdsService {
     });
     this.router.events
       .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
-      .subscribe(() => this.trackPageView());
+      .subscribe(() => {
+        this.trackPageView();
+        this.syncAdsenseForRoute();
+      });
   }
 
   initialize(): void {
@@ -140,14 +143,51 @@ export class GoogleAdsService {
       this.trackPageView();
     }
 
-    if (config.adsenseClientId && !this.adsenseLoaded) {
+    this.applyAdsenseVerificationMeta(config.adsenseClientId);
+    this.syncAdsenseForRoute();
+  }
+
+  /**
+   * Auto Ads must not appear on login, booking, payment, assessment, private
+   * support, call, error, or other utility screens. Until dedicated ad slots
+   * exist, only complete article-detail pages are eligible.
+   */
+  private syncAdsenseForRoute(): void {
+    const clientId = this.config.adsenseClientId;
+    const eligible = this.isEditorialAdsRoute(window.location.pathname);
+
+    if (clientId && eligible && !this.adsenseLoaded) {
       this.adsenseLoaded = true;
       this.appendScript(
-        `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(config.adsenseClientId)}`,
+        `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(clientId)}`,
         'hopehub-adsense',
-        config.adsenseClientId,
+        clientId,
       );
+      return;
     }
+
+    if (!eligible && this.adsenseLoaded) {
+      document.getElementById('hopehub-adsense')?.remove();
+      document
+        .querySelectorAll('ins.adsbygoogle, .google-auto-placed')
+        .forEach((element) => element.remove());
+      this.adsenseLoaded = false;
+    }
+  }
+
+  private isEditorialAdsRoute(pathname: string): boolean {
+    return /^\/articles\/[^/]+\/?$/.test(pathname);
+  }
+
+  private applyAdsenseVerificationMeta(clientId: string): void {
+    const selector = 'meta[name="google-adsense-account"]';
+    const existing = document.head.querySelector<HTMLMetaElement>(selector);
+    if (!clientId) return;
+
+    const meta = existing || document.createElement('meta');
+    meta.name = 'google-adsense-account';
+    meta.content = clientId;
+    if (!existing) document.head.appendChild(meta);
   }
 
   private appendScript(src: string, id: string, crossOriginClient = ''): void {

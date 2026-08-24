@@ -172,7 +172,7 @@ export class NavigationService {
     // Get the title and metadata from route data
     let title = 'Hope Hub - Professional Mental Health Services';
     let description = 'Professional mental health services and community support';
-    let keywords = 'mental health, counseling, therapy, hope hub';
+    let keywords: string | string[] = 'mental health, counseling, therapy, hope hub';
 
     // Try to get metadata from current route
     let route = this.activatedRoute;
@@ -186,26 +186,48 @@ export class NavigationService {
 
     if (route.snapshot.data) {
       const data = route.snapshot.data;
+      const articleSeo = data['articleSeo'] as
+        | {
+            title?: string;
+            description?: string;
+            keywords?: string[];
+            noindex?: boolean;
+            article?: Parameters<SEOService['addArticleStructuredData']>[0];
+          }
+        | undefined;
       if (data['description']) {
         description = data['description'];
       }
       if (data['keywords']) {
         keywords = data['keywords'];
       }
+      if (articleSeo?.title) title = articleSeo.title;
+      if (articleSeo?.description) description = articleSeo.description;
+      if (articleSeo?.keywords) keywords = articleSeo.keywords;
     }
 
     // Use SEO service for comprehensive meta tag updates
     const currentUrl = isPlatformBrowser(this.platformId)
       ? window.location.href
       : `https://hopehub.in${this.router.url === '/' ? '/' : this.router.url}`;
+    const canonicalPath = (this.router.url.split(/[?#]/, 1)[0] || '/').replace(/\/$/, '') || '/';
+    const canonicalUrl = `https://hopehub.in${canonicalPath}`;
     this.seoService.updateSEO({
       title,
       description,
       keywords: Array.isArray(keywords) ? keywords : keywords.split(',').map((k) => k.trim()),
       url: currentUrl,
-      canonicalUrl: currentUrl,
+      canonicalUrl,
       type: route.snapshot.data['type'] || 'website',
+      noindex:
+        route.snapshot.data['noindex'] === true ||
+        route.snapshot.data['articleSeo']?.noindex === true,
+      nofollow: route.snapshot.data['nofollow'] === true,
     });
+
+    // Replace route-specific schema so Article/FAQ data never leaks into the
+    // next page during client-side navigation.
+    this.seoService.clearPageStructuredData();
 
     // Add breadcrumb structured data
     const breadcrumbs = this.getBreadcrumbs();
@@ -213,6 +235,11 @@ export class NavigationService {
       this.seoService.addBreadcrumbStructuredData(
         breadcrumbs.map((b) => ({ name: b.label, url: b.url })),
       );
+    }
+    const articleSeo = route.snapshot.data['articleSeo'] as
+      { article?: Parameters<SEOService['addArticleStructuredData']>[0] } | undefined;
+    if (articleSeo?.article) {
+      this.seoService.addArticleStructuredData(articleSeo.article);
     }
   }
 

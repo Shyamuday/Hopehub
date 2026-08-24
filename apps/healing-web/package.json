@@ -4,6 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve --port 4204",
+    "prebuild": "node scripts/generate-public-sitemap.mjs",
     "build": "ng build",
     "build:prod": "ng build --configuration production",
     "build:s3": "ng build --configuration s3",

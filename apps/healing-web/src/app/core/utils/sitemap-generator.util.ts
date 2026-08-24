@@ -3,6 +3,8 @@
  * Generates sitemap.xml for SEO
  */
 
+import { ALL_ARTICLES } from '../data/article-configs';
+
 export interface SitemapUrl {
   loc: string;
   lastmod?: string;
@@ -15,12 +17,8 @@ export class SitemapGenerator {
   private static readonly currentDate = new Date().toISOString().split('T')[0];
   private static readonly offerRoutes = [
     { loc: '/packages', priority: 0.9 },
-    { loc: '/packages/single-30-minute-session', priority: 0.9 },
-    { loc: '/packages/weekly-care-package', priority: 0.8 },
-    { loc: '/packages/monthly-care-package', priority: 0.8 },
-    { loc: '/packages/three-month-care-package', priority: 0.8 },
     { loc: '/events', priority: 0.8 },
-    { loc: '/events/goa-wellness-meetup', priority: 0.8 },
+    { loc: '/resources', priority: 0.7 },
   ] as const;
 
   /**
@@ -88,6 +86,11 @@ ${urlEntries}
         priority: 0.8,
       },
       {
+        loc: '/organization',
+        changefreq: 'monthly',
+        priority: 0.6,
+      },
+      {
         loc: '/telegram-group-admin',
         changefreq: 'monthly',
         priority: 0.6,
@@ -106,6 +109,12 @@ ${urlEntries}
       },
       {
         loc: '/faq',
+        lastmod: this.currentDate,
+        changefreq: 'monthly',
+        priority: 0.7,
+      },
+      {
+        loc: '/editorial-policy',
         lastmod: this.currentDate,
         changefreq: 'monthly',
         priority: 0.7,
@@ -147,22 +156,6 @@ ${urlEntries}
         changefreq: 'weekly',
         priority: 0.9,
       },
-      ...[
-        '/anxiety-test',
-        '/depression-test',
-        '/stress-test',
-        '/breakup-test',
-        '/sleep-test',
-        '/relationship-test',
-        '/burnout-test',
-        '/wellbeing-test',
-        '/mental-health-test',
-      ].map((loc) => ({
-        loc,
-        lastmod: this.currentDate,
-        changefreq: 'weekly' as const,
-        priority: 0.95,
-      })),
       {
         loc: '/exercises',
         lastmod: this.currentDate,
@@ -181,6 +174,12 @@ ${urlEntries}
         changefreq: 'daily',
         priority: 0.9,
       },
+      ...ALL_ARTICLES.map((article) => ({
+        loc: `/articles/${article.id}`,
+        lastmod: (article.lastUpdated || article.publishedDate).toISOString().split('T')[0],
+        changefreq: 'monthly' as const,
+        priority: article.isFeatured ? 0.85 : 0.75,
+      })),
     ];
 
     return this.generateSitemap(urls);

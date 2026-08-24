@@ -1,5 +1,55 @@
-import { Routes } from '@angular/router';
+import { ResolveFn, Routes } from '@angular/router';
 import { AuthGuard, NavigationGuard } from './core/guards';
+
+type ResolvedArticleSeo = {
+  title: string;
+  description: string;
+  keywords: string[];
+  noindex?: boolean;
+  article?: {
+    headline: string;
+    description: string;
+    image?: string;
+    author: string;
+    datePublished: string;
+    dateModified: string;
+    articleSection?: string;
+    url: string;
+  };
+};
+
+async function articleSeoForSlug(slug: string | null): Promise<ResolvedArticleSeo> {
+  const { getArticleById } = await import('./core/data/article-configs');
+  const article = slug ? getArticleById(slug) : undefined;
+  if (!article) {
+    return {
+      title: 'Article Not Found - Hope Hub',
+      description: 'The requested Hope Hub article could not be found',
+      keywords: [],
+      noindex: true,
+    };
+  }
+  return {
+    title: `${article.title} - Hope Hub`,
+    description: article.metaDescription || article.description || article.introduction,
+    keywords: article.keywords || article.tags,
+    article: {
+      headline: article.title,
+      description: article.metaDescription || article.description || article.introduction,
+      image: article.featuredImage,
+      author: article.author,
+      datePublished: article.publishedDate.toISOString(),
+      dateModified: (article.lastUpdated || article.publishedDate).toISOString(),
+      articleSection: article.category[0],
+      url: `https://hopehub.in/articles/${article.id}`,
+    },
+  };
+}
+
+const resolveArticleSeo: ResolveFn<ResolvedArticleSeo> = (route) =>
+  articleSeoForSlug(route.paramMap.get('slug'));
+const resolveArticleTitle: ResolveFn<string> = async (route) =>
+  (await articleSeoForSlug(route.paramMap.get('slug'))).title;
 
 export const routes: Routes = [
   {
@@ -44,6 +94,7 @@ export const routes: Routes = [
     canActivate: [NavigationGuard],
     data: {
       breadcrumb: 'Service Details',
+      noindex: true,
       description: 'Detailed information about our mental health services',
       keywords: 'service details, mental health, counseling, therapy',
     },
@@ -70,6 +121,7 @@ export const routes: Routes = [
     title: 'Care Team Profile - Hope Hub',
     data: {
       breadcrumb: 'Care team profile',
+      noindex: true,
       description: 'View care team profile, focus areas, session details, and book support',
       keywords: 'care team profile, counsellor profile, mental wellness guide',
     },
@@ -81,6 +133,7 @@ export const routes: Routes = [
         (m) => m.PsychologistDetailComponent,
       ),
     title: 'Care Team Profile - Hope Hub',
+    data: { noindex: true },
   },
   {
     path: 's/:code',
@@ -89,6 +142,7 @@ export const routes: Routes = [
         (m) => m.ProviderShareRedirectComponent,
       ),
     title: 'Opening Hope Hub support',
+    data: { noindex: true, nofollow: true },
   },
   {
     path: 'psychologists',
@@ -112,6 +166,7 @@ export const routes: Routes = [
     title: 'Care Team Profile - Hope Hub',
     data: {
       breadcrumb: 'Care team profile',
+      noindex: true,
       description: 'View care team profile, focus areas, session details, and book support',
       keywords: 'care team profile, counsellor profile, mental wellness guide',
     },
@@ -135,6 +190,7 @@ export const routes: Routes = [
     title: 'Package Details - Hope Hub',
     data: {
       breadcrumb: 'Package Details',
+      noindex: true,
       description: 'View Hope Hub package details and book support',
       keywords: 'hope hub package, counselling plan, mental wellness support',
     },
@@ -158,6 +214,7 @@ export const routes: Routes = [
     title: 'Event Details - Hope Hub',
     data: {
       breadcrumb: 'Event Details',
+      noindex: true,
       description: 'View Hope Hub event details and register',
       keywords: 'hope hub event, mental health workshop, meetup',
     },
@@ -182,6 +239,7 @@ export const routes: Routes = [
     title: 'Recorded Session - Hope Hub',
     data: {
       breadcrumb: 'Recorded Session',
+      noindex: true,
       description: 'Watch or listen to a Hope Hub recorded session',
       keywords: 'recorded session, hope hub media, mental wellness video',
     },
@@ -206,6 +264,7 @@ export const routes: Routes = [
     canActivate: [AuthGuard],
     data: {
       breadcrumb: 'My Profile',
+      noindex: true,
       description: 'Manage your Hope Hub profile and mental wellness context',
       keywords: 'hope hub profile, patient profile, mental wellness profile',
     },
@@ -243,6 +302,7 @@ export const routes: Routes = [
     title: 'Become a Hope Hub Community Admin',
     data: {
       breadcrumb: 'Hope Hub community admin application',
+      noindex: true,
       description:
         'Apply to become a Hope Hub community admin and help moderate our Telegram group',
       keywords: 'Hope Hub Telegram admin, community moderator, Telegram volunteer',
@@ -278,6 +338,7 @@ export const routes: Routes = [
     title: 'Feedback - Hope Hub',
     data: {
       breadcrumb: 'Feedback',
+      noindex: true,
       description: 'Share private Hope Hub feedback for admin review',
       keywords: 'hope hub feedback, mental wellness review, counselling feedback',
     },
@@ -611,6 +672,31 @@ export const routes: Routes = [
     },
   },
   {
+    path: 'articles/:slug',
+    loadComponent: () =>
+      import('./shared/components/articles/articles.component').then((m) => m.ArticlesComponent),
+    title: resolveArticleTitle,
+    resolve: { articleSeo: resolveArticleSeo },
+    data: {
+      breadcrumb: 'Article',
+      description: 'Read a Hope Hub mental wellness article with practical guidance and sources',
+      keywords: 'mental health article, practical wellbeing guidance, Hope Hub',
+      type: 'article',
+    },
+  },
+  {
+    path: 'editorial-policy',
+    loadComponent: () =>
+      import('./features/legal/editorial-policy.component').then((m) => m.EditorialPolicyComponent),
+    title: 'Editorial & Medical Content Policy - Hope Hub',
+    data: {
+      breadcrumb: 'Editorial policy',
+      description:
+        'How Hope Hub creates, reviews, sources, corrects, and maintains mental wellness content',
+      keywords: 'Hope Hub editorial policy, content review, mental health information standards',
+    },
+  },
+  {
     path: 'donate',
     loadComponent: () =>
       import('./features/donate/donate.component').then((m) => m.DonateComponent),
@@ -686,6 +772,7 @@ export const routes: Routes = [
     canActivate: [AuthGuard],
     data: {
       breadcrumb: 'My support plan',
+      noindex: true,
       description: 'Your saved Hope Hub support preferences and next best step',
       keywords: 'personal support plan, mental wellness support, Hope Hub',
     },
@@ -698,6 +785,7 @@ export const routes: Routes = [
     canActivate: [AuthGuard],
     data: {
       breadcrumb: 'My Consultations',
+      noindex: true,
       description: 'View Hope Hub bookings and join voice or video consultation calls',
       keywords: 'hope hub dashboard, consultation call, video call, voice call',
     },
@@ -710,6 +798,7 @@ export const routes: Routes = [
     canActivate: [AuthGuard],
     data: {
       breadcrumb: 'Live Session',
+      noindex: true,
       description: 'Join your Hope Hub live chat, voice, or video session',
       keywords: 'hope hub live session, chat, voice call, video call',
     },
@@ -721,6 +810,7 @@ export const routes: Routes = [
     title: 'Live Group - Hope Hub',
     data: {
       breadcrumb: 'Live Group',
+      noindex: true,
       description: 'Join a moderated Hope Hub group support room',
       keywords: 'hope hub live group, support group chat, emotional support room',
     },
@@ -732,6 +822,8 @@ export const routes: Routes = [
     title: 'Page Not Found - Hope Hub',
     data: {
       breadcrumb: 'Not Found',
+      noindex: true,
+      nofollow: true,
       description: 'The page you are looking for could not be found',
       keywords: 'not found, error, page not found',
     },

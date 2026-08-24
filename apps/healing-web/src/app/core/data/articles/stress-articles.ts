@@ -16,7 +16,7 @@ export const STRESS_ARTICLES: Article[] = [
     category: [ArticleCategory.STRESS, ArticleCategory.GENERAL_WELLBEING],
     difficulty: ArticleDifficulty.BEGINNER,
     readingTime: '9 min read',
-    author: 'Dr. Kevin Martinez, Stress Management Specialist',
+    author: 'Hope Hub Editorial Team',
     publishedDate: new Date('2024-01-25'),
     tags: ['stress', 'stress-response', 'cortisol', 'fight-or-flight', 'physiology'],
 
@@ -105,8 +105,8 @@ export const STRESS_ARTICLES: Article[] = [
 
     sources: [
       'American Psychological Association. (2023). Stress in America Report.',
-      'Harvard Health Publishing. (2023). Understanding the Stress Response.',
-      'Mayo Clinic. (2023). Stress Management Techniques.',
+      'World Health Organization. Doing What Matters in Times of Stress. https://www.who.int/publications/i/item/9789240003927',
+      'National Health Service. Breathing exercises for stress. https://www.nhs.uk/mental-health/self-help/guides-tools-and-activities/breathing-exercises-for-stress/',
     ],
 
     relatedArticles: ['stress-management-techniques', 'workplace-stress-solutions'],
@@ -246,6 +246,11 @@ export const STRESS_ARTICLES: Article[] = [
 
     conclusion:
       'Effective stress management is a skill that improves with practice. Start with one or two techniques that appeal to you, and gradually build your stress management toolkit. Remember, managing stress is an investment in your overall health and well-being.',
+
+    sources: [
+      'World Health Organization. Doing What Matters in Times of Stress. https://www.who.int/publications/i/item/9789240003927',
+      'National Health Service. Tips to reduce stress. https://www.nhs.uk/every-mind-matters/mental-health-issues/stress/tips-to-reduce-stress/',
+    ],
 
     relatedArticles: ['understanding-stress-response', 'workplace-stress-solutions'],
     isPopular: true,
