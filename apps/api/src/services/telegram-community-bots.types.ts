@@ -51,6 +51,8 @@ export type CommunityTelegramMessage = {
   _groupHelpControlSourceChatId?: string;
   _groupHelpRequiresActiveStaff?: boolean;
   _groupHelpAuditRecorded?: boolean;
+  /** A direct private-bot action must never be copied into group-facing logs. */
+  _groupHelpPrivateControl?: boolean;
 };
 
 export type CommunityTelegramUpdate = {

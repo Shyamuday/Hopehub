@@ -255,18 +255,23 @@ export async function handleGroupHelpCommand(
   const effectiveValues = context.isControlGroup
     ? await groupHelpConfig(context.targetChatId)
     : values;
+  // Private bot administration is intentionally discreet. Keep the durable
+  // database audit, but do not publish a copy to the staff or log chats.
+  const executionValues = message._groupHelpPrivateControl
+    ? { ...effectiveValues, telegramGroupHelpPrivateControl: 'true' }
+    : effectiveValues;
   const handled =
-    (await handleGroupHelpStaffCommand(message, effectiveValues)) ||
-    (await handleGroupHelpMemberCommand(message, effectiveValues)) ||
-    (await handleGroupHelpReportCommand(message, effectiveValues)) ||
-    (await handleGroupHelpAdminCommand(message, effectiveValues));
+    (await handleGroupHelpStaffCommand(message, executionValues)) ||
+    (await handleGroupHelpMemberCommand(message, executionValues)) ||
+    (await handleGroupHelpReportCommand(message, executionValues)) ||
+    (await handleGroupHelpAdminCommand(message, executionValues));
   if (handled) {
     if (!message._groupHelpAuditRecorded) {
       await recordGroupHelpCommandAudit({
         message,
         targetChatId: context.targetChatId,
         status: 'HANDLED',
-        logChatId: effectiveValues.telegramGroupHelpLogChannelId
+        logChatId: executionValues.telegramGroupHelpLogChannelId
       });
       message._groupHelpAuditRecorded = true;
     }

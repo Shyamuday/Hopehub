@@ -147,6 +147,11 @@ export async function handleGroupHelpStaffCommand(
     const deleteFirst = ['delete', 'del', 'delwarn', 'delmute', 'delban', 'delkick'].includes(
       commandName
     );
+    // A direct /warn is used from the group as a response to a harmful
+    // message. Remove that source message too, so the warning does not leave
+    // the content visible. Cross-group /warn has no safe source-message ID,
+    // so it continues to record only the warning.
+    const deleteWarnedGroupMessage = !isCrossGroup && commandName === 'warn';
     const effectiveAction =
       canonicalName === 'delete' ? 'delete' : canonicalName.replace(/^del/, '') || 'delete';
 
@@ -276,7 +281,7 @@ export async function handleGroupHelpStaffCommand(
       }
     }
 
-    if (deleteFirst) {
+    if (deleteFirst || deleteWarnedGroupMessage) {
       const messageId = isCrossGroup
         ? crossGroupMessageId
         : message.reply_to_message?.message_id || null;

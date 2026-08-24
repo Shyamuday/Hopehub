@@ -75,6 +75,7 @@ export async function sendModerationLog(
   reason: string,
   action: string
 ) {
+  if (values.telegramGroupHelpPrivateControl === 'true') return;
   const staffDestination = values.telegramGroupHelpStaffGroupId?.trim() || '';
   const logDestination = values.telegramGroupHelpLogChannelId?.trim() || '';
   if (!staffDestination && !logDestination) return;
@@ -333,6 +334,7 @@ export async function sendGroupHelpActivityLog(
   title: string,
   details: Array<string | null | undefined> = []
 ) {
+  if (values.telegramGroupHelpPrivateControl === 'true') return;
   const destinations = [
     values.telegramGroupHelpLogChannelId?.trim(),
     values.telegramGroupHelpStaffGroupId?.trim()

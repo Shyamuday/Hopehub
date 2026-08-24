@@ -77,6 +77,10 @@ import {
 import { publicIdentityChangeAlert } from './telegram-group-help.identity-alert.js';
 import { notifyTelegramBotFailure } from './telegram-bot-failure-alerts.js';
 import { forwardGroupHelpAdminMention } from './telegram-group-help.admin-mentions.js';
+import {
+  groupCommandDeleteDelaySeconds,
+  shouldAutoDeleteGroupCommand
+} from './telegram-group-help.command-cleanup.js';
 
 const BOT = GROUP_HELP_BOT_SLUG;
 
@@ -122,6 +126,7 @@ function distinctNonEmpty(values: Array<string | null | undefined>) {
 
 async function handleCommand(message: CommunityTelegramMessage, values: Record<string, string>) {
   const chatId = String(message.chat.id);
+  if (message.chat.type === 'private') message._groupHelpPrivateControl = true;
   try {
     const handled = await handleGroupHelpCommand(message, values);
     if (!handled) {
@@ -158,6 +163,31 @@ async function handleCommand(message: CommunityTelegramMessage, values: Record<s
       () => null
     );
     return true;
+  } finally {
+    const context = groupHelpCommandContextFromConfig(chatId, values);
+    const delaySeconds = groupCommandDeleteDelaySeconds(
+      values.telegramGroupHelpCommandDeleteSeconds
+    );
+    if (
+      shouldAutoDeleteGroupCommand({
+        chatType: message.chat.type,
+        isControlGroup: context.isControlGroup,
+        delaySeconds
+      })
+    ) {
+      // Do not delay Telegram's webhook acknowledgement while the short
+      // privacy timer runs. A failed cleanup is non-fatal; the command audit
+      // remains available in the private moderation log.
+      setTimeout(() => {
+        void deleteMessage(chatId, message.message_id).catch((error) => {
+          console.warn('[telegram-group-help] Could not remove group command.', {
+            chatId,
+            messageId: message.message_id,
+            error: error instanceof Error ? error.message : String(error)
+          });
+        });
+      }, delaySeconds * 1000).unref();
+    }
   }
 }
 

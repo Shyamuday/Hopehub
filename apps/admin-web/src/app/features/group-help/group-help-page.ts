@@ -320,6 +320,7 @@ export class GroupHelpPage {
   readonly savingCleanup = signal(false);
   readonly cleanupSettingKeys = new Set([
     'telegramGroupHelpAutoDeleteSeconds',
+    'telegramGroupHelpCommandDeleteSeconds',
     'telegramGroupHelpWelcomeCleanup',
     'telegramGroupHelpCaptchaPendingMinutes',
     'telegramGroupHelpCaptchaSuccessCleanupMinutes',

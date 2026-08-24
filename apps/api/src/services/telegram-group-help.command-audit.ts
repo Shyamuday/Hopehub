@@ -40,7 +40,7 @@ export function recordGroupHelpCommandAudit(input: {
       detail: input.detail?.slice(0, 1000)
     }
   });
-  const logChatId = input.logChatId?.trim();
+  const logChatId = input.message._groupHelpPrivateControl ? '' : input.logChatId?.trim();
   if (!logChatId) return write;
   return Promise.all([
     write,

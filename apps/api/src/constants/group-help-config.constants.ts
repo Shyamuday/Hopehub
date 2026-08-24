@@ -1124,6 +1124,16 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
     defaultValue: '300'
   },
   {
+    key: 'telegramGroupHelpCommandDeleteSeconds',
+    label: 'Public command cleanup',
+    description:
+      'Seconds before a command sent in the main or test group is removed. Private staff and log-group commands are retained. Use 0 to keep public commands.',
+    section: 'content',
+    type: 'number',
+    maxLength: 2,
+    defaultValue: '3'
+  },
+  {
     key: 'telegramGroupHelpIdentityAlertDeleteHours',
     label: 'Profile-change alert expiry',
     description:
