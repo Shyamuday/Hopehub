@@ -17,6 +17,11 @@ test('call event tracker keeps useful diagnostics and strips signaling/media sec
       pushAttempted: 2,
       pushDelivered: 1,
       pushDisabled: 1,
+      audioChannelCount: 1,
+      audioSampleRate: 48000,
+      audioEchoCancellation: true,
+      audioNoiseSuppression: true,
+      audioAutoGainControl: true,
       videoPausedForNetwork: true,
       sdp: 'private-session-description',
       candidate: 'candidate with an IP address',
@@ -31,6 +36,11 @@ test('call event tracker keeps useful diagnostics and strips signaling/media sec
       pushAttempted: 2,
       pushDelivered: 1,
       pushDisabled: 1,
+      audioChannelCount: 1,
+      audioSampleRate: 48000,
+      audioEchoCancellation: true,
+      audioNoiseSuppression: true,
+      audioAutoGainControl: true,
       videoPausedForNetwork: true
     }
   );

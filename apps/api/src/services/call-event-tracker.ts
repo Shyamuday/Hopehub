@@ -47,6 +47,8 @@ const NUMBER_METADATA_KEYS = [
   'reconnectCount',
   'connectivityCheckMs',
   'mediaAcquisitionMs',
+  'audioChannelCount',
+  'audioSampleRate',
   'pushAttempted',
   'pushDelivered',
   'pushDisabled',
@@ -67,6 +69,9 @@ const BOOLEAN_METADATA_KEYS = [
   'relayRequiredByNetwork',
   'deliveryRetry',
   'preparedStreamReused',
+  'audioEchoCancellation',
+  'audioNoiseSuppression',
+  'audioAutoGainControl',
   'videoPausedForNetwork'
 ] as const;
 

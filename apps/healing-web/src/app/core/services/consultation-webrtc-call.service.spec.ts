@@ -93,6 +93,25 @@ describe('ConsultationWebrtcCallService incoming signaling', () => {
 });
 
 describe('ConsultationWebrtcCallService call preflight', () => {
+  it('requests a mono speech-processing profile for mobile call audio', () => {
+    const service = new ConsultationWebrtcCallService();
+    const internals = service as unknown as {
+      mediaConstraints: (mode: 'audio' | 'video') => MediaStreamConstraints;
+    };
+
+    expect(internals.mediaConstraints('audio')).toEqual({
+      audio: {
+        channelCount: { ideal: 1 },
+        sampleRate: { ideal: 48000 },
+        sampleSize: { ideal: 16 },
+        echoCancellation: { ideal: true },
+        noiseSuppression: { ideal: true },
+        autoGainControl: { ideal: true },
+      },
+      video: false,
+    });
+  });
+
   it('reuses a successful connectivity check during its network-aware TTL', async () => {
     const service = new ConsultationWebrtcCallService();
     service.invalidateConnectivityCache();

@@ -1611,15 +1611,9 @@ export class ConsultationWebrtcCallService {
   }
 
   private mediaConstraints(mode: CallMode): MediaStreamConstraints {
-    const audioDeviceId = this.selectedAudioInputId();
     const videoDeviceId = this.selectedVideoInputId();
     return {
-      audio: {
-        ...(audioDeviceId ? { deviceId: { exact: audioDeviceId } } : {}),
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true
-      },
+      audio: this.audioConstraints(),
       video:
         mode === 'video'
           ? videoDeviceId
@@ -1635,6 +1629,20 @@ export class ConsultationWebrtcCallService {
                 frameRate: { ideal: 24, max: 30 }
               }
           : false
+    };
+  }
+
+  private audioConstraints(deviceId = this.selectedAudioInputId()): MediaTrackConstraints {
+    return {
+      ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
+      // Speech calls should remain mono. This gives mobile echo cancellers one clean channel
+      // and prevents stereo capture from doubling room/background noise.
+      channelCount: { ideal: 1 },
+      sampleRate: { ideal: 48_000 },
+      sampleSize: { ideal: 16 },
+      echoCancellation: { ideal: true },
+      noiseSuppression: { ideal: true },
+      autoGainControl: { ideal: true }
     };
   }
 
@@ -1690,7 +1698,9 @@ export class ConsultationWebrtcCallService {
     }
 
     const replacementStream = await navigator.mediaDevices.getUserMedia({
-      audio: kind === 'audio' ? (deviceId ? { deviceId: { exact: deviceId } } : true) : false,
+      // Keep the same speech-processing profile when changing microphones mid-call. Using
+      // only a deviceId here caused some mobile browsers to drop echo/noise processing.
+      audio: kind === 'audio' ? this.audioConstraints(deviceId) : false,
       video: kind === 'video' ? (deviceId ? { deviceId: { exact: deviceId } } : true) : false
     });
     const replacementTrack =
@@ -1700,6 +1710,9 @@ export class ConsultationWebrtcCallService {
     if (!replacementTrack) {
       replacementStream.getTracks().forEach((track) => track.stop());
       throw new Error(`No ${kind} device is available.`);
+    }
+    if (kind === 'audio' && 'contentHint' in replacementTrack) {
+      replacementTrack.contentHint = 'speech';
     }
 
     const currentStream = this.localStream();
@@ -2565,6 +2578,7 @@ export class ConsultationWebrtcCallService {
   }
 
   private callMetadata(): Record<string, unknown> {
+    const audioSettings = this.localStream()?.getAudioTracks()[0]?.getSettings?.();
     return {
       userAgent:
         typeof navigator !== 'undefined' && 'userAgent' in navigator
@@ -2587,6 +2601,11 @@ export class ConsultationWebrtcCallService {
       connectivityCheckMs: this.connectivityCheckMs,
       mediaAcquisitionMs: this.mediaAcquisitionMs,
       preparedStreamReused: this.preparedStreamReused,
+      audioEchoCancellation: audioSettings?.echoCancellation,
+      audioNoiseSuppression: audioSettings?.noiseSuppression,
+      audioAutoGainControl: audioSettings?.autoGainControl,
+      audioChannelCount: audioSettings?.channelCount,
+      audioSampleRate: audioSettings?.sampleRate,
       videoPausedForNetwork: this.videoPausedForNetwork(),
       setupToRingAckMs:
         this.callStartedAt && this.ringAcknowledgedAt
