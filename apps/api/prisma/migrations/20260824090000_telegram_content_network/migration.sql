@@ -1,3 +1,5 @@
+BEGIN;
+
 CREATE TABLE "TelegramContentChannel" (
   "id" TEXT NOT NULL,
   "slug" TEXT NOT NULL,
@@ -74,3 +76,5 @@ ALTER TABLE "TelegramContentItem" ADD CONSTRAINT "TelegramContentItem_channelId_
   FOREIGN KEY ("channelId") REFERENCES "TelegramContentChannel"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 ALTER TABLE "TelegramContentItem" ADD CONSTRAINT "TelegramContentItem_sourceId_fkey"
   FOREIGN KEY ("sourceId") REFERENCES "TelegramContentSource"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+COMMIT;

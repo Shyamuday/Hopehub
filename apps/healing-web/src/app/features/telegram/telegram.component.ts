@@ -30,12 +30,38 @@ import { AppButtonComponent } from '../../shared/components';
           </h1>
           <p class="mx-auto mt-5 max-w-2xl text-lg leading-8 text-gray-700">
             Choose the right Telegram link for user support, care team access, or our community
-            group. These links are managed from one constants file so we can update them anytime.
+            group. Every destination below is an official Hope Hub link loaded from our managed
+            public configuration.
           </p>
         </div>
 
+        @if (telegram.GROUPS[0]; as community) {
+          <article
+            class="mx-auto mt-8 flex max-w-4xl flex-col gap-5 rounded-3xl border border-sky-200 bg-sky-950 p-6 text-white shadow-xl shadow-sky-100 sm:flex-row sm:items-center sm:justify-between sm:p-8"
+          >
+            <div>
+              <p class="text-xs font-bold uppercase tracking-[0.16em] text-sky-200">
+                Direct Telegram link
+              </p>
+              <h2 class="mt-2 text-2xl font-bold">Join {{ community.title }}</h2>
+              <p class="mt-2 max-w-2xl text-sm leading-6 text-sky-100">
+                Open the official community for support discussions, updates and daily voice
+                circles. You can review the safety information on this page before joining.
+              </p>
+            </div>
+            <app-button
+              [href]="community.url"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="shrink-0"
+            >
+              Join on Telegram
+            </app-button>
+          </article>
+        }
+
         <article
-          class="mx-auto mt-8 max-w-4xl rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-sky-50 p-5 shadow-sm sm:p-7"
+          class="mx-auto mt-6 max-w-4xl rounded-3xl border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-sky-50 p-5 shadow-sm sm:p-7"
         >
           <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div>

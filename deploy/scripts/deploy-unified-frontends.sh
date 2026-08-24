@@ -32,10 +32,44 @@ deploy_app() {
   aws s3 sync "$dir" "s3://${FRONTEND_BUCKET}/${app}" \
     --delete \
     --exclude "index.html" \
+    --exclude "*/index.html" \
+    --exclude "runtime-config.js" \
+    --exclude "robots.txt" \
+    --exclude "sitemap.xml" \
+    --exclude "ads.txt" \
     --cache-control "public,max-age=31536000,immutable"
-  aws s3 cp "$dir/index.html" "s3://${FRONTEND_BUCKET}/${app}/index.html" \
-    --content-type "text/html" \
+
+  aws s3 sync "$dir" "s3://${FRONTEND_BUCKET}/${app}" \
+    --delete \
+    --exclude "*" \
+    --include "index.html" \
+    --include "*/index.html" \
+    --content-type "text/html; charset=utf-8" \
     --cache-control "no-cache,no-store,must-revalidate"
+
+  if [ -f "$dir/runtime-config.js" ]; then
+    aws s3 cp "$dir/runtime-config.js" "s3://${FRONTEND_BUCKET}/${app}/runtime-config.js" \
+      --content-type "application/javascript; charset=utf-8" \
+      --cache-control "no-cache,no-store,must-revalidate"
+  fi
+
+  if [ -f "$dir/robots.txt" ]; then
+    aws s3 cp "$dir/robots.txt" "s3://${FRONTEND_BUCKET}/${app}/robots.txt" \
+      --content-type "text/plain; charset=utf-8" \
+      --cache-control "public,max-age=3600"
+  fi
+
+  if [ -f "$dir/sitemap.xml" ]; then
+    aws s3 cp "$dir/sitemap.xml" "s3://${FRONTEND_BUCKET}/${app}/sitemap.xml" \
+      --content-type "application/xml; charset=utf-8" \
+      --cache-control "public,max-age=3600"
+  fi
+
+  if [ -f "$dir/ads.txt" ]; then
+    aws s3 cp "$dir/ads.txt" "s3://${FRONTEND_BUCKET}/${app}/ads.txt" \
+      --content-type "text/plain; charset=utf-8" \
+      --cache-control "public,max-age=3600"
+  fi
 }
 
 if should_deploy patient; then deploy_app patient; fi

@@ -20,6 +20,7 @@ import { provideServiceWorker } from '@angular/service-worker';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
 import { requestTimeoutInterceptor } from '@hopehub/clinic-api';
 import { PublicCommunicationConfigService } from './core/services/public-communication-config.service';
+import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 
 function isLazyChunkError(error: unknown): boolean {
   const errorLike = error as { name?: string; message?: string; reason?: unknown };
@@ -57,6 +58,7 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideZonelessChangeDetection(),
     provideBrowserGlobalErrorListeners(),
+    provideClientHydration(withEventReplay()),
     provideHttpClient(withFetch(), withInterceptors([authInterceptor, requestTimeoutInterceptor])),
     {
       provide: APP_INITIALIZER,

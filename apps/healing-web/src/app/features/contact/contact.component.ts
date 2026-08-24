@@ -849,6 +849,7 @@ export class ContactComponent implements OnInit {
       consultationId: response.consultation.id,
       serviceName,
       offeringSlug: selectedOffer?.slug || data.offering || '',
+      payableInPaise: this.payTodayInPaise(),
     });
     this.clearPendingBooking();
     this.showSuccessAndReset('Appointment booked and payment verified successfully.');

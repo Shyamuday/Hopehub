@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { APP_CONSTANTS } from '../../core';
+import { CookieConsentService } from '../../core/services/cookie-consent.service';
 
 type FooterLink = {
   label: string;
@@ -114,6 +115,9 @@ type FooterSection = {
             @for (link of bottomLinks; track link.label) {
               <a [routerLink]="link.routerLink" class="footer-link">{{ link.label }}</a>
             }
+            <button type="button" class="footer-link" (click)="consent.openSettings()">
+              Cookie settings
+            </button>
           </div>
         </div>
       </div>
@@ -123,8 +127,13 @@ type FooterSection = {
     `
       .footer-link {
         color: #4b5f6a;
+        padding: 0;
+        background: transparent;
+        border: 0;
+        font: inherit;
         text-decoration: none;
         transition: color 160ms ease;
+        cursor: pointer;
       }
 
       .footer-link:hover,
@@ -137,6 +146,7 @@ type FooterSection = {
 export class FooterComponent {
   currentYear = new Date().getFullYear();
   APP_CONSTANTS = APP_CONSTANTS;
+  readonly consent = inject(CookieConsentService);
 
   readonly footerSections: FooterSection[] = [
     {

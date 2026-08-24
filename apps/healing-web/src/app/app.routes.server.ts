@@ -1,13 +1,29 @@
-// SSR server routes — commented out for static S3 build, uncomment to re-enable SSR
-// import { RenderMode, ServerRoute } from '@angular/ssr';
-//
-// export const serverRoutes: ServerRoute[] = [
-//   {
-//     path: 'services/:id',
-//     renderMode: RenderMode.Server
-//   },
-//   {
-//     path: '**',
-//     renderMode: RenderMode.Prerender
-//   }
-// ];
+import { RenderMode, ServerRoute } from '@angular/ssr';
+
+const googleLandingRoutes = [
+  '',
+  'services',
+  'support',
+  'care-team',
+  'packages',
+  'community',
+  'telegram',
+  'about',
+  'contact',
+  'faq',
+  'privacy',
+  'terms',
+  'refund-policy',
+  'payment-policy',
+  'shipping-policy',
+  'assessments',
+  'exercises',
+  'lifestyle-tips',
+  'articles',
+] as const;
+
+export const serverRoutes: ServerRoute[] = [
+  ...googleLandingRoutes.map((path): ServerRoute => ({ path, renderMode: RenderMode.Prerender })),
+  // User-specific and data-parameter routes stay client-rendered on the static host.
+  { path: '**', renderMode: RenderMode.Client },
+];

@@ -1,0 +1,22 @@
+@if (consent.showBanner()) {
+  <section class="cookie-consent" role="dialog" aria-modal="true" aria-labelledby="cookie-title">
+    <div class="cookie-consent__copy">
+      <p class="cookie-consent__eyebrow">Your privacy</p>
+      <h2 id="cookie-title">Choose how Hope Hub uses cookies</h2>
+      <p>
+        Essential cookies keep sign-in, safety and booking features working. With your permission,
+        optional measurement cookies help us understand whether our Google campaigns lead people
+        to useful support. We do not use health interests for personalised advertising.
+      </p>
+      <a routerLink="/privacy" (click)="consent.closeSettings()">Read our privacy policy</a>
+    </div>
+    <div class="cookie-consent__actions">
+      <button type="button" class="cookie-consent__secondary" (click)="consent.rejectOptional()">
+        Essential only
+      </button>
+      <button type="button" class="cookie-consent__primary" (click)="consent.acceptAll()">
+        Accept optional cookies
+      </button>
+    </div>
+  </section>
+}

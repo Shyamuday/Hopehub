@@ -1,6 +1,6 @@
 import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
-import { isPlatformBrowser } from '@angular/common';
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { APP_CONSTANTS } from '../constants/app.constants';
 
 export interface SEOData {
@@ -36,6 +36,7 @@ export class SEOService {
     private titleService: Title,
     private metaService: Meta,
     @Inject(PLATFORM_ID) private platformId: object,
+    @Inject(DOCUMENT) private document: Document,
   ) {}
 
   /**
@@ -68,7 +69,7 @@ export class SEOService {
     this.updateOrCreateTag('property', 'og:image', this.getAbsoluteUrl(image));
     this.updateOrCreateTag('property', 'og:url', url);
     this.updateOrCreateTag('property', 'og:site_name', 'Hope Hub');
-    this.updateOrCreateTag('property', 'og:locale', 'en_US');
+    this.updateOrCreateTag('property', 'og:locale', 'en_IN');
 
     // Twitter Card tags
     this.updateOrCreateTag('name', 'twitter:card', 'summary_large_image');
@@ -107,19 +108,17 @@ export class SEOService {
    * Add structured data (JSON-LD) to the page
    */
   addStructuredData(data: any): void {
-    if (!isPlatformBrowser(this.platformId)) return;
-
     // Remove existing structured data script
-    const existingScript = document.querySelector('script[type="application/ld+json"]');
+    const existingScript = this.document.querySelector('script[type="application/ld+json"]');
     if (existingScript) {
       existingScript.remove();
     }
 
     // Add new structured data
-    const script = document.createElement('script');
+    const script = this.document.createElement('script');
     script.type = 'application/ld+json';
     script.text = JSON.stringify(data);
-    document.head.appendChild(script);
+    this.document.head.appendChild(script);
   }
 
   /**
@@ -273,13 +272,11 @@ export class SEOService {
    * Update canonical URL
    */
   private updateCanonicalUrl(url: string): void {
-    if (!isPlatformBrowser(this.platformId)) return;
-
-    let link: HTMLLinkElement | null = document.querySelector('link[rel="canonical"]');
+    let link: HTMLLinkElement | null = this.document.querySelector('link[rel="canonical"]');
     if (!link) {
-      link = document.createElement('link');
+      link = this.document.createElement('link');
       link.setAttribute('rel', 'canonical');
-      document.head.appendChild(link);
+      this.document.head.appendChild(link);
     }
     link.setAttribute('href', url);
   }
@@ -318,8 +315,7 @@ export class SEOService {
    * Clear all structured data
    */
   clearStructuredData(): void {
-    if (!isPlatformBrowser(this.platformId)) return;
-    const scripts = document.querySelectorAll('script[type="application/ld+json"]');
+    const scripts = this.document.querySelectorAll('script[type="application/ld+json"]');
     scripts.forEach((script) => script.remove());
   }
 }

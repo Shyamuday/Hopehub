@@ -229,8 +229,9 @@ export const routes: Routes = [
     title: 'Telegram Hub - Hope Hub',
     data: {
       breadcrumb: 'Telegram Hub',
-      description: 'All Hope Hub Telegram bots, care team bot, operations bot, and community links',
-      keywords: 'Hope Hub Telegram, Telegram bot, care team bot, support group, community',
+      description:
+        'Open the official Hope Hub Telegram community, user-support bot, and care-team bot',
+      keywords: 'Hope Hub Telegram, Telegram support bot, care team bot, support group, community',
     },
   },
   {

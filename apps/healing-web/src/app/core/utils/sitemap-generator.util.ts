@@ -57,6 +57,18 @@ ${urlEntries}
         changefreq: 'weekly',
         priority: 0.9,
       },
+      {
+        loc: '/support',
+        lastmod: this.currentDate,
+        changefreq: 'weekly',
+        priority: 0.9,
+      },
+      {
+        loc: '/care-team',
+        lastmod: this.currentDate,
+        changefreq: 'daily',
+        priority: 0.95,
+      },
       ...this.offerRoutes.map((route) => ({
         loc: route.loc,
         lastmod: this.currentDate,
@@ -65,6 +77,12 @@ ${urlEntries}
       })),
       {
         loc: '/community',
+        lastmod: this.currentDate,
+        changefreq: 'weekly',
+        priority: 0.8,
+      },
+      {
+        loc: '/telegram',
         lastmod: this.currentDate,
         changefreq: 'weekly',
         priority: 0.8,
@@ -85,6 +103,12 @@ ${urlEntries}
         lastmod: this.currentDate,
         changefreq: 'monthly',
         priority: 0.8,
+      },
+      {
+        loc: '/faq',
+        lastmod: this.currentDate,
+        changefreq: 'monthly',
+        priority: 0.7,
       },
       {
         loc: '/privacy',

@@ -100,6 +100,7 @@ export class SiteConfigPage {
   }
 
   sectionLabel(key: string) {
+    if (key.startsWith('googleAds')) return 'Advertising & measurement';
     if (key.startsWith('homeHero')) return 'Homepage hero';
     if (key.startsWith('clinicAddress') || key.startsWith('contact')) return 'Footer & contact';
     if (

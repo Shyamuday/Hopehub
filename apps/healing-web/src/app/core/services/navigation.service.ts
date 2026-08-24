@@ -195,7 +195,9 @@ export class NavigationService {
     }
 
     // Use SEO service for comprehensive meta tag updates
-    const currentUrl = isPlatformBrowser(this.platformId) ? window.location.href : '';
+    const currentUrl = isPlatformBrowser(this.platformId)
+      ? window.location.href
+      : `https://hopehub.in${this.router.url === '/' ? '/' : this.router.url}`;
     this.seoService.updateSEO({
       title,
       description,

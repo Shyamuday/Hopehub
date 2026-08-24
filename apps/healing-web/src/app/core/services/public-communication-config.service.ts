@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { APP_CONSTANTS } from '../constants/app.constants';
+import { GoogleAdsService } from './google-ads.service';
 
 type PublicConfigResponse = {
   config: Partial<Record<string, string>>;
@@ -26,7 +27,10 @@ export class PublicCommunicationConfigService {
   defaultSessionLabel = '30 min + 15 min follow-up';
   defaultCareRoleLabel = 'Hope Hub care guide';
 
-  constructor(private readonly http: HttpClient) {}
+  constructor(
+    private readonly http: HttpClient,
+    private readonly googleAds: GoogleAdsService,
+  ) {}
 
   async load(): Promise<void> {
     try {
@@ -43,6 +47,7 @@ export class PublicCommunicationConfigService {
   }
 
   private apply(config: Partial<Record<string, string>>) {
+    this.googleAds.configure(config);
     const telegramUsername = config['telegramUsername']?.trim();
     const userBot = config['telegramUserBotUsername']?.trim();
     const doctorBot = config['telegramDoctorBotUsername']?.trim();
