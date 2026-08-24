@@ -17,11 +17,27 @@
   <p class="loading-text">Loading Group Help settings…</p>
 }
 
-<div class="group-help-workspace">
+<div
+  class="group-help-workspace"
+  [class.group-help-workspace--nav-collapsed]="workspaceNavCollapsed()"
+>
   <nav class="workspace-nav" aria-label="Telegram Community sections">
     <div class="workspace-nav__title">
-      <strong>Workspace</strong>
-      <small>Choose a section</small>
+      <span>
+        <strong>Workspace</strong>
+        <small>Choose a section</small>
+      </span>
+      <button
+        type="button"
+        class="workspace-nav__collapse"
+        [attr.aria-label]="
+          workspaceNavCollapsed() ? 'Expand workspace navigation' : 'Collapse workspace navigation'
+        "
+        [title]="workspaceNavCollapsed() ? 'Expand navigation' : 'Collapse navigation'"
+        (click)="toggleWorkspaceNav()"
+      >
+        {{ workspaceNavCollapsed() ? '›' : '‹' }}
+      </button>
     </div>
     @for (section of workspaceSections; track section.id) {
       <button
@@ -29,10 +45,15 @@
         class="workspace-nav__item"
         [class.workspace-nav__item--active]="activeWorkspaceSection() === section.id"
         [attr.aria-current]="activeWorkspaceSection() === section.id ? 'page' : null"
+        [attr.aria-label]="section.label"
+        [title]="section.label + ' — ' + section.description"
         (click)="openWorkspaceSection(section.id)"
       >
         <span>
-          <strong>{{ section.label }}</strong>
+          <strong class="workspace-nav__full-label">{{ section.label }}</strong>
+          <strong class="workspace-nav__short-label" aria-hidden="true">{{
+            section.label.slice(0, 2)
+          }}</strong>
           <small>{{ section.description }}</small>
         </span>
         @if (workspaceBadge(section.id)) {
@@ -43,6 +64,46 @@
   </nav>
 
   <main class="workspace-main">
+    <header class="workspace-context">
+      <div>
+        <p class="eyebrow">
+          Section {{ activeWorkspaceIndex() + 1 }} of {{ workspaceSections.length }}
+        </p>
+        <h2>{{ activeWorkspaceMeta().label }}</h2>
+        <p>{{ activeWorkspaceMeta().description }}</p>
+      </div>
+      <div class="workspace-context__actions">
+        <button
+          type="button"
+          (click)="openAdjacentWorkspaceSection(-1)"
+          [disabled]="!hasPreviousWorkspaceSection()"
+        >
+          Previous
+        </button>
+        @if (hasNextWorkspaceSection()) {
+          <button
+            type="button"
+            class="primary"
+            (click)="saveAndContinue()"
+            [disabled]="workspaceSaving()"
+          >
+            {{
+              workspaceSaving() ? 'Saving…' : hasUnsavedChanges() ? 'Save & continue' : 'Next section'
+            }}
+          </button>
+        }
+      </div>
+    </header>
+
+    <app-unsaved-changes-bar
+      [dirty]="hasUnsavedChanges()"
+      [saving]="workspaceSaving()"
+      savedHint="There are no browser-only edits in this workspace."
+      dirtyHint="Your campaign, event or configuration edits are still only in this browser."
+      (save)="saveCurrentWorkspace()"
+      (discard)="discardCurrentWorkspaceChanges()"
+    ></app-unsaved-changes-bar>
+
     <section
       class="notice-panel"
       [class.workspace-hidden]="activeWorkspaceSection() !== 'overview'"
@@ -144,7 +205,7 @@
       </div>
 
       <div class="campaign-layout">
-        <form class="campaign-editor" (submit)="$event.preventDefault(); saveCampaign()">
+        <form class="campaign-editor" novalidate (submit)="$event.preventDefault(); saveCampaign()">
           <div class="campaign-editor__head">
             <h3>{{ editingCampaignId() ? 'Edit campaign' : 'New campaign' }}</h3>
             @if (editingCampaignId()) {
@@ -156,12 +217,18 @@
             <label>
               Campaign name
               <input
+                id="campaign-name"
                 type="text"
+                required
                 maxlength="120"
                 placeholder="Daily community check-in"
                 [value]="campaignName()"
+                [attr.aria-invalid]="campaignValidationAttempted() && !campaignName().trim()"
                 (input)="campaignName.set($any($event.target).value)"
               />
+              @if (campaignValidationAttempted() && !campaignName().trim()) {
+                <small class="field-error">Give this campaign a name before saving.</small>
+              }
             </label>
             <label>
               Post next item every
@@ -188,7 +255,7 @@
                           ? 'Weekly summary'
                           : item.kind === 'IMAGE_QUOTE'
                             ? 'Image quote'
-                          : 'Message'
+                            : 'Message'
                     }}
                   </strong>
                   <span>{{
@@ -207,7 +274,7 @@
                           ? 'Weekly summary'
                           : item.kind === 'IMAGE_QUOTE'
                             ? 'Image quote'
-                          : 'Message'
+                            : 'Message'
                     }}
                   </strong>
                   @if (campaignItems().length > 1) {
@@ -425,7 +492,9 @@
                       placeholder="For example: daily check-in, sleep, peer support"
                       [value]="item.contentCategory"
                       (input)="
-                        updateCampaignItem(itemIndex, { contentCategory: $any($event.target).value })
+                        updateCampaignItem(itemIndex, {
+                          contentCategory: $any($event.target).value,
+                        })
                       "
                     />
                   </label>
@@ -436,7 +505,9 @@
                       maxlength="1000"
                       placeholder="https://www.who.int/..."
                       [value]="item.sourceUrl"
-                      (input)="updateCampaignItem(itemIndex, { sourceUrl: $any($event.target).value })"
+                      (input)="
+                        updateCampaignItem(itemIndex, { sourceUrl: $any($event.target).value })
+                      "
                     />
                   </label>
                 </div>
@@ -460,7 +531,9 @@
 
           <div class="campaign-add-actions">
             <button type="button" (click)="addCampaignItem('TEXT')">+ Add message</button>
-            <button type="button" (click)="addCampaignItem('IMAGE_QUOTE')">+ Add image quote</button>
+            <button type="button" (click)="addCampaignItem('IMAGE_QUOTE')">
+              + Add image quote
+            </button>
             <button type="button" (click)="addCampaignItem('POLL')">+ Add poll</button>
             <button type="button" (click)="addCampaignItem('WELLBEING_POLL')">
               + Add wellbeing poll
@@ -590,7 +663,11 @@
         </div>
       </div>
       <div class="event-layout">
-        <form class="event-form" (submit)="$event.preventDefault(); saveCommunityEvent()">
+        <form
+          class="event-form"
+          novalidate
+          (submit)="$event.preventDefault(); saveCommunityEvent()"
+        >
           <div class="campaign-editor__head">
             <h3>{{ editingEventId() ? 'Edit event' : 'New event' }}</h3>
             @if (editingEventId()) {
@@ -600,12 +677,18 @@
           <label>
             Event title
             <input
+              id="event-title"
               type="text"
+              required
               maxlength="160"
               placeholder="Daily 9 PM voice circle"
               [value]="eventTitle()"
+              [attr.aria-invalid]="eventValidationAttempted() && !eventTitle().trim()"
               (input)="eventTitle.set($any($event.target).value)"
             />
+            @if (eventValidationAttempted() && !eventTitle().trim()) {
+              <small class="field-error">Add a clear event title.</small>
+            }
           </label>
           <label>
             Short description
@@ -619,18 +702,30 @@
           <label>
             Date and time
             <input
+              id="event-starts-at"
               type="datetime-local"
+              required
               [value]="eventStartsAt()"
+              [attr.aria-invalid]="eventValidationAttempted() && !eventStartsAt()"
               (input)="eventStartsAt.set($any($event.target).value)"
             />
+            @if (eventValidationAttempted() && !eventStartsAt()) {
+              <small class="field-error">Choose when this event starts.</small>
+            }
           </label>
           <label>
             Join link
             <input
+              id="event-join-url"
               type="url"
+              required
               [value]="eventJoinUrl()"
+              [attr.aria-invalid]="eventValidationAttempted() && !eventJoinUrl().trim()"
               (input)="eventJoinUrl.set($any($event.target).value)"
             />
+            @if (eventValidationAttempted() && !eventJoinUrl().trim()) {
+              <small class="field-error">Add the Telegram or meeting link.</small>
+            }
           </label>
           <label>
             Reminder
@@ -693,16 +788,6 @@
       </div>
     </section>
 
-    <app-unsaved-changes-bar
-      [class.workspace-hidden]="activeWorkspaceSection() !== 'settings'"
-      [dirty]="hasUnsavedConfigChanges()"
-      [saving]="saving()"
-      savedHint="Changes take effect for future bot activity."
-      dirtyHint="Save or discard the configuration changes before moving on."
-      (save)="saveAll()"
-      (discard)="discardConfigChanges()"
-    ></app-unsaved-changes-bar>
-
     <section
       class="settings-essentials panel"
       [class.workspace-hidden]="activeWorkspaceSection() !== 'settings'"
@@ -711,7 +796,10 @@
         <div>
           <p class="eyebrow">Safe configuration changes</p>
           <h2>Draft, compare, publish</h2>
-          <p>Save a version first, compare it with the live group setup, then publish only when ready.</p>
+          <p>
+            Save a version first, compare it with the live group setup, then publish only when
+            ready.
+          </p>
         </div>
       </div>
       <div class="campaign-basics">
@@ -738,7 +826,10 @@
             <strong>{{ preview.changes.length }} live change(s)</strong>
             <small>{{ preview.unchanged }} setting(s) already match this version.</small>
             @for (change of preview.changes.slice(0, 8); track change.key) {
-              <small><b>{{ change.label }}:</b> {{ change.current || 'empty' }} → {{ change.next || 'empty' }}</small>
+              <small
+                ><b>{{ change.label }}:</b> {{ change.current || 'empty' }} →
+                {{ change.next || 'empty' }}</small
+              >
             }
           </div>
           <button type="button" (click)="configRevisionPreview.set(null)">Close preview</button>
@@ -750,14 +841,36 @@
             <article>
               <div>
                 <strong>{{ revision.name }}</strong>
-                <small>{{ revision.entryCount }} settings · {{ revision.createdAt | date: 'medium' }}</small>
+                <small
+                  >{{ revision.entryCount }} settings ·
+                  {{ revision.createdAt | date: 'medium' }}</small
+                >
               </div>
               <div class="campaign-card__actions">
-                <button type="button" (click)="previewConfigRevision(revision.id)" [disabled]="revisionBusyId() === revision.id">Compare</button>
+                <button
+                  type="button"
+                  (click)="previewConfigRevision(revision.id)"
+                  [disabled]="revisionBusyId() === revision.id"
+                >
+                  Compare
+                </button>
                 @if (revision.action === 'telegram_group_help.config_draft') {
-                  <button type="button" class="primary" (click)="publishConfigRevision(revision.id)" [disabled]="revisionBusyId() === revision.id">Publish</button>
+                  <button
+                    type="button"
+                    class="primary"
+                    (click)="publishConfigRevision(revision.id)"
+                    [disabled]="revisionBusyId() === revision.id"
+                  >
+                    Publish
+                  </button>
                 } @else {
-                  <button type="button" (click)="restoreConfigRevision(revision.id)" [disabled]="revisionBusyId() === revision.id">Restore previous</button>
+                  <button
+                    type="button"
+                    (click)="restoreConfigRevision(revision.id)"
+                    [disabled]="revisionBusyId() === revision.id"
+                  >
+                    Restore previous
+                  </button>
                 }
               </div>
             </article>
@@ -851,11 +964,44 @@
       </div>
     </section>
 
+    <section
+      class="panel settings-search"
+      [class.workspace-hidden]="activeWorkspaceSection() !== 'settings'"
+    >
+      <div>
+        <p class="eyebrow">Find a setting</p>
+        <h2>Search all bot configuration</h2>
+        <p>Search by setting name, description, stored key or current value.</p>
+      </div>
+      <div class="settings-search__control">
+        <input
+          type="search"
+          placeholder="Try welcome, captcha, banned words, topics or logs"
+          aria-label="Search bot settings"
+          [value]="configSearch()"
+          (input)="configSearch.set($any($event.target).value)"
+        />
+        @if (configSearch()) {
+          <button type="button" (click)="clearConfigSearch()">Clear</button>
+        }
+      </div>
+      <small> {{ settingsSearchMatchCount() }} of {{ config().length }} settings shown </small>
+    </section>
+
+    @if (activeWorkspaceSection() === 'settings' && configSearch() && !settingsSearchMatchCount()) {
+      <section class="notice-panel settings-empty">
+        <strong>No matching settings</strong>
+        <p>Try a broader word, or clear the search to show every configuration section.</p>
+        <button type="button" (click)="clearConfigSearch()">Clear search</button>
+      </section>
+    }
+
     <section class="config-grid" [class.workspace-hidden]="activeWorkspaceSection() !== 'settings'">
       @for (section of sectionOrder; track section) {
         <details
           class="panel config-section"
-          [open]="section === 'connection' || section === 'messages'"
+          [class.workspace-hidden]="!fieldsFor(section).length"
+          [open]="!!configSearch().trim() || section === 'connection' || section === 'messages'"
         >
           <summary>
             <span>{{ sectionLabels[section] }}</span>
@@ -1150,9 +1296,7 @@
                           → {{ entry.displayName || 'no public name' }}
                           @if (entry.previousUsername !== entry.username) {
                             · username
-                            {{
-                              entry.previousUsername ? '@' + entry.previousUsername : 'not set'
-                            }}
+                            {{ entry.previousUsername ? '@' + entry.previousUsername : 'not set' }}
                             → {{ entry.username ? '@' + entry.username : 'not set' }}
                           }
                         }
@@ -1505,17 +1649,82 @@
       [open]="activeWorkspaceSection() === 'activity'"
     >
       <summary>Recent configuration activity</summary>
+      <div class="activity-filters" aria-label="Activity filters">
+        <label class="activity-search">
+          <span>Search history</span>
+          <input
+            type="search"
+            placeholder="Action, admin, target or detail"
+            [value]="activitySearch()"
+            (input)="updateActivitySearch($any($event.target).value)"
+          />
+        </label>
+        <label>
+          <span>Action</span>
+          <app-form-dropdown
+            [options]="activityActionOptions()"
+            [ngModel]="activityActionFilter()"
+            (ngModelChange)="updateActivityFilter('action', $event)"
+          ></app-form-dropdown>
+        </label>
+        <label>
+          <span>Administrator</span>
+          <app-form-dropdown
+            [options]="activityActorOptions()"
+            [ngModel]="activityActorFilter()"
+            (ngModelChange)="updateActivityFilter('actor', $event)"
+          ></app-form-dropdown>
+        </label>
+        <label>
+          <span>Date</span>
+          <app-form-dropdown
+            [options]="activityDateOptions"
+            [ngModel]="activityDateFilter()"
+            (ngModelChange)="updateActivityFilter('date', $event)"
+          ></app-form-dropdown>
+        </label>
+      </div>
       @if (!actionHistory().length) {
         <p>No Group Help configuration actions recorded yet.</p>
+      } @else if (!filteredActionHistory().length) {
+        <div class="activity-empty">
+          <strong>No activity matches these filters.</strong>
+          <small>Change the search, administrator, action or date range.</small>
+        </div>
       } @else {
+        <div class="activity-summary">
+          <strong>{{ filteredActionHistory().length }} matching actions</strong>
+          <small>Every entry shown here completed successfully.</small>
+        </div>
         <div class="activity-list">
-          @for (entry of actionHistory(); track entry.id) {
+          @for (entry of pagedActionHistory(); track entry.id) {
             <article>
-              <strong>{{ entry.summary || entry.targetId }}</strong>
-              <small>{{ entry.createdAt | date: 'medium' }}</small>
+              <div>
+                <strong>{{ entry.summary || entry.targetId }}</strong>
+                <small>{{ activityActionLabel(entry.action) }} · {{ entry.targetId }}</small>
+              </div>
+              <div class="activity-list__meta">
+                <strong>{{ activityActorName(entry) }}</strong>
+                <small>{{ entry.createdAt | date: 'medium' }}</small>
+              </div>
             </article>
           }
         </div>
+        @if (activityPageCount() > 1) {
+          <nav class="activity-pagination" aria-label="Activity pages">
+            <button type="button" (click)="changeActivityPage(-1)" [disabled]="activityPage() <= 1">
+              Previous
+            </button>
+            <span>Page {{ activityPage() }} of {{ activityPageCount() }}</span>
+            <button
+              type="button"
+              (click)="changeActivityPage(1)"
+              [disabled]="activityPage() >= activityPageCount()"
+            >
+              Next
+            </button>
+          </nav>
+        }
       }
     </details>
 

@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, HostListener, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { FormDropdownComponent, type FormDropdownOption } from '@hopehub/platform-ui';
 import { AdminApi } from '../../core/services/admin-api';
@@ -61,6 +61,17 @@ type CampaignItemDraft = {
 type GroupHelpWorkspaceSection =
   'overview' | 'campaigns' | 'events' | 'announcements' | 'moderation' | 'settings' | 'activity';
 
+type GroupHelpActivityEntry = {
+  id: string;
+  action: string;
+  targetId: string;
+  summary?: string | null;
+  actorId?: string | null;
+  actorRole?: string | null;
+  actor?: { id: string; name: string; email?: string | null } | null;
+  createdAt: string;
+};
+
 const emptyCampaignItem = (
   kind: 'TEXT' | 'IMAGE_QUOTE' | 'POLL' | 'WELLBEING_POLL' | 'SUMMARY',
 ): CampaignItemDraft => ({
@@ -116,6 +127,7 @@ const SECTION_LABELS: Record<GroupHelpConfigEntry['section'], string> = {
 })
 export class GroupHelpPage {
   readonly activeWorkspaceSection = signal<GroupHelpWorkspaceSection>('overview');
+  readonly workspaceNavCollapsed = signal(this.readWorkspaceNavCollapsed());
   readonly workspaceSections: ReadonlyArray<{
     id: GroupHelpWorkspaceSection;
     label: string;
@@ -129,11 +141,33 @@ export class GroupHelpPage {
     { id: 'settings', label: 'Bot settings', description: 'Messages, rules and behaviour' },
     { id: 'activity', label: 'History', description: 'Configuration activity' },
   ];
+  readonly activeWorkspaceMeta = computed(
+    () =>
+      this.workspaceSections.find((section) => section.id === this.activeWorkspaceSection()) ??
+      this.workspaceSections[0],
+  );
+  readonly activeWorkspaceIndex = computed(() =>
+    this.workspaceSections.findIndex((section) => section.id === this.activeWorkspaceSection()),
+  );
+  readonly hasPreviousWorkspaceSection = computed(() => this.activeWorkspaceIndex() > 0);
+  readonly hasNextWorkspaceSection = computed(
+    () => this.activeWorkspaceIndex() < this.workspaceSections.length - 1,
+  );
   readonly config = signal<GroupHelpConfigEntry[]>([]);
   readonly localValues = signal<Record<string, string>>({});
   readonly hasUnsavedConfigChanges = computed(() => {
     const values = this.localValues();
     return this.config().some((entry) => values[entry.key] !== entry.value);
+  });
+  readonly changedConfigEntries = computed(() => {
+    const values = this.localValues();
+    return this.config().filter((entry) => values[entry.key] !== entry.value);
+  });
+  readonly configSearch = signal('');
+  readonly settingsSearchMatchCount = computed(() => {
+    const query = this.configSearch().trim().toLocaleLowerCase();
+    if (!query) return this.config().length;
+    return this.config().filter((entry) => this.configEntryMatches(entry, query)).length;
   });
   readonly tokenConfigured = signal(false);
   readonly loading = signal(false);
@@ -159,19 +193,80 @@ export class GroupHelpPage {
   readonly selectedDirectMessageKey = signal('telegramGroupHelpPinnedMessage');
   readonly pinDirectMessage = signal(false);
   readonly capabilityGroups = signal<Array<{ title: string; options: readonly string[] }>>([]);
-  readonly actionHistory = signal<
-    Array<{
-      id: string;
-      action: string;
-      targetId: string;
-      summary?: string | null;
-      createdAt: string;
-    }>
-  >([]);
+  readonly actionHistory = signal<GroupHelpActivityEntry[]>([]);
+  readonly activitySearch = signal('');
+  readonly activityActionFilter = signal('ALL');
+  readonly activityActorFilter = signal('ALL');
+  readonly activityDateFilter = signal('30');
+  readonly activityPage = signal(1);
+  readonly activityPageSize = 12;
+  readonly activityActionOptions = computed<FormDropdownOption[]>(() => [
+    { value: 'ALL', label: 'All actions' },
+    ...Array.from(new Set(this.actionHistory().map((entry) => entry.action)))
+      .sort()
+      .map((action) => ({ value: action, label: this.activityActionLabel(action) })),
+  ]);
+  readonly activityActorOptions = computed<FormDropdownOption[]>(() => [
+    { value: 'ALL', label: 'All administrators' },
+    ...Array.from(
+      new Map(
+        this.actionHistory()
+          .filter((entry) => entry.actorId)
+          .map((entry) => [
+            entry.actorId as string,
+            {
+              value: entry.actorId as string,
+              label: entry.actor?.name || entry.actor?.email || entry.actorId || 'Unknown admin',
+            },
+          ]),
+      ).values(),
+    ),
+  ]);
+  readonly activityDateOptions: FormDropdownOption[] = [
+    { value: '1', label: 'Today' },
+    { value: '7', label: 'Last 7 days' },
+    { value: '30', label: 'Last 30 days' },
+    { value: 'ALL', label: 'All available history' },
+  ];
+  readonly filteredActionHistory = computed(() => {
+    const query = this.activitySearch().trim().toLocaleLowerCase();
+    const action = this.activityActionFilter();
+    const actor = this.activityActorFilter();
+    const dateFilter = this.activityDateFilter();
+    const cutoff =
+      dateFilter === 'ALL' ? 0 : Date.now() - Number(dateFilter) * 24 * 60 * 60 * 1_000;
+    return this.actionHistory().filter((entry) => {
+      if (action !== 'ALL' && entry.action !== action) return false;
+      if (actor !== 'ALL' && entry.actorId !== actor) return false;
+      if (cutoff && new Date(entry.createdAt).getTime() < cutoff) return false;
+      if (!query) return true;
+      return [
+        entry.summary,
+        entry.targetId,
+        entry.action,
+        entry.actor?.name,
+        entry.actor?.email,
+        entry.actorRole,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLocaleLowerCase()
+        .includes(query);
+    });
+  });
+  readonly activityPageCount = computed(() =>
+    Math.max(1, Math.ceil(this.filteredActionHistory().length / this.activityPageSize)),
+  );
+  readonly pagedActionHistory = computed(() => {
+    const page = Math.min(this.activityPage(), this.activityPageCount());
+    const start = (page - 1) * this.activityPageSize;
+    return this.filteredActionHistory().slice(start, start + this.activityPageSize);
+  });
   readonly actionStatuses = signal<Record<string, 'applied' | 'confirmation'>>({});
   readonly campaigns = signal<any[]>([]);
   readonly campaignBotConfigured = signal(false);
   readonly campaignSaving = signal(false);
+  readonly campaignValidationAttempted = signal(false);
   readonly campaignBusyId = signal('');
   readonly campaignResults = signal<any[]>([]);
   readonly resultsCampaignId = signal('');
@@ -191,9 +286,41 @@ export class GroupHelpPage {
   readonly campaignRepeat = signal(true);
   readonly campaignActive = signal(false);
   readonly campaignItems = signal<CampaignItemDraft[]>([emptyCampaignItem('TEXT')]);
+  readonly campaignHasDraft = computed(() => {
+    const items = this.campaignItems();
+    return Boolean(
+      this.editingCampaignId() ||
+      this.campaignName().trim() ||
+      this.campaignIntervalMinutes() !== 1440 ||
+      this.campaignTimezone() !== 'Asia/Kolkata' ||
+      !this.campaignRepeat() ||
+      this.campaignActive() ||
+      items.length !== 1 ||
+      items.some(
+        (item) =>
+          item.kind !== 'TEXT' ||
+          item.contentCategory.trim() ||
+          item.sourceUrl.trim() ||
+          item.text.trim() ||
+          item.imageUrl.trim() ||
+          item.buttonsText.trim() ||
+          item.pollQuestion.trim() ||
+          item.pollOptionsText.trim() ||
+          item.pollQuiz ||
+          item.pollMultiple ||
+          item.correctOptionId != null ||
+          item.pollExplanation.trim() ||
+          item.closeAfterMinutes != null ||
+          item.messageThreadId != null ||
+          item.followUpOptionIdsText.trim() ||
+          item.followUpMessage.trim(),
+      ),
+    );
+  });
   readonly engagement = signal<any>(null);
   readonly communityEvents = signal<any[]>([]);
   readonly eventSaving = signal(false);
+  readonly eventValidationAttempted = signal(false);
   readonly editingEventId = signal('');
   readonly eventTitle = signal('');
   readonly eventDescription = signal('');
@@ -202,6 +329,24 @@ export class GroupHelpPage {
   readonly eventReminderMinutes = signal(30);
   readonly eventRecurrence = signal<'ONCE' | 'DAILY' | 'WEEKDAYS' | 'WEEKLY'>('ONCE');
   readonly eventOccurrences = signal(7);
+  readonly eventHasDraft = computed(() =>
+    Boolean(
+      this.editingEventId() ||
+      this.eventTitle().trim() ||
+      this.eventDescription().trim() ||
+      this.eventStartsAt() ||
+      this.eventJoinUrl().trim() !== 'https://t.me/hopehubindia' ||
+      this.eventReminderMinutes() !== 30 ||
+      this.eventRecurrence() !== 'ONCE' ||
+      this.eventOccurrences() !== 7,
+    ),
+  );
+  readonly hasUnsavedChanges = computed(
+    () => this.hasUnsavedConfigChanges() || this.campaignHasDraft() || this.eventHasDraft(),
+  );
+  readonly workspaceSaving = computed(
+    () => this.saving() || this.campaignSaving() || this.eventSaving(),
+  );
   readonly eventRecurrenceOptions: FormDropdownOption[] = [
     { value: 'ONCE', label: 'One voice circle' },
     { value: 'DAILY', label: 'Every day' },
@@ -337,9 +482,62 @@ export class GroupHelpPage {
 
   readonly uploadBotMedia = (file: File) => this.api.uploadTelegramGroupHelpMedia(file);
 
+  @HostListener('window:beforeunload', ['$event'])
+  protectUnsavedConfiguration(event: BeforeUnloadEvent) {
+    if (!this.hasUnsavedChanges()) return;
+    event.preventDefault();
+  }
+
+  private readWorkspaceNavCollapsed() {
+    try {
+      return localStorage.getItem('hopehub.admin.group-help.nav-collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  }
+
+  toggleWorkspaceNav() {
+    const collapsed = !this.workspaceNavCollapsed();
+    this.workspaceNavCollapsed.set(collapsed);
+    try {
+      localStorage.setItem('hopehub.admin.group-help.nav-collapsed', String(collapsed));
+    } catch {
+      // The layout still works when browser storage is unavailable.
+    }
+  }
+
   openWorkspaceSection(section: GroupHelpWorkspaceSection) {
     this.activeWorkspaceSection.set(section);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  openAdjacentWorkspaceSection(direction: -1 | 1) {
+    const nextIndex = this.activeWorkspaceIndex() + direction;
+    const section = this.workspaceSections[nextIndex];
+    if (section) this.openWorkspaceSection(section.id);
+  }
+
+  async saveAndContinue() {
+    if (!(await this.saveCurrentWorkspace())) return;
+    this.openAdjacentWorkspaceSection(1);
+  }
+
+  async saveCurrentWorkspace() {
+    if (this.campaignHasDraft()) {
+      if (!(await this.saveCampaign())) return false;
+    }
+    if (this.eventHasDraft()) {
+      if (!(await this.saveCommunityEvent())) return false;
+    }
+    if (this.hasUnsavedConfigChanges() && !(await this.saveAll())) return false;
+    return true;
+  }
+
+  discardCurrentWorkspaceChanges() {
+    if (this.campaignHasDraft()) this.resetCampaignForm();
+    if (this.eventHasDraft()) this.resetEventForm();
+    if (this.hasUnsavedConfigChanges()) this.discardConfigChanges();
+    else this.setSuccess('Unsaved edits discarded');
   }
 
   workspaceBadge(section: GroupHelpWorkspaceSection) {
@@ -347,6 +545,9 @@ export class GroupHelpPage {
       return this.campaigns().filter((campaign) => campaign.isActive).length;
     if (section === 'events') {
       return this.communityEvents().filter((event) => event.status === 'SCHEDULED').length;
+    }
+    if (section === 'settings' && this.hasUnsavedConfigChanges()) {
+      return this.changedConfigEntries().length;
     }
     return 0;
   }
@@ -746,6 +947,7 @@ export class GroupHelpPage {
   }
 
   resetCampaignForm() {
+    this.campaignValidationAttempted.set(false);
     this.editingCampaignId.set('');
     this.campaignName.set('');
     this.campaignIntervalMinutes.set(1440);
@@ -796,9 +998,11 @@ export class GroupHelpPage {
   }
 
   async saveCampaign() {
+    this.campaignValidationAttempted.set(true);
     if (!this.campaignName().trim() || !this.campaignItems().length) {
       this.error.set('Add a campaign name and at least one message or poll.');
-      return;
+      this.focusInvalidField(!this.campaignName().trim() ? '#campaign-name' : '.campaign-items');
+      return false;
     }
     this.campaignSaving.set(true);
     this.error.set('');
@@ -809,9 +1013,11 @@ export class GroupHelpPage {
       else await this.api.createTelegramCampaign(this.campaignPayload());
       await this.loadCampaigns();
       this.resetCampaignForm();
-      this.message.set(id ? 'Campaign updated.' : 'Campaign created.');
+      this.setSuccess(id ? 'Campaign updated' : 'Campaign created');
+      return true;
     } catch (error: any) {
       this.error.set(error?.error?.message || 'Could not save campaign.');
+      return false;
     } finally {
       this.campaignSaving.set(false);
     }
@@ -877,6 +1083,7 @@ export class GroupHelpPage {
   }
 
   resetEventForm() {
+    this.eventValidationAttempted.set(false);
     this.editingEventId.set('');
     this.eventTitle.set('');
     this.eventDescription.set('');
@@ -902,9 +1109,17 @@ export class GroupHelpPage {
   }
 
   async saveCommunityEvent() {
+    this.eventValidationAttempted.set(true);
     if (!this.eventTitle().trim() || !this.eventStartsAt() || !this.eventJoinUrl().trim()) {
       this.error.set('Add the event title, time and join link.');
-      return;
+      this.focusInvalidField(
+        !this.eventTitle().trim()
+          ? '#event-title'
+          : !this.eventStartsAt()
+            ? '#event-starts-at'
+            : '#event-join-url',
+      );
+      return false;
     }
     this.eventSaving.set(true);
     this.error.set('');
@@ -923,15 +1138,17 @@ export class GroupHelpPage {
       else await this.api.createTelegramCommunityEvent(payload);
       this.resetEventForm();
       await this.loadCampaigns();
-      this.message.set(
+      this.setSuccess(
         id
-          ? 'Voice circle updated.'
+          ? 'Voice circle updated'
           : this.eventRecurrence() === 'ONCE'
-            ? 'Voice circle announced.'
-            : 'Voice circle schedule created.',
+            ? 'Voice circle announced'
+            : 'Voice circle schedule created',
       );
+      return true;
     } catch (error: any) {
       this.error.set(error?.error?.message || 'Could not save voice circle.');
+      return false;
     } finally {
       this.eventSaving.set(false);
     }
@@ -943,8 +1160,60 @@ export class GroupHelpPage {
     await this.loadCampaigns();
   }
 
+  private configEntryMatches(entry: GroupHelpConfigEntry, query: string) {
+    return [
+      entry.label,
+      entry.description,
+      entry.key,
+      SECTION_LABELS[entry.section],
+      this.value(entry.key),
+    ]
+      .join(' ')
+      .toLocaleLowerCase()
+      .includes(query);
+  }
+
   fieldsFor(section: GroupHelpConfigEntry['section']) {
-    return this.config().filter((entry) => entry.section === section);
+    const query = this.configSearch().trim().toLocaleLowerCase();
+    return this.config().filter(
+      (entry) => entry.section === section && (!query || this.configEntryMatches(entry, query)),
+    );
+  }
+
+  clearConfigSearch() {
+    this.configSearch.set('');
+  }
+
+  activityActionLabel(action: string) {
+    const labels: Record<string, string> = {
+      'telegram_group_help.action_apply': 'Applied in Telegram',
+      'telegram_group_help.action_prepare': 'Prepared for confirmation',
+      'telegram_group_help.config_draft': 'Saved configuration draft',
+      'telegram_group_help.config_update': 'Updated live configuration',
+      'telegram_group_help.config_publish': 'Published configuration',
+    };
+    return labels[action] || action.replace(/^telegram_group_help\./, '').replaceAll('_', ' ');
+  }
+
+  activityActorName(entry: GroupHelpActivityEntry) {
+    return entry.actor?.name || entry.actor?.email || entry.actorRole || 'System';
+  }
+
+  updateActivityFilter(filter: 'action' | 'actor' | 'date', value: string) {
+    if (filter === 'action') this.activityActionFilter.set(value);
+    if (filter === 'actor') this.activityActorFilter.set(value);
+    if (filter === 'date') this.activityDateFilter.set(value);
+    this.activityPage.set(1);
+  }
+
+  updateActivitySearch(value: string) {
+    this.activitySearch.set(value);
+    this.activityPage.set(1);
+  }
+
+  changeActivityPage(direction: -1 | 1) {
+    const next = Math.min(this.activityPageCount(), Math.max(1, this.activityPage() + direction));
+    this.activityPage.set(next);
   }
 
   essentialSettings() {
@@ -983,6 +1252,22 @@ export class GroupHelpPage {
 
   directMessageOptions(): FormDropdownOption[] {
     return this.messageOptions().map((option) => ({ value: option.key, label: option.label }));
+  }
+
+  private focusInvalidField(selector: string) {
+    queueMicrotask(() => {
+      const element = document.querySelector<HTMLElement>(selector);
+      element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element?.focus({ preventScroll: true });
+    });
+  }
+
+  private setSuccess(action: string) {
+    const time = new Intl.DateTimeFormat('en-IN', {
+      hour: 'numeric',
+      minute: '2-digit',
+    }).format(new Date());
+    this.message.set(`${action} at ${time}.`);
   }
 
   value(key: string) {
@@ -1093,6 +1378,7 @@ export class GroupHelpPage {
     this.error.set('');
     this.message.set('');
     try {
+      const changedEntries = this.changedConfigEntries();
       const entries = this.config().map((entry) => ({
         key: entry.key,
         value: this.value(entry.key),
@@ -1104,7 +1390,16 @@ export class GroupHelpPage {
           (res.config as GroupHelpConfigEntry[]).map((entry) => [entry.key, entry.value]),
         ),
       );
-      this.message.set('Group Help config saved.');
+      const labels = changedEntries
+        .slice(0, 3)
+        .map((entry) => entry.label)
+        .join(', ');
+      const remaining = Math.max(0, changedEntries.length - 3);
+      this.setSuccess(
+        changedEntries.length
+          ? `Saved ${changedEntries.length} setting${changedEntries.length === 1 ? '' : 's'}${labels ? `: ${labels}` : ''}${remaining ? ` and ${remaining} more` : ''}. New bot activity will use the updated values`
+          : 'Configuration checked; all displayed values were already saved',
+      );
       return true;
     } catch {
       this.error.set('Could not save Group Help config.');
@@ -1141,7 +1436,9 @@ export class GroupHelpPage {
           return saved ? { ...entry, value: saved.value } : entry;
         }),
       );
-      this.message.set('Welcome saved. New members will receive this version from now on.');
+      this.setSuccess(
+        'Welcome message, media and buttons saved. New members will receive this version',
+      );
     } catch (error: any) {
       this.error.set(error?.error?.message || 'Could not save the welcome message.');
     } finally {
@@ -1166,7 +1463,9 @@ export class GroupHelpPage {
           (res.config as GroupHelpConfigEntry[]).map((entry) => [entry.key, entry.value]),
         ),
       }));
-      this.message.set('Community essentials saved.');
+      this.setSuccess(
+        `Saved ${entries.length} community essentials. New bot activity will use them`,
+      );
     } catch {
       this.error.set('Could not save community essentials.');
     } finally {
@@ -1191,8 +1490,8 @@ export class GroupHelpPage {
           (res.config as GroupHelpConfigEntry[]).map((entry) => [entry.key, entry.value]),
         ),
       }));
-      this.message.set(
-        'Message cleanup settings saved. New bot messages will follow these timings.',
+      this.setSuccess(
+        `Saved ${entries.length} message cleanup settings. New bot messages will follow these timings`,
       );
     } catch (error: any) {
       this.error.set(error?.error?.message || 'Could not save message cleanup settings.');

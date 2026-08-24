@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { adminAuthGuard } from './core/guards/admin-auth-guard';
 import { adminPermissionGuard } from './core/guards/admin-permission.guard';
+import { unsavedChangesGuard } from './core/guards/unsaved-changes.guard';
 import { ROUTE_PATHS } from './core/constants/app-routes.constants';
 
 const guard = [adminPermissionGuard];
@@ -227,6 +228,7 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/group-help/group-help-page').then((m) => m.GroupHelpPage),
         canActivate: guard,
+        canDeactivate: [unsavedChangesGuard],
       },
       {
         path: ROUTE_PATHS.TELEGRAM_CONTENT_NETWORK,

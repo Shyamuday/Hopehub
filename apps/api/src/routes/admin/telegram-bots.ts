@@ -1157,10 +1157,25 @@ export function registerAdminTelegramBotRoutes(router: Router) {
           where: {
             targetType: 'telegram_group_help',
             action: {
-              in: ['telegram_group_help.action_apply', 'telegram_group_help.action_prepare']
+              in: [
+                'telegram_group_help.action_apply',
+                'telegram_group_help.action_prepare',
+                'telegram_group_help.config_draft',
+                'telegram_group_help.config_update',
+                'telegram_group_help.config_publish'
+              ]
             }
           },
-          select: { id: true, action: true, targetId: true, summary: true, createdAt: true },
+          select: {
+            id: true,
+            action: true,
+            targetId: true,
+            summary: true,
+            actorId: true,
+            actorRole: true,
+            actor: { select: { id: true, name: true, email: true } },
+            createdAt: true
+          },
           orderBy: { createdAt: 'desc' },
           take: 50
         }),

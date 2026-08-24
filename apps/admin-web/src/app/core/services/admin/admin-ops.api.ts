@@ -320,6 +320,9 @@ export class AdminOpsApi extends AdminApiBase {
           action: string;
           targetId: string;
           summary?: string | null;
+          actorId?: string | null;
+          actorRole?: string | null;
+          actor?: { id: string; name: string; email?: string | null } | null;
           createdAt: string;
         }>;
         config: Array<{
