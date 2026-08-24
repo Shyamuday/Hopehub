@@ -1,21 +1,15 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
-import { form, FormField } from '@angular/forms/signals';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { RoleTaskGuideComponent } from '@hopehub/platform-ui';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
-import { AdminStatsComponent } from './admin-stats.component';
 import {
   BookConsultationPanelComponent,
   BookConsultationPayload,
 } from './book-consultation-panel.component';
-import {
-  ConsultationDetailComponent,
-  PrescriptionPayload,
-  SendMessagePayload,
-} from './consultation-detail.component';
+import { ConsultationDetailComponent, SendMessagePayload } from './consultation-detail.component';
 import { ConsultationListComponent } from './consultation-list.component';
 import { PaymentStatusOverlayComponent } from './payment-status-overlay.component';
 import { PrescriptionHistoryComponent } from './prescription-history.component';
@@ -36,24 +30,14 @@ import {
   DEFAULT_SNOOZE_MINUTES,
   NOTICE_DISMISS_MS,
 } from './core/constants/timing.constants';
-import {
-  BillingPlan,
-  Consultation,
-  Disease,
-  DoseEvent,
-  Doctor,
-  LabResult,
-  Prescription,
-} from './models';
+import { BillingPlan, Consultation, Disease, DoseEvent, LabResult, Prescription } from './models';
 
 @Component({
   selector: 'app-dashboard',
   imports: [
     CommonModule,
-    FormField,
     AppHeaderComponent,
     AppFooterComponent,
-    AdminStatsComponent,
     BookConsultationPanelComponent,
     ConsultationDetailComponent,
     ConsultationListComponent,
@@ -79,17 +63,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private pendingConsultationId: string | null = null;
   private pendingDiseaseId: string | null = null;
   private pendingClinicStoreId: string | null = null;
+  private pendingDoctorUserId = '';
+  private pendingDoctorName = '';
 
   readonly diseases = signal<Disease[]>([]);
   readonly selectedClinicStoreId = signal('');
   readonly billingPlans = signal<BillingPlan[]>([]);
   readonly consultations = signal<Consultation[]>([]);
-  readonly doctors = signal<Doctor[]>([]);
-  readonly report = signal<{
-    revenueInPaise: number;
-    activeDoctors: number;
-    consultations: unknown[];
-  } | null>(null);
   readonly activeConsultation = signal<Consultation | null>(null);
   readonly patientPrescriptions = signal<Prescription[]>([]);
   readonly patientLabResults = signal<LabResult[]>([]);
@@ -100,7 +80,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly notice = signal('');
   readonly isLoading = signal(false);
   readonly isProcessing = signal(false);
-  readonly title = computed(() => `${this.auth.user()?.role?.toLowerCase()} dashboard`);
+  readonly title = computed(() => 'Patient dashboard');
   private readonly whatsappSvc = inject(WhatsappLinkService);
   private readonly nativePermissions = inject(NativePermissionsService);
   readonly whatsappLink = this.whatsappSvc.url;
@@ -111,9 +91,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return this.diseases().find((disease) => disease.id === id) ?? null;
   });
   protected realtimeChannel?: { unsubscribe(): void; socket?: import('socket.io-client').Socket };
-  readonly iceServers = signal<Array<{ urls: string | string[]; username?: string; credential?: string }>>([
-    { urls: 'stun:stun.l.google.com:19302' }
-  ]);
+  readonly iceServers = signal<
+    Array<{ urls: string | string[]; username?: string; credential?: string }>
+  >([{ urls: 'stun:stun.l.google.com:19302' }]);
   readonly ensureMediaAccess = (mode: CallMode): Promise<MediaAccessResult> =>
     mode === 'video'
       ? this.nativePermissions.ensureVideoCallPermissions()
@@ -122,18 +102,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly snoozeMinutes = signal(DEFAULT_SNOOZE_MINUTES);
   readonly walletBalanceInPaise = signal(0);
   private activeConsultationSocketId: string | null = null;
-
-  readonly doctorFormModel = signal({
-    name: 'Dr. New Doctor',
-    email: 'newdoctor@hopehubclinic.local',
-    mobile: '',
-    password: 'Password@123',
-    specialty: 'Dermatology',
-  });
-  readonly doctorForm = form(this.doctorFormModel);
-
-  readonly assignmentModel = signal({ consultationId: '', doctorId: '' });
-  readonly assignmentForm = form(this.assignmentModel);
 
   reminderPreferences: ReminderPrefs = {
     inApp: true,
@@ -156,10 +124,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.pendingConsultationId = this.route.snapshot.queryParamMap.get('consultationId');
     this.pendingDiseaseId = this.route.snapshot.queryParamMap.get('diseaseId');
     this.pendingClinicStoreId = this.route.snapshot.queryParamMap.get('clinicStoreId');
+    this.pendingDoctorUserId = this.route.snapshot.queryParamMap.get('doctorId') || '';
+    this.pendingDoctorName = this.route.snapshot.queryParamMap.get('doctorName') || '';
     this.route.queryParamMap.subscribe((params) => {
       this.pendingConsultationId = params.get('consultationId');
       this.pendingDiseaseId = params.get('diseaseId');
       const clinicStoreId = params.get('clinicStoreId');
+      this.pendingDoctorUserId = params.get('doctorId') || '';
+      this.pendingDoctorName = params.get('doctorName') || '';
       if (params.get('bookFollowUp')) {
         this.showNotice('Book your follow-up consultation below.');
       }
@@ -176,7 +148,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.realtimeChannel = this.dataService.watchChanges(() => this.loadConsultations());
     this.api.fetchIceServers().subscribe({
       next: ({ iceServers }) => this.iceServers.set(iceServers),
-      error: () => undefined
+      error: () => undefined,
     });
   }
 
@@ -221,6 +193,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return '';
   }
 
+  preferredDoctorUserId() {
+    return this.pendingDoctorUserId;
+  }
+
+  preferredDoctorName() {
+    return this.pendingDoctorName;
+  }
+
   private applyPendingConsultation() {
     if (!this.pendingConsultationId) return;
     const match = this.consultations().find((c) => c.id === this.pendingConsultationId);
@@ -243,9 +223,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
         intakeAnswers: payload.intakeAnswers,
         purchaseType: payload.purchaseType,
         ...(payload.purchaseType === PURCHASE_TYPES.PLAN ? { planCode: payload.planCode } : {}),
-        ...(payload.walletRedeemInPaise ? { walletRedeemInPaise: payload.walletRedeemInPaise } : {}),
+        ...(payload.walletRedeemInPaise
+          ? { walletRedeemInPaise: payload.walletRedeemInPaise }
+          : {}),
         ...(payload.promoCode ? { promoCode: payload.promoCode } : {}),
         ...(payload.clinicStoreId !== undefined ? { clinicStoreId: payload.clinicStoreId } : {}),
+        ...(payload.preferredDoctorUserId
+          ? { preferredDoctorUserId: payload.preferredDoctorUserId }
+          : {}),
       })
       .subscribe({
         next: () => {
@@ -316,7 +301,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private loadWalletBalance() {
     this.api.patientRewards().subscribe({
       next: ({ balanceInPaise }) => this.walletBalanceInPaise.set(balanceInPaise ?? 0),
-      error: () => { /* wallet optional */ },
+      error: () => {
+        /* wallet optional */
+      },
     });
   }
 
@@ -327,42 +314,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
       error: (error) => {
         this.isProcessing.set(false);
         this.showNotice(error.error?.message || error.message || 'Could not send message.');
-      },
-      complete: () => this.isProcessing.set(false),
-    });
-  }
-
-  onUploadPrescription(payload: PrescriptionPayload) {
-    const consultation = this.activeConsultation();
-    if (!consultation) return;
-    this.isProcessing.set(true);
-    this.api.uploadPrescription(consultation.id, payload).subscribe({
-      next: () => {
-        this.showNotice('Prescription uploaded.');
-        this.loadConsultations();
-      },
-      error: (error) => {
-        this.isProcessing.set(false);
-        this.showNotice(error.error?.message || error.message || 'Could not upload prescription.');
-      },
-      complete: () => this.isProcessing.set(false),
-    });
-  }
-
-  onComplete() {
-    const consultation = this.activeConsultation();
-    if (!consultation) return;
-    this.isProcessing.set(true);
-    this.api.completeConsultation(consultation.id).subscribe({
-      next: () => {
-        this.showNotice('Consultation completed.');
-        this.loadConsultations();
-      },
-      error: (error) => {
-        this.isProcessing.set(false);
-        this.showNotice(
-          error.error?.message || error.message || 'Could not complete consultation.',
-        );
       },
       complete: () => this.isProcessing.set(false),
     });
@@ -442,41 +393,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  createDoctor() {
-    this.isProcessing.set(true);
-    this.api.createDoctor(this.doctorFormModel()).subscribe({
-      next: () => {
-        this.showNotice('Doctor created.');
-        this.loadAdminData();
-      },
-      error: (error) => {
-        this.isProcessing.set(false);
-        this.showNotice(error.error?.message || error.message || 'Could not create doctor.');
-      },
-      complete: () => this.isProcessing.set(false),
-    });
-  }
-
-  assignDoctor() {
-    const assignment = this.assignmentModel();
-    if (!assignment.consultationId || !assignment.doctorId) {
-      return this.showNotice('Select consultation and doctor.');
-    }
-
-    this.isProcessing.set(true);
-    this.api.assignDoctor(assignment.consultationId, assignment.doctorId).subscribe({
-      next: () => {
-        this.showNotice('Doctor assigned.');
-        this.loadConsultations();
-      },
-      error: (error) => {
-        this.isProcessing.set(false);
-        this.showNotice(error.error?.message || error.message || 'Could not assign doctor.');
-      },
-      complete: () => this.isProcessing.set(false),
-    });
-  }
-
   logout() {
     this.auth.logout();
     this.router.navigateByUrl(`/${ROUTE_PATHS.LOGIN}`);
@@ -495,9 +411,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (this.dataService.isPatient()) {
       this.loadPatientMedicationData();
       this.loadWalletBalance();
-    }
-    if (this.dataService.isAdmin()) {
-      this.loadAdminData();
     }
   }
 
@@ -526,34 +439,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
         if (active) {
           this.subscribeToActiveConsultation(active.id);
         }
-        const current = this.assignmentModel();
-        this.assignmentModel.set({
-          consultationId: consultations[0]?.id || current.consultationId,
-          doctorId: current.doctorId,
-        });
       },
       error: (error) =>
         this.showNotice(error.error?.message || error.message || 'Could not load consultations.'),
-    });
-  }
-
-  private loadAdminData() {
-    this.dataService.loadDoctors().subscribe({
-      next: ({ doctors }) => {
-        this.doctors.set(doctors);
-        const current = this.assignmentModel();
-        this.assignmentModel.set({
-          consultationId: current.consultationId,
-          doctorId: doctors[0]?.id || current.doctorId,
-        });
-      },
-      error: (error) =>
-        this.showNotice(error.error?.message || error.message || 'Could not load doctors.'),
-    });
-    this.dataService.loadReports().subscribe({
-      next: (report) => this.report.set(report),
-      error: (error) =>
-        this.showNotice(error.error?.message || error.message || 'Could not load reports.'),
     });
   }
 
@@ -590,7 +478,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.historyDosesLoading.set(true);
     this.dataService.loadDoseHistory(30).subscribe({
       next: ({ doses }) => this.historyDoseEvents.set(doses),
-      error: () => { /* history optional */ },
+      error: () => {
+        /* history optional */
+      },
       complete: () => this.historyDosesLoading.set(false),
     });
   }

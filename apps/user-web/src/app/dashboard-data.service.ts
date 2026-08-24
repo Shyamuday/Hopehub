@@ -6,15 +6,7 @@ import { API_PATHS } from './core/constants/api-paths.constants';
 import { ProductAnalyticsService } from './core/services/product-analytics.service';
 import { PRODUCT_ANALYTICS_EVENTS } from './core/constants/analytics.constants';
 import { AuthService } from './auth/auth.service';
-import {
-  BillingPlan,
-  Consultation,
-  Disease,
-  Doctor,
-  DoseEvent,
-  LabResult,
-  Prescription,
-} from './models';
+import { BillingPlan, Consultation, Disease, DoseEvent, LabResult, Prescription } from './models';
 import { ReminderPrefs } from './reminder-preferences.component';
 
 @Service()
@@ -47,18 +39,6 @@ export class DashboardDataService {
     return this.api.consultations();
   }
 
-  loadDoctors(): Observable<{ doctors: Doctor[] }> {
-    return this.api.doctors();
-  }
-
-  loadReports(): Observable<{
-    revenueInPaise: number;
-    activeDoctors: number;
-    consultations: unknown[];
-  }> {
-    return this.api.reports();
-  }
-
   loadReminderPreferences(): Observable<{ preferences: ReminderPrefs }> {
     return this.api.reminderPreferences();
   }
@@ -85,10 +65,6 @@ export class DashboardDataService {
 
   isPatient() {
     return this.auth.user()?.role === 'PATIENT';
-  }
-
-  isAdmin() {
-    return this.auth.user()?.role === 'ADMIN';
   }
 }
 

@@ -2,6 +2,13 @@
     <div class="panel book-panel">
       <h2>Book Consultation</h2>
 
+      @if (preferredDoctorUserId) {
+        <div class="preferred-doctor-note">
+          <strong>Preferred doctor: {{ preferredDoctorName || 'Selected doctor' }}</strong>
+          <span>We will prioritise this preference and rematch only if the doctor is unavailable.</span>
+        </div>
+      }
+
       <label>
         Purchase type
         <select [formField]="bookingForm.purchaseType" (change)="onBookingOptionChange()">

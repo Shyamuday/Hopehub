@@ -1,6 +1,13 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { ConsultationStatus, PaymentStatus, Role, SupportNoteCategory } from '@prisma/client';
+import {
+  ConsultationStatus,
+  HomeopathicDoctorType,
+  PaymentStatus,
+  ProviderDomain,
+  Role,
+  SupportNoteCategory
+} from '@prisma/client';
 import type { Server as SocketIoServer } from 'socket.io';
 import { authRequired, allowRoles } from '../auth.js';
 import { requireDoctorCapability } from '../doctor-capabilities.js';
@@ -119,6 +126,29 @@ export function createConsultationsRouter(io: SocketIoServer) {
         select: { homeClinicStoreId: true }
       });
       const isInstant = body.consultationMode === 'INSTANT_ONLINE';
+      if (body.preferredDoctorUserId) {
+        const preferredDoctor = await prisma.user.findFirst({
+          where: {
+            id: body.preferredDoctorUserId,
+            role: Role.DOCTOR,
+            isActive: true,
+            doctorProfile: {
+              is: {
+                providerDomain: ProviderDomain.HOMEOPATHY,
+                doctorType: { not: HomeopathicDoctorType.PSYCHOLOGIST },
+                suspendedAt: null,
+                showOnWebsite: true
+              }
+            }
+          },
+          select: { id: true }
+        });
+        if (!preferredDoctor) {
+          return res.status(400).json({
+            message: 'The selected homeopathy doctor is not available for booking.'
+          });
+        }
+      }
       const clinicStoreId = isInstant
         ? null
         : body.clinicStoreId === undefined
@@ -334,7 +364,18 @@ export function createConsultationsRouter(io: SocketIoServer) {
         select: { consultationMode: true }
       });
       const doctor = await prisma.user.findFirstOrThrow({
-        where: { id: body.doctorId, role: Role.DOCTOR, isActive: true },
+        where: {
+          id: body.doctorId,
+          role: Role.DOCTOR,
+          isActive: true,
+          doctorProfile: {
+            is: {
+              providerDomain: ProviderDomain.HOMEOPATHY,
+              doctorType: { not: HomeopathicDoctorType.PSYCHOLOGIST },
+              suspendedAt: null
+            }
+          }
+        },
         include: { doctorProfile: { select: { clinicStoreId: true } } }
       });
 

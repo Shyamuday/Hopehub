@@ -28,14 +28,24 @@
           <section class="doctors-grid">
             @for (doctor of doctors(); track doctor.id) {
               <article class="panel doctor-card">
-                <div class="doctor-avatar">{{ initials(doctor.user.name) }}</div>
+                @if (doctorImage(doctor); as imageUrl) {
+                  <img class="doctor-avatar doctor-avatar-photo" [src]="imageUrl" [alt]="doctor.user.name" loading="lazy" />
+                } @else {
+                  <div class="doctor-avatar">{{ initials(doctor.user.name) }}</div>
+                }
                 <div class="doctor-info">
-                  <p class="eyebrow">{{ doctor.designation || doctor.specialty || 'Homeopathic Doctor' }}</p>
+                  <div class="doctor-title-row">
+                    <p class="eyebrow">{{ doctor.designation || doctor.specialty || 'Homeopathic Doctor' }}</p>
+                    @if (doctor.credentialVerified) { <span class="doctor-verified">Verified</span> }
+                  </div>
                   <h2>{{ doctor.user.name }}</h2>
                   @if (doctor.yearsOfExperience) {
                     <p class="doctor-qual">{{ doctor.specialty }} &mdash; {{ doctor.yearsOfExperience }} yrs experience</p>
                   } @else if (doctor.specialty) {
                     <p class="doctor-qual">{{ doctor.specialty }}</p>
+                  }
+                  @if (doctor.registrationNo) {
+                    <p class="doctor-registration">Registration {{ doctor.registrationNo }}</p>
                   }
                   @if (doctor.bio) {
                     <p class="doctor-bio">{{ doctor.bio }}</p>
@@ -47,6 +57,13 @@
                       }
                     </div>
                   }
+                  <p class="doctor-opening">{{ nextOpening(doctor) }}</p>
+                  <div class="doctor-actions">
+                    <a class="doctor-book" routerLink="/patient/dashboard" [queryParams]="{ doctorId: doctor.userId, doctorName: doctor.user.name }">Book consultation</a>
+                    @if (doctor.isAvailable) {
+                      <a class="doctor-live-link" routerLink="/talk-to-doctor">Check live availability</a>
+                    }
+                  </div>
                 </div>
               </article>
             }
@@ -65,6 +82,7 @@
               </svg>
               Chat with us
             </a>
+            <a class="doctor-book" routerLink="/patient/dashboard">Book a consultation</a>
           </section>
         }
 

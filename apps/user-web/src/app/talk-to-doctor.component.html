@@ -6,7 +6,7 @@
         <section class="page-hero panel">
           <p class="eyebrow">Instant consult</p>
           <h1>Online doctors available now</h1>
-          <p>Chat and voice/video-call with a homeopathic doctor — like AstroTalk. Clinic appointments still work separately.</p>
+          <p>Choose a verified homeopathy doctor who is live now, or let us match you automatically.</p>
           <p class="trust-link"><a routerLink="/patient/account/permissions">How we use camera &amp; microphone for calls — your privacy explained</a></p>
         </section>
 
@@ -17,23 +17,45 @@
             <h2>Doctors online ({{ doctors().length }})</h2>
             <div class="doctor-live-grid">
               @for (doc of doctors(); track doc.userId) {
-                <article class="doctor-live-card" [class.selected]="selectedDoctor()?.userId === doc.userId" (click)="selectDoctor(doc)">
-                  <div class="live-badge">{{ doc.liveStatus === 'ON_CALL' ? 'On call' : 'Online' }}</div>
-                  <h3>{{ doc.name }}</h3>
-                  <p class="meta">{{ doc.specialty }} · {{ categoryLabel(doc) }}</p>
-                  @if (doc.bio) { <p class="bio">{{ doc.bio }}</p> }
-                  <div class="tags">
-                    @if (doc.acceptsChat) { <span>Chat</span> }
-                    @if (doc.acceptsVoiceCall) { <span>Voice &amp; video</span> }
+                <button type="button" class="doctor-live-card" [class.selected]="selectedDoctor()?.userId === doc.userId" (click)="selectDoctor(doc)" [attr.aria-pressed]="selectedDoctor()?.userId === doc.userId">
+                  <div class="live-badge"><span></span> Available now</div>
+                  <div class="doctor-card-head">
+                    @if (doctorImage(doc); as imageUrl) {
+                      <img class="doctor-photo" [src]="imageUrl" [alt]="doc.name" loading="lazy" />
+                    } @else {
+                      <span class="doctor-photo doctor-initials" aria-hidden="true">{{ initials(doc.name) }}</span>
+                    }
+                    <div>
+                      <h3>{{ doc.name }}</h3>
+                      <p class="meta">{{ doc.specialty || categoryLabel(doc) }}</p>
+                    </div>
                   </div>
-                </article>
+                  @if (doc.credentialVerified) { <p class="verified">Verified registration</p> }
+                  @if (doc.yearsOfExperience) { <p class="experience">{{ doc.yearsOfExperience }} years of experience</p> }
+                  @if (doc.bio) { <p class="bio">{{ doc.bio }}</p> }
+                  <div class="tags" aria-label="Consultation modes">
+                    @if (doc.acceptsChat) { <span>Chat</span> }
+                    @if (doc.acceptsVoiceCall) { <span>Voice</span> }
+                    @if (doc.acceptsVideoCall) { <span>Video</span> }
+                  </div>
+                </button>
               } @empty {
-                <p>No doctors are live right now. Try again shortly or <a routerLink="/dashboard">book a clinic consultation</a>.</p>
+                <div class="offline-state">
+                  <span class="offline-icon" aria-hidden="true">+</span>
+                  <div>
+                    <h3>No doctor is live right now</h3>
+                    <p>Book a time that works for you. Our clinical team will match your concern with an available homeopathy doctor.</p>
+                  </div>
+                  <a class="primary-link" routerLink="/patient/dashboard">Book a scheduled consultation</a>
+                </div>
               }
             </div>
-            <button type="button" class="ghost" (click)="selectDoctor(null)">Match me with any available doctor</button>
+            @if (doctors().length) {
+              <button type="button" class="ghost" (click)="selectDoctor(null)">Match me with any available doctor</button>
+            }
           </section>
 
+          @if (doctors().length) {
           <section class="panel booking-panel">
             <h2>Start your consult</h2>
             <div class="field">
@@ -54,12 +76,23 @@
             } @else {
               <p class="picked">We'll match you with the best available online doctor.</p>
             }
+            <div class="fee-summary">
+              <span>Consultation fee</span>
+              <strong>{{ consultationFeeLabel() }}</strong>
+              <small>Coupons and wallet savings are applied during secure checkout.</small>
+            </div>
             <button type="button" class="primary" (click)="startConsult()" [disabled]="booking()">
-              {{ booking() ? 'Starting…' : 'Consult now & pay' }}
+              {{ booking() ? 'Starting…' : 'Continue to secure payment' }}
             </button>
             @if (message()) { <p class="success">{{ message() }}</p> }
             @if (error()) { <p class="error">{{ error() }}</p> }
           </section>
+          }
+
+          <aside class="safety-note" role="note">
+            <strong>Need urgent medical help?</strong>
+            <span>Online homeopathy is not emergency care. Call 112 or visit the nearest emergency department for severe or rapidly worsening symptoms.</span>
+          </aside>
         }
       </main>
 

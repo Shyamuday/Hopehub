@@ -16,6 +16,8 @@ type OnlineDoctor = {
   userId: string;
   name: string;
   profileImageUrl?: string | null;
+  providerDomain: 'HOMEOPATHY' | 'HOPE_HUB';
+  credentialVerified?: boolean;
   specialty: string;
   doctorTypeLabel: string;
   category: 'GENERALIST' | 'SPECIALIST';
@@ -23,6 +25,7 @@ type OnlineDoctor = {
   liveStatus: string;
   acceptsChat: boolean;
   acceptsVoiceCall: boolean;
+  acceptsVideoCall: boolean;
   bio?: string | null;
   yearsOfExperience?: number | null;
 };
@@ -59,6 +62,10 @@ export class TalkToDoctorComponent implements OnInit, OnDestroy {
     this.socket = io(environment.apiUrl, { transports: ['websocket', 'polling'] });
     this.socket.emit(SOCKET_EVENTS.SUBSCRIBE_ONLINE_DOCTORS);
     this.socket.on(SOCKET_EVENTS.DOCTOR_PRESENCE, (doctor: OnlineDoctor) => {
+      if (!this.isAvailableHomeopathyDoctor(doctor)) {
+        this.removeDoctor(doctor.userId);
+        return;
+      }
       this.doctors.update((list) => {
         const idx = list.findIndex((d) => d.userId === doctor.userId);
         if (idx >= 0) {
@@ -70,7 +77,7 @@ export class TalkToDoctorComponent implements OnInit, OnDestroy {
       });
     });
     this.socket.on(SOCKET_EVENTS.DOCTOR_OFFLINE, (payload: { userId: string }) => {
-      this.doctors.update((list) => list.filter((d) => d.userId !== payload.userId));
+      this.removeDoctor(payload.userId);
     });
   }
 
@@ -84,7 +91,9 @@ export class TalkToDoctorComponent implements OnInit, OnDestroy {
         this.client.get<{ doctors: OnlineDoctor[] }>(API_PATHS.ONLINE_DOCTORS),
         this.client.get<{ diseases: Disease[] }>(`${API_PATHS.DISEASES}?grouped=false`),
       ]);
-      this.doctors.set(docRes.doctors ?? []);
+      this.doctors.set(
+        (docRes.doctors ?? []).filter((doctor) => this.isAvailableHomeopathyDoctor(doctor)),
+      );
       this.diseases.set(diseaseRes.diseases ?? []);
     } catch {
       this.error.set('Could not load online doctors.');
@@ -98,7 +107,47 @@ export class TalkToDoctorComponent implements OnInit, OnDestroy {
   }
 
   categoryLabel(doctor: OnlineDoctor) {
-    return doctor.category === 'SPECIALIST' ? 'Specialist' : 'General physician';
+    return doctor.category === 'SPECIALIST' ? 'Homeopathy specialist' : 'Homeopathy doctor';
+  }
+
+  doctorImage(doctor: OnlineDoctor): string | null {
+    const value = doctor.profileImageUrl?.trim();
+    if (!value) return null;
+    if (/^https?:\/\//i.test(value)) return value;
+    return `${environment.apiUrl.replace(/\/$/, '')}/${value.replace(/^\//, '')}`;
+  }
+
+  initials(name: string): string {
+    return name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() ?? '')
+      .join('');
+  }
+
+  selectedDisease(): Disease | null {
+    return this.diseases().find((disease) => disease.id === this.formModel().diseaseId) ?? null;
+  }
+
+  consultationFeeLabel(): string {
+    const amount = this.selectedDisease()?.feeInPaise;
+    return amount == null
+      ? 'Select a health concern to see the fee'
+      : new Intl.NumberFormat('en-IN', {
+          style: 'currency',
+          currency: 'INR',
+          maximumFractionDigits: 0,
+        }).format(amount / 100);
+  }
+
+  private isAvailableHomeopathyDoctor(doctor: OnlineDoctor): boolean {
+    return doctor.providerDomain === 'HOMEOPATHY' && doctor.liveStatus === 'ONLINE';
+  }
+
+  private removeDoctor(userId: string) {
+    this.doctors.update((list) => list.filter((doctor) => doctor.userId !== userId));
+    if (this.selectedDoctor()?.userId === userId) this.selectedDoctor.set(null);
   }
 
   async startConsult() {
@@ -111,12 +160,15 @@ export class TalkToDoctorComponent implements OnInit, OnDestroy {
       this.error.set('Select a concern and describe your symptoms.');
       return;
     }
+    if (!this.doctors().length) {
+      this.error.set('No doctor is live right now. Please book a scheduled consultation instead.');
+      return;
+    }
 
     this.booking.set(true);
     this.error.set('');
     this.message.set('');
     try {
-      const disease = this.diseases().find((d) => d.id === diseaseId);
       const res = await this.client.apiFetch<{ consultation: { id: string } }>(
         API_PATHS.CONSULTATIONS,
         {

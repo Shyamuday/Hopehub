@@ -21,9 +21,7 @@ app_domain() {
     doctor) echo "${HOPEHUB_DOCTOR_ORIGIN:-https://earn.hopehub.in}" ;;
     operations) echo "${HOPEHUB_OPERATIONS_ORIGIN:-https://ops.hopehub.in}" ;;
     healing) echo "${HOPEHUB_HEALING_ORIGIN:-https://hopehub.in}" ;;
-    # Patient is intentionally skipped because hopehub.in is currently used by
-    # healing in unified hosting and older patient aliases are optional.
-    patient) echo "" ;;
+    patient) echo "${HOPEHUB_PATIENT_ORIGIN:-https://care.hopehub.in}" ;;
     *) return 1 ;;
   esac
 }

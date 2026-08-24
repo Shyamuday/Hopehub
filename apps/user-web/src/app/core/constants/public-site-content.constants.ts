@@ -314,11 +314,11 @@ export const OUR_DOCTORS_PAGE_CONTENT = {
   headerSubtitle: 'Our doctors',
   eyebrow: 'Our clinical team',
   title: 'Experienced doctors. Dedicated to patient care.',
-  body: 'HopeHub Care and Research Centre maintains an internal panel of qualified homeopathic doctors with expertise across acute illnesses, chronic diseases, skin and hair concerns, metabolic health, pediatrics, and more. Patients are matched to doctors based on their condition — not random browsing.',
+  body: 'Meet qualified homeopathic doctors for acute illnesses, chronic conditions, skin and hair concerns, metabolic health, pediatrics, and more. Choose an available doctor or ask our clinical team to match your concern.',
   matching: {
     eyebrow: 'How it works',
-    title: 'You do not choose a doctor — we match you to the right one.',
-    body: 'At HopeHub, doctor assignment is internal. This ensures patients with specific conditions receive care from the most qualified and available doctor on our panel, rather than being left to navigate listings alone.',
+    title: 'Choose a doctor or let us match your care.',
+    body: 'Select an available doctor when you have a preference. If that doctor is unavailable, our clinical team can match you with another suitable homeopathy doctor so your care is not delayed.',
   },
   cta: {
     eyebrow: 'Ready to start?',

@@ -5,7 +5,8 @@ import {
   ConsultationStatus,
   SupportNoteCategory,
   Prisma,
-  HomeopathicDoctorType
+  HomeopathicDoctorType,
+  ProviderDomain
 } from '@prisma/client';
 import type { Server as SocketIoServer } from 'socket.io';
 import { authRequired, allowRoles } from '../../auth.js';
@@ -41,11 +42,23 @@ function consultationWorkspaceWhere(workspace: string): Prisma.ConsultationWhere
 
 function doctorWorkspaceWhere(workspace: string): Prisma.UserWhereInput {
   if (workspace === 'hope-hub') {
-    return { doctorProfile: { is: { doctorType: HomeopathicDoctorType.PSYCHOLOGIST } } };
+    return {
+      doctorProfile: {
+        is: {
+          providerDomain: ProviderDomain.HOPE_HUB,
+          doctorType: HomeopathicDoctorType.PSYCHOLOGIST
+        }
+      }
+    };
   }
   if (workspace === 'homeopathy') {
     return {
-      doctorProfile: { is: { doctorType: { not: HomeopathicDoctorType.PSYCHOLOGIST } } }
+      doctorProfile: {
+        is: {
+          providerDomain: ProviderDomain.HOMEOPATHY,
+          doctorType: { not: HomeopathicDoctorType.PSYCHOLOGIST }
+        }
+      }
     };
   }
   return {};

@@ -5,6 +5,7 @@ import {
   Prisma,
   LivePresenceStatus,
   OnlineDoctorCategory,
+  ProviderDomain,
   Role,
   CareTeamMemberType
 } from '@prisma/client';
@@ -162,6 +163,8 @@ const liveDoctorInclude = {
   doctor: {
     select: {
       specialty: true,
+      providerDomain: true,
+      registrationNo: true,
       doctorType: true,
       specialtyFocus: true,
       bio: true,
@@ -200,6 +203,8 @@ export function mapLiveDoctor(session: {
   };
   doctor: {
     specialty: string;
+    providerDomain: ProviderDomain;
+    registrationNo: string | null;
     doctorType: import('@prisma/client').HomeopathicDoctorType;
     specialtyFocus: import('@prisma/client').HomeopathicSpecialtyFocus | null;
     bio: string | null;
@@ -228,6 +233,8 @@ export function mapLiveDoctor(session: {
     userId: session.userId,
     name: session.user.name,
     profileImageUrl,
+    providerDomain: session.doctor.providerDomain,
+    credentialVerified: Boolean(session.doctor.registrationNo?.trim()),
     specialty: session.doctor.specialty,
     doctorType: session.doctor.doctorType,
     doctorTypeLabel: doctorTypeLabel(session.doctor.doctorType),
@@ -266,6 +273,7 @@ export async function listLiveOnlineDoctors(filters?: {
       lastHeartbeatAt: { gte: cutoff },
       user: { isActive: true, role: Role.DOCTOR },
       doctor: {
+        providerDomain: ProviderDomain.HOMEOPATHY,
         isAvailable: true,
         showOnWebsite: true,
         suspendedAt: null,
@@ -546,10 +554,11 @@ export async function isDoctorLiveForInstant(userId: string, diseaseId: string) 
     where: {
       userId,
       enabled: true,
-      liveStatus: { in: [LivePresenceStatus.ONLINE, LivePresenceStatus.ON_CALL] },
+      liveStatus: LivePresenceStatus.ONLINE,
       lastHeartbeatAt: { gte: cutoff },
       user: { isActive: true },
       doctor: {
+        providerDomain: ProviderDomain.HOMEOPATHY,
         isAvailable: true,
         showOnWebsite: true,
         suspendedAt: null,

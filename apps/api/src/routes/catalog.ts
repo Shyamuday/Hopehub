@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { Role } from '@prisma/client';
+import { HomeopathicDoctorType, ProviderDomain, Role } from '@prisma/client';
 import { authRequired, allowRoles } from '../auth.js';
 import { prisma } from '../db.js';
 import { DEFAULT_BILLING_PLANS } from '../constants/billing.constants.js';
@@ -25,6 +25,10 @@ import {
   syncDiseaseCatalog
 } from '../services/disease-catalog.js';
 import { resolveDiseaseConsultationFee } from '../services/consultation-pricing.js';
+import {
+  enrichWithProfileImageAccessUrl,
+  userProfileImagePath
+} from '../utils/profile-image-url.js';
 import {
   getDiseasePublicPageEditPayload,
   mergeDiseasePublicPage,
@@ -355,11 +359,22 @@ router.get(
       ? Math.max(1, Math.min(50, parseInt(limitConfig.value, 10) || 12))
       : 12;
 
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
     const doctors = await prisma.doctor.findMany({
-      where: { showOnWebsite: true, suspendedAt: null, user: { isActive: true } },
+      where: {
+        providerDomain: ProviderDomain.HOMEOPATHY,
+        doctorType: { not: HomeopathicDoctorType.PSYCHOLOGIST },
+        showOnWebsite: true,
+        suspendedAt: null,
+        user: { isActive: true }
+      },
       select: {
         id: true,
+        userId: true,
         specialty: true,
+        registrationNo: true,
+        isAvailable: true,
         doctorType: true,
         specialtyFocus: true,
         bio: true,
@@ -367,13 +382,36 @@ router.get(
         focusAreas: true,
         designation: true,
         websiteOrder: true,
-        user: { select: { id: true, name: true } }
+        slots: {
+          where: { date: { gte: today }, isBooked: false, isBlocked: false },
+          orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
+          take: 1,
+          select: { id: true, date: true, startTime: true, endTime: true }
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            profileImageKey: true,
+            profileImageUrl: true
+          }
+        }
       },
       orderBy: [{ websiteOrder: { sort: 'asc', nulls: 'last' } }, { user: { name: 'asc' } }],
       take: limit
     });
 
-    res.json({ doctors, limit });
+    const publicDoctors = await Promise.all(
+      doctors.map(async ({ slots, registrationNo, user, ...doctor }) => ({
+        ...doctor,
+        registrationNo,
+        credentialVerified: Boolean(registrationNo?.trim()),
+        nextAvailableSlot: slots[0] ?? null,
+        user: await enrichWithProfileImageAccessUrl(user, userProfileImagePath)
+      }))
+    );
+
+    res.json({ doctors: publicDoctors, limit });
   })
 );
 

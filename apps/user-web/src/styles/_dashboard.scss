@@ -107,6 +107,16 @@
   font-size: 1.8rem;
 }
 
+.preferred-doctor-banner {
+  width: fit-content;
+  margin: 0.75rem 0 0;
+  padding: 0.45rem 0.65rem;
+  border-radius: 0.65rem;
+  background: #eff6ff;
+  color: #1e40af;
+  font-size: 0.86rem;
+}
+
 .cards {
   display: grid;
   gap: 0.75rem;

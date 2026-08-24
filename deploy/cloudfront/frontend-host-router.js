@@ -8,6 +8,8 @@ function handler(event) {
 
   if (host === 'admin.hopehub.in') {
     prefix = 'admin';
+  } else if (host === 'care.hopehub.in') {
+    prefix = 'patient';
   } else if (
     host === 'earn.hopehub.in' ||
     host === 'support.hopehub.in' ||

@@ -6,7 +6,7 @@ import { DEFAULT_SNOOZE_MINUTES } from './core/constants/timing.constants';
 import { RAZORPAY_CHECKOUT } from './core/constants/branding.constants';
 import { SOCKET_EVENTS, SOCKET_TRANSPORTS } from './core/constants/socket.constants';
 import { environment } from '../environments/environment';
-import { BillingPlan, Consultation, Doctor, GroupedDiseaseCategory, LabResult } from './models';
+import { BillingPlan, Consultation, GroupedDiseaseCategory, LabResult } from './models';
 import type { PatientProfile } from './core/constants/patient-profile.constants';
 import { ClinicApiClient } from './clinic-api/clinic-api.client';
 import {
@@ -107,62 +107,6 @@ export class ClinicApiService {
         method: 'POST',
         body: JSON.stringify({ body }),
       }),
-    );
-  }
-
-  completeConsultation(consultationId: string) {
-    return from(
-      this.client.apiFetch(`/consultations/${consultationId}/complete`, { method: 'POST' }),
-    );
-  }
-
-  uploadPrescription(consultationId: string, payload: { notes: string; fileUrl?: string }) {
-    return from(
-      this.client.apiFetch(`/consultations/${consultationId}/messages`, {
-        method: 'POST',
-        body: JSON.stringify({
-          body: `[Prescription Notes]\n${payload.notes}${payload.fileUrl ? `\nFile: ${payload.fileUrl}` : ''}`,
-        }),
-      }),
-    );
-  }
-
-  doctors() {
-    return from(this.client.apiFetch<{ doctors: Doctor[] }>(API_PATHS.ADMIN.DOCTORS));
-  }
-
-  createDoctor(payload: {
-    name: string;
-    email: string;
-    mobile?: string;
-    password: string;
-    specialty: string;
-    registrationNo?: string;
-  }) {
-    return from(
-      this.client.apiFetch(API_PATHS.ADMIN.DOCTORS, {
-        method: 'POST',
-        body: JSON.stringify(payload),
-      }),
-    );
-  }
-
-  assignDoctor(consultationId: string, doctorId: string) {
-    return from(
-      this.client.apiFetch(`/consultations/${consultationId}/assign`, {
-        method: 'POST',
-        body: JSON.stringify({ doctorId }),
-      }),
-    );
-  }
-
-  reports() {
-    return from(
-      this.client.apiFetch<{
-        revenueInPaise: number;
-        activeDoctors: number;
-        consultations: unknown[];
-      }>(API_PATHS.ADMIN.REPORTS),
     );
   }
 

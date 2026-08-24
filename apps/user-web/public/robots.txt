@@ -4,4 +4,4 @@ Disallow: /auth/
 Disallow: /login
 Disallow: /patient/
 
-Sitemap: https://hopehub.in/sitemap.xml
+Sitemap: https://care.hopehub.in/sitemap.xml

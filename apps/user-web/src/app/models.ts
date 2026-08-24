@@ -248,12 +248,3 @@ export type Consultation = {
   prescriptions?: Prescription[];
   consultationMode?: 'CLINIC_QUEUE' | 'INSTANT_ONLINE';
 };
-
-export type Doctor = User & {
-  isActive: boolean;
-  doctorProfile?: {
-    specialty: string;
-    registrationNo?: string | null;
-    isAvailable: boolean;
-  };
-};

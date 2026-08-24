@@ -134,7 +134,7 @@ export const LEGAL_PAGES = {
       {
         title: 'Consultations & doctor assignment',
         bullets: [
-          'Doctors are assigned internally based on your concern, availability, and clinic workflow — patients do not browse or select doctors from a public marketplace listing.',
+          'You may choose an available live doctor or state a doctor preference. If that provider is unavailable, HopeHub Care may rematch the consultation based on your concern, availability, and clinic workflow.',
           'A consultation fee may apply before doctor review or assignment, as shown at booking.',
           'The doctor may request additional history, photos, or reports before prescribing.',
           'Prescriptions are issued only when clinically appropriate.',
