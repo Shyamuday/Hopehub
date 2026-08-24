@@ -2347,13 +2347,34 @@ export class ConsultationWebrtcCallService {
 
   private startMediaTimeout() {
     this.clearMediaTimeout();
+    // setRemoteDescription()/ICE callbacks can mark the peer connected before this method runs.
+    // Never arm the initial-connection timer after media has already connected; otherwise a later
+    // temporary disconnect can let this stale timer end a healthy call as `media_timeout` while
+    // the dedicated reconnect timer is already recovering it.
+    if (this.peerHasConnected()) return;
     this.mediaTimeout = setTimeout(() => {
-      if (this.state() === 'connected' || this.state() === 'ended') return;
+      this.mediaTimeout = null;
+      if (this.peerHasConnected() || this.state() === 'ended' || this.state() === 'reconnecting') {
+        return;
+      }
       void this.failCall(
         'media_timeout',
         'Call could not connect. Please try again or continue in chat.'
       );
     }, MEDIA_CONNECT_TIMEOUT_MS);
+  }
+
+  private peerHasConnected() {
+    const connectionState = this.pc?.connectionState;
+    const iceState = this.pc?.iceConnectionState;
+    return Boolean(
+      this.connectedAt ||
+      this.firstRemoteMediaAt ||
+      this.state() === 'connected' ||
+      connectionState === 'connected' ||
+      iceState === 'connected' ||
+      iceState === 'completed'
+    );
   }
 
   private startReconnectTimeout() {

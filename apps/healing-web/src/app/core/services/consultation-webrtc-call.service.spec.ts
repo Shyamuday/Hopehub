@@ -368,6 +368,37 @@ describe('ConsultationWebrtcCallService resilient signaling', () => {
 });
 
 describe('ConsultationWebrtcCallService premium recovery automation', () => {
+  it('does not let the initial media timeout end a call that already connected', () => {
+    vi.useFakeTimers();
+    const service = new ConsultationWebrtcCallService();
+    const failCall = vi.fn();
+    const internals = service as unknown as {
+      connectedAt: number;
+      pc: {
+        connectionState: RTCPeerConnectionState;
+        iceConnectionState: RTCIceConnectionState;
+        close: () => void;
+      };
+      startMediaTimeout: () => void;
+      failCall: (reason: string, message: string) => Promise<void>;
+    };
+    internals.connectedAt = Date.now();
+    internals.pc = {
+      connectionState: 'disconnected',
+      iceConnectionState: 'disconnected',
+      close: () => undefined,
+    };
+    internals.failCall = failCall;
+    service.state.set('reconnecting');
+
+    internals.startMediaTimeout();
+    vi.advanceTimersByTime(30_000);
+
+    expect(failCall).not.toHaveBeenCalled();
+    service.cleanup();
+    vi.useRealTimers();
+  });
+
   it('forces relay-only ICE when protected calling is selected', async () => {
     const service = new ConsultationWebrtcCallService();
     const audioTrack = {
