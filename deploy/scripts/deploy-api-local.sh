@@ -360,6 +360,36 @@ wait_for_api() {
   return 1
 }
 
+wait_for_nginx_api() {
+  local response_file
+  local http_code
+  response_file="$(mktemp /tmp/hopehub-api-nginx-health.XXXXXX)"
+
+  echo "Waiting for Nginx to route to the candidate API..."
+  for i in $(seq 1 15); do
+    http_code="$(
+      curl -sSk \
+        --resolve api.hopehub.in:443:127.0.0.1 \
+        --output "$response_file" \
+        --write-out '%{http_code}' \
+        https://api.hopehub.in/health/ready || true
+    )"
+    if [ "$http_code" = "200" ]; then
+      echo "Nginx reached the candidate API after ${i} attempt(s)"
+      rm -f "$response_file"
+      return 0
+    fi
+    echo "Attempt $i: Nginx readiness returned HTTP ${http_code:-transport-error}; retrying in 2s..."
+    sleep 2
+  done
+
+  echo "Nginx readiness did not recover. Last response body:"
+  head -c 1200 "$response_file" || true
+  echo
+  rm -f "$response_file"
+  return 1
+}
+
 if ! ensure_zero_downtime_proxy; then
   exit 1
 fi
@@ -385,7 +415,7 @@ if ! switch_api_upstream "$NEXT_API_PORT" "$CURRENT_API_PORT"; then
   exit 1
 fi
 
-if ! curl -fsSk --resolve api.hopehub.in:443:127.0.0.1 https://api.hopehub.in/health/ready >/dev/null; then
+if ! wait_for_nginx_api; then
   echo "Nginx did not reach the new API. Restoring port ${CURRENT_API_PORT}."
   switch_api_upstream "$CURRENT_API_PORT" "$NEXT_API_PORT" || true
   pm2 delete "$NEXT_API_PROCESS" || true
