@@ -61,7 +61,7 @@ export class Login {
   readonly enrollModel = signal({
     name: '',
     mobile: indianMobileDisplay(''),
-    specialty: '',
+    specialty: this.isHomeopathyPortal ? this.portal.defaultSpecialty : '',
     registrationNo: '',
     confirmPassword: '',
   });

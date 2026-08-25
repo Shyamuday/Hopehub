@@ -105,11 +105,6 @@
           <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
         </select>
 
-        @if (!isPsychologist) {
-          <label for="specialty">{{ specialtyFieldLabel() }}</label>
-          <input id="specialty" [formField]="profileForm.specialty" />
-        }
-
         @if (showRegistrationNumber()) {
           <label for="registrationNo">{{ registrationFieldLabel() }}</label>
           <input id="registrationNo" [formField]="profileForm.registrationNo" />

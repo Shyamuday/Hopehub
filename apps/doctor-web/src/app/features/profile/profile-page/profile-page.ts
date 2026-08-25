@@ -322,13 +322,6 @@ export class ProfilePage implements OnDestroy {
     );
   }
 
-  specialtyFieldLabel(): string {
-    if (!this.isPsychologist) return 'Specialty';
-    if (this.isListenerProfile()) return 'Listening focus';
-    if (this.isCoachGuideProfile()) return 'Coaching / guide focus';
-    return 'Professional focus';
-  }
-
   registrationFieldLabel(): string {
     return this.isPsychologist ? 'Registration / certification number' : 'Registration Number';
   }
@@ -1034,7 +1027,8 @@ export class ProfilePage implements OnDestroy {
         email: profile.email || '',
         gender: profile.gender || '',
         mobile: indianMobileDisplay(profile.mobile),
-        specialty: profile.doctorProfile?.specialty || '',
+        specialty:
+          profile.doctorProfile?.specialty || (this.isPsychologist ? '' : 'General Homeopathy'),
         registrationNo: profile.doctorProfile?.registrationNo || '',
         isAvailable: profile.doctorProfile?.isAvailable ?? true,
         bio: profile.doctorProfile?.bio || '',

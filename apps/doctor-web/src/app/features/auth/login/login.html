@@ -156,14 +156,6 @@
         <small>Indian mobile number, starting with 6–9.</small>
 
         @if (isHomeopathyPortal) {
-          <label for="specialty">Homeopathy specialty</label>
-          <input
-            id="specialty"
-            [formField]="enrollForm.specialty"
-            autocomplete="organization-title"
-            placeholder="For example, General Homeopathy"
-          />
-
           <label for="registrationNo">Professional registration number</label>
           <input
             id="registrationNo"
@@ -178,7 +170,7 @@
           <span>{{ enrollModel().name }}</span>
           <small>{{ signInModel().email }} · {{ enrollModel().mobile }}</small>
           @if (isHomeopathyPortal) {
-            <small>{{ enrollModel().specialty }} · {{ enrollModel().registrationNo }}</small>
+            <small>Registration: {{ enrollModel().registrationNo }}</small>
           }
           <button type="button" (click)="backToSignupDetails()">Edit</button>
         </div>
