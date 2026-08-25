@@ -281,7 +281,7 @@ export class AuthFormOverlayComponent {
       error: (error) =>
         this.showError(
           error.status === 401
-            ? 'Invalid or expired code. Send a new code and try again.'
+            ? 'The email or password is incorrect. Please try again.'
             : error.error?.message || 'Could not sign in.',
         ),
     });
@@ -370,6 +370,7 @@ export class AuthFormOverlayComponent {
       this.auth.patientRegister({
         email: signup.email.trim().toLowerCase(),
         password: signup.password,
+        referralCode: this.referralCodeFromUrl,
       }),
     ).subscribe({
       next: ({ user }) => {

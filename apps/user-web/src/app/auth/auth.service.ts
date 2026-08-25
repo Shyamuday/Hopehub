@@ -28,12 +28,22 @@ export class AuthService {
 
   readonly user = this.patientAuth.user.asReadonly();
   readonly isLoggedIn = computed(() => Boolean(this.user()));
+  private bootstrapPromise: Promise<User | null> | null = null;
 
   constructor() {
     void this.bootstrapSession();
   }
 
-  async bootstrapSession() {
+  bootstrapSession(): Promise<User | null> {
+    const authenticatedUser = this.user();
+    if (authenticatedUser) return Promise.resolve(authenticatedUser);
+    if (!this.bootstrapPromise) {
+      this.bootstrapPromise = this.restoreSession();
+    }
+    return this.bootstrapPromise;
+  }
+
+  private async restoreSession(): Promise<User | null> {
     const token = this.token;
     if (!token) {
       this.patientAuth.setAuthenticatedUser(null);
@@ -120,7 +130,12 @@ export class AuthService {
     ).pipe(tap((response) => this.persistSession(response)));
   }
 
-  patientRegister(payload: { name?: string; email: string; password: string }) {
+  patientRegister(payload: {
+    name?: string;
+    email: string;
+    password: string;
+    referralCode?: string;
+  }) {
     return from(this.patientAuth.register(payload)).pipe(
       tap((response) => this.persistSession(response)),
     );
@@ -155,6 +170,7 @@ export class AuthService {
     }
     this.clearSession();
     this.patientAuth.setAuthenticatedUser(null);
+    this.bootstrapPromise = null;
   }
 
   async refreshAuthSession() {
@@ -197,6 +213,7 @@ export class AuthService {
     }
 
     this.patientAuth.setAuthenticatedUser(response.user);
+    this.bootstrapPromise = Promise.resolve(response.user);
   }
 
   private clearSession() {
