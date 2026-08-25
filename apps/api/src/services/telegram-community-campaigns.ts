@@ -20,6 +20,7 @@ import {
 import { sendGroupHelpActivityLog } from './telegram-group-help.actions.js';
 import { observeTelegramCommunityMember } from './telegram-community-member-identity.js';
 import { telegramPersonLogLabel } from './telegram-group-help.people.js';
+import { telegramVideoChatJoinUrl } from './telegram-group-call-link.js';
 import { runTelegramContentNetworkScheduler } from './telegram-content-network.js';
 import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
 import { TELEGRAM_BOT_URLS } from '../constants/telegram-community-bot.constants.js';
@@ -917,6 +918,31 @@ export async function handleTelegramCommunityVoiceChatStarted(message: Community
       expiresAt: new Date(now.getTime() + VOICE_EVENT_RECOVERY_DELAY_MS)
     }
   });
+
+  // The announcement may have been posted before the host started the VC.
+  // Refresh its markup now so even existing announcements open Telegram's
+  // native active-call join screen for public groups.
+  if (activeEvent.telegramMessageId) {
+    try {
+      const rsvpCount = await prisma.telegramCommunityEventRsvp.count({
+        where: { eventId: activeEvent.id, status: 'GOING' }
+      });
+      await editCommunityReplyMarkup(
+        CAMPAIGN_BOT,
+        activeEvent.chatId,
+        activeEvent.telegramMessageId,
+        await telegramCommunityEventKeyboard(activeEvent, rsvpCount)
+      );
+    } catch (error) {
+      // Telegram's Bot API update already records the active call. A markup
+      // refresh failure must never prevent the scheduler from tracking it.
+      console.warn(
+        `Could not refresh Join VC button for ${activeEvent.id}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
   return true;
 }
 
@@ -1451,7 +1477,7 @@ async function telegramCommunityEventKeyboard(
     inline_keyboard: [
       [{ text: `I’ll join (${rsvpCount})`, callback_data: `event:rsvp:${event.id}` }],
       [
-        { text: 'Join voice circle', url: event.joinUrl },
+        { text: 'Join VC', url: telegramVideoChatJoinUrl(event.joinUrl) },
         { text: 'Talk privately (paid)', url: config.supportUrl }
       ]
     ]
@@ -1463,7 +1489,7 @@ async function telegramCommunityEventReminderKeyboard(event: { joinUrl: string }
   return {
     inline_keyboard: [
       [
-        { text: 'Join voice circle', url: event.joinUrl },
+        { text: 'Join VC', url: telegramVideoChatJoinUrl(event.joinUrl) },
         { text: 'Talk privately (paid)', url: config.supportUrl }
       ]
     ]

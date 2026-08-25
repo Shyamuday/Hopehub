@@ -324,7 +324,7 @@ export class GroupHelpPage {
   readonly editingEventId = signal('');
   readonly eventTitle = signal('');
   readonly eventDescription = signal('');
-  readonly eventJoinUrl = signal('https://t.me/hopehubindia');
+  readonly eventJoinUrl = signal('https://t.me/hopehubindia?videochat');
   readonly eventStartsAt = signal('');
   readonly eventReminderMinutes = signal(30);
   readonly eventRecurrence = signal<'ONCE' | 'DAILY' | 'WEEKDAYS' | 'WEEKLY'>('ONCE');
@@ -335,7 +335,7 @@ export class GroupHelpPage {
       this.eventTitle().trim() ||
       this.eventDescription().trim() ||
       this.eventStartsAt() ||
-      this.eventJoinUrl().trim() !== 'https://t.me/hopehubindia' ||
+      this.eventJoinUrl().trim() !== 'https://t.me/hopehubindia?videochat' ||
       this.eventReminderMinutes() !== 30 ||
       this.eventRecurrence() !== 'ONCE' ||
       this.eventOccurrences() !== 7,
@@ -1087,7 +1087,7 @@ export class GroupHelpPage {
     this.editingEventId.set('');
     this.eventTitle.set('');
     this.eventDescription.set('');
-    this.eventJoinUrl.set('https://t.me/hopehubindia');
+    this.eventJoinUrl.set('https://t.me/hopehubindia?videochat');
     this.eventStartsAt.set('');
     this.eventReminderMinutes.set(30);
     this.eventRecurrence.set('ONCE');
