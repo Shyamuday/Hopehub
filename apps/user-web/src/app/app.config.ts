@@ -4,12 +4,13 @@ import {
   provideZonelessChangeDetection,
   isDevMode,
 } from '@angular/core';
-import { provideHttpClient, withInterceptors, withXhr } from '@angular/common/http';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
+import { provideRouter, withInMemoryScrolling } from '@angular/router';
 import {
-  provideRouter,
-  withExperimentalAutoCleanupInjectors,
-  withExperimentalPlatformNavigation,
-} from '@angular/router';
+  provideClientHydration,
+  withEventReplay,
+  withHttpTransferCacheOptions,
+} from '@angular/platform-browser';
 import { provideServiceWorker } from '@angular/service-worker';
 import {
   CLINIC_API_BASE_URL,
@@ -28,12 +29,17 @@ export const appConfig: ApplicationConfig = {
     { provide: CLINIC_AUTH_TOKEN_KEY, useValue: AUTH_TOKEN_KEY },
     provideBrowserGlobalErrorListeners(),
     provideZonelessChangeDetection(),
+    provideClientHydration(
+      withEventReplay(),
+      // Until all environments have the public-content-audience migration,
+      // never embed raw blog API responses from another HopeHub domain in HTML.
+      withHttpTransferCacheOptions({ filter: (request) => !request.url.includes('/blog') }),
+    ),
     provideRouter(
       routes,
-      withExperimentalPlatformNavigation(),
-      withExperimentalAutoCleanupInjectors(),
+      withInMemoryScrolling({ scrollPositionRestoration: 'top', anchorScrolling: 'enabled' }),
     ),
-    provideHttpClient(withXhr(), withInterceptors([authInterceptor, requestTimeoutInterceptor])),
+    provideHttpClient(withFetch(), withInterceptors([authInterceptor, requestTimeoutInterceptor])),
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),
       registrationStrategy: 'registerWhenStable:30000',

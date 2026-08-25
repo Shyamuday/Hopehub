@@ -3,7 +3,7 @@
   <url>
     <loc>https://care.hopehub.in/</loc>
     <changefreq>daily</changefreq>
-    <priority>1.0</priority>
+    <priority>1</priority>
   </url>
   <url>
     <loc>https://care.hopehub.in/talk-to-doctor</loc>
@@ -16,14 +16,9 @@
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://care.hopehub.in/about</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://care.hopehub.in/our-doctors</loc>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.85</priority>
   </url>
   <url>
     <loc>https://care.hopehub.in/chronic-care</loc>
@@ -31,8 +26,8 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://care.hopehub.in/blog</loc>
-    <changefreq>weekly</changefreq>
+    <loc>https://care.hopehub.in/about</loc>
+    <changefreq>monthly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
@@ -46,31 +41,29 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://care.hopehub.in/careers</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.65</priority>
-  </url>
-  <url>
     <loc>https://care.hopehub.in/faq</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://care.hopehub.in/safety</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://care.hopehub.in/editorial-policy</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://care.hopehub.in/contact</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
-  <!-- Patient app page kept out of the sitemap until mobile launch.
   <url>
-    <loc>https://care.hopehub.in/get-app</loc>
-    <changefreq>monthly</changefreq>
+    <loc>https://care.hopehub.in/careers</loc>
+    <changefreq>weekly</changefreq>
     <priority>0.55</priority>
-  </url>
-  -->
-  <url>
-    <loc>https://care.hopehub.in/safety</loc>
-    <changefreq>yearly</changefreq>
-    <priority>0.5</priority>
   </url>
   <url>
     <loc>https://care.hopehub.in/legal</loc>
@@ -109,77 +102,187 @@
   </url>
   <url>
     <loc>https://care.hopehub.in/treatments/hair-fall</loc>
-    <changefreq>weekly</changefreq>
+    <changefreq>monthly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
     <loc>https://care.hopehub.in/treatments/skin-care</loc>
-    <changefreq>weekly</changefreq>
+    <changefreq>monthly</changefreq>
     <priority>0.75</priority>
   </url>
   <url>
     <loc>https://care.hopehub.in/treatments/chronic-care</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
     <loc>https://care.hopehub.in/treatments/diabetes-mellitus</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
     <loc>https://care.hopehub.in/treatments/hypertension</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
     <loc>https://care.hopehub.in/treatments/chronic-kidney-disease</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
     <loc>https://care.hopehub.in/treatments/gallstone</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
     <loc>https://care.hopehub.in/treatments/liver-cirrhosis</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
     <loc>https://care.hopehub.in/treatments/piles</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
     <loc>https://care.hopehub.in/treatments/kidney-stone</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
     <loc>https://care.hopehub.in/treatments/mental-health</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
     <loc>https://care.hopehub.in/treatments/sexual-health</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
     <loc>https://care.hopehub.in/treatments/respiratory-disease</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
     <loc>https://care.hopehub.in/treatments/musculoskeletal-disease</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
   </url>
   <url>
     <loc>https://care.hopehub.in/treatments/cardiovascular-disease</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://care.hopehub.in/treatments/addiction-habit-support</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://care.hopehub.in/treatments/anger-emotional-control</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://care.hopehub.in/treatments/anxiety-therapy</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://care.hopehub.in/treatments/breakup-counseling</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://care.hopehub.in/treatments/career-study-pressure</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://care.hopehub.in/treatments/chat-listener-support-session</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://care.hopehub.in/treatments/chat-session</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://care.hopehub.in/treatments/couples-pre-marriage-guidance</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://care.hopehub.in/treatments/depression-mood-support</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://care.hopehub.in/treatments/exam-performance-stress</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://care.hopehub.in/treatments/family-conflict-support</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://care.hopehub.in/treatments/goa-wellness-meetup</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://care.hopehub.in/treatments/grief-loss-support</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://care.hopehub.in/treatments/loneliness-emotional-support</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://care.hopehub.in/treatments/parenting-child-behavior</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://care.hopehub.in/treatments/relationship-guidance</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://care.hopehub.in/treatments/self-esteem-confidence</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://care.hopehub.in/treatments/sleep-overthinking-support</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://care.hopehub.in/treatments/social-anxiety-confidence</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://care.hopehub.in/treatments/stress-burnout-support</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://care.hopehub.in/treatments/stress-reset-workshop</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://care.hopehub.in/treatments/trauma-emotional-shock</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
   </url>
 </urlset>

@@ -11,6 +11,7 @@
       content="HopeHub Care offers doctor-led online homeopathic consultations for acute and chronic conditions — prescriptions, follow-up, and secure digital care."
     />
     <meta name="robots" content="index, follow" />
+    <meta name="google-adsense-account" content="ca-pub-4932263295519623" />
     <meta name="theme-color" content="#0f62fe" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="HopeHub Care | Doctor-Led Homeopathy for All Conditions" />
@@ -37,36 +38,30 @@
     <link rel="icon" type="image/jpeg" href="/hopehublogom.jpg" />
     <link rel="apple-touch-icon" href="/hopehublogom.jpg" />
     <link rel="manifest" href="/site.webmanifest" />
-    <script type="application/ld+json">
+    <script id="hopehub-site-structured-data" type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "MedicalClinic",
-        "name": "HopeHub Care and Research Centre",
-        "url": "https://care.hopehub.in/",
-        "logo": "https://care.hopehub.in/image/hopehublogom.jpg",
-        "image": "https://care.hopehub.in/image/hopehublogom.jpg",
-        "description": "Doctor-led online homeopathic consultations for acute and chronic conditions, prescriptions, follow-up, and secure patient support.",
-        "medicalSpecialty": "Homeopathic",
-        "areaServed": {
-          "@type": "Country",
-          "name": "India"
-        },
-        "address": {
-          "@type": "PostalAddress",
-          "streetAddress": "Near City Centre, Main Road",
-          "addressLocality": "Ranchi",
-          "addressRegion": "Jharkhand",
-          "postalCode": "834001",
-          "addressCountry": "IN"
-        },
-        "contactPoint": {
-          "@type": "ContactPoint",
-          "telephone": "+91-98765-43210",
-          "contactType": "customer support",
-          "areaServed": "IN",
-          "availableLanguage": ["English", "Hindi"]
-        },
-        "sameAs": ["https://care.hopehub.in/"]
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://care.hopehub.in/#website",
+            "url": "https://care.hopehub.in/",
+            "name": "HopeHub Care",
+            "inLanguage": "en-IN",
+            "publisher": { "@id": "https://care.hopehub.in/#clinic" }
+          },
+          {
+            "@type": ["MedicalClinic", "Organization"],
+            "@id": "https://care.hopehub.in/#clinic",
+            "name": "HopeHub Care and Research Centre",
+            "url": "https://care.hopehub.in/",
+            "logo": "https://care.hopehub.in/image/hopehublogom.jpg",
+            "image": "https://care.hopehub.in/image/hopehublogom.jpg",
+            "description": "Doctor-led online homeopathic consultations for acute and chronic conditions, prescriptions, follow-up, and secure patient support.",
+            "medicalSpecialty": "Homeopathic",
+            "areaServed": { "@type": "Country", "name": "India" }
+          }
+        ]
       }
     </script>
   </head>
@@ -150,10 +145,10 @@
           <img
             class="app-shell-loading__logo"
             src="https://hopehub-public-assets-924479393196.s3.us-east-1.amazonaws.com/brand/hopehublogom.jpg"
-            alt="Hope Hub"
+            alt="HopeHub Care"
           />
-          <strong>Hope Hub</strong>
-          <p>Healing becomes easier when you don&rsquo;t have to carry everything alone</p>
+          <strong>HopeHub Care</strong>
+          <p>Doctor-led homeopathic consultations, prescriptions, and follow-up care</p>
           <span class="app-shell-loading__pulse" aria-hidden="true"></span>
         </div>
       </div>

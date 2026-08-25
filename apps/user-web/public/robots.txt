@@ -1,7 +1,4 @@
 User-agent: *
 Allow: /
-Disallow: /auth/
-Disallow: /login
-Disallow: /patient/
 
 Sitemap: https://care.hopehub.in/sitemap.xml

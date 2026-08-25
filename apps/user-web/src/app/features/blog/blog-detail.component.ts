@@ -10,6 +10,7 @@ import { BLOG_PAGE_CONTENT } from '../../core/constants/public-site-content.cons
 import { SimpleMarkdownPipe } from '../../core/pipes/simple-markdown.pipe';
 import { WhatsappLinkService } from '../../core/services/whatsapp-link.service';
 import { AuthService } from '../../auth/auth.service';
+import { isUserWebBlogSlug } from '../../core/constants/blog-audience.constants';
 
 type BlogPostDetail = {
   id: string;
@@ -24,6 +25,7 @@ type BlogPostDetail = {
   viewCount?: number;
   publishedAt?: string | null;
   createdAt: string;
+  updatedAt: string;
 };
 
 type BlogComment = {
@@ -73,6 +75,11 @@ export class BlogDetailComponent implements OnInit {
         this.loading.set(false);
         return;
       }
+      if (!isUserWebBlogSlug(slug)) {
+        this.notFound.set(true);
+        this.loading.set(false);
+        return;
+      }
       void this.load(slug);
     });
   }
@@ -93,7 +100,7 @@ export class BlogDetailComponent implements OnInit {
       this.notFound.set(true);
     } finally {
       this.loading.set(false);
-      window.scrollTo(0, 0);
+      if (typeof window !== 'undefined') window.scrollTo(0, 0);
     }
   }
 
@@ -129,6 +136,13 @@ export class BlogDetailComponent implements OnInit {
       month: 'short',
       year: 'numeric',
     });
+  }
+
+  updatedDate(post: BlogPostDetail) {
+    return new Date(post.updatedAt || post.publishedAt || post.createdAt).toLocaleDateString(
+      'en-IN',
+      { day: 'numeric', month: 'short', year: 'numeric' },
+    );
   }
 
   authorLabel(post: BlogPostDetail): string {

@@ -393,7 +393,7 @@ export const ROUTE_SEO_CONTENT = {
   blog: {
     seoTitle: 'Health Blog | HopeHub Care and Research Centre',
     seoDescription:
-      'Evidence-informed articles on homeopathy, common diseases, mental wellness, and healthy living from the HopeHub Care clinical team.',
+      'Doctor-reviewed articles about homeopathy, common health conditions, consultation preparation, and safe care from the HopeHub Care clinical team.',
   },
   testimonials: {
     seoTitle: 'Patient Stories | HopeHub Care and Research Centre',

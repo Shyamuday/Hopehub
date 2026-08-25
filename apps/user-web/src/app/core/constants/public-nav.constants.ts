@@ -30,6 +30,7 @@ export const PUBLIC_HEADER_NAV_GROUPS: PublicNavGroup[] = [
       { label: 'Patient stories', path: `/${ROUTE_PATHS.TESTIMONIALS}` },
       { label: 'Why HopeHub works', path: `/${ROUTE_PATHS.WHY_SUCCESSFUL}` },
       { label: 'Safety', path: `/${ROUTE_PATHS.SAFETY}` },
+      { label: 'Editorial policy', path: `/${ROUTE_PATHS.EDITORIAL_POLICY}` },
     ],
   },
   {

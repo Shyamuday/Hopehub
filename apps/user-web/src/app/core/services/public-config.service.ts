@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { ClinicApiClient } from '../../clinic-api/clinic-api.client';
 import { API_PATHS } from '../constants/api-paths.constants';
+import { FOOTER_CONTENT } from '../constants/footer-content.constants';
 
 export type PublicConfig = {
   whatsappPhone: string;
@@ -58,6 +59,14 @@ const EMPTY_PUBLIC_CONFIG: PublicConfig = {
   statSatisfaction: '',
 };
 
+const PLACEHOLDER_PHONE_VALUES = new Set([
+  '+91-98765-43210',
+  '+91 98765 43210',
+  '+919876543210',
+  '919876543210',
+  '9876543210',
+]);
+
 @Injectable({ providedIn: 'root' })
 export class PublicConfigService {
   private readonly client = inject(ClinicApiClient);
@@ -92,14 +101,23 @@ export class PublicConfigService {
       config.clinicAddressLine4,
     ].filter((line) => line?.trim());
 
+    const displayPhone = PLACEHOLDER_PHONE_VALUES.has(config.contactPhone.trim())
+      ? FOOTER_CONTENT.address.phone
+      : config.contactPhone.trim();
+    const phoneTel = PLACEHOLDER_PHONE_VALUES.has(config.contactPhoneTel.trim())
+      ? FOOTER_CONTENT.address.phoneHref.replace(/^tel:/, '')
+      : config.contactPhoneTel.trim();
+
     return {
-      clinicName: config.clinicName,
-      lines,
+      clinicName: config.clinicName || FOOTER_CONTENT.address.clinicName,
+      lines: lines.length ? lines : [...FOOTER_CONTENT.address.lines],
       phoneLabel: 'Phone',
-      phone: config.contactPhone,
-      phoneHref: config.contactPhoneTel ? `tel:${config.contactPhoneTel}` : '',
-      email: config.contactEmail,
-      emailHref: config.contactEmail ? `mailto:${config.contactEmail}` : '',
+      phone: displayPhone || FOOTER_CONTENT.address.phone,
+      phoneHref: phoneTel ? `tel:${phoneTel}` : FOOTER_CONTENT.address.phoneHref,
+      email: config.contactEmail || FOOTER_CONTENT.address.email,
+      emailHref: config.contactEmail
+        ? `mailto:${config.contactEmail}`
+        : FOOTER_CONTENT.address.emailHref,
     };
   }
 }

@@ -5,6 +5,7 @@ export const ROUTE_PATHS = {
   CHRONIC_CARE: 'chronic-care',
   FAQ: 'faq',
   CONTACT: 'contact',
+  EDITORIAL_POLICY: 'editorial-policy',
   SAFETY: 'safety',
   PRIVACY: 'privacy-policy',
   LEGAL: 'legal',

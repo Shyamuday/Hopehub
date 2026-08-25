@@ -88,6 +88,12 @@ export const routes: Routes = [
     data: ROUTE_SEO_CONTENT.contact,
   },
   {
+    path: 'editorial-policy',
+    loadComponent: () =>
+      import('./editorial-policy.component').then((m) => m.EditorialPolicyComponent),
+    data: ROUTE_SEO_CONTENT['editorial-policy'],
+  },
+  {
     path: 'legal',
     loadComponent: () => import('./legal-hub/legal-hub.component').then((m) => m.LegalHubComponent),
     data: ROUTE_SEO_CONTENT.legal,
@@ -307,6 +313,7 @@ export const routes: Routes = [
     data: {
       seoTitle: 'Page not found | HopeHub Care',
       seoDescription: 'The page you requested could not be found.',
+      noIndex: true,
     },
   },
 ];

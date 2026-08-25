@@ -68,11 +68,13 @@ export class AuthService {
   }
 
   get token() {
-    return localStorage.getItem(AUTH_TOKEN_KEY);
+    return typeof localStorage === 'undefined' ? null : localStorage.getItem(AUTH_TOKEN_KEY);
   }
 
   get refreshToken() {
-    return localStorage.getItem(AUTH_REFRESH_TOKEN_KEY);
+    return typeof localStorage === 'undefined'
+      ? null
+      : localStorage.getItem(AUTH_REFRESH_TOKEN_KEY);
   }
 
   requestOtp(
@@ -202,6 +204,11 @@ export class AuthService {
   }
 
   private persistSession(response: AuthResponse) {
+    if (typeof localStorage === 'undefined') {
+      this.patientAuth.setAuthenticatedUser(response.user);
+      this.bootstrapPromise = Promise.resolve(response.user);
+      return;
+    }
     if (response.token) {
       localStorage.setItem(AUTH_TOKEN_KEY, response.token);
     }
@@ -217,6 +224,7 @@ export class AuthService {
   }
 
   private clearSession() {
+    if (typeof localStorage === 'undefined') return;
     localStorage.removeItem(AUTH_TOKEN_KEY);
     localStorage.removeItem(AUTH_REFRESH_TOKEN_KEY);
     localStorage.removeItem(AUTH_SESSION_ID_KEY);

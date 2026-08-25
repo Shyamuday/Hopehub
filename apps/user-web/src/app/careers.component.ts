@@ -34,7 +34,7 @@ export class CareersComponent implements OnInit {
   readonly whatsappLink = this.whatsappSvc.url;
   readonly copy = CAREERS_PAGE_CONTENT;
 
-  readonly whatsappPhone = signal('919876543210');
+  readonly whatsappPhone = signal('919304471227');
   readonly applyLink = computed(
     () =>
       `https://wa.me/${this.whatsappPhone()}?text=Hi%20HopeHub%20Care%2C%20I%20would%20like%20to%20apply%20for%20a%20position.`,

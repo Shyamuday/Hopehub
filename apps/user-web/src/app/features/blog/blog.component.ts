@@ -6,6 +6,7 @@ import { WhatsappLinkService } from '../../core/services/whatsapp-link.service';
 import { BLOG_PAGE_CONTENT } from '../../core/constants/public-site-content.constants';
 import { API_PATHS } from '../../core/constants/api-paths.constants';
 import { ClinicApiClient } from '../../clinic-api/clinic-api.client';
+import { isUserWebBlogSlug } from '../../core/constants/blog-audience.constants';
 
 interface BlogPost {
   id: string;
@@ -20,6 +21,7 @@ interface BlogPost {
   isFeatured?: boolean;
   publishedAt?: string | null;
   createdAt: string;
+  updatedAt: string;
 }
 
 type BlogSort = 'recent' | 'popular' | 'featured';
@@ -55,10 +57,13 @@ export class BlogComponent {
         this.client.get<{ posts: BlogPost[] }>(`${API_PATHS.BLOG_MOST_VIEWED}?limit=5`),
         this.client.get<{ posts: BlogPost[] }>(`${API_PATHS.BLOG}?sort=featured&featured=true`),
       ]);
-      this.allPosts.set(listRes.posts ?? []);
-      this.categories.set(['All', ...(listRes.categories ?? [])]);
-      this.mostViewed.set(popularRes.posts ?? []);
-      this.featuredPosts.set(featuredRes.posts ?? []);
+      const allPosts = (listRes.posts ?? []).filter((post) => isUserWebBlogSlug(post.slug));
+      this.allPosts.set(allPosts);
+      this.categories.set(['All', ...new Set(allPosts.map((post) => post.category))]);
+      this.mostViewed.set((popularRes.posts ?? []).filter((post) => isUserWebBlogSlug(post.slug)));
+      this.featuredPosts.set(
+        (featuredRes.posts ?? []).filter((post) => isUserWebBlogSlug(post.slug)),
+      );
     } catch {
       /* empty state */
     } finally {
@@ -72,7 +77,7 @@ export class BlogComponent {
     this.loading.set(true);
     try {
       const res = await this.client.get<{ posts: BlogPost[] }>(`${API_PATHS.BLOG}?sort=${next}`);
-      this.allPosts.set(res.posts ?? []);
+      this.allPosts.set((res.posts ?? []).filter((post) => isUserWebBlogSlug(post.slug)));
     } catch {
       /* keep previous */
     } finally {

@@ -46,6 +46,24 @@ verify_local_app() {
     exit 1
   }
   assert_json_marker "$app" "$(cat "$dir/hopehub-app.json")"
+  if [ "$app" = "patient" ]; then
+    [ -f "$dir/private-shell.html" ] || {
+      echo "::error::Missing noindex private shell for patient app"
+      exit 1
+    }
+    grep -q 'noindex, nofollow' "$dir/private-shell.html" || {
+      echo "::error::Patient private shell is indexable"
+      exit 1
+    }
+    [ -f "$dir/faq/index.html" ] || {
+      echo "::error::Missing prerendered patient FAQ"
+      exit 1
+    }
+    [ -f "$dir/ads.txt" ] || {
+      echo "::error::Missing patient ads.txt"
+      exit 1
+    }
+  fi
 }
 
 verify_s3_app() {
@@ -53,6 +71,11 @@ verify_s3_app() {
   if [ "${VERIFY_UNIFIED_BUCKET:-true}" = "true" ] && [ -n "${FRONTEND_BUCKET:-}" ]; then
     echo "==> Verifying s3://${FRONTEND_BUCKET}/${app}/hopehub-app.json"
     assert_json_marker "$app" "$(aws s3 cp "s3://${FRONTEND_BUCKET}/${app}/hopehub-app.json" -)"
+    if [ "$app" = "patient" ]; then
+      aws s3api head-object --bucket "$FRONTEND_BUCKET" --key "patient/private-shell.html" >/dev/null
+      aws s3api head-object --bucket "$FRONTEND_BUCKET" --key "patient/faq/index.html" >/dev/null
+      aws s3api head-object --bucket "$FRONTEND_BUCKET" --key "patient/ads.txt" >/dev/null
+    fi
   fi
 }
 
@@ -65,6 +88,18 @@ verify_domain_app() {
   local url="${origin%/}/hopehub-app.json"
   echo "==> Verifying ${url}"
   assert_json_marker "$app" "$(curl --fail --silent --show-error --max-time 20 "$url")"
+  if [ "$app" = "patient" ]; then
+    local faq_html
+    faq_html="$(curl --fail --silent --show-error --max-time 20 "${origin%/}/faq")"
+    grep -q 'https://care.hopehub.in/faq' <<< "$faq_html" || {
+      echo "::error::Patient FAQ is missing its production canonical URL"
+      exit 1
+    }
+    curl --fail --silent --show-error --max-time 20 "${origin%/}/ads.txt" | grep -q 'pub-' || {
+      echo "::error::Patient ads.txt is unavailable"
+      exit 1
+    }
+  fi
 }
 
 for app in patient admin doctor operations healing; do

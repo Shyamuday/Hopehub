@@ -171,11 +171,17 @@ blogRouter.get(
       return;
     }
 
-    const updated = await prisma.blogPost.update({
-      where: { id: post.id },
-      data: { viewCount: { increment: 1 } },
-      select: BLOG_DETAIL_SELECT
-    });
+    const updated =
+      req.query['trackView'] === 'false'
+        ? await prisma.blogPost.findUniqueOrThrow({
+            where: { id: post.id },
+            select: BLOG_DETAIL_SELECT
+          })
+        : await prisma.blogPost.update({
+            where: { id: post.id },
+            data: { viewCount: { increment: 1 } },
+            select: BLOG_DETAIL_SELECT
+          });
 
     res.json({ post: updated });
   })

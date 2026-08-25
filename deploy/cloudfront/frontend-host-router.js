@@ -160,6 +160,77 @@ function handler(event) {
     };
   }
 
+  // The patient site also publishes prerendered HTML for every stable public
+  // landing page. Private account and live-consultation URLs keep using the SPA
+  // shell and carry noindex metadata inside the application.
+  if (prefix === 'patient') {
+    var patientUri = uri.length > 1 ? uri.replace(/\/+$/, '') : '/';
+    var patientPublicRoutes = {
+      '/': true,
+      '/about': true,
+      '/treatments': true,
+      '/talk-to-doctor': true,
+      '/our-doctors': true,
+      '/blog': true,
+      '/testimonials': true,
+      '/careers': true,
+      '/chronic-care': true,
+      '/faq': true,
+      '/why-successful': true,
+      '/contact': true,
+      '/editorial-policy': true,
+      '/legal': true,
+      '/privacy-policy': true,
+      '/terms-and-conditions': true,
+      '/cancellation-and-refund-policy': true,
+      '/return-and-exchange-policy': true,
+      '/shipping-policy': true,
+      '/payment-policy': true,
+      '/safety': true
+    };
+    var patientDynamicPublicPrefixes = ['/treatments/', '/blog/'];
+    var isPatientPublicRoute = patientPublicRoutes[patientUri] === true;
+    for (var p = 0; !isPatientPublicRoute && p < patientDynamicPublicPrefixes.length; p += 1) {
+      isPatientPublicRoute = patientUri.indexOf(patientDynamicPublicPrefixes[p]) === 0;
+    }
+    if (isPatientPublicRoute) {
+      request.uri =
+        patientUri === '/' ? '/patient/index.html' : '/patient' + patientUri + '/index.html';
+      return request;
+    }
+
+    var patientSpaRoutes = ['/login', '/get-app'];
+    var patientSpaPrefixes = ['/auth/', '/patient/'];
+    var isPatientSpaRoute = patientSpaRoutes.indexOf(patientUri) !== -1;
+    for (var s = 0; !isPatientSpaRoute && s < patientSpaPrefixes.length; s += 1) {
+      isPatientSpaRoute = patientUri.indexOf(patientSpaPrefixes[s]) === 0;
+    }
+    if (isPatientSpaRoute) {
+      request.uri = '/patient/private-shell.html';
+      return request;
+    }
+
+    var escapedPatientUri = patientUri.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    return {
+      statusCode: 404,
+      statusDescription: 'Not Found',
+      headers: {
+        'content-type': { value: 'text/html; charset=utf-8' },
+        'cache-control': { value: 'no-cache, no-store, must-revalidate' },
+        'x-robots-tag': { value: 'noindex, nofollow' }
+      },
+      body:
+        '<!doctype html><html lang="en"><head><meta charset="utf-8">' +
+        '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+        '<meta name="robots" content="noindex,nofollow"><title>Page Not Found - HopeHub Care</title>' +
+        '<style>body{font-family:Arial,sans-serif;margin:0;background:#f8fafc;color:#0f172a}' +
+        'main{max-width:680px;margin:12vh auto;padding:32px;text-align:center}a{color:#047857;font-weight:700}</style>' +
+        '</head><body><main><h1>Page not found</h1><p>The page <code>' +
+        escapedPatientUri +
+        '</code> does not exist or has moved.</p><p><a href="/">Return to HopeHub Care</a></p></main></body></html>'
+    };
+  }
+
   if (uri === '/' || !looksLikeFile) {
     request.uri = '/' + prefix + '/index.html';
     return request;

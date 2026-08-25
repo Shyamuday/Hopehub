@@ -20,7 +20,7 @@ export class ClinicApiClient {
   private readonly apiBase = inject(CLINIC_API_BASE_URL);
 
   get backendToken() {
-    return localStorage.getItem(AUTH_TOKEN_KEY) || '';
+    return typeof localStorage === 'undefined' ? '' : localStorage.getItem(AUTH_TOKEN_KEY) || '';
   }
 
   async apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
@@ -65,6 +65,9 @@ export class ClinicApiClient {
   }
 
   loadRazorpayScript() {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return Promise.reject(new Error('Payment checkout is only available in the browser.'));
+    }
     if (window.Razorpay) {
       return Promise.resolve();
     }

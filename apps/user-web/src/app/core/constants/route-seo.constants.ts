@@ -28,7 +28,7 @@ export const ROUTE_SEO_CONTENT = {
   blog: {
     seoTitle: 'Health Blog | HopeHub Care and Research Centre',
     seoDescription:
-      'Evidence-informed articles on homeopathy, common diseases, mental wellness, and healthy living from the HopeHub Care clinical team.',
+      'Doctor-reviewed articles about homeopathy, common health conditions, consultation preparation, and safe care from the HopeHub Care clinical team.',
   },
   testimonials: {
     seoTitle: 'Patient Stories | HopeHub Care and Research Centre',
@@ -58,6 +58,11 @@ export const ROUTE_SEO_CONTENT = {
   contact: {
     seoTitle: 'Contact | HopeHub Care',
     seoDescription: 'Contact HopeHub Care for consultation help, guidance, and patient support.',
+  },
+  'editorial-policy': {
+    seoTitle: 'Editorial Policy | HopeHub Care',
+    seoDescription:
+      'How HopeHub Care creates, reviews, updates, and corrects its public health information.',
   },
   'privacy-terms': {
     seoTitle: 'Privacy and Terms | HopeHub Care',
