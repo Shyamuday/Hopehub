@@ -119,6 +119,7 @@ export class AdminCatalogApi extends AdminApiBase {
           isActive: boolean;
           intakeQuestions: string[];
           publicCategory: string | null;
+          publicDomains: Array<'HOMEOPATHY' | 'HOPE_HUB'>;
         }>;
         categories?: Array<{
           key: string;
@@ -196,6 +197,7 @@ export class AdminCatalogApi extends AdminApiBase {
     feeInPaise: number;
     intakeQuestions: string[];
     publicCategory?: string;
+    publicDomain: 'HOMEOPATHY' | 'HOPE_HUB';
   }) {
     return firstValueFrom(this.http.post(`${this.apiBase}${API_PATHS.ADMIN.DISEASES}`, payload));
   }
@@ -215,6 +217,7 @@ export class AdminCatalogApi extends AdminApiBase {
       isActive: boolean;
       intakeQuestions: string[];
       publicCategory?: string | null;
+      publicDomain: 'HOMEOPATHY' | 'HOPE_HUB';
     },
   ) {
     return firstValueFrom(

@@ -6,6 +6,7 @@ model BlogPost {
   content     String?   @db.Text
   category    String
   concernSlugs String[] @default([])
+  publicDomains ProviderDomain[] @default([HOMEOPATHY])
   readTime    String?
   authorId    String?
   authorName  String?
@@ -23,6 +24,7 @@ model BlogPost {
   comments BlogComment[]
 
   @@index([isPublished, isHidden, category])
+  @@index([publicDomains], type: Gin)
   @@index([isPublished, category])
   @@index([slug])
   @@index([publishedAt])

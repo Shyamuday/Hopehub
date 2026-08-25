@@ -20,6 +20,7 @@ export const BLOG_PUBLIC_SELECT = {
   excerpt: true,
   category: true,
   concernSlugs: true,
+  publicDomains: true,
   readTime: true,
   authorName: true,
   authorRole: true,

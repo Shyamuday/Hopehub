@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { Role } from '@prisma/client';
+import { ProviderDomain, Role } from '@prisma/client';
 import { authRequired, allowRoles } from '../../auth.js';
 import { BLOG_CATEGORIES } from '../../constants/blog.constants.js';
 import { prisma } from '../../db.js';
 import { asyncRoute, routeParam, writeAuditLog } from '../../utils/helpers.js';
+import { normalizePublicDomains } from '../../services/public-content-domain.js';
 
 const schema = z.object({
   slug: z
@@ -17,6 +18,12 @@ const schema = z.object({
   content: z.string().max(50000).optional().nullable(),
   category: z.string().min(1).max(80),
   concernSlugs: z.array(z.string().min(1).max(80)).max(30).default([]),
+  publicDomains: z
+    .array(z.nativeEnum(ProviderDomain))
+    .min(1)
+    .max(2)
+    .transform(normalizePublicDomains)
+    .default([ProviderDomain.HOMEOPATHY]),
   readTime: z.string().max(40).optional().nullable(),
   isPublished: z.boolean().default(false),
   isHidden: z.boolean().default(false),

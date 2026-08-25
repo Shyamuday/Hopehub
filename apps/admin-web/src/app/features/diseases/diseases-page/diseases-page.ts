@@ -17,6 +17,7 @@ import { ADMIN_PERMISSIONS, staffHasAnyPermission } from '../../../core/admin-pe
 import { AdminAuth } from '../../../core/services/admin-auth';
 
 type DiseaseFaqItem = { question: string; answer: string };
+type ProviderDomain = 'HOMEOPATHY' | 'HOPE_HUB';
 
 type Disease = {
   id: string;
@@ -32,6 +33,7 @@ type Disease = {
   isActive: boolean;
   intakeQuestions: string[];
   publicCategory: string | null;
+  publicDomains: ProviderDomain[];
 };
 
 type DiseaseCategory = {
@@ -63,6 +65,7 @@ function emptyDraft() {
     feeRupees: 500,
     isActive: true,
     publicCategory: 'miscellaneous',
+    publicDomain: 'HOMEOPATHY' as ProviderDomain,
     intakeQuestions: [] as string[],
     ...emptyMarketingDraft(),
   };
@@ -75,6 +78,7 @@ function emptyNew() {
     publicDescription: '',
     feeRupees: 500,
     publicCategory: 'miscellaneous',
+    publicDomain: 'HOMEOPATHY' as ProviderDomain,
     intakeQuestions: [] as string[],
     ...emptyMarketingDraft(),
   };
@@ -249,6 +253,7 @@ export class DiseasesPage {
       feeRupees: Math.round(disease.feeInPaise / PAISE_PER_RUPEE),
       isActive: disease.isActive,
       publicCategory: disease.publicCategory || 'miscellaneous',
+      publicDomain: disease.publicDomains?.[0] || 'HOMEOPATHY',
       intakeQuestions: [...disease.intakeQuestions],
       slug: disease.slug || '',
       publicImageUrl: disease.publicImageUrl || '',
@@ -450,6 +455,7 @@ export class DiseasesPage {
       feeInPaise: Math.round(Number(draft.feeRupees) * PAISE_PER_RUPEE),
       isActive: draft.isActive,
       publicCategory: draft.publicCategory,
+      publicDomain: draft.publicDomain,
       intakeQuestions: draft.intakeQuestions,
     };
   }
@@ -466,6 +472,7 @@ export class DiseasesPage {
       publicFaq: draft.publicFaq,
       feeInPaise: Math.round(Number(draft.feeRupees) * PAISE_PER_RUPEE),
       publicCategory: draft.publicCategory,
+      publicDomain: draft.publicDomain,
       intakeQuestions: draft.intakeQuestions,
     };
   }

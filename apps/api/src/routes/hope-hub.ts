@@ -9,6 +9,7 @@ import {
   HopeHubOfferingType,
   LivePresenceStatus,
   PaymentStatus,
+  ProviderDomain,
   Role
 } from '@prisma/client';
 import { authOptional, authRequired, allowRoles } from '../auth.js';
@@ -1698,7 +1699,11 @@ async function activeHopeHubOfferings(params: { type?: string; featured?: boolea
 async function activeHopeHubServices() {
   const [services, defaults] = await Promise.all([
     prisma.disease.findMany({
-      where: { isActive: true, publicCategory: 'Hope Hub' },
+      where: {
+        isActive: true,
+        publicCategory: 'Hope Hub',
+        publicDomains: { has: ProviderDomain.HOPE_HUB }
+      },
       select: hopeHubServiceSelect,
       orderBy: [{ name: 'asc' }]
     }),
@@ -2855,6 +2860,7 @@ hopeHubRouter.get(
       where: {
         isActive: true,
         publicCategory: 'Hope Hub',
+        publicDomains: { has: ProviderDomain.HOPE_HUB },
         OR: [{ id }, { slug: id }]
       },
       select: hopeHubServiceSelect
@@ -2975,7 +2981,10 @@ hopeHubRouter.get(
 
     const consultations = await prisma.consultation.findMany({
       where: {
-        disease: { publicCategory: 'Hope Hub' },
+        disease: {
+          publicCategory: 'Hope Hub',
+          publicDomains: { has: ProviderDomain.HOPE_HUB }
+        },
         status: { not: 'CANCELLED' }
       },
       select: { intakeAnswers: true }
@@ -3418,6 +3427,7 @@ hopeHubRouter.post(
         description: defaultDescription(effectiveServiceName),
         publicDescription: defaultDescription(effectiveServiceName),
         publicCategory: 'Hope Hub',
+        publicDomains: [ProviderDomain.HOPE_HUB],
         feeInPaise: amountInPaise,
         intakeQuestions: [
           { id: 'concern', label: 'What would you like support with?' },
@@ -3426,6 +3436,7 @@ hopeHubRouter.post(
       },
       update: {
         publicCategory: 'Hope Hub',
+        publicDomains: [ProviderDomain.HOPE_HUB],
         feeInPaise: amountInPaise
       }
     });
@@ -3904,6 +3915,7 @@ hopeHubRouter.post(
       where: {
         isActive: true,
         publicCategory: 'Hope Hub',
+        publicDomains: { has: ProviderDomain.HOPE_HUB },
         OR: [{ name: effectiveServiceName }, { slug }]
       },
       select: { id: true, feeInPaise: true }
@@ -4062,6 +4074,7 @@ hopeHubRouter.post(
             description: defaultDescription(effectiveServiceName),
             publicDescription: defaultDescription(effectiveServiceName),
             publicCategory: 'Hope Hub',
+            publicDomains: [ProviderDomain.HOPE_HUB],
             feeInPaise: amountInPaise,
             intakeQuestions: [
               { id: 'concern', label: 'What would you like support with?' },
@@ -4070,6 +4083,7 @@ hopeHubRouter.post(
           },
           update: {
             publicCategory: 'Hope Hub',
+            publicDomains: [ProviderDomain.HOPE_HUB],
             feeInPaise: amountInPaise
           }
         });

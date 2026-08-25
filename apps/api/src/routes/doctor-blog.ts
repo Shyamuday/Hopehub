@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { Role } from '@prisma/client';
+import { ProviderDomain, Role } from '@prisma/client';
 import { authRequired, allowRoles } from '../auth.js';
 import { BLOG_CATEGORIES } from '../constants/blog.constants.js';
 import { requireDoctorCapability } from '../doctor-capabilities.js';
@@ -81,6 +81,7 @@ export function registerDoctorBlogRoutes(router: Router) {
           authorId: req.user!.id,
           authorName: req.user!.name,
           authorRole: 'Provider',
+          publicDomains: [ProviderDomain.HOMEOPATHY],
           isPublished: false,
           publishedAt: null
         }

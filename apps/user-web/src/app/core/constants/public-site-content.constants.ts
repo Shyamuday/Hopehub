@@ -111,7 +111,7 @@ export const HOME_CONTENT = {
       badgeVariant: 'primary',
       icon: '🩺',
       title: 'Homeopathy for all conditions',
-      body: 'From fever, cough, and infections to diabetes, arthritis, skin disorders, and mental health — our doctors treat the full range of acute and chronic illnesses with individualized homeopathic prescribing.',
+      body: 'From fever, cough, and infections to diabetes, arthritis, skin disorders, digestive concerns, and recurring allergies — our doctors treat a wide range of acute and chronic illnesses with individualized homeopathic prescribing.',
       features: ['Acute & chronic complaints', 'All age groups', 'Prescription & follow-up'],
       linkLabel: 'Browse all conditions →',
       linkHref: '/treatments',
@@ -278,7 +278,7 @@ export const CHRONIC_CARE_PAGE_CONTENT = {
   pillars: [
     {
       title: 'Any condition',
-      body: 'From fever and infections to diabetes, arthritis, skin, hair, and mental health.',
+      body: 'From fever and infections to diabetes, arthritis, skin, hair, digestion, and recurring allergies.',
     },
     {
       title: 'Individualized care',

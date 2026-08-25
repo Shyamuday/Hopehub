@@ -39,6 +39,15 @@ import { diseasePublicPageUpdateSchema } from '../types/disease-public-page.js';
 
 export const router = Router();
 
+const adminDiseaseCategorySchema = z
+  .enum(DISEASE_PUBLIC_CATEGORY_KEYS as [string, ...string[]])
+  .or(z.literal('Hope Hub'));
+
+function categoryForAudience(domain: ProviderDomain, category: string | null | undefined) {
+  if (domain === ProviderDomain.HOPE_HUB) return 'Hope Hub';
+  return category === 'Hope Hub' ? 'miscellaneous' : category;
+}
+
 const diseaseFaqSchema = z.array(
   z.object({
     question: z.string().min(3),
@@ -92,7 +101,9 @@ export async function ensureBillingPlans() {
 router.get(
   '/diseases/categories',
   asyncRoute(async (_req, res) => {
-    res.json({ categories: DISEASE_PUBLIC_CATEGORIES });
+    res.json({
+      categories: [...DISEASE_PUBLIC_CATEGORIES, { key: 'Hope Hub', label: 'Hope Hub services' }]
+    });
   })
 );
 
@@ -104,7 +115,12 @@ router.get(
     const grouped = queryText(req, 'grouped') !== 'false';
     const clinicStoreId = queryText(req, 'clinicStoreId').trim() || undefined;
 
-    const diseases = await listDiseases({ q, category, activeOnly: true });
+    const diseases = await listDiseases({
+      q,
+      category,
+      activeOnly: true,
+      domains: [ProviderDomain.HOMEOPATHY]
+    });
     const withFees = await Promise.all(
       diseases.map(async (disease) => {
         const feeInPaise = await resolveDiseaseConsultationFee(disease.id, clinicStoreId ?? null);
@@ -127,7 +143,7 @@ router.get(
 router.get(
   '/diseases/by-slug/:slug',
   asyncRoute(async (req, res) => {
-    const disease = await getDiseaseBySlug(routeParam(req, 'slug'));
+    const disease = await getDiseaseBySlug(routeParam(req, 'slug'), [ProviderDomain.HOMEOPATHY]);
     if (!disease || !disease.isActive) {
       res.status(404).json({ message: 'Disease not found.' });
       return;
@@ -197,6 +213,7 @@ router.get(
         seoDescription: disease.seoDescription,
         publicFaq: parsePublicFaq(disease.publicFaq),
         publicCategory: disease.publicCategory,
+        publicDomains: disease.publicDomains,
         feeInPaise: disease.feeInPaise,
         isActive: disease.isActive
       }));
@@ -277,7 +294,8 @@ router.post(
         description: z.string().min(3),
         feeInPaise: z.number().int().positive(),
         intakeQuestions: z.array(z.string().min(3)).min(1),
-        publicCategory: z.enum(DISEASE_PUBLIC_CATEGORY_KEYS as [string, ...string[]]).optional(),
+        publicCategory: adminDiseaseCategorySchema.optional(),
+        publicDomain: z.nativeEnum(ProviderDomain).default(ProviderDomain.HOMEOPATHY),
         ...diseaseMarketingFields
       })
       .parse(req.body);
@@ -288,7 +306,8 @@ router.post(
         description: body.description,
         feeInPaise: body.feeInPaise,
         intakeQuestions: body.intakeQuestions,
-        publicCategory: body.publicCategory,
+        publicCategory: categoryForAudience(body.publicDomain, body.publicCategory),
+        publicDomains: [body.publicDomain],
         publicDescription: body.publicDescription ?? null,
         publicImageUrl: body.publicImageUrl ?? null,
         seoTitle: body.seoTitle ?? null,
@@ -314,10 +333,8 @@ router.put(
         feeInPaise: z.number().int().positive(),
         isActive: z.boolean(),
         intakeQuestions: z.array(z.string().min(1)).min(1),
-        publicCategory: z
-          .enum(DISEASE_PUBLIC_CATEGORY_KEYS as [string, ...string[]])
-          .nullable()
-          .optional(),
+        publicCategory: adminDiseaseCategorySchema.nullable().optional(),
+        publicDomain: z.nativeEnum(ProviderDomain),
         ...diseaseMarketingFields
       })
       .parse(req.body);
@@ -336,7 +353,8 @@ router.put(
         feeInPaise: body.feeInPaise,
         isActive: body.isActive,
         intakeQuestions: body.intakeQuestions,
-        publicCategory: body.publicCategory,
+        publicCategory: categoryForAudience(body.publicDomain, body.publicCategory),
+        publicDomains: [body.publicDomain],
         publicDescription: body.publicDescription,
         publicImageUrl: body.publicImageUrl ?? null,
         seoTitle: body.seoTitle ?? null,

@@ -1,4 +1,4 @@
-import { PrescriptionOptionType } from '@prisma/client';
+import { PrescriptionOptionType, ProviderDomain } from '@prisma/client';
 import {
   DEFAULT_DOCTOR_DISEASE_FEE_PAISE,
   DEFAULT_DISEASE_INTAKE_QUESTIONS,
@@ -22,6 +22,7 @@ export type DiseaseListItem = {
   seoDescription: string | null;
   publicFaq: DiseaseFaqItem[];
   publicCategory: string | null;
+  publicDomains: ProviderDomain[];
   feeInPaise: number;
   isActive: boolean;
   prescriptionOptionId?: string | null;
@@ -52,7 +53,10 @@ export async function listDiseasesForDoctor(filters: {
   limit?: number;
   activeOnly?: boolean;
 }) {
-  return listDiseases(filters);
+  return listDiseases({
+    ...filters,
+    domains: [ProviderDomain.HOMEOPATHY]
+  });
 }
 
 export async function listDiseases(filters: {
@@ -60,12 +64,14 @@ export async function listDiseases(filters: {
   category?: string;
   limit?: number;
   activeOnly?: boolean;
+  domains?: ProviderDomain[];
 }) {
   const q = filters.q?.trim();
 
   const rows = await prisma.disease.findMany({
     where: {
       ...(filters.activeOnly === false ? {} : { isActive: true }),
+      ...(filters.domains?.length ? { publicDomains: { hasSome: filters.domains } } : {}),
       ...(filters.category ? { publicCategory: filters.category } : {}),
       ...(q ? { name: { contains: q, mode: 'insensitive' } } : {})
     },
@@ -80,6 +86,7 @@ export async function listDiseases(filters: {
       seoDescription: true,
       publicFaq: true,
       publicCategory: true,
+      publicDomains: true,
       feeInPaise: true,
       isActive: true
     },
@@ -92,7 +99,9 @@ export async function listDiseases(filters: {
 
 async function attachPrescriptionOptionIds<T extends { name: string; publicFaq?: unknown }>(
   diseases: T[]
-): Promise<Array<Omit<T, 'publicFaq'> & { publicFaq: DiseaseFaqItem[]; prescriptionOptionId: string | null }>> {
+): Promise<
+  Array<Omit<T, 'publicFaq'> & { publicFaq: DiseaseFaqItem[]; prescriptionOptionId: string | null }>
+> {
   if (!diseases.length) return [];
 
   const normalizedLabels = diseases.map((disease) => normalizeOptionLabel(disease.name));
@@ -127,20 +136,30 @@ export function parsePublicFaq(value: unknown): DiseaseFaqItem[] {
     .filter((item) => item.question && item.answer);
 }
 
-export async function resolveDiseaseSlugInput(name: string, slugInput: string | null | undefined, excludeId?: string) {
+export async function resolveDiseaseSlugInput(
+  name: string,
+  slugInput: string | null | undefined,
+  excludeId?: string
+) {
   const normalized = slugInput?.trim().toLowerCase();
   if (normalized) {
     return ensureUniqueSlug(normalized, excludeId);
   }
   if (excludeId) {
-    const existing = await prisma.disease.findUnique({ where: { id: excludeId }, select: { slug: true } });
+    const existing = await prisma.disease.findUnique({
+      where: { id: excludeId },
+      select: { slug: true }
+    });
     if (existing?.slug) return existing.slug;
   }
   return assignDiseaseSlug(name, excludeId);
 }
 
 export async function reconcileDiagnosedDiseaseOptions() {
-  const diseases = await prisma.disease.findMany({ where: { isActive: true }, select: { name: true } });
+  const diseases = await prisma.disease.findMany({
+    where: { isActive: true },
+    select: { name: true }
+  });
   for (const disease of diseases) {
     await syncDiagnosedDiseaseOption(disease.name);
   }
@@ -186,7 +205,12 @@ export function groupDiseasesByCategory(
 export async function syncDiagnosedDiseaseOption(name: string, createdById?: string) {
   const normalized = normalizeOptionLabel(name);
   await prisma.prescriptionOption.upsert({
-    where: { type_normalizedLabel: { type: PrescriptionOptionType.DIAGNOSED_DISEASE, normalizedLabel: normalized } },
+    where: {
+      type_normalizedLabel: {
+        type: PrescriptionOptionType.DIAGNOSED_DISEASE,
+        normalizedLabel: normalized
+      }
+    },
     update: { label: name },
     create: {
       type: PrescriptionOptionType.DIAGNOSED_DISEASE,
@@ -220,17 +244,25 @@ export async function assignDiseaseSlug(name: string, excludeId?: string) {
   return ensureUniqueSlug(base, excludeId);
 }
 
-export async function getDiseaseBySlug(slug: string) {
+export async function getDiseaseBySlug(slug: string, domains?: ProviderDomain[]) {
   const normalized = slug.trim().toLowerCase();
   if (!normalized) return null;
 
   const direct = await prisma.disease.findFirst({
-    where: { slug: normalized, isActive: true }
+    where: {
+      slug: normalized,
+      isActive: true,
+      ...(domains?.length ? { publicDomains: { hasSome: domains } } : {})
+    }
   });
   if (direct) return direct;
 
   return prisma.disease.findFirst({
-    where: { slug: { equals: normalized, mode: 'insensitive' }, isActive: true }
+    where: {
+      slug: { equals: normalized, mode: 'insensitive' },
+      isActive: true,
+      ...(domains?.length ? { publicDomains: { hasSome: domains } } : {})
+    }
   });
 }
 
@@ -276,6 +308,7 @@ export async function createDoctorDisease(input: {
       slug,
       description: input.description?.trim() || `${name} — doctor-added condition`,
       publicCategory: input.publicCategory,
+      publicDomains: [ProviderDomain.HOMEOPATHY],
       feeInPaise: input.feeInPaise ?? DEFAULT_DOCTOR_DISEASE_FEE_PAISE,
       intakeQuestions: DEFAULT_DISEASE_INTAKE_QUESTIONS,
       isActive: true
@@ -286,6 +319,7 @@ export async function createDoctorDisease(input: {
       slug: true,
       description: true,
       publicCategory: true,
+      publicDomains: true,
       feeInPaise: true,
       isActive: true
     }
@@ -329,6 +363,7 @@ export async function syncDiseaseCatalog(defaultFeeInPaise = DEFAULT_DOCTOR_DISE
           slug,
           description: `Consultation for ${name}.`,
           publicCategory: group.publicCategory,
+          publicDomains: [ProviderDomain.HOMEOPATHY],
           feeInPaise: defaultFeeInPaise,
           intakeQuestions: DEFAULT_DISEASE_INTAKE_QUESTIONS,
           isActive: true

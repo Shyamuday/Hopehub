@@ -1,4 +1,4 @@
-import { Prisma, PracticeStatus, LifestyleTipStatus } from '@prisma/client';
+import { LifestyleTipStatus, PracticeStatus, Prisma, ProviderDomain } from '@prisma/client';
 import { Router } from 'express';
 import { prisma } from '../db.js';
 import { asyncRoute, routeParam } from '../utils/helpers.js';
@@ -46,7 +46,9 @@ async function loadFlowContext() {
     prisma.$queryRaw<ActiveServiceSummary[]>(Prisma.sql`
       SELECT "id", "slug", "name", "description", "publicDescription", "publicPageContent"
       FROM "Disease"
-      WHERE "isActive" = true AND "publicCategory" = 'Hope Hub'
+      WHERE "isActive" = true
+        AND "publicCategory" = 'Hope Hub'
+        AND "publicDomains" @> ARRAY['HOPE_HUB']::"ProviderDomain"[]
       ORDER BY "name" ASC
     `)
   ]);
@@ -211,7 +213,12 @@ consumerFlowsRouter.get(
         take: 4
       }),
       prisma.blogPost.findMany({
-        where: { isPublished: true, isHidden: false, concernSlugs: { has: concern.key } },
+        where: {
+          isPublished: true,
+          isHidden: false,
+          publicDomains: { has: ProviderDomain.HOPE_HUB },
+          concernSlugs: { has: concern.key }
+        },
         select: {
           id: true,
           slug: true,

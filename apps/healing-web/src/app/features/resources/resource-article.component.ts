@@ -164,7 +164,9 @@ export class ResourceArticleComponent {
       const slug = params.get('slug');
       if (!slug) return;
       this.http
-        .get<{ post: PublicArticle }>(`${environment.apiUrl}/blog/${encodeURIComponent(slug)}`)
+        .get<{ post: PublicArticle }>(
+          `${environment.apiUrl}/hope-hub/blog/${encodeURIComponent(slug)}`,
+        )
         .subscribe({
           next: (response) => {
             this.article.set(response.post);
