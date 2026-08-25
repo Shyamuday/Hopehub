@@ -8,6 +8,7 @@ import {
   PROVIDER_ROLE_OPTIONS,
   providerHasRoleCategory,
   type CarePricingTemplateDto,
+  type CareServiceCatalogItemDto,
   type CareTeamServiceDto,
   type ProviderReadinessDto,
   type ProviderRoleCategory,
@@ -123,6 +124,7 @@ type ProviderGender = 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY';
 type CareTeamMemberType = string;
 type CareTeamService = CareTeamServiceDto;
 type CareTeamPricingTemplate = CarePricingTemplateDto;
+type CareTeamServiceOption = CareServiceCatalogItemDto;
 type HopeHubSupportPath = ProviderRoleCategory;
 type HopeHubSupportPathFilter = '' | HopeHubSupportPath;
 
@@ -255,6 +257,7 @@ function emptyEditModel() {
   styleUrl: './doctors-page.scss',
 })
 export class DoctorsPage {
+  readonly customServiceTitleValue = '__CUSTOM_SERVICE__';
   private readonly auth = inject(AdminAuth);
   readonly manageProviderPermission = ADMIN_PERMISSIONS.DOCTORS_WRITE;
   readonly manageDirectoryPermissions = [
@@ -358,6 +361,7 @@ export class DoctorsPage {
 
   readonly siteConfig = signal<SiteConfigEntry[]>([]);
   readonly carePricingTemplates = signal<CareTeamPricingTemplate[]>([]);
+  readonly careServiceOptions = signal<CareTeamServiceOption[]>([]);
   readonly savingConfig = signal(false);
   readonly configMessage = signal('');
   readonly doctorListLimitValue = signal('12');
@@ -385,6 +389,7 @@ export class DoctorsPage {
     });
     void this.loadSiteConfig();
     void this.loadCarePricingTemplates();
+    void this.loadCareServiceOptions();
     void this.loadProviderRoles();
   }
 
@@ -1352,12 +1357,53 @@ export class DoctorsPage {
     );
   }
 
+  serviceTitleOptions(service?: Pick<CareTeamService, 'providerRole'>): string[] {
+    return [
+      ...new Set(
+        this.careServiceOptions()
+          .filter(
+            (option) =>
+              !option.applicableRoleCodes.length ||
+              Boolean(
+                service?.providerRole && option.applicableRoleCodes.includes(service.providerRole),
+              ),
+          )
+          .map((option) => option.title.trim())
+          .filter(Boolean),
+      ),
+    ];
+  }
+
+  serviceTitleChoice(service: Pick<CareTeamService, 'title' | 'providerRole'>): string {
+    const title = service.title?.trim() || '';
+    if (!title) return '';
+    if (title === this.customServiceTitleValue) return this.customServiceTitleValue;
+    return this.serviceTitleOptions(service).includes(title) ? title : this.customServiceTitleValue;
+  }
+
+  setServiceTitleChoice(target: 'create' | 'edit', index: number, value: string): void {
+    this.updateCareService(target, index, 'title', value);
+  }
+
+  customServiceTitle(service: Pick<CareTeamService, 'title'>): string {
+    return service.title === this.customServiceTitleValue ? '' : service.title || '';
+  }
+
   async loadCarePricingTemplates() {
     try {
       const res = await this.api.listCareTeamPricingTemplates();
       this.carePricingTemplates.set(res.templates as CareTeamPricingTemplate[]);
     } catch {
       this.carePricingTemplates.set([]);
+    }
+  }
+
+  async loadCareServiceOptions() {
+    try {
+      const res = await this.api.listCareTeamServiceOptions();
+      this.careServiceOptions.set(res.options as CareTeamServiceOption[]);
+    } catch {
+      this.careServiceOptions.set([]);
     }
   }
 
@@ -1412,7 +1458,9 @@ export class DoctorsPage {
   }
 
   private servicesForSave(services: CareTeamService[], legacyText: string) {
-    const structured = services.filter((service) => service.title.trim());
+    const structured = services.filter(
+      (service) => service.title.trim() && service.title.trim() !== this.customServiceTitleValue,
+    );
     const normalized = structured.length
       ? this.normalizeServiceList(structured)
       : this.parseServiceOffers(legacyText);

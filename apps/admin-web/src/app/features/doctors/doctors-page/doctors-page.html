@@ -312,11 +312,24 @@
           <div class="service-editor">
             @for (service of createCareServices(); track $index) {
               <article class="service-editor-card">
-                <input
-                  [value]="service.title"
-                  placeholder="Service title"
-                  (input)="updateCareService('create', $index, 'title', $any($event.target).value)"
-                />
+                <select
+                  aria-label="Service title"
+                  [value]="serviceTitleChoice(service)"
+                  (change)="setServiceTitleChoice('create', $index, $any($event.target).value)"
+                >
+                  <option value="">Choose a service</option>
+                  @for (title of serviceTitleOptions(service); track title) {
+                    <option [value]="title">{{ title }}</option>
+                  }
+                  <option [value]="customServiceTitleValue">Other / custom service</option>
+                </select>
+                @if (serviceTitleChoice(service) === customServiceTitleValue) {
+                  <input
+                    [value]="customServiceTitle(service)"
+                    placeholder="Enter custom service name"
+                    (input)="updateCareService('create', $index, 'title', $any($event.target).value)"
+                  />
+                }
                 <div class="template-row">
                   <select #createTemplate>
                     <option value="">Choose ready plan</option>
@@ -1306,13 +1319,24 @@
                         <button type="button" class="btn-secondary" [disabled]="mutating()" (click)="reviewServicePricing(service, 'REJECTED')">Request changes</button>
                       </div>
                     }
-                    <input
-                      [value]="service.title"
-                      placeholder="Service title"
-                      (input)="
-                        updateCareService('edit', $index, 'title', $any($event.target).value)
-                      "
-                    />
+                    <select
+                      aria-label="Service title"
+                      [value]="serviceTitleChoice(service)"
+                      (change)="setServiceTitleChoice('edit', $index, $any($event.target).value)"
+                    >
+                      <option value="">Choose a service</option>
+                      @for (title of serviceTitleOptions(service); track title) {
+                        <option [value]="title">{{ title }}</option>
+                      }
+                      <option [value]="customServiceTitleValue">Other / custom service</option>
+                    </select>
+                    @if (serviceTitleChoice(service) === customServiceTitleValue) {
+                      <input
+                        [value]="customServiceTitle(service)"
+                        placeholder="Enter custom service name"
+                        (input)="updateCareService('edit', $index, 'title', $any($event.target).value)"
+                      />
+                    }
                     <div class="template-row">
                       <select #editTemplate>
                         <option value="">Choose ready plan</option>

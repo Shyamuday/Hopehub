@@ -287,6 +287,18 @@ export type CarePricingTemplateDto = {
   updatedAt?: string;
 };
 
+export type CareServiceCatalogItemDto = {
+  id: string;
+  applicableRoleCodes: string[];
+  title: string;
+  description?: string | null;
+  isDefault: boolean;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 export type ProviderReadinessBlockerDto = {
   code: string;
   label: string;

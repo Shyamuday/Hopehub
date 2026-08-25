@@ -227,6 +227,21 @@ model CareTeamPricingTemplate {
   @@index([isActive, sortOrder])
 }
 
+model CareTeamServiceCatalogItem {
+  id                  String   @id @default(cuid())
+  applicableRoleCodes String[] @default([])
+  title               String
+  description         String?  @db.Text
+  isDefault           Boolean  @default(false)
+  isActive            Boolean  @default(true)
+  sortOrder           Int      @default(0)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @default(now()) @updatedAt
+
+  @@index([isActive, sortOrder])
+  @@index([isDefault, isActive])
+}
+
 model HopeHubLiveGroup {
   id              String    @id @default(cuid())
   title           String

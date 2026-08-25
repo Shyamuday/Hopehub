@@ -11,6 +11,7 @@ import {
   PROVIDER_SESSION_MODE_DEFINITIONS,
   providerSessionModeFromValue,
   type CarePricingTemplateDto,
+  type CareServiceCatalogItemDto,
   type ProviderRoleDefinitionDto,
   type ProviderSessionMode,
   type ProviderTaxonomyResponse,
@@ -120,6 +121,7 @@ function emptyProfileModel() {
   styleUrl: './profile-page.scss',
 })
 export class ProfilePage implements OnDestroy {
+  readonly customServiceTitleValue = '__CUSTOM_SERVICE__';
   readonly sessionModes = PROVIDER_SESSION_MODES;
   readonly languageSuggestions = PROVIDER_LANGUAGE_SUGGESTIONS;
   readonly ageGroupSuggestions = PROVIDER_AGE_GROUP_SUGGESTIONS;
@@ -150,6 +152,7 @@ export class ProfilePage implements OnDestroy {
   readonly careServices = signal<Array<any>>([]);
   readonly pricingHistory = signal<Array<any>>([]);
   readonly carePricingTemplates = signal<CarePricingTemplateDto[]>([]);
+  readonly careServiceOptions = signal<CareServiceCatalogItemDto[]>([]);
   readonly commonServiceDurations = [15, 20, 30, 45, 60, 90, 120];
   readonly customDurationServiceIndexes = signal<Set<number>>(new Set());
   readonly telegramConnection = signal<{
@@ -193,6 +196,7 @@ export class ProfilePage implements OnDestroy {
     void this.loadTelegramConnection();
     void this.loadProviderTaxonomy();
     void this.loadCarePricingTemplates();
+    void this.loadCareServiceOptions();
     void this.loadPricingHistory();
     effect(() => {
       const model = this.profileModel();
@@ -364,21 +368,35 @@ export class ProfilePage implements OnDestroy {
   suggestedServicesForSelectedSubtypes() {
     const seen = new Set<string>();
     const selectedRoles = this.selectedStructuredCareTeamTypes();
-    return this.carePricingTemplates()
+    return this.careServiceOptions()
       .filter(
-        (template) =>
-          !template.applicableRoleCodes.length ||
-          template.applicableRoleCodes.some((role) => selectedRoles.includes(role)),
+        (option) =>
+          !option.applicableRoleCodes.length ||
+          option.applicableRoleCodes.some((role) => selectedRoles.includes(role)),
       )
-      .map((template) => {
+      .map((option) => {
         const providerRole =
-          template.applicableRoleCodes.find((role) => selectedRoles.includes(role)) ||
+          option.applicableRoleCodes.find((role) => selectedRoles.includes(role)) ||
           selectedRoles[0] ||
           this.profileModel().careTeamType;
+        const pricing = this.pricingTemplatesForRole(providerRole)[0];
         return {
-          ...template,
+          id: option.id,
+          title: option.title,
+          description: option.description || pricing?.description || '',
           providerRole,
           subtype: this.roleLabel(providerRole),
+          pricingMode: pricing?.pricingMode || ('FIXED' as const),
+          priceInPaise: pricing?.priceInPaise ?? 0,
+          firstSessionPriceInPaise: pricing?.firstSessionPriceInPaise ?? null,
+          followUpPriceInPaise: pricing?.followUpPriceInPaise ?? null,
+          introSessionLimit: pricing?.introSessionLimit ?? 1,
+          packageSessionCount: pricing?.packageSessionCount ?? null,
+          packagePriceInPaise: pricing?.packagePriceInPaise ?? null,
+          freeMinutes: pricing?.freeMinutes ?? 0,
+          pricePerMinuteInPaise: pricing?.pricePerMinuteInPaise ?? null,
+          durationMinutes: pricing?.durationMinutes ?? 30,
+          isFree: pricing?.isFree ?? false,
         };
       })
       .filter((service) => {
@@ -928,6 +946,24 @@ export class ProfilePage implements OnDestroy {
       );
     } catch {
       this.carePricingTemplates.set([]);
+    }
+  }
+
+  async loadCareServiceOptions() {
+    try {
+      const res = await firstValueFrom(
+        this.http.get<{ options: CareServiceCatalogItemDto[] }>(
+          `${this.apiBase}/hope-hub/care-team-service-options`,
+        ),
+      );
+      this.careServiceOptions.set(
+        res.options.map((option) => ({
+          ...option,
+          applicableRoleCodes: option.applicableRoleCodes ?? [],
+        })),
+      );
+    } catch {
+      this.careServiceOptions.set([]);
     }
   }
 
@@ -1666,6 +1702,38 @@ export class ProfilePage implements OnDestroy {
     );
   }
 
+  serviceTitleOptions(service: { providerRole?: string | null }): string[] {
+    return [
+      ...new Set(
+        this.careServiceOptions()
+          .filter(
+            (option) =>
+              !option.applicableRoleCodes.length ||
+              Boolean(
+                service.providerRole && option.applicableRoleCodes.includes(service.providerRole),
+              ),
+          )
+          .map((option) => option.title.trim())
+          .filter(Boolean),
+      ),
+    ];
+  }
+
+  serviceTitleChoice(service: { title?: string; providerRole?: string | null }): string {
+    const title = service.title?.trim() || '';
+    if (!title) return '';
+    if (title === this.customServiceTitleValue) return this.customServiceTitleValue;
+    return this.serviceTitleOptions(service).includes(title) ? title : this.customServiceTitleValue;
+  }
+
+  selectCareServiceTitle(index: number, value: string): void {
+    this.updateCareService(index, 'title', value);
+  }
+
+  customServiceTitle(service: { title?: string }): string {
+    return service.title === this.customServiceTitleValue ? '' : service.title || '';
+  }
+
   rupees(value: number | null | undefined) {
     return value == null ? '' : String(value / 100);
   }
@@ -1717,7 +1785,9 @@ export class ProfilePage implements OnDestroy {
   }
 
   private servicesForSave(legacyText: string) {
-    const structured = this.careServices().filter((service) => service.title?.trim());
+    const structured = this.careServices().filter(
+      (service) => service.title?.trim() && service.title.trim() !== this.customServiceTitleValue,
+    );
     return structured.length
       ? this.normalizeServiceList(structured)
       : this.parseServiceOffers(legacyText);

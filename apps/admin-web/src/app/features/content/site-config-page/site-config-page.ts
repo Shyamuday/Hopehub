@@ -4,7 +4,11 @@ import { AdminApi } from '../../../core/services/admin-api';
 import { AdminCanDirective } from '../../../core/directives/admin-can.directive';
 import { ADMIN_PERMISSIONS } from '../../../core/admin-permissions';
 import { AppUnsavedChangesBarComponent } from '../../../shared/ui/app-unsaved-changes-bar.component';
-import type { CarePricingTemplateDto, ProviderRoleDefinitionDto } from '@hopehub/contracts';
+import type {
+  CarePricingTemplateDto,
+  CareServiceCatalogItemDto,
+  ProviderRoleDefinitionDto,
+} from '@hopehub/contracts';
 
 const REQUIRED_SITE_CONFIG_KEYS = new Set([
   'whatsappGroupUrl',
@@ -25,6 +29,18 @@ type ConfigEntry = {
 };
 type PricingMode = CarePricingTemplateDto['pricingMode'];
 type CarePricingTemplate = Omit<CarePricingTemplateDto, 'id'> & { id?: string };
+type CareServiceOption = Omit<CareServiceCatalogItemDto, 'id'> & { id?: string };
+
+function emptyServiceOption(): CareServiceOption {
+  return {
+    applicableRoleCodes: [],
+    title: '',
+    description: '',
+    isDefault: false,
+    isActive: true,
+    sortOrder: 100,
+  };
+}
 
 function emptyTemplate(): CarePricingTemplate {
   return {
@@ -77,9 +93,12 @@ export class SiteConfigPage {
     this.config().some((entry) => (this.localValues()[entry.key] ?? '') !== entry.value),
   );
   readonly templates = signal<CarePricingTemplate[]>([]);
+  readonly serviceOptions = signal<CareServiceOption[]>([]);
+  readonly serviceOptionDraft = signal<CareServiceOption>(emptyServiceOption());
   readonly providerRoles = signal<ProviderRoleDefinitionDto[]>([]);
   readonly templateDraft = signal<CarePricingTemplate>(emptyTemplate());
   readonly savingTemplate = signal<string | null>(null);
+  readonly savingServiceOption = signal<string | null>(null);
   readonly pricingModeOptions: Array<{ value: PricingMode; label: string }> = [
     { value: 'FIXED', label: 'Fixed price' },
     { value: 'FREE_INTRO', label: 'First session free' },
@@ -92,6 +111,7 @@ export class SiteConfigPage {
   constructor(private readonly api: AdminApi) {
     void this.load();
     void this.loadTemplates();
+    void this.loadServiceOptions();
     void this.loadProviderRoles();
   }
 
@@ -152,6 +172,20 @@ export class SiteConfigPage {
     }
   }
 
+  async loadServiceOptions() {
+    try {
+      const res = await this.api.listAdminCareTeamServiceOptions();
+      this.serviceOptions.set(
+        res.options.map((option) => ({
+          ...option,
+          applicableRoleCodes: option.applicableRoleCodes ?? [],
+        })),
+      );
+    } catch {
+      this.error.set('Could not load care service options.');
+    }
+  }
+
   async loadProviderRoles() {
     try {
       const response = await this.api.listProviderRoles();
@@ -179,6 +213,88 @@ export class SiteConfigPage {
         itemIndex === index ? { ...item, applicableRoleCodes } : item,
       ),
     );
+  }
+
+  toggleServiceOptionRole(
+    option: CareServiceOption,
+    roleCode: string,
+    checked: boolean,
+    index?: number,
+  ) {
+    const applicableRoleCodes = checked
+      ? Array.from(new Set([...option.applicableRoleCodes, roleCode]))
+      : option.applicableRoleCodes.filter((code) => code !== roleCode);
+    if (index == null) {
+      this.serviceOptionDraft.update((draft) => ({ ...draft, applicableRoleCodes }));
+      return;
+    }
+    this.serviceOptions.update((options) =>
+      options.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, applicableRoleCodes } : item,
+      ),
+    );
+  }
+
+  updateServiceOptionDraft(key: keyof CareServiceOption, value: string | boolean) {
+    this.serviceOptionDraft.update((draft) => this.patchServiceOption(draft, key, value));
+  }
+
+  updateServiceOption(index: number, key: keyof CareServiceOption, value: string | boolean) {
+    this.serviceOptions.update((options) =>
+      options.map((option, itemIndex) =>
+        itemIndex === index ? this.patchServiceOption(option, key, value) : option,
+      ),
+    );
+  }
+
+  async createServiceOption() {
+    const draft = this.serviceOptionDraft();
+    if (!draft.title.trim()) return;
+    this.savingServiceOption.set('new');
+    this.error.set('');
+    this.message.set('');
+    try {
+      await this.api.createCareTeamServiceOption(this.cleanServiceOption(draft));
+      this.serviceOptionDraft.set(emptyServiceOption());
+      this.message.set('Care service option created.');
+      await this.loadServiceOptions();
+    } catch (error: any) {
+      this.error.set(error?.error?.message || 'Could not create care service option.');
+    } finally {
+      this.savingServiceOption.set(null);
+    }
+  }
+
+  async saveServiceOption(option: CareServiceOption) {
+    if (!option.id || !option.title.trim()) return;
+    this.savingServiceOption.set(option.id);
+    this.error.set('');
+    this.message.set('');
+    try {
+      await this.api.updateCareTeamServiceOption(option.id, this.cleanServiceOption(option));
+      this.message.set('Care service option saved.');
+      await this.loadServiceOptions();
+    } catch (error: any) {
+      this.error.set(error?.error?.message || 'Could not save care service option.');
+    } finally {
+      this.savingServiceOption.set(null);
+    }
+  }
+
+  async deactivateServiceOption(option: CareServiceOption) {
+    if (!option.id || option.isDefault) return;
+    this.savingServiceOption.set(option.id);
+    this.error.set('');
+    this.message.set('');
+    try {
+      await this.api.deactivateCareTeamServiceOption(option.id);
+      this.message.set('Care service option deactivated.');
+      await this.loadServiceOptions();
+    } catch (error: any) {
+      this.error.set(error?.error?.message || 'Could not deactivate care service option.');
+    } finally {
+      this.savingServiceOption.set(null);
+    }
   }
 
   updateLocal(key: string, value: string) {
@@ -396,6 +512,27 @@ export class SiteConfigPage {
       if (value === 'FREE_VOLUNTEER' || value === 'PER_MINUTE') next.priceInPaise = 0;
     }
     return next;
+  }
+
+  private patchServiceOption(
+    option: CareServiceOption,
+    key: keyof CareServiceOption,
+    value: string | boolean,
+  ): CareServiceOption {
+    if (key === 'sortOrder') {
+      return { ...option, sortOrder: value === '' ? 0 : Math.round(Number(value)) };
+    }
+    return { ...option, [key]: value } as CareServiceOption;
+  }
+
+  private cleanServiceOption(option: CareServiceOption) {
+    return {
+      applicableRoleCodes: [...option.applicableRoleCodes],
+      title: option.title.trim(),
+      description: option.description?.trim() || null,
+      isActive: option.isDefault ? true : option.isActive !== false,
+      sortOrder: option.sortOrder || 0,
+    };
   }
 
   private cleanTemplate(template: CarePricingTemplate) {

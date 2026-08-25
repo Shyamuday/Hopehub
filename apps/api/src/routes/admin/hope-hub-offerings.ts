@@ -135,6 +135,22 @@ const carePricingTemplateSchema = z.object({
   sortOrder: z.number().int().default(0)
 });
 
+const careServiceCatalogItemSchema = z.object({
+  applicableRoleCodes: z
+    .array(
+      z
+        .string()
+        .trim()
+        .regex(/^[A-Z][A-Z0-9_]{2,63}$/)
+    )
+    .max(30)
+    .default([]),
+  title: z.string().trim().min(2).max(160),
+  description: emptyToNull,
+  isActive: z.boolean().default(true),
+  sortOrder: z.number().int().min(-100000).max(100000).default(0)
+});
+
 const MAX_HOPE_HUB_MEDIA_BYTES = 5 * 1024 * 1024;
 
 async function invalidPricingTemplateRoles(roleCodes: readonly string[]) {
@@ -184,6 +200,103 @@ function mapMediaUploadError(error: unknown) {
 }
 
 export function registerAdminHopeHubOfferingRoutes(router: Router) {
+  router.get(
+    '/admin/hope-hub/care-service-options',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.MARKETING),
+    asyncRoute(async (_req, res) => {
+      const options = await prisma.careTeamServiceCatalogItem.findMany({
+        orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }]
+      });
+      res.json({ options });
+    })
+  );
+
+  router.post(
+    '/admin/hope-hub/care-service-options',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.MARKETING),
+    asyncRoute(async (req, res) => {
+      const body = careServiceCatalogItemSchema.parse(req.body);
+      const invalidRoles = await invalidPricingTemplateRoles(body.applicableRoleCodes);
+      if (invalidRoles.length) {
+        return res.status(400).json({
+          message: `Unknown or inactive provider role: ${invalidRoles.join(', ')}`
+        });
+      }
+      const option = await prisma.careTeamServiceCatalogItem.create({
+        data: { ...body, isDefault: false }
+      });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'hopehub.care_service_option.create',
+        targetType: 'care_team_service_catalog_item',
+        targetId: option.id,
+        summary: `Created care service option "${option.title}".`
+      });
+      res.status(201).json({ option });
+    })
+  );
+
+  router.put(
+    '/admin/hope-hub/care-service-options/:id',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.MARKETING),
+    asyncRoute(async (req, res) => {
+      const id = routeParam(req, 'id');
+      const existing = await prisma.careTeamServiceCatalogItem.findUnique({ where: { id } });
+      if (!existing) return res.status(404).json({ message: 'Service option not found.' });
+      const body = careServiceCatalogItemSchema.partial().parse(req.body);
+      const invalidRoles = await invalidPricingTemplateRoles(body.applicableRoleCodes ?? []);
+      if (invalidRoles.length) {
+        return res.status(400).json({
+          message: `Unknown or inactive provider role: ${invalidRoles.join(', ')}`
+        });
+      }
+      const option = await prisma.careTeamServiceCatalogItem.update({
+        where: { id },
+        data: { ...body, ...(existing.isDefault ? { isActive: true } : {}) }
+      });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'hopehub.care_service_option.update',
+        targetType: 'care_team_service_catalog_item',
+        targetId: option.id,
+        summary: `Updated care service option "${option.title}".`
+      });
+      res.json({ option });
+    })
+  );
+
+  router.delete(
+    '/admin/hope-hub/care-service-options/:id',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.MARKETING),
+    asyncRoute(async (req, res) => {
+      const id = routeParam(req, 'id');
+      const existing = await prisma.careTeamServiceCatalogItem.findUnique({ where: { id } });
+      if (!existing) return res.status(404).json({ message: 'Service option not found.' });
+      if (existing.isDefault) {
+        return res.status(400).json({ message: 'Default service options cannot be deactivated.' });
+      }
+      const option = await prisma.careTeamServiceCatalogItem.update({
+        where: { id },
+        data: { isActive: false }
+      });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'hopehub.care_service_option.deactivate',
+        targetType: 'care_team_service_catalog_item',
+        targetId: option.id,
+        summary: `Deactivated care service option "${option.title}".`
+      });
+      res.json({ option });
+    })
+  );
+
   router.get(
     '/admin/hope-hub/care-pricing-templates',
     authRequired,

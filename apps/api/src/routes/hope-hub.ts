@@ -3208,6 +3208,40 @@ hopeHubRouter.get(
 );
 
 hopeHubRouter.get(
+  '/hope-hub/care-team-service-options',
+  asyncRoute(async (req, res) => {
+    const roleCodes = queryText(req, 'roleCodes')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
+    const options = await prisma.careTeamServiceCatalogItem.findMany({
+      where: {
+        isActive: true,
+        ...(roleCodes.length
+          ? {
+              OR: [
+                { applicableRoleCodes: { isEmpty: true } },
+                { applicableRoleCodes: { hasSome: roleCodes } }
+              ]
+            }
+          : {})
+      },
+      orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
+      select: {
+        id: true,
+        applicableRoleCodes: true,
+        title: true,
+        description: true,
+        isDefault: true,
+        isActive: true,
+        sortOrder: true
+      }
+    });
+    res.json({ options });
+  })
+);
+
+hopeHubRouter.get(
   '/hope-hub/care-team-pricing-templates',
   asyncRoute(async (req, res) => {
     const roleCodes = queryText(req, 'roleCodes')

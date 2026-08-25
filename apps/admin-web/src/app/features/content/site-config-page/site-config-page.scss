@@ -126,6 +126,67 @@ app-unsaved-changes-bar {
   p { font-size: 0.8rem; color: #6b7280; margin: 0.2rem 0 0; line-height: 1.5; }
 }
 
+.service-option-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.service-option-card {
+  display: grid;
+  grid-template-columns: minmax(13rem, 1.3fr) minmax(15rem, 2fr) 5rem auto auto;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.85rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+
+  input {
+    min-width: 0;
+    min-height: 38px;
+    padding: 0.45rem 0.6rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 0.875rem;
+  }
+
+  button {
+    min-height: 38px;
+    padding: 0.45rem 0.75rem;
+    border: 0;
+    border-radius: 8px;
+    color: #fff;
+    background: #2563eb;
+    font-weight: 700;
+    cursor: pointer;
+
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+    &.danger { background: #dc2626; }
+  }
+}
+
+.service-option-card--new { margin-bottom: 1rem; background: #f8fafc; }
+.service-option-card--inactive { opacity: 0.65; background: #f9fafb; }
+
+.service-option-title {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+
+  input { flex: 1 1 11rem; }
+}
+
+.default-badge {
+  align-self: center;
+  padding: 0.2rem 0.45rem;
+  border-radius: 999px;
+  color: #166534;
+  background: #dcfce7;
+  font-size: 0.7rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 .config-source {
   display: inline-flex;
   align-items: center;
@@ -185,4 +246,5 @@ app-unsaved-changes-bar {
   .config-row { flex-direction: column; }
   .config-input { width: 100%; }
   .template-card { grid-template-columns: 1fr; }
+  .service-option-card { grid-template-columns: 1fr; }
 }

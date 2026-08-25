@@ -177,6 +177,35 @@ export class AdminApi {
       ...(args as Parameters<AdminDoctorsApi['listCareTeamPricingTemplates']>),
     );
   }
+  listCareTeamServiceOptions(...args: Parameters<AdminDoctorsApi['listCareTeamServiceOptions']>) {
+    return this.doctors.listCareTeamServiceOptions(
+      ...(args as Parameters<AdminDoctorsApi['listCareTeamServiceOptions']>),
+    );
+  }
+  listAdminCareTeamServiceOptions(
+    ...args: Parameters<AdminDoctorsApi['listAdminCareTeamServiceOptions']>
+  ) {
+    return this.doctors.listAdminCareTeamServiceOptions(
+      ...(args as Parameters<AdminDoctorsApi['listAdminCareTeamServiceOptions']>),
+    );
+  }
+  createCareTeamServiceOption(...args: Parameters<AdminDoctorsApi['createCareTeamServiceOption']>) {
+    return this.doctors.createCareTeamServiceOption(
+      ...(args as Parameters<AdminDoctorsApi['createCareTeamServiceOption']>),
+    );
+  }
+  updateCareTeamServiceOption(...args: Parameters<AdminDoctorsApi['updateCareTeamServiceOption']>) {
+    return this.doctors.updateCareTeamServiceOption(
+      ...(args as Parameters<AdminDoctorsApi['updateCareTeamServiceOption']>),
+    );
+  }
+  deactivateCareTeamServiceOption(
+    ...args: Parameters<AdminDoctorsApi['deactivateCareTeamServiceOption']>
+  ) {
+    return this.doctors.deactivateCareTeamServiceOption(
+      ...(args as Parameters<AdminDoctorsApi['deactivateCareTeamServiceOption']>),
+    );
+  }
   listAdminCarePricingTemplates(
     ...args: Parameters<AdminDoctorsApi['listAdminCarePricingTemplates']>
   ) {

@@ -438,7 +438,7 @@
               <div class="service-editor-heading">
                 <div>
                   <small>Service {{ $index + 1 }}</small>
-                  <strong>{{ service.title || 'New service' }}</strong>
+                  <strong>{{ service.title === customServiceTitleValue ? 'Custom service' : service.title || 'New service' }}</strong>
                 </div>
                 <span>{{ servicePricingSummary(service) }}</span>
               </div>
@@ -460,12 +460,27 @@
               }
               <label class="service-field service-field--wide">
                 What should clients call this service?
-                <input
-                  [value]="service.title"
-                  placeholder="For example: Individual counselling session"
-                  (input)="updateCareService($index, 'title', $any($event.target).value)"
-                />
+                <select
+                  [value]="serviceTitleChoice(service)"
+                  (change)="selectCareServiceTitle($index, $any($event.target).value)"
+                >
+                  <option value="">Choose a service</option>
+                  @for (title of serviceTitleOptions(service); track title) {
+                    <option [value]="title">{{ title }}</option>
+                  }
+                  <option [value]="customServiceTitleValue">Other / custom service</option>
+                </select>
               </label>
+              @if (serviceTitleChoice(service) === customServiceTitleValue) {
+                <label class="service-field service-field--wide">
+                  Custom service name
+                  <input
+                    [value]="customServiceTitle(service)"
+                    placeholder="For example: Individual counselling session"
+                    (input)="updateCareService($index, 'title', $any($event.target).value)"
+                  />
+                </label>
+              }
               <div class="template-row">
                 <label>
                   Start from a ready plan (optional)
@@ -539,7 +554,7 @@
               <section class="service-customer-preview" aria-label="Client price preview">
                 <div>
                   <span>Client preview</span>
-                  <strong>{{ service.title || 'Your service title' }}</strong>
+                  <strong>{{ service.title === customServiceTitleValue ? 'Your custom service' : service.title || 'Your service title' }}</strong>
                   <small>{{ servicePricingSummary(service) }}</small>
                 </div>
                 <div>
