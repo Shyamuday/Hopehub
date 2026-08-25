@@ -4,7 +4,10 @@ import { readFileSync } from 'node:fs';
 import { TelegramClient } from 'teleproto';
 import { StringSession } from 'teleproto/sessions';
 import { prisma } from '../src/db.js';
-import { removeTelegramCommunityEventAnnouncement } from '../src/services/telegram-community-campaigns.js';
+import {
+  refreshTelegramCommunityEventAnnouncement,
+  removeTelegramCommunityEventAnnouncement
+} from '../src/services/telegram-community-campaigns.js';
 import { sendCommunityMessage } from '../src/services/telegram-community-bots.client.js';
 import { getSiteConfigMap } from '../src/services/site-config.service.js';
 import { GROUP_HELP_BOT_SLUG } from '../src/constants/telegram-community-bot.constants.js';
@@ -13,6 +16,7 @@ import { synchronizeConfiguredTelegramGroupMembers } from '../src/services/teleg
 const SESSION_PATH = '/etc/hopehub-telegram-user-session';
 const STATE_BOT = 'TELEGRAM_NATIVE_VOICE_SCHEDULER';
 const HOST_REMINDER_STATE_BOT = 'TELEGRAM_NATIVE_VOICE_HOST_REMINDER';
+const JOIN_BUTTON_ALERT_STATE_BOT = 'TELEGRAM_VOICE_JOIN_BUTTON_ALERT';
 const MAX_NATIVE_SCHEDULE_AHEAD_MS = 7 * 24 * 60 * 60 * 1000;
 const MINIMUM_LEAD_TIME_MS = 5 * 60 * 1000;
 const HOST_REMINDER_LEAD_TIME_MS = 5 * 60 * 1000;
@@ -40,6 +44,7 @@ type NativeVoiceSchedulerState = {
   endedAt?: string;
   recoveryAfter?: string;
   healthCheckedAt?: string;
+  joinButtonRefreshedAt?: string;
   reason?: string;
   error?: string;
 };
@@ -175,6 +180,97 @@ async function retainActiveVoiceState(
       expiresAt: new Date(now.getTime() + ACTIVE_VOICE_FALLBACK_CHECK_MS)
     }
   });
+}
+
+/**
+ * The Bot API normally refreshes the announcement on video_chat_started.
+ * MTProto is the fallback authority when that service update is delayed or
+ * missed, so also repair the existing Join VC button from this worker.
+ */
+async function reconcileActiveVoiceEvent(
+  payload: NativeVoiceSchedulerState,
+  now: Date
+): Promise<NativeVoiceSchedulerState> {
+  if (!payload.eventId) return payload;
+  const event = await prisma.telegramCommunityEvent.findUnique({
+    where: { id: payload.eventId },
+    select: {
+      id: true,
+      title: true,
+      chatId: true,
+      joinUrl: true,
+      startsAt: true,
+      status: true,
+      telegramMessageId: true
+    }
+  });
+  if (!event) return payload;
+
+  if (event.startsAt <= now && event.status === 'SCHEDULED') {
+    await prisma.telegramCommunityEvent.update({
+      where: { id: event.id },
+      data: { status: 'IN_PROGRESS' }
+    });
+  }
+
+  if (!event.telegramMessageId || payload.joinButtonRefreshedAt) return payload;
+  try {
+    await refreshTelegramCommunityEventAnnouncement(event.id);
+    await prisma.telegramCommunityState
+      .delete({
+        where: {
+          bot_chatId: { bot: JOIN_BUTTON_ALERT_STATE_BOT, chatId: event.id }
+        }
+      })
+      .catch(() => null);
+    console.log(
+      `Refreshed live VC Join button for event ${event.id} in Telegram chat ${event.chatId}.`
+    );
+    return { ...payload, joinButtonRefreshedAt: now.toISOString() };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(`Could not refresh live VC Join button for ${event.id}: ${message}`);
+    const alertKey = {
+      bot_chatId: { bot: JOIN_BUTTON_ALERT_STATE_BOT, chatId: event.id }
+    };
+    const alreadyAlerted = await prisma.telegramCommunityState.findUnique({
+      where: alertKey
+    });
+    if (!alreadyAlerted) {
+      const sent = await notifyVoiceOperations(
+        [
+          '⚠️ Live VC Join button update failed',
+          '',
+          event.title,
+          `Event ID: ${event.id}`,
+          `Group ID: ${event.chatId}`,
+          `Scheduled time: ${indiaDateTime(event.startsAt)} IST`,
+          `Configured join URL: ${event.joinUrl}`,
+          `Telegram error: ${message.slice(0, 700)}`,
+          '',
+          'The VC is live, but its existing announcement could not be updated. The scheduler will retry automatically.'
+        ].join('\n')
+      );
+      if (sent) {
+        await prisma.telegramCommunityState.create({
+          data: {
+            bot: JOIN_BUTTON_ALERT_STATE_BOT,
+            chatId: event.id,
+            state: 'SENT',
+            payload: {
+              eventId: event.id,
+              groupId: event.chatId,
+              joinUrl: event.joinUrl,
+              message: message.slice(0, 700),
+              notifiedAt: now.toISOString()
+            },
+            expiresAt: new Date(now.getTime() + 24 * 60 * 60 * 1000)
+          }
+        });
+      }
+    }
+    return payload;
+  }
 }
 
 async function retainScheduledVoiceState(
@@ -451,11 +547,8 @@ async function expireMissedVoiceChats(client: TelegramClient, now: Date) {
       payload.eventId === event.id &&
       payload.nativeCallId === activeCall.id
     ) {
-      await prisma.telegramCommunityEvent.update({
-        where: { id: event.id },
-        data: { status: 'IN_PROGRESS' }
-      });
-      await retainActiveVoiceState(event.chatId, payload, now);
+      const activePayload = await reconcileActiveVoiceEvent(payload, now);
+      await retainActiveVoiceState(event.chatId, activePayload, now);
       continue;
     }
 
@@ -619,7 +712,8 @@ async function main() {
         // not treat it as active or wait through a 15-minute recovery window.
         const currentCall = await currentTelegramGroupCall(client, event.chatId);
         if (currentCall && !currentCall.scheduled) {
-          await retainActiveVoiceState(event.chatId, payload, now);
+          const activePayload = await reconcileActiveVoiceEvent(payload, now);
+          await retainActiveVoiceState(event.chatId, activePayload, now);
           continue;
         }
         if (currentCall?.scheduled) {
