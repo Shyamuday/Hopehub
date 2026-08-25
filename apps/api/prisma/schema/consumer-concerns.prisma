@@ -1,0 +1,23 @@
+model ConsumerConcern {
+  id                 String   @id @default(cuid())
+  key                String   @unique
+  slug               String   @unique
+  label              String
+  shortLabel         String
+  description        String   @db.Text
+  searchTerms        String[] @default([])
+  serviceSearchTerms String[] @default([])
+  assessmentId       String
+  assessmentLabel    String
+  supportPath        String
+  isActive           Boolean  @default(true)
+  showOnHome         Boolean  @default(true)
+  showInResourceHub  Boolean  @default(true)
+  showInSupportGuide Boolean  @default(true)
+  sortOrder          Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@index([isActive, sortOrder])
+  @@index([showOnHome, isActive, sortOrder])
+}

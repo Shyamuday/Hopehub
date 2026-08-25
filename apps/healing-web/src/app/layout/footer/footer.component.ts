@@ -177,6 +177,7 @@ export class FooterComponent {
     {
       title: 'Resources & tests',
       links: [
+        { label: 'Resources library', routerLink: '/resources' },
         { label: 'Assessments', routerLink: '/assessments' },
         { label: 'Mental health test', routerLink: '/mental-health-test' },
         { label: 'Anxiety test', routerLink: '/anxiety-test' },
@@ -185,7 +186,7 @@ export class FooterComponent {
         { label: 'Exercises', routerLink: '/exercises' },
         { label: 'Lifestyle tips', routerLink: '/lifestyle-tips' },
         { label: 'Articles', routerLink: '/articles' },
-        { label: 'Recorded sessions', routerLink: '/resources' },
+        { label: 'Recorded sessions', routerLink: '/recorded-sessions' },
       ],
     },
     {

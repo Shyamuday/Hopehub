@@ -31,6 +31,11 @@
       <input id="blog-create-read-time" placeholder="e.g. 5 min read" [formField]="createForm.readTime" />
     </div>
     <div class="field">
+      <label class="field-label" for="blog-create-concerns">Show for concerns</label>
+      <input id="blog-create-concerns" placeholder="anxiety, stress, sleep" [formField]="createForm.concernSlugsText" />
+      <small>Use concern keys from Consumer Flows. Separate multiple values with commas.</small>
+    </div>
+    <div class="field">
       <label class="field-label" for="blog-create-author">Author name</label>
       <input id="blog-create-author" placeholder="Defaults to you" [formField]="createForm.authorName" />
     </div>
@@ -75,6 +80,7 @@
         <div>
           <strong>{{ p.title }}</strong>
           <span class="meta"> · {{ p.category }}</span>
+          @if (p.concernSlugs.length) { <span class="meta"> · {{ p.concernSlugs.join(', ') }}</span> }
           @if (p.readTime) { <span class="meta"> · {{ p.readTime }}</span> }
           @if (p.authorName) { <span class="meta"> · {{ p.authorName }}</span> }
         </div>
@@ -114,6 +120,10 @@
           <div class="field">
             <label class="field-label" [attr.for]="'blog-rt-' + p.id">Read time</label>
             <input [id]="'blog-rt-' + p.id" [formField]="editForm.readTime" />
+          </div>
+          <div class="field">
+            <label class="field-label" [attr.for]="'blog-concerns-' + p.id">Show for concerns</label>
+            <input [id]="'blog-concerns-' + p.id" [formField]="editForm.concernSlugsText" />
           </div>
           <div class="field">
             <label class="field-label" [attr.for]="'blog-author-' + p.id">Author</label>

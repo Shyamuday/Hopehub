@@ -47,6 +47,7 @@ function handler(event) {
       '/packages': true,
       '/events': true,
       '/resources': true,
+      '/recorded-sessions': true,
       '/organization': true,
       '/community': true,
       '/telegram': true,
@@ -123,6 +124,8 @@ function handler(event) {
       '/packages/',
       '/events/',
       '/resources/',
+      '/recorded-sessions/',
+      '/concerns/',
       '/assessments/',
       '/live-session/',
       '/live-groups/'

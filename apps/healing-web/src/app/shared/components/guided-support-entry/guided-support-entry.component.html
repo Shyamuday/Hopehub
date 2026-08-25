@@ -8,7 +8,7 @@
     <div class="guided-entry__group">
       <span class="guided-entry__label">What is closest today?</span>
       <div class="guided-entry__chips" role="list">
-        @for (concern of concerns; track concern.key) {
+        @for (concern of concerns(); track concern.key) {
           <app-selectable-card
             [title]="concern.shortLabel"
             [selected]="selectedConcern().key === concern.key"

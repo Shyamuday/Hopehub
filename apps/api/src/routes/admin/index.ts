@@ -41,6 +41,7 @@ import { registerAdminLifestyleTipRoutes } from './lifestyle-tips.js';
 import { registerAdminTelegramBotRoutes } from './telegram-bots.js';
 import { registerAdminListenerScreeningRoutes } from './listener-screening.js';
 import { registerAdminProviderRoleRoutes } from './provider-roles.js';
+import { registerAdminConsumerConcernRoutes } from './consumer-concerns.js';
 import { adminPermissionMiddleware } from '../../admin-route-permissions.js';
 
 export function createAdminRouter(io: SocketIoServer) {
@@ -89,6 +90,7 @@ export function createAdminRouter(io: SocketIoServer) {
   registerAdminTelegramBotRoutes(router);
   registerAdminListenerScreeningRoutes(router);
   registerAdminProviderRoleRoutes(router);
+  registerAdminConsumerConcernRoutes(router);
 
   return router;
 }

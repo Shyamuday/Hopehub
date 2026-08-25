@@ -29,6 +29,10 @@ import { AppButtonComponent } from '../app-button/app-button.component';
 import { EmptyStateComponent } from '../empty-state/empty-state.component';
 import { FilterBarComponent } from '../filter-bar/filter-bar.component';
 import { PageHeaderComponent } from '../page-header/page-header.component';
+import {
+  CONSUMER_CONCERN_FLOWS,
+  ConsumerConcernKey,
+} from '../../../core/constants/consumer-concerns.constants';
 
 @Component({
   selector: 'app-articles',
@@ -121,6 +125,10 @@ export class ArticlesComponent implements OnInit {
           }
         }
 
+        if (params['concern']) {
+          this.filterByConcern(String(params['concern']));
+        }
+
         // Check for specific article
         if (params['article']) {
           const article = this.allArticles().find((a) => a.id === params['article']);
@@ -197,6 +205,37 @@ export class ArticlesComponent implements OnInit {
         this.filteredArticles.set(searchResults.filter((article) => article.type === type));
       }
     }
+  }
+
+  private filterByConcern(value: string): void {
+    const normalized = value.trim().toLowerCase();
+    const flow = Object.values(CONSUMER_CONCERN_FLOWS).find(
+      (item) => item.key.toLowerCase() === normalized || item.slug === normalized,
+    );
+    if (!flow) return;
+    const terms = new Set(
+      [flow.key, flow.label, flow.shortLabel, ...flow.searchTerms].map((term) =>
+        term.toLowerCase(),
+      ),
+    );
+    this.currentFilter.set(`concern:${flow.key as ConsumerConcernKey}`);
+    this.filteredArticles.set(
+      this.allArticles().filter((article) => {
+        const text = [
+          article.title,
+          article.subtitle,
+          article.description,
+          article.introduction,
+          ...article.category,
+          ...article.tags,
+          ...(article.keywords ?? []),
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        return [...terms].some((term) => text.includes(term));
+      }),
+    );
   }
 
   selectArticle(article: Article) {

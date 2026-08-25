@@ -222,18 +222,42 @@ export const routes: Routes = [
   {
     path: 'resources',
     loadComponent: () =>
+      import('./features/resources/resources-hub.component').then((m) => m.ResourcesHubComponent),
+    title: 'Mental Health Resources - Hope Hub',
+    data: {
+      breadcrumb: 'Resources',
+      description:
+        'Browse Hope Hub self-checks, exercises, lifestyle guides, articles and recorded sessions by concern',
+      keywords:
+        'mental health resources, anxiety help, stress exercises, emotional support, Hope Hub',
+    },
+  },
+  {
+    path: 'concerns/:slug',
+    loadComponent: () =>
+      import('./features/resources/concern-detail.component').then((m) => m.ConcernDetailComponent),
+    title: 'Concern Guide - Hope Hub',
+    data: {
+      breadcrumb: 'Concern guide',
+      description:
+        'Find relevant self-checks, exercises, reading and human support for your concern',
+      keywords: 'mental health concern guide, self-help, counselling, emotional support',
+    },
+  },
+  {
+    path: 'recorded-sessions',
+    loadComponent: () =>
       import('./features/offers/offers-page.component').then((m) => m.OffersPageComponent),
     title: 'Recorded Sessions - Hope Hub',
     data: {
       mode: 'resources',
       breadcrumb: 'Recorded Sessions',
       description: 'Hope Hub recorded sessions, Telegram audio and video, and YouTube resources',
-      keywords:
-        'recorded mental health session, telegram audio, youtube session, hope hub resources',
+      keywords: 'recorded mental health session, telegram audio, youtube session, Hope Hub',
     },
   },
   {
-    path: 'resources/:slug',
+    path: 'recorded-sessions/:slug',
     loadComponent: () =>
       import('./features/offers/offer-detail.component').then((m) => m.OfferDetailComponent),
     title: 'Recorded Session - Hope Hub',
@@ -243,6 +267,25 @@ export const routes: Routes = [
       description: 'Watch or listen to a Hope Hub recorded session',
       keywords: 'recorded session, hope hub media, mental wellness video',
     },
+  },
+  {
+    path: 'resources/articles/:slug',
+    loadComponent: () =>
+      import('./features/resources/resource-article.component').then(
+        (m) => m.ResourceArticleComponent,
+      ),
+    title: 'Mental Health Article - Hope Hub',
+    data: {
+      breadcrumb: 'Article',
+      description: 'Read a Hope Hub mental wellness article',
+      keywords: 'mental health article, wellbeing guide, Hope Hub',
+      type: 'article',
+    },
+  },
+  {
+    path: 'resources/:slug',
+    redirectTo: 'recorded-sessions/:slug',
+    pathMatch: 'full',
   },
   {
     path: 'organization',

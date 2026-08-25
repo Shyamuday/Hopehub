@@ -23,6 +23,7 @@ const publicPages = [
   ['/packages', 'weekly', 0.9],
   ['/events', 'weekly', 0.8],
   ['/resources', 'weekly', 0.7],
+  ['/recorded-sessions', 'weekly', 0.65],
   ['/organization', 'monthly', 0.6],
   ['/community', 'weekly', 0.8],
   ['/telegram', 'weekly', 0.8],

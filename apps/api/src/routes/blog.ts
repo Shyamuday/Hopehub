@@ -2,7 +2,11 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { Role } from '@prisma/client';
 import { authRequired } from '../auth.js';
-import { BLOG_CATEGORIES, BLOG_DETAIL_SELECT, BLOG_PUBLIC_SELECT } from '../constants/blog.constants.js';
+import {
+  BLOG_CATEGORIES,
+  BLOG_DETAIL_SELECT,
+  BLOG_PUBLIC_SELECT
+} from '../constants/blog.constants.js';
 import { prisma } from '../db.js';
 import { asyncRoute, routeParam } from '../utils/helpers.js';
 
@@ -11,7 +15,11 @@ export const blogRouter = Router();
 const publicWhere = { isPublished: true, isHidden: false };
 
 function resolveOrderBy(sort: string | undefined) {
-  if (sort === 'popular') return [{ viewCount: 'desc' as const }, { publishedAt: { sort: 'desc' as const, nulls: 'last' as const } }];
+  if (sort === 'popular')
+    return [
+      { viewCount: 'desc' as const },
+      { publishedAt: { sort: 'desc' as const, nulls: 'last' as const } }
+    ];
   if (sort === 'featured') {
     return [
       { isFeatured: 'desc' as const },
@@ -19,7 +27,11 @@ function resolveOrderBy(sort: string | undefined) {
       { publishedAt: { sort: 'desc' as const, nulls: 'last' as const } }
     ];
   }
-  return [{ sortOrder: 'asc' as const }, { publishedAt: { sort: 'desc' as const, nulls: 'last' as const } }, { createdAt: 'desc' as const }];
+  return [
+    { sortOrder: 'asc' as const },
+    { publishedAt: { sort: 'desc' as const, nulls: 'last' as const } },
+    { createdAt: 'desc' as const }
+  ];
 }
 
 blogRouter.get(
@@ -54,6 +66,8 @@ blogRouter.get(
   '/blog',
   asyncRoute(async (req, res) => {
     const category = typeof req.query['category'] === 'string' ? req.query['category'] : undefined;
+    const concern =
+      typeof req.query['concern'] === 'string' ? req.query['concern'].trim() : undefined;
     const sort = typeof req.query['sort'] === 'string' ? req.query['sort'] : 'recent';
     const featuredOnly = req.query['featured'] === 'true';
 
@@ -61,6 +75,7 @@ blogRouter.get(
       where: {
         ...publicWhere,
         ...(category ? { category } : {}),
+        ...(concern ? { concernSlugs: { has: concern } } : {}),
         ...(featuredOnly ? { isFeatured: true } : {})
       },
       select: BLOG_PUBLIC_SELECT,

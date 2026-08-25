@@ -16,6 +16,7 @@ const schema = z.object({
   excerpt: z.string().min(10).max(500),
   content: z.string().max(50000).optional().nullable(),
   category: z.string().min(1).max(80),
+  concernSlugs: z.array(z.string().min(1).max(80)).max(30).default([]),
   readTime: z.string().max(40).optional().nullable(),
   isPublished: z.boolean().default(false),
   isHidden: z.boolean().default(false),

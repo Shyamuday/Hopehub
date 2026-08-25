@@ -2,10 +2,10 @@
   <header class="page-hero">
     <div>
       <p class="eyebrow">Hope Hub journey map</p>
-      <h1>Consumer flows</h1>
+      <h1>Concern routing</h1>
       <p>
-        Checks that each concern has a working assessment, related services, care-team filter,
-        and booking path.
+        Choose which concerns appear on each consumer surface and connect every concern to its
+        assessment, self-help content, services, care-team role, and booking path.
       </p>
     </div>
     <button type="button" class="secondary" (click)="load()" [disabled]="loading()">
@@ -16,6 +16,7 @@
   @if (error()) {
     <div class="alert error">{{ error() }}</div>
   }
+  @if (message()) { <div class="alert success">{{ message() }}</div> }
 
   <div class="summary-grid">
     <article>
@@ -44,6 +45,7 @@
         <span>Concern</span>
         <span>Assessment</span>
         <span>Services</span>
+        <span>Content</span>
         <span>Care team</span>
         <span>Status</span>
       </div>
@@ -79,7 +81,9 @@
           </div>
 
           <div>
-            @if (flowHealthy(flow)) {
+            @if (!flow.isActive) {
+              <span class="status inactive">Inactive</span>
+            } @else if (flowHealthy(flow)) {
               <span class="status ok">Healthy</span>
             } @else {
               <span class="status bad">Needs attention</span>
@@ -87,8 +91,38 @@
                 <small class="issue">{{ issue.issue }}</small>
               }
             }
+            <button type="button" class="edit-button" (click)="startEdit(flow)">Edit routing</button>
+          </div>
+
+          <div class="content-links">
+            <a [routerLink]="practiceAdminLink">{{ flow.resourceCounts?.practices || 0 }} practices</a>
+            <a [routerLink]="lifestyleAdminLink">{{ flow.resourceCounts?.lifestyleTips || 0 }} tips</a>
+            <a [routerLink]="blogAdminLink">{{ flow.resourceCounts?.articles || 0 }} articles</a>
           </div>
         </article>
+        @if (editingId() === flow.id) {
+          <section class="editor">
+            <div class="editor__heading"><div><strong>Edit {{ flow.label }}</strong><small>Controls what consumers see for this concern.</small></div><button type="button" class="secondary" (click)="cancelEdit()">Close</button></div>
+            <div class="editor__grid">
+              <label>Public name<input [ngModel]="draft()['label']" (ngModelChange)="patchDraft('label', $event)" /></label>
+              <label>Short name<input [ngModel]="draft()['shortLabel']" (ngModelChange)="patchDraft('shortLabel', $event)" /></label>
+              <label>URL slug<input [ngModel]="draft()['slug']" (ngModelChange)="patchDraft('slug', $event)" /></label>
+              <label>Sort order<input type="number" [ngModel]="draft()['sortOrder']" (ngModelChange)="patchDraft('sortOrder', $event)" /></label>
+              <label>Assessment ID<input [ngModel]="draft()['assessmentId']" (ngModelChange)="patchDraft('assessmentId', $event)" /></label>
+              <label>Assessment button text<input [ngModel]="draft()['assessmentLabel']" (ngModelChange)="patchDraft('assessmentLabel', $event)" /></label>
+              <label>Best support path<select [ngModel]="draft()['supportPath']" (ngModelChange)="patchDraft('supportPath', $event)"><option value="PROFESSIONAL_CARE">Professional care</option><option value="COACH_MENTOR">Coach / mentor</option><option value="EMOTIONAL_LISTENER">Emotional listener</option></select></label>
+              <label class="wide">Public description<textarea rows="3" [ngModel]="draft()['description']" (ngModelChange)="patchDraft('description', $event)"></textarea></label>
+              <label class="wide">Matching words<input [ngModel]="draft()['searchTermsText']" (ngModelChange)="patchDraft('searchTermsText', $event)" /><small>Comma-separated words used to recognise the concern.</small></label>
+              <label class="wide">Service matching words<input [ngModel]="draft()['serviceSearchTermsText']" (ngModelChange)="patchDraft('serviceSearchTermsText', $event)" /><small>These choose relevant services.</small></label>
+              <div class="wide mapping-note"><strong>Content mapping</strong><span>Tag practices, lifestyle tips, and blog posts with the concern key <code>{{ flow.key }}</code>. The current counts are shown above.</span><div><a [routerLink]="practiceAdminLink">Manage practices</a><a [routerLink]="lifestyleAdminLink">Manage tips</a><a [routerLink]="blogAdminLink">Manage articles</a></div></div>
+              <label class="check"><input type="checkbox" [ngModel]="draft()['showOnHome']" (ngModelChange)="patchDraft('showOnHome', $event)" /> Show in featured concerns</label>
+              <label class="check"><input type="checkbox" [ngModel]="draft()['showInResourceHub']" (ngModelChange)="patchDraft('showInResourceHub', $event)" /> Show in Resources library</label>
+              <label class="check"><input type="checkbox" [ngModel]="draft()['showInSupportGuide']" (ngModelChange)="patchDraft('showInSupportGuide', $event)" /> Show in guided support selector</label>
+              <label class="check"><input type="checkbox" [ngModel]="draft()['isActive']" (ngModelChange)="patchDraft('isActive', $event)" /> Active publicly</label>
+            </div>
+            <div class="editor__actions"><button type="button" (click)="save(flow)" [disabled]="saving()">{{ saving() ? 'Saving…' : 'Save routing' }}</button><button type="button" class="secondary" (click)="cancelEdit()">Cancel</button></div>
+          </section>
+        }
       }
     </div>
   }

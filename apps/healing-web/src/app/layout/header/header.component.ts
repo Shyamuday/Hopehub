@@ -143,6 +143,13 @@ import { ViewportOverlayService } from '../../core/services/viewport-overlay.ser
                   routerLinkActive="text-primary-600 bg-primary-50"
                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
                   role="menuitem"
+                  >Resources library</a
+                >
+                <a
+                  [routerLink]="ROUTES.links.recordedSessions"
+                  routerLinkActive="text-primary-600 bg-primary-50"
+                  class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary-600"
+                  role="menuitem"
                   >Recorded sessions</a
                 >
                 <a
@@ -409,6 +416,15 @@ import { ViewportOverlayService } from '../../core/services/viewport-overlay.ser
                   </a>
                   <a
                     [routerLink]="ROUTES.links.resources"
+                    (click)="closeMobileMenu()"
+                    routerLinkActive="text-primary-600 bg-primary-50"
+                    class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"
+                    role="menuitem"
+                  >
+                    Resources library
+                  </a>
+                  <a
+                    [routerLink]="ROUTES.links.recordedSessions"
                     (click)="closeMobileMenu()"
                     routerLinkActive="text-primary-600 bg-primary-50"
                     class="block rounded-md px-3 py-2 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-gray-50 hover:text-primary-600"

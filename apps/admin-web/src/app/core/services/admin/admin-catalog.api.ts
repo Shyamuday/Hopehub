@@ -366,6 +366,23 @@ export class AdminCatalogApi extends AdminApiBase {
     );
   }
 
+  getConsumerConcernsAdmin() {
+    return firstValueFrom(
+      this.http.get<{ concerns: Array<any>; supportPaths: string[] }>(
+        `${this.apiBase}${API_PATHS.ADMIN.CONSUMER_CONCERNS}`,
+      ),
+    );
+  }
+
+  updateConsumerConcern(id: string, payload: Record<string, unknown>) {
+    return firstValueFrom(
+      this.http.patch<{ concern: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.CONSUMER_CONCERN_BY_ID(id)}`,
+        payload,
+      ),
+    );
+  }
+
   getAssessmentAccessReport(
     params: {
       q?: string;

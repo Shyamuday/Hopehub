@@ -132,7 +132,7 @@ export const NAV_ITEMS = [
   },
   {
     path: adminNavPath(ROUTE_PATHS.CONSUMER_FLOWS),
-    label: '🧭 Consumer Flows',
+    label: '🧭 Concern Routing',
     workspaces: ['hope-hub'],
   },
   {

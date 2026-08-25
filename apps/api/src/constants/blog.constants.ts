@@ -19,6 +19,7 @@ export const BLOG_PUBLIC_SELECT = {
   title: true,
   excerpt: true,
   category: true,
+  concernSlugs: true,
   readTime: true,
   authorName: true,
   authorRole: true,

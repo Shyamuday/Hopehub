@@ -140,6 +140,8 @@ export const API_PATHS = {
     HOPE_HUB_ORGANIZATION_LEADS: '/admin/hope-hub/organization-leads',
     HOPE_HUB_ORGANIZATION_LEAD_BY_ID: (id: string) => `/admin/hope-hub/organization-leads/${id}`,
     HOPE_HUB_CONSUMER_FLOWS: '/hope-hub/consumer-flows',
+    CONSUMER_CONCERNS: '/admin/consumer-concerns',
+    CONSUMER_CONCERN_BY_ID: (id: string) => `/admin/consumer-concerns/${id}`,
     LISTENER_SCREENING: '/admin/hope-hub/listener-screening',
     LISTENER_SCREENING_BY_ID: (id: string) => `/admin/hope-hub/listener-screening/${id}`,
     LISTENER_SCREENING_PUBLISH: (id: string) => `/admin/hope-hub/listener-screening/${id}/publish`,

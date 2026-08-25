@@ -12,13 +12,20 @@ import { consumerAssessmentLink } from '../constants/consumer-routes.constants';
 
 type ConsumerFlowApiItem = {
   key: ConsumerConcernKey;
+  slug: string;
   label: string;
   shortLabel: string;
+  description: string;
   searchTerms: string[];
   serviceSearchTerms: string[];
   assessmentId: ConsumerConcernFlow['assessmentId'];
   assessmentLabel: string;
   supportPath: ConsumerConcernFlow['supportPath'];
+  isActive: boolean;
+  showOnHome: boolean;
+  showInResourceHub: boolean;
+  showInSupportGuide: boolean;
+  sortOrder: number;
   assessmentAvailable: boolean;
   assessmentTitle?: string | null;
   serviceAvailable: boolean;
@@ -79,17 +86,29 @@ export class ConsumerFlowsService {
   }
 
   private toState(response: ConsumerFlowsApiResponse): ConsumerFlowsState {
-    const flows = { ...CONSUMER_CONCERN_FLOWS };
+    const flows = Object.fromEntries(
+      Object.entries(CONSUMER_CONCERN_FLOWS).map(([key, flow]) => [
+        key,
+        { ...flow, isActive: false },
+      ]),
+    ) as Record<ConsumerConcernKey, ConsumerConcernFlow>;
     for (const flow of response.flows ?? []) {
       flows[flow.key] = {
         key: flow.key,
+        slug: flow.slug,
         label: flow.label,
         shortLabel: flow.shortLabel,
+        description: flow.description,
         searchTerms: flow.searchTerms,
         serviceSearchTerms: flow.serviceSearchTerms,
         assessmentId: flow.assessmentId,
         assessmentLabel: flow.assessmentLabel,
         supportPath: flow.supportPath,
+        isActive: flow.isActive,
+        showOnHome: flow.showOnHome,
+        showInResourceHub: flow.showInResourceHub,
+        showInSupportGuide: flow.showInSupportGuide,
+        sortOrder: flow.sortOrder,
         assessment: {
           id: flow.assessmentId,
           label: flow.assessmentLabel,

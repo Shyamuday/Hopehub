@@ -5,6 +5,7 @@ model BlogPost {
   excerpt     String    @db.Text
   content     String?   @db.Text
   category    String
+  concernSlugs String[] @default([])
   readTime    String?
   authorId    String?
   authorName  String?

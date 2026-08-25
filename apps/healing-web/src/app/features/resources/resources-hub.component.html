@@ -1,0 +1,66 @@
+<main class="resource-hub page-shell">
+  <section class="resource-hub__hero">
+    <p class="eyebrow">Self-help library</p>
+    <h1>Start with what you are experiencing</h1>
+    <p class="lead">
+      Find a private self-check, a practical exercise, clear reading, or the right person to talk to.
+      You do not need a diagnosis to begin.
+    </p>
+    <label class="resource-hub__search">
+      <span>Search concerns</span>
+      <input type="search" placeholder="Try anxiety, sleep, loneliness…" [value]="query()" (input)="updateQuery($event)" />
+    </label>
+  </section>
+
+  @if (loading()) {
+    <section class="state-card" aria-live="polite">Loading the library…</section>
+  }
+  @if (error()) {
+    <section class="state-card state-card--error" role="alert">{{ error() }}</section>
+  }
+  @if (!loading()) {
+    <section class="resource-hub__section" aria-labelledby="concerns-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Browse by concern</p>
+          <h2 id="concerns-title">Choose the closest match</h2>
+        </div>
+        <span>{{ filteredConcerns().length }} options</span>
+      </div>
+      <div class="concern-grid">
+        @for (concern of filteredConcerns(); track concern.id) {
+          <a class="concern-card" [routerLink]="['/concerns', concern.slug]">
+            <strong>{{ concern.label }}</strong>
+            <p>{{ concern.description }}</p>
+            <span>View support path <span aria-hidden="true">→</span></span>
+          </a>
+        } @empty {
+          <div class="state-card">No concern matched that search. Try a broader word or start with Mental health.</div>
+        }
+      </div>
+    </section>
+
+    <section class="resource-hub__section" aria-labelledby="formats-title">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Browse by format</p>
+          <h2 id="formats-title">Choose how you want to begin</h2>
+        </div>
+      </div>
+      <div class="format-grid">
+        @for (section of sections(); track section.key) {
+          <a class="format-card" [routerLink]="section.path">
+            <strong>{{ section.label }}</strong>
+            <p>{{ section.description }}</p>
+            <span>Explore <span aria-hidden="true">→</span></span>
+          </a>
+        }
+      </div>
+    </section>
+  }
+
+  <aside class="resource-hub__safety">
+    <strong>Need urgent help?</strong>
+    <p>Hope Hub self-help content is not emergency care. If you may harm yourself or someone else, contact local emergency services or a trusted person who can stay with you now.</p>
+  </aside>
+</main>

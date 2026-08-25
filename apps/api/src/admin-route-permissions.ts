@@ -118,7 +118,7 @@ const ADMIN_ROUTE_RULES: Array<{ pattern: RegExp; rules: RouteRule[] }> = [
   },
   {
     pattern:
-      /^\/admin\/(assessment-definitions|listener-screening|practices|practice-rules|lifestyle-tips|lifestyle-tip-rules)/,
+      /^\/admin\/(assessment-definitions|listener-screening|consumer-concerns|practices|practice-rules|lifestyle-tips|lifestyle-tip-rules)/,
     rules: [all([PERMISSIONS.CATALOG_READ], 'GET'), all([PERMISSIONS.CATALOG_WRITE])]
   },
   {

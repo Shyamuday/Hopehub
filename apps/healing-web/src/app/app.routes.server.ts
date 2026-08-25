@@ -9,6 +9,7 @@ const googleLandingRoutes = [
   'packages',
   'events',
   'resources',
+  'recorded-sessions',
   'organization',
   'community',
   'telegram',

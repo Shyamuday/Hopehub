@@ -1,0 +1,54 @@
+<main class="concern page-shell">
+  @if (loading()) {
+    <section class="state-card">Loading your support options…</section>
+  } @else if (error()) {
+    <section class="state-card state-card--error" role="alert">{{ error() }}</section>
+  } @else if (data(); as page) {
+    <nav class="breadcrumb" aria-label="Breadcrumb"><a routerLink="/resources">Resources</a><span>/</span><span>{{ page.concern.label }}</span></nav>
+    <header class="concern__hero">
+      <div>
+        <p class="eyebrow">Concern guide</p>
+        <h1>{{ page.concern.label }}</h1>
+        <p>{{ page.concern.description }}</p>
+      </div>
+      <div class="hero-actions">
+        <a class="button button--primary" [routerLink]="page.routes.talk">Talk to someone</a>
+        <a class="button" [routerLink]="routePath(page.routes.booking)" [queryParams]="routeQueryParams(page.routes.booking)">Book support</a>
+      </div>
+    </header>
+
+    @if (page.assessment) {
+      <section class="assessment-card">
+        <div><p class="eyebrow">Private self-check</p><h2>{{ page.assessment.title }}</h2><p>{{ page.assessment.description }}</p></div>
+        <a class="button button--primary" [routerLink]="page.routes.assessment">{{ page.concern.assessmentLabel }}</a>
+      </section>
+    }
+
+    @if (hasSelfHelp()) {
+      <section class="resource-section">
+        <div class="section-heading"><div><p class="eyebrow">Try at your pace</p><h2>Self-help for {{ page.concern.shortLabel }}</h2></div></div>
+        @if (page.practices.length) {
+          <div class="resource-group"><div class="resource-group__heading"><h3>Guided exercises</h3><a [routerLink]="routePath(page.routes.practices)" [queryParams]="routeQueryParams(page.routes.practices)">See all</a></div><div class="card-grid">
+            @for (item of page.practices; track item.id) { <a class="content-card" [routerLink]="routePath(page.routes.practices)" [queryParams]="routeQueryParams(page.routes.practices)"><strong>{{ item.title }}</strong><p>{{ item.shortDescription }}</p><span>{{ item.durationLabel || (item.durationMinutes ? item.durationMinutes + ' min' : 'Guided practice') }}</span></a> }
+          </div></div>
+        }
+        @if (page.lifestyleTips.length) {
+          <div class="resource-group"><div class="resource-group__heading"><h3>Lifestyle guides</h3><a [routerLink]="routePath(page.routes.lifestyleTips)" [queryParams]="routeQueryParams(page.routes.lifestyleTips)">See all</a></div><div class="card-grid">
+            @for (item of page.lifestyleTips; track item.id) { <a class="content-card" [routerLink]="routePath(page.routes.lifestyleTips)" [queryParams]="routeQueryParams(page.routes.lifestyleTips)"><strong>{{ item.title }}</strong><p>{{ item.shortDescription }}</p><span>{{ item.timeToImplement || 'Practical guide' }}</span></a> }
+          </div></div>
+        }
+        @if (page.articles.length) {
+          <div class="resource-group"><div class="resource-group__heading"><h3>Related reading</h3><a [routerLink]="routePath(page.routes.articles)" [queryParams]="routeQueryParams(page.routes.articles)">See all</a></div><div class="card-grid">
+            @for (item of page.articles; track item.id) { <a class="content-card" [routerLink]="['/resources/articles', item.slug]"><strong>{{ item.title }}</strong><p>{{ item.excerpt }}</p><span>{{ item.readTime || item.category || 'Article' }}</span></a> }
+          </div></div>
+        }
+      </section>
+    }
+
+    <section class="human-support">
+      <div><p class="eyebrow">Human support</p><h2>You do not have to work through this alone</h2><p>Browse people whose role matches this concern, or book a private session when you are ready.</p></div>
+      <div class="hero-actions"><a class="button button--primary" [routerLink]="routePath(page.routes.careTeam)" [queryParams]="routeQueryParams(page.routes.careTeam)">View matched care team</a><a class="button" [routerLink]="routePath(page.routes.booking)" [queryParams]="routeQueryParams(page.routes.booking)">Choose a session</a></div>
+    </section>
+    <aside class="safety-note"><strong>Important:</strong> This guide is educational and does not diagnose a condition. If you are in immediate danger or may harm yourself or someone else, contact local emergency services now.</aside>
+  }
+</main>
