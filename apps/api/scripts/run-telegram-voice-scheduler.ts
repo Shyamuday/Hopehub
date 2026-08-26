@@ -188,8 +188,10 @@ async function retainActiveVoiceState(
  * missed, so also repair the existing Join VC button from this worker.
  */
 async function reconcileActiveVoiceEvent(
+  client: TelegramClient,
   payload: NativeVoiceSchedulerState,
-  now: Date
+  now: Date,
+  activeCall: NativeGroupCallStatus
 ): Promise<NativeVoiceSchedulerState> {
   if (!payload.eventId) return payload;
   const event = await prisma.telegramCommunityEvent.findUnique({
@@ -206,6 +208,29 @@ async function reconcileActiveVoiceEvent(
   });
   if (!event) return payload;
 
+  try {
+    const invite = await client.api.phone.exportGroupCallInvite({
+      call: activeCall.inputCall as never,
+      canSelfUnmute: true
+    });
+    const exportedJoinUrl = (invite as { link?: string }).link?.trim();
+    if (exportedJoinUrl && exportedJoinUrl !== event.joinUrl) {
+      await prisma.telegramCommunityEvent.update({
+        where: { id: event.id },
+        data: { joinUrl: exportedJoinUrl }
+      });
+    }
+  } catch (error) {
+    // The public-group videochat link remains a valid fallback, but the
+    // exported invite is preferable because Telegram generated it for the
+    // exact active call.
+    console.warn(
+      `Could not export active VC invite for ${event.id}: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+  }
+
   if (event.startsAt <= now && event.status === 'SCHEDULED') {
     await prisma.telegramCommunityEvent.update({
       where: { id: event.id },
@@ -215,7 +240,7 @@ async function reconcileActiveVoiceEvent(
 
   if (!event.telegramMessageId || payload.joinButtonRefreshedAt) return payload;
   try {
-    await refreshTelegramCommunityEventAnnouncement(event.id);
+    await refreshTelegramCommunityEventAnnouncement(event.id, { active: true });
     await prisma.telegramCommunityState
       .delete({
         where: {
@@ -547,7 +572,7 @@ async function expireMissedVoiceChats(client: TelegramClient, now: Date) {
       payload.eventId === event.id &&
       payload.nativeCallId === activeCall.id
     ) {
-      const activePayload = await reconcileActiveVoiceEvent(payload, now);
+      const activePayload = await reconcileActiveVoiceEvent(client, payload, now, activeCall);
       await retainActiveVoiceState(event.chatId, activePayload, now);
       continue;
     }
@@ -712,7 +737,7 @@ async function main() {
         // not treat it as active or wait through a 15-minute recovery window.
         const currentCall = await currentTelegramGroupCall(client, event.chatId);
         if (currentCall && !currentCall.scheduled) {
-          const activePayload = await reconcileActiveVoiceEvent(payload, now);
+          const activePayload = await reconcileActiveVoiceEvent(client, payload, now, currentCall);
           await retainActiveVoiceState(event.chatId, activePayload, now);
           continue;
         }

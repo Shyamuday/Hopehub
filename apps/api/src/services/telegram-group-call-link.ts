@@ -36,3 +36,10 @@ export function telegramVideoChatJoinUrl(joinUrl: string): string {
     return trimmed;
   }
 }
+
+/** Scheduled calls open the group; only a confirmed live call is labelled as directly joinable. */
+export function telegramGroupCallButton(joinUrl: string, isLive: boolean) {
+  return isLive
+    ? { text: 'Join VC', url: telegramVideoChatJoinUrl(joinUrl) }
+    : { text: 'Open group', url: joinUrl.trim() };
+}

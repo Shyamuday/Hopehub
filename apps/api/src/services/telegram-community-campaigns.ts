@@ -20,7 +20,7 @@ import {
 import { sendGroupHelpActivityLog } from './telegram-group-help.actions.js';
 import { observeTelegramCommunityMember } from './telegram-community-member-identity.js';
 import { telegramPersonLogLabel } from './telegram-group-help.people.js';
-import { telegramVideoChatJoinUrl } from './telegram-group-call-link.js';
+import { telegramGroupCallButton } from './telegram-group-call-link.js';
 import { runTelegramContentNetworkScheduler } from './telegram-content-network.js';
 import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
 import { TELEGRAM_BOT_URLS } from '../constants/telegram-community-bot.constants.js';
@@ -931,7 +931,7 @@ export async function handleTelegramCommunityVoiceChatStarted(message: Community
         CAMPAIGN_BOT,
         activeEvent.chatId,
         activeEvent.telegramMessageId,
-        await telegramCommunityEventKeyboard(activeEvent, rsvpCount)
+        await telegramCommunityEventKeyboard(activeEvent, rsvpCount, true)
       );
     } catch (error) {
       // Telegram's Bot API update already records the active call. A markup
@@ -1470,14 +1470,15 @@ export async function handleTelegramCommunityJoinVerificationCallback(
 
 async function telegramCommunityEventKeyboard(
   event: { id: string; joinUrl: string },
-  rsvpCount: number
+  rsvpCount: number,
+  isLive = false
 ) {
   const config = await communityConfig();
   return {
     inline_keyboard: [
       [{ text: `I’ll join (${rsvpCount})`, callback_data: `event:rsvp:${event.id}` }],
       [
-        { text: 'Join VC', url: telegramVideoChatJoinUrl(event.joinUrl) },
+        telegramGroupCallButton(event.joinUrl, isLive),
         { text: 'Talk privately (paid)', url: config.supportUrl }
       ]
     ]
@@ -1489,7 +1490,7 @@ async function telegramCommunityEventReminderKeyboard(event: { joinUrl: string }
   return {
     inline_keyboard: [
       [
-        { text: 'Join VC', url: telegramVideoChatJoinUrl(event.joinUrl) },
+        telegramGroupCallButton(event.joinUrl, false),
         { text: 'Talk privately (paid)', url: config.supportUrl }
       ]
     ]
@@ -1525,27 +1526,22 @@ export async function announceTelegramCommunityEvent(eventId: string) {
   });
 }
 
-export async function refreshTelegramCommunityEventAnnouncement(eventId: string) {
+export async function refreshTelegramCommunityEventAnnouncement(
+  eventId: string,
+  options: { active?: boolean } = {}
+) {
   const event = await prisma.telegramCommunityEvent.findUnique({
     where: { id: eventId },
     include: { _count: { select: { rsvps: { where: { status: 'GOING' } } } } }
   });
   if (!event) return null;
   if (!event.telegramMessageId) return announceTelegramCommunityEvent(event.id);
-  const keyboard = await telegramCommunityEventKeyboard(event, event._count.rsvps);
-  await callCommunityTelegramApi(CAMPAIGN_BOT, 'editMessageText', {
-    chat_id: event.chatId,
-    message_id: event.telegramMessageId,
-    text: [
-      `🎧 ${event.title}`,
-      event.description,
-      '',
-      `Starts: ${event.startsAt.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`
-    ]
-      .filter(Boolean)
-      .join('\n'),
-    reply_markup: keyboard
-  });
+  const keyboard = await telegramCommunityEventKeyboard(
+    event,
+    event._count.rsvps,
+    Boolean(options.active)
+  );
+  await editCommunityReplyMarkup(CAMPAIGN_BOT, event.chatId, event.telegramMessageId, keyboard);
   return event;
 }
 
@@ -1602,7 +1598,16 @@ export async function handleTelegramCommunityEventCallback(update: CommunityTele
     where: { eventId, status: 'GOING' }
   });
   if (callback.message) {
-    const keyboard = await telegramCommunityEventKeyboard(event, total);
+    const nativeState = await prisma.telegramCommunityState.findUnique({
+      where: {
+        bot_chatId: { bot: NATIVE_VOICE_SCHEDULER_STATE, chatId: event.chatId }
+      },
+      select: { state: true, payload: true }
+    });
+    const nativePayload = nativeVoiceStatePayload(nativeState?.payload);
+    const isLive =
+      nativeState?.state === 'NATIVE_VOICE_ACTIVE' && nativePayload.eventId === event.id;
+    const keyboard = await telegramCommunityEventKeyboard(event, total, isLive);
     await editCommunityReplyMarkup(
       CAMPAIGN_BOT,
       callback.message.chat.id,
