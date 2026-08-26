@@ -31,18 +31,6 @@ function telegramDisplayName(user?: CommunityTelegramMessage['from']) {
   );
 }
 
-async function linkedTelegramDisplayName(userId: string, fallbackName: string) {
-  const session = await prisma.telegramBotSession.findFirst({
-    where: { linkedUserId: userId },
-    orderBy: { updatedAt: 'desc' },
-    select: { username: true }
-  });
-  if (session?.username?.trim()) {
-    return `@${session.username.trim().replace(/^@+/, '').slice(0, 32)}`;
-  }
-  return cleanDisplayName(fallbackName);
-}
-
 async function bridgeConfig() {
   const config = await getSiteConfigMap(BRIDGE_CONFIG_KEYS);
   return {
@@ -130,11 +118,10 @@ export async function mirrorHopeHubLiveChatMessageToTelegram(input: {
   }
 
   try {
-    const senderName = await linkedTelegramDisplayName(input.senderId, input.senderName);
     const sent = await sendCommunityMessage(
       GROUP_HELP_BOT_SLUG,
       config.telegramChatId,
-      `💬 ${senderName}\n\n${input.body.trim().slice(0, 3900)}`
+      input.body.trim().slice(0, 4096)
     );
     return sent.message_id;
   } catch (error) {
