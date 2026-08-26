@@ -32,6 +32,7 @@
     "telegram:voice:login": "tsx scripts/login-telegram-voice-scheduler.ts",
     "telegram:voice:schedule": "tsx scripts/run-telegram-voice-scheduler.ts",
     "telegram:members:sync": "tsx scripts/sync-telegram-group-members.ts",
+    "telegram:managed-bot:create": "tsx scripts/create-telegram-managed-bot.ts",
     "telegram:content:channels:create": "tsx scripts/create-telegram-content-channels.ts",
     "telegram:off-topic:log:create": "tsx scripts/create-telegram-off-topic-moderation-group.ts",
     "push:vapid:generate": "web-push generate-vapid-keys",

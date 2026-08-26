@@ -9,7 +9,8 @@ export const COMMUNITY_BOT_SLUGS = {
   CONTACT: 'contact',
   CONFESSION: 'confession',
   RULES: 'rules',
-  GROUP_HELP: 'hopehubai'
+  GROUP_HELP: 'hopehubai',
+  TOXIC_MOVIE: 'toxic-movie'
 } as const;
 
 export type CommunityBotSlug = (typeof COMMUNITY_BOT_SLUGS)[keyof typeof COMMUNITY_BOT_SLUGS];
@@ -24,7 +25,8 @@ export const TELEGRAM_BOT_DISPLAY_NAMES = {
   CONTACT: 'Hope Hub Contact Bot',
   CONFESSION: 'Hope Hub Confession Bot',
   RULES: 'Hope Hub Rules Bot',
-  GROUP_HELP: 'Hope Hub AI Community Bot'
+  GROUP_HELP: 'Hope Hub AI Community Bot',
+  TOXIC_MOVIE: 'Toxic Movie Updates | Yash — Unofficial'
 } as const;
 
 export const TELEGRAM_BOT_USERNAMES = {
@@ -32,7 +34,8 @@ export const TELEGRAM_BOT_USERNAMES = {
   CONFESSION: '@Hopehubconfessionbot',
   RULES: '@HHrules',
   GROUP_HELP: '@Hopehubbot',
-  WEB: '@Hopehubwebbot'
+  WEB: '@Hopehubwebbot',
+  TOXIC_MOVIE: '@ToxicYashUpdatesBot'
 } as const;
 
 export const TELEGRAM_BOT_URLS = Object.fromEntries(

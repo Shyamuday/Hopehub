@@ -133,6 +133,18 @@ const COMMUNITY_BOTS: Record<
       'chat_member',
       'my_chat_member'
     ]
+  },
+  [COMMUNITY_BOT_SLUGS.TOXIC_MOVIE]: {
+    name: TELEGRAM_BOT_DISPLAY_NAMES.TOXIC_MOVIE,
+    tokenEnv: 'TELEGRAM_TOXIC_MOVIE_BOT_TOKEN',
+    commands: [
+      { command: 'start', description: 'Open Toxic movie updates' },
+      { command: 'latest', description: 'Find the latest verified updates' },
+      { command: 'about', description: 'About this unofficial bot' },
+      { command: 'community', description: 'Join HopeHub India' },
+      { command: 'help', description: 'Show available commands' }
+    ],
+    allowedUpdates: ['message', 'callback_query', 'my_chat_member']
   }
 };
 
