@@ -9,14 +9,16 @@ import {
 const config = {
   telegramGroupHelpGroupChatId: '-100-main',
   telegramGroupHelpOffTopicGroupChatId: '-100-off-topic',
+  telegramGroupHelpOffTopicLogGroupId: '-100-off-topic-log',
   telegramGroupHelpStaffGroupId: '-100-staff',
   telegramGroupHelpLogChannelId: '-100-log'
 };
 
-test('main, off-topic, staff and log chats are admitted by the webhook allow-list', () => {
+test('main, off-topic and both private control rooms are admitted by the webhook allow-list', () => {
   assert.deepEqual(configuredGroupHelpChatIds(config), [
     '-100-main',
     '-100-off-topic',
+    '-100-off-topic-log',
     '-100-staff',
     '-100-log'
   ]);
@@ -46,6 +48,12 @@ test('main and off-topic group commands remain scoped to their own group', () =>
     targetChatId: '-100-off-topic',
     isControlGroup: false
   });
+});
+
+test('the private Chit-Chat moderation group targets only the off-topic group', () => {
+  const context = groupHelpCommandContextFromConfig('-100-off-topic-log', config);
+  assert.equal(context.isControlGroup, true);
+  assert.equal(context.targetChatId, '-100-off-topic');
 });
 
 test('control groups fail closed when the main group is not configured', () => {

@@ -67,6 +67,8 @@ Private support: https://hopehub.in/#live-connect`,
   telegramGroupHelpForwardPolicy: 'warn',
   telegramGroupHelpChannelSenderPolicy: 'delete',
   telegramGroupHelpReportsMode: 'staff group',
+  telegramGroupHelpLogChannelId: '',
+  telegramGroupHelpStaffGroupId: '',
   telegramGroupHelpIdentityChangeAlerts: 'staff only',
   telegramGroupHelpNightMode: 'off',
   telegramGroupHelpStatisticsMode: 'admins only',
@@ -83,4 +85,27 @@ export async function ensureHopeHubOffTopicGroupPolicy(chatId: string) {
     ...HOPE_HUB_OFF_TOPIC_GROUP_POLICY,
     ...existing
   });
+}
+
+export function offTopicPolicyWithPrivateModeration(
+  policy: Record<string, string>,
+  privateGroupId: string
+) {
+  return {
+    ...policy,
+    telegramGroupHelpLogChannelId: privateGroupId,
+    telegramGroupHelpStaffGroupId: privateGroupId,
+    telegramGroupHelpReportsMode: 'staff group'
+  };
+}
+
+export async function connectHopeHubOffTopicModerationGroup(
+  offTopicChatId: string,
+  privateGroupId: string
+) {
+  const existing = await getTelegramCommunityGroupPolicy(offTopicChatId);
+  return saveTelegramCommunityGroupPolicy(
+    offTopicChatId,
+    offTopicPolicyWithPrivateModeration(existing, privateGroupId)
+  );
 }

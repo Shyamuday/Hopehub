@@ -38,6 +38,12 @@ VALUES
     'https://t.me/hopehubtalks',
     'Chit-Chat group public link',
     NOW()
+  ),
+  (
+    'telegramGroupHelpOffTopicLogGroupId',
+    '',
+    'Chit-Chat private moderation group ID',
+    NOW()
   )
 ON CONFLICT ("key") DO NOTHING;
 
@@ -88,6 +94,8 @@ SELECT
     'telegramGroupHelpForwardPolicy', 'warn',
     'telegramGroupHelpChannelSenderPolicy', 'delete',
     'telegramGroupHelpReportsMode', 'staff group',
+    'telegramGroupHelpLogChannelId', '',
+    'telegramGroupHelpStaffGroupId', '',
     'telegramGroupHelpIdentityChangeAlerts', 'staff only',
     'telegramGroupHelpNightMode', 'off',
     'telegramGroupHelpStatisticsMode', 'admins only',

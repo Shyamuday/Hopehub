@@ -82,6 +82,7 @@ import {
   saveGroupHelpStaffPermissions
 } from '../../services/telegram-group-help.staff-permissions.js';
 import { replaceTelegramCommunityRoleAssignment } from '../../services/telegram-group-help.role-assignments.js';
+import { connectHopeHubOffTopicModerationGroup } from '../../services/telegram-group-help.off-topic.js';
 import {
   getTelegramCommunityGroupPolicy,
   saveTelegramCommunityGroupPolicy
@@ -547,6 +548,23 @@ async function persistGroupHelpConfig(
     )
   );
   await markGroupHelpConfigOverrides(updates.map(({ key, value }) => ({ key, value })));
+  if (
+    updates.some(({ key }) =>
+      ['telegramGroupHelpOffTopicGroupChatId', 'telegramGroupHelpOffTopicLogGroupId'].includes(key)
+    )
+  ) {
+    const nextValues = {
+      ...current,
+      ...Object.fromEntries(updates.map(({ key, value }) => [key, value]))
+    };
+    const offTopicChatId = nextValues.telegramGroupHelpOffTopicGroupChatId?.trim();
+    if (offTopicChatId) {
+      await connectHopeHubOffTopicModerationGroup(
+        offTopicChatId,
+        nextValues.telegramGroupHelpOffTopicLogGroupId?.trim() || ''
+      );
+    }
+  }
   await writeAuditLog({
     actorId: actor.id,
     actorRole: actor.role,
@@ -624,6 +642,7 @@ async function groupHelpConnectionHealth(values: Record<string, string>) {
       [
         ['main', values.telegramGroupHelpGroupChatId],
         ['off-topic', values.telegramGroupHelpOffTopicGroupChatId],
+        ['off-topic-log', values.telegramGroupHelpOffTopicLogGroupId],
         ['log', values.telegramGroupHelpLogChannelId],
         ['staff', values.telegramGroupHelpStaffGroupId]
       ].map(async ([kind, chatId]) => {
@@ -1312,6 +1331,9 @@ export function registerAdminTelegramBotRoutes(router: Router) {
           mainGroupConnected: Boolean(globalValues.telegramGroupHelpGroupChatId?.trim()),
           offTopicGroupConnected: Boolean(
             globalValues.telegramGroupHelpOffTopicGroupChatId?.trim()
+          ),
+          offTopicLogGroupConnected: Boolean(
+            globalValues.telegramGroupHelpOffTopicLogGroupId?.trim()
           ),
           logGroupConnected: Boolean(globalValues.telegramGroupHelpLogChannelId?.trim()),
           staffGroupConnected: Boolean(globalValues.telegramGroupHelpStaffGroupId?.trim()),

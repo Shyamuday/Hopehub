@@ -4,6 +4,7 @@ import type { CommunityTelegramMessage } from './telegram-community-bots.types.j
 const COMMAND_GROUP_KEYS = [
   'telegramGroupHelpGroupChatId',
   'telegramGroupHelpOffTopicGroupChatId',
+  'telegramGroupHelpOffTopicLogGroupId',
   'telegramGroupHelpStaffGroupId',
   'telegramGroupHelpLogChannelId'
 ] as const;
@@ -19,6 +20,7 @@ export function configuredGroupHelpChatIds(values: Record<string, string>) {
   return [
     values.telegramGroupHelpGroupChatId,
     values.telegramGroupHelpOffTopicGroupChatId,
+    values.telegramGroupHelpOffTopicLogGroupId,
     values.telegramGroupHelpStaffGroupId,
     values.telegramGroupHelpLogChannelId
   ]
@@ -31,6 +33,21 @@ export function groupHelpCommandContextFromConfig(
   values: Record<string, string>
 ): GroupHelpCommandContext {
   const normalizedSource = sourceChatId.trim().toLowerCase();
+  const offTopicLogGroup = values.telegramGroupHelpOffTopicLogGroupId?.trim().toLowerCase() || '';
+  const offTopicGroupId = values.telegramGroupHelpOffTopicGroupChatId?.trim() || '';
+  if (offTopicLogGroup && normalizedSource === offTopicLogGroup) {
+    return {
+      sourceChatId,
+      targetChatId: offTopicGroupId,
+      isControlGroup: true,
+      ...(offTopicGroupId
+        ? {}
+        : {
+            configurationError:
+              'The HopeHub Chit-Chat group is not configured. Set telegramGroupHelpOffTopicGroupChatId before using its private moderation group.'
+          })
+    };
+  }
   const controlGroups = [values.telegramGroupHelpStaffGroupId, values.telegramGroupHelpLogChannelId]
     .map((value) => value?.trim().toLowerCase())
     .filter(Boolean);

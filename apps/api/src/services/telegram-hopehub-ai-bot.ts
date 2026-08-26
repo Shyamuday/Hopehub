@@ -152,12 +152,15 @@ async function handleCommand(message: CommunityTelegramMessage, values: Record<s
       updateId: message.message_id
     });
     const context = groupHelpCommandContextFromConfig(chatId, values);
+    const auditValues = context.targetChatId
+      ? await config(context.targetChatId).catch(() => values)
+      : values;
     await recordGroupHelpCommandAudit({
       message,
       targetChatId: context.targetChatId || undefined,
       status: 'FAILED',
       detail: error instanceof Error ? error.message : String(error),
-      logChatId: values.telegramGroupHelpLogChannelId
+      logChatId: auditValues.telegramGroupHelpLogChannelId
     }).catch(() => null);
     await sendCommunityMessage(BOT, chatId, groupHelpCommandFailureMessage(error)).catch(
       () => null
@@ -246,12 +249,15 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
   }
   const commandContext = groupHelpCommandContextFromConfig(chatId, values);
   if (commandContext.isControlGroup) {
+    const targetValues = commandContext.targetChatId
+      ? await config(commandContext.targetChatId).catch(() => values)
+      : values;
     await recordGroupHelpStaffGroupMember(
       update,
-      values.telegramGroupHelpStaffGroupId || '',
-      values.telegramGroupHelpGroupChatId || '',
+      targetValues.telegramGroupHelpStaffGroupId || '',
+      commandContext.targetChatId || '',
       GROUP_HELP_DEFAULT_STAFF_COMMANDS,
-      values.telegramGroupHelpLogChannelId || ''
+      targetValues.telegramGroupHelpLogChannelId || ''
     );
     if (commandContext.configurationError) {
       if (message?.text?.startsWith('/')) {

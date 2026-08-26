@@ -421,6 +421,17 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
     defaultValue: '@hopehubtalks'
   },
   {
+    key: 'telegramGroupHelpOffTopicLogGroupId',
+    label: 'Chit-Chat private moderation group ID',
+    description:
+      'Private group that exclusively receives Chit-Chat warnings, mutes, bans, deletions, reports and moderation controls.',
+    section: 'connection',
+    type: 'text',
+    maxLength: 80,
+    placeholder: '-1001234567890',
+    defaultValue: ''
+  },
+  {
     key: 'telegramGroupHelpMainGroupUrl',
     label: 'Main support group public link',
     description:
