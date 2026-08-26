@@ -5,7 +5,8 @@ import {
   HOMEOPATHY_CREDENTIAL_REVIEW_PREFIX,
   HOMEOPATHY_PROFILE_DRAFT_REASON,
   isHomeopathyApprovalFlowSuspension,
-  isHomeopathyCredentialReview
+  isHomeopathyCredentialReview,
+  normalizeProfessionalRegistrationNumber
 } from './homeopathy-provider-approval.constants.js';
 
 test('homeopathy onboarding and review states allow profile completion login', () => {
@@ -17,6 +18,12 @@ test('homeopathy onboarding and review states allow profile completion login', (
     ),
     true
   );
+});
+
+test('normalizes professional registration numbers for duplicate protection', () => {
+  assert.equal(normalizeProfessionalRegistrationNumber('  MH-123 / 2024 '), 'mh1232024');
+  assert.equal(normalizeProfessionalRegistrationNumber('ab'), null);
+  assert.equal(normalizeProfessionalRegistrationNumber(null), null);
 });
 
 test('ordinary admin suspensions remain hard login blocks', () => {

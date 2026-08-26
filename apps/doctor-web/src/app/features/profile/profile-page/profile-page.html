@@ -13,6 +13,26 @@
     }
   </div>
 
+  @if (isHomeopathyProvider && approvalStatus !== 'NOT_REQUIRED') {
+    <aside class="approval-banner" [attr.data-status]="approvalStatus">
+      <div>
+        <strong>{{ approvalStatusTitle() }}</strong>
+        @if (approvalNote) {
+          <span>{{ approvalNote }}</span>
+        } @else if (approvalStatus === 'DRAFT') {
+          <span
+            >Verify your email, complete every required field, and upload your registration
+            credential.</span
+          >
+        } @else if (approvalStatus === 'PENDING') {
+          <span>You can continue using your account while an admin verifies your credentials.</span>
+        } @else if (approvalStatus === 'APPROVED') {
+          <span>Your profile is eligible for publishing and consultations.</span>
+        }
+      </div>
+    </aside>
+  }
+
   @if (setupIsComplete()) {
     <nav class="setup-stepper" aria-label="Provider profile setup steps">
       @for (step of setupStepItems(); track step.id) {
@@ -63,19 +83,45 @@
           @if (telegramLoading()) {
             <span>Checking your Telegram connection…</span>
           } @else if (telegramConnection()?.connected) {
-            <span>Connected{{ telegramConnection()?.telegramUsername ? ' as @' + telegramConnection()?.telegramUsername : telegramConnection()?.displayName ? ' as ' + telegramConnection()?.displayName : '' }}. Receive provider updates and manage your queue from Telegram.</span>
+            <span
+              >Connected{{
+                telegramConnection()?.telegramUsername
+                  ? ' as @' + telegramConnection()?.telegramUsername
+                  : telegramConnection()?.displayName
+                    ? ' as ' + telegramConnection()?.displayName
+                    : ''
+              }}. Receive provider updates and manage your queue from Telegram.</span
+            >
           } @else {
-            <span>Connect once to receive provider updates and open your Hope Hub tools from Telegram.</span>
+            <span
+              >Connect once to receive provider updates and open your Hope Hub tools from
+              Telegram.</span
+            >
           }
         </div>
         <div class="telegram-connect-actions">
           @if (telegramConnection()?.connected) {
-            <app-button type="button" size="sm" variant="outline" (click)="disconnectTelegram()" [disabled]="telegramConnecting()">Disconnect</app-button>
+            <app-button
+              type="button"
+              size="sm"
+              variant="outline"
+              (click)="disconnectTelegram()"
+              [disabled]="telegramConnecting()"
+              >Disconnect</app-button
+            >
           } @else {
-            <app-button type="button" size="sm" (click)="connectTelegram()" [disabled]="telegramConnecting()">{{ telegramConnecting() ? 'Opening…' : 'Connect Telegram' }}</app-button>
+            <app-button
+              type="button"
+              size="sm"
+              (click)="connectTelegram()"
+              [disabled]="telegramConnecting()"
+              >{{ telegramConnecting() ? 'Opening…' : 'Connect Telegram' }}</app-button
+            >
           }
           @if (telegramConnection()?.communityUrl; as communityUrl) {
-            <a class="telegram-community-link" [href]="communityUrl" target="_blank" rel="noopener">Join community</a>
+            <a class="telegram-community-link" [href]="communityUrl" target="_blank" rel="noopener"
+              >Join community</a
+            >
           }
         </div>
       </div>
@@ -110,6 +156,32 @@
           <input id="registrationNo" [formField]="profileForm.registrationNo" />
         }
       </div>
+
+      @if (isHomeopathyProvider) {
+        <div class="credential-upload">
+          <div>
+            <strong>Professional registration credential</strong>
+            <span>{{
+              credentialDocumentFileName || 'Upload a PDF or clear image (maximum 5 MB).'
+            }}</span>
+          </div>
+          <label class="credential-upload__button">
+            {{
+              credentialUploading
+                ? 'Uploading…'
+                : credentialDocumentFileName
+                  ? 'Replace file'
+                  : 'Choose file'
+            }}
+            <input
+              type="file"
+              accept="application/pdf,image/jpeg,image/png,image/webp"
+              [disabled]="credentialUploading"
+              (change)="uploadCredentialDocument($event)"
+            />
+          </label>
+        </div>
+      }
 
       @if (canPrescribe) {
         <label for="defaultApproach">Default prescribing approach</label>
@@ -189,7 +261,9 @@
               <option [value]="option.value">{{ option.label }}</option>
             }
           </select>
-          <p class="field-hint">This is the first role people will see. Your other roles remain active.</p>
+          <p class="field-hint">
+            This is the first role people will see. Your other roles remain active.
+          </p>
         }
 
         <details class="subtype-service-guide">
@@ -406,7 +480,10 @@
           <div>
             <span>Simple setup</span>
             <strong>Start with one service people can understand at a glance.</strong>
-            <p>Choose a plan, set a price and duration, then add offers only if you need them. You can edit everything later.</p>
+            <p>
+              Choose a plan, set a price and duration, then add offers only if you need them. You
+              can edit everything later.
+            </p>
           </div>
           <ol>
             <li><b>1</b> Choose a plan</li>
@@ -433,14 +510,24 @@
               <div class="service-editor-heading">
                 <div>
                   <small>Service {{ $index + 1 }}</small>
-                  <strong>{{ service.title === customServiceTitleValue ? 'Custom service' : service.title || 'New service' }}</strong>
+                  <strong>{{
+                    service.title === customServiceTitleValue
+                      ? 'Custom service'
+                      : service.title || 'New service'
+                  }}</strong>
                 </div>
                 <span>{{ servicePricingSummary(service) }}</span>
               </div>
               @if (service.approvalStatus === 'PENDING') {
-                <p class="service-editor-note">Pending Hope Hub approval: {{ service.approvalReason || 'Pricing review required.' }}</p>
+                <p class="service-editor-note">
+                  Pending Hope Hub approval:
+                  {{ service.approvalReason || 'Pricing review required.' }}
+                </p>
               } @else if (service.approvalStatus === 'REJECTED') {
-                <p class="service-editor-note">Needs changes: {{ service.approvalReason || 'Please update this service and resubmit it.' }}</p>
+                <p class="service-editor-note">
+                  Needs changes:
+                  {{ service.approvalReason || 'Please update this service and resubmit it.' }}
+                </p>
               }
               @if (selectedProviderRoleOptions().length > 1) {
                 <select
@@ -481,7 +568,10 @@
                   Start from a ready plan (optional)
                   <select #serviceTemplate>
                     <option value="">Choose a ready plan</option>
-                    @for (template of pricingTemplatesForRole(service.providerRole); track template.id) {
+                    @for (
+                      template of pricingTemplatesForRole(service.providerRole);
+                      track template.id
+                    ) {
                       <option [value]="template.id">{{ template.title }}</option>
                     }
                   </select>
@@ -491,7 +581,8 @@
                 </button>
               </div>
               <p class="service-editor-note">
-                A ready plan fills the fields below. You remain in control of every price and duration.
+                A ready plan fills the fields below. You remain in control of every price and
+                duration.
               </p>
               <div class="service-core-fields">
                 <label>
@@ -506,8 +597,7 @@
                   </select>
                 </label>
                 @if (
-                  service.pricingMode !== 'FREE_VOLUNTEER' &&
-                  service.pricingMode !== 'PER_MINUTE'
+                  service.pricingMode !== 'FREE_VOLUNTEER' && service.pricingMode !== 'PER_MINUTE'
                 ) {
                   <label>
                     Session price (₹)
@@ -541,7 +631,9 @@
                       max="240"
                       [value]="service.durationMinutes || 30"
                       placeholder="45"
-                      (input)="updateCareService($index, 'durationMinutes', $any($event.target).value)"
+                      (input)="
+                        updateCareService($index, 'durationMinutes', $any($event.target).value)
+                      "
                     />
                   </label>
                 }
@@ -549,7 +641,11 @@
               <section class="service-customer-preview" aria-label="Client price preview">
                 <div>
                   <span>Client preview</span>
-                  <strong>{{ service.title === customServiceTitleValue ? 'Your custom service' : service.title || 'Your service title' }}</strong>
+                  <strong>{{
+                    service.title === customServiceTitleValue
+                      ? 'Your custom service'
+                      : service.title || 'Your service title'
+                  }}</strong>
                   <small>{{ servicePricingSummary(service) }}</small>
                 </div>
                 <div>
@@ -593,14 +689,22 @@
                         max="50000"
                         [value]="service.offerBookingLimit || ''"
                         placeholder="For example, 10"
-                        (input)="updateCareService($index, 'offerBookingLimit', $any($event.target).value)"
+                        (input)="
+                          updateCareService($index, 'offerBookingLimit', $any($event.target).value)
+                        "
                       />
                     </label>
                     <label class="checkbox">
                       <input
                         type="checkbox"
                         [checked]="service.pauseOfferWhenNoSlots === true"
-                        (change)="updateCareService($index, 'pauseOfferWhenNoSlots', $any($event.target).checked)"
+                        (change)="
+                          updateCareService(
+                            $index,
+                            'pauseOfferWhenNoSlots',
+                            $any($event.target).checked
+                          )
+                        "
                       />
                       Pause this offer when I have no open slots
                     </label>
@@ -608,32 +712,107 @@
                       type="number"
                       [value]="rupees(service.firstSessionPriceInPaise)"
                       placeholder="First-session offer ₹"
-                      (input)="updateCareService($index, 'firstSessionPriceInPaise', $any($event.target).value)"
+                      (input)="
+                        updateCareService(
+                          $index,
+                          'firstSessionPriceInPaise',
+                          $any($event.target).value
+                        )
+                      "
                     />
                   }
                   @if (showFollowUpPrice(service)) {
-                    <input type="number" [value]="rupees(service.followUpPriceInPaise)" placeholder="Follow-up ₹" (input)="updateCareService($index, 'followUpPriceInPaise', $any($event.target).value)" />
-                    <input type="number" min="1" max="1000" [value]="service.followUpSessionLimit || ''" placeholder="Follow-up sessions (blank = ongoing)" (input)="updateCareService($index, 'followUpSessionLimit', $any($event.target).value)" />
-                    <input type="number" [value]="service.introSessionLimit || 1" placeholder="Intro limit" (input)="updateCareService($index, 'introSessionLimit', $any($event.target).value)" />
+                    <input
+                      type="number"
+                      [value]="rupees(service.followUpPriceInPaise)"
+                      placeholder="Follow-up ₹"
+                      (input)="
+                        updateCareService($index, 'followUpPriceInPaise', $any($event.target).value)
+                      "
+                    />
+                    <input
+                      type="number"
+                      min="1"
+                      max="1000"
+                      [value]="service.followUpSessionLimit || ''"
+                      placeholder="Follow-up sessions (blank = ongoing)"
+                      (input)="
+                        updateCareService($index, 'followUpSessionLimit', $any($event.target).value)
+                      "
+                    />
+                    <input
+                      type="number"
+                      [value]="service.introSessionLimit || 1"
+                      placeholder="Intro limit"
+                      (input)="
+                        updateCareService($index, 'introSessionLimit', $any($event.target).value)
+                      "
+                    />
                   }
                   @if (showPackageFields(service)) {
-                    <input type="number" [value]="service.packageSessionCount || ''" placeholder="Package sessions" (input)="updateCareService($index, 'packageSessionCount', $any($event.target).value)" />
-                    <input type="number" [value]="rupees(service.packagePriceInPaise)" placeholder="Package ₹" (input)="updateCareService($index, 'packagePriceInPaise', $any($event.target).value)" />
+                    <input
+                      type="number"
+                      [value]="service.packageSessionCount || ''"
+                      placeholder="Package sessions"
+                      (input)="
+                        updateCareService($index, 'packageSessionCount', $any($event.target).value)
+                      "
+                    />
+                    <input
+                      type="number"
+                      [value]="rupees(service.packagePriceInPaise)"
+                      placeholder="Package ₹"
+                      (input)="
+                        updateCareService($index, 'packagePriceInPaise', $any($event.target).value)
+                      "
+                    />
                   }
                   @if (showPerMinuteFields(service)) {
-                    <input type="number" [value]="service.freeMinutes || 0" placeholder="Free minutes" (input)="updateCareService($index, 'freeMinutes', $any($event.target).value)" />
-                    <input type="number" [value]="rupees(service.pricePerMinuteInPaise)" placeholder="₹ per minute" (input)="updateCareService($index, 'pricePerMinuteInPaise', $any($event.target).value)" />
+                    <input
+                      type="number"
+                      [value]="service.freeMinutes || 0"
+                      placeholder="Free minutes"
+                      (input)="updateCareService($index, 'freeMinutes', $any($event.target).value)"
+                    />
+                    <input
+                      type="number"
+                      [value]="rupees(service.pricePerMinuteInPaise)"
+                      placeholder="₹ per minute"
+                      (input)="
+                        updateCareService(
+                          $index,
+                          'pricePerMinuteInPaise',
+                          $any($event.target).value
+                        )
+                      "
+                    />
                   }
-                  <input [value]="service.description || ''" placeholder="Description" (input)="updateCareService($index, 'description', $any($event.target).value)" />
-                  <label class="checkbox"><input type="checkbox" [checked]="service.isActive !== false" (change)="updateCareService($index, 'isActive', $any($event.target).checked)" /> Show this service to clients</label>
-                  <button type="button" class="remove-service" (click)="removeCareService($index)">Remove service</button>
+                  <input
+                    [value]="service.description || ''"
+                    placeholder="Description"
+                    (input)="updateCareService($index, 'description', $any($event.target).value)"
+                  />
+                  <label class="checkbox"
+                    ><input
+                      type="checkbox"
+                      [checked]="service.isActive !== false"
+                      (change)="updateCareService($index, 'isActive', $any($event.target).checked)"
+                    />
+                    Show this service to clients</label
+                  >
+                  <button type="button" class="remove-service" (click)="removeCareService($index)">
+                    Remove service
+                  </button>
                 </div>
               </details>
             </article>
           }
-          <button type="button" class="add-service" (click)="addCareService()">Add custom service</button>
+          <button type="button" class="add-service" (click)="addCareService()">
+            Add custom service
+          </button>
           <p class="service-payout-preview">
-            Hope Hub coupons do not stack with your offer. The user automatically receives whichever price is lower.
+            Hope Hub coupons do not stack with your offer. The user automatically receives whichever
+            price is lower.
           </p>
           @if (pricingHistory().length) {
             <details class="availability-settings">
@@ -658,11 +837,33 @@
         <details class="availability-settings">
           <summary>Booking limits and matching</summary>
           <div>
-            <label class="checkbox"><input type="checkbox" [formField]="profileForm.autoMatchEnabled" /> Let Hope Hub suggest my profile to users</label>
-            <label class="checkbox"><input type="checkbox" [formField]="profileForm.acceptingNewUsers" /> Accepting new bookings</label>
+            <label class="checkbox"
+              ><input type="checkbox" [formField]="profileForm.autoMatchEnabled" /> Let Hope Hub
+              suggest my profile to users</label
+            >
+            <label class="checkbox"
+              ><input type="checkbox" [formField]="profileForm.acceptingNewUsers" /> Accepting new
+              bookings</label
+            >
             <div class="grid two">
-              <div><label for="maxSessionsPerDay">Max bookings per day</label><input id="maxSessionsPerDay" type="number" [formField]="profileForm.maxSessionsPerDay" placeholder="No daily limit" /></div>
-              <div><label for="maxSessionsPerWeek">Max bookings per week</label><input id="maxSessionsPerWeek" type="number" [formField]="profileForm.maxSessionsPerWeek" placeholder="No weekly limit" /></div>
+              <div>
+                <label for="maxSessionsPerDay">Max bookings per day</label
+                ><input
+                  id="maxSessionsPerDay"
+                  type="number"
+                  [formField]="profileForm.maxSessionsPerDay"
+                  placeholder="No daily limit"
+                />
+              </div>
+              <div>
+                <label for="maxSessionsPerWeek">Max bookings per week</label
+                ><input
+                  id="maxSessionsPerWeek"
+                  type="number"
+                  [formField]="profileForm.maxSessionsPerWeek"
+                  placeholder="No weekly limit"
+                />
+              </div>
             </div>
           </div>
         </details>
@@ -706,7 +907,9 @@
                 <b>{{ servicePreviewPrice(previewService) }}</b>
               </div>
               @if (profilePreviewLanguages().length) {
-                <small class="preview-languages">Available in {{ profilePreviewLanguages().join(', ') }}</small>
+                <small class="preview-languages"
+                  >Available in {{ profilePreviewLanguages().join(', ') }}</small
+                >
               }
             </article>
           </section>
@@ -722,9 +925,20 @@
       </span>
     }
     @if (canGoToPreviousSetupStep()) {
-      <app-button type="button" variant="ghost" (click)="previousSetupStep()" [disabled]="isLoading || saving">Back</app-button>
+      <app-button
+        type="button"
+        variant="ghost"
+        (click)="previousSetupStep()"
+        [disabled]="isLoading || saving"
+        >Back</app-button
+      >
     }
-    <app-button type="button" (click)="saveAndContinue()" [disabled]="isLoading || saving" [loading]="saving">
+    <app-button
+      type="button"
+      (click)="saveAndContinue()"
+      [disabled]="isLoading || saving"
+      [loading]="saving"
+    >
       {{ setupContinueLabel() }}
     </app-button>
   </app-action-bar>

@@ -7,6 +7,7 @@ import {
   createEmailVerificationToken,
   verifyEmailToken
 } from '../../services/email-verification.js';
+import { submitHomeopathyProviderForApprovalIfReady } from '../../services/homeopathy-provider-approval.js';
 
 export function registerAuthEmailVerificationRoutes(router: Router) {
   router.post(
@@ -17,7 +18,11 @@ export function registerAuthEmailVerificationRoutes(router: Router) {
       if (!user) {
         return res.status(400).json({ message: 'Invalid or expired verification link.' });
       }
-      res.json({ user, message: 'Email verified successfully.' });
+      const approvalSubmission =
+        user.role === Role.DOCTOR
+          ? await submitHomeopathyProviderForApprovalIfReady(user.id)
+          : undefined;
+      res.json({ user, approvalSubmission, message: 'Email verified successfully.' });
     })
   );
 

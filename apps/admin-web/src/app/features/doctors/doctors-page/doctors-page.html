@@ -24,21 +24,40 @@
     <div class="panel-header">
       <div>
         <h2>Pricing approvals</h2>
-        <p class="panel-hint">Review services that are free, unusually priced, or deeply discounted.</p>
+        <p class="panel-hint">
+          Review services that are free, unusually priced, or deeply discounted.
+        </p>
       </div>
       <span>{{ pendingPricingReviews().length }} waiting</span>
     </div>
     <div class="service-editor">
       @for (service of pendingPricingReviews(); track service.id) {
         <article class="service-editor-card">
-          <strong>{{ service.provider?.name || service.provider?.email || 'Provider' }} · {{ service.title }}</strong>
+          <strong
+            >{{ service.provider?.name || service.provider?.email || 'Provider' }} ·
+            {{ service.title }}</strong
+          >
           <p>
             ₹{{ service.priceInPaise / 100 }} · {{ service.durationMinutes }} min ·
             {{ service.approvalReason || 'Review required' }}
           </p>
           <div class="template-row">
-            <button type="button" class="btn-primary" [disabled]="mutating()" (click)="reviewServicePricing(service, 'APPROVED')">Approve</button>
-            <button type="button" class="btn-secondary" [disabled]="mutating()" (click)="reviewServicePricing(service, 'REJECTED')">Request changes</button>
+            <button
+              type="button"
+              class="btn-primary"
+              [disabled]="mutating()"
+              (click)="reviewServicePricing(service, 'APPROVED')"
+            >
+              Approve
+            </button>
+            <button
+              type="button"
+              class="btn-secondary"
+              [disabled]="mutating()"
+              (click)="reviewServicePricing(service, 'REJECTED')"
+            >
+              Request changes
+            </button>
           </div>
         </article>
       }
@@ -327,7 +346,9 @@
                   <input
                     [value]="customServiceTitle(service)"
                     placeholder="Enter custom service name"
-                    (input)="updateCareService('create', $index, 'title', $any($event.target).value)"
+                    (input)="
+                      updateCareService('create', $index, 'title', $any($event.target).value)
+                    "
                   />
                 }
                 <div class="template-row">
@@ -385,20 +406,36 @@
                     type="datetime-local"
                     [value]="dateTimeLocalValue(service.offerEndsAt)"
                     title="Offer end time"
-                    (input)="updateCareService('create', $index, 'offerEndsAt', $any($event.target).value)"
+                    (input)="
+                      updateCareService('create', $index, 'offerEndsAt', $any($event.target).value)
+                    "
                   />
                   <input
                     type="number"
                     min="1"
                     [value]="service.offerBookingLimit || ''"
                     placeholder="Total offer bookings"
-                    (input)="updateCareService('create', $index, 'offerBookingLimit', $any($event.target).value)"
+                    (input)="
+                      updateCareService(
+                        'create',
+                        $index,
+                        'offerBookingLimit',
+                        $any($event.target).value
+                      )
+                    "
                   />
                   <label>
                     <input
                       type="checkbox"
                       [checked]="service.pauseOfferWhenNoSlots || false"
-                      (change)="updateCareService('create', $index, 'pauseOfferWhenNoSlots', $any($event.target).checked)"
+                      (change)="
+                        updateCareService(
+                          'create',
+                          $index,
+                          'pauseOfferWhenNoSlots',
+                          $any($event.target).checked
+                        )
+                      "
                     />
                     Pause offer when no slots are available
                   </label>
@@ -422,7 +459,14 @@
                     min="1"
                     [value]="service.followUpSessionLimit || ''"
                     placeholder="Follow-up sessions (blank = ongoing)"
-                    (input)="updateCareService('create', $index, 'followUpSessionLimit', $any($event.target).value)"
+                    (input)="
+                      updateCareService(
+                        'create',
+                        $index,
+                        'followUpSessionLimit',
+                        $any($event.target).value
+                      )
+                    "
                   />
                   <input
                     type="number"
@@ -575,7 +619,11 @@
   <div class="panel-header">
     <div>
       <h2>
-        {{ workspaceKey() === 'homeopathy' ? 'Homeopathy approvals' : 'Inactive ' + providerSingularLabel() + ' accounts' }}
+        {{
+          workspaceKey() === 'homeopathy'
+            ? 'Homeopathy approvals'
+            : 'Inactive ' + providerSingularLabel() + ' accounts'
+        }}
       </h2>
       <p class="panel-hint">
         {{
@@ -588,8 +636,12 @@
     <button type="button" class="btn-secondary" (click)="showSetupReview.set(!showSetupReview())">
       {{
         showSetupReview()
-          ? (workspaceKey() === 'homeopathy' ? 'Close approvals' : 'Close inactive accounts')
-          : (workspaceKey() === 'homeopathy' ? 'Open approvals' : 'Open inactive accounts')
+          ? workspaceKey() === 'homeopathy'
+            ? 'Close approvals'
+            : 'Close inactive accounts'
+          : workspaceKey() === 'homeopathy'
+            ? 'Open approvals'
+            : 'Open inactive accounts'
       }}
     </button>
   </div>
@@ -884,6 +936,25 @@
           </a>
         </div>
         <hopehub-detail-rows [rows]="selectedDoctorDetailRows()" />
+        @if (selectedDoctor.doctorProfile?.providerDomain === 'HOMEOPATHY') {
+          <div class="credential-review-row">
+            <div>
+              <strong>Registration credential</strong>
+              <span>{{
+                selectedDoctor.doctorProfile?.credentialDocumentFileName || 'Not uploaded'
+              }}</span>
+            </div>
+            @if (selectedDoctor.doctorProfile?.credentialDocumentFileName) {
+              <button
+                type="button"
+                class="secondary"
+                (click)="openCredentialDocument(selectedDoctor)"
+              >
+                Open credential
+              </button>
+            }
+          </div>
+        }
         <div
           class="admin-readiness-box"
           [class.admin-readiness-box--ready]="selectedReadiness()?.ready"
@@ -897,7 +968,9 @@
                 @if (readinessLoading()) {
                   Checking provider readiness...
                 } @else {
-                  {{ selectedReadiness()?.message || 'Could not check whether this profile is ready.' }}
+                  {{
+                    selectedReadiness()?.message || 'Could not check whether this profile is ready.'
+                  }}
                 }
               </p>
             </div>
@@ -1342,9 +1415,26 @@
                   <article class="service-editor-card">
                     @if (service.approvalStatus === 'PENDING') {
                       <div class="template-row">
-                        <span>Pending pricing review: {{ service.approvalReason || 'Review required' }}</span>
-                        <button type="button" class="btn-primary" [disabled]="mutating()" (click)="reviewServicePricing(service, 'APPROVED')">Approve</button>
-                        <button type="button" class="btn-secondary" [disabled]="mutating()" (click)="reviewServicePricing(service, 'REJECTED')">Request changes</button>
+                        <span
+                          >Pending pricing review:
+                          {{ service.approvalReason || 'Review required' }}</span
+                        >
+                        <button
+                          type="button"
+                          class="btn-primary"
+                          [disabled]="mutating()"
+                          (click)="reviewServicePricing(service, 'APPROVED')"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          type="button"
+                          class="btn-secondary"
+                          [disabled]="mutating()"
+                          (click)="reviewServicePricing(service, 'REJECTED')"
+                        >
+                          Request changes
+                        </button>
                       </div>
                     }
                     <select
@@ -1362,7 +1452,9 @@
                       <input
                         [value]="customServiceTitle(service)"
                         placeholder="Enter custom service name"
-                        (input)="updateCareService('edit', $index, 'title', $any($event.target).value)"
+                        (input)="
+                          updateCareService('edit', $index, 'title', $any($event.target).value)
+                        "
                       />
                     }
                     <div class="template-row">
@@ -1426,20 +1518,41 @@
                         type="datetime-local"
                         [value]="dateTimeLocalValue(service.offerEndsAt)"
                         title="Offer end time"
-                        (input)="updateCareService('edit', $index, 'offerEndsAt', $any($event.target).value)"
+                        (input)="
+                          updateCareService(
+                            'edit',
+                            $index,
+                            'offerEndsAt',
+                            $any($event.target).value
+                          )
+                        "
                       />
                       <input
                         type="number"
                         min="1"
                         [value]="service.offerBookingLimit || ''"
                         placeholder="Total offer bookings"
-                        (input)="updateCareService('edit', $index, 'offerBookingLimit', $any($event.target).value)"
+                        (input)="
+                          updateCareService(
+                            'edit',
+                            $index,
+                            'offerBookingLimit',
+                            $any($event.target).value
+                          )
+                        "
                       />
                       <label>
                         <input
                           type="checkbox"
                           [checked]="service.pauseOfferWhenNoSlots || false"
-                          (change)="updateCareService('edit', $index, 'pauseOfferWhenNoSlots', $any($event.target).checked)"
+                          (change)="
+                            updateCareService(
+                              'edit',
+                              $index,
+                              'pauseOfferWhenNoSlots',
+                              $any($event.target).checked
+                            )
+                          "
                         />
                         Pause offer when no slots are available
                       </label>
@@ -1463,7 +1576,14 @@
                         min="1"
                         [value]="service.followUpSessionLimit || ''"
                         placeholder="Follow-up sessions (blank = ongoing)"
-                        (input)="updateCareService('edit', $index, 'followUpSessionLimit', $any($event.target).value)"
+                        (input)="
+                          updateCareService(
+                            'edit',
+                            $index,
+                            'followUpSessionLimit',
+                            $any($event.target).value
+                          )
+                        "
                       />
                       <input
                         type="number"

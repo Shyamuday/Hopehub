@@ -10,6 +10,7 @@ import {
   providerClassificationFromLegacy,
   providerHasRoleCategory
 } from '@hopehub/contracts';
+import { normalizeProfessionalRegistrationNumber } from './homeopathy-provider-approval.constants.js';
 
 export const HOMEOPATHIC_DOCTOR_TYPE_LABELS: Record<HomeopathicDoctorType, string> = {
   CHIEF_CONSULTANT: 'Homeopathy Chief Consultant',
@@ -254,6 +255,16 @@ export function capabilitiesForDoctorProfile(input?: {
 export const doctorProfileSelect = {
   specialty: true,
   registrationNo: true,
+  registrationNoNormalized: true,
+  approvalStatus: true,
+  approvalRequestedAt: true,
+  approvedAt: true,
+  approvedById: true,
+  approvalNote: true,
+  credentialDocumentKey: true,
+  credentialDocumentFileName: true,
+  credentialDocumentMimeType: true,
+  credentialDocumentUploadedAt: true,
   isAvailable: true,
   doctorType: true,
   providerDomain: true,
@@ -425,7 +436,8 @@ export function toDoctorProfilePayload(body: z.infer<ReturnType<typeof doctorPro
       specialtyFocus,
       specialty: body.specialty
     }),
-    registrationNo: body.registrationNo || null,
+    registrationNo: body.registrationNo?.trim() || null,
+    registrationNoNormalized: normalizeProfessionalRegistrationNumber(body.registrationNo),
     isAvailable: body.isAvailable ?? true
   };
 }

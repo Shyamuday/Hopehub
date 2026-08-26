@@ -1,4 +1,4 @@
-import { ProviderDomain, Role } from '@prisma/client';
+import { ProviderApprovalStatus, ProviderDomain, Role } from '@prisma/client';
 import { prisma } from '../db.js';
 import { homeopathyProviderApprovalReadiness } from '../doctor-capabilities.js';
 import { writeAuditLog } from '../utils/helpers.js';
@@ -8,6 +8,7 @@ import {
   isHomeopathyApprovalFlowSuspension,
   isHomeopathyCredentialReview
 } from '../constants/homeopathy-provider-approval.constants.js';
+import { notifyProviderApprovalStatus } from './provider-approval-notifications.js';
 
 export {
   HOMEOPATHY_CREDENTIAL_REVIEW_PREFIX,
@@ -81,6 +82,7 @@ export async function submitHomeopathyProviderForApprovalIfReady(userId: string)
       providerDomain: true,
       suspendedAt: true,
       suspendedReason: true,
+      approvalStatus: true,
       specialty: true,
       registrationNo: true,
       user: { select: { id: true, name: true, email: true, mobile: true } }
@@ -90,14 +92,19 @@ export async function submitHomeopathyProviderForApprovalIfReady(userId: string)
   if (!provider || provider.providerDomain !== ProviderDomain.HOMEOPATHY) {
     return { status: 'NOT_APPLICABLE' as const };
   }
-  if (!provider.suspendedAt) return { status: 'APPROVED' as const };
+  if (provider.approvalStatus === ProviderApprovalStatus.APPROVED || !provider.suspendedAt) {
+    return { status: 'APPROVED' as const };
+  }
   if (!isHomeopathyApprovalFlowSuspension(provider.suspendedReason)) {
     return { status: 'ADMIN_SUSPENDED' as const };
   }
 
   const readiness = await homeopathyProviderApprovalReadiness(userId);
   if (!readiness.ready) return { status: 'INCOMPLETE' as const, readiness };
-  if (isHomeopathyCredentialReview(provider.suspendedReason)) {
+  if (
+    provider.approvalStatus === ProviderApprovalStatus.PENDING ||
+    isHomeopathyCredentialReview(provider.suspendedReason)
+  ) {
     await notifyApprovalRequestOnce(provider);
     return { status: 'PENDING_REVIEW' as const, readiness };
   }
@@ -110,6 +117,9 @@ export async function submitHomeopathyProviderForApprovalIfReady(userId: string)
     },
     data: {
       suspendedReason: `${HOMEOPATHY_CREDENTIAL_REVIEW_PREFIX}.`,
+      approvalStatus: ProviderApprovalStatus.PENDING,
+      approvalRequestedAt: new Date(),
+      approvalNote: null,
       suspendedById: null,
       showOnWebsite: false,
       isOnline: false
@@ -151,7 +161,8 @@ export async function approveHomeopathyProviderAccount(input: {
         select: {
           providerDomain: true,
           suspendedAt: true,
-          suspendedReason: true
+          suspendedReason: true,
+          approvalStatus: true
         }
       }
     }
@@ -168,10 +179,16 @@ export async function approveHomeopathyProviderAccount(input: {
       'This approval action is only for homeopathy providers.'
     );
   }
-  if (!existing.doctorProfile.suspendedAt) {
+  if (
+    existing.doctorProfile.approvalStatus === ProviderApprovalStatus.APPROVED ||
+    !existing.doctorProfile.suspendedAt
+  ) {
     return { alreadyApproved: true, doctor: existing };
   }
-  if (!isHomeopathyCredentialReview(existing.doctorProfile.suspendedReason)) {
+  if (
+    existing.doctorProfile.approvalStatus !== ProviderApprovalStatus.PENDING &&
+    !isHomeopathyCredentialReview(existing.doctorProfile.suspendedReason)
+  ) {
     const readiness = await homeopathyProviderApprovalReadiness(input.doctorId);
     if (!readiness.ready) {
       throw new HomeopathyProviderApprovalError(
@@ -203,6 +220,10 @@ export async function approveHomeopathyProviderAccount(input: {
         suspendedAt: null,
         suspendedReason: null,
         suspendedById: null,
+        approvalStatus: ProviderApprovalStatus.APPROVED,
+        approvedAt: new Date(),
+        approvedById: input.actorId,
+        approvalNote: null,
         isAvailable: true,
         isOnline: false,
         showOnWebsite: true
@@ -231,6 +252,7 @@ export async function approveHomeopathyProviderAccount(input: {
     summary: 'Homeopathy credentials approved and provider activated.',
     metadata: { workspace: 'homeopathy', credentialReview: true }
   });
+  await notifyProviderApprovalStatus({ userId: doctor.id, status: 'APPROVED' });
 
   return { alreadyApproved: false, doctor };
 }

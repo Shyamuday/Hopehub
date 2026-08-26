@@ -47,6 +47,16 @@ export function answerTelegramCallback(
   });
 }
 
+export function editTelegramMessageReplyMarkup(
+  kind: TelegramBotKind,
+  input: { chat_id: string; message_id: number; reply_markup: SendMessagePayload['reply_markup'] }
+) {
+  return callTelegramApi(kind, 'editMessageReplyMarkup', {
+    ...input,
+    reply_markup: input.reply_markup ? colorizeTelegramKeyboard(input.reply_markup) : undefined
+  });
+}
+
 export async function setTelegramWebhook(input: {
   kind: TelegramBotKind;
   publicApiUrl?: string;

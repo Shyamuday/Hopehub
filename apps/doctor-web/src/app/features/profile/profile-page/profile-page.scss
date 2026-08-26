@@ -381,6 +381,53 @@
   }
 }
 
+.approval-banner,
+.credential-upload {
+  align-items: center;
+  background: var(--color-info-bg);
+  border: 1px solid var(--color-info-border);
+  border-radius: var(--radius-md);
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem;
+
+  div {
+    display: grid;
+    gap: 0.2rem;
+  }
+  span {
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+  }
+}
+
+.approval-banner[data-status='APPROVED'] {
+  border-color: var(--color-success);
+}
+.approval-banner[data-status='CHANGES_REQUESTED'],
+.approval-banner[data-status='REJECTED'] {
+  border-color: var(--color-danger);
+}
+
+.credential-upload {
+  margin-top: 1rem;
+}
+.credential-upload__button {
+  background: var(--color-brand);
+  border-radius: var(--radius-md);
+  color: white;
+  cursor: pointer;
+  flex: 0 0 auto;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  padding: 0.65rem 0.9rem;
+  input {
+    display: none;
+  }
+}
+
 .telegram-connect-card {
   align-items: center;
   background: var(--color-info-bg);
@@ -430,7 +477,11 @@
 .services-setup-guide {
   align-items: center;
   background:
-    radial-gradient(circle at 0 0, color-mix(in srgb, var(--color-brand) 12%, transparent), transparent 14rem),
+    radial-gradient(
+      circle at 0 0,
+      color-mix(in srgb, var(--color-brand) 12%, transparent),
+      transparent 14rem
+    ),
     var(--color-surface);
   border: 1px solid color-mix(in srgb, var(--color-brand) 24%, var(--color-border));
   border-radius: var(--radius-lg);
@@ -692,7 +743,11 @@
 
 .provider-preview-card {
   background:
-    radial-gradient(circle at top right, color-mix(in srgb, var(--color-brand) 10%, transparent), transparent 12rem),
+    radial-gradient(
+      circle at top right,
+      color-mix(in srgb, var(--color-brand) 10%, transparent),
+      transparent 12rem
+    ),
     var(--color-surface);
   border: 1px solid color-mix(in srgb, var(--color-brand) 24%, var(--color-border));
   border-radius: var(--radius-lg);
@@ -1055,7 +1110,6 @@
     border-radius: 0;
     padding: 0.9rem;
   }
-
 
   .setup-panel {
     border-left: 0;

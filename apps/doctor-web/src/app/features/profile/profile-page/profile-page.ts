@@ -134,6 +134,10 @@ export class ProfilePage implements OnDestroy {
   readonly authTokenKey = AUTH_TOKEN_KEY;
   readonly profileImageUploadPath = API_PATHS.DOCTOR.PROFILE_IMAGE;
   profileImageUrl: string | null = null;
+  approvalStatus = 'NOT_REQUIRED';
+  approvalNote = '';
+  credentialDocumentFileName = '';
+  credentialUploading = false;
 
   readonly profileModel = signal(emptyProfileModel());
   readonly profileForm = form(this.profileModel);
@@ -178,6 +182,7 @@ export class ProfilePage implements OnDestroy {
   listenerScreeningPassed = false;
   canPrescribe = false;
   isPsychologist = false;
+  isHomeopathyProvider = false;
   message = '';
   error = '';
   isLoading = false;
@@ -996,6 +1001,10 @@ export class ProfilePage implements OnDestroy {
       const profile = response.profile;
       this.canPrescribe = capabilitiesForProvider(profile.doctorProfile).prescribe;
       this.isPsychologist = profile.doctorProfile?.doctorType === 'PSYCHOLOGIST';
+      this.isHomeopathyProvider = profile.doctorProfile?.providerDomain === 'HOMEOPATHY';
+      this.approvalStatus = profile.doctorProfile?.approvalStatus || 'NOT_REQUIRED';
+      this.approvalNote = profile.doctorProfile?.approvalNote || '';
+      this.credentialDocumentFileName = profile.doctorProfile?.credentialDocumentFileName || '';
       const mental = profile.doctorProfile?.mentalHealthProfile;
       this.methodOptions = this.canPrescribe
         ? (
@@ -1134,6 +1143,46 @@ export class ProfilePage implements OnDestroy {
         this.careServices(),
       );
     }
+  }
+
+  async uploadCredentialDocument(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.message = '';
+    this.error = '';
+    this.credentialUploading = true;
+    try {
+      const formData = new FormData();
+      formData.append('file', file, file.name);
+      formData.append('fileName', file.name);
+      const response = await firstValueFrom(
+        this.http.put<{ message: string }>(
+          `${this.apiBase}${API_PATHS.DOCTOR.CREDENTIAL_DOCUMENT}`,
+          formData,
+        ),
+      );
+      this.credentialDocumentFileName = file.name;
+      this.message = response.message;
+      await this.loadProfile();
+    } catch (error: any) {
+      this.error = error?.error?.message || 'Could not upload the credential document.';
+    } finally {
+      this.credentialUploading = false;
+      input.value = '';
+    }
+  }
+
+  approvalStatusTitle(): string {
+    return (
+      {
+        DRAFT: 'Complete your profile for review',
+        PENDING: 'Credential review in progress',
+        CHANGES_REQUESTED: 'Changes requested by Hope Hub',
+        APPROVED: 'Provider profile approved',
+        REJECTED: 'Application not approved',
+      }[this.approvalStatus] || ''
+    );
   }
 
   async saveProfile(

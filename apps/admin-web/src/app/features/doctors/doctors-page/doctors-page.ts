@@ -59,6 +59,10 @@ type Doctor = {
   doctorProfile?: {
     specialty?: string;
     registrationNo?: string;
+    approvalStatus?: string;
+    approvalNote?: string | null;
+    credentialDocumentFileName?: string | null;
+    credentialDocumentUploadedAt?: string | null;
     isAvailable?: boolean;
     doctorType?: HomeopathicDoctorType;
     providerDomain?: 'HOMEOPATHY' | 'HOPE_HUB' | null;
@@ -490,6 +494,18 @@ export class DoctorsPage {
       );
     } finally {
       this.mutating.set(false);
+    }
+  }
+
+  async openCredentialDocument(doctor: Doctor) {
+    this.error.set('');
+    try {
+      const response = await this.api.getDoctorCredentialDocument(doctor.id);
+      const url = URL.createObjectURL(response.body || new Blob());
+      window.open(url, '_blank', 'noopener');
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (error: any) {
+      this.error.set(error?.error?.message || 'Could not open the credential document.');
     }
   }
 
@@ -1040,10 +1056,11 @@ export class DoctorsPage {
   isCredentialReviewPending(doctor: Doctor): boolean {
     return Boolean(
       doctor.doctorProfile?.suspendedAt &&
-      doctor.doctorProfile?.suspendedReason
-        ?.trim()
-        .toLowerCase()
-        .startsWith('awaiting homeopathy credential verification'),
+      (doctor.doctorProfile?.approvalStatus === 'PENDING' ||
+        doctor.doctorProfile?.suspendedReason
+          ?.trim()
+          .toLowerCase()
+          .startsWith('awaiting homeopathy credential verification')),
     );
   }
 

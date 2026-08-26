@@ -24,7 +24,11 @@ import {
   supportChannelOptions,
   volunteerConcernOptions
 } from './telegram-bots.config.js';
-import { answerTelegramCallback, sendTelegramMessage } from './telegram-bots.client.js';
+import {
+  answerTelegramCallback,
+  editTelegramMessageReplyMarkup,
+  sendTelegramMessage
+} from './telegram-bots.client.js';
 import { adminUrl, callbackRows, menuCancelRows, webUrl } from './telegram-bots.ui.js';
 import {
   cancelPending,
@@ -1153,7 +1157,8 @@ async function markTelegramLeadFollowUp(
 async function approveProviderFromAdminBot(
   kind: TelegramBotKind,
   session: TelegramSession,
-  doctorId: string
+  doctorId: string,
+  messageId?: number
 ) {
   if (kind !== TelegramBotKind.ADMIN || !(await requireLinked(kind, session))) return;
   if (!session.linkedUser || session.linkedUser.role !== 'ADMIN') {
@@ -1190,6 +1195,17 @@ async function approveProviderFromAdminBot(
       actorId: session.linkedUser.id,
       actorRole: session.linkedUser.role
     });
+    if (messageId) {
+      await editTelegramMessageReplyMarkup(kind, {
+        chat_id: session.chatId,
+        message_id: messageId,
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: 'Approved — open providers', url: adminUrl('/doctors'), style: 'success' }]
+          ]
+        }
+      }).catch(() => undefined);
+    }
     await sendTelegramMessage(kind, {
       chat_id: session.chatId,
       text: result.alreadyApproved
@@ -2905,7 +2921,12 @@ async function handleCallback(
   else if (data === 'admin:community_admins') await adminCommunityAdminApplications(kind, session);
   else if (data === 'admin:contributors') await adminContributors(kind, session);
   else if (data.startsWith('admin:provider_approve:'))
-    await approveProviderFromAdminBot(kind, session, data.slice('admin:provider_approve:'.length));
+    await approveProviderFromAdminBot(
+      kind,
+      session,
+      data.slice('admin:provider_approve:'.length),
+      query.message?.message_id
+    );
   else if (data.startsWith('admin:safety_reviewed:'))
     await markSafetyFlagReviewed(kind, session, data.slice('admin:safety_reviewed:'.length));
   else if (data.startsWith('lead:assign:')) {

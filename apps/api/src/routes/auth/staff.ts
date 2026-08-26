@@ -1,6 +1,6 @@
 import { Router, type Request } from 'express';
 import { z } from 'zod';
-import { Prisma, ProviderDomain, Role } from '@prisma/client';
+import { Prisma, ProviderApprovalStatus, ProviderDomain, Role } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../../db.js';
 import { getMailTransporter, smtpFrom } from '../../services/mail.js';
@@ -33,10 +33,16 @@ import { issueAuthSession, revokeAllAuthSessionsForUser } from '../../services/a
 import { isHomeopathyApprovalFlowSuspension } from '../../constants/homeopathy-provider-approval.constants.js';
 
 const staffOtpKey = (email: string) => `staff:${email.trim().toLowerCase()}`;
+const PROVIDER_ONBOARDING_APPROVAL_STATES = new Set<ProviderApprovalStatus>([
+  ProviderApprovalStatus.DRAFT,
+  ProviderApprovalStatus.PENDING,
+  ProviderApprovalStatus.CHANGES_REQUESTED
+]);
 const providerSuspensionSelect = {
   providerDomain: true,
   suspendedAt: true,
-  suspendedReason: true
+  suspendedReason: true,
+  approvalStatus: true
 } as const;
 const staffUserSelect = {
   ...publicUserSelect,
@@ -84,12 +90,16 @@ function providerSuspensionResponse(user: {
     providerDomain?: ProviderDomain;
     suspendedAt?: Date | null;
     suspendedReason?: string | null;
+    approvalStatus?: ProviderApprovalStatus;
   } | null;
 }) {
   if (user.role !== Role.DOCTOR || !user.doctorProfile?.suspendedAt) return null;
   if (
     user.doctorProfile.providerDomain === ProviderDomain.HOMEOPATHY &&
-    isHomeopathyApprovalFlowSuspension(user.doctorProfile.suspendedReason)
+    (PROVIDER_ONBOARDING_APPROVAL_STATES.has(
+      user.doctorProfile.approvalStatus ?? ProviderApprovalStatus.NOT_REQUIRED
+    ) ||
+      isHomeopathyApprovalFlowSuspension(user.doctorProfile.suspendedReason))
   ) {
     return null;
   }

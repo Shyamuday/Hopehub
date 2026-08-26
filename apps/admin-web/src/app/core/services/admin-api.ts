@@ -125,6 +125,9 @@ export class AdminApi {
   approveDoctor(...args: Parameters<AdminDoctorsApi['approveDoctor']>) {
     return this.doctors.approveDoctor(...(args as Parameters<AdminDoctorsApi['approveDoctor']>));
   }
+  getDoctorCredentialDocument(...args: Parameters<AdminDoctorsApi['getDoctorCredentialDocument']>) {
+    return this.doctors.getDoctorCredentialDocument(...args);
+  }
   rejectDoctor(...args: Parameters<AdminDoctorsApi['rejectDoctor']>) {
     return this.doctors.rejectDoctor(...(args as Parameters<AdminDoctorsApi['rejectDoctor']>));
   }

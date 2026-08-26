@@ -50,6 +50,8 @@ import {
   approveHomeopathyProviderAccount,
   HomeopathyProviderApprovalError
 } from '../../services/homeopathy-provider-approval.js';
+import { notifyProviderApprovalStatus } from '../../services/provider-approval-notifications.js';
+import { readProviderCredential } from '../../services/provider-credential-storage.js';
 import {
   HOMEOPATHY_CREDENTIAL_CHANGES_PREFIX,
   HOMEOPATHY_CREDENTIAL_REVIEW_PREFIX,
@@ -468,11 +470,16 @@ export function registerAdminDoctorRoutes(router: Router) {
                 {
                   doctorProfile: {
                     is: {
-                      suspendedAt: { not: null },
-                      suspendedReason: {
-                        startsWith: HOMEOPATHY_CREDENTIAL_REVIEW_PREFIX,
-                        mode: 'insensitive'
-                      }
+                      OR: [
+                        { approvalStatus: 'PENDING' },
+                        {
+                          suspendedAt: { not: null },
+                          suspendedReason: {
+                            startsWith: HOMEOPATHY_CREDENTIAL_REVIEW_PREFIX,
+                            mode: 'insensitive'
+                          }
+                        }
+                      ]
                     }
                   }
                 }
@@ -563,7 +570,12 @@ export function registerAdminDoctorRoutes(router: Router) {
         select: {
           role: true,
           doctorProfile: {
-            select: { providerDomain: true, suspendedAt: true, suspendedReason: true }
+            select: {
+              providerDomain: true,
+              suspendedAt: true,
+              suspendedReason: true,
+              approvalStatus: true
+            }
           }
         }
       });
@@ -585,7 +597,8 @@ export function registerAdminDoctorRoutes(router: Router) {
       const credentialReview =
         workspace === 'homeopathy' &&
         Boolean(existing.doctorProfile.suspendedAt) &&
-        isHomeopathyCredentialReview(existing.doctorProfile.suspendedReason);
+        (existing.doctorProfile.approvalStatus === 'PENDING' ||
+          isHomeopathyCredentialReview(existing.doctorProfile.suspendedReason));
 
       if (credentialReview) {
         try {
@@ -649,7 +662,12 @@ export function registerAdminDoctorRoutes(router: Router) {
         select: {
           role: true,
           doctorProfile: {
-            select: { providerDomain: true, suspendedAt: true, suspendedReason: true }
+            select: {
+              providerDomain: true,
+              suspendedAt: true,
+              suspendedReason: true,
+              approvalStatus: true
+            }
           }
         }
       });
@@ -669,7 +687,8 @@ export function registerAdminDoctorRoutes(router: Router) {
       const credentialReview =
         workspace === 'homeopathy' &&
         Boolean(existing.doctorProfile.suspendedAt) &&
-        isHomeopathyCredentialReview(existing.doctorProfile.suspendedReason);
+        (existing.doctorProfile.approvalStatus === 'PENDING' ||
+          isHomeopathyCredentialReview(existing.doctorProfile.suspendedReason));
       const reason = body.reason?.trim() || '';
       const doctor = await prisma.$transaction(async (tx) => {
         if (credentialReview) {
@@ -682,6 +701,11 @@ export function registerAdminDoctorRoutes(router: Router) {
                 ? `${HOMEOPATHY_CREDENTIAL_CHANGES_PREFIX}: ${reason}`
                 : `${HOMEOPATHY_CREDENTIAL_CHANGES_PREFIX}. Please contact Hope Hub support.`,
               suspendedById: req.user!.id,
+              approvalStatus: 'CHANGES_REQUESTED',
+              approvalNote: reason || 'Please contact Hope Hub support.',
+              approvalRequestedAt: null,
+              approvedAt: null,
+              approvedById: null,
               showOnWebsite: false,
               isAvailable: false,
               isOnline: false
@@ -706,6 +730,13 @@ export function registerAdminDoctorRoutes(router: Router) {
           : 'Provider account deactivated by admin.',
         metadata: { workspace, credentialReview, reason: reason || null }
       });
+      if (credentialReview) {
+        await notifyProviderApprovalStatus({
+          userId: doctor.id,
+          status: 'CHANGES_REQUESTED',
+          note: reason || null
+        });
+      }
       res.json({
         doctor,
         message: credentialReview
@@ -824,6 +855,50 @@ export function registerAdminDoctorRoutes(router: Router) {
       }
       const readiness = await providerPublicReadiness(doctor.id);
       res.json({ readiness });
+    })
+  );
+
+  router.get(
+    '/admin/doctors/:id/credential-document',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (req, res) => {
+      const doctorId = routeParam(req, 'id');
+      const provider = await prisma.user.findFirst({
+        where: { id: doctorId, role: Role.DOCTOR },
+        select: {
+          doctorProfile: {
+            select: {
+              providerDomain: true,
+              credentialDocumentKey: true,
+              credentialDocumentMimeType: true,
+              credentialDocumentFileName: true
+            }
+          }
+        }
+      });
+      if (!provider?.doctorProfile) return res.status(404).json({ message: 'Provider not found.' });
+      const workspace =
+        provider.doctorProfile.providerDomain === ProviderDomain.HOPE_HUB
+          ? 'hope-hub'
+          : 'homeopathy';
+      if (!staffCanAccessWorkspace(req.user, workspace)) {
+        return res.status(403).json({ message: 'You cannot review this workspace.' });
+      }
+      if (!provider.doctorProfile.credentialDocumentKey) {
+        return res.status(404).json({ message: 'Credential document not uploaded.' });
+      }
+      const data = await readProviderCredential(provider.doctorProfile.credentialDocumentKey);
+      res.setHeader(
+        'Content-Type',
+        provider.doctorProfile.credentialDocumentMimeType || 'application/octet-stream'
+      );
+      res.setHeader(
+        'Content-Disposition',
+        `inline; filename="${(provider.doctorProfile.credentialDocumentFileName || 'credential').replace(/["\r\n]/g, '')}"`
+      );
+      res.setHeader('Cache-Control', 'private, no-store');
+      res.send(data);
     })
   );
 

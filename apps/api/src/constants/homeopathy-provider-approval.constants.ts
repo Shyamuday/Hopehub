@@ -18,3 +18,12 @@ export function isHomeopathyCredentialReview(reason?: string | null): boolean {
     reason?.trim().toLowerCase().startsWith(HOMEOPATHY_CREDENTIAL_REVIEW_PREFIX.toLowerCase())
   );
 }
+
+export function normalizeProfessionalRegistrationNumber(value?: string | null): string | null {
+  const normalized =
+    value
+      ?.trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '') || '';
+  return normalized.length >= 3 ? normalized : null;
+}

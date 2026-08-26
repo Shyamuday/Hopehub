@@ -10,7 +10,8 @@ import {
 import { prisma } from './db.js';
 import {
   isHomeopathyApprovalFlowSuspension,
-  isHomeopathyCredentialReview
+  isHomeopathyCredentialReview,
+  normalizeProfessionalRegistrationNumber
 } from './constants/homeopathy-provider-approval.constants.js';
 import type {
   ProviderOnboardingStepDto,
@@ -55,7 +56,10 @@ const BLOCKER_STEP: Record<string, string> = {
   SERVICE_ROLE_MISMATCH: 'services',
   PROVIDER_AVAILABILITY_OFF: 'availability',
   NOT_ACCEPTING_USERS: 'availability',
-  PROVIDER_APPROVAL_PENDING: 'approval'
+  PROVIDER_APPROVAL_PENDING: 'approval',
+  EMAIL_VERIFICATION_REQUIRED: 'identity',
+  CREDENTIAL_DOCUMENT_REQUIRED: 'identity',
+  DUPLICATE_REGISTRATION_NUMBER: 'identity'
 };
 
 function readinessResult(
@@ -199,6 +203,8 @@ function readinessResult(
 type HomeopathyApprovalProfile = {
   specialty: string;
   registrationNo: string | null;
+  registrationNoNormalized?: string | null;
+  credentialDocumentKey?: string | null;
   bio: string | null;
   focusAreas: string[];
   user: {
@@ -207,6 +213,7 @@ type HomeopathyApprovalProfile = {
     gender: unknown;
     profileImageKey: string | null;
     profileImageUrl: string | null;
+    emailVerified?: boolean;
   };
 };
 
@@ -256,6 +263,20 @@ function homeopathyProfileCompletionBlockers(
       action: 'Add the registration number that admin should verify.'
     });
   }
+  if (!profile.user.emailVerified) {
+    blockers.push({
+      code: 'EMAIL_VERIFICATION_REQUIRED',
+      label: 'Email address is not verified.',
+      action: 'Open the verification email from Hope Hub before submitting for approval.'
+    });
+  }
+  if (!profile.credentialDocumentKey) {
+    blockers.push({
+      code: 'CREDENTIAL_DOCUMENT_REQUIRED',
+      label: 'Registration credential document is missing.',
+      action: 'Upload a PDF or image of your professional registration credential.'
+    });
+  }
   if (!hasText(profile.bio, 80)) {
     blockers.push({
       code: 'PROFILE_BIO_REQUIRED',
@@ -280,6 +301,8 @@ export async function homeopathyProviderApprovalReadiness(userId: string) {
       providerDomain: true,
       specialty: true,
       registrationNo: true,
+      registrationNoNormalized: true,
+      credentialDocumentKey: true,
       bio: true,
       focusAreas: true,
       user: {
@@ -288,7 +311,8 @@ export async function homeopathyProviderApprovalReadiness(userId: string) {
           mobile: true,
           gender: true,
           profileImageKey: true,
-          profileImageUrl: true
+          profileImageUrl: true,
+          emailVerified: true
         }
       }
     }
@@ -306,6 +330,33 @@ export async function homeopathyProviderApprovalReadiness(userId: string) {
     };
   }
   const blockers = homeopathyProfileCompletionBlockers(profile);
+  const normalizedRegistration =
+    profile.registrationNoNormalized ||
+    normalizeProfessionalRegistrationNumber(profile.registrationNo);
+  if (normalizedRegistration) {
+    const candidates = await prisma.doctor.findMany({
+      where: {
+        userId: { not: userId },
+        providerDomain: 'HOMEOPATHY',
+        registrationNo: { not: null }
+      },
+      select: { registrationNo: true, registrationNoNormalized: true }
+    });
+    if (
+      candidates.some(
+        (candidate) =>
+          (candidate.registrationNoNormalized ||
+            normalizeProfessionalRegistrationNumber(candidate.registrationNo)) ===
+          normalizedRegistration
+      )
+    ) {
+      blockers.push({
+        code: 'DUPLICATE_REGISTRATION_NUMBER',
+        label: 'This professional registration number is already in use.',
+        action: 'Contact Hope Hub support if this is your existing account.'
+      });
+    }
+  }
   return { ready: blockers.length === 0, blockers };
 }
 

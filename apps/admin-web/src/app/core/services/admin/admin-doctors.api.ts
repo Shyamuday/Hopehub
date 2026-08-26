@@ -101,6 +101,15 @@ export class AdminDoctorsApi extends AdminApiBase {
     );
   }
 
+  getDoctorCredentialDocument(doctorId: string) {
+    return firstValueFrom(
+      this.http.get(`${this.apiBase}${API_PATHS.ADMIN.DOCTORS}/${doctorId}/credential-document`, {
+        observe: 'response',
+        responseType: 'blob',
+      }),
+    );
+  }
+
   reviewServicePricing(serviceId: string, decision: 'APPROVED' | 'REJECTED', reason?: string) {
     return firstValueFrom(
       this.http.patch(`${this.apiBase}/admin/doctors/services/${serviceId}/pricing-approval`, {
