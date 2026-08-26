@@ -410,8 +410,9 @@
   color: #ffb8c0;
 }
 .control--active > span {
-  background: #248fc7;
-  box-shadow: 0 0 0 0.2rem rgba(36, 143, 199, 0.18);
+  background: #20a86b;
+  color: #fff;
+  box-shadow: 0 0 0 0.22rem rgba(32, 168, 107, 0.24);
 }
 .control--accept > span {
   background: #24b87a;
@@ -466,6 +467,28 @@
   color: #bfe9fb;
   font-size: 0.75rem;
   text-align: center;
+}
+.call-surface__audio-help {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  padding: 0.65rem 0.8rem;
+  background: rgba(255, 184, 77, 0.16);
+  color: #ffe3b0;
+  font-size: 0.76rem;
+  text-align: center;
+}
+.call-surface__audio-help button {
+  min-height: 2rem;
+  border: 1px solid rgba(255, 227, 176, 0.48);
+  border-radius: 999px;
+  padding: 0.35rem 0.72rem;
+  background: #fff;
+  color: #7b4b00;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
 }
 .call-surface__network-help {
   display: flex;
@@ -856,11 +879,11 @@ select:focus-visible {
   stroke-linecap: round;
   stroke-linejoin: round;
 }
-.call-compact__actions .call-compact__action--active {
-  border-color: rgba(101, 212, 255, 0.62);
-  background: rgba(36, 143, 199, 0.3);
-  color: #9ae3ff;
-}
+  .call-compact__actions .call-compact__action--active {
+    border-color: rgba(86, 228, 159, 0.72);
+    background: rgba(32, 168, 107, 0.34);
+    color: #b8ffdb;
+  }
 .call-compact__actions .call-compact__end {
   border-color: rgba(255, 120, 120, 0.5);
   background: #d83b4d;

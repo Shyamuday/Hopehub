@@ -64,7 +64,8 @@
             <button
               type="button"
               [class.call-compact__action--active]="speakerOutputActive()"
-              [attr.aria-label]="speakerOutputActive() ? 'Use phone audio' : 'Turn speaker on'"
+              [attr.aria-label]="speakerOutputActive() ? 'Use phone earpiece' : 'Turn loudspeaker on'"
+              [attr.aria-pressed]="speakerOutputActive()"
               (click)="toggleSpeakerOutput()"
             >
               <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -225,6 +226,12 @@
         @if (actionMessage()) {
           <div class="call-surface__action-toast" role="status">{{ actionMessage() }}</div>
         }
+        @if (audioPlaybackBlocked() && call.hasActiveCall()) {
+          <div class="call-surface__audio-help" role="alert">
+            <span>Call sound is paused by your phone.</span>
+            <button type="button" (click)="resumeRemoteAudio()">Tap to hear</button>
+          </div>
+        }
 
         <div
           class="call-surface__controls"
@@ -330,14 +337,14 @@
               class="control"
               [class.control--active]="speakerOutputActive()"
               [attr.aria-pressed]="speakerOutputActive()"
-              [attr.aria-label]="speakerOutputActive() ? 'Use phone audio' : 'Turn speaker on'"
+              [attr.aria-label]="speakerOutputActive() ? 'Use phone earpiece' : 'Turn loudspeaker on'"
               (click)="toggleSpeakerOutput()"
             >
               <span aria-hidden="true"
                 ><svg viewBox="0 0 24 24">
                   <path d="M5 9.25h3.25L13 5.5v13l-4.75-3.75H5a2 2 0 0 1-2-2v-1.5a2 2 0 0 1 2-2Z" />
                   <path d="M16 9a4.25 4.25 0 0 1 0 6M18.5 6.5a7.75 7.75 0 0 1 0 11" /></svg></span
-              >{{ speakerOutputActive() ? 'Speaker on' : 'Speaker' }}
+              >{{ speakerOutputActive() ? 'Loudspeaker' : 'Phone' }}
             </button>
             @if (call.callMode() === 'video') {
               <button

@@ -33,7 +33,8 @@ const STRING_METADATA_KEYS = [
   'networkEffectiveType',
   'diagnosticReason',
   'errorName',
-  'connectivityPreflightSource'
+  'connectivityPreflightSource',
+  'gatheredCandidateTypes'
 ] as const;
 
 const NUMBER_METADATA_KEYS = [
@@ -55,7 +56,9 @@ const NUMBER_METADATA_KEYS = [
   'setupToRingAckMs',
   'setupToAnswerMs',
   'setupToFirstMediaMs',
-  'setupToConnectedMs'
+  'setupToConnectedMs',
+  'gatheredCandidateCount',
+  'gatheredRelayCandidateCount'
 ] as const;
 
 const BOOLEAN_METADATA_KEYS = [
@@ -72,7 +75,9 @@ const BOOLEAN_METADATA_KEYS = [
   'audioEchoCancellation',
   'audioNoiseSuppression',
   'audioAutoGainControl',
-  'videoPausedForNetwork'
+  'videoPausedForNetwork',
+  'audioPlaybackBlocked',
+  'speakerOutputChangeFailed'
 ] as const;
 
 export function safeCallEventMetadata(metadata: unknown): Record<string, unknown> {

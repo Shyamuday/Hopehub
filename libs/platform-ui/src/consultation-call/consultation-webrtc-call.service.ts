@@ -301,6 +301,9 @@ export class ConsultationWebrtcCallService {
   private answerReceivedAt = 0;
   private firstRemoteMediaAt = 0;
   private connectedAt = 0;
+  private gatheredCandidateCount = 0;
+  private gatheredRelayCandidateCount = 0;
+  private readonly gatheredCandidateTypes = new Set<string>();
   private manualLowDataMode = false;
   private readonly connectivityChecks = new Map<string, Promise<ConnectivityResult>>();
   private connectivityPreflightSource = 'none';
@@ -1080,6 +1083,23 @@ export class ConsultationWebrtcCallService {
     return true;
   }
 
+  async reportActiveCallProblem(
+    reason: string,
+    metadata: Record<string, unknown> = {}
+  ): Promise<boolean> {
+    if (!this.socket || !this.callContext || !this.activeCallId) return false;
+    this.emitSignal(CALL_SOCKET_EVENTS.DIAGNOSTIC, {
+      ...this.callContext,
+      reason,
+      metadata: {
+        ...this.callMetadata(),
+        ...metadata,
+        diagnosticReason: reason
+      }
+    });
+    return true;
+  }
+
   async resumeRecoverableCall(iceServers: IceServerConfig[] = DEFAULT_STUN) {
     const recovery = this.recoverableCall();
     if (!recovery || !this.socket) return;
@@ -1220,6 +1240,9 @@ export class ConsultationWebrtcCallService {
     this.answerReceivedAt = 0;
     this.firstRemoteMediaAt = 0;
     this.connectedAt = 0;
+    this.gatheredCandidateCount = 0;
+    this.gatheredRelayCandidateCount = 0;
+    this.gatheredCandidateTypes.clear();
     this.pendingRecoveryRestart = null;
     this.networkQuality.set('unknown');
     this.voiceFallbackSuggested.set(false);
@@ -1590,6 +1613,10 @@ export class ConsultationWebrtcCallService {
 
     this.pc.onicecandidate = (event) => {
       if (!event.candidate || !this.socket || !this.callContext) return;
+      const candidateType = event.candidate.type || 'unknown';
+      this.gatheredCandidateCount += 1;
+      this.gatheredCandidateTypes.add(candidateType);
+      if (candidateType === 'relay') this.gatheredRelayCandidateCount += 1;
       this.emitSignal(CALL_SOCKET_EVENTS.ICE, {
         consultationId: this.callContext.consultationId,
         targetUserId: this.callContext.targetUserId,
@@ -2591,6 +2618,10 @@ export class ConsultationWebrtcCallService {
       connectionState: this.pc?.connectionState,
       iceConnectionState: this.pc?.iceConnectionState,
       mode: this.callMode(),
+      privacyRelay: this.privacyRelay(),
+      gatheredCandidateCount: this.gatheredCandidateCount,
+      gatheredRelayCandidateCount: this.gatheredRelayCandidateCount,
+      gatheredCandidateTypes: [...this.gatheredCandidateTypes].sort().join(',') || undefined,
       lowDataMode: this.lowDataMode(),
       backgroundBlurEnabled: this.backgroundBlurEnabled(),
       networkType: this.networkProfile().type,

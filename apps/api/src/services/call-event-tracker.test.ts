@@ -23,6 +23,11 @@ test('call event tracker keeps useful diagnostics and strips signaling/media sec
       audioNoiseSuppression: true,
       audioAutoGainControl: true,
       videoPausedForNetwork: true,
+      gatheredCandidateTypes: 'host,srflx,relay',
+      gatheredCandidateCount: 6,
+      gatheredRelayCandidateCount: 2,
+      audioPlaybackBlocked: true,
+      speakerOutputChangeFailed: false,
       sdp: 'private-session-description',
       candidate: 'candidate with an IP address',
       authorization: 'secret'
@@ -41,7 +46,12 @@ test('call event tracker keeps useful diagnostics and strips signaling/media sec
       audioEchoCancellation: true,
       audioNoiseSuppression: true,
       audioAutoGainControl: true,
-      videoPausedForNetwork: true
+      videoPausedForNetwork: true,
+      gatheredCandidateTypes: 'host,srflx,relay',
+      gatheredCandidateCount: 6,
+      gatheredRelayCandidateCount: 2,
+      audioPlaybackBlocked: true,
+      speakerOutputChangeFailed: false
     }
   );
   assert.deepEqual(
