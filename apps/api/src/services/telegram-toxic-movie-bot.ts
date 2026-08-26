@@ -16,31 +16,43 @@ function command(text: string): string | undefined {
 export function toxicMovieBotMenu(groupUrl: string): TelegramKeyboard {
   return {
     inline_keyboard: [
-      [{ text: 'Latest verified updates', url: LATEST_NEWS_URL, style: 'primary' }],
-      [
-        { text: 'About this bot', callback_data: 'toxic:about' },
-        { text: 'Help', callback_data: 'toxic:help' }
-      ],
       [
         {
-          text: 'Join HopeHub India community',
+          text: 'Join HopeHub India',
           url: groupUrl,
           style: 'success'
         }
+      ],
+      [{ text: 'Latest verified Toxic updates', url: LATEST_NEWS_URL, style: 'primary' }],
+      [
+        { text: 'About this bot', callback_data: 'toxic:about' },
+        { text: 'Help', callback_data: 'toxic:help' }
       ]
     ]
   };
 }
 
-export function toxicMovieWelcomeText(): string {
+export function toxicMovieWelcomeText(groupUrl = 'https://t.me/hopehubindia'): string {
   return [
-    'Toxic Movie Updates | Yash — Unofficial',
+    '*TOXIC — Yash Movie Updates*',
+    '_Unofficial fan information hub_',
     '',
-    'Follow verified news, release updates, cast announcements, trailers and official viewing information for Toxic.',
+    '━━━━━━━━━━━━━━━━━━━━',
     '',
-    'This is an independent fan-information bot. It is not affiliated with the film, its cast, producers or distributors. It never shares pirated films or unofficial downloads.',
+    '*Stay updated without the noise*',
+    '• Verified news and announcements',
+    '• Trailer, cast and release updates',
+    '• Official viewing information',
+    '• No fake download or piracy links',
     '',
-    'HopeHub India is shown separately as our community partner for friendly conversation and emotional support.'
+    '*Join HopeHub India*',
+    'Meet kind people, join friendly conversations and find a supportive community whenever you want to talk.',
+    '',
+    `*Community link:* ${groupUrl}`,
+    'Tap the green button below to join now.',
+    '',
+    '━━━━━━━━━━━━━━━━━━━━',
+    '_Independent and not affiliated with the film, cast, producers or distributors. Movie names and trademarks belong to their owners._'
   ].join('\n');
 }
 
@@ -73,7 +85,8 @@ async function groupUrl(): Promise<string> {
 
 async function showMenu(chatId: string | number): Promise<void> {
   const url = await groupUrl();
-  await sendCommunityMessage(slug, chatId, toxicMovieWelcomeText(), {
+  await sendCommunityMessage(slug, chatId, toxicMovieWelcomeText(url), {
+    parse_mode: 'Markdown',
     reply_markup: toxicMovieBotMenu(url)
   });
 }

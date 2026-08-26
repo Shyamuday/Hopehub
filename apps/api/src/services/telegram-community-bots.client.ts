@@ -13,6 +13,8 @@ const COMMUNITY_BOTS: Record<
     tokenEnv: string;
     commands: Array<{ command: string; description: string }>;
     allowedUpdates: string[];
+    description?: string;
+    shortDescription?: string;
   }
 > = {
   [COMMUNITY_BOT_SLUGS.CONTACT]: {
@@ -137,6 +139,10 @@ const COMMUNITY_BOTS: Record<
   [COMMUNITY_BOT_SLUGS.TOXIC_MOVIE]: {
     name: TELEGRAM_BOT_DISPLAY_NAMES.TOXIC_MOVIE,
     tokenEnv: 'TELEGRAM_TOXIC_MOVIE_BOT_TOKEN',
+    description:
+      'Unofficial verified Toxic and Yash updates without piracy links. Join HopeHub India for friendly conversation and emotional support: https://t.me/hopehubindia',
+    shortDescription:
+      'Verified Toxic and Yash updates. Join HopeHub India: https://t.me/hopehubindia',
     commands: [
       { command: 'start', description: 'Open Toxic movie updates' },
       { command: 'latest', description: 'Find the latest verified updates' },
@@ -248,6 +254,16 @@ export async function setupCommunityBot(input: {
 }) {
   const config = COMMUNITY_BOTS[input.slug];
   await callCommunityTelegramApi(input.slug, 'setMyCommands', { commands: config.commands });
+  if (config.description) {
+    await callCommunityTelegramApi(input.slug, 'setMyDescription', {
+      description: config.description
+    });
+  }
+  if (config.shortDescription) {
+    await callCommunityTelegramApi(input.slug, 'setMyShortDescription', {
+      short_description: config.shortDescription
+    });
+  }
   // Community bots use their inline keyboards, not a stale global web-app menu button.
   await callCommunityTelegramApi(input.slug, 'setChatMenuButton', {
     menu_button: { type: 'default' }
