@@ -53,6 +53,7 @@ import {
   sendCommunityMessage
 } from '../../services/telegram-community-bots.client.js';
 import { configuredUrlKeyboard } from '../../services/telegram-keyboard-config.js';
+import { withPublicCommunityLinks } from '../../services/telegram-public-community-links.js';
 import {
   applyTelegramCommunityAnnouncementPin,
   announceTelegramCommunityEvent,
@@ -190,6 +191,12 @@ const TELEGRAM_CHAT_ID_CONTROLS = new Set([
   'telegramConfessionApprovalGroupId',
   'telegramConfessionChannelId',
   'telegramContactSupportGroupId'
+]);
+
+const BOT_URL_CONTROLS = new Set([
+  'telegramCampaignContactUrl',
+  'telegramGroupHelpMainGroupUrl',
+  'telegramGroupHelpOffTopicGroupUrl'
 ]);
 
 function validBotLinkList(value: string) {
@@ -831,7 +838,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
             message: `${meta.label} must use “Label | https://link | primary, success, or danger”, with one button per line.`
           });
         }
-        if (key === 'telegramCampaignContactUrl' && value && !/^https:\/\//i.test(value)) {
+        if (BOT_URL_CONTROLS.has(key) && value && !/^https:\/\//i.test(value)) {
           return res.status(400).json({ message: `${meta.label} must be an HTTPS link.` });
         }
         if (
@@ -943,12 +950,18 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         parsed.data.group === 'Confession bot'
           ? {
               text: `🧪 CONFESSION BOT PREVIEW\n\n${controls.telegramConfessionWelcomeText}`,
-              keyboard: configuredUrlKeyboard(controls.telegramConfessionMenuLinks)
+              keyboard: withPublicCommunityLinks(
+                configuredUrlKeyboard(controls.telegramConfessionMenuLinks),
+                controls
+              )
             }
           : parsed.data.group === 'Contact bot'
             ? {
                 text: `🧪 CONTACT BOT PREVIEW\n\n${controls.telegramContactWelcomeText}`,
-                keyboard: configuredUrlKeyboard(controls.telegramContactMenuLinks)
+                keyboard: withPublicCommunityLinks(
+                  configuredUrlKeyboard(controls.telegramContactMenuLinks),
+                  controls
+                )
               }
             : parsed.data.group === 'Rules bot'
               ? {
@@ -956,12 +969,18 @@ export function registerAdminTelegramBotRoutes(router: Router) {
                     0,
                     4096
                   ),
-                  keyboard: configuredUrlKeyboard(controls.telegramRulesMenuLinks)
+                  keyboard: withPublicCommunityLinks(
+                    configuredUrlKeyboard(controls.telegramRulesMenuLinks),
+                    controls
+                  )
                 }
               : {
-                  text: `🧪 SHARED LINK PREVIEW\n\nCampaign contact: ${controls.telegramCampaignContactUrl}`,
-                  keyboard: configuredUrlKeyboard(
-                    `Contact Hope Hub | ${controls.telegramCampaignContactUrl} | success`
+                  text: `🧪 SHARED LINK PREVIEW\n\nMain group: ${controls.telegramGroupHelpMainGroupUrl}\nOff-topic group: ${controls.telegramGroupHelpOffTopicGroupUrl}\nCampaign contact: ${controls.telegramCampaignContactUrl}`,
+                  keyboard: withPublicCommunityLinks(
+                    configuredUrlKeyboard(
+                      `Contact Hope Hub | ${controls.telegramCampaignContactUrl} | success`
+                    ),
+                    controls
                   )
                 };
       const message = await sendCommunityMessage(

@@ -41,6 +41,18 @@ VALUES
   )
 ON CONFLICT ("key") DO NOTHING;
 
+-- Consolidate the older confession-only return URL into the shared group URL.
+UPDATE "SiteConfig" AS shared
+SET "value" = legacy."value", "updatedAt" = NOW()
+FROM "SiteConfig" AS legacy
+WHERE shared."key" = 'telegramGroupHelpMainGroupUrl'
+  AND legacy."key" = 'telegramConfessionCommunityUrl'
+  AND TRIM(legacy."value") <> ''
+  AND (TRIM(shared."value") = '' OR shared."value" = 'https://t.me/hopehubindia');
+
+DELETE FROM "SiteConfig"
+WHERE "key" = 'telegramConfessionCommunityUrl';
+
 -- Seed only the values that should differ from the primary support group.
 -- Existing per-group administrator changes win over these initial defaults.
 INSERT INTO "TelegramCommunityGroupPolicy" (

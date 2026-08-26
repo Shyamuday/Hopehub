@@ -20,6 +20,8 @@ export const TELEGRAM_BOT_CONTROL_DEFAULTS = {
   telegramSubmissionRetentionDays: '180',
   telegramEngagementRetentionDays: '90',
   telegramDeliveryRetentionDays: '180',
+  telegramGroupHelpMainGroupUrl: 'https://t.me/hopehubindia',
+  telegramGroupHelpOffTopicGroupUrl: 'https://t.me/hopehubtalks',
   telegramConfessionDailyLimit: '5',
   telegramContactDailyLimit: '10',
   telegramConfessionMinCharacters: '5',
@@ -34,7 +36,6 @@ export const TELEGRAM_BOT_CONTROL_DEFAULTS = {
   telegramConfessionChannelId: '',
   telegramConfessionChannelName: 'Hope Hub Anonymous Confessions',
   telegramConfessionChannelUrl: '',
-  telegramConfessionCommunityUrl: 'https://t.me/hopehubindia',
   telegramConfessionStartNumber: '1000',
   telegramConfessionMenuLinks:
     'Hope Hub | https://hopehub.in | primary\nGet help | https://hopehub.in/contact | danger',
@@ -65,6 +66,20 @@ export const TELEGRAM_BOT_CONTROL_DEFAULTS = {
 export type TelegramBotControlKey = keyof typeof TELEGRAM_BOT_CONTROL_DEFAULTS;
 
 export const TELEGRAM_BOT_CONTROL_META: Record<TelegramBotControlKey, TelegramBotControlMeta> = {
+  telegramGroupHelpMainGroupUrl: {
+    label: 'HopeHub support group link',
+    description: 'Shared public-group link added to the confession, contact and rules bots.',
+    group: 'Shared links',
+    type: 'text',
+    maxLength: 500
+  },
+  telegramGroupHelpOffTopicGroupUrl: {
+    label: 'Chit-Chat group link',
+    description: 'Shared off-topic community link added to all public Hope Hub bot menus.',
+    group: 'Shared links',
+    type: 'text',
+    maxLength: 500
+  },
   telegramProtectionEnabled: {
     label: 'Enable bot protection',
     description: 'Apply shared private-chat throttling to all Hope Hub API bots.',
@@ -200,14 +215,6 @@ export const TELEGRAM_BOT_CONTROL_META: Record<TelegramBotControlKey, TelegramBo
     label: 'Public channel link',
     description:
       'Link used by the community-group button so members can read every approved confession.',
-    group: 'Confession bot',
-    type: 'text',
-    maxLength: 500
-  },
-  telegramConfessionCommunityUrl: {
-    label: 'Return-to-community link',
-    description:
-      'Shown after a confession is sent or approved so the member can return to Hope Hub.',
     group: 'Confession bot',
     type: 'text',
     maxLength: 500

@@ -31,6 +31,8 @@ import {
   TELEGRAM_BOT_URLS
 } from '../constants/telegram-community-bot.constants.js';
 import { prisma } from '../db.js';
+import { withPublicCommunityLinks } from './telegram-public-community-links.js';
+import { withCrossCommunityButton } from './telegram-group-help.community-navigation.js';
 
 const slug = COMMUNITY_BOT_SLUGS.CONFESSION;
 const CONFESSION_REVIEWER_TELEGRAM_USER_ID = '7217536617';
@@ -117,14 +119,17 @@ export async function publishApprovedConfession(input: {
     routing.channelId,
     publishedConfessionText({ text: input.text, number, destinationName: channelName }),
     {
-      reply_markup: {
-        inline_keyboard: [
-          [
-            { text: 'Hope Hub', url: 'https://hopehub.in' },
-            { text: 'Write your confession', url: TELEGRAM_BOT_URLS.CONFESSION }
+      reply_markup: withPublicCommunityLinks(
+        {
+          inline_keyboard: [
+            [
+              { text: 'Hope Hub', url: 'https://hopehub.in' },
+              { text: 'Write your confession', url: TELEGRAM_BOT_URLS.CONFESSION }
+            ]
           ]
-        ]
-      }
+        },
+        controls
+      )
     }
   );
 
@@ -135,6 +140,10 @@ export async function publishApprovedConfession(input: {
         in: [
           'telegramCommunityConfessionsInGroup',
           'telegramGroupHelpGroupChatId',
+          'telegramGroupHelpOffTopicGroupChatId',
+          'telegramGroupHelpMainGroupUrl',
+          'telegramGroupHelpOffTopicGroupUrl',
+          'telegramGroupHelpGroupTitle',
           'telegramCommunityDefaultTopicId'
         ]
       }
@@ -156,20 +165,24 @@ export async function publishApprovedConfession(input: {
       publishedConfessionText({ text: input.text, number, destinationName: groupName }),
       {
         message_thread_id: Number(groupConfig.telegramCommunityDefaultTopicId) || undefined,
-        reply_markup: channelUrl
-          ? {
-              inline_keyboard: [
-                [
-                  { text: 'Read all', url: channelUrl },
-                  { text: 'Write yours', url: TELEGRAM_BOT_URLS.CONFESSION }
+        reply_markup: withCrossCommunityButton(
+          channelUrl
+            ? {
+                inline_keyboard: [
+                  [
+                    { text: 'Read all', url: channelUrl },
+                    { text: 'Write yours', url: TELEGRAM_BOT_URLS.CONFESSION }
+                  ]
                 ]
-              ]
-            }
-          : {
-              inline_keyboard: [
-                [{ text: 'Write your confession', url: TELEGRAM_BOT_URLS.CONFESSION }]
-              ]
-            }
+              }
+            : {
+                inline_keyboard: [
+                  [{ text: 'Write your confession', url: TELEGRAM_BOT_URLS.CONFESSION }]
+                ]
+              },
+          groupConfig,
+          groupChatId
+        )
       }
     );
     destinations.push(groupName);
@@ -186,20 +199,33 @@ function mainKeyboard(controls: TelegramBotControls): TelegramKeyboard {
   for (let index = 0; index < linkButtons.length; index += 2) {
     linkRows.push(linkButtons.slice(index, index + 2));
   }
-  return {
-    inline_keyboard: [[{ text: 'Send confession', callback_data: 'send_confession' }], ...linkRows]
-  };
+  return withPublicCommunityLinks(
+    {
+      inline_keyboard: [
+        [{ text: 'Send confession', callback_data: 'send_confession' }],
+        ...linkRows
+      ]
+    },
+    controls
+  )!;
 }
 
 function postConfessionKeyboard(controls: TelegramBotControls): TelegramKeyboard {
-  const communityUrl = controls.telegramConfessionCommunityUrl.trim();
+  const menu = mainKeyboard(controls);
+  const mainUrl = controls.telegramGroupHelpMainGroupUrl.trim();
+  const offTopicUrl = controls.telegramGroupHelpOffTopicGroupUrl.trim();
+  const communityUrls = new Set([mainUrl, offTopicUrl].filter(Boolean));
+  const communityButtons = menu.inline_keyboard
+    .flat()
+    .filter((button) => button.url && communityUrls.has(button.url))
+    .map((button) =>
+      button.url === mainUrl ? { ...button, text: 'Back to HopeHub group' } : button
+    );
+  const otherRows = menu.inline_keyboard
+    .map((row) => row.filter((button) => !button.url || !communityUrls.has(button.url)))
+    .filter((row) => row.length);
   return {
-    inline_keyboard: [
-      ...(/^https:\/\//i.test(communityUrl)
-        ? [[{ text: 'Back to Hope Hub group', url: communityUrl }]]
-        : []),
-      ...mainKeyboard(controls).inline_keyboard
-    ]
+    inline_keyboard: [...(communityButtons.length ? [communityButtons] : []), ...otherRows]
   };
 }
 
