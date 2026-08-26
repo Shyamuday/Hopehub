@@ -8,6 +8,7 @@
 }
 
 .group-help-hero,
+.managed-group-switcher,
 .notice-panel,
 .panel,
 .success,
@@ -22,6 +23,47 @@
   display: grid;
   gap: 1rem;
   padding: 1.25rem;
+}
+
+.managed-group-switcher {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+}
+
+.managed-group-switcher > div:first-child {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.managed-group-switcher .eyebrow {
+  margin-bottom: 0;
+}
+
+.managed-group-switcher small {
+  overflow-wrap: anywhere;
+}
+
+.managed-group-switcher__options {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+@media (max-width: 680px) {
+  .managed-group-switcher {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .managed-group-switcher__options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .eyebrow {

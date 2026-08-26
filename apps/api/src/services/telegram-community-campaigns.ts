@@ -27,6 +27,7 @@ import { TELEGRAM_BOT_URLS } from '../constants/telegram-community-bot.constants
 import {
   endTelegramCommunityLockdown,
   expiredTelegramCommunityLockdowns,
+  getTelegramCommunityGroupPolicy,
   savedLockdownPermissions
 } from './telegram-community-group-policy.js';
 
@@ -163,8 +164,12 @@ const SMART_SCHEDULE_CONFIG_KEYS = [
   'telegramCommunityContentRepeatDays'
 ] as const;
 
-async function communityConfig() {
-  const values = await getSiteConfigMap(COMMUNITY_CONFIG_KEYS);
+async function communityConfig(chatId?: string) {
+  const [stored, policy] = await Promise.all([
+    getSiteConfigMap(COMMUNITY_CONFIG_KEYS),
+    chatId ? getTelegramCommunityGroupPolicy(chatId) : Promise.resolve({} as Record<string, string>)
+  ]);
+  const values: Record<string, string> = { ...stored, ...policy };
   return {
     welcomeEnabled: values.telegramCommunityWelcomeEnabled !== 'Disabled',
     autoDeleteSeconds: boundedNumber(values.telegramGroupHelpAutoDeleteSeconds, 300, 0, 604_800),
@@ -594,7 +599,7 @@ async function performCampaignDelivery(input: {
   now: Date;
 }) {
   const { deliveryId, campaign, item, now } = input;
-  const config = await communityConfig();
+  const config = await communityConfig(campaign.chatId);
   const messageThreadId = item.messageThreadId || config.defaultTopicId || undefined;
   await prisma.telegramCampaignDelivery.update({
     where: { id: deliveryId },
@@ -1073,7 +1078,7 @@ export async function welcomeTelegramCommunityMembers(update: CommunityTelegramU
   if (!members.length) return true;
   const chat = message?.chat || membership?.chat;
   if (!chat) return false;
-  const config = await communityConfig();
+  const config = await communityConfig(String(chat.id));
   await Promise.all(
     members.map((member) =>
       observeTelegramCommunityMember({
@@ -1268,7 +1273,7 @@ export async function recordTelegramCommunityDeparture(update: CommunityTelegram
     where: { chatId: String(chat.id), telegramUserId: String(member.id) },
     data: { leftAt: new Date() }
   });
-  const config = await communityConfig();
+  const config = await communityConfig(String(chat.id));
   if (config.joinLeaveMessages === 'join and leave' && config.goodbyeText) {
     const goodbye = config.goodbyeText
       .replaceAll('{mention}', memberMention(member))
@@ -1324,7 +1329,7 @@ export async function handleTelegramCommunityJoinVerificationCallback(
     });
     if (!state || state.expiresAt <= new Date()) return false;
     const approvalPayload = (state.payload || {}) as { welcomeMessageId?: number };
-    const config = await communityConfig();
+    const config = await communityConfig(chatId);
     const chat = await callCommunityTelegramApi<{ permissions?: Record<string, boolean> }>(
       CAMPAIGN_BOT,
       'getChat',
@@ -1374,7 +1379,7 @@ export async function handleTelegramCommunityJoinVerificationCallback(
     welcomeMessageId?: number;
   };
   if (data.startsWith('hh_join_captcha:') && Number(selectedAnswer) !== payload.captchaAnswer) {
-    const config = await communityConfig();
+    const config = await communityConfig(chatId);
     const attempts = Number(payload.attempts || 0) + 1;
     if (config.joinProtection === 'strict' && attempts >= 3) {
       const action = config.failedVerificationAction;
@@ -1436,7 +1441,7 @@ export async function handleTelegramCommunityJoinVerificationCallback(
     });
     return 'incorrect';
   }
-  const config = await communityConfig();
+  const config = await communityConfig(chatId);
   const chat = await callCommunityTelegramApi<{ permissions?: Record<string, boolean> }>(
     CAMPAIGN_BOT,
     'getChat',

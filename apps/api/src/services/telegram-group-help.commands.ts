@@ -83,7 +83,7 @@ export const GROUP_HELP_COMMAND_CATALOG = {
     '/filters',
     '/lockdown',
     '/unlock',
-    '/settestgroup',
+    '/setofftopic',
     '/setlog'
   ],
   safety: ['/report']

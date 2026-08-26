@@ -81,6 +81,10 @@ import {
   saveGroupHelpStaffPermissions
 } from '../../services/telegram-group-help.staff-permissions.js';
 import { replaceTelegramCommunityRoleAssignment } from '../../services/telegram-group-help.role-assignments.js';
+import {
+  getTelegramCommunityGroupPolicy,
+  saveTelegramCommunityGroupPolicy
+} from '../../services/telegram-community-group-policy.js';
 
 const setupSchema = z.object({
   dropPendingUpdates: z.boolean().optional(),
@@ -88,6 +92,7 @@ const setupSchema = z.object({
 });
 
 const groupHelpSaveSchema = z.object({
+  scope: z.enum(['main', 'off-topic']).optional(),
   entries: z
     .array(
       z.object({
@@ -213,7 +218,8 @@ const groupHelpSendSchema = z.object({
 });
 
 const groupHelpApplySchema = z.object({
-  actionId: z.string().trim().min(1).max(80)
+  actionId: z.string().trim().min(1).max(80),
+  scope: z.enum(['main', 'off-topic']).optional()
 });
 
 const campaignItemSchema = z
@@ -419,18 +425,50 @@ function linkedName(session: {
   return name || (session.username ? `@${session.username}` : 'Telegram user');
 }
 
-async function groupHelpConfigMap() {
+type ManagedGroupHelpScope = 'main' | 'off-topic';
+
+async function groupHelpConfigMap(chatId?: string) {
   const rows = await prisma.siteConfig.findMany({
     where: { key: { in: GROUP_HELP_CONFIG_KEYS } }
   });
-  const values = {
+  const policy = chatId ? await getTelegramCommunityGroupPolicy(chatId) : {};
+  const values: Record<string, string> = {
     ...GROUP_HELP_CONFIG_DEFAULTS,
-    ...Object.fromEntries(rows.map((row) => [row.key, row.value]))
+    ...Object.fromEntries(rows.map((row) => [row.key, row.value])),
+    ...policy
   };
   if (values.telegramGroupHelpBotUsername?.replace(/^@/, '').toLowerCase() === 'hopehubaibot') {
     values.telegramGroupHelpBotUsername = 'Hopehubbot';
   }
   return values;
+}
+
+function managedGroupHelpTarget(values: Record<string, string>, scope: ManagedGroupHelpScope) {
+  const offTopic = scope === 'off-topic';
+  return {
+    scope,
+    chatId:
+      (offTopic
+        ? values.telegramGroupHelpOffTopicGroupChatId
+        : values.telegramGroupHelpGroupChatId
+      )?.trim() || '',
+    label: offTopic
+      ? 'HopeHub Chit-Chat'
+      : values.telegramGroupHelpGroupTitle || 'Main support group'
+  };
+}
+
+function editableGroupHelpConfigKeys(scope: ManagedGroupHelpScope) {
+  return scope === 'main'
+    ? GROUP_HELP_CONFIG_KEYS
+    : GROUP_HELP_CONFIG_KEYS.filter((key) => GROUP_HELP_CONFIG_META[key].section !== 'connection');
+}
+
+function serializedGroupHelpConfig(values: Record<string, string>, scope: ManagedGroupHelpScope) {
+  return editableGroupHelpConfigKeys(scope).map((key) => ({
+    ...GROUP_HELP_CONFIG_META[key],
+    value: values[key] ?? ''
+  }));
 }
 
 type GroupHelpConfigEntryInput = { key: string; value: string };
@@ -517,6 +555,50 @@ async function persistGroupHelpConfig(
   return saved;
 }
 
+async function persistScopedGroupHelpConfig(
+  scope: ManagedGroupHelpScope,
+  entries: GroupHelpConfigEntryInput[],
+  actor: { id: string; role: Role }
+) {
+  if (scope === 'main') {
+    return persistGroupHelpConfig(
+      entries,
+      actor,
+      'telegram_group_help.config_update',
+      `Updated ${entries.length} main-group config item(s).`,
+      'config:main'
+    );
+  }
+
+  const globalValues = await groupHelpConfigMap();
+  const target = managedGroupHelpTarget(globalValues, scope);
+  if (!target.chatId) throw new Error('HopeHub Chit-Chat group ID is not configured.');
+
+  const allowedKeys = new Set(editableGroupHelpConfigKeys(scope));
+  const updates = validateGroupHelpConfigEntries(entries).filter(({ key }) => allowedKeys.has(key));
+  if (!updates.length) throw new Error('No editable Chit-Chat settings were provided.');
+
+  const existing = await getTelegramCommunityGroupPolicy(target.chatId);
+  await saveTelegramCommunityGroupPolicy(target.chatId, {
+    ...existing,
+    ...Object.fromEntries(updates.map(({ key, value }) => [key, value]))
+  });
+  await writeAuditLog({
+    actorId: actor.id,
+    actorRole: actor.role,
+    action: 'telegram_group_help.config_update',
+    targetType: 'telegram_group_help',
+    targetId: 'config:off-topic',
+    summary: `Updated ${updates.length} HopeHub Chit-Chat config item(s).`,
+    metadata: {
+      scope,
+      chatId: target.chatId,
+      entries: updates.map(({ key, value }) => ({ key, value })),
+      changes: updates.map(({ key, value }) => ({ key, before: existing[key] ?? '', after: value }))
+    }
+  });
+}
+
 async function groupHelpConnectionHealth(values: Record<string, string>) {
   const requiredPermissions = [
     'can_delete_messages',
@@ -534,7 +616,7 @@ async function groupHelpConnectionHealth(values: Record<string, string>) {
     const groups = await Promise.all(
       [
         ['main', values.telegramGroupHelpGroupChatId],
-        ['test', values.telegramGroupHelpTestGroupChatId],
+        ['off-topic', values.telegramGroupHelpOffTopicGroupChatId],
         ['log', values.telegramGroupHelpLogChannelId],
         ['staff', values.telegramGroupHelpStaffGroupId]
       ].map(async ([kind, chatId]) => {
@@ -622,11 +704,17 @@ function renderGroupHelpCommand(
   };
 }
 
-async function sendGroupHelpPost(input: { message: string; imageUrl?: string; pin?: boolean }) {
-  const values = await groupHelpConfigMap();
-  const chatId = values.telegramGroupHelpGroupChatId?.trim();
+async function sendGroupHelpPost(input: {
+  message: string;
+  imageUrl?: string;
+  pin?: boolean;
+  chatId?: string;
+}) {
+  const globalValues = await groupHelpConfigMap();
+  const chatId = input.chatId?.trim() || globalValues.telegramGroupHelpGroupChatId?.trim();
   if (!groupHelpBotToken()) throw new Error('TELEGRAM_HOPEHUBBOT_TOKEN is not configured.');
   if (!chatId) throw new Error('Telegram group chat ID is not configured.');
+  const values = await groupHelpConfigMap(chatId);
   const messageThreadId = Number(values.telegramCommunityDefaultTopicId || 0) || undefined;
 
   const media = input.imageUrl ? groupHelpMediaPayload(input.imageUrl) : null;
@@ -844,11 +932,11 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         ...stored,
         ...Object.fromEntries(parsed.data.entries.map((entry) => [entry.key, entry.value.trim()]))
       };
-      const testGroupId = groupConfig.telegramGroupHelpTestGroupChatId?.trim();
-      if (!testGroupId) {
+      const previewGroupId = groupConfig.telegramGroupHelpStaffGroupId?.trim();
+      if (!previewGroupId) {
         return res.status(400).json({
           message:
-            'Test group is not configured. Send /settestgroup in the Telegram test group first.'
+            'Private staff group is not configured. Configure it before sending bot previews.'
         });
       }
       const preview =
@@ -876,18 +964,23 @@ export function registerAdminTelegramBotRoutes(router: Router) {
                     `Contact Hope Hub | ${controls.telegramCampaignContactUrl} | success`
                   )
                 };
-      const message = await sendCommunityMessage(GROUP_HELP_BOT_SLUG, testGroupId, preview.text, {
-        reply_markup: preview.keyboard
-      });
+      const message = await sendCommunityMessage(
+        GROUP_HELP_BOT_SLUG,
+        previewGroupId,
+        preview.text,
+        {
+          reply_markup: preview.keyboard
+        }
+      );
       await writeAuditLog({
         actorId: req.user!.id,
         actorRole: req.user!.role,
         action: 'telegram_bots.preview_send',
         targetType: 'telegram_bots',
         targetId: parsed.data.group,
-        summary: `Sent ${parsed.data.group} preview to the Telegram test group.`
+        summary: `Sent ${parsed.data.group} preview to the private Telegram staff group.`
       });
-      res.json({ ok: true, messageId: message.message_id, testGroupId });
+      res.json({ ok: true, messageId: message.message_id, previewGroupId });
     })
   );
 
@@ -1151,9 +1244,12 @@ export function registerAdminTelegramBotRoutes(router: Router) {
     '/admin/telegram-bots/group-help',
     authRequired,
     allowRoles(Role.ADMIN, Role.HR),
-    asyncRoute(async (_req, res) => {
+    asyncRoute(async (req, res) => {
+      const scope: ManagedGroupHelpScope = req.query.scope === 'off-topic' ? 'off-topic' : 'main';
+      const globalValues = await groupHelpConfigMap();
+      const target = managedGroupHelpTarget(globalValues, scope);
       const [values, actionHistory, openCases, groupPolicies] = await Promise.all([
-        groupHelpConfigMap(),
+        target.chatId ? groupHelpConfigMap(target.chatId) : Promise.resolve(globalValues),
         prisma.auditLog.findMany({
           where: {
             targetType: 'telegram_group_help',
@@ -1187,25 +1283,29 @@ export function registerAdminTelegramBotRoutes(router: Router) {
           take: 10
         })
       ]);
-      const connectionHealth = await groupHelpConnectionHealth(values);
+      const connectionHealth = await groupHelpConnectionHealth(globalValues);
       res.json({
         tokenConfigured: Boolean(groupHelpBotToken()),
         actions: GROUP_HELP_ACTIONS,
         capabilityGroups: GROUP_HELP_CAPABILITY_GROUPS,
         actionHistory,
         operationalHealth: {
-          mainGroupConnected: Boolean(values.telegramGroupHelpGroupChatId?.trim()),
-          testGroupConnected: Boolean(values.telegramGroupHelpTestGroupChatId?.trim()),
-          logGroupConnected: Boolean(values.telegramGroupHelpLogChannelId?.trim()),
-          staffGroupConnected: Boolean(values.telegramGroupHelpStaffGroupId?.trim()),
+          mainGroupConnected: Boolean(globalValues.telegramGroupHelpGroupChatId?.trim()),
+          offTopicGroupConnected: Boolean(
+            globalValues.telegramGroupHelpOffTopicGroupChatId?.trim()
+          ),
+          logGroupConnected: Boolean(globalValues.telegramGroupHelpLogChannelId?.trim()),
+          staffGroupConnected: Boolean(globalValues.telegramGroupHelpStaffGroupId?.trim()),
           openModerationCases: openCases,
           policies: groupPolicies,
           connectionHealth
         },
-        config: GROUP_HELP_CONFIG_KEYS.map((key) => ({
-          ...GROUP_HELP_CONFIG_META[key],
-          value: values[key] ?? ''
-        }))
+        selectedGroup: target,
+        managedGroups: [
+          managedGroupHelpTarget(globalValues, 'main'),
+          managedGroupHelpTarget(globalValues, 'off-topic')
+        ],
+        config: serializedGroupHelpConfig(values, scope)
       });
     })
   );
@@ -1401,11 +1501,19 @@ export function registerAdminTelegramBotRoutes(router: Router) {
     allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const values = await groupHelpConfigMap();
-      const scope = String(req.query.scope || 'main').toLowerCase() === 'staff' ? 'staff' : 'main';
+      const requestedScope = String(req.query.scope || 'main').toLowerCase();
+      const scope =
+        requestedScope === 'staff'
+          ? 'staff'
+          : requestedScope === 'off-topic'
+            ? 'off-topic'
+            : 'main';
       const chatId =
         scope === 'staff'
           ? values.telegramGroupHelpStaffGroupId?.trim() || ''
-          : values.telegramGroupHelpGroupChatId?.trim() || '';
+          : scope === 'off-topic'
+            ? values.telegramGroupHelpOffTopicGroupChatId?.trim() || ''
+            : values.telegramGroupHelpGroupChatId?.trim() || '';
       if (!chatId) {
         return res.status(400).json({ message: `The ${scope} Telegram group is not configured.` });
       }
@@ -1504,11 +1612,19 @@ export function registerAdminTelegramBotRoutes(router: Router) {
     allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const values = await groupHelpConfigMap();
-      const scope = String(req.query.scope || 'main').toLowerCase() === 'staff' ? 'staff' : 'main';
+      const requestedScope = String(req.query.scope || 'main').toLowerCase();
+      const scope =
+        requestedScope === 'staff'
+          ? 'staff'
+          : requestedScope === 'off-topic'
+            ? 'off-topic'
+            : 'main';
       const chatId =
         scope === 'staff'
           ? values.telegramGroupHelpStaffGroupId?.trim() || ''
-          : values.telegramGroupHelpGroupChatId?.trim() || '';
+          : scope === 'off-topic'
+            ? values.telegramGroupHelpOffTopicGroupChatId?.trim() || ''
+            : values.telegramGroupHelpGroupChatId?.trim() || '';
       if (!chatId) {
         return res.status(400).json({ message: `The ${scope} Telegram group is not configured.` });
       }
@@ -1896,24 +2012,24 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         return res.status(400).json({ message: 'Invalid Group Help config payload.' });
       }
       try {
-        await persistGroupHelpConfig(
-          parsed.data.entries,
-          { id: req.user!.id, role: req.user!.role },
-          'telegram_group_help.config_update',
-          `Updated ${parsed.data.entries.length} Group Help config item(s).`
-        );
+        const scope = parsed.data.scope || 'main';
+        await persistScopedGroupHelpConfig(scope, parsed.data.entries, {
+          id: req.user!.id,
+          role: req.user!.role
+        });
       } catch (error) {
         return res.status(400).json({
           message: error instanceof Error ? error.message : 'Invalid Group Help config payload.'
         });
       }
 
-      const values = await groupHelpConfigMap();
+      const scope = parsed.data.scope || 'main';
+      const globalValues = await groupHelpConfigMap();
+      const target = managedGroupHelpTarget(globalValues, scope);
+      const values = target.chatId ? await groupHelpConfigMap(target.chatId) : globalValues;
       res.json({
-        config: GROUP_HELP_CONFIG_KEYS.map((key) => ({
-          ...GROUP_HELP_CONFIG_META[key],
-          value: values[key] ?? ''
-        }))
+        selectedGroup: target,
+        config: serializedGroupHelpConfig(values, scope)
       });
     })
   );
@@ -1928,7 +2044,12 @@ export function registerAdminTelegramBotRoutes(router: Router) {
       const action = GROUP_HELP_ACTIONS.find((item) => item.id === parsed.data.actionId);
       if (!action) return res.status(404).json({ message: 'Unknown Group Help action.' });
 
-      const values = await groupHelpConfigMap();
+      const scope = parsed.data.scope || 'main';
+      const globalValues = await groupHelpConfigMap();
+      const target = managedGroupHelpTarget(globalValues, scope);
+      if (!target.chatId)
+        return res.status(400).json({ message: `${target.label} is not configured.` });
+      const values = await groupHelpConfigMap(target.chatId);
       const rendered = renderGroupHelpCommand(action, values);
       if (!rendered.raw) return res.status(400).json({ message: `${action.title} is empty.` });
 
@@ -1936,7 +2057,8 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         const result = await sendGroupHelpPost({
           message: rendered.raw,
           imageUrl: rendered.imageUrl || undefined,
-          pin: true
+          pin: true,
+          chatId: target.chatId
         });
         await writeAuditLog({
           actorId: req.user!.id,
@@ -1947,6 +2069,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
           summary: `Applied Group Help action: ${action.title}.`,
           metadata: {
             mode: action.applyMode,
+            scope,
             chatId: result.chatId,
             messageId: result.sent.message_id
           }
@@ -1961,7 +2084,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
         targetType: 'telegram_group_help',
         targetId: action.id,
         summary: `Applied ${GROUP_HELP_BOT_DISPLAY_NAME} setting: ${action.title}.`,
-        metadata: { mode: 'DATABASE_CONFIG' }
+        metadata: { mode: 'DATABASE_CONFIG', scope, chatId: target.chatId }
       });
       return res.json({
         ok: true,

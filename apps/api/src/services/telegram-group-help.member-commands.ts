@@ -631,7 +631,7 @@ export async function handleGroupHelpMemberCommand(
         ? `*Moderator tools*\n/mute [reason] — mute for ${muteMinutes} minutes\n/unmute, /ro, /unro, /ban, /unban, /kick\n/delmute, /delban, /delkick — delete plus member action`
         : '',
       canUseAdminTools
-        ? `*Administrator tools*\n/promote, /unadmin, /title, /untitle\n/helper, /unhelper, /mod, /unmod\n/pin [notify], /unpin, /unpinall, /pinned\n/filter, /unfilter, /filters\n/welcome on|off, /lockdown [minutes], /unlock\n/settings, /setlog, /settestgroup`
+        ? `*Administrator tools*\n/promote, /unadmin, /title, /untitle\n/helper, /unhelper, /mod, /unmod\n/pin [notify], /unpin, /unpinall, /pinned\n/filter, /unfilter, /filters\n/welcome on|off, /lockdown [minutes], /unlock\n/settings, /setlog, /setofftopic`
         : '',
       context.isControlGroup && canUseStaffTools
         ? `*Private admin-group syntax*\n/info or /history <user_id or @username>\nForward a member message directly to the bot for /history\n/perms <user_id or @username>\n/warn|mute|ban <user_id or @username> [reason]\n/delete <main_message_id> [reason]\n/delwarn|delmute|delban <user> <main_message_id> [reason]\n/geturl <main_message_id>\n/clearwarnings <user_id or @username>`

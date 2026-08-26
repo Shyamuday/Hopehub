@@ -3,7 +3,7 @@ import type { CommunityTelegramMessage } from './telegram-community-bots.types.j
 
 const COMMAND_GROUP_KEYS = [
   'telegramGroupHelpGroupChatId',
-  'telegramGroupHelpTestGroupChatId',
+  'telegramGroupHelpOffTopicGroupChatId',
   'telegramGroupHelpStaffGroupId',
   'telegramGroupHelpLogChannelId'
 ] as const;
@@ -18,7 +18,7 @@ export type GroupHelpCommandContext = {
 export function configuredGroupHelpChatIds(values: Record<string, string>) {
   return [
     values.telegramGroupHelpGroupChatId,
-    values.telegramGroupHelpTestGroupChatId,
+    values.telegramGroupHelpOffTopicGroupChatId,
     values.telegramGroupHelpStaffGroupId,
     values.telegramGroupHelpLogChannelId
   ]

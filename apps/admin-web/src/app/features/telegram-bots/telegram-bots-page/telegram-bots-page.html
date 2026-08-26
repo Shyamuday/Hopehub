@@ -235,7 +235,7 @@
       <ol>
         <li>Replace a compromised token in BotFather, then update only the server secret.</li>
         <li>Use Configure bots → Refresh connections to reconnect Telegram.</li>
-        <li>Send a preview to the test group before changing the main group.</li>
+        <li>Send previews to the private staff group before changing a public group.</li>
         <li>Keep pending updates unless the old token was abused or the queue is invalid.</li>
       </ol>
       <p>Tokens stay outside the database and are never shown in this panel.</p>
@@ -431,7 +431,7 @@
           (click)="previewControlGroup(group)"
         >
           {{
-            saving() === 'preview:' + group.name ? 'Sending preview…' : 'Send preview to test group'
+            saving() === 'preview:' + group.name ? 'Sending preview…' : 'Send preview to staff group'
           }}
         </button>
       }

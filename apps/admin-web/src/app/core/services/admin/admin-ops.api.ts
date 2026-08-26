@@ -300,7 +300,7 @@ export class AdminOpsApi extends AdminApiBase {
     );
   }
 
-  getTelegramGroupHelpConfig() {
+  getTelegramGroupHelpConfig(scope: 'main' | 'off-topic' = 'main') {
     return firstValueFrom(
       this.http.get<{
         tokenConfigured: boolean;
@@ -315,6 +315,12 @@ export class AdminOpsApi extends AdminApiBase {
           applyMode: 'TELEGRAM_ADMIN_CONFIRMATION' | 'DIRECT_PIN';
         }>;
         capabilityGroups: Array<{ title: string; options: readonly string[] }>;
+        selectedGroup: { scope: 'main' | 'off-topic'; chatId: string; label: string };
+        managedGroups: Array<{
+          scope: 'main' | 'off-topic';
+          chatId: string;
+          label: string;
+        }>;
         actionHistory: Array<{
           id: string;
           action: string;
@@ -344,14 +350,20 @@ export class AdminOpsApi extends AdminApiBase {
           options?: string[];
           value: string;
         }>;
-      }>(`${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP}`),
+      }>(`${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP}`, {
+        params: { scope },
+      }),
     );
   }
 
-  saveTelegramGroupHelpConfig(entries: Array<{ key: string; value: string }>) {
+  saveTelegramGroupHelpConfig(
+    entries: Array<{ key: string; value: string }>,
+    scope: 'main' | 'off-topic' = 'main',
+  ) {
     return firstValueFrom(
       this.http.patch<{ config: any[] }>(`${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP}`, {
         entries,
+        scope,
       }),
     );
   }
@@ -400,14 +412,14 @@ export class AdminOpsApi extends AdminApiBase {
   }
 
   getTelegramGroupHelpMembers(params: {
-    scope?: 'main' | 'staff';
+    scope?: 'main' | 'off-topic' | 'staff';
     q?: string;
     page?: number;
     pageSize?: number;
   }) {
     return firstValueFrom(
       this.http.get<{
-        scope: 'main' | 'staff';
+        scope: 'main' | 'off-topic' | 'staff';
         chatId: string;
         page: number;
         pageSize: number;
@@ -439,11 +451,11 @@ export class AdminOpsApi extends AdminApiBase {
 
   getTelegramGroupHelpMemberIdentityHistory(
     telegramUserId: string,
-    scope: 'main' | 'staff' = 'main',
+    scope: 'main' | 'off-topic' | 'staff' = 'main',
   ) {
     return firstValueFrom(
       this.http.get<{
-        scope: 'main' | 'staff';
+        scope: 'main' | 'off-topic' | 'staff';
         chatId: string;
         telegramUserId: string;
         history: Array<{
@@ -585,7 +597,7 @@ export class AdminOpsApi extends AdminApiBase {
     );
   }
 
-  applyTelegramGroupHelpAction(actionId: string) {
+  applyTelegramGroupHelpAction(actionId: string, scope: 'main' | 'off-topic' = 'main') {
     return firstValueFrom(
       this.http.post<{
         ok: boolean;
@@ -593,7 +605,7 @@ export class AdminOpsApi extends AdminApiBase {
         command?: string;
         botUrl?: string;
         message?: string;
-      }>(`${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_APPLY}`, { actionId }),
+      }>(`${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_APPLY}`, { actionId, scope }),
     );
   }
 

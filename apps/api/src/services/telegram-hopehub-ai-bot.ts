@@ -50,7 +50,7 @@ import {
 import { moderateGroupHelpMessage as moderate } from './telegram-group-help.moderation.js';
 import {
   registerGroupHelpLogGroup as registerLogGroup,
-  registerGroupHelpTestGroup as registerTestGroup
+  registerGroupHelpOffTopicGroup as registerOffTopicGroup
 } from './telegram-group-help.registration.js';
 import { handleGroupHelpCallback } from './telegram-group-help.callbacks.js';
 import {
@@ -216,7 +216,7 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
     message?.sender_chat && String(message.sender_chat.id) === String(message.chat.id)
   );
   if (message && message.from?.is_bot && !anonymousAdminMessage) return;
-  if (message && (await registerTestGroup(message))) return;
+  if (message && (await registerOffTopicGroup(message))) return;
   if (message && (await registerLogGroup(message))) return;
   const chatId = String(chat.id);
   const values = await config(chatId);

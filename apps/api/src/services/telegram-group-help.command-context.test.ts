@@ -8,15 +8,15 @@ import {
 
 const config = {
   telegramGroupHelpGroupChatId: '-100-main',
-  telegramGroupHelpTestGroupChatId: '-100-test',
+  telegramGroupHelpOffTopicGroupChatId: '-100-off-topic',
   telegramGroupHelpStaffGroupId: '-100-staff',
   telegramGroupHelpLogChannelId: '-100-log'
 };
 
-test('main, test, staff and log chats are admitted by the webhook allow-list', () => {
+test('main, off-topic, staff and log chats are admitted by the webhook allow-list', () => {
   assert.deepEqual(configuredGroupHelpChatIds(config), [
     '-100-main',
-    '-100-test',
+    '-100-off-topic',
     '-100-staff',
     '-100-log'
   ]);
@@ -35,15 +35,15 @@ test('private staff and log commands target the configured main group', () => {
   });
 });
 
-test('main and test group commands remain scoped to their own group', () => {
+test('main and off-topic group commands remain scoped to their own group', () => {
   assert.deepEqual(groupHelpCommandContextFromConfig('-100-main', config), {
     sourceChatId: '-100-main',
     targetChatId: '-100-main',
     isControlGroup: false
   });
-  assert.deepEqual(groupHelpCommandContextFromConfig('-100-test', config), {
-    sourceChatId: '-100-test',
-    targetChatId: '-100-test',
+  assert.deepEqual(groupHelpCommandContextFromConfig('-100-off-topic', config), {
+    sourceChatId: '-100-off-topic',
+    targetChatId: '-100-off-topic',
     isControlGroup: false
   });
 });

@@ -1,56 +1,11 @@
 import { getTelegramCommunityGroupPolicy } from './telegram-community-group-policy.js';
 import { getSiteConfigMap } from './site-config.service.js';
 import type { CommunityTelegramMessage } from './telegram-community-bots.types.js';
+import { GROUP_HELP_CONFIG_KEYS as MANAGED_GROUP_HELP_CONFIG_KEYS } from '../constants/group-help-config.constants.js';
 
-export const GROUP_HELP_CONFIG_KEYS = [
-  'telegramGroupHelpGroupChatId',
-  'telegramGroupHelpTestGroupChatId',
-  'telegramGroupHelpWelcomeMessage',
-  'telegramGroupHelpWelcomeButtons',
-  'telegramGroupHelpAboutMessage',
-  'telegramGroupHelpRulesMessage',
-  'telegramGroupHelpSupportMessage',
-  'telegramCommunitySupportUrl',
-  'telegramGroupHelpFirstMessageReview',
-  'telegramGroupHelpCaptchaPendingMinutes',
-  'telegramGroupHelpCaptchaSuccessCleanupMinutes',
-  'telegramGroupHelpBannedWords',
-  'telegramGroupHelpSupportRedirectPhrases',
-  'telegramGroupHelpReviewPhrases',
-  'telegramGroupHelpLinkPolicy',
-  'telegramGroupHelpAntiFloodAction',
-  'telegramGroupHelpAntiFloodLimit',
-  'telegramGroupHelpWarnLimit',
-  'telegramGroupHelpWarnAction',
-  'telegramGroupHelpMuteMinutes',
-  'telegramGroupHelpForwardPolicy',
-  'telegramGroupHelpMediaPolicy',
-  'telegramGroupHelpAllowedMedia',
-  'telegramGroupHelpChannelSenderPolicy',
-  'telegramGroupHelpQuotePolicy',
-  'telegramGroupHelpAntiSpamAction',
-  'telegramGroupHelpAntiPornAction',
-  'telegramGroupHelpAutoDeleteSeconds',
-  'telegramGroupHelpCommandDeleteSeconds',
-  'telegramGroupHelpMaxMessageLength',
-  'telegramGroupHelpAdminWhitelist',
-  'telegramGroupHelpBanAuthorityUserIds',
-  'telegramGroupHelpBanCooldownSeconds',
-  'telegramGroupHelpReportsMode',
-  'telegramGroupHelpIdentityChangeAlerts',
-  'telegramGroupHelpIdentityAlertDeleteHours',
-  'telegramGroupHelpStaffGroupId',
-  'telegramGroupHelpMemberDirectorySync',
-  'telegramGroupHelpMemberSyncHours',
-  'telegramGroupHelpLogChannelId',
-  'telegramGroupHelpCustomReplies',
-  'telegramGroupHelpCommandPermissions',
-  'telegramGroupHelpNightMode',
-  'telegramGroupHelpNightStart',
-  'telegramGroupHelpNightEnd',
-  'telegramGroupHelpTimezone',
-  'telegramCommunityDefaultTopicId'
-] as const;
+// Keep runtime config aligned with the admin-managed catalog. Per-group
+// policies may override any of these values without introducing a second list.
+export const GROUP_HELP_CONFIG_KEYS = MANAGED_GROUP_HELP_CONFIG_KEYS;
 
 export async function groupHelpConfig(chatId?: string) {
   const stored = await getSiteConfigMap(GROUP_HELP_CONFIG_KEYS);

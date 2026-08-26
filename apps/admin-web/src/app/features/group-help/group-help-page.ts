@@ -27,6 +27,13 @@ type GroupHelpConfigEntry = {
   value: string;
 };
 
+type ManagedGroupHelpScope = 'main' | 'off-topic';
+type ManagedGroupHelpTarget = {
+  scope: ManagedGroupHelpScope;
+  chatId: string;
+  label: string;
+};
+
 type CommandItem = {
   id: string;
   title: string;
@@ -154,6 +161,13 @@ export class GroupHelpPage {
     () => this.activeWorkspaceIndex() < this.workspaceSections.length - 1,
   );
   readonly config = signal<GroupHelpConfigEntry[]>([]);
+  readonly selectedManagedGroupScope = signal<ManagedGroupHelpScope>('main');
+  readonly managedGroups = signal<ManagedGroupHelpTarget[]>([]);
+  readonly selectedManagedGroup = computed(
+    () =>
+      this.managedGroups().find((group) => group.scope === this.selectedManagedGroupScope()) ??
+      null,
+  );
   readonly localValues = signal<Record<string, string>>({});
   readonly hasUnsavedConfigChanges = computed(() => {
     const values = this.localValues();
@@ -377,7 +391,7 @@ export class GroupHelpPage {
   readonly moderatorTarget = signal('');
   readonly moderatorReason = signal('');
   readonly memberDirectory = signal<any[]>([]);
-  readonly memberDirectoryScope = signal<'main' | 'staff'>('main');
+  readonly memberDirectoryScope = signal<'main' | 'off-topic' | 'staff'>('main');
   readonly memberDirectorySearch = signal('');
   readonly memberDirectoryTotal = signal(0);
   readonly memberDirectorySyncedAt = signal('');
@@ -561,8 +575,12 @@ export class GroupHelpPage {
     this.loading.set(true);
     this.error.set('');
     try {
-      const res = await this.api.getTelegramGroupHelpConfig();
+      const res = await this.api.getTelegramGroupHelpConfig(this.selectedManagedGroupScope());
       this.config.set(res.config);
+      this.managedGroups.set(res.managedGroups || []);
+      this.selectedManagedGroupScope.set(
+        res.selectedGroup?.scope || this.selectedManagedGroupScope(),
+      );
       this.tokenConfigured.set(res.tokenConfigured);
       const actions = (res.actions || []).map((action) => ({
         ...action,
@@ -592,6 +610,19 @@ export class GroupHelpPage {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  async selectManagedGroup(scope: ManagedGroupHelpScope) {
+    if (scope === this.selectedManagedGroupScope()) return;
+    if (
+      this.hasUnsavedConfigChanges() &&
+      !window.confirm('Discard the unsaved settings before switching groups?')
+    ) {
+      return;
+    }
+    this.selectedManagedGroupScope.set(scope);
+    this.configSearch.set('');
+    await this.load();
   }
 
   async loadRoles() {
@@ -637,7 +668,7 @@ export class GroupHelpPage {
     }
   }
 
-  setMemberDirectoryScope(scope: 'main' | 'staff') {
+  setMemberDirectoryScope(scope: 'main' | 'off-topic' | 'staff') {
     if (this.memberDirectoryScope() === scope) return;
     this.memberDirectoryScope.set(scope);
     void this.loadMemberDirectory();
@@ -1287,6 +1318,11 @@ export class GroupHelpPage {
   }
 
   async loadConfigRevisions() {
+    if (this.selectedManagedGroupScope() !== 'main') {
+      this.configRevisions.set([]);
+      this.configRevisionPreview.set(null);
+      return;
+    }
     try {
       const response = await this.api.getTelegramGroupHelpRevisions();
       this.configRevisions.set(response.revisions || []);
@@ -1383,7 +1419,10 @@ export class GroupHelpPage {
         key: entry.key,
         value: this.value(entry.key),
       }));
-      const res = await this.api.saveTelegramGroupHelpConfig(entries);
+      const res = await this.api.saveTelegramGroupHelpConfig(
+        entries,
+        this.selectedManagedGroupScope(),
+      );
       this.config.set(res.config as GroupHelpConfigEntry[]);
       this.localValues.set(
         Object.fromEntries(
@@ -1421,6 +1460,7 @@ export class GroupHelpPage {
       ];
       const res = await this.api.saveTelegramGroupHelpConfig(
         keys.map((key) => ({ key, value: this.value(key) })),
+        this.selectedManagedGroupScope(),
       );
       this.localValues.update((current) => ({
         ...current,
@@ -1455,7 +1495,10 @@ export class GroupHelpPage {
         key: entry.key,
         value: this.value(entry.key),
       }));
-      const res = await this.api.saveTelegramGroupHelpConfig(entries);
+      const res = await this.api.saveTelegramGroupHelpConfig(
+        entries,
+        this.selectedManagedGroupScope(),
+      );
       this.config.set(res.config as GroupHelpConfigEntry[]);
       this.localValues.update((current) => ({
         ...current,
@@ -1482,7 +1525,10 @@ export class GroupHelpPage {
         key: entry.key,
         value: this.value(entry.key),
       }));
-      const res = await this.api.saveTelegramGroupHelpConfig(entries);
+      const res = await this.api.saveTelegramGroupHelpConfig(
+        entries,
+        this.selectedManagedGroupScope(),
+      );
       this.config.set(res.config as GroupHelpConfigEntry[]);
       this.localValues.update((current) => ({
         ...current,
@@ -1573,7 +1619,10 @@ export class GroupHelpPage {
     this.telegramApplyUrl.set('');
     try {
       if (!(await this.saveAll())) return;
-      const result = await this.api.applyTelegramGroupHelpAction(item.id);
+      const result = await this.api.applyTelegramGroupHelpAction(
+        item.id,
+        this.selectedManagedGroupScope(),
+      );
       if (result.mode === 'APPLIED') {
         this.actionStatuses.update((current) => ({ ...current, [item.id]: 'applied' }));
         this.message.set(`${item.title} applied to the configured Telegram group.`);

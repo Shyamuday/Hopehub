@@ -6,6 +6,32 @@
   </div>
 </section>
 
+<section class="managed-group-switcher" aria-label="Managed Telegram group">
+  <div>
+    <p class="eyebrow">Editing group</p>
+    <strong>{{ selectedManagedGroup()?.label || 'Telegram community' }}</strong>
+    <small>
+      {{
+        selectedManagedGroup()?.chatId
+          ? selectedManagedGroup()?.chatId
+          : 'Group ID is not configured yet'
+      }}
+    </small>
+  </div>
+  <div class="managed-group-switcher__options" role="group" aria-label="Choose a group">
+    @for (group of managedGroups(); track group.scope) {
+      <button
+        type="button"
+        [class.primary]="selectedManagedGroupScope() === group.scope"
+        [attr.aria-pressed]="selectedManagedGroupScope() === group.scope"
+        (click)="selectManagedGroup(group.scope)"
+      >
+        {{ group.scope === 'main' ? 'Main support group' : 'Chit-Chat group' }}
+      </button>
+    }
+  </div>
+</section>
+
 @if (message()) {
   <div class="success workspace-feedback">{{ message() }}</div>
 }
@@ -791,7 +817,9 @@
 
     <section
       class="settings-essentials panel"
-      [class.workspace-hidden]="activeWorkspaceSection() !== 'settings'"
+      [class.workspace-hidden]="
+        activeWorkspaceSection() !== 'settings' || selectedManagedGroupScope() !== 'main'
+      "
     >
       <div class="panel-head">
         <div>
@@ -1199,6 +1227,13 @@
             (click)="setMemberDirectoryScope('main')"
           >
             Main group
+          </button>
+          <button
+            type="button"
+            [class.active]="memberDirectoryScope() === 'off-topic'"
+            (click)="setMemberDirectoryScope('off-topic')"
+          >
+            Chit-Chat group
           </button>
           <button
             type="button"

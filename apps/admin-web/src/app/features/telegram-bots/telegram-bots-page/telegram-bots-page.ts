@@ -387,7 +387,7 @@ export class TelegramBotsPage implements OnInit {
           value: this.controlValue(control.key),
         })),
       );
-      this.showToast(`Preview sent to the Telegram test group.`);
+      this.showToast(`Preview sent to the private Telegram staff group.`);
     } catch (e: any) {
       this.showToast(e?.error?.message || 'Could not send the preview.');
     } finally {

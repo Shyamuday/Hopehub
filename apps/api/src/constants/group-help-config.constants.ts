@@ -411,10 +411,9 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
     defaultValue: ''
   },
   {
-    key: 'telegramGroupHelpTestGroupChatId',
-    label: 'Test Telegram group ID',
-    description:
-      'Test group handle or numeric ID used for previews before publishing to the main group.',
+    key: 'telegramGroupHelpOffTopicGroupChatId',
+    label: 'Off-topic Telegram group ID',
+    description: 'Permanent HopeHub Chit-Chat group managed independently by the Hope Hub bot.',
     section: 'connection',
     type: 'text',
     maxLength: 80,
@@ -1127,7 +1126,7 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
     key: 'telegramGroupHelpCommandDeleteSeconds',
     label: 'Public command cleanup',
     description:
-      'Seconds before a command sent in the main or test group is removed. Private staff and log-group commands are retained. Use 0 to keep public commands.',
+      'Seconds before a command sent in a managed public group is removed. Private staff and log-group commands are retained. Use 0 to keep public commands.',
     section: 'content',
     type: 'number',
     maxLength: 2,
