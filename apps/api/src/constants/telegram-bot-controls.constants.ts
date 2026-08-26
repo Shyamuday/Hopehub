@@ -362,6 +362,17 @@ export const TELEGRAM_BOT_CONTROL_META: Record<TelegramBotControlKey, TelegramBo
   }
 };
 
-export const TELEGRAM_BOT_CONTROL_KEYS = Object.keys(
+// Group URLs are edited in the Group Help workspace. Other bots consume the
+// same SiteConfig rows, but must not claim a second editable owner for them.
+export const TELEGRAM_BOT_SHARED_GROUP_CONFIG_KEYS: TelegramBotControlKey[] = [
+  'telegramGroupHelpMainGroupUrl',
+  'telegramGroupHelpOffTopicGroupUrl'
+];
+
+export const TELEGRAM_BOT_CONTROL_READ_KEYS = Object.keys(
   TELEGRAM_BOT_CONTROL_DEFAULTS
 ) as TelegramBotControlKey[];
+
+export const TELEGRAM_BOT_CONTROL_KEYS = TELEGRAM_BOT_CONTROL_READ_KEYS.filter(
+  (key) => !TELEGRAM_BOT_SHARED_GROUP_CONFIG_KEYS.includes(key)
+);

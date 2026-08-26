@@ -1,7 +1,7 @@
 import { prisma } from '../db.js';
 import {
   TELEGRAM_BOT_CONTROL_DEFAULTS,
-  TELEGRAM_BOT_CONTROL_KEYS,
+  TELEGRAM_BOT_CONTROL_READ_KEYS,
   type TelegramBotControlKey
 } from '../constants/telegram-bot-controls.constants.js';
 
@@ -12,7 +12,7 @@ let cached: { value: TelegramBotControls; expiresAt: number } | null = null;
 export async function getTelegramBotControls(): Promise<TelegramBotControls> {
   if (cached && cached.expiresAt > Date.now()) return cached.value;
   const rows = await prisma.siteConfig.findMany({
-    where: { key: { in: TELEGRAM_BOT_CONTROL_KEYS } },
+    where: { key: { in: TELEGRAM_BOT_CONTROL_READ_KEYS } },
     select: { key: true, value: true }
   });
   const value = {
