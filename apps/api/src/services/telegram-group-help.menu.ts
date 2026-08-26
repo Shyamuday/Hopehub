@@ -1,5 +1,6 @@
 import type { TelegramKeyboard } from './telegram-community-bots.types.js';
 import { TELEGRAM_BOT_URLS } from '../constants/telegram-community-bot.constants.js';
+import { withCrossCommunityButton } from './telegram-group-help.community-navigation.js';
 
 /** A compact, button-first entry point for people who do not know bot commands yet. */
 export function groupHelpPrivateSettingsUrl(chatId: string): string {
@@ -20,37 +21,44 @@ export function groupHelpPrivateSettingsKeyboard(chatId: string): TelegramKeyboa
   };
 }
 
-export function groupHelpMainMenuKeyboard(chatId?: string): TelegramKeyboard {
-  return {
-    inline_keyboard: [
-      [
-        { text: 'Rules', callback_data: 'hh_menu_rules', style: 'success' },
-        { text: 'Private support', callback_data: 'hh_menu_support', style: 'success' }
-      ],
-      [
-        { text: 'My warnings', callback_data: 'hh_menu_warnings', style: 'success' },
-        { text: 'Report a concern', callback_data: 'hh_menu_report', style: 'danger' }
-      ],
-      [
-        { text: 'Bot help', callback_data: 'hh_menu_help', style: 'success' },
-        ...(chatId
-          ? [
-              {
-                text: 'Admin settings',
-                url: groupHelpPrivateSettingsUrl(chatId),
-                style: 'success' as const
-              }
-            ]
-          : [
-              {
-                text: 'Admin settings',
-                callback_data: 'hh_menu_settings',
-                style: 'success' as const
-              }
-            ])
+export function groupHelpMainMenuKeyboard(
+  chatId?: string,
+  values: Record<string, string> = {}
+): TelegramKeyboard {
+  return withCrossCommunityButton(
+    {
+      inline_keyboard: [
+        [
+          { text: 'Rules', callback_data: 'hh_menu_rules', style: 'success' },
+          { text: 'Private support', callback_data: 'hh_menu_support', style: 'success' }
+        ],
+        [
+          { text: 'My warnings', callback_data: 'hh_menu_warnings', style: 'success' },
+          { text: 'Report a concern', callback_data: 'hh_menu_report', style: 'danger' }
+        ],
+        [
+          { text: 'Bot help', callback_data: 'hh_menu_help', style: 'success' },
+          ...(chatId
+            ? [
+                {
+                  text: 'Admin settings',
+                  url: groupHelpPrivateSettingsUrl(chatId),
+                  style: 'success' as const
+                }
+              ]
+            : [
+                {
+                  text: 'Admin settings',
+                  callback_data: 'hh_menu_settings',
+                  style: 'success' as const
+                }
+              ])
+        ]
       ]
-    ]
-  };
+    },
+    values,
+    chatId
+  )!;
 }
 
 export function groupHelpSettingsHomeKeyboard(): TelegramKeyboard {

@@ -11,6 +11,7 @@ import {
 } from './telegram-community-bots.client.js';
 import { groupHelpConfig } from './telegram-group-help.config.js';
 import { configuredUrlKeyboard } from './telegram-keyboard-config.js';
+import { withCrossCommunityButton } from './telegram-group-help.community-navigation.js';
 import { telegramGroupWarningCount } from './telegram-community-bots.store.js';
 import {
   groupHelpMainMenuKeyboard,
@@ -92,7 +93,8 @@ export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
     const aboutMessage =
       values.telegramGroupHelpAboutMessage?.trim() || HOPEHUB_COMMUNITY_ABOUT_MESSAGE;
     await sendTemporaryGroupHelpMessage(chatId, aboutMessage, values, {
-      reply_to_message_id: callback.message.message_id
+      reply_to_message_id: callback.message.message_id,
+      reply_markup: withCrossCommunityButton(undefined, values, chatId)
     });
     // Each welcome message belongs to one new member. Once they have opened the
     // introduction, keep its useful links but remove About so it cannot be
@@ -101,9 +103,11 @@ export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
       GROUP_HELP_BOT_SLUG,
       chatId,
       callback.message.message_id,
-      configuredUrlKeyboard(values.telegramGroupHelpWelcomeButtons || '') || {
-        inline_keyboard: []
-      }
+      withCrossCommunityButton(
+        configuredUrlKeyboard(values.telegramGroupHelpWelcomeButtons || ''),
+        values,
+        chatId
+      ) || { inline_keyboard: [] }
     );
     await answerCommunityCallback(
       GROUP_HELP_BOT_SLUG,
@@ -113,9 +117,11 @@ export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
     return true;
   }
   if (callback.data === 'hh_menu_home') {
+    const values = await groupHelpConfig(chatId);
     await sendCommunityMessage(GROUP_HELP_BOT_SLUG, chatId, 'Choose what you need.', {
       reply_markup: groupHelpMainMenuKeyboard(
-        ['group', 'supergroup'].includes(callback.message.chat.type || '') ? chatId : undefined
+        ['group', 'supergroup'].includes(callback.message.chat.type || '') ? chatId : undefined,
+        values
       )
     });
     await answerCommunityCallback(GROUP_HELP_BOT_SLUG, callback.id);
@@ -178,7 +184,11 @@ export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
               ? 'To report a group message, reply to it and send /report followed by a short reason. For immediate danger, contact local emergency services now.'
               : 'Use the menu for common actions. You can also send /help to see the complete command guide.';
     await sendCommunityMessage(GROUP_HELP_BOT_SLUG, chatId, text, {
-      reply_markup: { inline_keyboard: [[{ text: 'Main menu', callback_data: 'hh_menu_home' }]] }
+      reply_markup: withCrossCommunityButton(
+        { inline_keyboard: [[{ text: 'Main menu', callback_data: 'hh_menu_home' }]] },
+        values,
+        chatId
+      )
     });
     await answerCommunityCallback(GROUP_HELP_BOT_SLUG, callback.id);
     return true;

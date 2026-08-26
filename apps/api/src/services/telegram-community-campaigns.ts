@@ -30,6 +30,7 @@ import {
   getTelegramCommunityGroupPolicy,
   savedLockdownPermissions
 } from './telegram-community-group-policy.js';
+import { withCrossCommunityButton } from './telegram-group-help.community-navigation.js';
 
 const CAMPAIGN_BOT = GROUP_HELP_BOT_SLUG;
 const MAX_DELIVERIES_PER_SWEEP = 20;
@@ -135,6 +136,11 @@ const COMMUNITY_CONFIG_KEYS = [
   'telegramGroupHelpWelcomeMessage',
   'telegramGroupHelpWelcomeImageUrl',
   'telegramGroupHelpWelcomeButtons',
+  'telegramGroupHelpGroupChatId',
+  'telegramGroupHelpOffTopicGroupChatId',
+  'telegramGroupHelpMainGroupUrl',
+  'telegramGroupHelpOffTopicGroupUrl',
+  'telegramGroupHelpGroupTitle',
   'telegramGroupHelpGoodbyeMessage',
   'telegramGroupHelpJoinProtection',
   'telegramGroupHelpCaptchaMode',
@@ -179,13 +185,17 @@ async function communityConfig(chatId?: string) {
       values.telegramGroupHelpWelcomeMessage ||
       'Welcome to Hope Hub 💙 Participate at your own pace and protect your personal details.',
     welcomeMediaUrl: values.telegramGroupHelpWelcomeImageUrl?.trim() || '',
-    welcomeKeyboard: {
-      inline_keyboard: [
-        [{ text: 'About Hope Hub', callback_data: 'hh_welcome_about', style: 'success' }],
-        ...(configuredUrlKeyboard(values.telegramGroupHelpWelcomeButtons || '')?.inline_keyboard ||
-          [])
-      ]
-    },
+    welcomeKeyboard: withCrossCommunityButton(
+      {
+        inline_keyboard: [
+          [{ text: 'About Hope Hub', callback_data: 'hh_welcome_about', style: 'success' }],
+          ...(configuredUrlKeyboard(values.telegramGroupHelpWelcomeButtons || '')
+            ?.inline_keyboard || [])
+        ]
+      },
+      values,
+      chatId
+    ),
     goodbyeText: values.telegramGroupHelpGoodbyeMessage?.trim() || '',
     joinProtection: values.telegramGroupHelpJoinProtection || 'off',
     captchaMode: values.telegramGroupHelpCaptchaMode || 'on',

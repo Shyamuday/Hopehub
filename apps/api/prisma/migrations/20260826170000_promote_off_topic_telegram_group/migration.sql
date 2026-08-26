@@ -25,6 +25,22 @@ SET "value" = COALESCE(
 DELETE FROM "SiteConfig"
 WHERE "key" = 'telegramGroupHelpTestGroupChatId';
 
+INSERT INTO "SiteConfig" ("key", "value", "label", "updatedAt")
+VALUES
+  (
+    'telegramGroupHelpMainGroupUrl',
+    'https://t.me/hopehubindia',
+    'Main support group public link',
+    NOW()
+  ),
+  (
+    'telegramGroupHelpOffTopicGroupUrl',
+    'https://t.me/hopehubtalks',
+    'Chit-Chat group public link',
+    NOW()
+  )
+ON CONFLICT ("key") DO NOTHING;
+
 -- Seed only the values that should differ from the primary support group.
 -- Existing per-group administrator changes win over these initial defaults.
 INSERT INTO "TelegramCommunityGroupPolicy" (

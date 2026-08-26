@@ -21,6 +21,7 @@ import { forgetGroupHelpMemberData } from './telegram-group-help.privacy.js';
 import { forgetAllGroupHelpMemberData } from './telegram-group-help.privacy.js';
 import { sendGroupHelpActivityLog } from './telegram-group-help.actions.js';
 import { groupHelpMainMenuKeyboard } from './telegram-group-help.menu.js';
+import { withCrossCommunityButton } from './telegram-group-help.community-navigation.js';
 import {
   messageForGroupHelpTarget,
   resolveGroupHelpCommandContext
@@ -144,7 +145,8 @@ export async function handleGroupHelpMemberCommand(
       'Welcome to Hope Hub 💙\n\nChoose what you need. You can still use commands whenever that feels easier.',
       {
         reply_markup: groupHelpMainMenuKeyboard(
-          ['group', 'supergroup'].includes(message.chat.type || '') ? chatId : undefined
+          ['group', 'supergroup'].includes(message.chat.type || '') ? chatId : undefined,
+          values
         ),
         message_thread_id: message.message_thread_id
       }
@@ -186,7 +188,8 @@ export async function handleGroupHelpMemberCommand(
   }
   if (command === '/rules') {
     await sendCommunityMessage(GROUP_HELP_BOT_SLUG, chatId, values.telegramGroupHelpRulesMessage, {
-      message_thread_id: message.message_thread_id
+      message_thread_id: message.message_thread_id,
+      reply_markup: withCrossCommunityButton(undefined, values, targetChatId)
     });
     return true;
   }
@@ -195,7 +198,10 @@ export async function handleGroupHelpMemberCommand(
       GROUP_HELP_BOT_SLUG,
       chatId,
       values.telegramGroupHelpSupportMessage,
-      { message_thread_id: message.message_thread_id }
+      {
+        message_thread_id: message.message_thread_id,
+        reply_markup: withCrossCommunityButton(undefined, values, targetChatId)
+      }
     );
     return true;
   }

@@ -421,6 +421,28 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
     defaultValue: '@hopehubtalks'
   },
   {
+    key: 'telegramGroupHelpMainGroupUrl',
+    label: 'Main support group public link',
+    description:
+      'Public join link shown to members of the Chit-Chat group. Update this if the main group username changes.',
+    section: 'connection',
+    type: 'text',
+    maxLength: 300,
+    placeholder: 'https://t.me/hopehubindia',
+    defaultValue: 'https://t.me/hopehubindia'
+  },
+  {
+    key: 'telegramGroupHelpOffTopicGroupUrl',
+    label: 'Chit-Chat group public link',
+    description:
+      'Public join link shown to members of the main support group. Update this if the Chit-Chat username changes.',
+    section: 'connection',
+    type: 'text',
+    maxLength: 300,
+    placeholder: 'https://t.me/hopehubtalks',
+    defaultValue: 'https://t.me/hopehubtalks'
+  },
+  {
     key: 'telegramLiveChatBridgeEnabled',
     label: 'Website live-chat bridge',
     description:
