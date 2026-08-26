@@ -22,6 +22,7 @@ import { observeTelegramCommunityMember } from './telegram-community-member-iden
 import { telegramPersonLogLabel } from './telegram-group-help.people.js';
 import { telegramGroupCallButton } from './telegram-group-call-link.js';
 import { runTelegramContentNetworkScheduler } from './telegram-content-network.js';
+import { runTelegramDailyVcTopicPlanner } from './telegram-community-vc-topics.js';
 import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
 import { TELEGRAM_BOT_URLS } from '../constants/telegram-community-bot.constants.js';
 import {
@@ -782,6 +783,20 @@ export async function runTelegramCampaignScheduler(now = new Date()) {
   await restoreExpiredCommunityLockdowns(now);
   if (!telegramCampaignSweepEnabled) return;
   await runTelegramContentNetworkScheduler(now);
+  try {
+    await runTelegramDailyVcTopicPlanner(now);
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    console.error('[telegram-vc-topics] Daily topic planner failed.', error);
+    await communityConfig()
+      .then((config) =>
+        logCommunityActivity(config, 'Daily VC topic planner failed', [
+          `Reason: ${detail}`,
+          'The normal VC scheduler and community campaigns will continue.'
+        ])
+      )
+      .catch(() => null);
+  }
   await runTelegramCommunityEventScheduler(now);
   await closeExpiredPolls(now);
   const retries = await prisma.telegramCampaignDelivery.findMany({

@@ -74,6 +74,67 @@ A place for healing, connection, listening and emotional guidance.
 
 Our goal is to make support more accessible, human and available when people need someone to talk to.`;
 
+export const DEFAULT_COMMUNITY_VC_TOPIC_ROOTS = `setting boundaries without guilt
+handling loneliness when people are around
+asking for support without feeling like a burden
+building trust after being hurt
+coping with overthinking at night
+recovering from emotional exhaustion
+managing expectations in relationships
+finding motivation during a difficult week
+dealing with rejection in a healthy way
+understanding the difference between rest and avoidance
+communicating needs without starting a conflict
+making peace with slow progress
+coping with homesickness and feeling disconnected
+building confidence after a setback
+letting go of comparisons with other people
+recognising emotionally safe friendships
+dealing with uncertainty about the future
+creating a calming routine that is realistic
+handling criticism without losing self-worth
+moving forward after a breakup
+supporting someone without trying to fix them
+balancing work pressure and emotional health
+learning to say no respectfully
+rebuilding routines after a low period
+dealing with family pressure and expectations
+understanding emotional triggers
+making space for grief and loss
+reducing the fear of being judged
+building healthier digital and social-media habits
+coping with exam and performance pressure
+finding meaning when life feels repetitive
+handling anger before it becomes harmful
+practising self-compassion after a mistake
+staying connected without unwanted private messages
+identifying small wins during recovery
+talking openly while protecting personal privacy
+managing attachment and fear of abandonment
+creating hope during a difficult transition
+recognising burnout before it becomes severe
+building friendships as an adult
+dealing with guilt after choosing yourself
+making decisions when emotions feel intense
+coping with sleep difficulties and racing thoughts
+responding to insensitive comments
+learning from conflict without blaming yourself
+finding courage to seek professional support
+supporting a friend while protecting your own energy
+rebuilding self-esteem after emotional abuse
+handling days when nothing feels productive
+creating emotional safety in group conversations
+letting go of the need for constant reassurance
+staying grounded during panic or overwhelm
+making room for joy without feeling guilty
+understanding healthy vulnerability
+coping when plans suddenly change
+separating your identity from your achievements
+dealing with one-sided relationships
+recognising when advice is not helpful
+building patience with your healing process
+finding supportive ways to express anger`;
+
 export type GroupHelpConfigField = {
   key: string;
   label: string;
@@ -1184,6 +1245,38 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
     type: 'number',
     maxLength: 4,
     defaultValue: '15'
+  },
+  {
+    key: 'telegramCommunityVcTopicPlannerEnabled',
+    label: 'Daily VC topic planner',
+    description:
+      'Send today’s VC topic board to the private staff group and the public RSVP schedule to the main group.',
+    section: 'content',
+    type: 'select',
+    options: ['Enabled', 'Disabled'],
+    maxLength: 20,
+    defaultValue: 'Enabled'
+  },
+  {
+    key: 'telegramCommunityVcTopicPromptTime',
+    label: 'Daily VC topic-board time',
+    description:
+      'India time when the bot should prepare today’s topics and ask staff to choose their VC slots.',
+    section: 'content',
+    type: 'text',
+    maxLength: 5,
+    placeholder: '09:00',
+    defaultValue: '09:00'
+  },
+  {
+    key: 'telegramCommunityVcTopicRoots',
+    label: 'VC topic library',
+    description:
+      'One safe discussion theme per line. The bot creates varied titles, records prior use, and never repeats a generated topic while unused topics remain.',
+    section: 'content',
+    type: 'textarea',
+    maxLength: 20000,
+    defaultValue: DEFAULT_COMMUNITY_VC_TOPIC_ROOTS
   },
   {
     key: 'telegramCommunityAnnouncementPinMode',

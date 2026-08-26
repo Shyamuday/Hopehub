@@ -19,6 +19,7 @@ import {
   groupHelpSettingsHomeKeyboard
 } from './telegram-group-help.menu.js';
 import { handleGroupHelpBotSettingsCallback } from './telegram-group-help.bot-settings.js';
+import { handleTelegramVcTopicCallback } from './telegram-community-vc-topics.js';
 import {
   handleGroupHelpModerationActionCallback,
   sendGroupHelpActivityLog,
@@ -79,6 +80,23 @@ export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
               : joinVerification === 'denied'
                 ? 'Only an administrator of that community can approve this member.'
                 : 'Verification was not completed. Please ask an admin for help.'
+    );
+    return true;
+  }
+  const vcTopicAction = await handleTelegramVcTopicCallback(update);
+  if (vcTopicAction) {
+    await answerCommunityCallback(
+      GROUP_HELP_BOT_SLUG,
+      callback.id,
+      vcTopicAction === 'claimed'
+        ? 'This VC topic is assigned to you.'
+        : vcTopicAction === 'already-claimed'
+          ? 'This VC topic has already been selected.'
+          : vcTopicAction === 'rsvp'
+            ? 'You are on the list for this VC.'
+            : vcTopicAction === 'denied'
+              ? 'Only authorised members of the private staff group can select VC topics.'
+              : 'This VC slot is no longer available.'
     );
     return true;
   }
