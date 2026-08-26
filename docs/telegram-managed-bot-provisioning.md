@@ -63,3 +63,16 @@ Use `--secret-name hopehub-telegram-custom-token` when deployment expects a spec
 - Do not create replacement bots when an existing owned bot can be recovered.
 - Give every generated bot only the group/channel permissions required for its purpose.
 - Back up `/etc/hopehub-telegram-managed-bots.json`; back up token secrets only through the approved encrypted secret backup process.
+
+## Conventional BotFather fallback
+
+When Bot Management Mode has not been enabled yet, the server can create a conventional bot through the approved MTProto account:
+
+```bash
+sudo npm run telegram:botfather-bot:create -- \\
+  --name "Toxic Movie Updates - Yash Unofficial" \\
+  --username ToxicYashUpdatesBot \\
+  --secret-name hopehub-telegram-toxic-movie-token
+```
+
+This fallback cancels any unfinished BotFather operation, creates exactly one bot, verifies its identity through the Bot API, and writes the token directly to the protected `/etc` secret without printing it. It refuses to overwrite an existing token.
