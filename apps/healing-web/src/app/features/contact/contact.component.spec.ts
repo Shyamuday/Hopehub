@@ -84,6 +84,42 @@ describe('ContactComponent', () => {
     expect(component.contactForm.get('email')?.touched).toBeTruthy();
     expect(component.contactForm.get('message')?.touched).toBeTruthy();
     expect(component.contactForm.get('preferredContact')?.touched).toBeTruthy();
+    expect(component.bookingValidationIssues()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ field: 'name', message: 'Name is required.' }),
+        expect.objectContaining({ field: 'email', message: 'Email is required.' }),
+      ]),
+    );
+    expect(component.bookingStep()).toBe(3);
+  });
+
+  it('maps API validation issues to clear booking field messages', () => {
+    const issues = (component as any).readValidationIssues({
+      error: {
+        message: 'Validation failed',
+        issues: [
+          {
+            code: 'invalid_format',
+            path: ['visitorEmail'],
+            message: 'Invalid email address',
+          },
+          {
+            code: 'invalid_value',
+            path: ['preferredProviderGender'],
+            message: 'Invalid option',
+          },
+        ],
+      },
+    });
+
+    expect(issues).toEqual([
+      { field: 'email', label: 'Email', message: 'Enter a valid email address.' },
+      {
+        field: 'preferredProviderGender',
+        label: 'Provider gender',
+        message: 'Choose a listed option or leave provider gender as no preference.',
+      },
+    ]);
   });
 
   it('should submit a valid enquiry', async () => {

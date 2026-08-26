@@ -43,6 +43,17 @@
           <p class="booking-step-error" role="alert">{{ bookingStepError() }}</p>
         }
 
+        @if (bookingValidationIssues().length) {
+          <section class="booking-validation-summary" role="alert" aria-live="assertive">
+            <strong>Please check these details</strong>
+            <ul>
+              @for (issue of bookingValidationIssues(); track issue.field) {
+                <li><b>{{ issue.label }}:</b> {{ issue.message }}</li>
+              }
+            </ul>
+          </section>
+        }
+
         @if (bookingStep() === 1) {
         <p data-booking-step="1" tabindex="-1" class="mb-3 mt-6 text-sm font-semibold text-primary-800">Choose the support that feels right</p>
         <div class="form-grid">
@@ -53,7 +64,11 @@
               placeholder="Choose the type of support you want"
               [options]="serviceOptions"
               [panelMaxHeight]="'18rem'"
+              [invalid]="!!bookingFieldError('serviceInterest')"
             ></app-form-dropdown>
+            @if (bookingFieldError('serviceInterest')) {
+              <p class="field-error">{{ bookingFieldError('serviceInterest') }}</p>
+            }
           </div>
         </div>
 
@@ -155,7 +170,11 @@
                 formControlName="preferredProviderGender"
                 placeholder="No preference"
                 [options]="providerGenderOptions"
+                [invalid]="!!bookingFieldError('preferredProviderGender')"
               ></app-form-dropdown>
+              @if (bookingFieldError('preferredProviderGender')) {
+                <p class="field-error">{{ bookingFieldError('preferredProviderGender') }}</p>
+              }
             </div>
 
             <div>
@@ -164,6 +183,7 @@
                 name="preferredTime"
                 formControlName="preferredTime"
                 placeholder="Today evening, tomorrow 11 AM"
+                [error]="bookingFieldError('preferredTime')"
               />
             </div>
           </div>
@@ -214,9 +234,9 @@
           <summary>Contact details</summary>
           <p class="mt-2 text-sm text-gray-600">Only used to confirm your private session.</p>
           <div class="form-grid two mt-4">
-            <app-form-field label="Name" name="name" formControlName="name" [required]="true" placeholder="Full name" />
-            <app-form-field label="Email" type="email" name="email" formControlName="email" [required]="true" placeholder="Email address" />
-            <app-form-field label="Phone" type="tel" name="phone" formControlName="phone" placeholder="Phone number (optional)" />
+            <app-form-field label="Name" name="name" formControlName="name" [required]="true" placeholder="Full name" [error]="bookingFieldError('name')" />
+            <app-form-field label="Email" type="email" name="email" formControlName="email" [required]="true" placeholder="Email address" [error]="bookingFieldError('email')" />
+            <app-form-field label="Phone" type="tel" name="phone" formControlName="phone" placeholder="Phone number (optional)" [error]="bookingFieldError('phone')" />
             <div>
               <label class="form-label">Contact by *</label>
               <div class="contact-methods contact-methods--text">
@@ -227,13 +247,16 @@
                   </label>
                 }
               </div>
+              @if (bookingFieldError('preferredContact')) {
+                <p class="field-error">{{ bookingFieldError('preferredContact') }}</p>
+              }
             </div>
           </div>
         </details>
 
         <details class="optional-panel">
           <summary>Add a note (optional)</summary>
-          <app-form-field class="mt-3 block" kind="textarea" label="Note" name="message" formControlName="message" rows="3" placeholder="Anything you want the provider to know" />
+          <app-form-field class="mt-3 block" kind="textarea" label="Note" name="message" formControlName="message" rows="3" placeholder="Anything you want the provider to know" [error]="bookingFieldError('message')" />
         </details>
 
         @if (selectedOffering(); as offer) {
@@ -286,7 +309,7 @@
 
         <app-button
           type="submit"
-          [disabled]="contactForm.invalid || isSubmitting()"
+          [disabled]="isSubmitting()"
           [loading]="isSubmitting()"
           [block]="true"
         >
