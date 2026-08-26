@@ -50,6 +50,7 @@ import {
 } from '../services/online-doctor-presence.js';
 import { emitHopeHubLiveGroupMessage } from '../services/hope-hub-live-groups-realtime.js';
 import { mirrorHopeHubLiveChatMessageToTelegram } from '../services/telegram-live-chat-bridge.js';
+import { moderateWebsiteLiveChatMessage } from '../services/hope-hub-live-chat-moderation.js';
 import { emitConsultationAssignedToDoctor } from '../services/consultation-realtime.js';
 import { INSTANT_ASSIGNMENT_RESPONSE_TIMEOUT_MS } from '../constants/online-doctor.constants.js';
 import {
@@ -2379,6 +2380,7 @@ hopeHubRouter.post(
     if (isMuted(moderation)) {
       return res.status(403).json({ message: 'You are muted in this group room.' });
     }
+
     if (group.slowModeSeconds > 0) {
       const recentMessage = await prisma.hopeHubLiveGroupMessage.findFirst({
         where: {
@@ -2393,6 +2395,23 @@ hopeHubRouter.post(
           message: `Slow mode is on. Please wait ${group.slowModeSeconds} seconds between messages.`
         });
       }
+    }
+
+    const automaticModeration = await moderateWebsiteLiveChatMessage({
+      groupId: group.id,
+      groupTitle: group.title,
+      userId: req.user!.id,
+      userName: req.user!.name,
+      userRole: req.user!.role,
+      text: body.body
+    });
+    if (!automaticModeration.allowed) {
+      return res
+        .status(['mute', 'kick', 'ban'].includes(automaticModeration.action) ? 403 : 422)
+        .json({
+          message: automaticModeration.message,
+          moderation: automaticModeration
+        });
     }
 
     const message = await prisma.hopeHubLiveGroupMessage.create({

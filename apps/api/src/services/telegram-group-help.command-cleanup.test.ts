@@ -3,7 +3,8 @@ import test from 'node:test';
 import {
   DEFAULT_GROUP_COMMAND_DELETE_SECONDS,
   groupCommandDeleteDelaySeconds,
-  shouldAutoDeleteGroupCommand
+  shouldAutoDeleteGroupCommand,
+  shouldDeleteModerationTarget
 } from './telegram-group-help.command-cleanup.js';
 
 test('group commands default to a short cleanup delay and clamp configured values', () => {
@@ -38,4 +39,13 @@ test('only commands in public group chats are automatically removed', () => {
     }),
     false
   );
+});
+
+test('plain moderation keeps member content unless deletion is explicit', () => {
+  for (const command of ['warn', 'mute', 'ban', 'kick', 'unwarn', 'unmute', 'unban']) {
+    assert.equal(shouldDeleteModerationTarget(command), false, command);
+  }
+  for (const command of ['delete', 'del', 'delwarn', 'delmute', 'delban', 'delkick']) {
+    assert.equal(shouldDeleteModerationTarget(command), true, command);
+  }
 });

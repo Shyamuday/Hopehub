@@ -18,3 +18,14 @@ export function shouldAutoDeleteGroupCommand(input: {
 }) {
   return input.chatType !== 'private' && !input.isControlGroup && input.delaySeconds > 0;
 }
+
+/**
+ * Deleting member content must be an explicit staff choice. Plain warn/mute/
+ * ban commands affect only the member record; /delete and /del... variants
+ * additionally remove the replied message.
+ */
+export function shouldDeleteModerationTarget(commandName: string) {
+  return ['delete', 'del', 'delwarn', 'delmute', 'delban', 'delkick'].includes(
+    commandName.toLowerCase()
+  );
+}
