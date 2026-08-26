@@ -46,14 +46,15 @@ import {
 } from '../../constants/doctor-hr-defaults.js';
 import { PSYCHOLOGIST_CONSULTATION_SHARE_PERCENT } from '../../services/doctor-compensation.js';
 import { syncProviderRoleAssignments } from '../../services/provider-taxonomy.service.js';
-
-const HOMEOPATHY_CREDENTIAL_REVIEW_PREFIX = 'Awaiting homeopathy credential verification';
-
-function isHomeopathyCredentialReview(reason?: string | null): boolean {
-  return Boolean(
-    reason?.trim().toLowerCase().startsWith(HOMEOPATHY_CREDENTIAL_REVIEW_PREFIX.toLowerCase())
-  );
-}
+import {
+  approveHomeopathyProviderAccount,
+  HomeopathyProviderApprovalError
+} from '../../services/homeopathy-provider-approval.js';
+import {
+  HOMEOPATHY_CREDENTIAL_CHANGES_PREFIX,
+  HOMEOPATHY_CREDENTIAL_REVIEW_PREFIX,
+  isHomeopathyCredentialReview
+} from '../../constants/homeopathy-provider-approval.constants.js';
 
 const textArraySchema = z.array(z.string().trim().min(1).max(160)).max(40).optional();
 const careTeamServiceSchema = z.object({
@@ -586,20 +587,33 @@ export function registerAdminDoctorRoutes(router: Router) {
         Boolean(existing.doctorProfile.suspendedAt) &&
         isHomeopathyCredentialReview(existing.doctorProfile.suspendedReason);
 
+      if (credentialReview) {
+        try {
+          const result = await approveHomeopathyProviderAccount({
+            doctorId,
+            actorId: req.user!.id,
+            actorRole: req.user!.role
+          });
+          return res.json({
+            doctor: result.doctor,
+            message: result.alreadyApproved
+              ? 'This provider was already approved.'
+              : 'Homeopathy credentials approved. The provider is now active and public.'
+          });
+        } catch (error) {
+          if (error instanceof HomeopathyProviderApprovalError) {
+            return res.status(error.code === 'PROVIDER_NOT_FOUND' ? 404 : 409).json({
+              message: error.message,
+              code: error.code,
+              blockers: error.blockers
+            });
+          }
+          throw error;
+        }
+      }
+
       const doctor = await prisma.$transaction(async (tx) => {
         await tx.user.update({ where: { id: doctorId }, data: { isActive: true } });
-        if (credentialReview) {
-          await tx.doctor.update({
-            where: { userId: doctorId },
-            data: {
-              suspendedAt: null,
-              suspendedReason: null,
-              suspendedById: null,
-              isAvailable: true,
-              isOnline: false
-            }
-          });
-        }
         return tx.user.findUniqueOrThrow({
           where: { id: doctorId },
           select: { ...publicUserSelect, isActive: true, doctorProfile: true }
@@ -611,16 +625,12 @@ export function registerAdminDoctorRoutes(router: Router) {
         action: 'doctor.approve',
         targetType: 'doctor',
         targetId: doctor.id,
-        summary: credentialReview
-          ? 'Homeopathy credentials approved and provider sign-in enabled.'
-          : 'Provider account activated by admin.',
+        summary: 'Provider account activated by admin.',
         metadata: { workspace, credentialReview }
       });
       res.json({
         doctor,
-        message: credentialReview
-          ? 'Homeopathy credentials approved. The provider can now sign in.'
-          : 'Provider account activated successfully.'
+        message: 'Provider account activated successfully.'
       });
     })
   );
@@ -669,8 +679,8 @@ export function registerAdminDoctorRoutes(router: Router) {
             data: {
               suspendedAt: new Date(),
               suspendedReason: reason
-                ? `Homeopathy credential verification needs changes: ${reason}`
-                : 'Homeopathy credential verification needs changes. Please contact Hope Hub support.',
+                ? `${HOMEOPATHY_CREDENTIAL_CHANGES_PREFIX}: ${reason}`
+                : `${HOMEOPATHY_CREDENTIAL_CHANGES_PREFIX}. Please contact Hope Hub support.`,
               suspendedById: req.user!.id,
               showOnWebsite: false,
               isAvailable: false,

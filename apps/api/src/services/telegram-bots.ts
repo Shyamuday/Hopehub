@@ -117,6 +117,12 @@ import {
   type TelegramSession
 } from './telegram-bots.sessions.js';
 import { notifyAdminsAboutProviderApplication } from './provider-application-notifications.js';
+import {
+  approveHomeopathyProviderAccount,
+  HomeopathyProviderApprovalError
+} from './homeopathy-provider-approval.js';
+import { loadStaffProfileForUser } from '../staff-profile.js';
+import { staffCanAccessWorkspace } from '../staff-permissions.js';
 import type {
   InlineButton,
   SessionMetadata,
@@ -1142,6 +1148,71 @@ async function markTelegramLeadFollowUp(
       inline_keyboard: [[{ text: 'Open lead', url: leadAdminUrl(leadId) }]]
     }
   });
+}
+
+async function approveProviderFromAdminBot(
+  kind: TelegramBotKind,
+  session: TelegramSession,
+  doctorId: string
+) {
+  if (kind !== TelegramBotKind.ADMIN || !(await requireLinked(kind, session))) return;
+  if (!session.linkedUser || session.linkedUser.role !== 'ADMIN') {
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: 'Only a linked Hope Hub admin account can approve providers.'
+    });
+    return;
+  }
+
+  const staffProfile = await loadStaffProfileForUser(
+    session.linkedUser.id,
+    session.linkedUser.role
+  );
+  if (
+    !staffCanAccessWorkspace(
+      {
+        ...session.linkedUser,
+        staffProfile
+      },
+      'homeopathy'
+    )
+  ) {
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: 'Your admin account does not have access to the homeopathy workspace.'
+    });
+    return;
+  }
+
+  try {
+    const result = await approveHomeopathyProviderAccount({
+      doctorId,
+      actorId: session.linkedUser.id,
+      actorRole: session.linkedUser.role
+    });
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: result.alreadyApproved
+        ? 'This provider is already approved.'
+        : `Provider approved by ${escapeHtml(session.linkedUser.name)}. The profile is now active and public.`,
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [[{ text: 'Review providers', url: adminUrl('/doctors') }]]
+      }
+    });
+  } catch (error) {
+    const message =
+      error instanceof HomeopathyProviderApprovalError
+        ? [error.message, ...error.blockers.slice(0, 6).map((item) => `• ${item.label}`)].join('\n')
+        : 'Could not approve this provider right now. The error was recorded for review.';
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: message,
+      reply_markup: {
+        inline_keyboard: [[{ text: 'Open full review', url: adminUrl('/doctors') }]]
+      }
+    });
+  }
 }
 
 const providerTrackLabels = PROVIDER_APPLICATION_TRACK_LABELS;
@@ -2833,6 +2904,8 @@ async function handleCallback(
   } else if (data === 'admin:leads') await adminLeads(kind, session);
   else if (data === 'admin:community_admins') await adminCommunityAdminApplications(kind, session);
   else if (data === 'admin:contributors') await adminContributors(kind, session);
+  else if (data.startsWith('admin:provider_approve:'))
+    await approveProviderFromAdminBot(kind, session, data.slice('admin:provider_approve:'.length));
   else if (data.startsWith('admin:safety_reviewed:'))
     await markSafetyFlagReviewed(kind, session, data.slice('admin:safety_reviewed:'.length));
   else if (data.startsWith('lead:assign:')) {

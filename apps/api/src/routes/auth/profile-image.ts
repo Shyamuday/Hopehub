@@ -19,6 +19,7 @@ import {
   saveStoreStaffProfileImage,
   saveUserProfileImage
 } from '../../services/profile-image-storage.js';
+import { submitHomeopathyProviderForApprovalIfReady } from '../../services/homeopathy-provider-approval.js';
 import {
   enrichWithProfileImageAccessUrl,
   enrichWithProfileImageUrl,
@@ -31,6 +32,7 @@ const MAX_PROFILE_IMAGE_BYTES = 2 * 1024 * 1024;
 
 async function syncProviderVisibility(userId: string, role: Role) {
   if (role !== Role.DOCTOR) return;
+  await submitHomeopathyProviderForApprovalIfReady(userId);
   const readiness = await providerPublicReadiness(userId);
   await prisma.doctor.updateMany({
     where: { userId },

@@ -473,8 +473,21 @@ export class DoctorsPage {
       await this.api.approveDoctor(doctorId);
       this.message.set(`${this.providerSingularTitle()} approved and activated.`);
       await this.load();
-    } catch {
-      this.error.set(`Could not activate ${this.providerSingularLabel()}.`);
+    } catch (error: any) {
+      const blockers = Array.isArray(error?.error?.blockers)
+        ? error.error.blockers
+            .map((item: { label?: string }) => item?.label)
+            .filter(Boolean)
+            .slice(0, 6)
+        : [];
+      this.error.set(
+        [
+          error?.error?.message || `Could not activate ${this.providerSingularLabel()}.`,
+          blockers.length ? `Missing: ${blockers.join(', ')}.` : '',
+        ]
+          .filter(Boolean)
+          .join(' '),
+      );
     } finally {
       this.mutating.set(false);
     }

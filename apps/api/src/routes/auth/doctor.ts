@@ -28,6 +28,10 @@ import {
 import { assertMethodOptionId } from '../../services/doctor-prescribing-preferences.js';
 import { PSYCHOLOGIST_CONSULTATION_SHARE_PERCENT } from '../../services/doctor-compensation.js';
 import { notifyAdminsAboutDoctorSignup } from '../../services/doctor-signup-notifications.js';
+import {
+  HOMEOPATHY_PROFILE_DRAFT_REASON,
+  submitHomeopathyProviderForApprovalIfReady
+} from '../../services/homeopathy-provider-approval.js';
 import { asyncRoute, publicUserSelect, logAuthEvent, writeAuditLog } from '../../utils/helpers.js';
 import { enrichWithProfileImageUrl, userProfileImagePath } from '../../utils/profile-image-url.js';
 import { createEmailVerificationToken } from '../../services/email-verification.js';
@@ -455,7 +459,7 @@ export function registerAuthDoctorRoutes(router: Router) {
               ...(requiresCredentialApproval
                 ? {
                     suspendedAt: new Date(),
-                    suspendedReason: 'Awaiting homeopathy credential verification.',
+                    suspendedReason: HOMEOPATHY_PROFILE_DRAFT_REASON,
                     showOnWebsite: false,
                     isOnline: false
                   }
@@ -478,15 +482,17 @@ export function registerAuthDoctorRoutes(router: Router) {
         select: publicUserSelect
       });
 
-      await notifyAdminsAboutDoctorSignup({
-        id: doctor.id,
-        name: body.name,
-        email: body.email,
-        mobile: doctor.mobile,
-        specialty,
-        registrationNo: body.registrationNo || null,
-        requiresCredentialApproval
-      });
+      if (!requiresCredentialApproval) {
+        await notifyAdminsAboutDoctorSignup({
+          id: doctor.id,
+          name: body.name,
+          email: body.email,
+          mobile: doctor.mobile,
+          specialty,
+          registrationNo: body.registrationNo || null,
+          requiresCredentialApproval: false
+        });
+      }
 
       const verification = await createEmailVerificationToken({
         userId: doctor.id,
@@ -511,12 +517,12 @@ export function registerAuthDoctorRoutes(router: Router) {
 
       res.status(201).json({
         doctor,
-        approvalStatus: requiresCredentialApproval ? 'PENDING_REVIEW' : 'ACTIVE',
+        approvalStatus: requiresCredentialApproval ? 'PROFILE_REQUIRED' : 'ACTIVE',
         emailVerificationRequired: true,
         emailVerificationSent: verification.sent,
         ...(verification.devVerifyUrl ? { devVerifyUrl: verification.devVerifyUrl } : {}),
         message: requiresCredentialApproval
-          ? 'Application received. Hope Hub will verify your professional registration before you can sign in and use clinical tools.'
+          ? 'Account created. Verify your email, sign in, and complete your full profile. Admin approval is requested automatically only after the required profile fields are complete.'
           : 'Provider account created. Log in to complete your setup before appearing on Hope Hub.'
       });
     })
@@ -665,8 +671,9 @@ export function registerAuthDoctorRoutes(router: Router) {
     authRequired,
     allowRoles(Role.DOCTOR),
     asyncRoute(async (req, res) => {
+      const approvalSubmission = await submitHomeopathyProviderForApprovalIfReady(req.user!.id);
       const readiness = await providerPublicReadiness(req.user!.id);
-      res.json({ readiness });
+      res.json({ readiness, approvalSubmission });
     })
   );
 
@@ -812,12 +819,13 @@ export function registerAuthDoctorRoutes(router: Router) {
         }
       });
 
+      const approvalSubmission = await submitHomeopathyProviderForApprovalIfReady(req.user!.id);
       const readiness = await providerPublicReadiness(req.user!.id);
       await prisma.doctor.update({
         where: { userId: req.user!.id },
         data: { showOnWebsite: readiness.ready }
       });
-      res.status(201).json({ result: { ...result, review }, readiness });
+      res.status(201).json({ result: { ...result, review }, readiness, approvalSubmission });
     })
   );
 
@@ -1176,6 +1184,7 @@ export function registerAuthDoctorRoutes(router: Router) {
         });
       }
 
+      const approvalSubmission = await submitHomeopathyProviderForApprovalIfReady(req.user!.id);
       const readiness = await providerPublicReadiness(req.user!.id);
       await prisma.doctor.update({
         where: { userId: req.user!.id },
@@ -1202,7 +1211,7 @@ export function registerAuthDoctorRoutes(router: Router) {
           });
         }
       }
-      res.json({ message: 'Profile step saved.', readiness });
+      res.json({ message: 'Profile step saved.', readiness, approvalSubmission });
     })
   );
 
@@ -1446,6 +1455,7 @@ export function registerAuthDoctorRoutes(router: Router) {
         });
       }
 
+      const approvalSubmission = await submitHomeopathyProviderForApprovalIfReady(req.user!.id);
       const readiness = await providerPublicReadiness(req.user!.id);
       if (updated.doctorProfile?.showOnWebsite !== readiness.ready) {
         await prisma.doctor.update({
@@ -1474,7 +1484,8 @@ export function registerAuthDoctorRoutes(router: Router) {
             doctorProfile: withListenerScreening(doctorProfile, refreshedListenerScreening)
           },
           userProfileImagePath
-        )
+        ),
+        approvalSubmission
       });
     })
   );

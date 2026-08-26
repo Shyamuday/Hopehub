@@ -311,19 +311,17 @@ export class Login {
         return;
       }
 
-      if (this.isHomeopathyPortal) {
-        this.setMode('signin');
-        this.message.set(result.message);
-        return;
-      }
-
       const login = await this.auth.login(email, password);
       if (login.ok) {
         await this.navigateAfterLogin();
         return;
       }
       this.setMode('signin');
-      this.message.set('Account created. Sign in to choose your support path.');
+      this.message.set(
+        this.isHomeopathyPortal
+          ? result.message
+          : 'Account created. Sign in to choose your support path.',
+      );
     } finally {
       this.submitting.set(false);
     }

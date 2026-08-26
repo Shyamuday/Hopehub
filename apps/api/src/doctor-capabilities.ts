@@ -8,6 +8,10 @@ import {
   type DoctorTypeCapabilities
 } from './constants/homeopathic-doctor-types.js';
 import { prisma } from './db.js';
+import {
+  isHomeopathyApprovalFlowSuspension,
+  isHomeopathyCredentialReview
+} from './constants/homeopathy-provider-approval.constants.js';
 import type {
   ProviderOnboardingStepDto,
   ProviderReadinessBlockerDto,
@@ -33,7 +37,10 @@ const BLOCKER_STEP: Record<string, string> = {
   MOBILE_REQUIRED: 'identity',
   GENDER_REQUIRED: 'identity',
   PROFILE_PHOTO_REQUIRED: 'identity',
+  SPECIALTY_REQUIRED: 'identity',
+  REGISTRATION_NUMBER_REQUIRED: 'identity',
   PROFILE_BIO_REQUIRED: 'public',
+  FOCUS_AREAS_REQUIRED: 'public',
   LANGUAGES_REQUIRED: 'care',
   SESSION_TYPES_REQUIRED: 'care',
   CONCERNS_REQUIRED: 'care',
@@ -47,12 +54,18 @@ const BLOCKER_STEP: Record<string, string> = {
   PRICING_APPROVAL_PENDING: 'services',
   SERVICE_ROLE_MISMATCH: 'services',
   PROVIDER_AVAILABILITY_OFF: 'availability',
-  NOT_ACCEPTING_USERS: 'availability'
+  NOT_ACCEPTING_USERS: 'availability',
+  PROVIDER_APPROVAL_PENDING: 'approval'
 };
 
 function readinessResult(
   rawBlockers: ProviderReadinessBlocker[],
-  options: { providerLabel?: string; hopeHub?: boolean; listener?: boolean } = {}
+  options: {
+    providerLabel?: string;
+    hopeHub?: boolean;
+    listener?: boolean;
+    approval?: boolean;
+  } = {}
 ): ProviderReadinessDto {
   const blockers = rawBlockers.map((blocker) => ({
     ...blocker,
@@ -149,7 +162,20 @@ function readinessResult(
       actionLabel: 'Set availability',
       route: '/slots',
       required: true
-    })
+    }),
+    ...(options.approval
+      ? [
+          step({
+            id: 'approval',
+            title: 'Credential approval',
+            description:
+              'Hope Hub reviews your completed professional profile before it becomes public.',
+            actionLabel: 'View approval status',
+            route: '/dashboard',
+            required: true
+          })
+        ]
+      : [])
   ];
   const required = steps.filter((item) => item.required);
   const completeCount = required.filter((item) => item.complete).length;
@@ -168,6 +194,119 @@ function readinessResult(
     blockers,
     steps
   };
+}
+
+type HomeopathyApprovalProfile = {
+  specialty: string;
+  registrationNo: string | null;
+  bio: string | null;
+  focusAreas: string[];
+  user: {
+    name: string;
+    mobile: string | null;
+    gender: unknown;
+    profileImageKey: string | null;
+    profileImageUrl: string | null;
+  };
+};
+
+function homeopathyProfileCompletionBlockers(
+  profile: HomeopathyApprovalProfile
+): ProviderReadinessBlocker[] {
+  const blockers: ProviderReadinessBlocker[] = [];
+  if (!hasText(profile.user.name)) {
+    blockers.push({
+      code: 'NAME_REQUIRED',
+      label: 'Provider name is missing.',
+      action: 'Add your full name in Profile.'
+    });
+  }
+  if (!hasText(profile.user.mobile, 8)) {
+    blockers.push({
+      code: 'MOBILE_REQUIRED',
+      label: 'Mobile number is missing.',
+      action: 'Add a valid mobile number in Profile.'
+    });
+  }
+  if (!profile.user.gender) {
+    blockers.push({
+      code: 'GENDER_REQUIRED',
+      label: 'Gender is missing.',
+      action: 'Choose a gender/preference in Profile.'
+    });
+  }
+  if (!profile.user.profileImageKey && !profile.user.profileImageUrl) {
+    blockers.push({
+      code: 'PROFILE_PHOTO_REQUIRED',
+      label: 'Profile photo is missing.',
+      action: 'Upload a clear professional profile photo.'
+    });
+  }
+  if (!hasText(profile.specialty)) {
+    blockers.push({
+      code: 'SPECIALTY_REQUIRED',
+      label: 'Homeopathy specialty is missing.',
+      action: 'Add your specialty/focus in Profile.'
+    });
+  }
+  if (!hasText(profile.registrationNo, 3)) {
+    blockers.push({
+      code: 'REGISTRATION_NUMBER_REQUIRED',
+      label: 'Professional registration number is missing.',
+      action: 'Add the registration number that admin should verify.'
+    });
+  }
+  if (!hasText(profile.bio, 80)) {
+    blockers.push({
+      code: 'PROFILE_BIO_REQUIRED',
+      label: 'Public bio must be at least 80 characters.',
+      action: 'Write a clear professional bio in Profile.'
+    });
+  }
+  if (!hasList(profile.focusAreas)) {
+    blockers.push({
+      code: 'FOCUS_AREAS_REQUIRED',
+      label: 'At least one focus area is required.',
+      action: 'Add the concerns or focus areas you work with.'
+    });
+  }
+  return blockers;
+}
+
+export async function homeopathyProviderApprovalReadiness(userId: string) {
+  const profile = await prisma.doctor.findUnique({
+    where: { userId },
+    select: {
+      providerDomain: true,
+      specialty: true,
+      registrationNo: true,
+      bio: true,
+      focusAreas: true,
+      user: {
+        select: {
+          name: true,
+          mobile: true,
+          gender: true,
+          profileImageKey: true,
+          profileImageUrl: true
+        }
+      }
+    }
+  });
+  if (!profile || profile.providerDomain !== 'HOMEOPATHY') {
+    return {
+      ready: false,
+      blockers: [
+        {
+          code: 'DOCTOR_PROFILE_REQUIRED',
+          label: 'Homeopathy provider profile not found.',
+          action: 'Create or restore the provider profile.'
+        }
+      ] as ProviderReadinessBlocker[]
+    };
+  }
+  const blockers = homeopathyProfileCompletionBlockers(profile);
+  return { ready: blockers.length === 0, blockers };
 }
 
 async function latestListenerScreeningPassedForEmail(email?: string | null) {
@@ -208,9 +347,12 @@ export async function providerPublicReadiness(userId: string) {
       id: true,
       doctorType: true,
       providerDomain: true,
+      specialty: true,
+      registrationNo: true,
       isAvailable: true,
       showOnWebsite: true,
       suspendedAt: true,
+      suspendedReason: true,
       bio: true,
       focusAreas: true,
       user: {
@@ -286,14 +428,18 @@ export async function providerPublicReadiness(userId: string) {
       action: 'Ask admin to activate the account.'
     });
   }
-  if (profile.suspendedAt) {
+  const onboardingApprovalPending =
+    profile.providerDomain === 'HOMEOPATHY' &&
+    Boolean(profile.suspendedAt) &&
+    isHomeopathyApprovalFlowSuspension(profile.suspendedReason);
+  if (profile.suspendedAt && !onboardingApprovalPending) {
     blockers.push({
       code: 'PROVIDER_SUSPENDED',
       label: 'Provider account is under review and cannot accept sessions.',
       action: 'Contact Hope Hub support/admin.'
     });
   }
-  if (!profile.isAvailable) {
+  if (!profile.isAvailable && !onboardingApprovalPending) {
     blockers.push({
       code: 'PROVIDER_AVAILABILITY_OFF',
       label: 'Profile availability is off.',
@@ -305,14 +451,26 @@ export async function providerPublicReadiness(userId: string) {
     profile.providerDomain === 'HOPE_HUB' ||
     profile.doctorType === HomeopathicDoctorType.PSYCHOLOGIST;
   if (!isHopeHub) {
-    if (!hasText(profile.bio, 40)) {
+    if (onboardingApprovalPending) {
+      blockers.push(...homeopathyProfileCompletionBlockers(profile));
+      blockers.push({
+        code: 'PROVIDER_APPROVAL_PENDING',
+        label: isHomeopathyCredentialReview(profile.suspendedReason)
+          ? 'Your completed profile is awaiting credential approval.'
+          : 'Complete your profile to submit it for credential approval.',
+        action: 'Complete the missing profile steps or wait for admin review.'
+      });
+    } else if (!hasText(profile.bio, 40)) {
       blockers.push({
         code: 'PROFILE_BIO_REQUIRED',
         label: 'Complete your provider bio before accepting bookings.',
         action: 'Open Profile and add a short public bio.'
       });
     }
-    return readinessResult(blockers, { providerLabel: 'Homeopathy provider' });
+    return readinessResult(blockers, {
+      providerLabel: 'Homeopathy provider',
+      approval: onboardingApprovalPending
+    });
   }
 
   const mental = profile.mentalHealthProfile;

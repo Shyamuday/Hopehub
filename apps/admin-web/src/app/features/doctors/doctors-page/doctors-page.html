@@ -597,7 +597,7 @@
     <p class="panel-hint">
       {{
         workspaceKey() === 'homeopathy'
-          ? 'New homeopathy applications waiting for credential verification appear here with an approval action.'
+          ? 'Completed homeopathy profiles waiting for credential verification appear here. Providers can keep editing while review is pending.'
           : 'New self-registrations are active and appear in the registration list below. This queue is only for inactive accounts.'
       }}
     </p>
@@ -955,7 +955,7 @@
                 mutating()
                   ? '...'
                   : isCredentialReviewPending(selectedDoctor)
-                    ? 'Approve credentials & enable sign-in'
+                    ? 'Approve credentials & publish profile'
                     : 'Remove suspension'
               }}
             </button>
