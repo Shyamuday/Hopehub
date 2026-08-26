@@ -574,17 +574,32 @@
 <section class="panel">
   <div class="panel-header">
     <div>
-      <h2>Inactive {{ providerSingularLabel() }} accounts</h2>
-      <p class="panel-hint">Review accounts that an admin has deactivated or not yet activated.</p>
+      <h2>
+        {{ workspaceKey() === 'homeopathy' ? 'Homeopathy approvals' : 'Inactive ' + providerSingularLabel() + ' accounts' }}
+      </h2>
+      <p class="panel-hint">
+        {{
+          workspaceKey() === 'homeopathy'
+            ? 'Verify new homeopathy registrations and manage inactive provider accounts.'
+            : 'Review accounts that an admin has deactivated or not yet activated.'
+        }}
+      </p>
     </div>
     <button type="button" class="btn-secondary" (click)="showSetupReview.set(!showSetupReview())">
-      {{ showSetupReview() ? 'Close inactive accounts' : 'Open inactive accounts' }}
+      {{
+        showSetupReview()
+          ? (workspaceKey() === 'homeopathy' ? 'Close approvals' : 'Close inactive accounts')
+          : (workspaceKey() === 'homeopathy' ? 'Open approvals' : 'Open inactive accounts')
+      }}
     </button>
   </div>
   @if (showSetupReview()) {
     <p class="panel-hint">
-      New self-registrations are active and appear in the registration list below. This queue is
-      only for inactive accounts.
+      {{
+        workspaceKey() === 'homeopathy'
+          ? 'New homeopathy applications waiting for credential verification appear here with an approval action.'
+          : 'New self-registrations are active and appear in the registration list below. This queue is only for inactive accounts.'
+      }}
     </p>
 
     @if (loading()) {
@@ -646,6 +661,9 @@
             </label>
             <strong>{{ doctor.name }}</strong>
             <p>{{ doctor.email }} | {{ doctor.mobile || 'No mobile' }}</p>
+            @if (isCredentialReviewPending(doctor)) {
+              <span class="readiness-badge readiness-badge--warn">Credentials awaiting review</span>
+            }
             <small
               >{{
                 workspaceKey() === 'hope-hub'
@@ -685,7 +703,13 @@
                 (click)="approveDoctor(doctor.id)"
                 [disabled]="mutating()"
               >
-                {{ mutating() ? '...' : 'Activate account' }}
+                {{
+                  mutating()
+                    ? '...'
+                    : isCredentialReviewPending(doctor)
+                      ? 'Approve credentials'
+                      : 'Activate account'
+                }}
               </button>
               <button
                 type="button"
@@ -693,7 +717,7 @@
                 (click)="rejectDoctor(doctor.id)"
                 [disabled]="mutating()"
               >
-                Deactivate account
+                {{ isCredentialReviewPending(doctor) ? 'Request changes' : 'Deactivate account' }}
               </button>
             </div>
           </article>
@@ -920,7 +944,11 @@
             <button
               type="button"
               class="secondary"
-              (click)="setDoctorSuspension(selectedDoctor.id, false)"
+              (click)="
+                isCredentialReviewPending(selectedDoctor)
+                  ? approveDoctor(selectedDoctor.id)
+                  : setDoctorSuspension(selectedDoctor.id, false)
+              "
               [disabled]="mutating()"
             >
               {{

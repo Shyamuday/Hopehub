@@ -366,7 +366,7 @@ export class DoctorsPage {
   readonly configMessage = signal('');
   readonly doctorListLimitValue = signal('12');
   readonly showDirectorySettings = signal(false);
-  readonly showSetupReview = signal(false);
+  readonly showSetupReview = signal(true);
   readonly showCreateProviderForm = signal(false);
   readonly createProviderStep = signal(0);
   private editBaseline = '';
@@ -471,7 +471,7 @@ export class DoctorsPage {
     this.mutating.set(true);
     try {
       await this.api.approveDoctor(doctorId);
-      this.message.set(`${this.providerSingularTitle()} account activated.`);
+      this.message.set(`${this.providerSingularTitle()} approved and activated.`);
       await this.load();
     } catch {
       this.error.set(`Could not activate ${this.providerSingularLabel()}.`);
@@ -505,12 +505,24 @@ export class DoctorsPage {
 
   async rejectDoctor(doctorId: string) {
     if (!this.canManageProviders()) return;
+    const doctor =
+      this.pendingDoctors().find((item) => item.id === doctorId) ||
+      this.doctors().find((item) => item.id === doctorId);
+    const credentialReview = doctor ? this.isCredentialReviewPending(doctor) : false;
+    const reason = credentialReview
+      ? window.prompt('What should the homeopathy provider correct before approval?', '')
+      : '';
+    if (credentialReview && reason === null) return;
     this.message.set('');
     this.error.set('');
     this.mutating.set(true);
     try {
-      await this.api.rejectDoctor(doctorId);
-      this.message.set(`${this.providerSingularTitle()} account deactivated.`);
+      await this.api.rejectDoctor(doctorId, reason || undefined);
+      this.message.set(
+        credentialReview
+          ? 'Credential application returned to the provider with your reason.'
+          : `${this.providerSingularTitle()} account deactivated.`,
+      );
       await this.load();
     } catch {
       this.error.set(`Could not update ${this.providerSingularLabel()} status.`);

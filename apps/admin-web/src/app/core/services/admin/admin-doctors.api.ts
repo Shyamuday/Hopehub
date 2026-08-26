@@ -116,9 +116,11 @@ export class AdminDoctorsApi extends AdminApiBase {
     );
   }
 
-  rejectDoctor(doctorId: string) {
+  rejectDoctor(doctorId: string, reason?: string) {
     return firstValueFrom(
-      this.http.post(`${this.apiBase}${API_PATHS.ADMIN.DOCTORS}/${doctorId}/reject`, {}),
+      this.http.post(`${this.apiBase}${API_PATHS.ADMIN.DOCTORS}/${doctorId}/reject`, {
+        reason: reason || null,
+      }),
     );
   }
 
