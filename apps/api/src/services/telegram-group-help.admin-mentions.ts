@@ -6,6 +6,7 @@ import { telegramPersonLogLabel } from './telegram-group-help.people.js';
 
 const ADMIN_MENTION_STATE = 'group-help:admin-mention';
 const ADMIN_MENTION_LIFETIME_MS = 7 * 24 * 60 * 60_000;
+const ADMIN_MENTION_PATTERN = /(^|[^a-z0-9_])@(admins?|administrators?|moderators?|mods?)\b/i;
 
 export type GroupHelpAdminMentionTarget = {
   targetChatId: string;
@@ -15,14 +16,14 @@ export type GroupHelpAdminMentionTarget = {
 };
 
 export function hasGroupHelpAdminMention(text: string) {
-  return /(^|[^a-z0-9_])@admin\b/i.test(text.normalize('NFKC'));
+  return ADMIN_MENTION_PATTERN.test(text.normalize('NFKC'));
 }
 
 function stateKey(staffChatId: string, messageId: number) {
   return `${staffChatId}:${messageId}`;
 }
 
-/** Sends an @admin request into the private staff group and retains its reply target. */
+/** Sends an admin/moderator mention into the private staff group and retains its reply target. */
 export async function forwardGroupHelpAdminMention(
   message: CommunityTelegramMessage,
   values: Record<string, string>
@@ -77,7 +78,7 @@ export async function forwardGroupHelpAdminMention(
   return true;
 }
 
-/** Resolves the original group message when a staff member replies to an @admin alert. */
+/** Resolves the original group message when a staff member replies to an admin alert. */
 export async function groupHelpAdminMentionReplyTarget(
   staffChatId: string,
   replyMessageId?: number
