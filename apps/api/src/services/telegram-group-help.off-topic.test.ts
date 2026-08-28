@@ -3,12 +3,20 @@ import test from 'node:test';
 import {
   HOPE_HUB_OFF_TOPIC_GROUP_POLICY,
   HOPE_HUB_OFF_TOPIC_GROUP_TITLE,
+  HOPE_HUB_OFF_TOPIC_WELCOME_BUTTONS,
   offTopicPolicyWithPrivateModeration
 } from './telegram-group-help.off-topic.js';
 
 test('off-topic community has an independent, production-safe policy', () => {
   assert.equal(HOPE_HUB_OFF_TOPIC_GROUP_TITLE, 'HopeHub Chit-Chat');
   assert.match(HOPE_HUB_OFF_TOPIC_GROUP_POLICY.telegramGroupHelpWelcomeMessage, /off-topic/i);
+  assert.equal(
+    HOPE_HUB_OFF_TOPIC_GROUP_POLICY.telegramGroupHelpWelcomeButtons,
+    HOPE_HUB_OFF_TOPIC_WELCOME_BUTTONS
+  );
+  assert.match(HOPE_HUB_OFF_TOPIC_WELCOME_BUTTONS, /Talk privately/);
+  assert.match(HOPE_HUB_OFF_TOPIC_WELCOME_BUTTONS, /Share anonymously/);
+  assert.doesNotMatch(HOPE_HUB_OFF_TOPIC_WELCOME_BUTTONS, /admin/i);
   assert.match(HOPE_HUB_OFF_TOPIC_GROUP_POLICY.telegramGroupHelpRulesMessage, /unwanted private/i);
   assert.equal(HOPE_HUB_OFF_TOPIC_GROUP_POLICY.telegramGroupHelpJoinProtection, 'captcha');
   assert.equal(HOPE_HUB_OFF_TOPIC_GROUP_POLICY.telegramGroupHelpAntiFloodAction, 'mute');

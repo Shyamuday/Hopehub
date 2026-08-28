@@ -2,13 +2,18 @@ import {
   getTelegramCommunityGroupPolicy,
   saveTelegramCommunityGroupPolicy
 } from './telegram-community-group-policy.js';
+import { TELEGRAM_BOT_URLS } from '../constants/telegram-community-bot.constants.js';
 
 export const HOPE_HUB_OFF_TOPIC_GROUP_TITLE = 'HopeHub Chit-Chat';
 export const HOPE_HUB_OFF_TOPIC_GROUP_DESCRIPTION =
   'Hope Hub’s friendly off-topic community for everyday conversation, connection and safe chit-chat. Managed by HopeHubAI.';
 
+export const HOPE_HUB_OFF_TOPIC_WELCOME_BUTTONS = `Talk privately | https://hopehub.in/#live-connect | success && Share anonymously | ${TELEGRAM_BOT_URLS.CONFESSION} | success
+Group rules | ${TELEGRAM_BOT_URLS.RULES} | success && HopeHub website | https://hopehub.in/ | success`;
+
 export const HOPE_HUB_OFF_TOPIC_GROUP_POLICY: Record<string, string> = {
   telegramGroupHelpGroupTitle: HOPE_HUB_OFF_TOPIC_GROUP_TITLE,
+  telegramGroupHelpWelcomeButtons: HOPE_HUB_OFF_TOPIC_WELCOME_BUTTONS,
   telegramGroupHelpWelcomeMessage: `Hi {mention} 👋
 
 Welcome to *HopeHub Chit-Chat* — Hope Hub’s relaxed, off-topic community space.

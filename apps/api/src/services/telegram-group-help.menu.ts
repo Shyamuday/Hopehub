@@ -38,21 +38,7 @@ export function groupHelpMainMenuKeyboard(
         ],
         [
           { text: 'Bot help', callback_data: 'hh_menu_help', style: 'success' },
-          ...(chatId
-            ? [
-                {
-                  text: 'Admin settings',
-                  url: groupHelpPrivateSettingsUrl(chatId),
-                  style: 'success' as const
-                }
-              ]
-            : [
-                {
-                  text: 'Admin settings',
-                  callback_data: 'hh_menu_settings',
-                  style: 'success' as const
-                }
-              ])
+          { text: 'HopeHub website', url: 'https://hopehub.in/', style: 'success' }
         ]
       ]
     },
