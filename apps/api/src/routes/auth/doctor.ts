@@ -486,49 +486,80 @@ export function registerAuthDoctorRoutes(router: Router) {
           });
         }
       }
-      const doctor = await prisma.user.create({
-        data: {
-          name: body.name,
-          email: body.email,
-          mobile: body.mobile,
-          passwordHash,
-          role: Role.DOCTOR,
-          isActive: true,
-          doctorProfile: {
-            create: {
-              ...toDoctorProfilePayload({
-                doctorType: inferredDoctorType,
-                specialty,
-                registrationNo: body.registrationNo
-              }),
-              providerDomain: body.providerDomain,
-              approvalStatus: requiresCredentialApproval ? 'DRAFT' : 'NOT_REQUIRED',
-              isAvailable: !requiresCredentialApproval,
-              ...(requiresCredentialApproval
-                ? {
-                    suspendedAt: new Date(),
-                    suspendedReason: HOMEOPATHY_PROFILE_DRAFT_REASON,
-                    showOnWebsite: false,
-                    isOnline: false
-                  }
-                : {}),
-              ...(isHopeHubProvider
-                ? {
-                    mentalHealthProfile: {
-                      create: {
-                        careTeamType: primaryCareTeamType,
-                        careTeamTypes,
-                        acceptingNewUsers: true,
-                        autoMatchEnabled: true
+      let doctor;
+      try {
+        doctor = await prisma.user.create({
+          data: {
+            name: body.name,
+            email: body.email,
+            mobile: body.mobile,
+            passwordHash,
+            role: Role.DOCTOR,
+            isActive: true,
+            doctorProfile: {
+              create: {
+                ...toDoctorProfilePayload({
+                  doctorType: inferredDoctorType,
+                  specialty,
+                  registrationNo: body.registrationNo
+                }),
+                providerDomain: body.providerDomain,
+                approvalStatus: requiresCredentialApproval ? 'DRAFT' : 'NOT_REQUIRED',
+                isAvailable: !requiresCredentialApproval,
+                ...(requiresCredentialApproval
+                  ? {
+                      suspendedAt: new Date(),
+                      suspendedReason: HOMEOPATHY_PROFILE_DRAFT_REASON,
+                      showOnWebsite: false,
+                      isOnline: false
+                    }
+                  : {}),
+                ...(isHopeHubProvider
+                  ? {
+                      mentalHealthProfile: {
+                        create: {
+                          careTeamType: primaryCareTeamType,
+                          careTeamTypes,
+                          acceptingNewUsers: true,
+                          autoMatchEnabled: true
+                        }
                       }
                     }
-                  }
-                : {})
+                  : {})
+              }
             }
+          },
+          select: publicUserSelect
+        });
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+          const target = error.meta?.target;
+          const fields = Array.isArray(target)
+            ? target.map(String)
+            : typeof target === 'string'
+              ? [target]
+              : [];
+          if (fields.some((field) => field.toLowerCase().includes('email'))) {
+            return res.status(409).json({
+              code: 'EMAIL_IN_USE',
+              message: 'This email is already connected to an account.'
+            });
           }
-        },
-        select: publicUserSelect
-      });
+          if (fields.some((field) => field.toLowerCase().includes('mobile'))) {
+            return res.status(409).json({
+              code: 'MOBILE_IN_USE',
+              message: 'This mobile number is already connected to an account.'
+            });
+          }
+          if (fields.some((field) => field.toLowerCase().includes('registration'))) {
+            return res.status(409).json({
+              code: 'REGISTRATION_NUMBER_IN_USE',
+              message: 'This professional registration number is already connected to an account.'
+            });
+          }
+        }
+        throw error;
+      }
 
       if (!requiresCredentialApproval) {
         await notifyAdminsAboutDoctorSignup({

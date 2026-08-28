@@ -31,6 +31,7 @@ import { googleClient, googleClientId } from './shared.js';
 import { recordAuthProcess } from '../../services/auth-process-log.js';
 import { issueAuthSession, revokeAllAuthSessionsForUser } from '../../services/auth-sessions.js';
 import { isHomeopathyApprovalFlowSuspension } from '../../constants/homeopathy-provider-approval.constants.js';
+import { staffPasswordLoginSchema } from '../../services/staff-login-validation.js';
 
 const staffOtpKey = (email: string) => `staff:${email.trim().toLowerCase()}`;
 const PROVIDER_ONBOARDING_APPROVAL_STATES = new Set<ProviderApprovalStatus>([
@@ -517,9 +518,7 @@ export function registerAuthStaffRoutes(router: Router) {
   router.post(
     '/auth/staff-login',
     asyncRoute(async (req, res) => {
-      const body = z
-        .object({ email: z.string().email(), password: z.string().min(8) })
-        .parse(req.body);
+      const body = staffPasswordLoginSchema.parse(req.body);
       const email = body.email.trim().toLowerCase();
       const user = await prisma.user.findFirst({
         where: { email, role: { not: Role.PATIENT } },

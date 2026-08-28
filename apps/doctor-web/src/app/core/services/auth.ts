@@ -23,6 +23,65 @@ type AuthResponse = {
   sessionId?: string;
 };
 
+type AuthFailure = {
+  ok: false;
+  message: string;
+  fieldErrors: Record<string, string>;
+};
+
+type ApiValidationIssue = {
+  path?: Array<string | number>;
+  message?: string;
+  code?: string;
+  minimum?: number;
+};
+
+function fieldValidationMessage(field: string, issue: ApiValidationIssue): string {
+  if (field === 'email') return 'Enter a valid email address.';
+  if (field === 'password' && issue.code === 'too_small') {
+    return issue.minimum === 1
+      ? 'Password is required.'
+      : `Use at least ${issue.minimum || 8} characters.`;
+  }
+  if (field === 'name') return 'Enter your real full name.';
+  if (field === 'mobile') return 'Enter a valid 10-digit Indian mobile number.';
+  if (field === 'registrationNo') {
+    return 'Enter your professional registration number (at least 3 characters).';
+  }
+  if (field === 'otp') return 'Enter the OTP sent to your email.';
+  return issue.message || 'Check this field and try again.';
+}
+
+function authFailure(error: any, fallbackMessage: string): AuthFailure {
+  const issues = Array.isArray(error?.error?.issues)
+    ? (error.error.issues as ApiValidationIssue[])
+    : [];
+  const fieldErrors: Record<string, string> = {};
+  for (const issue of issues) {
+    const field = issue.path?.[0];
+    if (typeof field === 'string' && issue.message && !fieldErrors[field]) {
+      fieldErrors[field] = fieldValidationMessage(field, issue);
+    }
+  }
+  const code = typeof error?.error?.code === 'string' ? error.error.code : '';
+  if (code === 'EMAIL_IN_USE') {
+    fieldErrors['email'] = 'This email is already connected to an account. Sign in instead.';
+  } else if (code === 'MOBILE_IN_USE') {
+    fieldErrors['mobile'] = 'This mobile number is already connected to an account.';
+  } else if (code === 'REGISTRATION_NUMBER_IN_USE') {
+    fieldErrors['registrationNo'] =
+      'This professional registration number is already connected to an account.';
+  }
+  return {
+    ok: false,
+    message:
+      issues.length || Object.keys(fieldErrors).length
+        ? 'Please correct the highlighted fields.'
+        : error?.error?.message || fallbackMessage,
+    fieldErrors,
+  };
+}
+
 type GooglePromptMomentNotification = {
   isNotDisplayed(): boolean;
   isSkippedMoment(): boolean;
@@ -70,7 +129,14 @@ export class Auth {
 
   async login(email: string, password: string) {
     if (!email || !password) {
-      return { ok: false as const, message: AUTH_MESSAGES.CREDENTIALS_REQUIRED };
+      return {
+        ok: false as const,
+        message: AUTH_MESSAGES.CREDENTIALS_REQUIRED,
+        fieldErrors: {
+          ...(!email ? { email: 'Email is required.' } : {}),
+          ...(!password ? { password: 'Password is required.' } : {}),
+        },
+      };
     }
 
     try {
@@ -84,13 +150,17 @@ export class Auth {
       this.persistSession(response);
       return { ok: true as const };
     } catch (error: any) {
-      return { ok: false as const, message: error?.error?.message || AUTH_MESSAGES.INVALID_LOGIN };
+      return authFailure(error, AUTH_MESSAGES.INVALID_LOGIN);
     }
   }
 
   async requestOtp(email: string) {
     if (!email) {
-      return { ok: false as const, message: 'Email is required.' };
+      return {
+        ok: false as const,
+        message: 'Email is required.',
+        fieldErrors: { email: 'Email is required.' },
+      };
     }
 
     try {
@@ -99,13 +169,20 @@ export class Auth {
       );
       return { ok: true as const };
     } catch (error: any) {
-      return { ok: false as const, message: error?.error?.message || 'Could not send OTP.' };
+      return authFailure(error, 'Could not send OTP.');
     }
   }
 
   async loginWithOtp(email: string, otp: string) {
     if (!email || !otp) {
-      return { ok: false as const, message: 'Email and OTP are required.' };
+      return {
+        ok: false as const,
+        message: 'Email and OTP are required.',
+        fieldErrors: {
+          ...(!email ? { email: 'Email is required.' } : {}),
+          ...(!otp ? { otp: 'OTP is required.' } : {}),
+        },
+      };
     }
 
     try {
@@ -116,7 +193,12 @@ export class Auth {
       this.persistSession(response);
       return { ok: true as const };
     } catch (error: any) {
-      return { ok: false as const, message: error?.error?.message || AUTH_MESSAGES.INVALID_LOGIN };
+      const failure = authFailure(error, AUTH_MESSAGES.INVALID_LOGIN);
+      if (!Object.keys(failure.fieldErrors).length && /otp/i.test(failure.message)) {
+        failure.fieldErrors['otp'] = failure.message;
+        failure.message = 'Please correct the highlighted fields.';
+      }
+      return failure;
     }
   }
 
@@ -154,7 +236,15 @@ export class Auth {
     careTeamTypes?: string[];
   }) {
     if (!payload.name || !payload.email || !payload.password) {
-      return { ok: false as const, message: AUTH_MESSAGES.ENROLL_REQUIRED_FIELDS };
+      return {
+        ok: false as const,
+        message: AUTH_MESSAGES.ENROLL_REQUIRED_FIELDS,
+        fieldErrors: {
+          ...(!payload.name ? { name: 'Full name is required.' } : {}),
+          ...(!payload.email ? { email: 'Email is required.' } : {}),
+          ...(!payload.password ? { password: 'Password is required.' } : {}),
+        },
+      };
     }
 
     try {
@@ -166,7 +256,7 @@ export class Auth {
         message: response.message || AUTH_MESSAGES.ENROLL_DEFAULT_SUCCESS,
       };
     } catch (error: any) {
-      return { ok: false as const, message: error?.error?.message || AUTH_MESSAGES.ENROLL_FAILED };
+      return authFailure(error, AUTH_MESSAGES.ENROLL_FAILED);
     }
   }
 
