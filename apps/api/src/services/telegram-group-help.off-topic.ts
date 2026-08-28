@@ -16,15 +16,15 @@ export const HOPE_HUB_OFF_TOPIC_GROUP_POLICY: Record<string, string> = {
   telegramGroupHelpWelcomeButtons: HOPE_HUB_OFF_TOPIC_WELCOME_BUTTONS,
   telegramGroupHelpWelcomeMessage: `Hi {mention} 👋
 
-Welcome to *HopeHub Chit-Chat* — Hope Hub’s relaxed, off-topic community space.
+Welcome to *HopeHub Chit-Chat* — a relaxed off-topic place to talk and have fun.
 
-Use this group for friendly conversations, everyday updates, hobbies, humour and healthy connection. You can speak freely, but please protect your privacy and be considerate of people who may be having a difficult day.
+You can share everyday updates, hobbies, jokes, memes, photos, videos, GIFs, stickers, music and voice notes.
 
-• Be respectful and inclusive.
-• Do not send unwanted private messages.
-• No harassment, sexual content, hate, scams, spam or promotions.
-• Do not present yourself as a therapist or offer unsafe medical advice.
-• Report concerning behaviour to the admins.
+Just keep it friendly:
+• Be kind and respect people’s privacy.
+• No adult/graphic content, bullying, hate, scams or repeated spam.
+• Ask before sending someone a private message.
+• Use /report if something feels unsafe.
 
 For private emotional support, use HopeHub Live through the button below.`,
   telegramGroupHelpAboutMessage: `*About HopeHub Chit-Chat*
@@ -38,21 +38,21 @@ You can use it to:
 • Find the official Hope Hub routes when you need a listener or professional care.
 
 This group is managed by the Hope Hub bot for safety. It is not therapy, medical care or an emergency service.`,
-  telegramGroupHelpRulesMessage: `*HopeHub Chit-Chat rules*
+  telegramGroupHelpRulesMessage: `*HopeHub Chit-Chat — simple rules*
 
-1. Treat every member with respect.
-2. Protect privacy; do not repost messages or personal information.
-3. No bullying, hate, sexual content, threats or harassment.
-4. No spam, scams, unsolicited promotions or repeated links.
-5. Do not send unwanted private messages or pressure people to talk privately.
-6. Do not impersonate professionals or give unsafe medical advice.
-7. Use /report on a message when moderator help is needed.
-8. For urgent danger, contact local emergency services; this group is not emergency care.`,
+1. Be kind. No bullying, hate, threats or harassment.
+2. Photos, videos, GIFs, stickers, music, documents and voice notes are welcome.
+3. Keep media safe: no adult, graphic, illegal or privacy-breaking content.
+4. No scams, repeated spam or unwanted promotion.
+5. Ask before privately messaging another member.
+6. Reply with /report when moderator help is needed.
+
+That’s it — relax, talk and enjoy the community.`,
   telegramGroupHelpSupportMessage:
     'For private emotional support, visit https://hopehub.in/#live-connect. You can choose chat, voice or video based on provider availability. This group is not an emergency service.',
   telegramGroupHelpPinnedMessage: `*Welcome to HopeHub Chit-Chat*
 
-Friendly off-topic conversation is welcome here. Keep it respectful, protect privacy, avoid unsolicited DMs and use /report if something feels unsafe.
+Chat freely and share safe photos, videos, GIFs, stickers, music and voice notes. Be kind, avoid unwanted DMs and use /report if something feels unsafe.
 
 Private support: https://hopehub.in/#live-connect`,
   telegramGroupHelpRecurringMessage:
@@ -69,7 +69,9 @@ Private support: https://hopehub.in/#live-connect`,
   telegramGroupHelpAntiPornAction: 'review',
   telegramGroupHelpLinkPolicy: 'warn',
   telegramGroupHelpMediaPolicy: 'allow',
-  telegramGroupHelpForwardPolicy: 'warn',
+  telegramGroupHelpAllowedMedia: 'photo\nvideo\naudio\nvoice\nGIF\nsticker\ndocument\npoll',
+  telegramGroupHelpForwardPolicy: 'allow',
+  telegramGroupHelpQuotePolicy: 'allow',
   telegramGroupHelpChannelSenderPolicy: 'delete',
   telegramGroupHelpReportsMode: 'staff group',
   telegramGroupHelpLogChannelId: '',
