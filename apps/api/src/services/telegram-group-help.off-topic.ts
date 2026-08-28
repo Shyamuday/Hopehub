@@ -44,7 +44,7 @@ This group is managed by the Hope Hub bot for safety. It is not therapy, medical
 2. Photos, videos, GIFs, stickers, music, documents and voice notes are welcome.
 3. Keep media safe: no adult, graphic, illegal or privacy-breaking content.
 4. No scams, repeated spam or unwanted promotion.
-5. Ask before privately messaging another member.
+5. No unwanted private messages — ask before messaging another member.
 6. Reply with /report when moderator help is needed.
 
 That’s it — relax, talk and enjoy the community.`,
