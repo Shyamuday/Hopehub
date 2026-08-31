@@ -19,12 +19,15 @@ model TelegramCommunitySubmission {
   bot            String
   userChatId     String
   firstName      String?
+  lastName       String?
   username       String?
   category       String?
   text           String
   status         String
   groupChatId    String?
   groupMessageId Int?
+  ownerReplyCount Int     @default(0)
+  lastOwnerReplyAt DateTime?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

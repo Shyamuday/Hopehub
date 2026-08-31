@@ -18,6 +18,7 @@ export type CommunitySubmissionInput = {
   bot: CommunitySubmissionBotSlug;
   userChatId: string;
   firstName?: string | null;
+  lastName?: string | null;
   username?: string | null;
   category?: string | null;
   text: string;
@@ -334,6 +335,16 @@ export function updateCommunitySubmission(
   }
 ) {
   return prisma.telegramCommunitySubmission.update({ where: { reference }, data });
+}
+
+export function recordCommunitySubmissionOwnerReply(reference: string) {
+  return prisma.telegramCommunitySubmission.update({
+    where: { reference },
+    data: {
+      ownerReplyCount: { increment: 1 },
+      lastOwnerReplyAt: new Date()
+    }
+  });
 }
 
 export function deleteDraftCommunitySubmission(reference: string, userChatId: string) {
