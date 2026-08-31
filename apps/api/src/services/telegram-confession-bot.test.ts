@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  confessionApprovalAction,
   confessionOwnerReviewText,
   confessionPrivateReplyText,
   confessionRejectionReplyText,
@@ -77,4 +78,23 @@ This is the real confession.
   });
   assert.equal(published.match(/This is the real confession\./g)?.length, 1);
   assert.doesNotMatch(published, /Preview your confession|This will be submitted anonymously/i);
+});
+
+test('confession approval callbacks distinguish publish from publish and pin', () => {
+  assert.deepEqual(confessionApprovalAction('approve_CONF-ONE'), {
+    approved: true,
+    pin: false,
+    reference: 'CONF-ONE'
+  });
+  assert.deepEqual(confessionApprovalAction('approve_pin_CONF-TWO'), {
+    approved: true,
+    pin: true,
+    reference: 'CONF-TWO'
+  });
+  assert.deepEqual(confessionApprovalAction('reject_CONF-THREE'), {
+    approved: false,
+    pin: false,
+    reference: 'CONF-THREE'
+  });
+  assert.equal(confessionApprovalAction('reject_reply_CONF-FOUR'), null);
 });

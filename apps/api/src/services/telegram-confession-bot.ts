@@ -145,24 +145,33 @@ ${input.text}
 This note is private and was sent through the Confession bot. The reviewer’s identity and your identity remain hidden.`;
 }
 
-function confessionReviewKeyboard(reference: string, processed?: 'approved' | 'rejected') {
+function confessionReviewKeyboard(
+  reference: string,
+  processed?: 'approved' | 'approved-pinned' | 'rejected'
+) {
   return {
     inline_keyboard: [
       processed
         ? [
             {
-              text: processed === 'approved' ? 'Approved & published' : 'Rejected',
+              text:
+                processed === 'approved-pinned'
+                  ? 'Approved, published & pinned'
+                  : processed === 'approved'
+                    ? 'Approved & published'
+                    : 'Rejected',
               callback_data: 'already_processed'
             }
           ]
         : [
             { text: 'Approve & publish', callback_data: `approve_${reference}` },
-            { text: 'Reject', callback_data: `reject_${reference}` }
+            { text: 'Publish & pin', callback_data: `approve_pin_${reference}` }
           ],
       ...(processed
         ? []
         : [
             [
+              { text: 'Reject', callback_data: `reject_${reference}` },
               {
                 text: 'Reject with reply',
                 callback_data: `reject_reply_${reference}`
@@ -172,6 +181,19 @@ function confessionReviewKeyboard(reference: string, processed?: 'approved' | 'r
       [{ text: 'Reply privately', callback_data: `reply_confession_${reference}` }]
     ]
   } satisfies TelegramKeyboard;
+}
+
+export function confessionApprovalAction(data: string) {
+  if (data.startsWith('approve_pin_')) {
+    return { approved: true, pin: true, reference: data.slice('approve_pin_'.length) };
+  }
+  if (data.startsWith('approve_')) {
+    return { approved: true, pin: false, reference: data.slice('approve_'.length) };
+  }
+  if (data.startsWith('reject_') && !data.startsWith('reject_reply_')) {
+    return { approved: false, pin: false, reference: data.slice('reject_'.length) };
+  }
+  return null;
 }
 
 async function deliverConfessionOwnerReply(input: {
@@ -260,6 +282,7 @@ export async function publishApprovedConfession(input: {
   text: string;
   serial: bigint;
   reviewerChatId?: string | number;
+  pin?: boolean;
 }): Promise<string[]> {
   const controls = await getTelegramBotControls();
   const routing = confessionRouting(controls);
@@ -267,7 +290,7 @@ export async function publishApprovedConfession(input: {
 
   const number = confessionNumber(input.serial, routing.startNumber);
   const channelName = await confessionDestinationLabel(routing.channelId, routing.channelName);
-  await sendCommunityMessage(
+  const channelMessage = await sendCommunityMessage(
     slug,
     routing.channelId,
     publishedConfessionText({ text: input.text, number, destinationName: channelName }),
@@ -287,6 +310,19 @@ export async function publishApprovedConfession(input: {
   );
 
   const destinations = [channelName];
+  const failedPins: string[] = [];
+  if (input.pin) {
+    try {
+      await callCommunityTelegramApi(slug, 'pinChatMessage', {
+        chat_id: routing.channelId,
+        message_id: channelMessage.message_id,
+        disable_notification: true
+      });
+    } catch (error) {
+      failedPins.push(channelName);
+      console.error('[telegram-confession] Could not pin confession channel post.', error);
+    }
+  }
   const groupConfigRows = await prisma.siteConfig.findMany({
     where: {
       key: {
@@ -352,7 +388,7 @@ export async function publishApprovedConfession(input: {
     const targetChatId = target.chatId!;
     try {
       const groupName = await confessionDestinationLabel(targetChatId, target.fallbackName);
-      await sendCommunityMessage(
+      const sent = await sendCommunityMessage(
         COMMUNITY_BOT_SLUGS.GROUP_HELP,
         targetChatId,
         publishedConfessionText({ text: input.text, number, destinationName: groupName }),
@@ -362,6 +398,21 @@ export async function publishApprovedConfession(input: {
         }
       );
       destinations.push(groupName);
+      if (input.pin) {
+        try {
+          await callCommunityTelegramApi(COMMUNITY_BOT_SLUGS.GROUP_HELP, 'pinChatMessage', {
+            chat_id: targetChatId,
+            message_id: sent.message_id,
+            disable_notification: true
+          });
+        } catch (error) {
+          failedPins.push(groupName);
+          console.error(
+            `[telegram-confession] Could not pin approved confession in ${groupName}.`,
+            error
+          );
+        }
+      }
     } catch (error) {
       failedDestinations.push(target.fallbackName);
       // Channel publication remains valid if an optional group mirror is unavailable.
@@ -381,6 +432,17 @@ export async function publishApprovedConfession(input: {
       );
     } catch (error) {
       console.error('[telegram-confession] Could not notify reviewer about mirror failure.', error);
+    }
+  }
+  if (failedPins.length && input.reviewerChatId) {
+    try {
+      await sendCommunityMessage(
+        slug,
+        input.reviewerChatId,
+        `⚠️ Confession #${number} was published, but pinning failed for: ${failedPins.join(', ')}. Check the bot's Pin messages permission.`
+      );
+    } catch (error) {
+      console.error('[telegram-confession] Could not notify reviewer about pin failure.', error);
     }
   }
   return destinations;
@@ -627,7 +689,8 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
       );
       return;
     }
-    if (data.startsWith('approve_') || data.startsWith('reject_')) {
+    const approvalAction = confessionApprovalAction(data);
+    if (approvalAction) {
       if (!isConfessionReviewInbox(chatId, controls) || !isConfessionReviewer(callback.from)) {
         await answerCommunityCallback(
           slug,
@@ -636,9 +699,8 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
         );
         return;
       }
-      const approved = data.startsWith('approve_');
-      const id = data.slice(approved ? 'approve_'.length : 'reject_'.length);
-      const confession = await findCommunitySubmission(id);
+      const { approved, pin, reference } = approvalAction;
+      const confession = await findCommunitySubmission(reference);
       if (!confession || confession.bot !== slug || confession.status !== 'pending') {
         await sendCommunityMessage(slug, chatId, '⚠️ Confession not found or already processed.');
         return;
@@ -647,14 +709,18 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
         await publishApprovedConfession({
           text: confession.text,
           serial: confession.serial,
-          reviewerChatId: chatId
+          reviewerChatId: chatId,
+          pin
         });
       }
       await updateCommunitySubmission(confession.reference, {
         status: approved ? 'approved' : 'rejected'
       });
       await editCommunityReplyMarkup(slug, chatId, callback.message.message_id, {
-        ...confessionReviewKeyboard(confession.reference, approved ? 'approved' : 'rejected')
+        ...confessionReviewKeyboard(
+          confession.reference,
+          approved ? (pin ? 'approved-pinned' : 'approved') : 'rejected'
+        )
       });
       try {
         await sendCommunityMessage(
