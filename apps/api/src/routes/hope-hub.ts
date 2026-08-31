@@ -51,6 +51,7 @@ import {
 import { emitHopeHubLiveGroupMessage } from '../services/hope-hub-live-groups-realtime.js';
 import { mirrorHopeHubLiveChatMessageToTelegram } from '../services/telegram-live-chat-bridge.js';
 import { moderateWebsiteLiveChatMessage } from '../services/hope-hub-live-chat-moderation.js';
+import { serializePublicHopeHubLiveGroupMessage } from '../services/hope-hub-live-group-message-public.js';
 import { emitConsultationAssignedToDoctor } from '../services/consultation-realtime.js';
 import { INSTANT_ASSIGNMENT_RESPONSE_TIMEOUT_MS } from '../constants/online-doctor.constants.js';
 import {
@@ -2216,18 +2217,7 @@ function serializeLiveGroupMessage(message: {
   deletedByUserId?: string | null;
   createdAt: Date;
 }) {
-  return {
-    id: message.id,
-    groupId: message.groupId,
-    senderId: message.senderId,
-    senderName: message.senderName,
-    senderRole: message.senderRole,
-    body: message.isDeleted ? 'Message removed by moderator.' : message.body,
-    isDeleted: Boolean(message.isDeleted),
-    deletedAt: message.deletedAt?.toISOString() ?? null,
-    deletedByUserId: message.deletedByUserId ?? null,
-    createdAt: message.createdAt.toISOString()
-  };
+  return serializePublicHopeHubLiveGroupMessage(message);
 }
 
 async function liveGroupModerationFor(groupId: string, userId: string) {
@@ -2269,6 +2259,7 @@ hopeHubRouter.get(
   '/hope-hub/live-groups',
   authOptional,
   asyncRoute(async (_req, res) => {
+    res.set('Cache-Control', 'private, no-store');
     const groups = await prisma.hopeHubLiveGroup.findMany({
       where: {
         isActive: true,
@@ -2326,6 +2317,7 @@ hopeHubRouter.get(
   '/hope-hub/live-groups/:id',
   authOptional,
   asyncRoute(async (req, res) => {
+    res.set('Cache-Control', 'private, no-store');
     const id = routeParam(req, 'id');
     const group = await prisma.hopeHubLiveGroup.findFirst({
       where: {
@@ -2472,8 +2464,10 @@ hopeHubRouter.post(
         messageId: message?.id ?? null,
         reporterUserId: req.user!.id,
         reporterName: req.user!.name,
-        targetUserId: body.targetUserId || message?.senderId || null,
-        targetDisplayName: body.targetDisplayName || message?.senderName || null,
+        // Resolve reported message identity from the private database record.
+        // Never trust or require the anonymized identity sent to public clients.
+        targetUserId: message?.senderId || body.targetUserId || null,
+        targetDisplayName: message?.senderName || body.targetDisplayName || null,
         reason: body.reason,
         details: body.details || null
       }

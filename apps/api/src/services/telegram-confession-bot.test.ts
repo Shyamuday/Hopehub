@@ -3,6 +3,7 @@ import test from 'node:test';
 import {
   confessionOwnerReviewText,
   confessionPrivateReplyText,
+  confessionRejectionReplyText,
   isConfessionReviewer
 } from './telegram-confession-bot.js';
 
@@ -41,5 +42,16 @@ test('private owner response does not expose the reviewer identity', () => {
   const text = confessionPrivateReplyText({ text: 'We received your message.', number: 1042 });
   assert.match(text, /Anonymous Confession #1042/);
   assert.match(text, /We received your message/);
+  assert.doesNotMatch(text, /spiritualspirirt|7217536617/i);
+});
+
+test('private rejection reply explains the outcome without exposing the reviewer', () => {
+  const text = confessionRejectionReplyText({
+    text: 'Please remove identifying details and submit it again.',
+    number: 1042
+  });
+  assert.match(text, /wasn't approved for public posting/i);
+  assert.match(text, /remove identifying details/i);
+  assert.match(text, /Anonymous Confession #1042/);
   assert.doesNotMatch(text, /spiritualspirirt|7217536617/i);
 });

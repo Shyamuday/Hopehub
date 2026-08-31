@@ -113,6 +113,19 @@ ${input.text}
 This response is private and was sent through the Confession bot. Your identity remains hidden from public confession posts.`;
 }
 
+export function confessionRejectionReplyText(input: { text: string; number: number }) {
+  return `💙 Update about your confession
+
+Re: Anonymous Confession #${input.number}
+
+Your confession wasn't approved for public posting at this time.
+
+Private review note:
+${input.text}
+
+This note is private and was sent through the Confession bot. The reviewer’s identity and your identity remain hidden.`;
+}
+
 function confessionReviewKeyboard(reference: string, processed?: 'approved' | 'rejected') {
   return {
     inline_keyboard: [
@@ -127,6 +140,16 @@ function confessionReviewKeyboard(reference: string, processed?: 'approved' | 'r
             { text: 'Approve & publish', callback_data: `approve_${reference}` },
             { text: 'Reject', callback_data: `reject_${reference}` }
           ],
+      ...(processed
+        ? []
+        : [
+            [
+              {
+                text: 'Reject with reply',
+                callback_data: `reject_reply_${reference}`
+              }
+            ]
+          ]),
       [{ text: 'Reply privately', callback_data: `reply_confession_${reference}` }]
     ]
   } satisfies TelegramKeyboard;
@@ -138,13 +161,16 @@ async function deliverConfessionOwnerReply(input: {
   controls: TelegramBotControls;
   ownerChatId: string | number;
   ownerReplyToMessageId?: number;
+  kind?: 'reply' | 'rejection';
 }) {
   const routing = confessionRouting(input.controls);
   const number = confessionNumber(input.confession.serial, routing.startNumber);
   await sendCommunityMessage(
     slug,
     input.confession.userChatId,
-    confessionPrivateReplyText({ text: input.text, number }),
+    input.kind === 'rejection'
+      ? confessionRejectionReplyText({ text: input.text, number })
+      : confessionPrivateReplyText({ text: input.text, number }),
     { reply_markup: postConfessionKeyboard(input.controls) }
   );
   try {
@@ -158,7 +184,7 @@ async function deliverConfessionOwnerReply(input: {
     await sendCommunityMessage(
       slug,
       input.ownerChatId,
-      `✅ Private reply delivered.\n\nConfession #${number} · ${input.confession.reference}\nRecipient: ${confessionDisplayName(input.confession)}${input.confession.username ? ` (@${input.confession.username.replace(/^@/, '')})` : ''}\nTelegram ID: ${input.confession.userChatId}`,
+      `✅ ${input.kind === 'rejection' ? 'Rejected and private review note delivered' : 'Private reply delivered'}.\n\nConfession #${number} · ${input.confession.reference}\nRecipient: ${confessionDisplayName(input.confession)}${input.confession.username ? ` (@${input.confession.username.replace(/^@/, '')})` : ''}\nTelegram ID: ${input.confession.userChatId}`,
       { reply_to_message_id: input.ownerReplyToMessageId }
     );
   } catch (error) {
@@ -401,8 +427,15 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
         await answerCommunityCallback(slug, callback.id, 'Only the Confession owner can do this.');
         return;
       }
+      const activeReply = await getCommunityState(slug, stateKey);
       await clearCommunityState(slug, stateKey);
-      await sendCommunityMessage(slug, chatId, 'Private reply cancelled.');
+      await sendCommunityMessage(
+        slug,
+        chatId,
+        activeReply?.state === 'owner_confession_reject_reply'
+          ? 'Rejection cancelled. The confession is still pending.'
+          : 'Private reply cancelled.'
+      );
       return;
     }
     if (data.startsWith('reply_confession_')) {
@@ -431,6 +464,40 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
         slug,
         chatId,
         `Write the private reply for Confession #${confessionNumber(confession.serial, routing.startNumber)}.\n\nRecipient: ${confessionDisplayName(confession)}${confession.username ? ` (@${confession.username.replace(/^@/, '')})` : ''}\nTelegram ID: ${confession.userChatId}\n\nYour next message will be delivered privately through this bot.`,
+        {
+          reply_markup: {
+            inline_keyboard: [[{ text: 'Cancel', callback_data: 'cancel_confession_reply' }]]
+          }
+        }
+      );
+      return;
+    }
+    if (data.startsWith('reject_reply_')) {
+      if (!isConfessionReviewInbox(chatId, controls) || !isConfessionReviewer(callback.from)) {
+        await answerCommunityCallback(
+          slug,
+          callback.id,
+          'Only the private Confession reviewer can reject submissions.'
+        );
+        return;
+      }
+      const reference = data.slice('reject_reply_'.length);
+      const confession = await findCommunitySubmission(reference);
+      if (!confession || confession.bot !== slug || confession.status !== 'pending') {
+        await sendCommunityMessage(slug, chatId, '⚠️ Confession not found or already processed.');
+        return;
+      }
+      await setCommunityState(
+        slug,
+        stateKey,
+        'owner_confession_reject_reply',
+        { reference, reviewMessageId: callback.message.message_id },
+        30 * 60 * 1000
+      );
+      await sendCommunityMessage(
+        slug,
+        chatId,
+        `Write the private reason for rejecting Confession #${confessionNumber(confession.serial, routing.startNumber)}.\n\nThe confession will be rejected and your next text message will be sent privately to the sender. Your identity will not be shown.`,
         {
           reply_markup: {
             inline_keyboard: [[{ text: 'Cancel', callback_data: 'cancel_confession_reply' }]]
@@ -557,7 +624,62 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
   const stateKey = keyOf(chatId);
   const text = message.text.trim();
   if (isConfessionReviewInbox(chatId, controls) && isConfessionReviewer(message.from)) {
-    const replyState = await getCommunityState<{ reference?: string }>(slug, stateKey);
+    const replyState = await getCommunityState<{
+      reference?: string;
+      reviewMessageId?: number;
+    }>(slug, stateKey);
+    if (replyState?.state === 'owner_confession_reject_reply' && replyState.payload?.reference) {
+      if (isCommand(text, 'cancel')) {
+        await clearCommunityState(slug, stateKey);
+        await sendCommunityMessage(slug, chatId, 'Rejection cancelled. The confession is pending.');
+        return;
+      }
+      if (text.startsWith('/')) {
+        await sendCommunityMessage(
+          slug,
+          chatId,
+          'Write a normal text rejection reason, or use /cancel.'
+        );
+        return;
+      }
+      const confession = await findCommunitySubmission(replyState.payload.reference);
+      if (!confession || confession.bot !== slug || confession.status !== 'pending') {
+        await clearCommunityState(slug, stateKey);
+        await sendCommunityMessage(slug, chatId, '⚠️ Confession not found or already processed.');
+        return;
+      }
+
+      await updateCommunitySubmission(confession.reference, { status: 'rejected' });
+      if (replyState.payload.reviewMessageId) {
+        try {
+          await editCommunityReplyMarkup(slug, chatId, replyState.payload.reviewMessageId, {
+            ...confessionReviewKeyboard(confession.reference, 'rejected')
+          });
+        } catch (error) {
+          console.error('[telegram-confession] Could not update rejected review markup.', error);
+        }
+      }
+      try {
+        await deliverConfessionOwnerReply({
+          confession,
+          text,
+          controls,
+          ownerChatId: chatId,
+          ownerReplyToMessageId: message.message_id,
+          kind: 'rejection'
+        });
+      } catch {
+        await sendCommunityMessage(
+          slug,
+          chatId,
+          '⚠️ Confession rejected, but the private reason could not be delivered. The user may have blocked the bot.',
+          { reply_to_message_id: message.message_id }
+        );
+      } finally {
+        await clearCommunityState(slug, stateKey);
+      }
+      return;
+    }
     if (replyState?.state === 'owner_confession_reply' && replyState.payload?.reference) {
       if (isCommand(text, 'cancel')) {
         await clearCommunityState(slug, stateKey);

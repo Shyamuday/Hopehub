@@ -4,6 +4,7 @@ import { emitHopeHubLiveGroupMessage } from './hope-hub-live-groups-realtime.js'
 import { sendCommunityMessage } from './telegram-community-bots.client.js';
 import type { CommunityTelegramMessage } from './telegram-community-bots.types.js';
 import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
+import { serializePublicHopeHubLiveGroupMessage } from './hope-hub-live-group-message-public.js';
 
 const BRIDGE_CONFIG_KEYS = [
   'telegramGroupHelpGroupChatId',
@@ -37,25 +38,6 @@ async function bridgeConfig() {
     enabled: bridgeEnabled(config.telegramLiveChatBridgeEnabled),
     telegramChatId: config.telegramGroupHelpGroupChatId.trim(),
     liveGroupSlug: config.telegramLiveChatGroupSlug.trim() || 'telegram-community'
-  };
-}
-
-function serializeBridgeMessage(message: {
-  id: string;
-  groupId: string;
-  senderId: string;
-  senderName: string;
-  senderRole: string | null;
-  body: string;
-  isDeleted: boolean;
-  deletedAt: Date | null;
-  deletedByUserId: string | null;
-  createdAt: Date;
-}) {
-  return {
-    ...message,
-    deletedAt: message.deletedAt?.toISOString() ?? null,
-    createdAt: message.createdAt.toISOString()
   };
 }
 
@@ -102,7 +84,7 @@ export async function ingestTelegramLiveChatMessage(message: CommunityTelegramMe
     }
   });
 
-  emitHopeHubLiveGroupMessage(group.id, serializeBridgeMessage(created));
+  emitHopeHubLiveGroupMessage(group.id, serializePublicHopeHubLiveGroupMessage(created));
   return true;
 }
 
