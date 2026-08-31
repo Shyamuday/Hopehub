@@ -57,8 +57,10 @@ Chat freely and share safe photos, videos, GIFs, stickers, music and voice notes
 Private support: https://hopehub.in/#live-connect`,
   telegramGroupHelpRecurringMessage:
     'Community reminder: keep conversations respectful, protect personal details, avoid unsolicited DMs and report unsafe behaviour to the admins.',
-  telegramGroupHelpJoinProtection: 'captcha',
-  telegramGroupHelpCaptchaMode: 'on',
+  // Chit-Chat is intentionally frictionless: welcome new members immediately
+  // without restricting them or asking for a captcha/confirmation tap.
+  telegramGroupHelpJoinProtection: 'off',
+  telegramGroupHelpCaptchaMode: 'off',
   telegramGroupHelpJoinLeaveMessages: 'join only',
   telegramGroupHelpWelcomeCleanup: 'on',
   telegramGroupHelpFirstMessageReview: 'off',
