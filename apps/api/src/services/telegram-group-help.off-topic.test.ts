@@ -24,6 +24,7 @@ test('off-topic community has an independent, production-safe policy', () => {
   assert.equal(HOPE_HUB_OFF_TOPIC_GROUP_POLICY.telegramGroupHelpAntiFloodAction, 'mute');
   assert.equal(HOPE_HUB_OFF_TOPIC_GROUP_POLICY.telegramGroupHelpAntiPornAction, 'off');
   assert.equal(HOPE_HUB_OFF_TOPIC_GROUP_POLICY.telegramGroupHelpMediaPolicy, 'allow');
+  assert.equal(HOPE_HUB_OFF_TOPIC_GROUP_POLICY.telegramGroupHelpLinkPolicy, 'allow');
   assert.equal(HOPE_HUB_OFF_TOPIC_GROUP_POLICY.telegramGroupHelpForwardPolicy, 'allow');
   assert.equal(HOPE_HUB_OFF_TOPIC_GROUP_POLICY.telegramGroupHelpQuotePolicy, 'allow');
   assert.match(HOPE_HUB_OFF_TOPIC_GROUP_POLICY.telegramGroupHelpAllowedMedia, /sticker/i);
