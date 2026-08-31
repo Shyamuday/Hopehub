@@ -81,6 +81,25 @@ function confessionDisplayName(confession: Pick<ConfessionIdentity, 'firstName' 
   );
 }
 
+const CONFESSION_PREVIEW_START =
+  /^\s*(?:📝\s*)?\*{0,2}Preview your confession\*{0,2}\s*[\r\n]+\s*[━─—_-]{5,}\s*[\r\n]*/i;
+const CONFESSION_PREVIEW_END =
+  /[\r\n]*\s*[━─—_-]{5,}\s*[\r\n]+\s*(?:🔒\s*)?This will be submitted\s*\*{0,2}anonymously[.!]?\*{0,2}\s*$/i;
+
+/** Removes bot-generated preview chrome that may be pasted back into a confession. */
+export function normalizeConfessionText(value: string) {
+  let normalized = value.replace(/\r\n?/g, '\n').trim();
+  for (let pass = 0; pass < 5; pass += 1) {
+    const previous = normalized;
+    normalized = normalized
+      .replace(CONFESSION_PREVIEW_START, '')
+      .replace(CONFESSION_PREVIEW_END, '')
+      .trim();
+    if (normalized === previous) break;
+  }
+  return normalized;
+}
+
 export function confessionOwnerReviewText(confession: ConfessionIdentity, startNumber: number) {
   return `${confession.category === 'SAFETY_REVIEW' ? '🚨 POSSIBLE URGENT SAFETY REVIEW\n\n' : ''}🔔 NEW ANONYMOUS CONFESSION
 
@@ -93,7 +112,7 @@ export function confessionOwnerReviewText(confession: ConfessionIdentity, startN
 🛡 Review type: ${confession.category === 'SAFETY_REVIEW' ? 'Possible immediate safety risk' : 'Standard'}
 ━━━━━━━━━━━━━━
 
-${confession.text}
+${normalizeConfessionText(confession.text)}
 
 ━━━━━━━━━━━━━━
 These identity details are visible only to the designated Confession owner for safety, moderation and a private response. They are never published.`;
@@ -230,7 +249,7 @@ export function publishedConfessionText(input: {
   return [
     input.number ? `🕊 Anonymous Confession #${input.number}` : '🕊 Anonymous Confession',
     '',
-    input.text,
+    normalizeConfessionText(input.text),
     '',
     '━━━━━━━━━━━━━━',
     `💙 ${input.destinationName}`
@@ -820,13 +839,14 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
     );
     return;
   }
+  const confessionText = normalizeConfessionText(text);
   const minCharacters = controlNumber(controls.telegramConfessionMinCharacters, 5);
   const maxCharacters = controlNumber(controls.telegramConfessionMaxCharacters, 4000);
-  if (text.length < minCharacters || text.length > maxCharacters) {
+  if (confessionText.length < minCharacters || confessionText.length > maxCharacters) {
     await sendCommunityMessage(
       slug,
       chatId,
-      text.length < minCharacters
+      confessionText.length < minCharacters
         ? `Please write at least ${minCharacters} characters. 💙`
         : `Please keep your confession under ${maxCharacters.toLocaleString()} characters.`
     );
@@ -834,7 +854,7 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
   }
   const needsSafetyReview =
     controlBoolean(controls.telegramConfessionSafetyScreeningEnabled) &&
-    POSSIBLE_IMMEDIATE_RISK.test(text);
+    POSSIBLE_IMMEDIATE_RISK.test(confessionText);
   if (needsSafetyReview) {
     await sendCommunityMessage(slug, chatId, controls.telegramConfessionSafetyMessage);
   }
@@ -847,14 +867,14 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
     lastName: message.from?.last_name || null,
     username: message.from?.username || null,
     category: needsSafetyReview ? 'SAFETY_REVIEW' : null,
-    text,
+    text: confessionText,
     status: 'draft'
   });
   await setCommunityState(slug, stateKey, 'preview', { confessionId: id });
   await sendCommunityMessage(
     slug,
     chatId,
-    `📝 *Preview your confession*\n\n━━━━━━━━━━━━━━\n\n${text}\n\n━━━━━━━━━━━━━━\n\n🔒 This will be submitted *anonymously.*`,
+    `📝 *Preview your confession*\n\n━━━━━━━━━━━━━━\n\n${confessionText}\n\n━━━━━━━━━━━━━━\n\n🔒 This will be submitted *anonymously.*`,
     {
       parse_mode: 'Markdown',
       reply_markup: {

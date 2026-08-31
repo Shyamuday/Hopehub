@@ -4,7 +4,9 @@ import {
   confessionOwnerReviewText,
   confessionPrivateReplyText,
   confessionRejectionReplyText,
-  isConfessionReviewer
+  isConfessionReviewer,
+  normalizeConfessionText,
+  publishedConfessionText
 } from './telegram-confession-bot.js';
 
 test('only the configured spiritualspirirt Telegram account can review confessions', () => {
@@ -54,4 +56,25 @@ test('private rejection reply explains the outcome without exposing the reviewer
   assert.match(text, /remove identifying details/i);
   assert.match(text, /Anonymous Confession #1042/);
   assert.doesNotMatch(text, /spiritualspirirt|7217536617/i);
+});
+
+test('nested preview wrappers are removed before a confession is published', () => {
+  const wrapped = `📝 Preview your confession
+━━━━━━━━━━━━━━
+📝 Preview your confession
+━━━━━━━━━━━━━━
+This is the real confession.
+━━━━━━━━━━━━━━
+🔒 This will be submitted anonymously.
+━━━━━━━━━━━━━━
+🔒 This will be submitted anonymously.`;
+
+  assert.equal(normalizeConfessionText(wrapped), 'This is the real confession.');
+  const published = publishedConfessionText({
+    text: wrapped,
+    destinationName: 'Hope Hub Community',
+    number: 1043
+  });
+  assert.equal(published.match(/This is the real confession\./g)?.length, 1);
+  assert.doesNotMatch(published, /Preview your confession|This will be submitted anonymously/i);
 });
