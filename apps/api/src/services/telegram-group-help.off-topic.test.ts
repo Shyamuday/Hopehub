@@ -38,7 +38,7 @@ test('off-topic community has an independent, production-safe policy', () => {
   assert.match(HOPE_HUB_OFF_TOPIC_BANNED_PHRASES, /send nudes/);
   assert.doesNotMatch(
     HOPE_HUB_OFF_TOPIC_BANNED_PHRASES,
-    /^(?:harami|chutiya|gandu|randi|lund|loda|my number|call me now)$/m
+    /^(?:harami|chutiya|gandu|randi|lund|loda|pagal|pagla|my number|call me now)$/m
   );
   assert.doesNotMatch(HOPE_HUB_OFF_TOPIC_REVIEW_PHRASES, /^(?:dm me|my number|call me now)$/m);
   assert.equal(HOPE_HUB_OFF_TOPIC_GROUP_POLICY.telegramGroupHelpForwardPolicy, 'allow');
