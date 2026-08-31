@@ -465,6 +465,7 @@ export class GroupHelpPage {
     'telegramGroupHelpFirstMessageReview',
     'telegramCommunitySmartScheduleEnabled',
     'telegramCommunityConfessionsInGroup',
+    'telegramCommunityConfessionsInOffTopicGroup',
     'telegramGroupHelpCaptchaMode',
     'telegramGroupHelpWelcomeCleanup',
     'telegramGroupHelpJoinProtection',

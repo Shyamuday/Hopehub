@@ -23,6 +23,7 @@ test('every Group Help action is backed by stored configuration fields', () => {
 
 test('HopeHubAI has a permanent off-topic group separate from the main support community', () => {
   assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramGroupHelpOffTopicGroupChatId, '@hopehubtalks');
+  assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramCommunityConfessionsInOffTopicGroup, 'Enabled');
   assert.notEqual(
     GROUP_HELP_CONFIG_DEFAULTS.telegramGroupHelpOffTopicGroupChatId,
     GROUP_HELP_CONFIG_DEFAULTS.telegramGroupHelpGroupChatId

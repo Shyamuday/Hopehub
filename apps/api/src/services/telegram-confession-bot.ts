@@ -240,6 +240,7 @@ export function publishedConfessionText(input: {
 export async function publishApprovedConfession(input: {
   text: string;
   serial: bigint;
+  reviewerChatId?: string | number;
 }): Promise<string[]> {
   const controls = await getTelegramBotControls();
   const routing = confessionRouting(controls);
@@ -272,6 +273,7 @@ export async function publishApprovedConfession(input: {
       key: {
         in: [
           'telegramCommunityConfessionsInGroup',
+          'telegramCommunityConfessionsInOffTopicGroup',
           'telegramGroupHelpGroupChatId',
           'telegramGroupHelpOffTopicGroupChatId',
           'telegramGroupHelpMainGroupUrl',
@@ -285,43 +287,82 @@ export async function publishApprovedConfession(input: {
   });
   const groupConfig = Object.fromEntries(groupConfigRows.map((row) => [row.key, row.value]));
   const groupChatId = groupConfig.telegramGroupHelpGroupChatId?.trim();
-  if (groupConfig.telegramCommunityConfessionsInGroup === 'Disabled' || !groupChatId) {
-    return destinations;
+  const offTopicChatId = groupConfig.telegramGroupHelpOffTopicGroupChatId?.trim();
+  const channelUrl = await confessionChannelUrl(routing.channelId, routing.channelUrl);
+  const groupKeyboard = (targetChatId: string) =>
+    withCrossCommunityButton(
+      channelUrl
+        ? {
+            inline_keyboard: [
+              [
+                { text: 'Read all', url: channelUrl },
+                { text: 'Write yours', url: TELEGRAM_BOT_URLS.CONFESSION }
+              ]
+            ]
+          }
+        : {
+            inline_keyboard: [
+              [{ text: 'Write your confession', url: TELEGRAM_BOT_URLS.CONFESSION }]
+            ]
+          },
+      groupConfig,
+      targetChatId
+    );
+  const groupTargets = [
+    {
+      enabled: groupConfig.telegramCommunityConfessionsInGroup !== 'Disabled',
+      chatId: groupChatId,
+      fallbackName: 'Hope Hub Community',
+      messageThreadId: Number(groupConfig.telegramCommunityDefaultTopicId) || undefined
+    },
+    {
+      enabled: groupConfig.telegramCommunityConfessionsInOffTopicGroup !== 'Disabled',
+      chatId: offTopicChatId,
+      fallbackName: 'HopeHub Chit-Chat',
+      messageThreadId: undefined
+    }
+  ].filter(
+    (target, index, targets) =>
+      target.enabled &&
+      Boolean(target.chatId) &&
+      targets.findIndex((candidate) => candidate.chatId === target.chatId) === index
+  );
+  const failedDestinations: string[] = [];
+
+  for (const target of groupTargets) {
+    const targetChatId = target.chatId!;
+    try {
+      const groupName = await confessionDestinationLabel(targetChatId, target.fallbackName);
+      await sendCommunityMessage(
+        COMMUNITY_BOT_SLUGS.GROUP_HELP,
+        targetChatId,
+        publishedConfessionText({ text: input.text, number, destinationName: groupName }),
+        {
+          message_thread_id: target.messageThreadId,
+          reply_markup: groupKeyboard(targetChatId)
+        }
+      );
+      destinations.push(groupName);
+    } catch (error) {
+      failedDestinations.push(target.fallbackName);
+      // Channel publication remains valid if an optional group mirror is unavailable.
+      console.error(
+        `[telegram-confession] Could not mirror approved confession to ${target.fallbackName}.`,
+        error
+      );
+    }
   }
 
-  try {
-    const groupName = await confessionDestinationLabel(groupChatId, 'Hope Hub Community');
-    const channelUrl = await confessionChannelUrl(routing.channelId, routing.channelUrl);
-    await sendCommunityMessage(
-      COMMUNITY_BOT_SLUGS.GROUP_HELP,
-      groupChatId,
-      publishedConfessionText({ text: input.text, number, destinationName: groupName }),
-      {
-        message_thread_id: Number(groupConfig.telegramCommunityDefaultTopicId) || undefined,
-        reply_markup: withCrossCommunityButton(
-          channelUrl
-            ? {
-                inline_keyboard: [
-                  [
-                    { text: 'Read all', url: channelUrl },
-                    { text: 'Write yours', url: TELEGRAM_BOT_URLS.CONFESSION }
-                  ]
-                ]
-              }
-            : {
-                inline_keyboard: [
-                  [{ text: 'Write your confession', url: TELEGRAM_BOT_URLS.CONFESSION }]
-                ]
-              },
-          groupConfig,
-          groupChatId
-        )
-      }
-    );
-    destinations.push(groupName);
-  } catch (error) {
-    // A channel publication remains valid even if an optional group mirror is unavailable.
-    console.error('Could not mirror approved confession to the Hope Hub group.', error);
+  if (failedDestinations.length && input.reviewerChatId) {
+    try {
+      await sendCommunityMessage(
+        slug,
+        input.reviewerChatId,
+        `⚠️ Confession #${number} was published, but mirroring failed for: ${failedDestinations.join(', ')}. Check that the Hope Hub bot is present and allowed to post there.`
+      );
+    } catch (error) {
+      console.error('[telegram-confession] Could not notify reviewer about mirror failure.', error);
+    }
   }
   return destinations;
 }
@@ -584,7 +625,11 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
         return;
       }
       if (approved) {
-        await publishApprovedConfession({ text: confession.text, serial: confession.serial });
+        await publishApprovedConfession({
+          text: confession.text,
+          serial: confession.serial,
+          reviewerChatId: chatId
+        });
       }
       await updateCommunitySubmission(confession.reference, {
         status: approved ? 'approved' : 'rejected'

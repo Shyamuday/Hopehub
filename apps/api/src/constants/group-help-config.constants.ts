@@ -656,8 +656,18 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
   },
   {
     key: 'telegramCommunityConfessionsInGroup',
-    label: 'Publish approved confessions in group',
-    description: 'Allow admin-approved anonymous confessions to appear in the community group.',
+    label: 'Publish confessions in support group',
+    description: 'Allow approved anonymous confessions to appear in the main support group.',
+    section: 'content',
+    type: 'select',
+    maxLength: 20,
+    options: ['Enabled', 'Disabled'],
+    defaultValue: 'Enabled'
+  },
+  {
+    key: 'telegramCommunityConfessionsInOffTopicGroup',
+    label: 'Publish confessions in Chit-Chat',
+    description: 'Also publish approved anonymous confessions in the off-topic Chit-Chat group.',
     section: 'content',
     type: 'select',
     maxLength: 20,
