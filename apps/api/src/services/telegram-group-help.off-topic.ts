@@ -11,6 +11,44 @@ export const HOPE_HUB_OFF_TOPIC_GROUP_DESCRIPTION =
 export const HOPE_HUB_OFF_TOPIC_WELCOME_BUTTONS = `Talk privately | https://hopehub.in/#live-connect | success && Share anonymously | ${TELEGRAM_BOT_URLS.CONFESSION} | success
 Group rules | ${TELEGRAM_BOT_URLS.RULES} | success && HopeHub website | https://hopehub.in/ | success`;
 
+// Chit-Chat permits ordinary informal language. Keep automatic blocking
+// limited to unambiguous sexual solicitation, explicit-content promotion and
+// severe targeted abuse; moderators can still act on anything else via report.
+export const HOPE_HUB_OFF_TOPIC_BANNED_PHRASES = [
+  'teri maa ki chut',
+  'teri behen ki chut',
+  'fuck you',
+  'i want pussy',
+  'i want sex',
+  'sex video',
+  'xxx video',
+  'porn video',
+  'pornstar',
+  'xvideos',
+  'xnxx',
+  'xhamster',
+  'callgirl',
+  'call girl',
+  'escort service',
+  'hot girl available',
+  'nude video',
+  'nudes available',
+  'sexy service',
+  'video call sex',
+  'send nudes'
+].join('\n');
+
+// Broad entries such as "dm me", "my number" and "call me now" create too
+// many false positives in a social group. Review only direct requests for a
+// member's private contact details.
+export const HOPE_HUB_OFF_TOPIC_REVIEW_PHRASES = [
+  'send me your number',
+  'share your number',
+  'dm me your number',
+  'msg me your number',
+  'whatsapp me privately'
+].join('\n');
+
 export const HOPE_HUB_OFF_TOPIC_GROUP_POLICY: Record<string, string> = {
   telegramGroupHelpGroupTitle: HOPE_HUB_OFF_TOPIC_GROUP_TITLE,
   telegramGroupHelpWelcomeButtons: HOPE_HUB_OFF_TOPIC_WELCOME_BUTTONS,
@@ -68,6 +106,8 @@ Private support: https://hopehub.in/#live-connect`,
   telegramGroupHelpAntiFloodAction: 'mute',
   telegramGroupHelpAntiFloodLimit: '5 2',
   telegramGroupHelpAntiSpamAction: 'warn',
+  telegramGroupHelpBannedWords: HOPE_HUB_OFF_TOPIC_BANNED_PHRASES,
+  telegramGroupHelpReviewPhrases: HOPE_HUB_OFF_TOPIC_REVIEW_PHRASES,
   // Telegram does not classify media as NSFW. "review" therefore removes
   // every media message, including ordinary photos and stickers. Chit-Chat
   // allows media and relies on member reports plus normal moderation instead.

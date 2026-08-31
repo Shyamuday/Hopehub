@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  HOPE_HUB_OFF_TOPIC_BANNED_PHRASES,
   HOPE_HUB_OFF_TOPIC_GROUP_POLICY,
   HOPE_HUB_OFF_TOPIC_GROUP_TITLE,
+  HOPE_HUB_OFF_TOPIC_REVIEW_PHRASES,
   HOPE_HUB_OFF_TOPIC_WELCOME_BUTTONS,
   offTopicPolicyWithPrivateModeration
 } from './telegram-group-help.off-topic.js';
@@ -25,6 +27,20 @@ test('off-topic community has an independent, production-safe policy', () => {
   assert.equal(HOPE_HUB_OFF_TOPIC_GROUP_POLICY.telegramGroupHelpAntiPornAction, 'off');
   assert.equal(HOPE_HUB_OFF_TOPIC_GROUP_POLICY.telegramGroupHelpMediaPolicy, 'allow');
   assert.equal(HOPE_HUB_OFF_TOPIC_GROUP_POLICY.telegramGroupHelpLinkPolicy, 'allow');
+  assert.equal(
+    HOPE_HUB_OFF_TOPIC_GROUP_POLICY.telegramGroupHelpBannedWords,
+    HOPE_HUB_OFF_TOPIC_BANNED_PHRASES
+  );
+  assert.equal(
+    HOPE_HUB_OFF_TOPIC_GROUP_POLICY.telegramGroupHelpReviewPhrases,
+    HOPE_HUB_OFF_TOPIC_REVIEW_PHRASES
+  );
+  assert.match(HOPE_HUB_OFF_TOPIC_BANNED_PHRASES, /send nudes/);
+  assert.doesNotMatch(
+    HOPE_HUB_OFF_TOPIC_BANNED_PHRASES,
+    /^(?:harami|chutiya|gandu|randi|lund|loda|my number|call me now)$/m
+  );
+  assert.doesNotMatch(HOPE_HUB_OFF_TOPIC_REVIEW_PHRASES, /^(?:dm me|my number|call me now)$/m);
   assert.equal(HOPE_HUB_OFF_TOPIC_GROUP_POLICY.telegramGroupHelpForwardPolicy, 'allow');
   assert.equal(HOPE_HUB_OFF_TOPIC_GROUP_POLICY.telegramGroupHelpQuotePolicy, 'allow');
   assert.match(HOPE_HUB_OFF_TOPIC_GROUP_POLICY.telegramGroupHelpAllowedMedia, /sticker/i);
