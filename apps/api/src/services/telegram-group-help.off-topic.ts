@@ -68,7 +68,10 @@ Private support: https://hopehub.in/#live-connect`,
   telegramGroupHelpAntiFloodAction: 'mute',
   telegramGroupHelpAntiFloodLimit: '5 2',
   telegramGroupHelpAntiSpamAction: 'warn',
-  telegramGroupHelpAntiPornAction: 'review',
+  // Telegram does not classify media as NSFW. "review" therefore removes
+  // every media message, including ordinary photos and stickers. Chit-Chat
+  // allows media and relies on member reports plus normal moderation instead.
+  telegramGroupHelpAntiPornAction: 'off',
   telegramGroupHelpLinkPolicy: 'warn',
   telegramGroupHelpMediaPolicy: 'allow',
   telegramGroupHelpAllowedMedia: 'photo\nvideo\naudio\nvoice\nGIF\nsticker\ndocument\npoll',
