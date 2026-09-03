@@ -40,15 +40,88 @@
         <app-notification-bell-host [config]="bellConfig" />
       }
       @if (!loadingSession) {
-        <hopehub-profile-avatar
-          [apiBase]="apiBase"
-          [tokenKey]="authTokenKey"
-          [displayName]="doctorName || 'Provider'"
-          [profileImageUrl]="doctorProfileImageUrl"
-          size="md"
-        />
+        <div class="account-menu">
+          <button
+            type="button"
+            class="account-menu-trigger"
+            aria-label="Open profile and account menu"
+            aria-haspopup="menu"
+            [attr.aria-expanded]="accountMenuOpen()"
+            (click)="toggleAccountMenu()"
+          >
+            <hopehub-profile-avatar
+              [apiBase]="apiBase"
+              [tokenKey]="authTokenKey"
+              [displayName]="doctorName || 'Provider'"
+              [profileImageUrl]="doctorProfileImageUrl"
+              size="md"
+            />
+            <span class="account-menu-chevron" aria-hidden="true">⌄</span>
+          </button>
+
+          @if (accountMenuOpen()) {
+            <button
+              type="button"
+              class="account-menu-backdrop"
+              aria-label="Close profile and account menu"
+              (click)="closeAccountMenu()"
+            ></button>
+            <section class="account-popover" role="menu" aria-label="Profile and account">
+              <header class="account-popover-header">
+                <hopehub-profile-avatar
+                  [apiBase]="apiBase"
+                  [tokenKey]="authTokenKey"
+                  [displayName]="doctorName || 'Provider'"
+                  [profileImageUrl]="doctorProfileImageUrl"
+                  size="md"
+                />
+                <div>
+                  <strong>{{ doctorName || 'Provider' }}</strong>
+                  <span>{{ doctorTypeLabel || 'Provider' }}</span>
+                  @if (specialtyLabel) {
+                    <small>{{ specialtyLabel }}</small>
+                  }
+                </div>
+              </header>
+
+              @if (!onboardingComplete()) {
+                <div class="account-setup-progress">
+                  <span>Profile setup</span>
+                  <strong>{{ onboardingPercent() }}% complete</strong>
+                </div>
+              }
+
+              <nav class="account-popover-links" aria-label="Account shortcuts">
+                <a
+                  role="menuitem"
+                  [routerLink]="['/', routePaths.DASHBOARD]"
+                  (click)="closeAccountMenu()"
+                >
+                  <span aria-hidden="true">⌂</span>
+                  Dashboard
+                </a>
+                <a role="menuitem" [routerLink]="profileItem.path!" (click)="closeAccountMenu()">
+                  <span aria-hidden="true">{{ profileItem.icon }}</span>
+                  My profile
+                </a>
+                <a
+                  role="menuitem"
+                  [routerLink]="['/', routePaths.SUPPORT]"
+                  (click)="closeAccountMenu()"
+                >
+                  <span aria-hidden="true">?</span>
+                  Help centre
+                </a>
+              </nav>
+
+              <button type="button" class="account-signout" role="menuitem" (click)="logout()">
+                <span aria-hidden="true">↪</span>
+                Log out
+              </button>
+            </section>
+          }
+        </div>
       }
-      <button type="button" class="logout-btn" (click)="logout()">Logout</button>
     </div>
   </header>
 
@@ -333,7 +406,6 @@
     }
   </nav>
 </main>
-
 @if (incomingAssignment(); as incoming) {
   <div class="incoming-session-backdrop" role="presentation">
     <section
