@@ -151,13 +151,79 @@
           <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
         </select>
 
-        @if (showRegistrationNumber()) {
+        @if (showRegistrationNumber() && !isHomeopathyProvider) {
           <label for="registrationNo">{{ registrationFieldLabel() }}</label>
           <input id="registrationNo" [formField]="profileForm.registrationNo" />
         }
       </div>
 
-      @if (isHomeopathyProvider) {
+      @if (canPrescribe && !isHomeopathyProvider) {
+        <label for="defaultApproach">Default prescribing approach</label>
+        <select id="defaultApproach" [formField]="profileForm.defaultMethodOptionId">
+          <option value="">No default — choose per case</option>
+          @for (method of methodOptions; track method.id) {
+            <option [value]="method.id">{{ method.label }}</option>
+          }
+        </select>
+        <p class="section-hint">
+          Pre-selected when you open case analysis or start a new prescription.
+        </p>
+      }
+    }
+
+    @if (isHomeopathyProvider && activeSetupStep() === 'credentials') {
+      <div class="credential-step">
+        <div class="grid two-column">
+          <label for="specialty">Homeopathy specialty / focus</label>
+          <input
+            id="specialty"
+            [formField]="profileForm.specialty"
+            autocomplete="organization-title"
+            placeholder="For example: General Homeopathy"
+          />
+
+          <label for="registrationNo">{{ registrationFieldLabel() }}</label>
+          <input
+            id="registrationNo"
+            [formField]="profileForm.registrationNo"
+            autocomplete="off"
+            placeholder="Council registration number"
+          />
+        </div>
+
+        <div class="credential-email-status" [attr.data-verified]="emailVerified">
+          <div>
+            <strong>{{ emailVerified ? 'Email verified' : 'Verify your email' }}</strong>
+            <span>{{ profileModel().email }}</span>
+            @if (!emailVerified) {
+              <small
+                >Use the newest verification link in your inbox, then check the status here.</small
+              >
+            }
+          </div>
+          @if (!emailVerified) {
+            <div class="credential-email-actions">
+              <app-button
+                type="button"
+                size="sm"
+                variant="outline"
+                (click)="resendVerificationEmail()"
+                [disabled]="verificationSending || verificationRefreshing"
+                [loading]="verificationSending"
+                >Send new link</app-button
+              >
+              <app-button
+                type="button"
+                size="sm"
+                (click)="refreshEmailVerificationStatus()"
+                [disabled]="verificationSending || verificationRefreshing"
+                [loading]="verificationRefreshing"
+                >Check status</app-button
+              >
+            </div>
+          }
+        </div>
+
         <div class="credential-upload">
           <div>
             <strong>Professional registration credential</strong>
@@ -181,20 +247,20 @@
             />
           </label>
         </div>
-      }
 
-      @if (canPrescribe) {
-        <label for="defaultApproach">Default prescribing approach</label>
-        <select id="defaultApproach" [formField]="profileForm.defaultMethodOptionId">
-          <option value="">No default — choose per case</option>
-          @for (method of methodOptions; track method.id) {
-            <option [value]="method.id">{{ method.label }}</option>
-          }
-        </select>
-        <p class="section-hint">
-          Pre-selected when you open case analysis or start a new prescription.
-        </p>
-      }
+        @if (canPrescribe) {
+          <label for="defaultApproach">Default prescribing approach</label>
+          <select id="defaultApproach" [formField]="profileForm.defaultMethodOptionId">
+            <option value="">No default — choose per case</option>
+            @for (method of methodOptions; track method.id) {
+              <option [value]="method.id">{{ method.label }}</option>
+            }
+          </select>
+          <p class="section-hint">
+            Pre-selected when you open case analysis or start a new prescription.
+          </p>
+        }
+      </div>
     }
 
     @if (activeSetupStep() === 'public') {

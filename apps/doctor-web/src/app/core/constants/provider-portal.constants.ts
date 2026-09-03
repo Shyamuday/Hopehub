@@ -37,7 +37,7 @@ const HOMEOPATHY_PORTAL: ProviderPortalConfig = {
     'Sign in to manage homeopathy consultations, patients, availability, and prescriptions.',
   signupTitle: 'Apply as a homeopathy doctor',
   signupDescription:
-    'Add your professional details. Hope Hub will verify your registration before clinical access is enabled.',
+    'Create your account first. Then complete identity, credentials, and your public profile one step at a time.',
   defaultSpecialty: 'General Homeopathy',
   requiresCredentialApproval: true,
 };

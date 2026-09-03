@@ -19,7 +19,7 @@ import {
 import { environment } from '../../../../environments/environment';
 import { API_PATHS } from '../../../core/constants/api-paths.constants';
 import { ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
-import { AUTH_TOKEN_KEY } from '../../../core/constants/auth.constants';
+import { AUTH_PATHS, AUTH_TOKEN_KEY } from '../../../core/constants/auth.constants';
 import {
   CARE_TEAM_TYPE_LABELS,
   capabilitiesForProvider,
@@ -52,7 +52,17 @@ const LISTENER_SAFETY_ACKNOWLEDGEMENT_VERSION = 'listener-safety-v1-2026-08-07';
 const CARE_TEAM_TYPE_OPTIONS = PROVIDER_ROLE_CODES;
 type ProfileCareTeamType = string;
 type SelectableProfileCareTeamType = ProfileCareTeamType | 'OTHER';
-type ProfileSetupStepId = 'identity' | 'public' | 'care' | 'safety' | 'services';
+export type ProfileSetupStepId =
+  'identity' | 'credentials' | 'public' | 'care' | 'safety' | 'services';
+
+export function providerProfileSetupStepIds(
+  isPsychologist: boolean,
+  isHomeopathyProvider: boolean,
+): ProfileSetupStepId[] {
+  if (isPsychologist) return ['identity', 'public', 'care', 'safety', 'services'];
+  if (isHomeopathyProvider) return ['identity', 'credentials', 'public'];
+  return ['identity', 'public'];
+}
 
 export function resolveProviderServiceRole(
   providerRole: string | null | undefined,
@@ -138,6 +148,9 @@ export class ProfilePage implements OnDestroy {
   approvalNote = '';
   credentialDocumentFileName = '';
   credentialUploading = false;
+  emailVerified = false;
+  verificationSending = false;
+  verificationRefreshing = false;
 
   readonly profileModel = signal(emptyProfileModel());
   readonly profileForm = form(this.profileModel);
@@ -647,8 +660,12 @@ export class ProfilePage implements OnDestroy {
       !isProviderDisplayName(form.name) ? 'valid name' : '',
       !indianMobileE164(form.mobile) ? 'valid 10-digit Indian mobile number' : '',
       !form.gender ? 'gender' : '',
-      !form.specialty.trim() && !this.isPsychologist ? 'specialty/focus' : '',
-      !form.registrationNo.trim() && !this.isPsychologist ? 'professional registration number' : '',
+    ].filter(Boolean);
+    const credentialsMissing = [
+      form.specialty.trim().length < 2 ? 'specialty/focus' : '',
+      form.registrationNo.trim().length < 3 ? 'professional registration number' : '',
+      !this.emailVerified ? 'verified email' : '',
+      !this.credentialDocumentFileName ? 'registration credential document' : '',
     ].filter(Boolean);
     const publicMissing = [
       form.bio.trim().length < 80 ? 'bio of at least 80 characters' : '',
@@ -686,10 +703,22 @@ export class ProfilePage implements OnDestroy {
           Boolean(this.profileImageUrl) &&
           isProviderDisplayName(form.name) &&
           Boolean(indianMobileE164(form.mobile)) &&
-          Boolean(form.gender) &&
-          Boolean(form.specialty.trim() || this.isPsychologist) &&
-          Boolean(form.registrationNo.trim() || this.isPsychologist),
+          Boolean(form.gender),
         missing: identityMissing,
+      },
+      {
+        id: 'credentials' as const,
+        label: 'Credentials',
+        title: 'Professional credentials',
+        description:
+          'Add the registration details Hope Hub needs to review your provider application.',
+        complete:
+          !this.isHomeopathyProvider ||
+          (form.specialty.trim().length >= 2 &&
+            form.registrationNo.trim().length >= 3 &&
+            this.emailVerified &&
+            Boolean(this.credentialDocumentFileName)),
+        missing: credentialsMissing,
       },
       {
         id: 'public' as const,
@@ -739,9 +768,11 @@ export class ProfilePage implements OnDestroy {
       },
     ];
 
-    return this.isPsychologist
-      ? steps
-      : steps.filter((step) => step.id === 'identity' || step.id === 'public');
+    const visibleStepIds = providerProfileSetupStepIds(
+      this.isPsychologist,
+      this.isHomeopathyProvider,
+    );
+    return visibleStepIds.map((id) => steps.find((step) => step.id === id)!);
   }
 
   setupCompletionPercent() {
@@ -797,6 +828,7 @@ export class ProfilePage implements OnDestroy {
     const nextStep = this.nextSetupStep();
     if (
       (step === 'identity' ||
+        step === 'credentials' ||
         step === 'public' ||
         step === 'care' ||
         step === 'safety' ||
@@ -991,6 +1023,7 @@ export class ProfilePage implements OnDestroy {
           profile: {
             name: string;
             email?: string | null;
+            emailVerified?: boolean;
             gender?: 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY' | null;
             mobile?: string | null;
             doctorProfile?: DoctorProfileSummary | null;
@@ -999,6 +1032,7 @@ export class ProfilePage implements OnDestroy {
       );
 
       const profile = response.profile;
+      this.emailVerified = Boolean(profile.emailVerified);
       this.canPrescribe = capabilitiesForProvider(profile.doctorProfile).prescribe;
       this.isPsychologist = profile.doctorProfile?.doctorType === 'PSYCHOLOGIST';
       this.isHomeopathyProvider = profile.doctorProfile?.providerDomain === 'HOMEOPATHY';
@@ -1173,6 +1207,43 @@ export class ProfilePage implements OnDestroy {
     }
   }
 
+  async resendVerificationEmail(): Promise<void> {
+    const email = this.profileModel().email.trim();
+    if (!email) {
+      this.error = 'Your account email is unavailable. Reload the page and try again.';
+      return;
+    }
+    this.message = '';
+    this.error = '';
+    this.verificationSending = true;
+    try {
+      const response = await firstValueFrom(
+        this.http.post<{ message: string }>(`${this.apiBase}${AUTH_PATHS.RESEND_VERIFICATION}`, {
+          email,
+          role: 'DOCTOR',
+        }),
+      );
+      this.message = response.message;
+    } catch (error: any) {
+      this.error = error?.error?.message || 'Could not send a verification email. Please retry.';
+    } finally {
+      this.verificationSending = false;
+    }
+  }
+
+  async refreshEmailVerificationStatus(): Promise<void> {
+    this.message = '';
+    this.error = '';
+    this.verificationRefreshing = true;
+    await this.loadProfile();
+    if (!this.error) {
+      this.message = this.emailVerified
+        ? 'Email verified successfully.'
+        : 'Email is still waiting for verification. Open the newest link in your inbox.';
+    }
+    this.verificationRefreshing = false;
+  }
+
   approvalStatusTitle(): string {
     return (
       {
@@ -1236,6 +1307,7 @@ export class ProfilePage implements OnDestroy {
 
   private profileSetupStep(value?: string | null): ProfileSetupStepId | null {
     return value === 'identity' ||
+      value === 'credentials' ||
       value === 'public' ||
       value === 'care' ||
       value === 'safety' ||
@@ -1295,12 +1367,23 @@ export class ProfilePage implements OnDestroy {
         gender: form.gender || null,
         mobile: indianMobileE164(form.mobile) || form.mobile,
         isAvailable: form.isAvailable,
-        ...(!this.isPsychologist
+        ...(!this.isPsychologist && !this.isHomeopathyProvider
           ? {
               specialty: this.specialtyForProfileSave(form),
               registrationNo: form.registrationNo.trim(),
             }
           : {}),
+        ...(this.canPrescribe && !this.isHomeopathyProvider
+          ? { defaultMethodOptionId: form.defaultMethodOptionId || null }
+          : {}),
+      };
+    }
+
+    if (step === 'credentials') {
+      return {
+        step,
+        specialty: this.specialtyForProfileSave(form).trim(),
+        registrationNo: form.registrationNo.trim(),
         ...(this.canPrescribe ? { defaultMethodOptionId: form.defaultMethodOptionId || null } : {}),
       };
     }

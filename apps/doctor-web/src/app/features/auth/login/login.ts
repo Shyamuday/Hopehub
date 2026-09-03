@@ -80,7 +80,6 @@ export class Login {
     name: '',
     mobile: indianMobileDisplay(''),
     specialty: this.isHomeopathyPortal ? this.portal.defaultSpecialty : '',
-    registrationNo: '',
     confirmPassword: '',
   });
   readonly enrollForm = form(this.enrollModel, (schema) => {
@@ -96,14 +95,6 @@ export class Login {
       !value() || indianMobileE164(value())
         ? undefined
         : { kind: 'indianMobile', message: 'Enter a valid 10-digit Indian mobile number.' },
-    );
-    validate(schema.registrationNo, ({ value }) =>
-      !this.isHomeopathyPortal || value().trim().length >= 3
-        ? undefined
-        : {
-            kind: 'registrationNumber',
-            message: 'Enter your professional registration number (at least 3 characters).',
-          },
     );
     required(schema.confirmPassword, {
       message: 'Confirm your password.',
@@ -200,8 +191,6 @@ export class Login {
       !this.enrollForm().invalid() &&
       Boolean(indianMobileE164(enroll.mobile)) &&
       isProviderDisplayName(enroll.name) &&
-      (!this.isHomeopathyPortal ||
-        (enroll.specialty.trim().length >= 2 && enroll.registrationNo.trim().length >= 3)) &&
       isStrongProviderPassword(password) &&
       password === enroll.confirmPassword
     );
@@ -209,13 +198,11 @@ export class Login {
 
   canContinueSignup(): boolean {
     const email = this.signInModel().email.trim();
-    const { name, mobile, specialty, registrationNo } = this.enrollModel();
+    const { name, mobile } = this.enrollModel();
     return (
       isProviderDisplayName(name) &&
       /^\S+@\S+\.\S+$/.test(email) &&
-      Boolean(indianMobileE164(mobile)) &&
-      (!this.isHomeopathyPortal ||
-        (specialty.trim().length >= 2 && registrationNo.trim().length >= 3))
+      Boolean(indianMobileE164(mobile))
     );
   }
 
@@ -223,13 +210,8 @@ export class Login {
     this.signInForm.email().markAsTouched();
     this.enrollForm.name().markAsTouched();
     this.enrollForm.mobile().markAsTouched();
-    this.enrollForm.registrationNo().markAsTouched();
     if (!this.canContinueSignup()) {
-      this.error.set(
-        this.isHomeopathyPortal
-          ? 'Add your name, valid contact details, specialty, and professional registration number to continue.'
-          : 'Add your name, a valid email, and a valid 10-digit Indian mobile number to continue.',
-      );
+      this.error.set('Add your name, a valid email, and a valid 10-digit Indian mobile number.');
       return;
     }
     this.error.set('');
@@ -390,7 +372,6 @@ export class Login {
     this.signInForm.password().markAsTouched();
     this.enrollForm.name().markAsTouched();
     this.enrollForm.mobile().markAsTouched();
-    this.enrollForm.registrationNo().markAsTouched();
     this.enrollForm.confirmPassword().markAsTouched();
     if (!this.canSignup()) {
       this.error.set(
@@ -399,7 +380,7 @@ export class Login {
       return;
     }
     const { email, password } = this.signInModel();
-    const { name, mobile, specialty, registrationNo } = this.enrollModel();
+    const { name, mobile, specialty } = this.enrollModel();
     const normalizedMobile = indianMobileE164(mobile);
     if (!normalizedMobile) {
       this.error.set('Enter a valid 10-digit Indian mobile number.');
@@ -416,7 +397,6 @@ export class Login {
         password,
         providerDomain: this.portal.id,
         specialty: this.isHomeopathyPortal ? specialty.trim() : undefined,
-        registrationNo: this.isHomeopathyPortal ? registrationNo.trim() : undefined,
       });
 
       if (!result.ok) {

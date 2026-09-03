@@ -414,6 +414,57 @@
 .credential-upload {
   margin-top: 1rem;
 }
+
+.credential-step {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.credential-email-status {
+  align-items: center;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: var(--radius-md);
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+
+  > div:first-child {
+    display: grid;
+    gap: 0.2rem;
+  }
+
+  strong {
+    color: #9a3412;
+    font-size: var(--text-sm);
+  }
+
+  span,
+  small {
+    color: var(--color-text-muted);
+    font-size: var(--text-xs);
+    line-height: var(--leading-relaxed);
+  }
+}
+
+.credential-email-status[data-verified='true'] {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+
+  strong {
+    color: #15803d;
+  }
+}
+
+.credential-email-actions {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .credential-upload__button {
   background: var(--color-brand);
   border-radius: var(--radius-md);
@@ -1100,6 +1151,12 @@
 
   .telegram-connect-card {
     align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .credential-email-status,
+  .credential-upload {
+    align-items: stretch;
     flex-direction: column;
   }
 

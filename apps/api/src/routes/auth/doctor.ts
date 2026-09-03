@@ -298,7 +298,7 @@ const mentalHealthProviderProfilePatchSchema = mentalHealthProviderProfileFields
 });
 
 export const doctorProfileStepPatchSchema = z.object({
-  step: z.enum(['identity', 'public', 'care', 'safety', 'services']),
+  step: z.enum(['identity', 'credentials', 'public', 'care', 'safety', 'services']),
   name: providerDisplayNameSchema.optional(),
   gender: z.nativeEnum(PatientGender).optional().nullable(),
   mobile: indianMobileSchema.optional().or(z.literal('')),
@@ -435,23 +435,6 @@ export function registerAuthDoctorRoutes(router: Router) {
           registrationNo: z.string().trim().optional(),
           careTeamType: z.nativeEnum(CareTeamMemberType).optional(),
           careTeamTypes: z.array(z.nativeEnum(CareTeamMemberType)).max(12).optional()
-        })
-        .superRefine((value, ctx) => {
-          if (value.providerDomain !== ProviderDomain.HOMEOPATHY) return;
-          if (!value.specialty?.trim()) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              path: ['specialty'],
-              message: 'Homeopathy specialty is required.'
-            });
-          }
-          if (!value.registrationNo || value.registrationNo.length < 3) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              path: ['registrationNo'],
-              message: 'A valid professional registration number is required.'
-            });
-          }
         })
         .parse(req.body);
 
@@ -714,6 +697,7 @@ export function registerAuthDoctorRoutes(router: Router) {
         where: { id: req.user!.id },
         select: {
           ...publicUserSelect,
+          emailVerified: true,
           gender: true,
           profileImageKey: true,
           profileImageUrl: true,
@@ -1105,6 +1089,11 @@ export function registerAuthDoctorRoutes(router: Router) {
         if (body.gender !== undefined) userData.gender = body.gender;
         if (body.mobile !== undefined) userData.mobile = body.mobile || null;
         if (body.isAvailable !== undefined) doctorData.isAvailable = body.isAvailable;
+      }
+
+      // Accept professional fields on identity for older clients while new clients
+      // use the dedicated credentials step.
+      if (body.step === 'identity' || body.step === 'credentials') {
         if (body.specialty !== undefined) doctorData.specialty = body.specialty;
         if (body.registrationNo !== undefined) {
           doctorData.registrationNo = body.registrationNo || null;

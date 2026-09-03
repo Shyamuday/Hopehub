@@ -1,5 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { resolveProviderServiceRole } from './profile-page';
+import { providerProfileSetupStepIds, resolveProviderServiceRole } from './profile-page';
+
+describe('provider profile setup steps', () => {
+  it('gives homeopathy providers a dedicated credentials step', () => {
+    expect(providerProfileSetupStepIds(false, true)).toEqual(['identity', 'credentials', 'public']);
+  });
+
+  it('keeps the earn provider flow unchanged', () => {
+    expect(providerProfileSetupStepIds(true, false)).toEqual([
+      'identity',
+      'public',
+      'care',
+      'safety',
+      'services',
+    ]);
+  });
+});
 
 describe('provider service role reconciliation', () => {
   it('keeps a service role that is still selected', () => {

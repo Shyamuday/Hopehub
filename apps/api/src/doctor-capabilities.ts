@@ -38,8 +38,8 @@ const BLOCKER_STEP: Record<string, string> = {
   MOBILE_REQUIRED: 'identity',
   GENDER_REQUIRED: 'identity',
   PROFILE_PHOTO_REQUIRED: 'identity',
-  SPECIALTY_REQUIRED: 'identity',
-  REGISTRATION_NUMBER_REQUIRED: 'identity',
+  SPECIALTY_REQUIRED: 'credentials',
+  REGISTRATION_NUMBER_REQUIRED: 'credentials',
   PROFILE_BIO_REQUIRED: 'public',
   FOCUS_AREAS_REQUIRED: 'public',
   LANGUAGES_REQUIRED: 'care',
@@ -57,9 +57,9 @@ const BLOCKER_STEP: Record<string, string> = {
   PROVIDER_AVAILABILITY_OFF: 'availability',
   NOT_ACCEPTING_USERS: 'availability',
   PROVIDER_APPROVAL_PENDING: 'approval',
-  EMAIL_VERIFICATION_REQUIRED: 'identity',
-  CREDENTIAL_DOCUMENT_REQUIRED: 'identity',
-  DUPLICATE_REGISTRATION_NUMBER: 'identity'
+  EMAIL_VERIFICATION_REQUIRED: 'credentials',
+  CREDENTIAL_DOCUMENT_REQUIRED: 'credentials',
+  DUPLICATE_REGISTRATION_NUMBER: 'credentials'
 };
 
 function readinessResult(
@@ -107,6 +107,20 @@ function readinessResult(
       queryParams: { step: 'identity' },
       required: true
     }),
+    ...(options.approval
+      ? [
+          step({
+            id: 'credentials',
+            title: 'Professional credentials',
+            description:
+              'Add your specialty, registration number, verified email, and credential document.',
+            actionLabel: 'Complete credentials',
+            route: '/profile',
+            queryParams: { step: 'credentials' },
+            required: true
+          })
+        ]
+      : []),
     step({
       id: 'public',
       title: 'Public profile',
@@ -400,6 +414,7 @@ export async function providerPublicReadiness(userId: string) {
       providerDomain: true,
       specialty: true,
       registrationNo: true,
+      credentialDocumentKey: true,
       isAvailable: true,
       showOnWebsite: true,
       suspendedAt: true,
@@ -414,6 +429,7 @@ export async function providerPublicReadiness(userId: string) {
           gender: true,
           profileImageKey: true,
           profileImageUrl: true,
+          emailVerified: true,
           isActive: true
         }
       },

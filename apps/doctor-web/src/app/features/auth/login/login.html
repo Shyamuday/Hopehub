@@ -256,44 +256,10 @@
             }
           </p>
         }
-
-        @if (isHomeopathyPortal) {
-          <label for="registrationNo">Professional registration number</label>
-          <input
-            id="registrationNo"
-            [formField]="enrollForm.registrationNo"
-            autocomplete="off"
-            placeholder="Council registration number"
-            (input)="clearFieldError('registrationNo')"
-            [attr.aria-invalid]="
-              (enrollForm.registrationNo().invalid() && enrollForm.registrationNo().touched()) ||
-              fieldError('registrationNo')
-                ? 'true'
-                : null
-            "
-          />
-          <small>Clinical access remains locked until these credentials are reviewed.</small>
-          @if (
-            (enrollForm.registrationNo().invalid() && enrollForm.registrationNo().touched()) ||
-            fieldError('registrationNo')
-          ) {
-            <p class="error">
-              @for (fieldError of enrollForm.registrationNo().errors(); track fieldError.kind) {
-                <span>{{ fieldError.message }}</span>
-              }
-              @if (fieldError('registrationNo')) {
-                <span>{{ fieldError('registrationNo') }}</span>
-              }
-            </p>
-          }
-        }
       } @else {
         <div class="signup-summary">
           <span>{{ enrollModel().name }}</span>
           <small>{{ signInModel().email }} · {{ enrollModel().mobile }}</small>
-          @if (isHomeopathyPortal) {
-            <small>Registration: {{ enrollModel().registrationNo }}</small>
-          }
           <button type="button" (click)="backToSignupDetails()">Edit</button>
         </div>
 
