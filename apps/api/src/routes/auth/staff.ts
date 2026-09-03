@@ -30,15 +30,10 @@ import {
 import { googleClient, googleClientId } from './shared.js';
 import { recordAuthProcess } from '../../services/auth-process-log.js';
 import { issueAuthSession, revokeAllAuthSessionsForUser } from '../../services/auth-sessions.js';
-import { isHomeopathyApprovalFlowSuspension } from '../../constants/homeopathy-provider-approval.constants.js';
+import { isHomeopathyOnboardingSuspension } from '../../constants/homeopathy-provider-approval.constants.js';
 import { staffPasswordLoginSchema } from '../../services/staff-login-validation.js';
 
 const staffOtpKey = (email: string) => `staff:${email.trim().toLowerCase()}`;
-const PROVIDER_ONBOARDING_APPROVAL_STATES = new Set<ProviderApprovalStatus>([
-  ProviderApprovalStatus.DRAFT,
-  ProviderApprovalStatus.PENDING,
-  ProviderApprovalStatus.CHANGES_REQUESTED
-]);
 const providerSuspensionSelect = {
   providerDomain: true,
   suspendedAt: true,
@@ -95,13 +90,7 @@ function providerSuspensionResponse(user: {
   } | null;
 }) {
   if (user.role !== Role.DOCTOR || !user.doctorProfile?.suspendedAt) return null;
-  if (
-    user.doctorProfile.providerDomain === ProviderDomain.HOMEOPATHY &&
-    (PROVIDER_ONBOARDING_APPROVAL_STATES.has(
-      user.doctorProfile.approvalStatus ?? ProviderApprovalStatus.NOT_REQUIRED
-    ) ||
-      isHomeopathyApprovalFlowSuspension(user.doctorProfile.suspendedReason))
-  ) {
+  if (isHomeopathyOnboardingSuspension(user.doctorProfile)) {
     return null;
   }
   const reason = user.doctorProfile.suspendedReason?.trim();

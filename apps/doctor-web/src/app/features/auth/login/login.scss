@@ -270,6 +270,21 @@ button[type='submit'] {
   font-size: var(--text-sm);
 }
 
+.form-notice {
+  border: 1px solid;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  margin-bottom: 0.35rem;
+  padding: 0.75rem 0.85rem;
+}
+
+.form-notice--error {
+  background: var(--color-error-bg);
+  border-color: var(--color-error-border);
+  color: var(--color-error);
+}
+
 .success {
   color: var(--color-success);
   margin: 0.3rem 0;
@@ -283,7 +298,6 @@ button[type='submit'] {
     justify-content: center;
     padding: 2rem 1rem;
   }
-
 }
 
 @media (max-width: 480px) {

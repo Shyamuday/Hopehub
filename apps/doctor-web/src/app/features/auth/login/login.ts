@@ -160,6 +160,7 @@ export class Login {
     const next = { ...this.fieldErrors() };
     delete next[field];
     this.fieldErrors.set(next);
+    this.error.set('');
   }
 
   updateOtp(value: string): void {
@@ -177,7 +178,17 @@ export class Login {
   }
 
   private applyFailure(result: { message: string; fieldErrors?: Record<string, string> }): void {
-    this.fieldErrors.set(result.fieldErrors || {});
+    const fieldErrors = result.fieldErrors || {};
+    this.fieldErrors.set(fieldErrors);
+
+    if (
+      this.mode() === 'signup' &&
+      this.signupStep() === 2 &&
+      ['name', 'email', 'mobile', 'specialty', 'registrationNo'].some((field) => fieldErrors[field])
+    ) {
+      this.signupStep.set(1);
+    }
+
     this.error.set(result.message);
   }
 

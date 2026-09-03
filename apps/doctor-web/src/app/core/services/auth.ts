@@ -52,7 +52,7 @@ function fieldValidationMessage(field: string, issue: ApiValidationIssue): strin
   return issue.message || 'Check this field and try again.';
 }
 
-function authFailure(error: any, fallbackMessage: string): AuthFailure {
+export function authFailure(error: any, fallbackMessage: string): AuthFailure {
   const issues = Array.isArray(error?.error?.issues)
     ? (error.error.issues as ApiValidationIssue[])
     : [];
@@ -72,12 +72,17 @@ function authFailure(error: any, fallbackMessage: string): AuthFailure {
     fieldErrors['registrationNo'] =
       'This professional registration number is already connected to an account.';
   }
+
+  const responseMessage =
+    typeof error?.error?.message === 'string' ? error.error.message.trim() : '';
+  const firstFieldMessage = Object.values(fieldErrors)[0];
+
   return {
     ok: false,
     message:
-      issues.length || Object.keys(fieldErrors).length
-        ? 'Please correct the highlighted fields.'
-        : error?.error?.message || fallbackMessage,
+      responseMessage && responseMessage !== 'Validation failed'
+        ? responseMessage
+        : firstFieldMessage || fallbackMessage,
     fieldErrors,
   };
 }

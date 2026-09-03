@@ -4,6 +4,15 @@ export const HOMEOPATHY_CREDENTIAL_REVIEW_PREFIX = 'Awaiting homeopathy credenti
 export const HOMEOPATHY_CREDENTIAL_CHANGES_PREFIX =
   'Homeopathy credential verification needs changes';
 
+const HOMEOPATHY_ONBOARDING_APPROVAL_STATES = new Set(['DRAFT', 'PENDING', 'CHANGES_REQUESTED']);
+
+type ProviderSuspensionSummary = {
+  providerDomain?: string | null;
+  suspendedAt?: Date | string | null;
+  suspendedReason?: string | null;
+  approvalStatus?: string | null;
+};
+
 export function isHomeopathyApprovalFlowSuspension(reason?: string | null): boolean {
   const normalized = reason?.trim().toLowerCase() || '';
   return [
@@ -11,6 +20,22 @@ export function isHomeopathyApprovalFlowSuspension(reason?: string | null): bool
     HOMEOPATHY_CREDENTIAL_REVIEW_PREFIX,
     HOMEOPATHY_CREDENTIAL_CHANGES_PREFIX
   ].some((prefix) => normalized.startsWith(prefix.toLowerCase()));
+}
+
+/**
+ * Homeopathy providers must be able to authenticate while completing or correcting
+ * credentials. These records use suspension fields to block clinical/public access,
+ * but that onboarding lock is not an account suspension.
+ */
+export function isHomeopathyOnboardingSuspension(
+  profile?: ProviderSuspensionSummary | null
+): boolean {
+  if (profile?.providerDomain !== 'HOMEOPATHY' || !profile.suspendedAt) return false;
+  const reason = profile.suspendedReason?.trim() || '';
+  return (
+    isHomeopathyApprovalFlowSuspension(reason) ||
+    (!reason && HOMEOPATHY_ONBOARDING_APPROVAL_STATES.has(profile.approvalStatus || ''))
+  );
 }
 
 export function isHomeopathyCredentialReview(reason?: string | null): boolean {

@@ -39,9 +39,7 @@
             : null
         "
       />
-      @if (
-        (signInForm.email().invalid() && signInForm.email().touched()) || fieldError('email')
-      ) {
+      @if ((signInForm.email().invalid() && signInForm.email().touched()) || fieldError('email')) {
         <p class="error">
           @for (fieldError of signInForm.email().errors(); track fieldError.kind) {
             <span>{{ fieldError.message }}</span>
@@ -107,7 +105,9 @@
             [attr.aria-invalid]="otpError() ? 'true' : null"
           />
           @if (otpError()) {
-            <p class="error"><span>{{ otpError() }}</span></p>
+            <p class="error">
+              <span>{{ otpError() }}</span>
+            </p>
           }
         }
       }
@@ -170,6 +170,12 @@
       (submit)="$event.preventDefault(); signupStep() === 1 ? continueSignup() : enroll()"
       class="signup-form"
     >
+      @if (error()) {
+        <div class="form-notice form-notice--error" role="alert" aria-live="assertive">
+          {{ error() }}
+        </div>
+      }
+
       @if (signupStep() === 1) {
         <label for="name">Full name</label>
         <input
@@ -232,8 +238,7 @@
           placeholder="+91 98765 43210"
           (input)="clearFieldError('mobile')"
           [attr.aria-invalid]="
-            (enrollForm.mobile().invalid() && enrollForm.mobile().touched()) ||
-            fieldError('mobile')
+            (enrollForm.mobile().invalid() && enrollForm.mobile().touched()) || fieldError('mobile')
               ? 'true'
               : null
           "
@@ -341,8 +346,7 @@
             placeholder="Type it once more"
             (input)="clearFieldError('confirmPassword')"
             [attr.aria-invalid]="
-              (enrollForm.confirmPassword().invalid() &&
-                enrollForm.confirmPassword().touched()) ||
+              (enrollForm.confirmPassword().invalid() && enrollForm.confirmPassword().touched()) ||
               fieldError('confirmPassword')
                 ? 'true'
                 : null
@@ -371,9 +375,6 @@
         }
       }
 
-      @if (error()) {
-        <p class="error">{{ error() }}</p>
-      }
       @if (message()) {
         <p class="success">{{ message() }}</p>
       }
@@ -385,11 +386,7 @@
         block
       >
         {{
-          submitting()
-            ? 'Creating account...'
-            : signupStep() === 1
-              ? 'Continue'
-              : 'Create account'
+          submitting() ? 'Creating account...' : signupStep() === 1 ? 'Continue' : 'Create account'
         }}
       </app-button>
       @if (signupStep() === 2) {
