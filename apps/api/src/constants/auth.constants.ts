@@ -1,5 +1,5 @@
 export const DEFAULT_JWT_SECRET = 'dev-only-secret';
-export const JWT_EXPIRY = '7d';
+export const JWT_EXPIRY = '30d';
 export const STORE_TOKEN_EXPIRY = '12h';
 export const HR_JWT_EXPIRY = '12h';
 

@@ -18,6 +18,7 @@ import { routes } from './app.routes';
 import { GlobalErrorHandler } from './core/services/global-error-handler.service';
 import { provideServiceWorker } from '@angular/service-worker';
 import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { authErrorInterceptor } from './core/interceptors/auth-error.interceptor';
 import { requestTimeoutInterceptor } from '@hopehub/clinic-api';
 import { PublicCommunicationConfigService } from './core/services/public-communication-config.service';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
@@ -59,7 +60,10 @@ export const appConfig: ApplicationConfig = {
     provideZonelessChangeDetection(),
     provideBrowserGlobalErrorListeners(),
     provideClientHydration(withEventReplay()),
-    provideHttpClient(withFetch(), withInterceptors([authInterceptor, requestTimeoutInterceptor])),
+    provideHttpClient(
+      withFetch(),
+      withInterceptors([authInterceptor, requestTimeoutInterceptor, authErrorInterceptor]),
+    ),
     {
       provide: APP_INITIALIZER,
       multi: true,

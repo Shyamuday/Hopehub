@@ -27,8 +27,11 @@ import {
   PatientReferralSummary,
 } from '../models/auth.model';
 import { environment } from '../../../environments/environment';
+import { AuthModalService } from './auth-modal.service';
 
 const TOKEN_KEY = 'clinic_token';
+const REFRESH_TOKEN_KEY = 'clinic_refresh_token';
+const SESSION_ID_KEY = 'clinic_session_id';
 const LEGACY_TOKEN_KEY = 'hh_patient_token';
 const USER_KEY = 'hh_patient_user';
 const PREFS_KEY = 'hh_patient_prefs';
@@ -71,12 +74,14 @@ type GoogleWindow = Window &
 export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
+  private authModal = inject(AuthModalService);
   private platformId = inject(PLATFORM_ID);
 
   private isBrowser = isPlatformBrowser(this.platformId);
   private apiUrl = environment.apiUrl;
   private googleScriptPromise: Promise<void> | null = null;
   private googleClientIdPromise: Promise<string> | null = null;
+  private refreshPromise: Promise<string | null> | null = null;
 
   private authStateSubject = new BehaviorSubject<AuthState>({
     user: null,
@@ -102,6 +107,7 @@ export class AuthService {
   // ── Session persistence ──────────────────────────────────────────────────
 
   private async restoreSession(): Promise<void> {
+    let cachedUser: User | null = null;
     try {
       const legacyToken = localStorage.getItem(LEGACY_TOKEN_KEY);
       const token = localStorage.getItem(TOKEN_KEY) || legacyToken;
@@ -110,14 +116,33 @@ export class AuthService {
         localStorage.setItem(TOKEN_KEY, legacyToken);
         localStorage.removeItem(LEGACY_TOKEN_KEY);
       }
-      if (token && raw) {
-        const user: User = JSON.parse(raw);
-        user.preferences = this.loadPreferences();
-        this.updateState({ user, isAuthenticated: true, isLoading: false });
-        return;
+      if (raw) {
+        cachedUser = JSON.parse(raw) as User;
+        cachedUser.preferences = this.loadPreferences();
       }
       if (token) {
-        await this.hydrateSessionFromApi(token);
+        try {
+          await this.hydrateSessionFromApi(token);
+        } catch (error) {
+          // Keep a cached session during a temporary network failure. A 401 is
+          // handled by the auth error interceptor and must never remain cached.
+          if (cachedUser && (!(error instanceof HttpErrorResponse) || error.status !== 401)) {
+            this.updateState({
+              user: cachedUser,
+              isAuthenticated: true,
+              isLoading: false,
+              error: null,
+            });
+          } else {
+            this.clearStorage();
+            this.updateState({
+              user: null,
+              isAuthenticated: false,
+              isLoading: false,
+              error: null,
+            });
+          }
+        }
         return;
       }
     } catch {
@@ -127,15 +152,27 @@ export class AuthService {
     this.updateState({ isLoading: false });
   }
 
-  private saveSession(token: string, user: User): void {
+  private saveSession(
+    token: string,
+    user: User,
+    session?: Pick<ApiAuthResponse, 'refreshToken' | 'sessionId'>,
+  ): void {
     if (!this.isBrowser) return;
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(USER_KEY, JSON.stringify(user));
+    if (session?.refreshToken) {
+      localStorage.setItem(REFRESH_TOKEN_KEY, session.refreshToken);
+    }
+    if (session?.sessionId) {
+      localStorage.setItem(SESSION_ID_KEY, session.sessionId);
+    }
   }
 
   private clearStorage(): void {
     if (!this.isBrowser) return;
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
+    localStorage.removeItem(SESSION_ID_KEY);
     localStorage.removeItem(LEGACY_TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     localStorage.removeItem(PREFS_KEY);
@@ -144,6 +181,11 @@ export class AuthService {
   getToken(): string | null {
     if (!this.isBrowser) return null;
     return localStorage.getItem(TOKEN_KEY);
+  }
+
+  getRefreshToken(): string | null {
+    if (!this.isBrowser) return null;
+    return localStorage.getItem(REFRESH_TOKEN_KEY);
   }
 
   // ── Auth state helpers ───────────────────────────────────────────────────
@@ -171,15 +213,70 @@ export class AuthService {
       }),
     );
     const user = this.buildUser(resp.user);
-    this.saveSession(token, user);
+    // A 401 interceptor may have refreshed the access token before retrying /me.
+    this.saveSession(this.getToken() || token, user);
     this.updateState({ user, isAuthenticated: true, isLoading: false, error: null });
   }
 
   private applyAuthResponse(resp: ApiAuthResponse): User {
     const user = this.buildUser(resp.user);
-    this.saveSession(resp.token, user);
+    this.saveSession(resp.token, user, resp);
     this.updateState({ user, isAuthenticated: true, isLoading: false, error: null });
     return user;
+  }
+
+  async refreshAccessToken(): Promise<string | null> {
+    if (this.refreshPromise) return this.refreshPromise;
+
+    const refreshToken = this.getRefreshToken();
+    if (!refreshToken) return null;
+
+    const request = firstValueFrom(
+      this.http.post<ApiAuthResponse>(`${this.apiUrl}/auth/refresh`, { refreshToken }),
+    )
+      .then((response) => {
+        this.applyAuthResponse(response);
+        return response.token;
+      })
+      .catch(() => {
+        this.clearStorage();
+        this.updateState({
+          user: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: null,
+        });
+        return null;
+      });
+
+    this.refreshPromise = request.finally(() => {
+      this.refreshPromise = null;
+    });
+    return this.refreshPromise;
+  }
+
+  requireLogin(returnUrl = this.router.url): void {
+    this.clearStorage();
+    this.updateState({
+      user: null,
+      isAuthenticated: false,
+      isLoading: false,
+      error: null,
+    });
+
+    if (!this.isBrowser) return;
+
+    if (this.authModal.getCurrentModal() !== 'login') {
+      if (returnUrl && returnUrl !== '/') {
+        this.authModal.openLoginFor(returnUrl);
+      } else {
+        this.authModal.openLogin();
+      }
+    }
+
+    if (this.router.url !== '/') {
+      void this.router.navigateByUrl('/');
+    }
   }
 
   // ── Public auth methods ──────────────────────────────────────────────────
@@ -342,9 +439,15 @@ export class AuthService {
   }
 
   async logout(): Promise<void> {
+    const refreshToken = this.getRefreshToken();
     this.clearStorage();
     this.updateState({ user: null, isAuthenticated: false, isLoading: false, error: null });
-    this.router.navigate(['/']);
+    if (refreshToken) {
+      await firstValueFrom(this.http.post(`${this.apiUrl}/auth/logout`, { refreshToken })).catch(
+        () => undefined,
+      );
+    }
+    await this.router.navigate(['/']);
   }
 
   async resetPassword(request: ResetPasswordRequest): Promise<void> {
