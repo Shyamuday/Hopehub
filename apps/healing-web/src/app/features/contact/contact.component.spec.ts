@@ -23,15 +23,20 @@ describe('ContactComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should initialize form with empty values', () => {
+  it('should initialize direct booking with quick defaults', () => {
     expect(component.contactForm.get('name')?.value).toBe('');
     expect(component.contactForm.get('email')?.value).toBe('');
     expect(component.contactForm.get('phone')?.value).toBe('');
-    expect(component.contactForm.get('serviceInterest')?.value).toBe('');
+    expect(component.contactForm.get('serviceInterest')?.value).toBe('Mental wellness session');
     expect(component.contactForm.get('urgencyLevel')?.value).toBe('normal');
-    expect(component.contactForm.get('preferredTime')?.value).toBe('');
+    expect(component.contactForm.get('preferredTime')?.value).toBe(
+      'Earliest available, at least one hour from now',
+    );
+    expect(component.contactForm.get('concernCategory')?.value).toBe('Depression and anxiety');
+    expect(component.contactForm.get('autoMatchProvider')?.value).toBe(false);
     expect(component.contactForm.get('message')?.value).toBe('');
     expect(component.contactForm.get('preferredContact')?.value).toBe('telegram');
+    expect(component.bookingStep()).toBe(2);
   });
 
   it('should validate required fields', () => {
@@ -62,6 +67,9 @@ describe('ContactComponent', () => {
   });
 
   it('should keep the user on support until a service is selected', () => {
+    component.directBooking.set(false);
+    component.bookingStep.set(1);
+    component.contactForm.patchValue({ serviceInterest: '' });
     component.goToBookingStep(2);
 
     expect(component.bookingStep()).toBe(1);
@@ -130,6 +138,7 @@ describe('ContactComponent', () => {
     form.patchValue({
       name: 'John Doe',
       email: 'john@example.com',
+      serviceInterest: '',
       message: 'This is a test message that is long enough',
       preferredContact: 'email',
     });
@@ -141,5 +150,14 @@ describe('ContactComponent', () => {
     expect(sendContactForm).toHaveBeenCalledOnce();
     expect(component.showSuccessMessage()).toBeTruthy();
     expect(component.isSubmitting()).toBeFalsy();
+  });
+
+  it('keeps a direct booking unassigned even if a provider suggestion exists', () => {
+    component.matchedProvider.set({ id: 'provider-1', name: 'Suggested provider' } as any);
+
+    expect(component.activeProviderId()).toBe('');
+    expect(component.activeProviderName()).toBe('');
+    expect(component.selectedSessionProvider()).toBe('');
+    expect(component.bookingSummaryItems().some((item) => item.includes('Provider:'))).toBe(false);
   });
 });

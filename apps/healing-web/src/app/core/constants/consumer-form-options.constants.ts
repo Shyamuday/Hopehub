@@ -30,6 +30,7 @@ export const CONSUMER_URGENCY_OPTIONS: ConsumerFormOption[] = [
 
 export const CONSUMER_CONCERN_CATEGORY_OPTIONS: ConsumerFormOption[] = [
   { value: '', label: 'Select concern category' },
+  { value: 'Depression and anxiety', label: 'Depression / anxiety' },
   ...Object.values(CONSUMER_CONCERN_FLOWS).map((flow) => ({
     value: flow.label,
     label: flow.shortLabel || flow.label,

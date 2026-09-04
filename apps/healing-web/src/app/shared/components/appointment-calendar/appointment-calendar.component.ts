@@ -55,6 +55,7 @@ export class AppointmentCalendarComponent implements OnInit {
   providerId = input<string | undefined>(undefined);
   careTeamServiceId = input<string | undefined>(undefined);
   daysToShow = input<number>(7);
+  autoSelectEarliest = input(false);
 
   selectedDate = signal<Date | null>(null);
   selectedTime = signal<string | null>(null);
@@ -83,7 +84,6 @@ export class AppointmentCalendarComponent implements OnInit {
       this.appointmentSelected.emit({
         date: this.selectedDate()!,
         time: this.selectedTime()!,
-        consultant: this.selectedService(),
       });
     }
   }
@@ -201,11 +201,46 @@ export class AppointmentCalendarComponent implements OnInit {
   }
 
   private selectRecommendedDate(days: AppointmentDay[]): void {
-    const firstAvailableDay = days.find((day) => day.slots.some((slot) => slot.available));
+    const recommendation = this.recommendedAppointment(days);
+    const firstAvailableDay = recommendation?.day;
     if (!firstAvailableDay) return;
 
     this.selectedDate.set(new Date(firstAvailableDay.date));
-    this.selectedTime.set(null);
+    if (!this.autoSelectEarliest() || !recommendation) {
+      this.selectedTime.set(null);
+      return;
+    }
+
+    this.selectedTime.set(recommendation.slot.time);
+    this.appointmentSelected.emit({
+      date: new Date(firstAvailableDay.date),
+      time: recommendation.slot.time,
+    });
+  }
+
+  private recommendedAppointment(
+    days: AppointmentDay[],
+  ): { day: AppointmentDay; slot: TimeSlot } | null {
+    const minimumTime = Date.now() + 60 * 60 * 1000;
+    for (const day of days) {
+      for (const slot of day.slots) {
+        if (!slot.available) continue;
+        if (!this.autoSelectEarliest() || this.slotDateTime(day.date, slot.time) >= minimumTime) {
+          return { day, slot };
+        }
+      }
+    }
+    return null;
+  }
+
+  private slotDateTime(date: Date, time: string): number {
+    const match = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(time.trim());
+    if (!match) return Number.POSITIVE_INFINITY;
+    let hour = Number(match[1]) % 12;
+    if (match[3].toUpperCase() === 'PM') hour += 12;
+    const value = new Date(date);
+    value.setHours(hour, Number(match[2]), 0, 0);
+    return value.getTime();
   }
 
   private daysWindowLabel(): string {

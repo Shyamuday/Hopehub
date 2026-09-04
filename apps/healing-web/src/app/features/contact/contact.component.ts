@@ -82,6 +82,9 @@ type BookingValidationIssue = {
   message: string;
 };
 
+const DIRECT_BOOKING_DEFAULT_CONCERN = 'Depression and anxiety';
+const DIRECT_BOOKING_PREFERRED_TIME = 'Earliest available, at least one hour from now';
+
 const BOOKING_API_FIELD_TO_CONTROL: Record<string, string> = {
   serviceName: 'serviceInterest',
   visitorName: 'name',
@@ -194,6 +197,7 @@ export class ContactComponent implements OnInit {
   checkoutQuoteError = signal('');
   featuredCoupon = signal<HopeHubPublicCoupon | null>(null);
   readonly bookingStep = signal<1 | 2 | 3>(1);
+  readonly directBooking = signal(false);
   readonly bookingStepError = signal('');
   readonly bookingValidationIssues = signal<BookingValidationIssue[]>([]);
 
@@ -216,6 +220,9 @@ export class ContactComponent implements OnInit {
 
   ngOnInit(): void {
     this.initializeForm();
+    if (this.directBooking()) {
+      this.bookingStep.set(2);
+    }
     this.restorePendingBooking();
     this.loadDefaultSessionOffer();
     this.loadAvailableCoupons();
@@ -286,6 +293,21 @@ export class ContactComponent implements OnInit {
     this.route.queryParams.pipe(takeUntilDestroyed()).subscribe((params: any) => {
       const saved = this.preferences.read();
       const mode = this.normalizeLiveConnectMode(params['mode'] || saved.mode || '');
+      const directBooking = ![
+        params['service'],
+        params['serviceName'],
+        params['consultant'],
+        params['providerId'],
+        params['careTeamServiceId'],
+        params['offering'],
+        params['offeringId'],
+        params['source'],
+        params['supportPath'],
+        params['preferredExpertType'],
+        params['concernCategory'],
+        params['concern'],
+      ].some((value) => String(value || '').trim());
+      this.directBooking.set(directBooking);
       this.prefilledData.set({
         service: params['service'] || '',
         serviceName: params['serviceName'] || '',
@@ -302,7 +324,10 @@ export class ContactComponent implements OnInit {
         supportPath: params['supportPath'] || '',
         supportPathLabel: params['supportPathLabel'] || '',
         preferredExpertType: params['preferredExpertType'] || '',
-        concernCategory: params['concernCategory'] || params['concern'] || saved.concern || '',
+        concernCategory:
+          params['concernCategory'] ||
+          params['concern'] ||
+          (directBooking ? DIRECT_BOOKING_DEFAULT_CONCERN : saved.concern || ''),
         mode,
       });
       if (this.contactForm) {
@@ -363,7 +388,11 @@ export class ContactComponent implements OnInit {
     const initialServiceValue =
       this.prefilledData().serviceName ||
       this.prefilledData().service ||
-      (this.isLiveConnectFallback() ? 'Hope Hub Consultation' : '');
+      (this.isLiveConnectFallback()
+        ? 'Hope Hub Consultation'
+        : this.directBooking()
+          ? this.publicConfig.defaultServiceName
+          : '');
     const initialMessage = this.generateInitialMessage();
 
     // Get user data if logged in
@@ -378,13 +407,16 @@ export class ContactComponent implements OnInit {
       phone: [userPhone, [Validators.maxLength(30)]],
       serviceInterest: [initialServiceValue, [Validators.maxLength(160)]],
       urgencyLevel: ['normal', [Validators.required]],
-      preferredTime: ['', [Validators.maxLength(120)]],
-      concernCategory: ['', [Validators.maxLength(160)]],
+      preferredTime: [
+        this.directBooking() ? DIRECT_BOOKING_PREFERRED_TIME : '',
+        [Validators.maxLength(120)],
+      ],
+      concernCategory: [this.prefilledData().concernCategory || '', [Validators.maxLength(160)]],
       preferredExpertType: [this.initialPreferredExpertType(), [Validators.maxLength(160)]],
       sessionMode: [this.initialSessionMode(), [Validators.maxLength(80)]],
       preferredLanguage: ['', [Validators.maxLength(80)]],
       preferredProviderGender: [''],
-      autoMatchProvider: [true],
+      autoMatchProvider: [!this.directBooking()],
       safetyRisk: ['none', [Validators.maxLength(80)]],
       previousTherapyOrMedication: ['', [Validators.maxLength(1000)]],
       emergencyConsent: [true],
@@ -421,7 +453,9 @@ export class ContactComponent implements OnInit {
         void this.loadQuickTalkProviders();
       });
     void this.updateProviderSuggestion();
-    void this.loadQuickTalkProviders();
+    if (!this.directBooking()) {
+      void this.loadQuickTalkProviders();
+    }
   }
 
   isLiveConnectFallback(): boolean {
@@ -477,6 +511,7 @@ export class ContactComponent implements OnInit {
   }
 
   selectedSessionProvider(): string {
+    if (this.directBooking()) return '';
     return (
       this.careTeamServiceQuote()?.service.providerName ||
       this.prefilledData().consultant ||
@@ -570,7 +605,9 @@ export class ContactComponent implements OnInit {
     const offer = this.selectedOffering();
     const duration =
       data.duration || (offer?.sessionDurationMinutes ? `${offer.sessionDurationMinutes} min` : '');
-    const consultant = data.consultant || this.matchedProvider()?.name || '';
+    const consultant = this.directBooking()
+      ? ''
+      : data.consultant || this.matchedProvider()?.name || '';
     const supportPathLabel =
       data.supportPathLabel ||
       this.supportPathLabelFromPreference(
@@ -742,6 +779,7 @@ export class ContactComponent implements OnInit {
   }
 
   activeProviderId(): string {
+    if (this.directBooking()) return '';
     const data = this.prefilledData();
     if (data.providerId) return data.providerId;
     if (!this.contactForm?.get('autoMatchProvider')?.value) return '';
@@ -749,6 +787,7 @@ export class ContactComponent implements OnInit {
   }
 
   activeProviderName(): string {
+    if (this.directBooking()) return '';
     const data = this.prefilledData();
     if (data.consultant) return data.consultant;
     if (!this.contactForm?.get('autoMatchProvider')?.value) return '';
@@ -1409,6 +1448,7 @@ export class ContactComponent implements OnInit {
     if (this.selectedOffering()) {
       return this.prefilledData().paymentMode === 'PARTIAL' ? 'Deposit checkout' : 'Full checkout';
     }
+    if (this.directBooking()) return 'Hope Hub checkout';
     return this.prefilledData().careTeamServiceId
       ? 'Fixed service checkout'
       : 'Direct provider checkout';
@@ -1697,7 +1737,7 @@ export class ContactComponent implements OnInit {
   }
 
   private async updateProviderSuggestion(): Promise<void> {
-    if (!this.contactForm || this.prefilledData().providerId) {
+    if (!this.contactForm || this.prefilledData().providerId || this.directBooking()) {
       this.matchedProvider.set(null);
       this.providerMatchLoading.set(false);
       this.providerMatchMessage.set('');
@@ -1769,7 +1809,7 @@ export class ContactComponent implements OnInit {
   }
 
   private async loadQuickTalkProviders(): Promise<void> {
-    if (!this.contactForm) return;
+    if (!this.contactForm || this.directBooking()) return;
     const formValue = this.contactForm.value as ContactForm;
     const roleGroup = this.roleGroupForExpertType(formValue.preferredExpertType || '');
     this.quickTalkLoading.set(true);
