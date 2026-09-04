@@ -50,13 +50,16 @@ export class SEOService {
       : data.keywords || this.defaultKeywords;
     const image = data.image || this.defaultImage;
     const url =
-      data.url || (isPlatformBrowser(this.platformId) ? window.location.href : this.siteUrl);
+      data.canonicalUrl ||
+      data.url ||
+      (isPlatformBrowser(this.platformId) ? window.location.href : this.siteUrl);
     const type = data.type || 'website';
 
     // Update title
     this.titleService.setTitle(title);
 
     // Basic meta tags
+    this.updateOrCreateTag('name', 'title', title);
     this.updateOrCreateTag('name', 'description', description);
     this.updateOrCreateTag('name', 'keywords', keywords);
     this.updateOrCreateTag('name', 'author', data.author || 'Hope Hub');
@@ -76,6 +79,7 @@ export class SEOService {
     this.updateOrCreateTag('name', 'twitter:title', title);
     this.updateOrCreateTag('name', 'twitter:description', description);
     this.updateOrCreateTag('name', 'twitter:image', this.getAbsoluteUrl(image));
+    this.updateOrCreateTag('name', 'twitter:url', url);
 
     // Article-specific meta tags
     if (type === 'article') {
@@ -92,7 +96,7 @@ export class SEOService {
         this.updateOrCreateTag('property', 'article:section', data.section);
       }
       if (data.tags && data.tags.length > 0) {
-        data.tags.forEach((tag, index) => {
+        data.tags.forEach((tag) => {
           this.updateOrCreateTag('property', `article:tag`, tag);
         });
       }
@@ -196,12 +200,13 @@ export class SEOService {
       headline: article.headline,
       description: article.description,
       image: article.image ? this.getAbsoluteUrl(article.image) : this.defaultImage,
-      author: article.author.includes('Editorial Team')
+      author: /(?:editorial|wellness|content) team/i.test(article.author)
         ? { '@type': 'Organization', name: article.author, url: `${this.siteUrl}/editorial-policy` }
         : { '@type': 'Person', name: article.author },
       publisher: {
         '@type': 'Organization',
         name: 'Hope Hub',
+        url: this.siteUrl,
         logo: {
           '@type': 'ImageObject',
           url: this.getAbsoluteUrl(APP_CONSTANTS.BRAND.LOGO_PATH),
@@ -210,6 +215,7 @@ export class SEOService {
       datePublished: article.datePublished,
       dateModified: article.dateModified || article.datePublished,
       articleSection: article.articleSection || 'Mental Health',
+      inLanguage: 'en-IN',
       mainEntityOfPage: {
         '@type': 'WebPage',
         '@id':

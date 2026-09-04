@@ -1,5 +1,13 @@
 import { ResolveFn, Routes } from '@angular/router';
 import { AuthGuard, NavigationGuard } from './core/guards';
+import { CONSUMER_CONCERN_FLOWS } from './core/constants/consumer-concerns.constants';
+
+type ResolvedPageSeo = {
+  title: string;
+  description: string;
+  keywords: string[];
+  noindex?: boolean;
+};
 
 type ResolvedArticleSeo = {
   title: string;
@@ -50,6 +58,28 @@ const resolveArticleSeo: ResolveFn<ResolvedArticleSeo> = (route) =>
   articleSeoForSlug(route.paramMap.get('slug'));
 const resolveArticleTitle: ResolveFn<string> = async (route) =>
   (await articleSeoForSlug(route.paramMap.get('slug'))).title;
+
+function concernSeoForSlug(slug: string | null): ResolvedPageSeo {
+  const concern = Object.values(CONSUMER_CONCERN_FLOWS).find((item) => item.slug === slug);
+  if (!concern) {
+    return {
+      title: 'Concern Guide Not Found - Hope Hub',
+      description: 'The requested Hope Hub concern guide could not be found',
+      keywords: [],
+      noindex: true,
+    };
+  }
+  return {
+    title: `${concern.shortLabel} Support Guide - Hope Hub`,
+    description: `${concern.description} Find a private self-check, practical resources, and the right Hope Hub support path.`,
+    keywords: [...concern.searchTerms, 'mental wellness support', 'Hope Hub'],
+  };
+}
+
+const resolveConcernSeo: ResolveFn<ResolvedPageSeo> = (route) =>
+  concernSeoForSlug(route.paramMap.get('slug'));
+const resolveConcernTitle: ResolveFn<string> = (route) =>
+  concernSeoForSlug(route.paramMap.get('slug')).title;
 
 export const routes: Routes = [
   {
@@ -146,30 +176,13 @@ export const routes: Routes = [
   },
   {
     path: 'psychologists',
-    loadComponent: () =>
-      import('./features/psychologists/psychologists.component').then(
-        (m) => m.PsychologistsComponent,
-      ),
-    title: 'Care Team - Hope Hub',
-    data: {
-      breadcrumb: 'Care team',
-      description: 'Meet Hope Hub care team members available for mental wellness support',
-      keywords: 'care team, mental wellness support, counsellors, listeners, hope hub support',
-    },
+    redirectTo: 'care-team',
+    pathMatch: 'full',
   },
   {
     path: 'psychologists/:id',
-    loadComponent: () =>
-      import('./features/psychologists/psychologist-detail.component').then(
-        (m) => m.PsychologistDetailComponent,
-      ),
-    title: 'Care Team Profile - Hope Hub',
-    data: {
-      breadcrumb: 'Care team profile',
-      noindex: true,
-      description: 'View care team profile, focus areas, session details, and book support',
-      keywords: 'care team profile, counsellor profile, mental wellness guide',
-    },
+    redirectTo: 'care-team/:id',
+    pathMatch: 'full',
   },
   {
     path: 'packages',
@@ -236,7 +249,8 @@ export const routes: Routes = [
     path: 'concerns/:slug',
     loadComponent: () =>
       import('./features/resources/concern-detail.component').then((m) => m.ConcernDetailComponent),
-    title: 'Concern Guide - Hope Hub',
+    title: resolveConcernTitle,
+    resolve: { pageSeo: resolveConcernSeo },
     data: {
       breadcrumb: 'Concern guide',
       description:
@@ -270,17 +284,8 @@ export const routes: Routes = [
   },
   {
     path: 'resources/articles/:slug',
-    loadComponent: () =>
-      import('./features/resources/resource-article.component').then(
-        (m) => m.ResourceArticleComponent,
-      ),
-    title: 'Mental Health Article - Hope Hub',
-    data: {
-      breadcrumb: 'Article',
-      description: 'Read a Hope Hub mental wellness article',
-      keywords: 'mental health article, wellbeing guide, Hope Hub',
-      type: 'article',
-    },
+    redirectTo: 'articles/:slug',
+    pathMatch: 'full',
   },
   {
     path: 'resources/:slug',

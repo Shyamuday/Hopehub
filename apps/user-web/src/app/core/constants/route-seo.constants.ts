@@ -38,7 +38,7 @@ export const ROUTE_SEO_CONTENT = {
   careers: {
     seoTitle: 'Careers | HopeHub Care and Research Centre',
     seoDescription:
-      'Join the HopeHub Care team. We are hiring homeopathic doctors, care coordinators, pharmacists, and operations staff who are passionate about patient-first healthcare.',
+      'Join HopeHub Care. We hire homeopathic doctors, care coordinators, pharmacists, and operations staff committed to patient-first healthcare.',
   },
   'chronic-care': {
     seoTitle: 'Homeopathic Treatment | HopeHub Care',
@@ -51,9 +51,9 @@ export const ROUTE_SEO_CONTENT = {
       'Frequently asked questions about consultations, treatment flow, and patient support at HopeHub Care.',
   },
   'why-successful': {
-    seoTitle: 'Why HopeHub Works | HopeHub Care',
+    seoTitle: 'Homeopathy Approaches | HopeHub Care',
     seoDescription:
-      'See how HopeHub Care combines structured case-taking, method-led decision making, and disciplined follow-up.',
+      'Explore HopeHub Care homeopathy approaches, including structured case frameworks, strengths, limitations, safety, and follow-up.',
   },
   contact: {
     seoTitle: 'Contact | HopeHub Care',

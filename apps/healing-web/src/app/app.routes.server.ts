@@ -1,5 +1,27 @@
 import { RenderMode, ServerRoute } from '@angular/ssr';
 import { ALL_ARTICLES } from './core/data/article-configs';
+import {
+  CONSUMER_CONCERN_FLOWS,
+  CONSUMER_CONCERN_ORDER,
+} from './core/constants/consumer-concerns.constants';
+
+const googleAssessmentRoutes = [
+  'anxiety-test',
+  'depression-test',
+  'stress-test',
+  'breakup-test',
+  'sleep-test',
+  'relationship-test',
+  'burnout-test',
+  'wellbeing-test',
+  'mental-health-test',
+  'panic-test',
+  'social-anxiety-test',
+  'loneliness-test',
+  'self-esteem-test',
+  'anger-test',
+  'grief-test',
+] as const;
 
 const googleLandingRoutes = [
   '',
@@ -31,6 +53,7 @@ const googleLandingRoutes = [
   'articles',
   'editorial-policy',
   'donate',
+  ...googleAssessmentRoutes,
   '404',
 ] as const;
 
@@ -40,6 +63,12 @@ export const serverRoutes: ServerRoute[] = [
     path: 'articles/:slug',
     renderMode: RenderMode.Prerender,
     getPrerenderParams: async () => ALL_ARTICLES.map((article) => ({ slug: article.id })),
+  },
+  {
+    path: 'concerns/:slug',
+    renderMode: RenderMode.Prerender,
+    getPrerenderParams: async () =>
+      CONSUMER_CONCERN_ORDER.map((key) => ({ slug: CONSUMER_CONCERN_FLOWS[key].slug })),
   },
   // User-specific and data-parameter routes stay client-rendered on the static host.
   { path: '**', renderMode: RenderMode.Client },

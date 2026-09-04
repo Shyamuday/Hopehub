@@ -33,6 +33,7 @@ deploy_app() {
     --delete \
     --exclude "index.html" \
     --exclude "*/index.html" \
+    --exclude "private-shell.html" \
     --exclude "runtime-config.js" \
     --exclude "robots.txt" \
     --exclude "sitemap.xml" \
@@ -44,6 +45,7 @@ deploy_app() {
     --exclude "*" \
     --include "index.html" \
     --include "*/index.html" \
+    --include "private-shell.html" \
     --content-type "text/html; charset=utf-8" \
     --cache-control "no-cache,no-store,must-revalidate"
 

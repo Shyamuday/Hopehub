@@ -2,224 +2,225 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
     <loc>https://hopehub.in/</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>1</priority>
   </url>
   <url>
     <loc>https://hopehub.in/services</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://hopehub.in/support</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://hopehub.in/care-team</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.95</priority>
   </url>
   <url>
     <loc>https://hopehub.in/packages</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://hopehub.in/events</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://hopehub.in/resources</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://hopehub.in/recorded-sessions</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.65</priority>
   </url>
   <url>
     <loc>https://hopehub.in/organization</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
   </url>
   <url>
     <loc>https://hopehub.in/community</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://hopehub.in/telegram</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://hopehub.in/about</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://hopehub.in/contact</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://hopehub.in/faq</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://hopehub.in/careers</loc>
+  </url>
+  <url>
+    <loc>https://hopehub.in/listener-guidelines</loc>
+  </url>
+  <url>
+    <loc>https://hopehub.in/listener-training</loc>
   </url>
   <url>
     <loc>https://hopehub.in/editorial-policy</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://hopehub.in/donate</loc>
   </url>
   <url>
     <loc>https://hopehub.in/privacy</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.5</priority>
   </url>
   <url>
     <loc>https://hopehub.in/terms</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.5</priority>
   </url>
   <url>
     <loc>https://hopehub.in/refund-policy</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.5</priority>
   </url>
   <url>
     <loc>https://hopehub.in/payment-policy</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.5</priority>
   </url>
   <url>
     <loc>https://hopehub.in/shipping-policy</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.5</priority>
   </url>
   <url>
     <loc>https://hopehub.in/assessments</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://hopehub.in/anxiety-test</loc>
+  </url>
+  <url>
+    <loc>https://hopehub.in/depression-test</loc>
+  </url>
+  <url>
+    <loc>https://hopehub.in/stress-test</loc>
+  </url>
+  <url>
+    <loc>https://hopehub.in/breakup-test</loc>
+  </url>
+  <url>
+    <loc>https://hopehub.in/sleep-test</loc>
+  </url>
+  <url>
+    <loc>https://hopehub.in/relationship-test</loc>
+  </url>
+  <url>
+    <loc>https://hopehub.in/burnout-test</loc>
+  </url>
+  <url>
+    <loc>https://hopehub.in/wellbeing-test</loc>
+  </url>
+  <url>
+    <loc>https://hopehub.in/mental-health-test</loc>
+  </url>
+  <url>
+    <loc>https://hopehub.in/panic-test</loc>
+  </url>
+  <url>
+    <loc>https://hopehub.in/social-anxiety-test</loc>
+  </url>
+  <url>
+    <loc>https://hopehub.in/loneliness-test</loc>
+  </url>
+  <url>
+    <loc>https://hopehub.in/self-esteem-test</loc>
+  </url>
+  <url>
+    <loc>https://hopehub.in/anger-test</loc>
+  </url>
+  <url>
+    <loc>https://hopehub.in/grief-test</loc>
+  </url>
+  <url>
+    <loc>https://hopehub.in/concerns/anxiety</loc>
+  </url>
+  <url>
+    <loc>https://hopehub.in/concerns/depression</loc>
+  </url>
+  <url>
+    <loc>https://hopehub.in/concerns/stress</loc>
+  </url>
+  <url>
+    <loc>https://hopehub.in/concerns/relationship</loc>
+  </url>
+  <url>
+    <loc>https://hopehub.in/concerns/sleep</loc>
+  </url>
+  <url>
+    <loc>https://hopehub.in/concerns/breakup</loc>
+  </url>
+  <url>
+    <loc>https://hopehub.in/concerns/burnout</loc>
+  </url>
+  <url>
+    <loc>https://hopehub.in/concerns/panic</loc>
+  </url>
+  <url>
+    <loc>https://hopehub.in/concerns/social-anxiety</loc>
+  </url>
+  <url>
+    <loc>https://hopehub.in/concerns/loneliness</loc>
+  </url>
+  <url>
+    <loc>https://hopehub.in/concerns/self-esteem</loc>
+  </url>
+  <url>
+    <loc>https://hopehub.in/concerns/anger</loc>
+  </url>
+  <url>
+    <loc>https://hopehub.in/concerns/grief</loc>
+  </url>
+  <url>
+    <loc>https://hopehub.in/concerns/wellbeing</loc>
   </url>
   <url>
     <loc>https://hopehub.in/exercises</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://hopehub.in/lifestyle-tips</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://hopehub.in/articles</loc>
-    <lastmod>2026-08-25</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
   </url>
   <url>
     <loc>https://hopehub.in/articles/building-healthy-boundaries</loc>
     <lastmod>2024-03-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.75</priority>
   </url>
   <url>
     <loc>https://hopehub.in/articles/coping-strategies-depression</loc>
     <lastmod>2024-02-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.75</priority>
   </url>
   <url>
     <loc>https://hopehub.in/articles/depression-myths-facts</loc>
     <lastmod>2024-03-05</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.75</priority>
   </url>
   <url>
     <loc>https://hopehub.in/articles/managing-panic-attacks</loc>
     <lastmod>2024-02-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.75</priority>
   </url>
   <url>
     <loc>https://hopehub.in/articles/navigating-breakup-recovery</loc>
     <lastmod>2024-01-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.75</priority>
   </url>
   <url>
     <loc>https://hopehub.in/articles/rebuilding-life-after-breakup</loc>
     <lastmod>2024-02-01</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.75</priority>
   </url>
   <url>
     <loc>https://hopehub.in/articles/self-care-basics-guide</loc>
     <lastmod>2024-03-01</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.75</priority>
   </url>
   <url>
     <loc>https://hopehub.in/articles/social-anxiety-tips</loc>
     <lastmod>2024-03-10</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.75</priority>
   </url>
   <url>
     <loc>https://hopehub.in/articles/stress-management-techniques</loc>
     <lastmod>2024-02-20</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.75</priority>
   </url>
   <url>
     <loc>https://hopehub.in/articles/understanding-anxiety-disorders</loc>
     <lastmod>2024-11-15</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.75</priority>
   </url>
   <url>
     <loc>https://hopehub.in/articles/understanding-depression-basics</loc>
     <lastmod>2024-12-01</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.75</priority>
   </url>
   <url>
     <loc>https://hopehub.in/articles/understanding-grief-after-breakup</loc>
     <lastmod>2024-01-20</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.75</priority>
   </url>
   <url>
     <loc>https://hopehub.in/articles/understanding-stress-response</loc>
     <lastmod>2024-01-25</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.75</priority>
   </url>
 </urlset>

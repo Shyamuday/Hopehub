@@ -22,45 +22,27 @@ const excludedBlogSlugs = new Set(
 );
 
 const publicPages = [
-  ['/', 'daily', 1.0],
-  ['/talk-to-doctor', 'daily', 0.95],
-  ['/treatments', 'weekly', 0.9],
-  ['/our-doctors', 'weekly', 0.85],
-  ['/blog', 'weekly', 0.85],
-  ['/chronic-care', 'weekly', 0.8],
-  ['/about', 'monthly', 0.75],
-  ['/testimonials', 'monthly', 0.7],
-  ['/why-successful', 'monthly', 0.7],
-  ['/faq', 'monthly', 0.7],
-  ['/safety', 'monthly', 0.7],
-  ['/editorial-policy', 'monthly', 0.7],
-  ['/contact', 'monthly', 0.6],
-  ['/careers', 'weekly', 0.55],
-  ['/legal', 'yearly', 0.4],
-  ['/privacy-policy', 'yearly', 0.4],
-  ['/terms-and-conditions', 'yearly', 0.4],
-  ['/cancellation-and-refund-policy', 'yearly', 0.4],
-  ['/return-and-exchange-policy', 'yearly', 0.4],
-  ['/shipping-policy', 'yearly', 0.4],
-  ['/payment-policy', 'yearly', 0.4],
-];
-
-const knownTreatmentSlugs = [
-  'hair-fall',
-  'skin-care',
-  'chronic-care',
-  'diabetes-mellitus',
-  'hypertension',
-  'chronic-kidney-disease',
-  'gallstone',
-  'liver-cirrhosis',
-  'piles',
-  'kidney-stone',
-  'mental-health',
-  'sexual-health',
-  'respiratory-disease',
-  'musculoskeletal-disease',
-  'cardiovascular-disease',
+  '/',
+  '/talk-to-doctor',
+  '/treatments',
+  '/our-doctors',
+  '/blog',
+  '/chronic-care',
+  '/about',
+  '/testimonials',
+  '/why-successful',
+  '/faq',
+  '/safety',
+  '/editorial-policy',
+  '/contact',
+  '/careers',
+  '/legal',
+  '/privacy-policy',
+  '/terms-and-conditions',
+  '/cancellation-and-refund-policy',
+  '/return-and-exchange-policy',
+  '/shipping-policy',
+  '/payment-policy',
 ];
 
 function xmlEscape(value) {
@@ -95,8 +77,6 @@ async function loadDynamicEntries() {
       if (!disease.slug) continue;
       entries.push({
         path: `/treatments/${encodeURIComponent(disease.slug)}`,
-        frequency: 'monthly',
-        priority: 0.75,
         lastModified: validDate(disease.updatedAt),
       });
     }
@@ -110,8 +90,6 @@ async function loadDynamicEntries() {
       if (!post.slug || excludedBlogSlugs.has(post.slug.trim().toLowerCase())) continue;
       entries.push({
         path: `/blog/${encodeURIComponent(post.slug)}`,
-        frequency: 'monthly',
-        priority: post.isFeatured ? 0.8 : 0.7,
         lastModified: validDate(post.updatedAt || post.publishedAt || post.createdAt),
       });
     }
@@ -121,21 +99,13 @@ async function loadDynamicEntries() {
   return entries;
 }
 
-function renderEntry({ path, frequency, priority, lastModified }) {
+function renderEntry({ path, lastModified }) {
   return `  <url>
     <loc>${xmlEscape(`${siteUrl}${path}`)}</loc>${lastModified ? `\n    <lastmod>${lastModified}</lastmod>` : ''}
-    <changefreq>${frequency}</changefreq>
-    <priority>${priority}</priority>
   </url>`;
 }
 
-const entriesByPath = new Map(
-  publicPages.map(([path, frequency, priority]) => [path, { path, frequency, priority }]),
-);
-for (const slug of knownTreatmentSlugs) {
-  const path = `/treatments/${slug}`;
-  entriesByPath.set(path, { path, frequency: 'monthly', priority: 0.7 });
-}
+const entriesByPath = new Map(publicPages.map((path) => [path, { path }]));
 const dynamicEntries = await loadDynamicEntries();
 for (const entry of dynamicEntries) entriesByPath.set(entry.path, entry);
 if (!dynamicEntries.some((entry) => entry.path.startsWith('/blog/'))) {

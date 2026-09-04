@@ -1,10 +1,41 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+function querySuffix(request) {
+  var query = request.querystring || {};
+  var pairs = [];
+  var keys = Object.keys(query);
+  for (var i = 0; i < keys.length; i += 1) {
+    var key = keys[i];
+    var item = query[key];
+    var values = item.multiValue || [item];
+    for (var j = 0; j < values.length; j += 1) {
+      pairs.push(encodeURIComponent(key) + '=' + encodeURIComponent(values[j].value || ''));
+    }
+  }
+  return pairs.length ? '?' + pairs.join('&') : '';
+}
+
+function permanentRedirect(request, path, targetHost) {
+  return {
+    statusCode: 301,
+    statusDescription: 'Moved Permanently',
+    headers: {
+      location: { value: 'https://' + (targetHost || 'hopehub.in') + path + querySuffix(request) },
+      'cache-control': { value: 'public, max-age=3600' }
+    }
+  };
+}
+
 function handler(event) {
   var request = event.request;
   var headers = request.headers;
   var host = headers.host && headers.host.value ? headers.host.value.toLowerCase() : '';
   var uri = request.uri || '/';
   var prefix = 'healing';
+
+  // Consolidate every public URL on the non-www HTTPS origin.
+  if (host === 'www.hopehub.in') {
+    return permanentRedirect(request, uri);
+  }
 
   if (host === 'admin.hopehub.in') {
     prefix = 'admin';
@@ -18,11 +49,13 @@ function handler(event) {
     prefix = 'doctor';
   } else if (host === 'ops.hopehub.in') {
     prefix = 'operations';
-  } else if (host === 'hopehub.in' || host === 'www.hopehub.in') {
+  } else if (host === 'hopehub.in') {
     prefix = 'healing';
   }
 
-  if (uri.indexOf('/' + prefix + '/') === 0) {
+  // Do not apply this storage-key escape hatch on care.hopehub.in: legitimate
+  // private application routes also begin with `/patient/`.
+  if (prefix !== 'patient' && uri.indexOf('/' + prefix + '/') === 0) {
     return request;
   }
 
@@ -39,6 +72,23 @@ function handler(event) {
   // than a 200 response that search engines interpret as a soft 404.
   if (prefix === 'healing') {
     var normalizedUri = uri.length > 1 ? uri.replace(/\/+$/, '') : '/';
+
+    // Retire duplicate public paths with a strong canonical signal.
+    if (normalizedUri === '/psychologists') {
+      return permanentRedirect(request, '/care-team');
+    }
+    if (normalizedUri.indexOf('/psychologists/') === 0) {
+      return permanentRedirect(request, '/care-team/' + normalizedUri.substring(15));
+    }
+    if (normalizedUri.indexOf('/resources/articles/') === 0) {
+      return permanentRedirect(request, '/articles/' + normalizedUri.substring(20));
+    }
+
+    // Canonical public URLs do not use a trailing slash (except the homepage).
+    if (uri.length > 1 && uri !== normalizedUri) {
+      return permanentRedirect(request, normalizedUri);
+    }
+
     var prerenderedRoutes = {
       '/': true,
       '/services': true,
@@ -69,6 +119,35 @@ function handler(event) {
       '/articles': true,
       '/editorial-policy': true,
       '/donate': true,
+      '/anxiety-test': true,
+      '/depression-test': true,
+      '/stress-test': true,
+      '/breakup-test': true,
+      '/sleep-test': true,
+      '/relationship-test': true,
+      '/burnout-test': true,
+      '/wellbeing-test': true,
+      '/mental-health-test': true,
+      '/panic-test': true,
+      '/social-anxiety-test': true,
+      '/loneliness-test': true,
+      '/self-esteem-test': true,
+      '/anger-test': true,
+      '/grief-test': true,
+      '/concerns/anxiety': true,
+      '/concerns/depression': true,
+      '/concerns/stress': true,
+      '/concerns/relationship': true,
+      '/concerns/sleep': true,
+      '/concerns/breakup': true,
+      '/concerns/burnout': true,
+      '/concerns/panic': true,
+      '/concerns/social-anxiety': true,
+      '/concerns/loneliness': true,
+      '/concerns/self-esteem': true,
+      '/concerns/anger': true,
+      '/concerns/grief': true,
+      '/concerns/wellbeing': true,
       '/404': true,
       '/articles/understanding-stress-response': true,
       '/articles/stress-management-techniques': true,
@@ -93,39 +172,16 @@ function handler(event) {
 
     // These are authenticated or data-driven SPA routes. They still need the
     // browser shell, but they are intentionally excluded from the sitemap.
-    var spaRoutes = [
-      '/profile',
-      '/feedback',
-      '/psychologists',
-      '/anxiety-test',
-      '/depression-test',
-      '/stress-test',
-      '/breakup-test',
-      '/sleep-test',
-      '/relationship-test',
-      '/burnout-test',
-      '/wellbeing-test',
-      '/mental-health-test',
-      '/panic-test',
-      '/social-anxiety-test',
-      '/loneliness-test',
-      '/self-esteem-test',
-      '/anger-test',
-      '/grief-test',
-      '/my-support-plan',
-      '/dashboard'
-    ];
+    var spaRoutes = ['/profile', '/feedback', '/my-support-plan', '/dashboard'];
     var spaPrefixes = [
       '/services/',
       '/care-team/',
-      '/psychologists/',
       '/p/',
       '/s/',
       '/packages/',
       '/events/',
       '/resources/',
       '/recorded-sessions/',
-      '/concerns/',
       '/assessments/',
       '/live-session/',
       '/live-groups/'
@@ -135,7 +191,7 @@ function handler(event) {
       isSpaRoute = normalizedUri.indexOf(spaPrefixes[i]) === 0;
     }
     if (isSpaRoute) {
-      request.uri = '/healing/index.html';
+      request.uri = '/healing/private-shell.html';
       return request;
     }
 
@@ -165,6 +221,21 @@ function handler(event) {
   // shell and carry noindex metadata inside the application.
   if (prefix === 'patient') {
     var patientUri = uri.length > 1 ? uri.replace(/\/+$/, '') : '/';
+
+    var patientRedirects = {
+      '/hair-fall': '/treatments/hair-fall',
+      '/skin-care': '/treatments/skin-care',
+      '/privacy-terms': '/legal'
+    };
+    if (patientRedirects[patientUri]) {
+      return permanentRedirect(request, patientRedirects[patientUri], 'care.hopehub.in');
+    }
+
+    // Canonical patient URLs do not use a trailing slash (except the homepage).
+    if (uri.length > 1 && uri !== patientUri) {
+      return permanentRedirect(request, patientUri, 'care.hopehub.in');
+    }
+
     var patientPublicRoutes = {
       '/': true,
       '/about': true,
@@ -188,11 +259,28 @@ function handler(event) {
       '/payment-policy': true,
       '/safety': true
     };
-    var patientDynamicPublicPrefixes = ['/treatments/', '/blog/'];
-    var isPatientPublicRoute = patientPublicRoutes[patientUri] === true;
-    for (var p = 0; !isPatientPublicRoute && p < patientDynamicPublicPrefixes.length; p += 1) {
-      isPatientPublicRoute = patientUri.indexOf(patientDynamicPublicPrefixes[p]) === 0;
-    }
+    // CloudFront Functions cannot check whether an S3 object exists. Keep an
+    // explicit allowlist so an unknown dynamic slug becomes a real 404 instead
+    // of falling through to another app's index page as a soft 404.
+    var patientDynamicPublicRoutes = {
+      '/treatments/hair-fall': true,
+      '/treatments/skin-care': true,
+      '/treatments/chronic-care': true,
+      '/treatments/diabetes-mellitus': true,
+      '/treatments/hypertension': true,
+      '/treatments/chronic-kidney-disease': true,
+      '/treatments/gallstone': true,
+      '/treatments/liver-cirrhosis': true,
+      '/treatments/piles': true,
+      '/treatments/kidney-stone': true,
+      '/treatments/mental-health': true,
+      '/treatments/sexual-health': true,
+      '/treatments/respiratory-disease': true,
+      '/treatments/musculoskeletal-disease': true,
+      '/treatments/cardiovascular-disease': true
+    };
+    var isPatientPublicRoute =
+      patientPublicRoutes[patientUri] === true || patientDynamicPublicRoutes[patientUri] === true;
     if (isPatientPublicRoute) {
       request.uri =
         patientUri === '/' ? '/patient/index.html' : '/patient' + patientUri + '/index.html';

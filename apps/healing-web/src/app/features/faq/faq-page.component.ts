@@ -6,7 +6,7 @@ import { SEOService } from '../../core/services';
   selector: 'app-faq-page',
   standalone: true,
   imports: [HomeFaqComponent],
-  template: '<app-home-faq />',
+  template: '<app-home-faq [headingLevel]="1" />',
 })
 export class FaqPageComponent implements OnInit {
   private readonly seo = inject(SEOService);

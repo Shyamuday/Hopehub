@@ -82,6 +82,7 @@ export const HOME_FAQS: HomeFaq[] = [
 export class HomeFaqComponent {
   @Input() limit: number | null = null;
   @Input() showAllLink = false;
+  @Input() headingLevel: 1 | 2 = 2;
 
   readonly routes = CONSUMER_ROUTES;
   readonly faqs = HOME_FAQS;

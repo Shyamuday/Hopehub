@@ -3,7 +3,11 @@ import { environment } from '../environments/environment';
 import { isUserWebBlogSlug } from './core/constants/blog-audience.constants';
 
 type DiseaseListResponse = {
-  diseases?: Array<{ slug?: string | null }>;
+  diseases?: Array<{
+    slug?: string | null;
+    isActive?: boolean;
+    publicDomains?: string[];
+  }>;
 };
 
 type BlogListResponse = {
@@ -22,6 +26,14 @@ async function fetchSlugs(path: string, key: 'diseases' | 'posts'): Promise<stri
     }
     const payload = (await response.json()) as DiseaseListResponse & BlogListResponse;
     return (payload[key] ?? [])
+      .filter((entry) => {
+        if (key !== 'diseases') return true;
+        const disease = entry as NonNullable<DiseaseListResponse['diseases']>[number];
+        return (
+          disease.isActive !== false &&
+          (!disease.publicDomains?.length || disease.publicDomains.includes('HOMEOPATHY'))
+        );
+      })
       .map((entry) => entry.slug?.trim())
       .filter((slug): slug is string => Boolean(slug));
   } catch (error) {

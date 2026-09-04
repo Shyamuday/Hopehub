@@ -22,8 +22,9 @@ export const routes: Routes = [
     path: 'talk-to-doctor',
     loadComponent: () => import('./talk-to-doctor.component').then((m) => m.TalkToDoctorComponent),
     data: {
-      title: 'Talk to a doctor now',
-      description: 'Instant online consultation with live doctors.',
+      seoTitle: 'Talk to a Doctor Online | HopeHub Care',
+      seoDescription:
+        'Check doctor availability and request an online homeopathic consultation through HopeHub Care.',
     },
   },
   {

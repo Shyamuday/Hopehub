@@ -195,6 +195,13 @@ export class NavigationService {
             article?: Parameters<SEOService['addArticleStructuredData']>[0];
           }
         | undefined;
+      const pageSeo = data['pageSeo'] as
+        | {
+            title?: string;
+            description?: string;
+            keywords?: string[];
+          }
+        | undefined;
       if (data['description']) {
         description = data['description'];
       }
@@ -204,6 +211,9 @@ export class NavigationService {
       if (articleSeo?.title) title = articleSeo.title;
       if (articleSeo?.description) description = articleSeo.description;
       if (articleSeo?.keywords) keywords = articleSeo.keywords;
+      if (pageSeo?.title) title = pageSeo.title;
+      if (pageSeo?.description) description = pageSeo.description;
+      if (pageSeo?.keywords) keywords = pageSeo.keywords;
     }
 
     // Use SEO service for comprehensive meta tag updates
@@ -221,6 +231,7 @@ export class NavigationService {
       type: route.snapshot.data['type'] || 'website',
       noindex:
         route.snapshot.data['noindex'] === true ||
+        route.snapshot.data['pageSeo']?.noindex === true ||
         route.snapshot.data['articleSeo']?.noindex === true,
       nofollow: route.snapshot.data['nofollow'] === true,
     });

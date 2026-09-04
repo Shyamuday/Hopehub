@@ -5,10 +5,12 @@ import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { filter } from 'rxjs';
 import { ClinicApiClient } from './clinic-api/clinic-api.client';
 import { BRAND_ASSETS, SEO_DEFAULTS } from './core/constants/branding.constants';
+import { API_PATHS } from './core/constants/api-paths.constants';
 import { FAQ_FALLBACK_ENTRIES } from './faq/constants/faq-fallback.constants';
 import { isUserWebBlogSlug } from './core/constants/blog-audience.constants';
 
 type StructuredData = Record<string, unknown>;
+type FaqItem = { question: string; answer: string };
 
 type PageSeo = {
   metaTitle?: string;
@@ -19,7 +21,7 @@ type PageSeo = {
   ogImage?: string;
   ogType?: 'website' | 'article';
   canonicalPath?: string;
-  structuredData?: StructuredData;
+  structuredData?: StructuredData | StructuredData[];
   noIndex?: boolean;
 };
 
@@ -63,20 +65,27 @@ export class SeoService {
     const leafRoute = this.getLeafRoute(this.activatedRoute);
     const routeData = leafRoute.snapshot.data;
     const cleanPath = this.cleanPath(this.router.url);
-    const [diseaseSeo, blogSeo, blogIndexSeo, approachSeo] = await Promise.all([
+    const [diseaseSeo, blogSeo, blogIndexSeo, faqSeo, doctorsSeo] = await Promise.all([
       this.getDiseaseSeoFromUrl(cleanPath),
       this.getBlogSeoFromUrl(cleanPath),
       this.getBlogIndexSeo(cleanPath),
-      this.getApproachSeoFromPage(cleanPath),
+      this.getFaqSeoFromPage(cleanPath),
+      this.getDoctorsSeoFromPage(cleanPath),
     ]);
 
-    const dynamicSeo = { ...approachSeo, ...blogIndexSeo, ...diseaseSeo, ...blogSeo };
+    const dynamicSeo = {
+      ...faqSeo,
+      ...doctorsSeo,
+      ...blogIndexSeo,
+      ...diseaseSeo,
+      ...blogSeo,
+    };
     const seoTitle = dynamicSeo.metaTitle || routeData['seoTitle'] || this.defaultTitle;
     const seoDescription =
       dynamicSeo.metaDescription || routeData['seoDescription'] || this.defaultDescription;
     const seoKeywords = dynamicSeo.keywords || routeData['seoKeywords'] || [];
     const canonicalPath = dynamicSeo.canonicalPath || cleanPath;
-    const canonicalUrl = `${this.siteUrl}${canonicalPath === '/' ? '' : canonicalPath}`;
+    const canonicalUrl = `${this.siteUrl}${canonicalPath}`;
     const ogTitle = dynamicSeo.ogTitle || seoTitle;
     const ogDescription = dynamicSeo.ogDescription || seoDescription;
     const ogImage = dynamicSeo.ogImage || this.defaultImage;
@@ -112,6 +121,7 @@ export class SeoService {
     this.meta.updateTag({ name: 'twitter:title', content: ogTitle });
     this.meta.updateTag({ name: 'twitter:description', content: ogDescription });
     this.meta.updateTag({ name: 'twitter:image', content: ogImage });
+    this.meta.updateTag({ name: 'twitter:url', content: canonicalUrl });
 
     this.upsertCanonical(canonicalUrl);
     this.upsertStructuredData(
@@ -167,7 +177,7 @@ export class SeoService {
     canonicalUrl: string,
     title: string,
     description: string,
-    pageSpecific?: StructuredData,
+    pageSpecific?: StructuredData | StructuredData[],
   ): StructuredData {
     const graph: StructuredData[] = [
       {
@@ -202,17 +212,9 @@ export class SeoService {
       });
     }
 
-    if (path === '/faq') {
-      graph.push({
-        '@type': 'FAQPage',
-        mainEntity: FAQ_FALLBACK_ENTRIES.map((entry) => ({
-          '@type': 'Question',
-          name: entry.question,
-          acceptedAnswer: { '@type': 'Answer', text: entry.answer },
-        })),
-      });
+    if (pageSpecific) {
+      graph.push(...(Array.isArray(pageSpecific) ? pageSpecific : [pageSpecific]));
     }
-    if (pageSpecific) graph.push(pageSpecific);
     return { '@context': 'https://schema.org', '@graph': graph };
   }
 
@@ -236,13 +238,41 @@ export class SeoService {
           publicImageUrl?: string | null;
           name: string;
           updatedAt?: string | null;
+          publicFaq?: FaqItem[] | null;
+          publicPage?: {
+            faq?: FaqItem[];
+            reviewedBy?: string;
+            lastUpdated?: string;
+            references?: string[];
+          } | null;
         };
       }>(`/diseases/by-slug/${encodeURIComponent(slug)}`);
       const live = response.disease;
-      const metaTitle = live.seoTitle || `${live.name} | HopeHub Care`;
-      const metaDescription =
+      const metaTitle = this.normalizeSeoTitle(live.seoTitle || `${live.name} | HopeHub Care`);
+      const metaDescription = this.normalizeMetaDescription(
         live.seoDescription ||
-        `Learn about ${live.name}, common symptoms, safety guidance, and when to consult a doctor.`;
+          `Learn about ${live.name}, common symptoms, safety guidance, and when to consult a doctor.`,
+      );
+      const faq = live.publicFaq?.length ? live.publicFaq : live.publicPage?.faq || [];
+      const medicalPage: StructuredData = {
+        '@type': 'MedicalWebPage',
+        name: metaTitle,
+        description: metaDescription,
+        url: `${this.siteUrl}${canonicalPath}`,
+        about: { '@type': 'MedicalCondition', name: live.name },
+        ...(live.publicPage?.reviewedBy
+          ? {
+              reviewedBy: {
+                '@type': 'Organization',
+                name: live.publicPage.reviewedBy,
+              },
+            }
+          : {}),
+        ...(live.publicPage?.lastUpdated || live.updatedAt
+          ? { lastReviewed: live.publicPage?.lastUpdated || live.updatedAt }
+          : {}),
+        ...(live.publicPage?.references?.length ? { citation: live.publicPage.references } : {}),
+      };
       return {
         metaTitle,
         metaDescription,
@@ -250,14 +280,7 @@ export class SeoService {
         ogDescription: metaDescription,
         ogImage: live.publicImageUrl || undefined,
         canonicalPath,
-        structuredData: {
-          '@type': 'MedicalWebPage',
-          name: metaTitle,
-          description: metaDescription,
-          url: `${this.siteUrl}${canonicalPath}`,
-          about: { '@type': 'MedicalCondition', name: live.name },
-          ...(live.updatedAt ? { lastReviewed: live.updatedAt } : {}),
-        },
+        structuredData: [medicalPage, ...(faq.length ? [this.buildFaqStructuredData(faq)] : [])],
       };
     } catch {
       return { canonicalPath };
@@ -319,19 +342,94 @@ export class SeoService {
     }
   }
 
-  private async getApproachSeoFromPage(path: string): Promise<PageSeo> {
-    if (path !== '/why-successful') return {};
-    const { homeopathyApproaches } =
-      await import('./treatment-approach/homeopathy-approaches.constants');
-    const allKeywords = homeopathyApproaches.flatMap((approach) => approach.seo?.keywords || []);
+  private async getFaqSeoFromPage(path: string): Promise<PageSeo> {
+    if (path !== '/faq') return {};
+    let entries: FaqItem[] = FAQ_FALLBACK_ENTRIES;
+    try {
+      const response = await this.apiClient.get<{ entries?: FaqItem[] }>(API_PATHS.FAQ);
+      if (response.entries?.length) entries = response.entries;
+    } catch {
+      // The FAQ page renders the same fallback entries when the API is unavailable.
+    }
+    return { structuredData: this.buildFaqStructuredData(entries) };
+  }
+
+  private async getDoctorsSeoFromPage(path: string): Promise<PageSeo> {
+    if (path !== '/our-doctors') return {};
+    try {
+      const response = await this.apiClient.get<{
+        doctors?: Array<{
+          id: string;
+          specialty?: string | null;
+          designation?: string | null;
+          bio?: string | null;
+          registrationNo?: string | null;
+          credentialVerified?: boolean;
+          user: { name: string; profileImageUrl?: string | null };
+        }>;
+      }>(API_PATHS.DOCTORS);
+      const doctors = response.doctors ?? [];
+      if (!doctors.length) return {};
+      return {
+        structuredData: {
+          '@type': 'ItemList',
+          name: 'HopeHub Care doctors',
+          itemListElement: doctors.map((doctor, index) => ({
+            '@type': 'ListItem',
+            position: index + 1,
+            item: {
+              '@type': 'Person',
+              '@id': `${this.siteUrl}/our-doctors#doctor-${encodeURIComponent(doctor.id)}`,
+              name: doctor.user.name,
+              jobTitle: doctor.designation || doctor.specialty || 'Homeopathic Doctor',
+              ...(doctor.bio ? { description: doctor.bio } : {}),
+              ...(doctor.user.profileImageUrl ? { image: doctor.user.profileImageUrl } : {}),
+              ...(doctor.registrationNo && doctor.credentialVerified
+                ? {
+                    hasCredential: {
+                      '@type': 'EducationalOccupationalCredential',
+                      credentialCategory: 'Professional registration',
+                      identifier: doctor.registrationNo,
+                    },
+                  }
+                : {}),
+            },
+          })),
+        },
+      };
+    } catch {
+      return {};
+    }
+  }
+
+  private buildFaqStructuredData(entries: FaqItem[]): StructuredData {
     return {
-      metaTitle: 'Homeopathy Approaches | HopeHub Care and Research Centre',
-      metaDescription:
-        'Explore structured homeopathy approaches used at HopeHub Care and Research Centre, including case frameworks, strengths, and limitations.',
-      keywords: Array.from(new Set(allKeywords)).slice(0, 30),
-      ogTitle: 'Homeopathy Approaches at HopeHub Care and Research Centre',
-      ogDescription:
-        'Compare method-led homeopathy approaches and their digital care mapping at HopeHub Care and Research Centre.',
+      '@type': 'FAQPage',
+      mainEntity: entries.map((entry) => ({
+        '@type': 'Question',
+        name: entry.question,
+        acceptedAnswer: { '@type': 'Answer', text: entry.answer },
+      })),
     };
+  }
+
+  private normalizeSeoTitle(value: string): string {
+    const deDuplicated = value.trim().replace(/\bTreatment\s+Treatment\b/gi, 'Treatment');
+    if (deDuplicated.length <= 65) return deDuplicated;
+    const shortenedBrand = deDuplicated.replace(
+      /\s*\|\s*HopeHub Care and Research Centre$/i,
+      ' | HopeHub Care',
+    );
+    return shortenedBrand.length <= 65
+      ? shortenedBrand
+      : `${shortenedBrand.slice(0, 62).trim()}...`;
+  }
+
+  private normalizeMetaDescription(value: string): string {
+    const normalized = value.trim().replace(/\s+/g, ' ');
+    if (normalized.length <= 165) return normalized;
+    const clipped = normalized.slice(0, 162);
+    const lastSpace = clipped.lastIndexOf(' ');
+    return `${clipped.slice(0, lastSpace > 120 ? lastSpace : 162).replace(/[.,;:]$/, '')}...`;
   }
 }

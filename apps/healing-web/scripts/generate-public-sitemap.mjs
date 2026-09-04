@@ -14,32 +14,64 @@ const cloudFrontRouterPath = join(
   'frontend-host-router.js',
 );
 
-const today = new Date().toISOString().slice(0, 10);
 const publicPages = [
-  ['/', 'daily', 1.0],
-  ['/services', 'weekly', 0.9],
-  ['/support', 'weekly', 0.9],
-  ['/care-team', 'daily', 0.95],
-  ['/packages', 'weekly', 0.9],
-  ['/events', 'weekly', 0.8],
-  ['/resources', 'weekly', 0.7],
-  ['/recorded-sessions', 'weekly', 0.65],
-  ['/organization', 'monthly', 0.6],
-  ['/community', 'weekly', 0.8],
-  ['/telegram', 'weekly', 0.8],
-  ['/about', 'monthly', 0.8],
-  ['/contact', 'monthly', 0.8],
-  ['/faq', 'monthly', 0.8],
-  ['/editorial-policy', 'monthly', 0.8],
-  ['/privacy', 'yearly', 0.5],
-  ['/terms', 'yearly', 0.5],
-  ['/refund-policy', 'yearly', 0.5],
-  ['/payment-policy', 'yearly', 0.5],
-  ['/shipping-policy', 'yearly', 0.5],
-  ['/assessments', 'weekly', 0.8],
-  ['/exercises', 'weekly', 0.9],
-  ['/lifestyle-tips', 'weekly', 0.9],
-  ['/articles', 'weekly', 0.9],
+  '/',
+  '/services',
+  '/support',
+  '/care-team',
+  '/packages',
+  '/events',
+  '/resources',
+  '/recorded-sessions',
+  '/organization',
+  '/community',
+  '/telegram',
+  '/about',
+  '/contact',
+  '/faq',
+  '/careers',
+  '/listener-guidelines',
+  '/listener-training',
+  '/editorial-policy',
+  '/donate',
+  '/privacy',
+  '/terms',
+  '/refund-policy',
+  '/payment-policy',
+  '/shipping-policy',
+  '/assessments',
+  '/anxiety-test',
+  '/depression-test',
+  '/stress-test',
+  '/breakup-test',
+  '/sleep-test',
+  '/relationship-test',
+  '/burnout-test',
+  '/wellbeing-test',
+  '/mental-health-test',
+  '/panic-test',
+  '/social-anxiety-test',
+  '/loneliness-test',
+  '/self-esteem-test',
+  '/anger-test',
+  '/grief-test',
+  '/concerns/anxiety',
+  '/concerns/depression',
+  '/concerns/stress',
+  '/concerns/relationship',
+  '/concerns/sleep',
+  '/concerns/breakup',
+  '/concerns/burnout',
+  '/concerns/panic',
+  '/concerns/social-anxiety',
+  '/concerns/loneliness',
+  '/concerns/self-esteem',
+  '/concerns/anger',
+  '/concerns/grief',
+  '/concerns/wellbeing',
+  '/exercises',
+  '/lifestyle-tips',
+  '/articles',
 ];
 
 function xmlEscape(value) {
@@ -51,12 +83,11 @@ function xmlEscape(value) {
     .replaceAll("'", '&apos;');
 }
 
-function entry(path, changeFrequency, priority, lastModified = today) {
+function entry(path, lastModified) {
   return `  <url>
-    <loc>${xmlEscape(`https://hopehub.in${path}`)}</loc>
-    <lastmod>${lastModified}</lastmod>
-    <changefreq>${changeFrequency}</changefreq>
-    <priority>${priority}</priority>
+    <loc>${xmlEscape(`https://hopehub.in${path}`)}</loc>${
+      lastModified ? `\n    <lastmod>${lastModified}</lastmod>` : ''
+    }
   </url>`;
 }
 
@@ -68,17 +99,17 @@ for (const name of articleFiles) {
   for (const match of source.matchAll(objectPattern)) {
     const id = match[1];
     const body = match[2];
-    const published = body.match(/publishedDate:\s*new Date\('([^']+)'\)/)?.[1] || today;
+    const published = body.match(/publishedDate:\s*new Date\('([^']+)'\)/)?.[1];
+    if (!published) throw new Error(`Article ${id} is missing publishedDate.`);
     const updated = body.match(/lastUpdated:\s*new Date\('([^']+)'\)/)?.[1] || published;
-    const featured = /isFeatured:\s*true/.test(body);
-    articleRoutes.push({ id, updated, priority: featured ? 0.85 : 0.75 });
+    articleRoutes.push({ id, updated });
   }
 }
 articleRoutes.sort((left, right) => left.id.localeCompare(right.id));
 
 const cloudFrontRouter = await readFile(cloudFrontRouterPath, 'utf8');
 const missingCloudFrontRoutes = [
-  ...publicPages.map(([path]) => path),
+  ...publicPages,
   ...articleRoutes.map(({ id }) => `/articles/${id}`),
 ].filter((path) => !cloudFrontRouter.includes(`'${path}': true`));
 if (missingCloudFrontRoutes.length) {
@@ -89,10 +120,8 @@ if (missingCloudFrontRoutes.length) {
 }
 
 const entries = [
-  ...publicPages.map(([path, frequency, priority]) => entry(path, frequency, priority)),
-  ...articleRoutes.map(({ id, updated, priority }) =>
-    entry(`/articles/${id}`, 'monthly', priority, updated),
-  ),
+  ...publicPages.map((path) => entry(path)),
+  ...articleRoutes.map(({ id, updated }) => entry(`/articles/${id}`, updated)),
 ];
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

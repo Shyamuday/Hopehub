@@ -27,7 +27,7 @@
         } @else if (doctors().length) {
           <section class="doctors-grid">
             @for (doctor of doctors(); track doctor.id) {
-              <article class="panel doctor-card">
+              <article class="panel doctor-card" [id]="'doctor-' + doctor.id">
                 @if (doctorImage(doctor); as imageUrl) {
                   <img class="doctor-avatar doctor-avatar-photo" [src]="imageUrl" [alt]="doctor.user.name" loading="lazy" />
                 } @else {

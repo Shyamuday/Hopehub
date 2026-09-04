@@ -1,7 +1,4 @@
-/**
- * Sitemap Generator Utility
- * Generates sitemap.xml for SEO
- */
+/** Generates canonical Hope Hub sitemap XML. */
 
 import { ALL_ARTICLES } from '../data/article-configs';
 
@@ -9,202 +6,105 @@ export interface SitemapUrl {
   loc: string;
   lastmod?: string;
   changefreq?: 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never';
-  priority?: number; // 0.0 to 1.0
+  priority?: number;
 }
 
 export class SitemapGenerator {
   private static readonly baseUrl = 'https://hopehub.in';
-  private static readonly currentDate = new Date().toISOString().split('T')[0];
-  private static readonly offerRoutes = [
-    { loc: '/packages', priority: 0.9 },
-    { loc: '/events', priority: 0.8 },
-    { loc: '/resources', priority: 0.7 },
+  private static readonly publicPaths = [
+    '/',
+    '/services',
+    '/support',
+    '/care-team',
+    '/packages',
+    '/events',
+    '/resources',
+    '/recorded-sessions',
+    '/organization',
+    '/community',
+    '/telegram',
+    '/about',
+    '/contact',
+    '/faq',
+    '/careers',
+    '/listener-guidelines',
+    '/listener-training',
+    '/editorial-policy',
+    '/donate',
+    '/privacy',
+    '/terms',
+    '/refund-policy',
+    '/payment-policy',
+    '/shipping-policy',
+    '/assessments',
+    '/anxiety-test',
+    '/depression-test',
+    '/stress-test',
+    '/breakup-test',
+    '/sleep-test',
+    '/relationship-test',
+    '/burnout-test',
+    '/wellbeing-test',
+    '/mental-health-test',
+    '/panic-test',
+    '/social-anxiety-test',
+    '/loneliness-test',
+    '/self-esteem-test',
+    '/anger-test',
+    '/grief-test',
+    '/concerns/anxiety',
+    '/concerns/depression',
+    '/concerns/stress',
+    '/concerns/relationship',
+    '/concerns/sleep',
+    '/concerns/breakup',
+    '/concerns/burnout',
+    '/concerns/panic',
+    '/concerns/social-anxiety',
+    '/concerns/loneliness',
+    '/concerns/self-esteem',
+    '/concerns/anger',
+    '/concerns/grief',
+    '/concerns/wellbeing',
+    '/exercises',
+    '/lifestyle-tips',
+    '/articles',
   ] as const;
 
-  /**
-   * Generate sitemap XML
-   */
   static generateSitemap(urls: SitemapUrl[]): string {
     const urlEntries = urls.map((url) => this.generateUrlEntry(url)).join('\n');
 
     return `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
-        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urlEntries}
 </urlset>`;
   }
 
-  /**
-   * Generate default sitemap for Hope Hub
-   */
   static generateDefaultSitemap(): string {
     const urls: SitemapUrl[] = [
-      // Homepage
-      {
-        loc: '/',
-        lastmod: this.currentDate,
-        changefreq: 'daily',
-        priority: 1.0,
-      },
-      // Main pages
-      {
-        loc: '/services',
-        lastmod: this.currentDate,
-        changefreq: 'weekly',
-        priority: 0.9,
-      },
-      {
-        loc: '/support',
-        lastmod: this.currentDate,
-        changefreq: 'weekly',
-        priority: 0.9,
-      },
-      {
-        loc: '/care-team',
-        lastmod: this.currentDate,
-        changefreq: 'daily',
-        priority: 0.95,
-      },
-      ...this.offerRoutes.map((route) => ({
-        loc: route.loc,
-        lastmod: this.currentDate,
-        changefreq: 'weekly' as const,
-        priority: route.priority,
-      })),
-      {
-        loc: '/community',
-        lastmod: this.currentDate,
-        changefreq: 'weekly',
-        priority: 0.8,
-      },
-      {
-        loc: '/telegram',
-        lastmod: this.currentDate,
-        changefreq: 'weekly',
-        priority: 0.8,
-      },
-      {
-        loc: '/organization',
-        changefreq: 'monthly',
-        priority: 0.6,
-      },
-      {
-        loc: '/telegram-group-admin',
-        changefreq: 'monthly',
-        priority: 0.6,
-      },
-      {
-        loc: '/about',
-        lastmod: this.currentDate,
-        changefreq: 'monthly',
-        priority: 0.7,
-      },
-      {
-        loc: '/contact',
-        lastmod: this.currentDate,
-        changefreq: 'monthly',
-        priority: 0.8,
-      },
-      {
-        loc: '/faq',
-        lastmod: this.currentDate,
-        changefreq: 'monthly',
-        priority: 0.7,
-      },
-      {
-        loc: '/editorial-policy',
-        lastmod: this.currentDate,
-        changefreq: 'monthly',
-        priority: 0.7,
-      },
-      {
-        loc: '/privacy',
-        lastmod: this.currentDate,
-        changefreq: 'yearly',
-        priority: 0.5,
-      },
-      {
-        loc: '/terms',
-        lastmod: this.currentDate,
-        changefreq: 'yearly',
-        priority: 0.5,
-      },
-      {
-        loc: '/refund-policy',
-        lastmod: this.currentDate,
-        changefreq: 'yearly',
-        priority: 0.5,
-      },
-      {
-        loc: '/payment-policy',
-        lastmod: this.currentDate,
-        changefreq: 'yearly',
-        priority: 0.5,
-      },
-      {
-        loc: '/shipping-policy',
-        lastmod: this.currentDate,
-        changefreq: 'yearly',
-        priority: 0.5,
-      },
-      // Content pages
-      {
-        loc: '/assessments',
-        lastmod: this.currentDate,
-        changefreq: 'weekly',
-        priority: 0.9,
-      },
-      {
-        loc: '/exercises',
-        lastmod: this.currentDate,
-        changefreq: 'weekly',
-        priority: 0.9,
-      },
-      {
-        loc: '/lifestyle-tips',
-        lastmod: this.currentDate,
-        changefreq: 'weekly',
-        priority: 0.9,
-      },
-      {
-        loc: '/articles',
-        lastmod: this.currentDate,
-        changefreq: 'daily',
-        priority: 0.9,
-      },
+      ...this.publicPaths.map((loc) => ({ loc })),
       ...ALL_ARTICLES.map((article) => ({
         loc: `/articles/${article.id}`,
         lastmod: (article.lastUpdated || article.publishedDate).toISOString().split('T')[0],
-        changefreq: 'monthly' as const,
-        priority: article.isFeatured ? 0.85 : 0.75,
       })),
     ];
 
     return this.generateSitemap(urls);
   }
 
-  /**
-   * Generate URL entry for sitemap
-   */
   private static generateUrlEntry(url: SitemapUrl): string {
     const loc = url.loc.startsWith('http') ? url.loc : `${this.baseUrl}${url.loc}`;
-    const lastmod = url.lastmod || this.currentDate;
-    const changefreq = url.changefreq || 'monthly';
-    const priority = url.priority !== undefined ? url.priority : 0.5;
+    const optionalTags = [
+      url.lastmod ? `    <lastmod>${this.escapeXml(url.lastmod)}</lastmod>` : '',
+      url.changefreq ? `    <changefreq>${url.changefreq}</changefreq>` : '',
+      url.priority !== undefined ? `    <priority>${url.priority}</priority>` : '',
+    ].filter(Boolean);
 
     return `  <url>
-    <loc>${this.escapeXml(loc)}</loc>
-    <lastmod>${lastmod}</lastmod>
-    <changefreq>${changefreq}</changefreq>
-    <priority>${priority}</priority>
+    <loc>${this.escapeXml(loc)}</loc>${optionalTags.length ? `\n${optionalTags.join('\n')}` : ''}
   </url>`;
   }
 
-  /**
-   * Escape XML special characters
-   */
   private static escapeXml(text: string): string {
     return text
       .replace(/&/g, '&amp;')

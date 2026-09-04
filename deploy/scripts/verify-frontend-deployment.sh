@@ -64,6 +64,16 @@ verify_local_app() {
       exit 1
     }
   fi
+  if [ "$app" = "healing" ]; then
+    [ -f "$dir/private-shell.html" ] || {
+      echo "::error::Missing noindex private shell for healing app"
+      exit 1
+    }
+    grep -q 'noindex, nofollow' "$dir/private-shell.html" || {
+      echo "::error::Healing private shell is indexable"
+      exit 1
+    }
+  fi
 }
 
 verify_s3_app() {
@@ -75,6 +85,9 @@ verify_s3_app() {
       aws s3api head-object --bucket "$FRONTEND_BUCKET" --key "patient/private-shell.html" >/dev/null
       aws s3api head-object --bucket "$FRONTEND_BUCKET" --key "patient/faq/index.html" >/dev/null
       aws s3api head-object --bucket "$FRONTEND_BUCKET" --key "patient/ads.txt" >/dev/null
+    fi
+    if [ "$app" = "healing" ]; then
+      aws s3api head-object --bucket "$FRONTEND_BUCKET" --key "healing/private-shell.html" >/dev/null
     fi
   fi
 }
@@ -89,7 +102,7 @@ verify_domain_app() {
   echo "==> Verifying ${url}"
   assert_json_marker "$app" "$(curl --fail --silent --show-error --max-time 20 "$url")"
   if [ "$app" = "patient" ]; then
-    local faq_html
+    local faq_html private_html unknown_status
     faq_html="$(curl --fail --silent --show-error --max-time 20 "${origin%/}/faq")"
     grep -q 'https://care.hopehub.in/faq' <<< "$faq_html" || {
       echo "::error::Patient FAQ is missing its production canonical URL"
@@ -97,6 +110,31 @@ verify_domain_app() {
     }
     curl --fail --silent --show-error --max-time 20 "${origin%/}/ads.txt" | grep -q 'pub-' || {
       echo "::error::Patient ads.txt is unavailable"
+      exit 1
+    }
+    private_html="$(curl --fail --silent --show-error --max-time 20 "${origin%/}/patient/dashboard")"
+    grep -q 'name="hopehub-app" content="patient"' <<< "$private_html" || {
+      echo "::error::Patient private route returned the wrong frontend"
+      exit 1
+    }
+    grep -q 'noindex, nofollow' <<< "$private_html" || {
+      echo "::error::Patient private routes are missing crawler noindex metadata"
+      exit 1
+    }
+    unknown_status="$(
+      curl --silent --output /dev/null --write-out '%{http_code}' --max-time 20 \
+        "${origin%/}/treatments/not-a-real-treatment"
+    )"
+    [ "$unknown_status" = "404" ] || {
+      echo "::error::Unknown patient treatment returned HTTP $unknown_status instead of 404"
+      exit 1
+    }
+  fi
+  if [ "$app" = "healing" ]; then
+    local private_html
+    private_html="$(curl --fail --silent --show-error --max-time 20 "${origin%/}/profile")"
+    grep -q 'noindex, nofollow' <<< "$private_html" || {
+      echo "::error::Healing private routes are missing crawler noindex metadata"
       exit 1
     }
   fi

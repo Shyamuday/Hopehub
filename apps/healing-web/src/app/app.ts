@@ -17,12 +17,7 @@ import {
   ConsultationWebrtcCallService,
   type IceServerConfig,
 } from '@hopehub/platform-ui';
-import {
-  ConsumerChromeService,
-  HopeHubRealtimeService,
-  NavigationService,
-  SEOService,
-} from './core/services';
+import { ConsumerChromeService, HopeHubRealtimeService, NavigationService } from './core/services';
 import { AuthModalService } from './core/services/auth-modal.service';
 import { AuthService } from './core/services/auth.service';
 import { BookingService } from './core/services/booking.service';
@@ -58,7 +53,6 @@ export class App implements OnInit {
   protected readonly isOnline = signal(true);
   protected readonly chrome = inject(ConsumerChromeService);
 
-  private seoService = inject(SEOService);
   private platformId = inject(PLATFORM_ID);
   private authService = inject(AuthService);
   private authModalService = inject(AuthModalService);
@@ -81,9 +75,6 @@ export class App implements OnInit {
       this.isOnline.set(window.navigator.onLine);
       captureReferralAttribution(new URLSearchParams(window.location.search).get('ref'));
       FontLoader.init();
-
-      // Add organization structured data for SEO
-      this.seoService.addOrganizationStructuredData();
 
       this.openAuthModalWhenSessionMissing();
       this.bindGlobalCallAlerts();
