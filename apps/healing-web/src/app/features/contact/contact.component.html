@@ -8,341 +8,508 @@
 
   <div class="request-layout">
     <section class="request-card" [attr.aria-label]="UX.booking.formAria">
-      <form [formGroup]="contactForm" (submit)="$event.preventDefault(); onSubmit()">
-        @if (isLiveConnectFallback()) {
-          <section class="live-handoff-card" aria-label="Book support for later">
-            <div>
-              <app-status-chip label="No live expert available" tone="success" [strong]="true" />
-              <h2>{{ liveConnectHandoffTitle() }}</h2>
-              <p>{{ liveConnectHandoffCopy() }}</p>
-            </div>
-          </section>
-        }
-
-        <app-booking-intent-summary
-          [title]="bookingSummaryTitle()"
-          [items]="bookingSummaryItems()"
-        />
-
-        <div class="mb-5 mt-4 grid grid-cols-3 gap-2" aria-label="Booking steps">
-          @for (step of [1, 2, 3]; track step) {
-            <div
-              class="rounded-lg px-3 py-2 text-xs font-semibold"
-              [class.bg-primary-50]="bookingStep() === step"
-              [class.text-primary-800]="bookingStep() === step"
-              [class.bg-gray-50]="bookingStep() !== step"
-              [class.text-gray-600]="bookingStep() !== step"
-              [attr.aria-current]="bookingStep() === step ? 'step' : null"
-            >
-              {{ step }}. {{ step === 1 ? 'Support' : step === 2 ? 'Time' : 'Confirm' }}
-            </div>
+      @if (!guestBookingSubmitted()) {
+        <form [formGroup]="contactForm" (submit)="$event.preventDefault(); onSubmit()">
+          @if (isLiveConnectFallback()) {
+            <section class="live-handoff-card" aria-label="Book support for later">
+              <div>
+                <app-status-chip label="No live expert available" tone="success" [strong]="true" />
+                <h2>{{ liveConnectHandoffTitle() }}</h2>
+                <p>{{ liveConnectHandoffCopy() }}</p>
+              </div>
+            </section>
           }
-        </div>
 
-        @if (bookingStepError()) {
-          <p class="booking-step-error" role="alert">{{ bookingStepError() }}</p>
-        }
+          <app-booking-intent-summary
+            [title]="bookingSummaryTitle()"
+            [items]="bookingSummaryItems()"
+          />
 
-        @if (bookingValidationIssues().length) {
-          <section class="booking-validation-summary" role="alert" aria-live="assertive">
-            <strong>Please check these details</strong>
-            <ul>
-              @for (issue of bookingValidationIssues(); track issue.field) {
-                <li><b>{{ issue.label }}:</b> {{ issue.message }}</li>
-              }
-            </ul>
-          </section>
-        }
-
-        @if (bookingStep() === 1) {
-        <p data-booking-step="1" tabindex="-1" class="mb-3 mt-6 text-sm font-semibold text-primary-800">Choose the support that feels right</p>
-        <div class="form-grid">
-          <div>
-            <label for="serviceInterest" class="form-label">Support service</label>
-            <app-form-dropdown
-              formControlName="serviceInterest"
-              placeholder="Choose the type of support you want"
-              [options]="serviceOptions"
-              [panelMaxHeight]="'18rem'"
-              [invalid]="!!bookingFieldError('serviceInterest')"
-            ></app-form-dropdown>
-            @if (bookingFieldError('serviceInterest')) {
-              <p class="field-error">{{ bookingFieldError('serviceInterest') }}</p>
+          <div class="mb-5 mt-4 grid grid-cols-3 gap-2" aria-label="Booking steps">
+            @for (step of [1, 2, 3]; track step) {
+              <div
+                class="rounded-lg px-3 py-2 text-xs font-semibold"
+                [class.bg-primary-50]="bookingStep() === step"
+                [class.text-primary-800]="bookingStep() === step"
+                [class.bg-gray-50]="bookingStep() !== step"
+                [class.text-gray-600]="bookingStep() !== step"
+                [attr.aria-current]="bookingStep() === step ? 'step' : null"
+              >
+                {{ step }}. {{ step === 1 ? 'Support' : step === 2 ? 'Time' : 'Confirm' }}
+              </div>
             }
           </div>
-        </div>
 
-        @if (contactForm.get('serviceInterest')?.value || prefilledData().serviceName || prefilledData().service) {
-          <section class="selected-session" aria-live="polite">
-            <div class="selected-session__head">
+          @if (bookingStepError()) {
+            <p class="booking-step-error" role="alert">{{ bookingStepError() }}</p>
+          }
+
+          @if (bookingValidationIssues().length) {
+            <section class="booking-validation-summary" role="alert" aria-live="assertive">
+              <strong>Please check these details</strong>
+              <ul>
+                @for (issue of bookingValidationIssues(); track issue.field) {
+                  <li>
+                    <b>{{ issue.label }}:</b> {{ issue.message }}
+                  </li>
+                }
+              </ul>
+            </section>
+          }
+
+          @if (bookingStep() === 1) {
+            <p
+              data-booking-step="1"
+              tabindex="-1"
+              class="mb-3 mt-6 text-sm font-semibold text-primary-800"
+            >
+              Choose the support that feels right
+            </p>
+            <div class="form-grid">
               <div>
-                <p>Selected session</p>
-                <h2>{{ selectedSessionTitle() }}</h2>
-                @if (selectedSessionProvider()) {
-                  <span>with {{ selectedSessionProvider() }}</span>
+                <label for="serviceInterest" class="form-label">Support service</label>
+                <app-form-dropdown
+                  formControlName="serviceInterest"
+                  placeholder="Choose the type of support you want"
+                  [options]="serviceOptions"
+                  [panelMaxHeight]="'18rem'"
+                  [invalid]="!!bookingFieldError('serviceInterest')"
+                ></app-form-dropdown>
+                @if (bookingFieldError('serviceInterest')) {
+                  <p class="field-error">{{ bookingFieldError('serviceInterest') }}</p>
                 }
               </div>
-              <strong>{{ selectedSessionPriceLabel() }}</strong>
-            </div>
-            <div class="selected-session__facts">
-              <span>{{ selectedSessionDurationLabel() }}</span>
-              <span>{{ sessionModeLabel() }}</span>
-            </div>
-            <small>{{ selectedSessionPriceHint() }}</small>
-          </section>
-
-          <section class="session-mode-panel" aria-label="Choose session mode">
-            <div>
-              <p>How would you like to connect?</p>
-              <span>Choose a comfortable mode now. You will select a time next.</span>
-            </div>
-            <div class="contact-methods contact-methods--modes">
-              @for (mode of availableSessionModes(); track mode) {
-                <label>
-                  <input
-                    type="radio"
-                    formControlName="sessionMode"
-                    [value]="sessionModeForLiveConnectMode(mode)"
-                    (change)="selectSessionMode(mode)"
-                  />
-                  <span>{{ sessionModeLabel(mode) }}</span>
-                </label>
-              }
-            </div>
-          </section>
-        }
-
-        <section class="support-path-panel" [attr.aria-label]="UX.supportPath.chooserAria">
-          <div class="support-path-panel__head">
-            <p>{{ UX.supportPath.chooserEyebrow }}</p>
-            <h2>{{ UX.supportPath.chooserTitle }}</h2>
-            <span>{{ UX.supportPath.chooserHint }}</span>
-          </div>
-          <app-support-path-selector
-            [selected]="activeSupportPathPreference()"
-            (selectedChange)="setSupportPathPreference($event)"
-          />
-        </section>
-
-        <app-button type="button" class="mt-6 block" [block]="true" (click)="goToBookingStep(2)">
-          Continue to time
-        </app-button>
-        }
-
-        @if (bookingStep() === 2) {
-        <details data-booking-step="2" tabindex="-1" class="optional-panel">
-          <summary>{{ directBooking() ? 'Preferences (optional)' : 'Refine your match (optional)' }}</summary>
-          <div class="form-grid two">
-            <div>
-              <label for="concernCategory" class="form-label">Concern</label>
-              <app-form-dropdown
-                formControlName="concernCategory"
-                placeholder="Select concern"
-                [options]="concernCategoryOptions"
-              ></app-form-dropdown>
             </div>
 
-            <div>
-              <label for="preferredExpertType" class="form-label">Support preference</label>
-              <app-form-dropdown
-                formControlName="preferredExpertType"
-                placeholder="No preference"
-                [options]="expertTypeOptions"
-              ></app-form-dropdown>
-              <p class="field-hint">
-                Choose professional care, clarity and growth, or talk-now emotional listening. Non-clinical paths are
-                for support and guidance, not diagnosis or emergency care.
-              </p>
-            </div>
+            @if (
+              contactForm.get('serviceInterest')?.value ||
+              prefilledData().serviceName ||
+              prefilledData().service
+            ) {
+              <section class="selected-session" aria-live="polite">
+                <div class="selected-session__head">
+                  <div>
+                    <p>Selected session</p>
+                    <h2>{{ selectedSessionTitle() }}</h2>
+                    @if (selectedSessionProvider()) {
+                      <span>with {{ selectedSessionProvider() }}</span>
+                    }
+                  </div>
+                  <strong>{{ selectedSessionPriceLabel() }}</strong>
+                </div>
+                <div class="selected-session__facts">
+                  <span>{{ selectedSessionDurationLabel() }}</span>
+                  <span>{{ sessionModeLabel() }}</span>
+                </div>
+                <small>{{ selectedSessionPriceHint() }}</small>
+              </section>
 
-            <div>
-              <label for="preferredLanguage" class="form-label">Language</label>
-              <app-form-dropdown
-                formControlName="preferredLanguage"
-                placeholder="No preference"
-                [options]="languageOptions"
-              ></app-form-dropdown>
-            </div>
+              <section class="session-mode-panel" aria-label="Choose session mode">
+                <div>
+                  <p>How would you like to connect?</p>
+                  <span>Choose a comfortable mode now. You will select a time next.</span>
+                </div>
+                <div class="contact-methods contact-methods--modes">
+                  @for (mode of availableSessionModes(); track mode) {
+                    <label>
+                      <input
+                        type="radio"
+                        formControlName="sessionMode"
+                        [value]="sessionModeForLiveConnectMode(mode)"
+                        (change)="selectSessionMode(mode)"
+                      />
+                      <span>{{ sessionModeLabel(mode) }}</span>
+                    </label>
+                  }
+                </div>
+              </section>
+            }
 
-            <div>
-              <label for="preferredProviderGender" class="form-label">Provider gender</label>
-              <app-form-dropdown
-                formControlName="preferredProviderGender"
-                placeholder="No preference"
-                [options]="providerGenderOptions"
-                [invalid]="!!bookingFieldError('preferredProviderGender')"
-              ></app-form-dropdown>
-              @if (bookingFieldError('preferredProviderGender')) {
-                <p class="field-error">{{ bookingFieldError('preferredProviderGender') }}</p>
-              }
-            </div>
-
-            <div>
-              <app-form-field
-                label="Preferred time"
-                name="preferredTime"
-                formControlName="preferredTime"
-                placeholder="Today evening, tomorrow 11 AM"
-                [error]="bookingFieldError('preferredTime')"
+            <section class="support-path-panel" [attr.aria-label]="UX.supportPath.chooserAria">
+              <div class="support-path-panel__head">
+                <p>{{ UX.supportPath.chooserEyebrow }}</p>
+                <h2>{{ UX.supportPath.chooserTitle }}</h2>
+                <span>{{ UX.supportPath.chooserHint }}</span>
+              </div>
+              <app-support-path-selector
+                [selected]="activeSupportPathPreference()"
+                (selectedChange)="setSupportPathPreference($event)"
               />
-            </div>
-          </div>
+            </section>
 
-          @if (!directBooking()) {
-            <app-form-checkbox class="mt-4 block" formControlName="autoMatchProvider">
-              Let Hope Hub choose someone suitable
+            <app-button
+              type="button"
+              class="mt-6 block"
+              [block]="true"
+              (click)="goToBookingStep(2)"
+            >
+              Continue to time
+            </app-button>
+          }
+
+          @if (bookingStep() === 2) {
+            <details data-booking-step="2" tabindex="-1" class="optional-panel">
+              <summary>
+                {{ directBooking() ? 'Preferences (optional)' : 'Refine your match (optional)' }}
+              </summary>
+              <div class="form-grid two">
+                <div>
+                  <label for="concernCategory" class="form-label">Concern</label>
+                  <app-form-dropdown
+                    formControlName="concernCategory"
+                    placeholder="Select concern"
+                    [options]="concernCategoryOptions"
+                  ></app-form-dropdown>
+                </div>
+
+                <div>
+                  <label for="preferredExpertType" class="form-label">Support preference</label>
+                  <app-form-dropdown
+                    formControlName="preferredExpertType"
+                    placeholder="No preference"
+                    [options]="expertTypeOptions"
+                  ></app-form-dropdown>
+                  <p class="field-hint">
+                    Choose professional care, clarity and growth, or talk-now emotional listening.
+                    Non-clinical paths are for support and guidance, not diagnosis or emergency
+                    care.
+                  </p>
+                </div>
+
+                <div>
+                  <label for="preferredLanguage" class="form-label">Language</label>
+                  <app-form-dropdown
+                    formControlName="preferredLanguage"
+                    placeholder="No preference"
+                    [options]="languageOptions"
+                  ></app-form-dropdown>
+                </div>
+
+                <div>
+                  <label for="preferredProviderGender" class="form-label">Provider gender</label>
+                  <app-form-dropdown
+                    formControlName="preferredProviderGender"
+                    placeholder="No preference"
+                    [options]="providerGenderOptions"
+                    [invalid]="!!bookingFieldError('preferredProviderGender')"
+                  ></app-form-dropdown>
+                  @if (bookingFieldError('preferredProviderGender')) {
+                    <p class="field-error">{{ bookingFieldError('preferredProviderGender') }}</p>
+                  }
+                </div>
+
+                <div>
+                  <app-form-field
+                    label="Preferred time"
+                    name="preferredTime"
+                    formControlName="preferredTime"
+                    placeholder="Today evening, tomorrow 11 AM"
+                    [error]="bookingFieldError('preferredTime')"
+                  />
+                </div>
+              </div>
+
+              @if (!directBooking()) {
+                <app-form-checkbox class="mt-4 block" formControlName="autoMatchProvider">
+                  Let Hope Hub choose someone suitable
+                </app-form-checkbox>
+
+                <div
+                  class="mt-3 flex flex-col gap-2 rounded-lg border border-gray-200 bg-white p-3 text-sm text-gray-700 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  @if (providerMatchLoading()) {
+                    <p>Finding a suitable provider...</p>
+                  } @else if (matchedProvider(); as provider) {
+                    <div>
+                      <strong class="block text-gray-950">{{ activeProviderNotice() }}</strong>
+                      <span class="text-gray-600">{{ matchedProviderMeta(provider) }}</span>
+                    </div>
+                    <a
+                      class="font-semibold text-primary-700"
+                      [routerLink]="careTeamProfileLink(provider)"
+                      >View profile</a
+                    >
+                  } @else {
+                    <p>
+                      {{ activeProviderNotice() || 'Add preferences if you want help choosing.' }}
+                    </p>
+                  }
+                </div>
+              } @else {
+                <p
+                  class="mt-3 rounded-lg border border-primary-100 bg-primary-50 p-3 text-sm text-primary-900"
+                >
+                  Hope Hub will assign a suitable care team member after your booking is confirmed.
+                </p>
+              }
+            </details>
+
+            @if (contactForm.get('serviceInterest')?.value) {
+              <p class="mb-3 mt-6 text-sm font-semibold text-primary-800">Choose a time</p>
+              <p class="slot-intro">
+                @if (directBooking()) {
+                  We selected the earliest available time at least one hour from now. You can change
+                  it.
+                } @else {
+                  Pick a time that works for you. A slot is not reserved until you review and
+                  confirm.
+                }
+              </p>
+              <div class="slot-panel">
+                <app-appointment-calendar
+                  [selectedService]="contactForm.get('serviceInterest')?.value"
+                  [providerId]="activeProviderId() || undefined"
+                  [careTeamServiceId]="prefilledData().careTeamServiceId || undefined"
+                  [daysToShow]="7"
+                  [autoSelectEarliest]="directBooking()"
+                  (appointmentSelected)="onAppointmentSelected($event)"
+                ></app-appointment-calendar>
+              </div>
+            }
+
+            <app-button
+              type="button"
+              class="mt-6 block"
+              [block]="true"
+              (click)="goToBookingStep(3)"
+            >
+              Review and confirm
+            </app-button>
+            <app-button
+              type="button"
+              variant="ghost"
+              class="mt-3 block"
+              [block]="true"
+              (click)="goToBookingStep(1)"
+            >
+              Back
+            </app-button>
+          }
+
+          @if (bookingStep() === 3) {
+            <details data-booking-step="3" tabindex="-1" class="optional-panel" open>
+              <summary>Contact details</summary>
+              <p class="mt-2 text-sm text-gray-600">Only used to confirm your private session.</p>
+              <div class="form-grid two mt-4">
+                <app-form-field
+                  label="Name"
+                  name="name"
+                  formControlName="name"
+                  [required]="true"
+                  placeholder="Full name"
+                  [error]="bookingFieldError('name')"
+                />
+                <app-form-field
+                  label="Email"
+                  type="email"
+                  name="email"
+                  formControlName="email"
+                  [required]="true"
+                  placeholder="Email address"
+                  [error]="bookingFieldError('email')"
+                />
+                <app-form-field
+                  label="Phone"
+                  type="tel"
+                  name="phone"
+                  formControlName="phone"
+                  placeholder="Phone number (optional)"
+                  [error]="bookingFieldError('phone')"
+                />
+                <div>
+                  <label class="form-label">Contact by *</label>
+                  <div class="contact-methods contact-methods--text">
+                    @for (method of ['telegram', 'whatsapp', 'email', 'phone']; track method) {
+                      <label>
+                        <input type="radio" formControlName="preferredContact" [value]="method" />
+                        <span>{{
+                          method === 'whatsapp'
+                            ? 'WhatsApp'
+                            : method === 'telegram'
+                              ? 'Telegram'
+                              : method === 'email'
+                                ? 'Email'
+                                : 'Phone'
+                        }}</span>
+                      </label>
+                    }
+                  </div>
+                  @if (bookingFieldError('preferredContact')) {
+                    <p class="field-error">{{ bookingFieldError('preferredContact') }}</p>
+                  }
+                </div>
+              </div>
+            </details>
+
+            <details class="optional-panel">
+              <summary>Add a note (optional)</summary>
+              <app-form-field
+                class="mt-3 block"
+                kind="textarea"
+                label="Note"
+                name="message"
+                formControlName="message"
+                rows="3"
+                placeholder="Anything you want the care team to know"
+                [error]="bookingFieldError('message')"
+              />
+            </details>
+
+            @if (selectedOffering(); as offer) {
+              @if (
+                contactForm.get('serviceInterest')?.value ||
+                prefilledData().serviceName ||
+                prefilledData().offering
+              ) {
+                <app-checkout-summary
+                  [eyebrow]="checkoutEyebrow()"
+                  [title]="checkoutTitle()"
+                  [notices]="checkoutSummaryNotices()"
+                  [rows]="checkoutSummaryRows()"
+                  [includes]="checkoutIncludes()"
+                  [reassurance]="[]"
+                />
+              }
+            } @else if (contactForm.get('serviceInterest')?.value || prefilledData().serviceName) {
+              <app-checkout-summary
+                [eyebrow]="checkoutEyebrow()"
+                [title]="checkoutTitle()"
+                [notices]="checkoutSummaryNotices()"
+                [rows]="checkoutSummaryRows()"
+                [includes]="checkoutIncludes()"
+                [reassurance]="[]"
+              />
+            }
+
+            @if (
+              currentUser() &&
+              selectedAppointment() &&
+              (contactForm.get('serviceInterest')?.value ||
+                prefilledData().serviceName ||
+                selectedOffering())
+            ) {
+              <app-coupon-box
+                [value]="promoCode()"
+                [applied]="!!appliedPromoCode()"
+                [loading]="checkoutQuoteLoading()"
+                [showClear]="!!appliedPromoCode()"
+                [placeholder]="'Enter code'"
+                [applyLabel]="'Apply'"
+                [checkingLabel]="'Checking…'"
+                [error]="checkoutQuoteError()"
+                [success]="couponSuccessMessage()"
+                [helper]="couponHelperMessage()"
+                [suggestedCode]="featuredCoupon()?.code || ''"
+                [suggestedLabel]="featuredCoupon()?.label || ''"
+                [suggestedDescription]="featuredCoupon()?.description || ''"
+                (valueChange)="updatePromoCode($event)"
+                (apply)="applyPromoCode()"
+                (clear)="clearPromoCode()"
+                (suggestedApply)="applySuggestedPromoCode($event)"
+              />
+            }
+
+            <app-form-checkbox formControlName="emergencyConsent" tone="warning">
+              I understand this is not emergency care.
             </app-form-checkbox>
 
-            <div class="mt-3 flex flex-col gap-2 rounded-lg border border-gray-200 bg-white p-3 text-sm text-gray-700 sm:flex-row sm:items-center sm:justify-between">
-              @if (providerMatchLoading()) {
-                <p>Finding a suitable provider...</p>
-              } @else if (matchedProvider(); as provider) {
-                <div>
-                  <strong class="block text-gray-950">{{ activeProviderNotice() }}</strong>
-                  <span class="text-gray-600">{{ matchedProviderMeta(provider) }}</span>
-                </div>
-                <a class="font-semibold text-primary-700" [routerLink]="careTeamProfileLink(provider)">View profile</a>
+            <app-button
+              type="submit"
+              [disabled]="isSubmitting()"
+              [loading]="isSubmitting()"
+              [block]="true"
+            >
+              @if (!isSubmitting()) {
+                <span>{{ paymentButtonLabel() }}</span>
               } @else {
-                <p>{{ activeProviderNotice() || 'Add preferences if you want help choosing.' }}</p>
+                <span>{{ selectedAppointment() ? UX.booking.creating : 'Submitting...' }}</span>
               }
-            </div>
-          } @else {
-            <p class="mt-3 rounded-lg border border-primary-100 bg-primary-50 p-3 text-sm text-primary-900">
-              Hope Hub will assign a suitable care team member after your booking is confirmed.
-            </p>
+            </app-button>
+            <app-button
+              type="button"
+              variant="ghost"
+              class="mt-3 block"
+              [block]="true"
+              (click)="goToBookingStep(2)"
+            >
+              Back
+            </app-button>
           }
-        </details>
-
-        @if (contactForm.get('serviceInterest')?.value) {
-          <p class="mb-3 mt-6 text-sm font-semibold text-primary-800">Choose a time</p>
-          <p class="slot-intro">
-            @if (directBooking()) {
-              We selected the earliest available time at least one hour from now. You can change it.
-            } @else {
-              Pick a time that works for you. A slot is not reserved until you review and confirm.
-            }
-          </p>
-          <div class="slot-panel">
-            <app-appointment-calendar
-              [selectedService]="contactForm.get('serviceInterest')?.value"
-              [providerId]="activeProviderId() || undefined"
-              [careTeamServiceId]="prefilledData().careTeamServiceId || undefined"
-              [daysToShow]="7"
-              [autoSelectEarliest]="directBooking()"
-              (appointmentSelected)="onAppointmentSelected($event)"
-            ></app-appointment-calendar>
-          </div>
-        }
-
-        <app-button type="button" class="mt-6 block" [block]="true" (click)="goToBookingStep(3)">
-          Review and confirm
-        </app-button>
-        <app-button type="button" variant="ghost" class="mt-3 block" [block]="true" (click)="goToBookingStep(1)">
-          Back
-        </app-button>
-        }
-
-        @if (bookingStep() === 3) {
-        <details data-booking-step="3" tabindex="-1" class="optional-panel" open>
-          <summary>Contact details</summary>
-          <p class="mt-2 text-sm text-gray-600">Only used to confirm your private session.</p>
-          <div class="form-grid two mt-4">
-            <app-form-field label="Name" name="name" formControlName="name" [required]="true" placeholder="Full name" [error]="bookingFieldError('name')" />
-            <app-form-field label="Email" type="email" name="email" formControlName="email" [required]="true" placeholder="Email address" [error]="bookingFieldError('email')" />
-            <app-form-field label="Phone" type="tel" name="phone" formControlName="phone" placeholder="Phone number (optional)" [error]="bookingFieldError('phone')" />
-            <div>
-              <label class="form-label">Contact by *</label>
-              <div class="contact-methods contact-methods--text">
-                @for (method of ['telegram', 'whatsapp', 'email', 'phone']; track method) {
-                  <label>
-                    <input type="radio" formControlName="preferredContact" [value]="method" />
-                    <span>{{ method === 'whatsapp' ? 'WhatsApp' : method === 'telegram' ? 'Telegram' : method === 'email' ? 'Email' : 'Phone' }}</span>
-                  </label>
-                }
-              </div>
-              @if (bookingFieldError('preferredContact')) {
-                <p class="field-error">{{ bookingFieldError('preferredContact') }}</p>
-              }
-            </div>
-          </div>
-        </details>
-
-        <details class="optional-panel">
-          <summary>Add a note (optional)</summary>
-          <app-form-field class="mt-3 block" kind="textarea" label="Note" name="message" formControlName="message" rows="3" placeholder="Anything you want the care team to know" [error]="bookingFieldError('message')" />
-        </details>
-
-        @if (selectedOffering(); as offer) {
-          @if (contactForm.get('serviceInterest')?.value || prefilledData().serviceName || prefilledData().offering) {
-          <app-checkout-summary
-            [eyebrow]="checkoutEyebrow()"
-            [title]="checkoutTitle()"
-            [notices]="checkoutSummaryNotices()"
-            [rows]="checkoutSummaryRows()"
-            [includes]="checkoutIncludes()"
-            [reassurance]="[]"
-          />
-          }
-        } @else if (contactForm.get('serviceInterest')?.value || prefilledData().serviceName) {
-          <app-checkout-summary
-            [eyebrow]="checkoutEyebrow()"
-            [title]="checkoutTitle()"
-            [notices]="checkoutSummaryNotices()"
-            [rows]="checkoutSummaryRows()"
-            [includes]="checkoutIncludes()"
-            [reassurance]="[]"
-          />
-        }
-
-        @if (selectedAppointment() && (contactForm.get('serviceInterest')?.value || prefilledData().serviceName || selectedOffering())) {
-          <app-coupon-box
-            [value]="promoCode()"
-            [applied]="!!appliedPromoCode()"
-            [loading]="checkoutQuoteLoading()"
-            [showClear]="!!appliedPromoCode()"
-            [placeholder]="'Enter code'"
-            [applyLabel]="'Apply'"
-            [checkingLabel]="'Checking…'"
-            [error]="checkoutQuoteError()"
-            [success]="couponSuccessMessage()"
-            [helper]="couponHelperMessage()"
-            [suggestedCode]="featuredCoupon()?.code || ''"
-            [suggestedLabel]="featuredCoupon()?.label || ''"
-            [suggestedDescription]="featuredCoupon()?.description || ''"
-            (valueChange)="updatePromoCode($event)"
-            (apply)="applyPromoCode()"
-            (clear)="clearPromoCode()"
-            (suggestedApply)="applySuggestedPromoCode($event)"
-          />
-        }
-
-        <app-form-checkbox formControlName="emergencyConsent" tone="warning">
-          I understand this is not emergency care.
-        </app-form-checkbox>
-
-        <app-button
-          type="submit"
-          [disabled]="isSubmitting()"
-          [loading]="isSubmitting()"
-          [block]="true"
-        >
-          @if (!isSubmitting()) {
-            <span>{{ paymentButtonLabel() }}</span>
-          } @else {
-            <span>{{ selectedAppointment() ? UX.booking.creating : 'Submitting...' }}</span>
-          }
-        </app-button>
-        <app-button type="button" variant="ghost" class="mt-3 block" [block]="true" (click)="goToBookingStep(2)">
-          Back
-        </app-button>
-        }
-      </form>
+        </form>
+      }
 
       @if (showSuccessMessage()) {
-        <div class="feedback success">
-          <strong>{{ errorMessage() || UX.booking.successTitle }}</strong>
-          <span>We will contact you through your selected channel.</span>
-          <a [routerLink]="ROUTES.links.dashboard">View dashboard</a>
+        <div
+          class="feedback success"
+          [class.booking-verification]="guestBookingSubmitted()"
+          [attr.data-booking-verification]="guestBookingSubmitted() ? '' : null"
+          [attr.tabindex]="guestBookingSubmitted() ? -1 : null"
+        >
+          @if (guestBookingSubmitted()) {
+            <strong>Support request saved</strong>
+            <span
+              >Your details and selected time are safely saved. Verify
+              {{ contactForm.get('email')?.value }} to complete the booking.</span
+            >
+
+            @if (
+              bookingVerificationState() === 'IDLE' || bookingVerificationState() === 'SENDING'
+            ) {
+              <app-button
+                type="button"
+                [loading]="bookingVerificationState() === 'SENDING'"
+                [disabled]="bookingVerificationState() === 'SENDING'"
+                (click)="requestBookingVerification()"
+              >
+                Verify email
+              </app-button>
+            } @else if (bookingVerificationState() === 'READY_TO_RETRY') {
+              <app-button type="button" (click)="completeBookingVerification()">
+                Complete booking
+              </app-button>
+            } @else {
+              <label class="booking-verification__field" for="booking-verification-code">
+                <span>Verification code</span>
+                <input
+                  id="booking-verification-code"
+                  type="text"
+                  inputmode="numeric"
+                  autocomplete="one-time-code"
+                  placeholder="Enter email OTP"
+                  [value]="bookingVerificationCode()"
+                  [disabled]="bookingVerificationState() === 'VERIFYING'"
+                  (input)="setBookingVerificationCode($any($event.target).value)"
+                />
+              </label>
+              <app-button
+                type="button"
+                [loading]="bookingVerificationState() === 'VERIFYING'"
+                [disabled]="bookingVerificationState() === 'VERIFYING'"
+                (click)="completeBookingVerification()"
+              >
+                Verify and complete booking
+              </app-button>
+              <button
+                type="button"
+                class="booking-verification__resend"
+                [disabled]="bookingVerificationState() === 'VERIFYING'"
+                (click)="requestBookingVerification()"
+              >
+                Send a new code
+              </button>
+            }
+
+            @if (bookingVerificationError()) {
+              <span class="booking-verification__error" role="alert">{{
+                bookingVerificationError()
+              }}</span>
+            }
+            <small>Your request remains saved even if you verify later.</small>
+          } @else {
+            <strong>{{ errorMessage() || UX.booking.successTitle }}</strong>
+            <span>We will contact you through your selected channel.</span>
+            <a [routerLink]="ROUTES.links.dashboard">View dashboard</a>
+          }
         </div>
       }
 
@@ -353,7 +520,6 @@
         </div>
       }
     </section>
-
   </div>
 
   <app-payment-status-overlay

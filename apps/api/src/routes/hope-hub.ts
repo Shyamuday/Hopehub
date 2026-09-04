@@ -43,6 +43,7 @@ import { isFirstPaidConsultation, redeemReferralFreeCall } from '../services/ref
 import { getSiteConfigMap, getSiteConfigValue } from '../services/site-config.service.js';
 import { upsertProviderEarningForPayment } from '../services/provider-earnings.js';
 import { settleConsultationPaymentRewards } from '../services/reward-settlement.js';
+import { canAttachSubmittedWebsiteLead } from '../services/website-lead-booking.js';
 import { notifyConsultationBooked } from '../services/consultation-reminders.js';
 import {
   claimDoctorForInstantConsultation,
@@ -180,6 +181,7 @@ const hopeHubBookingSchema = z.object({
   previousTherapyOrMedication: z.string().trim().max(1000).optional().or(z.literal('')),
   emergencyConsent: z.boolean().optional(),
   listenerSupportConsent: z.boolean().optional().default(false),
+  websiteLeadId: z.string().trim().min(1).max(120).optional().or(z.literal('')),
   entryPage: z.string().trim().max(500).optional().or(z.literal(''))
 });
 
@@ -4473,42 +4475,57 @@ hopeHubRouter.post(
       });
     }
 
-    await prisma.websiteLead.create({
-      data: {
-        source: 'HOME_BOOKING',
-        followUpStatus: 'BOOKED',
-        visitorName: body.visitorName || req.user!.name,
-        visitorEmail: body.visitorEmail || req.user!.email,
-        visitorPhone: body.visitorPhone || req.user!.mobile,
-        concern: [
-          `Service: ${effectiveServiceName}`,
-          selectedOffering ? `Offer: ${selectedOffering.title}` : '',
-          selectedCareTeamService ? `Care team service: ${selectedCareTeamService.title}` : '',
-          careTeamServicePricing?.label ? `Pricing: ${careTeamServicePricing.label}` : '',
-          `Appointment: ${body.appointmentDate} ${body.appointmentTime}`,
-          body.preferredContact ? `Preferred contact: ${body.preferredContact}` : '',
-          body.urgencyLevel ? `Urgency: ${body.urgencyLevel}` : '',
-          body.concernCategory ? `Concern category: ${body.concernCategory}` : '',
-          body.preferredExpertType ? `Preferred expert: ${body.preferredExpertType}` : '',
-          body.preferredLanguage ? `Preferred language: ${body.preferredLanguage}` : '',
-          body.preferredProviderGender
-            ? `Preferred provider gender: ${body.preferredProviderGender}`
-            : '',
-          body.safetyRisk ? `Safety risk: ${body.safetyRisk}` : '',
-          body.preferredTime ? `Preferred callback time: ${body.preferredTime}` : '',
-          requestedProvider ? `Requested expert: ${requestedProvider.user.name}` : '',
-          body.preferAnonymousTelegram ? 'Low-identity Telegram follow-up requested' : '',
-          body.message ? `Message: ${body.message}` : ''
-        ]
-          .filter(Boolean)
-          .join('\n'),
-        entryPage: body.entryPage || null,
-        userId: req.user!.id,
-        registeredAt: new Date(),
-        bookedAt: new Date(),
-        consultationId: consultation.id
-      }
-    });
+    const websiteLeadData = {
+      source: 'HOME_BOOKING' as const,
+      followUpStatus: 'BOOKED' as const,
+      visitorName: body.visitorName || req.user!.name,
+      visitorEmail: body.visitorEmail || req.user!.email,
+      visitorPhone: body.visitorPhone || req.user!.mobile,
+      concern: [
+        `Service: ${effectiveServiceName}`,
+        selectedOffering ? `Offer: ${selectedOffering.title}` : '',
+        selectedCareTeamService ? `Care team service: ${selectedCareTeamService.title}` : '',
+        careTeamServicePricing?.label ? `Pricing: ${careTeamServicePricing.label}` : '',
+        `Appointment: ${body.appointmentDate} ${body.appointmentTime}`,
+        body.preferredContact ? `Preferred contact: ${body.preferredContact}` : '',
+        body.urgencyLevel ? `Urgency: ${body.urgencyLevel}` : '',
+        body.concernCategory ? `Concern category: ${body.concernCategory}` : '',
+        body.preferredExpertType ? `Preferred expert: ${body.preferredExpertType}` : '',
+        body.preferredLanguage ? `Preferred language: ${body.preferredLanguage}` : '',
+        body.preferredProviderGender
+          ? `Preferred provider gender: ${body.preferredProviderGender}`
+          : '',
+        body.safetyRisk ? `Safety risk: ${body.safetyRisk}` : '',
+        body.preferredTime ? `Preferred callback time: ${body.preferredTime}` : '',
+        requestedProvider ? `Requested expert: ${requestedProvider.user.name}` : '',
+        body.preferAnonymousTelegram ? 'Low-identity Telegram follow-up requested' : '',
+        body.message ? `Message: ${body.message}` : ''
+      ]
+        .filter(Boolean)
+        .join('\n'),
+      entryPage: body.entryPage || null,
+      userId: req.user!.id,
+      registeredAt: new Date(),
+      bookedAt: new Date(),
+      consultationId: consultation.id
+    };
+
+    const submittedLead = body.websiteLeadId
+      ? await prisma.websiteLead.findUnique({
+          where: { id: body.websiteLeadId },
+          select: { id: true, visitorEmail: true }
+        })
+      : null;
+    const canAttachSubmittedLead = canAttachSubmittedWebsiteLead(submittedLead, req.user!.email);
+
+    if (canAttachSubmittedLead) {
+      await prisma.websiteLead.update({
+        where: { id: submittedLead!.id },
+        data: websiteLeadData
+      });
+    } else {
+      await prisma.websiteLead.create({ data: websiteLeadData });
+    }
 
     void trackProductEvent({
       name: PRODUCT_EVENTS.CONSULTATION_BOOKED,

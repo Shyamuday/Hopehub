@@ -81,6 +81,7 @@ type BookingValidationIssue = {
   label: string;
   message: string;
 };
+type BookingVerificationState = 'IDLE' | 'SENDING' | 'CODE_SENT' | 'VERIFYING' | 'READY_TO_RETRY';
 
 const DIRECT_BOOKING_DEFAULT_CONCERN = 'Depression and anxiety';
 const DIRECT_BOOKING_PREFERRED_TIME = 'Earliest available, at least one hour from now';
@@ -170,7 +171,13 @@ export class ContactComponent implements OnInit {
   errorTitle = signal('Message could not be sent');
   errorMessage = signal('');
   selectedAppointment = signal<AppointmentSlot | null>(null);
-  waitingForAuthToBook = signal(false);
+  readonly guestBookingSubmitted = signal(false);
+  readonly bookingVerificationState = signal<BookingVerificationState>('IDLE');
+  readonly bookingVerificationCode = signal('');
+  readonly bookingVerificationError = signal('');
+  readonly guestWebsiteLeadId = signal('');
+  private guestBookingFormData: ContactForm | null = null;
+  private guestBookingAppointment: AppointmentSlot | null = null;
   paymentFlowState = signal<PaymentFlowState>('IDLE');
   paymentFlowError = signal('');
   paymentFlowConsultation = signal<any | null>(null);
@@ -280,10 +287,6 @@ export class ContactComponent implements OnInit {
       // If form is already initialized, update it with user data
       if (this.contactForm) {
         this.updateFormWithUserData(user);
-      }
-      if (user && this.waitingForAuthToBook()) {
-        this.waitingForAuthToBook.set(false);
-        setTimeout(() => void this.onSubmit(), 0);
       }
       this.loadCareTeamServiceQuote();
     });
@@ -422,7 +425,7 @@ export class ContactComponent implements OnInit {
       emergencyConsent: [true],
       preferAnonymousTelegram: [false],
       message: [initialMessage, [Validators.maxLength(3000)]],
-      preferredContact: ['telegram', [Validators.required]],
+      preferredContact: ['phone', [Validators.required]],
     });
 
     Object.entries(this.contactForm.controls).forEach(([field, control]) => {
@@ -1069,15 +1072,8 @@ export class ContactComponent implements OnInit {
   private async submitBooking(formData: ContactForm, appointment: AppointmentSlot): Promise<void> {
     const user = this.currentUser();
     if (!user) {
-      this.savePendingBooking(formData, appointment);
-      this.waitingForAuthToBook.set(true);
-      this.notificationService.info(CONSUMER_UX_COPY.messages.authRequiredPayment);
-      this.productAnalytics.track(HOPE_HUB_ANALYTICS_EVENTS.LOGIN_REQUIRED, {
-        serviceName: formData.serviceInterest || this.prefilledData().serviceName || '',
-        offeringSlug: this.selectedOffering()?.slug || this.prefilledData().offering || '',
-      });
-      this.authModalService.openRegister();
-      throw new Error(CONSUMER_UX_COPY.messages.authRequiredPayment);
+      await this.submitGuestBookingRequest(formData, appointment);
+      return;
     }
 
     const data = this.prefilledData();
@@ -1125,6 +1121,7 @@ export class ContactComponent implements OnInit {
           emergencyConsent: Boolean((formData as any).emergencyConsent),
           listenerSupportConsent: this.needsListenerSupportConsent(),
           preferAnonymousTelegram: Boolean(formData.preferAnonymousTelegram),
+          websiteLeadId: this.guestWebsiteLeadId() || undefined,
           entryPage: typeof window === 'undefined' ? undefined : window.location.href,
         })
         .subscribe({ next: resolve, error: reject });
@@ -1316,10 +1313,124 @@ export class ContactComponent implements OnInit {
         ? 'Choose slot to pay'
         : CONSUMER_UX_COPY.cta.bookSupport;
     }
+    if (!this.currentUser()) {
+      return 'Submit support request';
+    }
     if (this.payTodayInPaise() <= 0) {
       return 'Confirm free booking';
     }
     return this.prefilledData().paymentMode === 'PARTIAL' ? 'Book and pay deposit' : 'Book and pay';
+  }
+
+  setBookingVerificationCode(value: string): void {
+    this.bookingVerificationCode.set(value.replace(/\D/g, '').slice(0, 8));
+    this.bookingVerificationError.set('');
+  }
+
+  async requestBookingVerification(): Promise<void> {
+    if (!this.guestBookingSubmitted() || this.bookingVerificationState() === 'SENDING') return;
+    const email = (this.guestBookingFormData?.email || this.contactForm.get('email')?.value || '')
+      .trim()
+      .toLowerCase();
+    if (!email) {
+      this.bookingVerificationError.set('Enter your email before requesting a verification code.');
+      return;
+    }
+
+    this.bookingVerificationState.set('SENDING');
+    this.bookingVerificationError.set('');
+    try {
+      await this.authService.requestOtp(email);
+      this.bookingVerificationState.set('CODE_SENT');
+      this.notificationService.success(`Verification code sent to ${email}.`);
+      this.focusBookingVerification();
+    } catch (error) {
+      this.bookingVerificationState.set('IDLE');
+      this.bookingVerificationError.set(this.readErrorMessage(error));
+    }
+  }
+
+  async completeBookingVerification(): Promise<void> {
+    if (!this.guestBookingSubmitted() || this.bookingVerificationState() === 'VERIFYING') return;
+    const formData = this.guestBookingFormData;
+    const appointment = this.guestBookingAppointment;
+    if (!formData || !appointment) {
+      this.bookingVerificationError.set(
+        'Your saved booking could not be restored. Please submit it again.',
+      );
+      return;
+    }
+
+    const code = this.bookingVerificationCode().trim();
+    if (!this.currentUser() && code.length < 4) {
+      this.bookingVerificationError.set('Enter the verification code sent to your email.');
+      return;
+    }
+
+    this.bookingVerificationState.set('VERIFYING');
+    this.bookingVerificationError.set('');
+    try {
+      if (!this.currentUser()) {
+        await this.authService.loginWithOtp(formData.email, code, undefined, formData.name);
+      }
+      await this.submitBooking(formData, appointment);
+    } catch (error) {
+      this.bookingVerificationState.set(this.currentUser() ? 'READY_TO_RETRY' : 'CODE_SENT');
+      this.bookingVerificationError.set(this.readErrorMessage(error));
+    }
+  }
+
+  private async submitGuestBookingRequest(
+    formData: ContactForm,
+    appointment: AppointmentSlot,
+  ): Promise<void> {
+    const data = this.prefilledData();
+    const serviceName =
+      formData.serviceInterest || data.serviceName || data.service || 'Hope Hub Consultation';
+    const message =
+      formData.message?.trim() ||
+      [`Support request for ${serviceName}`, formData.concernCategory, formData.sessionMode]
+        .filter(Boolean)
+        .join(' | ');
+    const response = await firstValueFrom(
+      this.leadService.saveBookingRequest({
+        ...formData,
+        serviceInterest: serviceName,
+        message,
+        appointmentDate: this.formatLocalDate(appointment.date),
+        appointmentTime: appointment.time,
+        selectedService: serviceName,
+        selectedConsultant: this.activeProviderName() || undefined,
+        consultantPhone: data.consultantPhone || undefined,
+        sessionDuration: data.duration || undefined,
+        bookingSource: data.source || 'direct-booking',
+      }),
+    );
+    if (!response.success) {
+      throw new Error('Your support request could not be saved. Please try again.');
+    }
+
+    this.guestBookingFormData = { ...formData };
+    this.guestBookingAppointment = { ...appointment, date: new Date(appointment.date) };
+    this.guestWebsiteLeadId.set(response.id);
+    this.guestBookingSubmitted.set(true);
+    this.bookingVerificationState.set('IDLE');
+    this.bookingVerificationCode.set('');
+    this.bookingVerificationError.set('');
+    this.showSuccessMessage.set(true);
+    this.errorMessage.set('Support request saved.');
+    this.savePendingBooking(formData, appointment);
+    this.notificationService.success(
+      'Your support request is saved. Verify your email to complete booking.',
+    );
+    this.focusBookingVerification();
+  }
+
+  private focusBookingVerification(): void {
+    if (typeof document === 'undefined') return;
+    window.setTimeout(() => {
+      document.querySelector<HTMLElement>('[data-booking-verification]')?.focus();
+    });
   }
 
   updatePromoCode(value: string): void {
@@ -1706,10 +1817,11 @@ export class ContactComponent implements OnInit {
       previousTherapyOrMedication: '',
       emergencyConsent: true,
       preferAnonymousTelegram: false,
-      preferredContact: 'telegram',
+      preferredContact: 'phone',
     });
     this.clearPromoCode();
     this.selectedAppointment.set(null);
+    this.resetGuestBookingVerification();
 
     setTimeout(() => {
       this.showSuccessMessage.set(false);
@@ -1964,6 +2076,8 @@ export class ContactComponent implements OnInit {
           date: appointment.date.toISOString(),
         },
         prefilledData: this.prefilledData(),
+        websiteLeadId: this.guestWebsiteLeadId() || undefined,
+        guestSubmitted: this.guestBookingSubmitted(),
         savedAt: new Date().toISOString(),
       }),
     );
@@ -1979,6 +2093,8 @@ export class ContactComponent implements OnInit {
         formData: ContactForm;
         appointment: { date: string; time: string; consultant?: string };
         prefilledData?: any;
+        websiteLeadId?: string;
+        guestSubmitted?: boolean;
         savedAt: string;
       };
       const savedAt = new Date(parsed.savedAt).getTime();
@@ -1990,13 +2106,19 @@ export class ContactComponent implements OnInit {
 
       this.prefilledData.set({ ...this.prefilledData(), ...(parsed.prefilledData || {}) });
       this.contactForm.patchValue(parsed.formData);
-      this.selectedAppointment.set({
+      const restoredAppointment = {
         ...parsed.appointment,
         date: new Date(parsed.appointment.date),
-      });
+      };
+      this.selectedAppointment.set(restoredAppointment);
 
-      if (!this.currentUser()) {
-        this.waitingForAuthToBook.set(true);
+      if (!this.currentUser() && parsed.guestSubmitted && parsed.websiteLeadId) {
+        this.guestBookingFormData = { ...parsed.formData };
+        this.guestBookingAppointment = restoredAppointment;
+        this.guestWebsiteLeadId.set(parsed.websiteLeadId);
+        this.guestBookingSubmitted.set(true);
+        this.showSuccessMessage.set(true);
+        this.errorMessage.set('Support request saved.');
       }
     } catch {
       this.clearPendingBooking();
@@ -2006,5 +2128,15 @@ export class ContactComponent implements OnInit {
   private clearPendingBooking(): void {
     if (typeof sessionStorage === 'undefined') return;
     sessionStorage.removeItem(this.pendingBookingStorageKey);
+  }
+
+  private resetGuestBookingVerification(): void {
+    this.guestBookingSubmitted.set(false);
+    this.bookingVerificationState.set('IDLE');
+    this.bookingVerificationCode.set('');
+    this.bookingVerificationError.set('');
+    this.guestWebsiteLeadId.set('');
+    this.guestBookingFormData = null;
+    this.guestBookingAppointment = null;
   }
 }

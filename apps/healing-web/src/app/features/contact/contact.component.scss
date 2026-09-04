@@ -241,9 +241,7 @@ form {
   gap: 0.85rem;
   border: 1px solid rgba(16, 185, 129, 0.18);
   border-radius: 16px;
-  background:
-    radial-gradient(circle at 8% 0%, rgba(16, 185, 129, 0.1), transparent 12rem),
-    #ffffff;
+  background: radial-gradient(circle at 8% 0%, rgba(16, 185, 129, 0.1), transparent 12rem), #ffffff;
   padding: 1rem;
 }
 
@@ -314,8 +312,7 @@ form {
   border: 1px solid rgba(16, 185, 129, 0.28);
   border-radius: 14px;
   background:
-    radial-gradient(circle at 0% 0%, rgba(16, 185, 129, 0.12), transparent 11rem),
-    #ffffff;
+    radial-gradient(circle at 0% 0%, rgba(16, 185, 129, 0.12), transparent 11rem), #ffffff;
   padding: 1rem;
 }
 
@@ -443,6 +440,54 @@ form {
   text-underline-offset: 2px;
 }
 
+.booking-verification {
+  align-items: stretch;
+  gap: 0.85rem;
+  outline: none;
+}
+
+.booking-verification__field {
+  display: grid;
+  gap: 0.4rem;
+  color: inherit;
+  font-weight: 800;
+}
+
+.booking-verification__field input {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid currentColor;
+  border-radius: 0.7rem;
+  background: var(--surface-primary, #fff);
+  color: var(--text-primary);
+  font: inherit;
+  letter-spacing: 0.14em;
+}
+
+.booking-verification__resend {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.booking-verification__resend:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.booking-verification__error {
+  color: var(--color-danger, #991b1b);
+  font-weight: 700;
+}
+
 .request-aside {
   display: grid;
   gap: 1rem;
@@ -551,8 +596,7 @@ form {
     grid-template-columns: 1fr;
   }
 
-  .request-card button[type="submit"] {
+  .request-card button[type='submit'] {
     width: 100%;
   }
 }
-

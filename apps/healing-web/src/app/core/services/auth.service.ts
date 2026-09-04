@@ -340,11 +340,16 @@ export class AuthService {
     }
   }
 
-  async loginWithOtp(email: string, otp: string, referralCode?: string): Promise<User> {
+  async loginWithOtp(
+    email: string,
+    otp: string,
+    referralCode?: string,
+    name?: string,
+  ): Promise<User> {
     this.updateState({ isLoading: true, error: null });
     try {
       const normalizedEmail = email.trim().toLowerCase();
-      const resp = await this.loginPatientOrStaffWithOtp(normalizedEmail, otp, referralCode);
+      const resp = await this.loginPatientOrStaffWithOtp(normalizedEmail, otp, referralCode, name);
 
       if ('requiresPatientSelection' in resp) {
         this.updateState({ isLoading: false });
@@ -364,6 +369,7 @@ export class AuthService {
     email: string,
     otp: string,
     referralCode?: string,
+    name?: string,
   ): Promise<ApiAuthResponse | PatientSelectionResponse> {
     try {
       return await firstValueFrom(
@@ -372,6 +378,7 @@ export class AuthService {
           {
             email,
             otp,
+            ...(name?.trim() ? { name: name.trim() } : {}),
             ...(referralCode ? { referralCode } : {}),
           },
         ),

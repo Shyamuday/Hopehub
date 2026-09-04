@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { RouterTestingModule } from '@angular/router/testing';
 import { of } from 'rxjs';
-import { LeadService } from '../../core/services';
+import { AuthService, LeadService } from '../../core/services';
 import { ContactComponent } from './contact.component';
 
 describe('ContactComponent', () => {
@@ -35,7 +35,7 @@ describe('ContactComponent', () => {
     expect(component.contactForm.get('concernCategory')?.value).toBe('Depression and anxiety');
     expect(component.contactForm.get('autoMatchProvider')?.value).toBe(false);
     expect(component.contactForm.get('message')?.value).toBe('');
-    expect(component.contactForm.get('preferredContact')?.value).toBe('telegram');
+    expect(component.contactForm.get('preferredContact')?.value).toBe('phone');
     expect(component.bookingStep()).toBe(2);
   });
 
@@ -150,6 +150,50 @@ describe('ContactComponent', () => {
     expect(sendContactForm).toHaveBeenCalledOnce();
     expect(component.showSuccessMessage()).toBeTruthy();
     expect(component.isSubmitting()).toBeFalsy();
+  });
+
+  it('saves a guest booking before offering email verification and completes it with OTP', async () => {
+    const leadService = TestBed.inject(LeadService);
+    const authService = TestBed.inject(AuthService);
+    const saveBookingRequest = vi
+      .spyOn(leadService, 'saveBookingRequest')
+      .mockReturnValue(of({ id: 'lead-1', success: true }));
+    const requestOtp = vi.spyOn(authService, 'requestOtp').mockResolvedValue();
+    const loginWithOtp = vi.spyOn(authService, 'loginWithOtp').mockResolvedValue({} as any);
+
+    component.contactForm.patchValue({
+      name: 'John Doe',
+      email: 'john@example.com',
+      preferredContact: 'email',
+    });
+    component.selectedAppointment.set({
+      date: new Date(2030, 0, 2),
+      time: '10:00 AM',
+    });
+
+    await component.onSubmit();
+
+    expect(saveBookingRequest).toHaveBeenCalledOnce();
+    expect(requestOtp).not.toHaveBeenCalled();
+    expect(component.guestBookingSubmitted()).toBe(true);
+    expect(component.guestWebsiteLeadId()).toBe('lead-1');
+    expect(component.bookingVerificationState()).toBe('IDLE');
+
+    await component.requestBookingVerification();
+    expect(requestOtp).toHaveBeenCalledWith('john@example.com');
+    expect(component.bookingVerificationState()).toBe('CODE_SENT');
+
+    const completeSavedBooking = vi
+      .spyOn(component as any, 'submitBooking')
+      .mockResolvedValue(undefined);
+    component.setBookingVerificationCode('123456');
+    await component.completeBookingVerification();
+
+    expect(loginWithOtp).toHaveBeenCalledWith('john@example.com', '123456', undefined, 'John Doe');
+    expect(completeSavedBooking).toHaveBeenCalledWith(
+      expect.objectContaining({ email: 'john@example.com' }),
+      expect.objectContaining({ time: '10:00 AM' }),
+    );
   });
 
   it('keeps a direct booking unassigned even if a provider suggestion exists', () => {

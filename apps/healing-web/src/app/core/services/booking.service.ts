@@ -37,6 +37,7 @@ export type HopeHubBookingPayload = {
   previousTherapyOrMedication?: string;
   emergencyConsent?: boolean;
   listenerSupportConsent?: boolean;
+  websiteLeadId?: string;
   entryPage?: string;
 };
 

@@ -4,9 +4,19 @@ import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { ContactForm, ContactMethod } from '../models/contact.model';
 
-type LeadResponse = {
+export type LeadResponse = {
   id: string;
   success: boolean;
+};
+
+export type BookingRequestLeadPayload = ContactForm & {
+  appointmentDate: string;
+  appointmentTime: string;
+  selectedService?: string;
+  selectedConsultant?: string;
+  consultantPhone?: string;
+  sessionDuration?: string;
+  bookingSource?: string;
 };
 
 export type CounsellorApplicationPayload = {
@@ -147,7 +157,11 @@ export class LeadService {
   private readonly endpoint = `${environment.apiUrl}/website-leads`;
 
   sendContactForm(formData: ContactForm): Observable<boolean> {
-    return this.createLead(formData);
+    return this.createLead(formData).pipe(map((response) => response.success));
+  }
+
+  saveBookingRequest(payload: BookingRequestLeadPayload): Observable<LeadResponse> {
+    return this.createLead(payload);
   }
 
   sendServiceInquiry(
@@ -160,7 +174,7 @@ export class LeadService {
       serviceInterest: serviceName,
       message: userInfo.message?.trim() || `I am interested in ${serviceName}.`,
       preferredContact: ContactMethod.EMAIL,
-    });
+    }).pipe(map((response) => response.success));
   }
 
   sendCounsellorApplication(
@@ -222,10 +236,8 @@ export class LeadService {
       .pipe(map((response) => response.success));
   }
 
-  private createLead(payload: ContactForm): Observable<boolean> {
-    return this.http
-      .post<LeadResponse>(this.endpoint, this.withBrowserContext(payload))
-      .pipe(map((response) => response.success));
+  private createLead(payload: ContactForm): Observable<LeadResponse> {
+    return this.http.post<LeadResponse>(this.endpoint, this.withBrowserContext(payload));
   }
 
   private withBrowserContext<T extends object>(payload: T) {
