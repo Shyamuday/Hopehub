@@ -67,6 +67,17 @@ describe('ContactComponent', () => {
     expect(messageControl?.valid).toBeTruthy();
   });
 
+  it('uses assessment context as the initial booking message', () => {
+    component.prefilledData.set({
+      source: 'assessment-result-voice',
+      message: 'I completed the anxiety test and got Moderate. I want support with this.',
+    });
+
+    expect((component as any).generateInitialMessage()).toBe(
+      'I completed the anxiety test and got Moderate. I want support with this.',
+    );
+  });
+
   it('should keep the user on support until a service is selected', () => {
     component.directBooking.set(false);
     component.bookingStep.set(1);

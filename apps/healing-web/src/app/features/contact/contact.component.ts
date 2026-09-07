@@ -330,6 +330,9 @@ export class ContactComponent implements OnInit {
         offeringId: params['offeringId'] || '',
         paymentMode: params['paymentMode'] || 'FULL',
         source: params['source'] || '',
+        message: params['message'] || '',
+        assessmentId: params['assessmentId'] || '',
+        assessmentLevel: params['assessmentLevel'] || '',
         supportPath: params['supportPath'] || '',
         supportPathLabel: params['supportPathLabel'] || '',
         preferredExpertType: params['preferredExpertType'] || '',
@@ -767,6 +770,9 @@ export class ContactComponent implements OnInit {
 
   private generateInitialMessage(): string {
     const data = this.prefilledData();
+    if (String(data.message || '').trim()) {
+      return String(data.message).trim().slice(0, 3000);
+    }
     if (data.source === 'live-connect') {
       const supportPath = supportPathForExpertPreference(
         data.supportPath || data.preferredExpertType,
