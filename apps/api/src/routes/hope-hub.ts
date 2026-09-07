@@ -96,6 +96,12 @@ type HopeHubPublicDefaults = {
   careRoleLabel: string;
 };
 
+function jsonRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
 function positiveConfigInt(value: string | undefined, fallback: number) {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed) : fallback;
@@ -148,10 +154,10 @@ const HOPE_HUB_TIME_SLOTS = [
 
 const hopeHubBookingSchema = z.object({
   serviceName: z.string().trim().min(2).max(160),
-  servicePriceInPaise: z.number().int().min(100).max(10000000).optional(),
+  servicePriceInPaise: z.number().int().min(0).max(10000000).optional(),
   message: z.string().trim().max(3000).optional().or(z.literal('')),
-  appointmentDate: z.string().trim().min(1).max(80),
-  appointmentTime: z.string().trim().min(1).max(80),
+  appointmentDate: z.string().trim().max(80).optional().or(z.literal('')),
+  appointmentTime: z.string().trim().max(80).optional().or(z.literal('')),
   consultantName: z.string().trim().max(160).optional().or(z.literal('')),
   consultantPhone: z.string().trim().max(30).optional().or(z.literal('')),
   sessionDuration: z.string().trim().max(80).optional().or(z.literal('')),
@@ -183,6 +189,14 @@ const hopeHubBookingSchema = z.object({
   listenerSupportConsent: z.boolean().optional().default(false),
   websiteLeadId: z.string().trim().min(1).max(120).optional().or(z.literal('')),
   entryPage: z.string().trim().max(500).optional().or(z.literal(''))
+});
+
+const hopeHubBookingSlotSchema = z.object({
+  appointmentDate: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/),
+  appointmentTime: z.string().trim().min(1).max(80)
 });
 
 const hopeHubQuickTalkSchema = z.object({
@@ -3890,6 +3904,16 @@ hopeHubRouter.post(
   allowRoles(Role.PATIENT),
   asyncRoute(async (req, res) => {
     const body = hopeHubBookingSchema.parse(req.body);
+    const hasAppointmentDate = Boolean(body.appointmentDate);
+    const hasAppointmentTime = Boolean(body.appointmentTime);
+    if (hasAppointmentDate !== hasAppointmentTime) {
+      return res.status(400).json({ message: 'Choose both an appointment date and time.' });
+    }
+    if (!hasAppointmentDate && !body.providerId) {
+      return res.status(400).json({
+        message: 'Choose an appointment slot unless you are booking a specific care team member.'
+      });
+    }
     const defaults = await hopeHubPublicDefaults();
     const selectedOffering =
       body.offeringId || body.offeringSlug
@@ -4091,7 +4115,7 @@ hopeHubRouter.post(
             select: { id: true, startTime: true, endTime: true }
           })
         : null;
-    if (requestedProvider && !requestedSlot) {
+    if (requestedProvider && hasAppointmentDate && !requestedSlot) {
       return res.status(409).json({ message: 'Selected expert slot is no longer available.' });
     }
     if (
@@ -4233,8 +4257,9 @@ hopeHubRouter.post(
             source: 'hope-hub',
             serviceName: effectiveServiceName,
             message: body.message || '',
-            appointmentDate: body.appointmentDate,
-            appointmentTime: body.appointmentTime,
+            appointmentDate: body.appointmentDate || '',
+            appointmentTime: body.appointmentTime || '',
+            scheduleStatus: hasAppointmentDate ? 'CONFIRMED' : 'AWAITING_SLOT_SELECTION',
             consultantName: body.consultantName || '',
             consultantPhone: body.consultantPhone || '',
             offeringId: selectedOffering?.id || body.offeringId || '',
@@ -4465,8 +4490,8 @@ hopeHubRouter.post(
               {
                 consultationId: consultation.id,
                 redeemedAt: new Date().toISOString(),
-                appointmentDate: body.appointmentDate,
-                appointmentTime: body.appointmentTime,
+                appointmentDate: body.appointmentDate || '',
+                appointmentTime: body.appointmentTime || '',
                 providerId: requestedProvider?.id || body.providerId || ''
               }
             ]
@@ -4486,7 +4511,9 @@ hopeHubRouter.post(
         selectedOffering ? `Offer: ${selectedOffering.title}` : '',
         selectedCareTeamService ? `Care team service: ${selectedCareTeamService.title}` : '',
         careTeamServicePricing?.label ? `Pricing: ${careTeamServicePricing.label}` : '',
-        `Appointment: ${body.appointmentDate} ${body.appointmentTime}`,
+        hasAppointmentDate
+          ? `Appointment: ${body.appointmentDate} ${body.appointmentTime}`
+          : 'Appointment: Paid booking; slot to be selected or arranged',
         body.preferredContact ? `Preferred contact: ${body.preferredContact}` : '',
         body.urgencyLevel ? `Urgency: ${body.urgencyLevel}` : '',
         body.concernCategory ? `Concern category: ${body.concernCategory}` : '',
@@ -4544,6 +4571,144 @@ hopeHubRouter.post(
     });
 
     res.status(201).json({ consultation });
+  })
+);
+
+hopeHubRouter.post(
+  '/hope-hub/bookings/:id/slot',
+  authRequired,
+  allowRoles(Role.PATIENT),
+  asyncRoute(async (req, res) => {
+    const consultationId = routeParam(req, 'id');
+    const body = hopeHubBookingSlotSchema.parse(req.body);
+    const consultation = await prisma.consultation.findFirst({
+      where: { id: consultationId, patientId: req.user!.id },
+      include: { payment: true }
+    });
+    if (!consultation) {
+      return res.status(404).json({ message: 'Booking not found.' });
+    }
+    if (consultation.payment?.status !== PaymentStatus.PAID) {
+      return res.status(409).json({ message: 'Complete payment before choosing a slot.' });
+    }
+
+    const intake = jsonRecord(consultation.intakeAnswers);
+    const providerId = String(intake['providerId'] || '').trim();
+    if (!providerId || !consultation.assignedDoctorId) {
+      return res
+        .status(409)
+        .json({ message: 'This booking is not linked to a specific provider.' });
+    }
+    if (intake['scheduleStatus'] === 'CONFIRMED') {
+      return res.status(409).json({ message: 'A slot is already confirmed for this booking.' });
+    }
+
+    const provider = await prisma.doctor.findFirst({
+      where: {
+        id: providerId,
+        userId: consultation.assignedDoctorId,
+        showOnWebsite: true,
+        suspendedAt: null,
+        user: { isActive: true }
+      },
+      select: { id: true, userId: true }
+    });
+    if (!provider) {
+      return res.status(409).json({ message: 'The selected provider is no longer available.' });
+    }
+
+    const capacity = await providerBookingCapacityStatus(provider.id, body.appointmentDate);
+    if (!capacity.available) {
+      return res.status(409).json({ message: capacity.message });
+    }
+
+    const careTeamServiceId = String(intake['careTeamServiceId'] || '').trim();
+    const careTeamService = careTeamServiceId
+      ? await prisma.careTeamService.findFirst({
+          where: {
+            id: careTeamServiceId,
+            isActive: true,
+            mentalHealthProfile: { doctorId: provider.id }
+          },
+          select: { id: true, durationMinutes: true }
+        })
+      : null;
+    const slot = await prisma.doctorSlot.findFirst({
+      where: {
+        doctorId: provider.id,
+        date: new Date(body.appointmentDate),
+        startTime: time24HourFromDisplay(body.appointmentTime),
+        isBooked: false,
+        isBlocked: false,
+        ...(careTeamService
+          ? { OR: [{ careTeamServiceId: null }, { careTeamServiceId: careTeamService.id }] }
+          : {})
+      },
+      select: { id: true, startTime: true, endTime: true }
+    });
+    if (!slot) {
+      return res.status(409).json({ message: 'Selected expert slot is no longer available.' });
+    }
+    if (
+      careTeamService &&
+      minutesBetweenTimes(slot.startTime, slot.endTime) < careTeamService.durationMinutes
+    ) {
+      return res
+        .status(409)
+        .json({ message: 'Selected expert slot is too short for this service.' });
+    }
+
+    const nextIntakeAnswers = {
+      ...intake,
+      appointmentDate: body.appointmentDate,
+      appointmentTime: body.appointmentTime,
+      scheduleStatus: 'CONFIRMED',
+      slotAssignedAt: new Date().toISOString(),
+      slotAssignmentSource: 'PATIENT_AFTER_PAYMENT'
+    };
+    let updated;
+    try {
+      updated = await prisma.$transaction(async (tx) => {
+        const claimed = await tx.consultation.updateMany({
+          where: {
+            id: consultation.id,
+            intakeAnswers: { path: ['scheduleStatus'], equals: 'AWAITING_SLOT_SELECTION' }
+          },
+          data: {
+            intakeAnswers: nextIntakeAnswers
+          }
+        });
+        if (claimed.count !== 1) return null;
+        const reserved = await tx.doctorSlot.updateMany({
+          where: { id: slot.id, isBooked: false, isBlocked: false },
+          data: { isBooked: true }
+        });
+        if (reserved.count !== 1) {
+          throw new Error('SLOT_ALREADY_BOOKED');
+        }
+        return tx.consultation.findUnique({
+          where: { id: consultation.id },
+          include: includeConsultationRelations()
+        });
+      });
+    } catch (error) {
+      if (error instanceof Error && error.message === 'SLOT_ALREADY_BOOKED') {
+        return res
+          .status(409)
+          .json({ message: 'Selected expert slot was just booked. Choose another.' });
+      }
+      throw error;
+    }
+    if (!updated) {
+      return res
+        .status(409)
+        .json({ message: 'Selected expert slot was just booked. Choose another.' });
+    }
+
+    void notifyConsultationBooked(updated.id).catch((error) =>
+      console.error('[booking-reminders] Post-payment slot notification failed', error)
+    );
+    res.json({ consultation: updated });
   })
 );
 

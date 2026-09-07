@@ -193,33 +193,43 @@ export async function notifyConsultationBooked(consultationId: string) {
     asRecord(consultation.pricingSnapshot)['careTeamServiceTitle'] ||
     consultation.disease?.name ||
     'session';
+  const awaitingSlot = !appointment;
+  const patientTitle = awaitingSlot
+    ? 'Payment received — choose your session time'
+    : 'Session booked — Hope Hub';
+  const patientBody = awaitingSlot
+    ? `Your ${service} is paid. Choose an available time now, or Hope Hub will arrange it with your selected provider.`
+    : `Your ${service} is booked for ${appointmentLabel(appointment)}.`;
   await sendToUser({
     eventType: 'BOOKING_CONFIRMED',
     user: consultation.patient,
-    title: 'Session booked — Hope Hub',
-    body: `Your ${service} is booked for ${appointmentLabel(appointment)}.`,
+    title: patientTitle,
+    body: patientBody,
     metadata: { consultationId, appointmentAt: appointment?.toISOString() ?? null }
   });
   void notifyUserBookingOnTelegram({
     userId: consultation.patient.id,
     consultationId,
-    title: 'Session booked — Hope Hub',
-    body: `Your ${service} is booked for ${appointmentLabel(appointment)}.`
+    title: patientTitle,
+    body: patientBody
   }).catch((error) => console.error('[telegram-user] booking notification failed', error));
 
   if (consultation.assignedDoctor) {
+    const providerBody = awaitingSlot
+      ? `${consultation.patient.name} paid for ${service} with you. The session time is awaiting selection or arrangement.`
+      : `${consultation.patient.name} booked ${service} for ${appointmentLabel(appointment)}.`;
     await sendToUser({
       eventType: 'PROVIDER_BOOKING_ASSIGNED',
       user: consultation.assignedDoctor,
       title: 'New session assigned',
-      body: `${consultation.patient.name} booked ${service} for ${appointmentLabel(appointment)}.`,
+      body: providerBody,
       metadata: { consultationId, appointmentAt: appointment?.toISOString() ?? null }
     });
     void notifyProviderBookingOnTelegram({
       providerUserId: consultation.assignedDoctor.id,
       consultationId,
       title: 'New session assigned',
-      body: `${consultation.patient.name} booked ${service} for ${appointmentLabel(appointment)}.`
+      body: providerBody
     }).catch((error) => console.error('[telegram-provider] booking notification failed', error));
   } else {
     const admins = await activeAdmins();

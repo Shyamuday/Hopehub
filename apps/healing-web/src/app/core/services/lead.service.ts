@@ -10,10 +10,11 @@ export type LeadResponse = {
 };
 
 export type BookingRequestLeadPayload = ContactForm & {
-  appointmentDate: string;
-  appointmentTime: string;
+  appointmentDate?: string;
+  appointmentTime?: string;
   selectedService?: string;
   selectedConsultant?: string;
+  requestedProviderId?: string;
   consultantPhone?: string;
   sessionDuration?: string;
   bookingSource?: string;

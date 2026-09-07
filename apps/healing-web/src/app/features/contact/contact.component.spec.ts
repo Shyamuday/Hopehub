@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { RouterTestingModule } from '@angular/router/testing';
 import { of } from 'rxjs';
-import { AuthService, LeadService } from '../../core/services';
+import { AuthService, BookingService, LeadService } from '../../core/services';
 import { ContactComponent } from './contact.component';
 
 describe('ContactComponent', () => {
@@ -10,6 +10,7 @@ describe('ContactComponent', () => {
   let fixture: ComponentFixture<ContactComponent>;
 
   beforeEach(async () => {
+    sessionStorage.clear();
     await TestBed.configureTestingModule({
       imports: [ContactComponent, ReactiveFormsModule, RouterTestingModule],
     }).compileComponents();
@@ -83,6 +84,17 @@ describe('ContactComponent', () => {
 
     expect(component.bookingStep()).toBe(2);
     expect(component.bookingStepError()).toContain('available time');
+  });
+
+  it('allows a specifically selected provider booking to reach confirmation without a slot', () => {
+    component.prefilledData.set({ providerId: 'provider-1', consultant: 'Selected Provider' });
+    component.contactForm.patchValue({ serviceInterest: 'Hope Hub Consultation' });
+    component.bookingStep.set(2);
+
+    component.goToBookingStep(3);
+
+    expect(component.bookingStep()).toBe(3);
+    expect(component.bookingStepError()).toBe('');
   });
 
   it('should mark all fields as touched when submitting invalid form', () => {
@@ -194,6 +206,72 @@ describe('ContactComponent', () => {
       expect.objectContaining({ email: 'john@example.com' }),
       expect.objectContaining({ time: '10:00 AM' }),
     );
+  });
+
+  it('saves a guest provider booking without a slot before email verification', async () => {
+    const leadService = TestBed.inject(LeadService);
+    const saveBookingRequest = vi
+      .spyOn(leadService, 'saveBookingRequest')
+      .mockReturnValue(of({ id: 'lead-provider-1', success: true }));
+    component.prefilledData.set({
+      providerId: 'provider-1',
+      consultant: 'Selected Provider',
+      serviceName: 'Private support',
+    });
+    component.directBooking.set(false);
+    component.selectedAppointment.set(null);
+    component.contactForm.patchValue({
+      name: 'John Doe',
+      email: 'john@example.com',
+      serviceInterest: 'Private support',
+      preferredContact: 'email',
+    });
+
+    await component.onSubmit();
+
+    expect(saveBookingRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        requestedProviderId: 'provider-1',
+        selectedConsultant: 'Selected Provider',
+        appointmentDate: undefined,
+        appointmentTime: undefined,
+      }),
+    );
+    expect(component.guestBookingSubmitted()).toBe(true);
+  });
+
+  it('does not require name or email fields again for an authenticated user', () => {
+    (component as any).updateContactIdentityValidators({ id: 'patient-1' });
+    component.contactForm.patchValue({ name: '', email: '' });
+
+    expect(component.contactForm.get('name')?.hasError('required')).toBe(false);
+    expect(component.contactForm.get('email')?.hasError('required')).toBe(false);
+  });
+
+  it('assigns a selected provider slot only after the booking is paid', async () => {
+    const bookingService = TestBed.inject(BookingService);
+    const assignBookingSlot = vi
+      .spyOn(bookingService, 'assignBookingSlot')
+      .mockReturnValue(of({ consultation: { id: 'booking-1' } }));
+    component.prefilledData.set({
+      providerId: 'provider-1',
+      consultant: 'Selected Provider',
+    });
+    component.directBooking.set(false);
+    (component as any).beginPostPaymentScheduling({ id: 'booking-1' });
+    component.onPostPaymentAppointmentSelected({
+      date: new Date(2030, 0, 3),
+      time: '11:00 AM',
+    });
+
+    await component.confirmPostPaymentSlot();
+
+    expect(assignBookingSlot).toHaveBeenCalledWith('booking-1', {
+      appointmentDate: '2030-01-03',
+      appointmentTime: '11:00 AM',
+    });
+    expect(component.postPaymentScheduling()).toBe(false);
+    expect(component.errorMessage()).toContain('confirmed for 11:00 AM');
   });
 
   it('keeps a direct booking unassigned even if a provider suggestion exists', () => {

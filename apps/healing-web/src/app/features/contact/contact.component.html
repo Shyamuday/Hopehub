@@ -8,7 +8,7 @@
 
   <div class="request-layout">
     <section class="request-card" [attr.aria-label]="UX.booking.formAria">
-      @if (!guestBookingSubmitted()) {
+      @if (!guestBookingSubmitted() && !postPaymentScheduling()) {
         <form [formGroup]="contactForm" (submit)="$event.preventDefault(); onSubmit()">
           @if (isLiveConnectFallback()) {
             <section class="live-handoff-card" aria-label="Book support for later">
@@ -35,7 +35,16 @@
                 [class.text-gray-600]="bookingStep() !== step"
                 [attr.aria-current]="bookingStep() === step ? 'step' : null"
               >
-                {{ step }}. {{ step === 1 ? 'Support' : step === 2 ? 'Time' : 'Confirm' }}
+                {{ step }}.
+                {{
+                  step === 1
+                    ? 'Support'
+                    : step === 2
+                      ? isSpecificProviderBooking()
+                        ? 'Preferences'
+                        : 'Time'
+                      : 'Confirm'
+                }}
               </div>
             }
           </div>
@@ -143,14 +152,20 @@
               [block]="true"
               (click)="goToBookingStep(2)"
             >
-              Continue to time
+              {{ isSpecificProviderBooking() ? 'Continue' : 'Continue to time' }}
             </app-button>
           }
 
           @if (bookingStep() === 2) {
             <details data-booking-step="2" tabindex="-1" class="optional-panel">
               <summary>
-                {{ directBooking() ? 'Preferences (optional)' : 'Refine your match (optional)' }}
+                {{
+                  isSpecificProviderBooking()
+                    ? 'Session preferences (optional)'
+                    : directBooking()
+                      ? 'Preferences (optional)'
+                      : 'Refine your match (optional)'
+                }}
               </summary>
               <div class="form-grid two">
                 <div>
@@ -198,18 +213,27 @@
                   }
                 </div>
 
-                <div>
-                  <app-form-field
-                    label="Preferred time"
-                    name="preferredTime"
-                    formControlName="preferredTime"
-                    placeholder="Today evening, tomorrow 11 AM"
-                    [error]="bookingFieldError('preferredTime')"
-                  />
-                </div>
+                @if (!isSpecificProviderBooking()) {
+                  <div>
+                    <app-form-field
+                      label="Preferred time"
+                      name="preferredTime"
+                      formControlName="preferredTime"
+                      placeholder="Today evening, tomorrow 11 AM"
+                      [error]="bookingFieldError('preferredTime')"
+                    />
+                  </div>
+                }
               </div>
 
-              @if (!directBooking()) {
+              @if (isSpecificProviderBooking()) {
+                <p
+                  class="mt-4 rounded-lg border border-primary-100 bg-primary-50 p-3 text-sm text-primary-900"
+                >
+                  You chose {{ activeProviderName() }}. After payment, choose any available time or
+                  let Hope Hub arrange the session with this provider.
+                </p>
+              } @else if (!directBooking()) {
                 <app-form-checkbox class="mt-4 block" formControlName="autoMatchProvider">
                   Let Hope Hub choose someone suitable
                 </app-form-checkbox>
@@ -244,7 +268,7 @@
               }
             </details>
 
-            @if (contactForm.get('serviceInterest')?.value) {
+            @if (contactForm.get('serviceInterest')?.value && !isSpecificProviderBooking()) {
               <p class="mb-3 mt-6 text-sm font-semibold text-primary-800">Choose a time</p>
               <p class="slot-intro">
                 @if (directBooking()) {
@@ -265,6 +289,14 @@
                   (appointmentSelected)="onAppointmentSelected($event)"
                 ></app-appointment-calendar>
               </div>
+            } @else if (contactForm.get('serviceInterest')?.value) {
+              <section class="slot-panel mt-6" aria-label="Scheduling after payment">
+                <strong>Choose the time after payment</strong>
+                <p class="slot-intro mt-2">
+                  Your booking stays with {{ activeProviderName() }}. After payment, we will show
+                  available slots. If none suit you, Hope Hub will arrange one.
+                </p>
+              </section>
             }
 
             <app-button
@@ -290,24 +322,32 @@
             <details data-booking-step="3" tabindex="-1" class="optional-panel" open>
               <summary>Contact details</summary>
               <p class="mt-2 text-sm text-gray-600">Only used to confirm your private session.</p>
+              @if (currentUser()) {
+                <p class="mt-3 rounded-lg bg-gray-50 p-3 text-sm text-gray-700">
+                  Booking as {{ currentUser()?.name || 'your Hope Hub account' }}. We will use your
+                  verified account details.
+                </p>
+              }
               <div class="form-grid two mt-4">
-                <app-form-field
-                  label="Name"
-                  name="name"
-                  formControlName="name"
-                  [required]="true"
-                  placeholder="Full name"
-                  [error]="bookingFieldError('name')"
-                />
-                <app-form-field
-                  label="Email"
-                  type="email"
-                  name="email"
-                  formControlName="email"
-                  [required]="true"
-                  placeholder="Email address"
-                  [error]="bookingFieldError('email')"
-                />
+                @if (!currentUser()) {
+                  <app-form-field
+                    label="Name"
+                    name="name"
+                    formControlName="name"
+                    [required]="true"
+                    placeholder="Full name"
+                    [error]="bookingFieldError('name')"
+                  />
+                  <app-form-field
+                    label="Email"
+                    type="email"
+                    name="email"
+                    formControlName="email"
+                    [required]="true"
+                    placeholder="Email address"
+                    [error]="bookingFieldError('email')"
+                  />
+                }
                 <app-form-field
                   label="Phone"
                   type="tel"
@@ -383,7 +423,7 @@
 
             @if (
               currentUser() &&
-              selectedAppointment() &&
+              (selectedAppointment() || isSpecificProviderBooking()) &&
               (contactForm.get('serviceInterest')?.value ||
                 prefilledData().serviceName ||
                 selectedOffering())
@@ -422,7 +462,11 @@
               @if (!isSubmitting()) {
                 <span>{{ paymentButtonLabel() }}</span>
               } @else {
-                <span>{{ selectedAppointment() ? UX.booking.creating : 'Submitting...' }}</span>
+                <span>{{
+                  selectedAppointment() || isSpecificProviderBooking()
+                    ? UX.booking.creating
+                    : 'Submitting...'
+                }}</span>
               }
             </app-button>
             <app-button
@@ -447,10 +491,10 @@
         >
           @if (guestBookingSubmitted()) {
             <strong>Support request saved</strong>
-            <span
-              >Your details and selected time are safely saved. Verify
-              {{ contactForm.get('email')?.value }} to complete the booking.</span
-            >
+            <span>
+              Your details and provider choice are safely saved. Verify
+              {{ contactForm.get('email')?.value }} to continue to payment.
+            </span>
 
             @if (
               bookingVerificationState() === 'IDLE' || bookingVerificationState() === 'SENDING'
@@ -518,6 +562,47 @@
           <strong>{{ errorTitle() }}</strong>
           <span>{{ errorMessage() || 'Please try again or contact us directly.' }}</span>
         </div>
+      }
+
+      @if (postPaymentScheduling()) {
+        <section class="feedback success post-payment-scheduling" aria-live="polite">
+          <strong>Payment received — choose a time</strong>
+          <span>
+            Select an available slot with {{ activeProviderName() }}. If none is available or
+            suitable, Hope Hub will arrange it with the provider.
+          </span>
+
+          <app-appointment-calendar
+            [selectedService]="contactForm.get('serviceInterest')?.value"
+            [providerId]="activeProviderId()"
+            [careTeamServiceId]="prefilledData().careTeamServiceId || undefined"
+            [daysToShow]="7"
+            (appointmentSelected)="onPostPaymentAppointmentSelected($event)"
+          ></app-appointment-calendar>
+
+          @if (postPaymentSlotError()) {
+            <span class="booking-verification__error" role="alert">{{
+              postPaymentSlotError()
+            }}</span>
+          }
+
+          <app-button
+            type="button"
+            [disabled]="!postPaymentAppointment() || postPaymentSlotSaving()"
+            [loading]="postPaymentSlotSaving()"
+            (click)="confirmPostPaymentSlot()"
+          >
+            Confirm selected time
+          </app-button>
+          <app-button
+            type="button"
+            variant="ghost"
+            [disabled]="postPaymentSlotSaving()"
+            (click)="arrangePostPaymentSlot()"
+          >
+            Let Hope Hub arrange my time
+          </app-button>
+        </section>
       }
     </section>
   </div>

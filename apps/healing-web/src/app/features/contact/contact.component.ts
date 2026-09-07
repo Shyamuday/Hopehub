@@ -171,6 +171,11 @@ export class ContactComponent implements OnInit {
   errorTitle = signal('Message could not be sent');
   errorMessage = signal('');
   selectedAppointment = signal<AppointmentSlot | null>(null);
+  readonly postPaymentScheduling = signal(false);
+  readonly postPaymentAppointment = signal<AppointmentSlot | null>(null);
+  readonly postPaymentSlotSaving = signal(false);
+  readonly postPaymentSlotError = signal('');
+  private postPaymentConsultation: any | null = null;
   readonly guestBookingSubmitted = signal(false);
   readonly bookingVerificationState = signal<BookingVerificationState>('IDLE');
   readonly bookingVerificationCode = signal('');
@@ -254,7 +259,7 @@ export class ContactComponent implements OnInit {
         this.focusBookingStep(currentStep);
         return;
       }
-      if (step === 3 && !this.selectedAppointment()) {
+      if (step === 3 && this.needsSlotBeforePayment() && !this.selectedAppointment()) {
         this.bookingStepError.set('Choose an available time before reviewing your booking.');
         this.notificationService.warning(this.bookingStepError());
         this.focusBookingStep(2);
@@ -286,6 +291,7 @@ export class ContactComponent implements OnInit {
       this.currentUser.set(user);
       // If form is already initialized, update it with user data
       if (this.contactForm) {
+        this.updateContactIdentityValidators(user);
         this.updateFormWithUserData(user);
       }
       this.loadCareTeamServiceQuote();
@@ -405,8 +411,16 @@ export class ContactComponent implements OnInit {
     const userPhone = this.getUserPhone(user);
 
     this.contactForm = this.formBuilder.group({
-      name: [userName, [Validators.required, Validators.maxLength(120)]],
-      email: [userEmail, [Validators.required, Validators.email, Validators.maxLength(254)]],
+      name: [
+        userName,
+        user ? [Validators.maxLength(120)] : [Validators.required, Validators.maxLength(120)],
+      ],
+      email: [
+        userEmail,
+        user
+          ? [Validators.email, Validators.maxLength(254)]
+          : [Validators.required, Validators.email, Validators.maxLength(254)],
+      ],
       phone: [userPhone, [Validators.maxLength(30)]],
       serviceInterest: [initialServiceValue, [Validators.maxLength(160)]],
       urgencyLevel: ['normal', [Validators.required]],
@@ -626,6 +640,14 @@ export class ContactComponent implements OnInit {
     ].filter(Boolean);
   }
 
+  isSpecificProviderBooking(): boolean {
+    return Boolean(this.prefilledData().providerId);
+  }
+
+  needsSlotBeforePayment(): boolean {
+    return !this.isSpecificProviderBooking();
+  }
+
   activeSupportPathPreference() {
     return supportPathForExpertPreference(
       this.contactForm?.get('preferredExpertType')?.value ||
@@ -666,6 +688,21 @@ export class ContactComponent implements OnInit {
     if (!this.contactForm.get('preferredContact')?.value) {
       this.contactForm.patchValue({ preferredContact: 'email' });
     }
+  }
+
+  private updateContactIdentityValidators(user: User | null): void {
+    const name = this.contactForm.get('name');
+    const email = this.contactForm.get('email');
+    name?.setValidators(
+      user ? [Validators.maxLength(120)] : [Validators.required, Validators.maxLength(120)],
+    );
+    email?.setValidators(
+      user
+        ? [Validators.email, Validators.maxLength(254)]
+        : [Validators.required, Validators.email, Validators.maxLength(254)],
+    );
+    name?.updateValueAndValidity({ emitEvent: false });
+    email?.updateValueAndValidity({ emitEvent: false });
   }
 
   private loadDefaultSessionOffer(): void {
@@ -886,14 +923,14 @@ export class ContactComponent implements OnInit {
       }
 
       try {
-        if (serviceSelected && !appointment) {
+        if (serviceSelected && this.needsSlotBeforePayment() && !appointment) {
           this.showErrorMessage.set(true);
           this.errorTitle.set('Choose a slot to continue');
           this.errorMessage.set('Select an appointment slot before payment.');
           this.notificationService.warning('Select an appointment slot before payment.');
           return;
         }
-        if (appointment) {
+        if (appointment || (serviceSelected && this.isSpecificProviderBooking())) {
           await this.submitBooking(formData, appointment);
         } else {
           await this.submitLead(formData);
@@ -1069,7 +1106,10 @@ export class ContactComponent implements OnInit {
     });
   }
 
-  private async submitBooking(formData: ContactForm, appointment: AppointmentSlot): Promise<void> {
+  private async submitBooking(
+    formData: ContactForm,
+    appointment: AppointmentSlot | null,
+  ): Promise<void> {
     const user = this.currentUser();
     if (!user) {
       await this.submitGuestBookingRequest(formData, appointment);
@@ -1098,9 +1138,9 @@ export class ContactComponent implements OnInit {
           paymentMode: data.paymentMode === 'PARTIAL' ? 'PARTIAL' : 'FULL',
           promoCode: this.checkoutPromoCode(),
           message: bookingMessage,
-          appointmentDate: this.formatLocalDate(appointment.date),
-          appointmentTime: appointment.time,
-          consultantName: activeProviderName || appointment.consultant || '',
+          appointmentDate: appointment ? this.formatLocalDate(appointment.date) : '',
+          appointmentTime: appointment?.time || '',
+          consultantName: activeProviderName || appointment?.consultant || '',
           consultantPhone: data.consultantPhone || '',
           providerId: activeProviderId,
           careTeamServiceId: data.careTeamServiceId || '',
@@ -1139,6 +1179,10 @@ export class ContactComponent implements OnInit {
         payableInPaise: 0,
       });
       this.clearPendingBooking();
+      if (!appointment && activeProviderId) {
+        this.beginPostPaymentScheduling(response.consultation);
+        return;
+      }
       this.showSuccessAndReset('Free booking confirmed. We will share the next details soon.');
       return;
     }
@@ -1174,6 +1218,10 @@ export class ContactComponent implements OnInit {
       payableInPaise: this.payTodayInPaise(),
     });
     this.clearPendingBooking();
+    if (!appointment && activeProviderId) {
+      this.beginPostPaymentScheduling(response.consultation);
+      return;
+    }
     this.showSuccessAndReset('Appointment booked and payment verified successfully.');
   }
 
@@ -1258,7 +1306,12 @@ export class ContactComponent implements OnInit {
       })
       .then(() => {
         this.paymentFlowState.set('SUCCESS');
-        this.showSuccessAndReset('Appointment booked and payment verified successfully.');
+        const intake = consultation?.intakeAnswers || {};
+        if (intake.scheduleStatus === 'AWAITING_SLOT_SELECTION') {
+          this.beginPostPaymentScheduling(consultation);
+        } else {
+          this.showSuccessAndReset('Appointment booked and payment verified successfully.');
+        }
       })
       .catch((error) => {
         const message = this.readErrorMessage(error);
@@ -1300,7 +1353,9 @@ export class ContactComponent implements OnInit {
     if (state === 'OPENING_CHECKOUT') return 'Complete payment in the secure checkout window.';
     if (state === 'VERIFYING') return 'Confirming your payment. Please keep this page open.';
     if (state === 'SUCCESS')
-      return 'Your request is confirmed. We will share the next details soon.';
+      return this.postPaymentScheduling()
+        ? 'Payment is confirmed. Choose an available time, or ask Hope Hub to arrange it.'
+        : 'Your request is confirmed. We will share the next details soon.';
     if (state === 'ERROR') {
       return this.paymentFlowError() || 'Payment could not be completed. You can retry safely.';
     }
@@ -1309,6 +1364,13 @@ export class ContactComponent implements OnInit {
 
   paymentButtonLabel(): string {
     if (!this.selectedAppointment()) {
+      if (this.isSpecificProviderBooking()) {
+        if (!this.currentUser()) return 'Submit support request';
+        if (this.payTodayInPaise() <= 0) return 'Confirm booking';
+        return this.prefilledData().paymentMode === 'PARTIAL'
+          ? 'Book and pay deposit'
+          : 'Book and pay';
+      }
       return this.contactForm.get('serviceInterest')?.value
         ? 'Choose slot to pay'
         : CONSUMER_UX_COPY.cta.bookSupport;
@@ -1354,7 +1416,7 @@ export class ContactComponent implements OnInit {
     if (!this.guestBookingSubmitted() || this.bookingVerificationState() === 'VERIFYING') return;
     const formData = this.guestBookingFormData;
     const appointment = this.guestBookingAppointment;
-    if (!formData || !appointment) {
+    if (!formData || (this.needsSlotBeforePayment() && !appointment)) {
       this.bookingVerificationError.set(
         'Your saved booking could not be restored. Please submit it again.',
       );
@@ -1382,7 +1444,7 @@ export class ContactComponent implements OnInit {
 
   private async submitGuestBookingRequest(
     formData: ContactForm,
-    appointment: AppointmentSlot,
+    appointment: AppointmentSlot | null,
   ): Promise<void> {
     const data = this.prefilledData();
     const serviceName =
@@ -1397,10 +1459,11 @@ export class ContactComponent implements OnInit {
         ...formData,
         serviceInterest: serviceName,
         message,
-        appointmentDate: this.formatLocalDate(appointment.date),
-        appointmentTime: appointment.time,
+        appointmentDate: appointment ? this.formatLocalDate(appointment.date) : undefined,
+        appointmentTime: appointment?.time,
         selectedService: serviceName,
         selectedConsultant: this.activeProviderName() || undefined,
+        requestedProviderId: this.activeProviderId() || undefined,
         consultantPhone: data.consultantPhone || undefined,
         sessionDuration: data.duration || undefined,
         bookingSource: data.source || 'direct-booking',
@@ -1411,7 +1474,9 @@ export class ContactComponent implements OnInit {
     }
 
     this.guestBookingFormData = { ...formData };
-    this.guestBookingAppointment = { ...appointment, date: new Date(appointment.date) };
+    this.guestBookingAppointment = appointment
+      ? { ...appointment, date: new Date(appointment.date) }
+      : null;
     this.guestWebsiteLeadId.set(response.id);
     this.guestBookingSubmitted.set(true);
     this.bookingVerificationState.set('IDLE');
@@ -1424,6 +1489,56 @@ export class ContactComponent implements OnInit {
       'Your support request is saved. Verify your email to complete booking.',
     );
     this.focusBookingVerification();
+  }
+
+  onPostPaymentAppointmentSelected(appointment: AppointmentSlot): void {
+    this.postPaymentAppointment.set(appointment);
+    this.postPaymentSlotError.set('');
+  }
+
+  async confirmPostPaymentSlot(): Promise<void> {
+    const consultation = this.postPaymentConsultation;
+    const appointment = this.postPaymentAppointment();
+    if (!consultation?.id || !appointment || this.postPaymentSlotSaving()) return;
+    this.postPaymentSlotSaving.set(true);
+    this.postPaymentSlotError.set('');
+    try {
+      await firstValueFrom(
+        this.bookingService.assignBookingSlot(consultation.id, {
+          appointmentDate: this.formatLocalDate(appointment.date),
+          appointmentTime: appointment.time,
+        }),
+      );
+      this.finishPostPaymentScheduling(
+        `Your session with ${this.activeProviderName() || 'your selected provider'} is confirmed for ${appointment.time}.`,
+      );
+    } catch (error) {
+      this.postPaymentSlotError.set(this.readErrorMessage(error));
+    } finally {
+      this.postPaymentSlotSaving.set(false);
+    }
+  }
+
+  arrangePostPaymentSlot(): void {
+    this.finishPostPaymentScheduling(
+      `Payment received. Hope Hub will arrange a time with ${this.activeProviderName() || 'your selected provider'} and contact you.`,
+    );
+  }
+
+  private beginPostPaymentScheduling(consultation: any): void {
+    this.postPaymentConsultation = consultation;
+    this.postPaymentAppointment.set(null);
+    this.postPaymentSlotError.set('');
+    this.postPaymentScheduling.set(true);
+    this.showSuccessMessage.set(false);
+    this.resetGuestBookingVerification();
+  }
+
+  private finishPostPaymentScheduling(message: string): void {
+    this.postPaymentScheduling.set(false);
+    this.postPaymentConsultation = null;
+    this.postPaymentAppointment.set(null);
+    this.showSuccessAndReset(message);
   }
 
   private focusBookingVerification(): void {
@@ -1577,6 +1692,12 @@ export class ContactComponent implements OnInit {
   checkoutSummaryNotices(): CheckoutSummaryNotice[] {
     const notices: CheckoutSummaryNotice[] = [];
     const offer = this.selectedOffering();
+    if (this.isSpecificProviderBooking()) {
+      notices.push({
+        title: 'Choose your time after payment',
+        message: `Your booking stays with ${this.activeProviderName() || 'the selected provider'}. If no listed time works, Hope Hub will arrange it.`,
+      });
+    }
     if (offer && this.offerDiscountInPaise() > 0 && offer.type === 'INDIVIDUAL_SESSION') {
       notices.push({
         title: `${offer.discountPercent || 50}% off first session`,
@@ -2065,16 +2186,18 @@ export class ContactComponent implements OnInit {
     return `${year}-${month}-${day}`;
   }
 
-  private savePendingBooking(formData: ContactForm, appointment: AppointmentSlot): void {
+  private savePendingBooking(formData: ContactForm, appointment: AppointmentSlot | null): void {
     if (typeof sessionStorage === 'undefined') return;
     sessionStorage.setItem(
       this.pendingBookingStorageKey,
       JSON.stringify({
         formData,
-        appointment: {
-          ...appointment,
-          date: appointment.date.toISOString(),
-        },
+        appointment: appointment
+          ? {
+              ...appointment,
+              date: appointment.date.toISOString(),
+            }
+          : null,
         prefilledData: this.prefilledData(),
         websiteLeadId: this.guestWebsiteLeadId() || undefined,
         guestSubmitted: this.guestBookingSubmitted(),
@@ -2091,7 +2214,7 @@ export class ContactComponent implements OnInit {
     try {
       const parsed = JSON.parse(raw) as {
         formData: ContactForm;
-        appointment: { date: string; time: string; consultant?: string };
+        appointment: { date: string; time: string; consultant?: string } | null;
         prefilledData?: any;
         websiteLeadId?: string;
         guestSubmitted?: boolean;
@@ -2106,10 +2229,12 @@ export class ContactComponent implements OnInit {
 
       this.prefilledData.set({ ...this.prefilledData(), ...(parsed.prefilledData || {}) });
       this.contactForm.patchValue(parsed.formData);
-      const restoredAppointment = {
-        ...parsed.appointment,
-        date: new Date(parsed.appointment.date),
-      };
+      const restoredAppointment = parsed.appointment
+        ? {
+            ...parsed.appointment,
+            date: new Date(parsed.appointment.date),
+          }
+        : null;
       this.selectedAppointment.set(restoredAppointment);
 
       if (!this.currentUser() && parsed.guestSubmitted && parsed.websiteLeadId) {

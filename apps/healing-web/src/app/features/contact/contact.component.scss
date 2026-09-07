@@ -427,6 +427,11 @@ form {
   color: var(--surface-green-text);
 }
 
+.post-payment-scheduling {
+  align-items: stretch;
+  gap: 1rem;
+}
+
 .feedback.error {
   border: 1px solid rgba(185, 28, 28, 0.24);
   background: rgba(185, 28, 28, 0.08);
