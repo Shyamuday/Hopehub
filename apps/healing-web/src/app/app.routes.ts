@@ -1,6 +1,7 @@
 import { ResolveFn, Routes } from '@angular/router';
 import { AuthGuard, NavigationGuard } from './core/guards';
 import { CONSUMER_CONCERN_FLOWS } from './core/constants/consumer-concerns.constants';
+import { CAREER_DEEP_LINK_SLUGS } from './features/careers/career-deep-links.constants';
 
 type ResolvedPageSeo = {
   title: string;
@@ -414,6 +415,19 @@ export const routes: Routes = [
       keywords: 'hope hub careers, counsellor application, counselor jobs, mental health careers',
     },
   },
+  ...CAREER_DEEP_LINK_SLUGS.map((careerSelection) => ({
+    path: `careers/${careerSelection}`,
+    loadComponent: () =>
+      import('./features/careers/careers.component').then((m) => m.CareersComponent),
+    title: 'Career Application - Hope Hub',
+    data: {
+      breadcrumb: 'Career application',
+      noindex: true,
+      description: 'Open the selected Hope Hub career or community application form',
+      keywords: 'Hope Hub application',
+      careerSelection,
+    },
+  })),
   {
     path: 'listener-guidelines',
     loadComponent: () =>

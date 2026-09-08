@@ -89,6 +89,28 @@ describe('CareersComponent', () => {
     expect(fixture.nativeElement.textContent).not.toContain('← Telegram Hub');
   });
 
+  it('opens a shared Telegram admin Careers link directly on its form', () => {
+    component.applyCareerDeepLink('tgadmin');
+    fixture.detectChanges();
+
+    expect(component.applicationKind()).toBe('TELEGRAM_ADMIN');
+    expect(fixture.nativeElement.textContent).toContain('Become a Hope Hub Community Admin');
+  });
+
+  it('opens shared pathway and specific-role links with the correct form selected', () => {
+    component.applyCareerDeepLink('listener');
+    expect(component.selectedPathway()).toBe('EMOTIONAL_LISTENER');
+    expect(component.applicationForm.controls.careTeamType.value).toBe(
+      'PSYCHOLOGY_STUDENT_VOLUNTEER',
+    );
+
+    component.applyCareerDeepLink('life-coach');
+    expect(component.applicationKind()).toBe('CARE_TEAM');
+    expect(component.selectedPathway()).toBe('COACH_MENTOR');
+    expect(component.applicationForm.controls.careTeamType.value).toBe('LIFE_COACH');
+    expect(component.selectedTrack()).toBe('COACH_MENTOR');
+  });
+
   it('uses clinical credential fields for professional-care applications', () => {
     component.selectTrack('MENTAL_WELLNESS_PROFESSIONAL');
     fixture.detectChanges();

@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import {
   PROVIDER_ROLE_CODES,
   PROVIDER_ROLE_DEFINITIONS,
@@ -33,6 +33,7 @@ import {
   SelectableCardComponent,
 } from '../../shared/components';
 import { TelegramAdminApplicationComponent } from '../telegram-admin-application/telegram-admin-application.component';
+import { careerDeepLinkTarget } from './career-deep-links.constants';
 
 type CareContributorTrack = ProviderApplicationTrack;
 type CareTeamMemberType = string;
@@ -66,6 +67,7 @@ export class CareersComponent implements OnInit, OnDestroy {
   private readonly loadingService = inject(LoadingService);
   private readonly notificationService = inject(NotificationService);
   private readonly http = inject(HttpClient);
+  private readonly route = inject(ActivatedRoute);
 
   readonly isSubmitting = signal(false);
   readonly successMessage = signal('');
@@ -228,8 +230,30 @@ export class CareersComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.applyCareerDeepLink(
+      this.route.snapshot.data['careerSelection'] ||
+        this.route.snapshot.queryParamMap.get('role') ||
+        this.route.snapshot.queryParamMap.get('pathway'),
+    );
     void this.loadProviderTaxonomy();
     this.loadListenerScreeningQuestionSet();
+  }
+
+  applyCareerDeepLink(value?: string | null): void {
+    const target = careerDeepLinkTarget(value);
+    if (!target) return;
+
+    if (target.applicationKind === 'TELEGRAM_ADMIN') {
+      this.selectApplicationKind('TELEGRAM_ADMIN');
+      return;
+    }
+
+    this.selectApplicationKind('CARE_TEAM');
+    if (target.role) {
+      this.selectTrack(target.role);
+    } else if (target.pathway) {
+      this.selectPathway(target.pathway);
+    }
   }
 
   private async loadProviderTaxonomy(): Promise<void> {

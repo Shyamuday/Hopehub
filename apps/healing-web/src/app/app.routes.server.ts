@@ -4,6 +4,7 @@ import {
   CONSUMER_CONCERN_FLOWS,
   CONSUMER_CONCERN_ORDER,
 } from './core/constants/consumer-concerns.constants';
+import { CAREER_DEEP_LINK_SLUGS } from './features/careers/career-deep-links.constants';
 
 const googleAssessmentRoutes = [
   'anxiety-test',
@@ -59,6 +60,10 @@ const googleLandingRoutes = [
 
 export const serverRoutes: ServerRoute[] = [
   ...googleLandingRoutes.map((path): ServerRoute => ({ path, renderMode: RenderMode.Prerender })),
+  ...CAREER_DEEP_LINK_SLUGS.map((selection): ServerRoute => ({
+    path: `careers/${selection}`,
+    renderMode: RenderMode.Prerender,
+  })),
   {
     path: 'articles/:slug',
     renderMode: RenderMode.Prerender,

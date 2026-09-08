@@ -43,6 +43,15 @@ test('serves crawler-ready HTML for assessments and known concerns', () => {
   );
 });
 
+test('serves shareable Careers forms while rejecting unknown Careers links', () => {
+  assert.equal(route('hopehub.in', '/careers/tgadmin').uri, '/healing/careers/tgadmin/index.html');
+  assert.equal(
+    route('hopehub.in', '/careers/life-coach').uri,
+    '/healing/careers/life-coach/index.html'
+  );
+  assert.equal(route('hopehub.in', '/careers/not-a-role').statusCode, 404);
+});
+
 test('serves a noindex shell for private routes and 404 for unknown concerns', () => {
   assert.equal(route('hopehub.in', '/profile').uri, '/healing/private-shell.html');
   assert.equal(route('hopehub.in', '/concerns/not-real').statusCode, 404);

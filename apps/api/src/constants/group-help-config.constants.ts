@@ -92,8 +92,8 @@ We are looking for calm, reliable, empathetic adults who can give some time regu
 
 Submitting the form does not automatically make someone an admin. Every application is reviewed before access is granted.
 
-Apply here: https://hopehub.in/careers
-Choose “Telegram community admin” and complete the form.`;
+Apply here: https://hopehub.in/careers/tgadmin
+The Telegram community admin form will open automatically.`;
 
 export const DEFAULT_COMMUNITY_VC_TOPIC_ROOTS = `setting boundaries without guilt
 handling loneliness when people are around

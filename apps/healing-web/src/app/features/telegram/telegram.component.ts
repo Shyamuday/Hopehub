@@ -76,7 +76,7 @@ import { AppButtonComponent } from '../../shared/components';
                 two minutes.
               </p>
             </div>
-            <app-button routerLink="/telegram-group-admin" class="shrink-0"> Apply now </app-button>
+            <app-button routerLink="/careers/tgadmin" class="shrink-0"> Apply now </app-button>
           </div>
         </article>
 

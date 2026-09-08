@@ -61,5 +61,5 @@ test('Telegram admin recruitment is an editable, sendable Group Help post', () =
   assert.equal(action?.applyMode, 'DIRECT_PIN');
   assert.match(message, /Telegram Community Admins/i);
   assert.match(message, /responsibilities|help with/i);
-  assert.match(message, /https:\/\/hopehub\.in\/careers/);
+  assert.match(message, /https:\/\/hopehub\.in\/careers\/tgadmin/);
 });
