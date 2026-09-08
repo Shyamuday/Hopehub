@@ -18,6 +18,7 @@
     "release:verify": "tsx scripts/verify-release-readiness.ts",
     "config:sync": "tsx scripts/sync-managed-site-config.ts",
     "healing-content:sync": "tsx scripts/sync-healing-content.ts",
+    "email-marketing:import": "tsx scripts/import-email-addresses.ts",
     "db-backup:bucket:configure": "tsx scripts/configure-db-backup-bucket.ts",
     "db-backup:retention:configure": "tsx scripts/configure-db-backup-bucket.ts --lifecycle-only",
     "prisma:verify": "tsx scripts/verify-migrations.ts",

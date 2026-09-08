@@ -138,6 +138,7 @@ cat > .env <<ENV
 DATABASE_URL="postgresql://hopehub_app:${DB_PASS}@localhost:5432/hopehub_clinic?schema=public"
 JWT_SECRET="${JWT_SECRET}"
 NODE_ENV="production"
+EMAIL_MARKETING_BATCH_SIZE="10"
 PORT=4000
 API_PUBLIC_URL="https://api.hopehub.in"
 API_URL="https://api.hopehub.in"

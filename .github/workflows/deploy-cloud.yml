@@ -15,6 +15,10 @@ on:
         description: 'Optional known partially-applied Prisma migration to repair before an API deploy'
         required: false
         default: ''
+      email_import_s3_key:
+        description: 'Optional private hopehub-contact-inbox object key containing one normalized email per line'
+        required: false
+        default: ''
   push:
     branches: [main]
     paths:
@@ -414,6 +418,32 @@ jobs:
           TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
           TELEGRAM_SETUP_SECRET: ${{ secrets.TELEGRAM_SETUP_SECRET }}
         run: bash deploy/scripts/deploy-api-local.sh
+
+      - name: Import email marketing contacts from private S3 transfer
+        if: steps.api-changes.outputs.deploy == 'true' && github.event.inputs.email_import_s3_key != ''
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+          EMAIL_IMPORT_S3_KEY: ${{ github.event.inputs.email_import_s3_key }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$EMAIL_IMPORT_S3_KEY" =~ ^imports/email-marketing/[A-Za-z0-9._/-]+\.txt$ ]]; then
+            echo "Invalid email import object key."
+            exit 1
+          fi
+          import_file="$(mktemp /tmp/hopehub-email-import.XXXXXX.txt)"
+          cleanup() {
+            rm -f "$import_file"
+          }
+          trap cleanup EXIT
+          aws s3 cp "s3://hopehub-contact-inbox/$EMAIL_IMPORT_S3_KEY" "$import_file" --only-show-errors
+          cd /opt/hopehub/apps/api
+          npm run email-marketing:import -- \
+            --file "$import_file" \
+            --source "Downloads/emails historical exports (2026-09-08)" \
+            --basis "Administrator-directed import from historical customer/order exports on 2026-09-08; promotional consent not independently verified."
+          aws s3 rm "s3://hopehub-contact-inbox/$EMAIL_IMPORT_S3_KEY" --only-show-errors
 
   notify-deployment-failure:
     name: Notify admin about failed deployment
