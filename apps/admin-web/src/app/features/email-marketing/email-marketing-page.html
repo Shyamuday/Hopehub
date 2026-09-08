@@ -1,0 +1,764 @@
+<section class="page">
+  <header class="hero">
+    <div>
+      <span class="eyebrow">Communication</span>
+      <h1>Email marketing</h1>
+      <p>
+        Build consent-based audiences, send campaigns in controlled batches, and retain a complete
+        delivery history.
+      </p>
+    </div>
+    <button type="button" class="button secondary" (click)="refresh()" [disabled]="loading()">
+      {{ loading() ? 'Refreshing…' : 'Refresh' }}
+    </button>
+  </header>
+
+  @if (overview(); as stats) {
+    @if (!stats.emailConfig.configured) {
+      <div class="notice error">
+        Email sending is not configured on the API. Campaigns can be drafted and contacts imported,
+        but test, schedule, and launch are unavailable until SMTP credentials are configured.
+      </div>
+    }
+    <div class="stats" aria-label="Email marketing overview">
+      <article>
+        <strong>{{ stats.registered }}</strong
+        ><span>Registered emails</span>
+      </article>
+      <article>
+        <strong>{{ stats.promotional }}</strong
+        ><span>Promotional contacts</span>
+      </article>
+      <article>
+        <strong>{{ stats.converted }}</strong
+        ><span>Converted to users</span>
+      </article>
+      <article>
+        <strong>{{ stats.suppressed }}</strong
+        ><span>Suppressed</span>
+      </article>
+      <article>
+        <strong>{{ stats.sent }}</strong
+        ><span>Emails sent</span>
+      </article>
+    </div>
+  }
+
+  @if (error()) {
+    <div class="notice error">{{ error() }}</div>
+  }
+  @if (success()) {
+    <div class="notice success">{{ success() }}</div>
+  }
+
+  <div class="tabs" role="tablist">
+    <button type="button" [class.active]="tab() === 'campaigns'" (click)="tab.set('campaigns')">
+      Campaigns
+    </button>
+    <button type="button" [class.active]="tab() === 'templates'" (click)="tab.set('templates')">
+      Templates ({{ templates().length }})
+    </button>
+    <button type="button" [class.active]="tab() === 'contacts'" (click)="tab.set('contacts')">
+      Promotional contacts
+    </button>
+    <button type="button" [class.active]="tab() === 'deliveries'" (click)="openDeliveries()">
+      Delivery log
+    </button>
+  </div>
+
+  @if (tab() === 'campaigns') {
+    <div class="campaign-layout">
+      <section class="panel composer">
+        <div class="panel-heading">
+          <div>
+            <span class="step">Create</span>
+            <h2>New campaign</h2>
+          </div>
+          <span class="safe-chip">Unsubscribe included</span>
+        </div>
+
+        <label
+          >Start from a database template
+          <select [value]="draft().templateId || ''" (change)="loadTemplateById($event)">
+            <option value="">Blank campaign</option>
+            @for (template of activeTemplates(); track template.id) {
+              <option [value]="template.id">{{ template.category }} · {{ template.name }}</option>
+            }
+          </select>
+        </label>
+        @if (draft().templateId) {
+          <p class="help">
+            Template content has been copied into this campaign. Editing it here does not change the
+            saved template.
+          </p>
+        }
+
+        <div class="field-grid two">
+          <label
+            >Campaign name<input
+              [value]="draft().name"
+              (input)="setDraft('name', inputValue($event))"
+              placeholder="September wellbeing update"
+          /></label>
+          <label
+            >Email subject<input
+              [value]="draft().subject"
+              (input)="setDraft('subject', inputValue($event))"
+              placeholder="A little support for your week"
+          /></label>
+        </div>
+        <label
+          >Inbox preview text<input
+            [value]="draft().previewText"
+            (input)="setDraft('previewText', inputValue($event))"
+            maxlength="240"
+            placeholder="Short line shown beside the subject"
+        /></label>
+
+        <div class="field-grid two">
+          <label
+            >Audience
+            <select
+              [value]="draft().audience"
+              (change)="setDraft('audience', $any(inputValue($event)))"
+            >
+              @for (option of audienceOptions; track option.value) {
+                <option [value]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          </label>
+          @if (draft().audience !== 'PROMOTIONAL_CONTACTS') {
+            <label
+              >Registered account role
+              <select
+                [value]="draft().registeredRole || ''"
+                (change)="setDraft('registeredRole', inputValue($event) || null)"
+              >
+                @for (option of roleOptions; track option.value) {
+                  <option [value]="option.value">{{ option.label }}</option>
+                }
+              </select>
+            </label>
+          }
+        </div>
+        <div class="audience-row">
+          <button
+            type="button"
+            class="button secondary"
+            (click)="previewAudience()"
+            [disabled]="activeAction() === 'preview'"
+          >
+            Preview audience
+          </button>
+          @if (audiencePreview(); as preview) {
+            <span
+              ><strong>{{ preview.eligible }}</strong> eligible ·
+              {{ preview.registered }} registered · {{ preview.promotional }} promotional</span
+            >
+          }
+        </div>
+
+        <label
+          >HTML content<textarea
+            class="code"
+            rows="12"
+            [value]="draft().htmlBody"
+            (input)="setDraft('htmlBody', inputValue($event))"
+          ></textarea>
+        </label>
+        <label
+          >Plain-text fallback<textarea
+            rows="7"
+            [value]="draft().textBody"
+            (input)="setDraft('textBody', inputValue($event))"
+          ></textarea>
+        </label>
+        <label
+          >Schedule later (optional)<input
+            type="datetime-local"
+            [value]="draft().scheduledAt"
+            (input)="setDraft('scheduledAt', inputValue($event))"
+        /></label>
+
+        <label class="consent-check">
+          <input
+            type="checkbox"
+            [checked]="complianceConfirmed()"
+            (change)="complianceConfirmed.set(checked($event))"
+          />
+          <span
+            >I confirm this audience has a valid consent or customer-relationship basis for this
+            message. Suppressed and unsubscribed addresses will be excluded automatically.</span
+          >
+        </label>
+        <button
+          type="button"
+          class="button primary"
+          (click)="saveCampaign()"
+          [disabled]="!campaignReady() || saving()"
+        >
+          {{ saving() ? 'Saving…' : draft().scheduledAt ? 'Schedule campaign' : 'Save draft' }}
+        </button>
+      </section>
+
+      <section class="panel history">
+        <div class="panel-heading">
+          <div>
+            <span class="step">Track</span>
+            <h2>Campaign history</h2>
+          </div>
+        </div>
+        <label
+          >Test recipient<input
+            type="email"
+            [value]="testEmail()"
+            (input)="testEmail.set(inputValue($event))"
+            placeholder="you@example.com"
+        /></label>
+        @if (!campaigns().length) {
+          <p class="empty">No campaigns yet. Save the first draft to start.</p>
+        }
+        @for (campaign of campaigns(); track campaign.id) {
+          <article class="campaign-card">
+            <div class="campaign-title">
+              <div>
+                <strong>{{ campaign.name }}</strong
+                ><span>{{ campaign.subject }}</span>
+              </div>
+              <span class="status" [attr.data-status]="campaign.status">{{ campaign.status }}</span>
+            </div>
+            <div class="metrics">
+              <span
+                ><b>{{ campaign.recipientCount }}</b> audience</span
+              >
+              <span
+                ><b>{{ campaign.sentCount }}</b> sent</span
+              >
+              <span
+                ><b>{{ sentRate(campaign) }}%</b> sent rate</span
+              >
+              <span
+                ><b>{{ openRate(campaign) }}%</b> opened</span
+              >
+              <span
+                ><b>{{ campaign.clickedCount }}</b> clicked</span
+              >
+              <span
+                ><b>{{ campaign.failedCount + campaign.skippedCount }}</b> failed/skipped</span
+              >
+            </div>
+            <p class="meta">
+              {{ campaign.audience }}
+              @if (campaign.template) {
+                · Template: {{ campaign.template.name }}
+              }
+              · {{ campaign.createdAt | date: 'medium' }}
+              @if (campaign.scheduledAt) {
+                · Sends {{ campaign.scheduledAt | date: 'medium' }}
+              }
+            </p>
+            <div class="actions">
+              @if (campaign.recipientCount) {
+                <button
+                  type="button"
+                  class="button secondary"
+                  (click)="openDeliveries(campaign.id)"
+                >
+                  View recipients
+                </button>
+              }
+              <button
+                type="button"
+                class="button secondary"
+                (click)="sendTest(campaign)"
+                [disabled]="
+                  activeAction() === 'test:' + campaign.id ||
+                  overview()?.emailConfig?.configured === false
+                "
+              >
+                Send test
+              </button>
+              @if (campaign.status === 'DRAFT') {
+                <button
+                  type="button"
+                  class="button primary"
+                  (click)="launch(campaign)"
+                  [disabled]="
+                    activeAction() === 'launch:' + campaign.id ||
+                    overview()?.emailConfig?.configured === false
+                  "
+                >
+                  Launch
+                </button>
+              }
+              @if (
+                campaign.status === 'SCHEDULED' ||
+                campaign.status === 'QUEUED' ||
+                campaign.status === 'SENDING'
+              ) {
+                <button
+                  type="button"
+                  class="button danger"
+                  (click)="cancel(campaign)"
+                  [disabled]="activeAction() === 'cancel:' + campaign.id"
+                >
+                  Cancel remaining
+                </button>
+              }
+            </div>
+          </article>
+        }
+      </section>
+    </div>
+  } @else if (tab() === 'contacts') {
+    <div class="contacts-layout">
+      <section class="panel importer">
+        <div class="panel-heading">
+          <div>
+            <span class="step">Import</span>
+            <h2>Add promotional contacts</h2>
+          </div>
+        </div>
+        <p class="help">
+          Paste one address per line, comma-separated addresses, or
+          <code>Name &lt;email@example.com&gt;</code>. You can also load a CSV or text file.
+          Duplicate and registered addresses are reconciled automatically.
+        </p>
+        <label
+          >Load list file (optional)<input
+            type="file"
+            accept=".csv,.txt,text/csv,text/plain"
+            (change)="loadImportFile($event)"
+        /></label>
+        <label
+          >Source / list name<input
+            [value]="sourceLabel()"
+            (input)="sourceLabel.set(inputValue($event))"
+            placeholder="Wellness workshop registrations"
+        /></label>
+        <label
+          >Consent basis<textarea
+            rows="3"
+            [value]="consentBasis()"
+            (input)="consentBasis.set(inputValue($event))"
+            placeholder="Opted in on the workshop registration form on 8 September 2026"
+          ></textarea>
+        </label>
+        <label
+          >Email addresses<textarea
+            class="code"
+            rows="14"
+            [value]="importText()"
+            (input)="importText.set(inputValue($event))"
+            placeholder="Asha &lt;asha@example.com&gt;&#10;rahul@example.com"
+          ></textarea>
+        </label>
+        <label class="consent-check">
+          <input
+            type="checkbox"
+            [checked]="importConsentConfirmed()"
+            (change)="importConsentConfirmed.set(checked($event))"
+          />
+          <span
+            >I confirm these people agreed to receive promotional email. Purchased, scraped, or
+            unrelated lists must not be imported.</span
+          >
+        </label>
+        <button
+          type="button"
+          class="button primary"
+          (click)="importContacts()"
+          [disabled]="!importReady() || activeAction() === 'import'"
+        >
+          Import and reconcile
+        </button>
+      </section>
+
+      <section class="panel contact-list">
+        <div class="panel-heading">
+          <div>
+            <span class="step">Manage</span>
+            <h2>Promotional directory</h2>
+          </div>
+          <span>{{ contactsTotal() }} records</span>
+        </div>
+        <div class="filters">
+          <input
+            type="search"
+            [value]="contactSearch()"
+            (input)="contactSearch.set(inputValue($event))"
+            (keyup.enter)="loadContacts(1)"
+            placeholder="Search email, name, or source"
+          />
+          <select
+            [value]="contactStatus()"
+            (change)="contactStatus.set(inputValue($event)); loadContacts(1)"
+          >
+            <option value="">All statuses</option>
+            <option value="ACTIVE">Active</option>
+            <option value="CONVERTED">Converted</option>
+            <option value="UNSUBSCRIBED">Unsubscribed</option>
+            <option value="SUPPRESSED">Suppressed</option>
+          </select>
+          <button type="button" class="button secondary" (click)="loadContacts(1)">Search</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Contact</th>
+                <th>Source and consent</th>
+                <th>Status</th>
+                <th>Last sent</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (contact of contacts(); track contact.id) {
+                <tr>
+                  <td>
+                    <strong>{{ contact.name || 'Unnamed' }}</strong
+                    ><span>{{ contact.email }}</span>
+                  </td>
+                  <td>
+                    <strong>{{ contact.sourceLabel }}</strong
+                    ><span>{{ contact.consentBasis }}</span>
+                  </td>
+                  <td>
+                    <span class="status" [attr.data-status]="contact.status">{{
+                      contact.status
+                    }}</span>
+                    @if (contact.registeredUser) {
+                      <small>{{ contact.registeredUser.role }} account</small>
+                    }
+                  </td>
+                  <td>{{ contact.lastSentAt ? (contact.lastSentAt | date: 'short') : 'Never' }}</td>
+                  <td>
+                    @if (contact.status === 'ACTIVE') {
+                      <button type="button" class="link danger-text" (click)="suppress(contact)">
+                        Suppress
+                      </button>
+                    }
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5" class="empty">No contacts match this filter.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <button
+            type="button"
+            class="button secondary"
+            (click)="loadContacts(contactsPage() - 1)"
+            [disabled]="contactsPage() <= 1"
+          >
+            Previous
+          </button>
+          <span>Page {{ contactsPage() }} of {{ contactsPages() }}</span>
+          <button
+            type="button"
+            class="button secondary"
+            (click)="loadContacts(contactsPage() + 1)"
+            [disabled]="contactsPage() >= contactsPages()"
+          >
+            Next
+          </button>
+        </div>
+      </section>
+    </div>
+  } @else if (tab() === 'deliveries') {
+    <section class="panel delivery-log">
+      <div class="panel-heading">
+        <div>
+          <span class="step">Audit</span>
+          <h2>Per-recipient delivery log</h2>
+        </div>
+        <span>{{ deliveriesTotal() }} records</span>
+      </div>
+      <p class="help">
+        Search an address to see every campaign queued or sent to it, including opens, clicks,
+        failures, and unsubscribes. Open and click counts are approximate because email privacy
+        tools may block or pre-load tracking.
+      </p>
+      @if (deliveryCampaignId()) {
+        <div class="filter-chip">
+          Campaign filter active
+          <button type="button" class="link" (click)="clearDeliveryCampaign()">Clear</button>
+        </div>
+      }
+      <div class="filters delivery-filters">
+        <input
+          type="search"
+          [value]="deliverySearch()"
+          (input)="deliverySearch.set(inputValue($event))"
+          (keyup.enter)="loadDeliveries(1)"
+          placeholder="Search email, name, or campaign"
+        />
+        <select
+          [value]="deliveryStatus()"
+          (change)="deliveryStatus.set(inputValue($event)); loadDeliveries(1)"
+        >
+          <option value="">All statuses</option>
+          <option value="SENT">Sent</option>
+          <option value="QUEUED">Queued</option>
+          <option value="PROCESSING">Processing</option>
+          <option value="FAILED">Failed</option>
+          <option value="SKIPPED_SUPPRESSED">Suppressed</option>
+          <option value="SKIPPED_REGISTERED">Became registered</option>
+          <option value="CANCELLED">Cancelled</option>
+        </select>
+        <button type="button" class="button secondary" (click)="loadDeliveries(1)">Search</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Recipient</th>
+              <th>Campaign</th>
+              <th>Status</th>
+              <th>Engagement</th>
+              <th>Provider record</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (delivery of deliveries(); track delivery.id) {
+              <tr>
+                <td>
+                  <strong>{{ delivery.name || 'Unnamed' }}</strong
+                  ><span>{{ delivery.email }}</span>
+                </td>
+                <td>
+                  <strong>{{ delivery.campaign.name }}</strong
+                  ><span>{{ delivery.campaign.subject }}</span>
+                </td>
+                <td>
+                  <span class="status" [attr.data-status]="delivery.status">{{
+                    delivery.status
+                  }}</span
+                  ><small>{{
+                    delivery.sentAt
+                      ? 'Sent ' + (delivery.sentAt | date: 'short')
+                      : 'Added ' + (delivery.createdAt | date: 'short')
+                  }}</small>
+                  @if (delivery.lastError) {
+                    <small class="error-text">{{ delivery.lastError }}</small>
+                  }
+                </td>
+                <td>
+                  <strong>{{ delivery.openCount }} opens · {{ delivery.clickCount }} clicks</strong>
+                  @if (delivery.unsubscribedAt) {
+                    <span>Unsubscribed {{ delivery.unsubscribedAt | date: 'short' }}</span>
+                  }
+                </td>
+                <td>
+                  <strong>{{ delivery.attempts }} attempt(s)</strong
+                  ><span>{{ delivery.providerMessageId || 'No provider ID' }}</span>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="empty">No delivery records match this filter.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <button
+          type="button"
+          class="button secondary"
+          (click)="loadDeliveries(deliveriesPage() - 1)"
+          [disabled]="deliveriesPage() <= 1"
+        >
+          Previous
+        </button>
+        <span>Page {{ deliveriesPage() }} of {{ deliveriesPages() }}</span>
+        <button
+          type="button"
+          class="button secondary"
+          (click)="loadDeliveries(deliveriesPage() + 1)"
+          [disabled]="deliveriesPage() >= deliveriesPages()"
+        >
+          Next
+        </button>
+      </div>
+    </section>
+  } @else {
+    <div class="template-layout">
+      <section class="panel template-library">
+        <div class="panel-heading">
+          <div>
+            <span class="step">Library</span>
+            <h2>Database email templates</h2>
+          </div>
+          <button type="button" class="button primary" (click)="newTemplate()">New template</button>
+        </div>
+        <p class="help">
+          All templates are stored in the database. The five starter templates can be edited,
+          duplicated, archived, restored, and loaded into a campaign.
+        </p>
+        <div class="template-cards">
+          @for (template of templates(); track template.id) {
+            <article class="template-card" [class.archived]="!template.isActive">
+              <div class="campaign-title">
+                <div>
+                  <strong>{{ template.name }}</strong>
+                  <span
+                    >{{ template.category }}
+                    @if (template.isSystem) {
+                      · STARTER
+                    }
+                  </span>
+                </div>
+                <span
+                  class="status"
+                  [attr.data-status]="template.isActive ? 'ACTIVE' : 'SUPPRESSED'"
+                >
+                  {{ template.isActive ? 'ACTIVE' : 'ARCHIVED' }}
+                </span>
+              </div>
+              <p class="template-subject">{{ template.subject }}</p>
+              <p class="help">{{ template.description || 'No description' }}</p>
+              <p class="meta">Updated {{ template.updatedAt | date: 'medium' }}</p>
+              <div class="actions">
+                @if (template.isActive) {
+                  <button type="button" class="button primary" (click)="loadTemplate(template)">
+                    Use template
+                  </button>
+                }
+                <button type="button" class="button secondary" (click)="editTemplate(template)">
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  class="button secondary"
+                  (click)="duplicateTemplate(template)"
+                  [disabled]="activeAction() === 'template-duplicate:' + template.id"
+                >
+                  Duplicate
+                </button>
+                <button
+                  type="button"
+                  class="link"
+                  [class.danger-text]="template.isActive"
+                  (click)="toggleTemplate(template)"
+                  [disabled]="activeAction() === 'template-toggle:' + template.id"
+                >
+                  {{ template.isActive ? 'Archive' : 'Restore' }}
+                </button>
+              </div>
+            </article>
+          } @empty {
+            <p class="empty">No database templates are available.</p>
+          }
+        </div>
+      </section>
+
+      <section class="panel template-editor">
+        <div class="panel-heading">
+          <div>
+            <span class="step">Creator</span>
+            <h2>{{ editingTemplateId() ? 'Edit template' : 'Create template' }}</h2>
+          </div>
+          @if (editingTemplateId()) {
+            <button type="button" class="button secondary" (click)="newTemplate()">
+              Cancel edit
+            </button>
+          }
+        </div>
+        <p class="help">
+          Personalization fields: <code>{{ '{{firstName}}' }}</code>,
+          <code>{{ '{{fullName}}' }}</code>, and <code>{{ '{{email}}' }}</code>. Missing names
+          safely become “there”.
+        </p>
+        <div class="field-grid two">
+          <label
+            >Template name<input
+              [value]="templateDraft().name"
+              (input)="setTemplateDraft('name', inputValue($event))"
+              placeholder="Monthly wellbeing update"
+          /></label>
+          <label
+            >Category<input
+              [value]="templateDraft().category"
+              (input)="setTemplateDraft('category', inputValue($event))"
+              placeholder="GENERAL"
+          /></label>
+        </div>
+        <label
+          >Description<textarea
+            rows="2"
+            [value]="templateDraft().description || ''"
+            (input)="setTemplateDraft('description', inputValue($event))"
+          ></textarea>
+        </label>
+        <label
+          >Subject<input
+            [value]="templateDraft().subject"
+            (input)="setTemplateDraft('subject', inputValue($event))"
+            placeholder="A note for {{ '{{firstName}}' }}"
+        /></label>
+        <label
+          >Inbox preview<input
+            [value]="templateDraft().previewText || ''"
+            (input)="setTemplateDraft('previewText', inputValue($event))"
+            maxlength="240"
+        /></label>
+        <label
+          >HTML content<textarea
+            class="code"
+            rows="12"
+            [value]="templateDraft().htmlBody"
+            (input)="setTemplateDraft('htmlBody', inputValue($event))"
+          ></textarea>
+        </label>
+        <label
+          >Plain-text content<textarea
+            rows="7"
+            [value]="templateDraft().textBody"
+            (input)="setTemplateDraft('textBody', inputValue($event))"
+          ></textarea>
+        </label>
+        <details class="template-preview">
+          <summary>Preview HTML content</summary>
+          <div class="email-preview" [innerHTML]="templateDraft().htmlBody"></div>
+        </details>
+        <div class="field-grid two">
+          <label
+            >Sort order<input
+              type="number"
+              min="0"
+              max="10000"
+              [value]="templateDraft().sortOrder"
+              (input)="setTemplateDraft('sortOrder', +inputValue($event))"
+          /></label>
+          <label class="toggle-field"
+            ><input
+              type="checkbox"
+              [checked]="templateDraft().isActive"
+              (change)="setTemplateDraft('isActive', checked($event))"
+            /><span>Active and available to campaigns</span></label
+          >
+        </div>
+        <button
+          type="button"
+          class="button primary"
+          (click)="saveTemplate()"
+          [disabled]="!templateReady() || activeAction() === 'template-save'"
+        >
+          {{
+            activeAction() === 'template-save'
+              ? 'Saving…'
+              : editingTemplateId()
+                ? 'Save template changes'
+                : 'Create template'
+          }}
+        </button>
+      </section>
+    </div>
+  }
+</section>

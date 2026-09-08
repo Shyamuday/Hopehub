@@ -19,6 +19,7 @@ export type SendEmailInput = {
   html?: string;
   replyTo?: string;
   from?: string;
+  headers?: Record<string, string>;
 };
 
 export function getMailTransporter() {
@@ -53,18 +54,20 @@ export async function verifyEmailTransport(): Promise<boolean> {
   return true;
 }
 
-export async function sendEmail(input: SendEmailInput): Promise<void> {
+export async function sendEmail(input: SendEmailInput): Promise<{ messageId: string }> {
   const mailer = getMailTransporter();
   if (!mailer) {
     throw new Error('Email delivery is not configured.');
   }
 
-  await mailer.sendMail({
+  const result = await mailer.sendMail({
     from: input.from || smtpFrom,
     to: input.to,
     subject: input.subject,
     text: input.text,
     html: input.html,
-    replyTo: input.replyTo || supportReplyTo
+    replyTo: input.replyTo || supportReplyTo,
+    headers: input.headers
   });
+  return { messageId: result.messageId || '' };
 }

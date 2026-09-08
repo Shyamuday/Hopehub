@@ -39,6 +39,7 @@ export const ROUTE_PATHS = {
   INVENTORY: 'inventory',
   NOTIFICATIONS: 'notifications',
   NOTIFICATIONS_INBOX: 'notifications-inbox',
+  EMAIL_MARKETING: 'email-marketing',
   SECURITY: 'security',
   ECOSYSTEM_USERS: 'ecosystem-users',
   STAFF: 'staff',
@@ -213,6 +214,11 @@ export const NAV_ITEMS = [
     workspaces: ['shared'],
   },
   {
+    path: adminNavPath(ROUTE_PATHS.EMAIL_MARKETING),
+    label: '✉️ Email Marketing',
+    workspaces: ['shared'],
+  },
+  {
     path: adminNavPath(ROUTE_PATHS.TELEGRAM_BOTS),
     label: '🤖 Telegram Bots',
     workspaces: ['shared'],
@@ -330,6 +336,7 @@ const MORE_NAV_SECTIONS: readonly AdminNavSection[] = [
     segments: [
       ROUTE_PATHS.NOTIFICATIONS,
       ROUTE_PATHS.NOTIFICATIONS_INBOX,
+      ROUTE_PATHS.EMAIL_MARKETING,
       ROUTE_PATHS.TELEGRAM_BOTS,
     ],
   },

@@ -219,6 +219,14 @@ export const routes: Routes = [
         canActivate: guard,
       },
       {
+        path: ROUTE_PATHS.EMAIL_MARKETING,
+        loadComponent: () =>
+          import('./features/email-marketing/email-marketing-page').then(
+            (m) => m.EmailMarketingPage,
+          ),
+        canActivate: guard,
+      },
+      {
         path: ROUTE_PATHS.TELEGRAM_BOTS,
         loadComponent: () =>
           import('./features/telegram-bots/telegram-bots-page/telegram-bots-page').then(

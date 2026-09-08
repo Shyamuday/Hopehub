@@ -37,6 +37,7 @@ test('previously uncovered admin areas have explicit requirements', () => {
     ['GET', '/admin/call-health'],
     ['PATCH', '/admin/consumer-concerns/concern-anxiety'],
     ['GET', '/admin/counsellor-applications'],
+    ['GET', '/admin/email-marketing/deliveries'],
     ['GET', '/admin/lab-referrals'],
     ['GET', '/admin/pricing/location-fees'],
     ['PATCH', '/admin/provider-roles/listener'],

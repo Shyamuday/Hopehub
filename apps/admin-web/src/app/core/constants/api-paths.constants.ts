@@ -105,6 +105,24 @@ export const API_PATHS = {
     CONTACT_MAIL: '/admin/contact-mail',
     CONTACT_MAIL_BY_ID: (id: string) => `/admin/contact-mail/${id}`,
     CONTACT_MAIL_REPLY: (id: string) => `/admin/contact-mail/${id}/reply`,
+    EMAIL_MARKETING_OVERVIEW: '/admin/email-marketing/overview',
+    EMAIL_MARKETING_TEMPLATES: '/admin/email-marketing/templates',
+    EMAIL_MARKETING_TEMPLATE: (id: string) => `/admin/email-marketing/templates/${id}`,
+    EMAIL_MARKETING_TEMPLATE_DUPLICATE: (id: string) =>
+      `/admin/email-marketing/templates/${id}/duplicate`,
+    EMAIL_MARKETING_AUDIENCE_PREVIEW: '/admin/email-marketing/audience-preview',
+    EMAIL_MARKETING_CONTACTS: '/admin/email-marketing/contacts',
+    EMAIL_MARKETING_CONTACTS_IMPORT: '/admin/email-marketing/contacts/import',
+    EMAIL_MARKETING_CONTACT_SUPPRESS: (id: string) =>
+      `/admin/email-marketing/contacts/${id}/suppress`,
+    EMAIL_MARKETING_CAMPAIGNS: '/admin/email-marketing/campaigns',
+    EMAIL_MARKETING_DELIVERIES: '/admin/email-marketing/deliveries',
+    EMAIL_MARKETING_CAMPAIGN: (id: string) => `/admin/email-marketing/campaigns/${id}`,
+    EMAIL_MARKETING_CAMPAIGN_TEST: (id: string) => `/admin/email-marketing/campaigns/${id}/test`,
+    EMAIL_MARKETING_CAMPAIGN_LAUNCH: (id: string) =>
+      `/admin/email-marketing/campaigns/${id}/launch`,
+    EMAIL_MARKETING_CAMPAIGN_CANCEL: (id: string) =>
+      `/admin/email-marketing/campaigns/${id}/cancel`,
     AUDIT_RETENTION_STATS: '/admin/audit-retention/stats',
     AUDIT_RETENTION_PURGE: '/admin/audit-retention/purge',
     RBAC_MATRIX: '/admin/rbac/matrix',

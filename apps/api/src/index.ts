@@ -72,6 +72,7 @@ import { providerShareLinksRouter } from './routes/provider-share-links.js';
 import { rtcRouter } from './routes/rtc.js';
 import { telegramBotsRouter } from './routes/telegram-bots.js';
 import { telegramAccountLinkRouter } from './routes/telegram-account-link.js';
+import { emailMarketingRouter } from './routes/email-marketing.js';
 import { createRepertoryRouter } from './routes/repertory/index.js';
 import { roleGuidesRouter } from './routes/role-guides.js';
 import { ReceptionScopeError } from './routes/reception/shared.js';
@@ -124,6 +125,7 @@ import { getRuntimeReadiness, setRuntimeDraining } from './services/runtime-heal
 import { retryFailedTelegramWebhookUpdates } from './services/telegram-webhook-retries.js';
 import { monitorHopeHubCommunityWebhook } from './services/telegram-community-webhook-health.js';
 import { configureSocketScaling } from './services/socket-scaling.js';
+import { runEmailMarketingScheduler } from './services/email-marketing.js';
 
 // ── App & HTTP server ──────────────────────────────────────────────────────────
 
@@ -370,6 +372,7 @@ app.use(lifestyleTipsRouter);
 app.use(providerShareLinksRouter);
 app.use(telegramAccountLinkRouter);
 app.use(telegramBotsRouter);
+app.use(emailMarketingRouter);
 
 // ── Global error handler ───────────────────────────────────────────────────────
 
@@ -476,6 +479,9 @@ httpServer.listen(port, bindHost, () => {
   void monitorHopeHubCommunityWebhook().catch((e) =>
     console.error('[scheduler] Initial Hope Hub Telegram webhook health check failed', e)
   );
+  void runEmailMarketingScheduler().catch((e) =>
+    console.error('[scheduler] Initial email marketing delivery failed', e)
+  );
 
   const doseTimer = setInterval(() => {
     void runDoseSchedulers().catch((e) =>
@@ -535,6 +541,13 @@ httpServer.listen(port, bindHost, () => {
     );
   }, 5 * 60_000);
   telegramWebhookHealthTimer.unref();
+
+  const emailMarketingTimer = setInterval(() => {
+    void runEmailMarketingScheduler().catch((e) =>
+      console.error('[scheduler] Email marketing delivery failed', e)
+    );
+  }, 30_000);
+  emailMarketingTimer.unref();
 
   void restoreEmployeesFromLeave().catch((e) =>
     console.error('[scheduler] Leave restore failed', e)

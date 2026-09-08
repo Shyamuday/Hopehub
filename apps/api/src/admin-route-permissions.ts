@@ -97,6 +97,10 @@ const ADMIN_ROUTE_RULES: Array<{ pattern: RegExp; rules: RouteRule[] }> = [
     rules: [all([PERMISSIONS.NOTIFICATIONS_WRITE])]
   },
   {
+    pattern: /^\/admin\/email-marketing/,
+    rules: [all([PERMISSIONS.NOTIFICATIONS_WRITE])]
+  },
+  {
     pattern: /^\/admin\/contact-mail/,
     rules: [all([PERMISSIONS.CONTACT_MAIL_WRITE])]
   },

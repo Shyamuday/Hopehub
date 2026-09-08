@@ -1,0 +1,171 @@
+enum EmailMarketingContactStatus {
+  ACTIVE
+  CONVERTED
+  UNSUBSCRIBED
+  SUPPRESSED
+}
+
+enum EmailSuppressionReason {
+  UNSUBSCRIBED
+  HARD_BOUNCE
+  COMPLAINT
+  MANUAL
+}
+
+enum EmailCampaignAudience {
+  REGISTERED_USERS
+  PROMOTIONAL_CONTACTS
+  ALL_ELIGIBLE
+}
+
+enum EmailCampaignStatus {
+  DRAFT
+  SCHEDULED
+  QUEUED
+  SENDING
+  COMPLETED
+  CANCELLED
+  FAILED
+}
+
+enum EmailCampaignRecipientStatus {
+  QUEUED
+  PROCESSING
+  SENT
+  FAILED
+  SKIPPED_SUPPRESSED
+  SKIPPED_REGISTERED
+  CANCELLED
+}
+
+model EmailMarketingContact {
+  id                String                      @id @default(cuid())
+  email             String
+  normalizedEmail   String                      @unique
+  name              String?
+  sourceLabel       String
+  consentBasis      String
+  consentCapturedAt DateTime
+  status            EmailMarketingContactStatus @default(ACTIVE)
+  registeredUserId  String?
+  registeredUser    User?                       @relation("RegisteredEmailMarketingContacts", fields: [registeredUserId], references: [id], onDelete: SetNull)
+  importedById      String?
+  importedBy        User?                       @relation("ImportedEmailMarketingContacts", fields: [importedById], references: [id], onDelete: SetNull)
+  convertedAt       DateTime?
+  unsubscribedAt    DateTime?
+  lastSentAt        DateTime?
+  recipients        EmailCampaignRecipient[]
+  createdAt         DateTime                    @default(now())
+  updatedAt         DateTime                    @updatedAt
+
+  @@index([status, createdAt])
+  @@index([registeredUserId])
+  @@index([importedById])
+}
+
+model EmailSuppression {
+  id              String                 @id @default(cuid())
+  email           String
+  normalizedEmail String                 @unique
+  reason          EmailSuppressionReason
+  source          String?
+  suppressedAt    DateTime               @default(now())
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+
+  @@index([reason, suppressedAt])
+}
+
+model EmailCampaign {
+  id             String                   @id @default(cuid())
+  name           String
+  subject        String
+  previewText    String?
+  htmlBody       String                   @db.Text
+  textBody       String                   @db.Text
+  audience       EmailCampaignAudience
+  registeredRole Role?
+  templateId     String?
+  template       EmailMarketingTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  status         EmailCampaignStatus      @default(DRAFT)
+  scheduledAt    DateTime?
+  queuedAt       DateTime?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  recipientCount Int                      @default(0)
+  sentCount      Int                      @default(0)
+  failedCount    Int                      @default(0)
+  skippedCount   Int                      @default(0)
+  openedCount    Int                      @default(0)
+  clickedCount   Int                      @default(0)
+  createdById    String?
+  createdBy      User?                    @relation("CreatedEmailCampaigns", fields: [createdById], references: [id], onDelete: SetNull)
+  recipients     EmailCampaignRecipient[]
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+
+  @@index([status, scheduledAt])
+  @@index([createdAt])
+  @@index([createdById])
+  @@index([templateId])
+}
+
+model EmailMarketingTemplate {
+  id          String          @id @default(cuid())
+  systemKey   String?         @unique
+  name        String
+  category    String
+  description String?         @db.Text
+  subject     String
+  previewText String?
+  htmlBody    String          @db.Text
+  textBody    String          @db.Text
+  isSystem    Boolean         @default(false)
+  isActive    Boolean         @default(true)
+  sortOrder   Int             @default(0)
+  createdById String?
+  createdBy   User?           @relation("CreatedEmailMarketingTemplates", fields: [createdById], references: [id], onDelete: SetNull)
+  campaigns   EmailCampaign[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([isActive, sortOrder])
+  @@index([category, isActive])
+  @@index([createdById])
+}
+
+model EmailCampaignRecipient {
+  id                String                       @id @default(cuid())
+  campaignId        String
+  campaign          EmailCampaign                @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  email             String
+  normalizedEmail   String
+  name              String?
+  userId            String?
+  user              User?                        @relation("UserEmailCampaignRecipients", fields: [userId], references: [id], onDelete: SetNull)
+  contactId         String?
+  contact           EmailMarketingContact?       @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  status            EmailCampaignRecipientStatus @default(QUEUED)
+  attempts          Int                          @default(0)
+  nextAttemptAt     DateTime                     @default(now())
+  processingAt      DateTime?
+  providerMessageId String?
+  lastError         String?
+  sentAt            DateTime?
+  firstOpenedAt     DateTime?
+  lastOpenedAt      DateTime?
+  openCount         Int                          @default(0)
+  firstClickedAt    DateTime?
+  lastClickedAt     DateTime?
+  clickCount        Int                          @default(0)
+  unsubscribedAt    DateTime?
+  createdAt         DateTime                     @default(now())
+  updatedAt         DateTime                     @updatedAt
+
+  @@unique([campaignId, normalizedEmail])
+  @@index([status, nextAttemptAt])
+  @@index([normalizedEmail])
+  @@index([campaignId, status])
+  @@index([userId])
+  @@index([contactId])
+}
