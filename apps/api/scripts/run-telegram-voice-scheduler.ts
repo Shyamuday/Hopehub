@@ -12,6 +12,16 @@ import { sendCommunityMessage } from '../src/services/telegram-community-bots.cl
 import { getSiteConfigMap } from '../src/services/site-config.service.js';
 import { GROUP_HELP_BOT_SLUG } from '../src/constants/telegram-community-bot.constants.js';
 import { synchronizeConfiguredTelegramGroupMembers } from '../src/services/telegram-mtproto-member-sync.js';
+import {
+  EMPTY_VOICE_CHAT_RECOVERY_MS,
+  EMPTY_VOICE_CHAT_RECOVERY_REASON,
+  knownVoiceStarterForEmptyAlert,
+  trackEmptyVoiceChat,
+  type VoiceParticipantSnapshot,
+  voiceChatOccupancyCheckDue
+} from '../src/services/telegram-voice-empty-timeout.js';
+import { telegramGroupCallButton } from '../src/services/telegram-group-call-link.js';
+import { telegramPersonLogLabel } from '../src/services/telegram-group-help.people.js';
 
 const SESSION_PATH = '/etc/hopehub-telegram-user-session';
 const STATE_BOT = 'TELEGRAM_NATIVE_VOICE_SCHEDULER';
@@ -45,6 +55,11 @@ type NativeVoiceSchedulerState = {
   recoveryAfter?: string;
   healthCheckedAt?: string;
   joinButtonRefreshedAt?: string;
+  emptySince?: string;
+  lastParticipantCheckAt?: string;
+  participantCount?: number;
+  startedBy?: VoiceParticipantSnapshot;
+  emptyLeaveAlertedAt?: string;
   reason?: string;
   error?: string;
 };
@@ -111,6 +126,26 @@ async function notifyVoiceOperations(text: string) {
   } catch (error) {
     console.warn(
       `VC operations notice could not be delivered: ${error instanceof Error ? error.message : String(error)}`
+    );
+    return false;
+  }
+}
+
+async function notifyPrivateVoiceStaff(text: string) {
+  const values = await getSiteConfigMap(['telegramGroupHelpStaffGroupId']);
+  const chatId = values.telegramGroupHelpStaffGroupId?.trim() || '';
+  if (!chatId) {
+    console.warn('Private VC staff notice skipped: no private staff group is configured.');
+    return false;
+  }
+  try {
+    await sendCommunityMessage(GROUP_HELP_BOT_SLUG, chatId, text);
+    return true;
+  } catch (error) {
+    console.warn(
+      `Private VC staff notice could not be delivered: ${
+        error instanceof Error ? error.message : String(error)
+      }`
     );
     return false;
   }
@@ -492,6 +527,7 @@ type NativeGroupCallStatus = {
   accessHash?: string;
   scheduled: boolean;
   scheduleDate?: number;
+  participantCount: number;
   inputCall: unknown;
 };
 
@@ -503,7 +539,8 @@ async function currentTelegramGroupCall(
   client: TelegramClient,
   chatId: string
 ): Promise<NativeGroupCallStatus | null> {
-  const peer = await client.getInputEntity(Number(chatId));
+  const peerReference = /^-?\d+$/.test(chatId.trim()) ? Number(chatId) : chatId.trim();
+  const peer = await client.getInputEntity(peerReference);
   const full = await client.api.channels.getFullChannel({ channel: peer });
   const inputCall = (full as { fullChat?: { call?: unknown } }).fullChat?.call;
   if (!inputCall) return null;
@@ -511,14 +548,16 @@ async function currentTelegramGroupCall(
     id?: string | number | bigint;
     accessHash?: string | number | bigint;
   };
-  const result = await client.api.phone.getGroupCall({ call: inputCall as never, limit: 1 });
+  const result = await client.api.phone.getGroupCall({ call: inputCall as never, limit: 100 });
   const call = (
     result as {
       call?: {
         id?: string | number | bigint;
         accessHash?: string | number | bigint;
         scheduleDate?: number | null;
+        participantsCount?: number;
       };
+      participants?: unknown[];
     }
   ).call;
   if (call?.id == null) return null;
@@ -529,10 +568,235 @@ async function currentTelegramGroupCall(
       : { accessHash: String(call.accessHash ?? inputCallReference.accessHash) }),
     scheduled: Boolean(call.scheduleDate),
     ...(call.scheduleDate == null ? {} : { scheduleDate: call.scheduleDate }),
+    participantCount: Math.max(
+      0,
+      Number(
+        call.participantsCount ?? (result as { participants?: unknown[] }).participants?.length ?? 0
+      )
+    ),
     // Keep Telegram's original InputGroupCall object. Reconstructing it from
     // its ID and access hash is rejected by Telegram for some scheduled VCs.
     inputCall
   };
+}
+
+async function sendLiveVoiceReminder(
+  chatId: string,
+  payload: NativeVoiceSchedulerState,
+  participantCount: number
+) {
+  const [event, config] = await Promise.all([
+    payload.eventId
+      ? prisma.telegramCommunityEvent.findUnique({
+          where: { id: payload.eventId },
+          select: { title: true, joinUrl: true }
+        })
+      : null,
+    getSiteConfigMap(['telegramGroupHelpGroupChatId', 'telegramGroupHelpMainGroupUrl'])
+  ]);
+  const mainGroupJoinUrl =
+    config.telegramGroupHelpGroupChatId?.trim() === chatId
+      ? config.telegramGroupHelpMainGroupUrl?.trim() || ''
+      : '';
+  const joinUrl = event?.joinUrl?.trim() || mainGroupJoinUrl;
+  const memberLabel = participantCount === 1 ? 'member is' : 'members are';
+  try {
+    await sendCommunityMessage(
+      GROUP_HELP_BOT_SLUG,
+      chatId,
+      [
+        '🎙 Voice chat is live now',
+        '',
+        ...(event?.title ? [event.title] : []),
+        `${participantCount} ${memberLabel} already in the VC. Join the conversation.`
+      ].join('\n'),
+      joinUrl
+        ? { reply_markup: { inline_keyboard: [[telegramGroupCallButton(joinUrl, true)]] } }
+        : {}
+    );
+  } catch (error) {
+    console.warn(
+      `Could not send live VC reminder to ${chatId}: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+  }
+}
+
+async function alertVoiceStarterWhoLeftItOpen(
+  payload: NativeVoiceSchedulerState,
+  administrator: VoiceParticipantSnapshot,
+  now: Date
+) {
+  const label = telegramPersonLogLabel(administrator, 'VC administrator');
+  const sent = await notifyPrivateVoiceStaff(
+    [
+      `⚠️ ${label}, please do not leave a VC running empty.`,
+      '',
+      'You started this VC, and it now has 0 members.',
+      'If the session is over, close the VC before leaving. Otherwise, remain until another administrator takes over.'
+    ].join('\n')
+  );
+  return sent ? { ...payload, emptyLeaveAlertedAt: now.toISOString() } : payload;
+}
+
+async function enterEmptyVoiceRecovery(
+  chatId: string,
+  payload: NativeVoiceSchedulerState,
+  now: Date
+) {
+  if (payload.eventId) {
+    const event = await prisma.telegramCommunityEvent.findUnique({
+      where: { id: payload.eventId },
+      select: { id: true, title: true, startsAt: true, status: true }
+    });
+    // Preserve a future event that an administrator started early so it can
+    // be placed back on Telegram after the normal handover window.
+    if (event && event.startsAt <= now && ['SCHEDULED', 'IN_PROGRESS'].includes(event.status)) {
+      await prisma.telegramCommunityEvent.update({
+        where: { id: event.id },
+        data: { status: 'COMPLETED' }
+      });
+    }
+    if (event) {
+      await notifyVoiceOperations(
+        [
+          'ℹ️ Empty VC closed automatically',
+          '',
+          event.title,
+          'The voice chat stayed empty for five minutes, so it was closed.',
+          'The next upcoming VC will be scheduled automatically.'
+        ].join('\n')
+      );
+    }
+  }
+
+  // Give Telegram one worker cycle to clear the discarded call, then restore
+  // the next slot. The normal 15-minute host handover is unnecessary here.
+  const recoveryAfter = new Date(now.getTime() + EMPTY_VOICE_CHAT_RECOVERY_MS);
+  await prisma.telegramCommunityState.upsert({
+    where: { bot_chatId: { bot: STATE_BOT, chatId } },
+    create: {
+      bot: STATE_BOT,
+      chatId,
+      state: 'NATIVE_VOICE_RECOVERY',
+      payload: {
+        ...payload,
+        endedAt: now.toISOString(),
+        recoveryAfter: recoveryAfter.toISOString(),
+        reason: EMPTY_VOICE_CHAT_RECOVERY_REASON
+      },
+      expiresAt: recoveryAfter
+    },
+    update: {
+      state: 'NATIVE_VOICE_RECOVERY',
+      payload: {
+        ...payload,
+        endedAt: now.toISOString(),
+        recoveryAfter: recoveryAfter.toISOString(),
+        reason: EMPTY_VOICE_CHAT_RECOVERY_REASON
+      },
+      expiresAt: recoveryAfter
+    }
+  });
+}
+
+async function monitorEmptyActiveVoiceChats(client: TelegramClient, now: Date) {
+  const activeStates = await prisma.telegramCommunityState.findMany({
+    where: { bot: STATE_BOT, state: 'NATIVE_VOICE_ACTIVE' },
+    select: { chatId: true, payload: true }
+  });
+  const configured = await getSiteConfigMap(['telegramGroupHelpGroupChatId']);
+  const configuredMainChatId = configured.telegramGroupHelpGroupChatId?.trim();
+  const statesByChatId = new Map(
+    activeStates.map((state) => [state.chatId, { ...state, wasAlreadyTracked: true }])
+  );
+  // Also inspect the main group directly. This covers a voice chat started
+  // manually by an administrator before a matching event/state was recorded.
+  if (configuredMainChatId && !statesByChatId.has(configuredMainChatId)) {
+    statesByChatId.set(configuredMainChatId, {
+      chatId: configuredMainChatId,
+      payload: null,
+      wasAlreadyTracked: false
+    });
+  }
+
+  for (const state of statesByChatId.values()) {
+    const savedPayload = statePayload(state.payload);
+    if (state.wasAlreadyTracked && !voiceChatOccupancyCheckDue(savedPayload, now)) {
+      continue;
+    }
+    let currentCall: NativeGroupCallStatus | null;
+    try {
+      currentCall = await currentTelegramGroupCall(client, state.chatId);
+    } catch (error) {
+      // An unknown participant count is not the same as an empty call. Keep
+      // the state untouched and try again on the next one-minute worker run.
+      console.warn(
+        `Could not check active Telegram VC occupancy for ${state.chatId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+      continue;
+    }
+
+    if (!currentCall || currentCall.scheduled) {
+      if (state.wasAlreadyTracked) {
+        await releaseEndedVoiceState(state.chatId, savedPayload, now);
+      }
+      continue;
+    }
+
+    const sameCall = !savedPayload.nativeCallId || savedPayload.nativeCallId === currentCall.id;
+    const basePayload: NativeVoiceSchedulerState = sameCall
+      ? savedPayload
+      : {
+          ...savedPayload,
+          emptySince: undefined,
+          lastParticipantCheckAt: undefined,
+          participantCount: undefined,
+          emptyLeaveAlertedAt: undefined
+        };
+    const knownStarter = knownVoiceStarterForEmptyAlert(basePayload, currentCall.participantCount);
+    const tracked = trackEmptyVoiceChat(
+      {
+        ...basePayload,
+        nativeCallId: currentCall.id,
+        nativeCallAccessHash: currentCall.accessHash
+      },
+      currentCall.participantCount,
+      now
+    );
+    let activePayload = await reconcileActiveVoiceEvent(client, tracked.payload, now, currentCall);
+
+    if (currentCall.participantCount > 0) {
+      await sendLiveVoiceReminder(state.chatId, activePayload, currentCall.participantCount);
+    } else if (knownStarter) {
+      activePayload = await alertVoiceStarterWhoLeftItOpen(activePayload, knownStarter, now);
+    }
+
+    if (!tracked.shouldClose) {
+      await retainActiveVoiceState(state.chatId, activePayload, now);
+      continue;
+    }
+
+    try {
+      await client.api.phone.discardGroupCall({ call: currentCall.inputCall as never });
+      await enterEmptyVoiceRecovery(state.chatId, activePayload, now);
+      console.log(
+        `Closed Telegram voice chat ${currentCall.id} in ${state.chatId} after five empty minutes.`
+      );
+    } catch (error) {
+      // Retain the elapsed timer so the next pass retries the same close. A
+      // participant joining before then still clears the timer normally.
+      await retainActiveVoiceState(state.chatId, activePayload, now);
+      console.warn(
+        `Could not close empty Telegram VC in ${state.chatId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
 }
 
 async function expireMissedVoiceChats(client: TelegramClient, now: Date) {
@@ -693,6 +957,7 @@ async function main() {
     }
     await sendVoiceHostReminders(now);
     await expireMissedVoiceChats(client, now);
+    await monitorEmptyActiveVoiceChats(client, now);
     const events = await prisma.telegramCommunityEvent.findMany({
       where: {
         status: 'SCHEDULED',

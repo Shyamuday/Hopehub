@@ -32,6 +32,12 @@ import {
   savedLockdownPermissions
 } from './telegram-community-group-policy.js';
 import { withCrossCommunityButton } from './telegram-group-help.community-navigation.js';
+import {
+  EMPTY_VOICE_CHAT_RECOVERY_MS,
+  EMPTY_VOICE_CHAT_RECOVERY_REASON,
+  type VoiceParticipantSnapshot,
+  voiceStarterSnapshot
+} from './telegram-voice-empty-timeout.js';
 
 const CAMPAIGN_BOT = GROUP_HELP_BOT_SLUG;
 const MAX_DELIVERIES_PER_SWEEP = 20;
@@ -51,6 +57,8 @@ type NativeVoiceStatePayload = {
   startedEarly?: boolean;
   endedAt?: string;
   recoveryAfter?: string;
+  reason?: string;
+  startedBy?: VoiceParticipantSnapshot;
 };
 
 function nativeVoiceStatePayload(
@@ -821,10 +829,14 @@ export async function handleTelegramCommunityVoiceChatEnded(message: CommunityTe
   }
   const chatId = String(message.chat.id);
   const now = new Date();
-  const recoveryAfter = new Date(now.getTime() + VOICE_EVENT_RECOVERY_DELAY_MS);
   const stateKey = { bot_chatId: { bot: NATIVE_VOICE_SCHEDULER_STATE, chatId } };
   const nativeState = await prisma.telegramCommunityState.findUnique({ where: stateKey });
   const nativePayload = nativeVoiceStatePayload(nativeState?.payload);
+  const wasClosedBecauseEmpty = nativePayload.reason === EMPTY_VOICE_CHAT_RECOVERY_REASON;
+  const recoveryAfter = new Date(
+    now.getTime() +
+      (wasClosedBecauseEmpty ? EMPTY_VOICE_CHAT_RECOVERY_MS : VOICE_EVENT_RECOVERY_DELAY_MS)
+  );
   const linkedEvent = nativePayload.eventId
     ? await prisma.telegramCommunityEvent.findUnique({ where: { id: nativePayload.eventId } })
     : null;
@@ -858,7 +870,8 @@ export async function handleTelegramCommunityVoiceChatEnded(message: CommunityTe
       payload: {
         eventId: nativePayload.eventId,
         endedAt: now.toISOString(),
-        recoveryAfter: recoveryAfter.toISOString()
+        recoveryAfter: recoveryAfter.toISOString(),
+        ...(wasClosedBecauseEmpty ? { reason: EMPTY_VOICE_CHAT_RECOVERY_REASON } : {})
       },
       expiresAt: recoveryAfter
     },
@@ -867,7 +880,8 @@ export async function handleTelegramCommunityVoiceChatEnded(message: CommunityTe
       payload: {
         eventId: nativePayload.eventId,
         endedAt: now.toISOString(),
-        recoveryAfter: recoveryAfter.toISOString()
+        recoveryAfter: recoveryAfter.toISOString(),
+        ...(wasClosedBecauseEmpty ? { reason: EMPTY_VOICE_CHAT_RECOVERY_REASON } : {})
       },
       expiresAt: recoveryAfter
     }
@@ -913,9 +927,9 @@ export async function handleTelegramCommunityVoiceChatStarted(message: Community
     orderBy: { startsAt: 'desc' }
   });
   const activeEvent = linkedEvent || current;
-  if (!activeEvent) return false;
-  const startedEarly = activeEvent.startsAt > now;
-  if (!startedEarly) {
+  const startedEarly = Boolean(activeEvent && activeEvent.startsAt > now);
+  const startedBy = voiceStarterSnapshot(message.from) || nativePayload.startedBy;
+  if (activeEvent && !startedEarly) {
     await prisma.telegramCommunityEvent.update({
       where: { id: activeEvent.id },
       data: { status: 'IN_PROGRESS' }
@@ -929,21 +943,23 @@ export async function handleTelegramCommunityVoiceChatStarted(message: Community
       state: 'NATIVE_VOICE_ACTIVE',
       payload: {
         ...nativePayload,
-        eventId: activeEvent.id,
+        ...(activeEvent ? { eventId: activeEvent.id } : {}),
         startedAt: now.toISOString(),
-        startedEarly
+        startedEarly,
+        ...(startedBy ? { startedBy } : {})
       },
-      // Event updates are primary. This is only a 15-minute fallback in case
-      // Telegram does not deliver the eventual video_chat_ended update.
+      // The native worker checks occupancy on its managed cadence. Keep the longer
+      // expiry as a recovery boundary if Telegram cannot be read temporarily.
       expiresAt: new Date(now.getTime() + VOICE_EVENT_RECOVERY_DELAY_MS)
     },
     update: {
       state: 'NATIVE_VOICE_ACTIVE',
       payload: {
         ...nativePayload,
-        eventId: activeEvent.id,
+        ...(activeEvent ? { eventId: activeEvent.id } : {}),
         startedAt: now.toISOString(),
-        startedEarly
+        startedEarly,
+        ...(startedBy ? { startedBy } : {})
       },
       expiresAt: new Date(now.getTime() + VOICE_EVENT_RECOVERY_DELAY_MS)
     }
@@ -952,7 +968,7 @@ export async function handleTelegramCommunityVoiceChatStarted(message: Community
   // The announcement may have been posted before the host started the VC.
   // Refresh its markup now so even existing announcements open Telegram's
   // native active-call join screen for public groups.
-  if (activeEvent.telegramMessageId) {
+  if (activeEvent?.telegramMessageId) {
     try {
       const rsvpCount = await prisma.telegramCommunityEventRsvp.count({
         where: { eventId: activeEvent.id, status: 'GOING' }
