@@ -432,18 +432,12 @@ jobs:
             echo "Invalid email import object key."
             exit 1
           fi
-          import_file="$(mktemp /tmp/hopehub-email-import.XXXXXX.txt)"
-          cleanup() {
-            rm -f "$import_file"
-          }
-          trap cleanup EXIT
-          aws s3 cp "s3://hopehub-contact-inbox/$EMAIL_IMPORT_S3_KEY" "$import_file" --only-show-errors
           cd /opt/hopehub/apps/api
           npm run email-marketing:import -- \
-            --file "$import_file" \
+            --s3-bucket "hopehub-contact-inbox" \
+            --s3-key "$EMAIL_IMPORT_S3_KEY" \
             --source "Downloads/emails historical exports (2026-09-08)" \
             --basis "Administrator-directed import from historical customer/order exports on 2026-09-08; promotional consent not independently verified."
-          aws s3 rm "s3://hopehub-contact-inbox/$EMAIL_IMPORT_S3_KEY" --only-show-errors
 
   notify-deployment-failure:
     name: Notify admin about failed deployment

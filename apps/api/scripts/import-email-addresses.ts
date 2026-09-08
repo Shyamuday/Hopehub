@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { DeleteObjectCommand, GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { readFile } from 'node:fs/promises';
 import { prisma } from '../src/db.js';
 import { importMarketingContacts } from '../src/services/email-marketing.js';
@@ -10,16 +11,29 @@ const getArgument = (name: string) => {
 
 async function main() {
   const file = getArgument('--file');
+  const s3Bucket = getArgument('--s3-bucket');
+  const s3Key = getArgument('--s3-key');
   const sourceLabel = getArgument('--source') || 'Historical email exports';
   const consentBasis =
     getArgument('--basis') ||
     'Administrator-directed import from historical customer/order exports; promotional consent not independently verified.';
 
-  if (!file) throw new Error('Pass the normalized email file with --file.');
+  if (!file && !(s3Bucket && s3Key)) {
+    throw new Error('Pass --file or both --s3-bucket and --s3-key.');
+  }
+
+  const s3 = s3Bucket && s3Key ? new S3Client({}) : null;
+  const sourceText = file
+    ? await readFile(file, 'utf8')
+    : await (async () => {
+        const response = await s3!.send(new GetObjectCommand({ Bucket: s3Bucket, Key: s3Key }));
+        if (!response.Body) throw new Error('The S3 import object is empty.');
+        return response.Body.transformToString('utf-8');
+      })();
 
   const emails = [
     ...new Set(
-      (await readFile(file, 'utf8'))
+      sourceText
         .split(/\r?\n/)
         .map((value) => value.trim().toLowerCase())
         .filter(Boolean)
@@ -39,6 +53,11 @@ async function main() {
 
   const stored = await prisma.emailMarketingContact.count({ where: { sourceLabel } });
   console.log(JSON.stringify({ ...totals, stored }));
+
+  if (s3 && s3Bucket && s3Key) {
+    await s3.send(new DeleteObjectCommand({ Bucket: s3Bucket, Key: s3Key }));
+    console.log('Deleted the private S3 transfer object after successful import.');
+  }
 }
 
 main()
