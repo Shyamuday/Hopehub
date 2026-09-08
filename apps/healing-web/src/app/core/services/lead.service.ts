@@ -22,7 +22,10 @@ export type BookingRequestLeadPayload = ContactForm & {
 
 export type CounsellorApplicationPayload = {
   applicationTrack:
-    'PROFESSIONAL_PSYCHOLOGIST' | 'PSYCHOLOGY_STUDENT_VOLUNTEER' | 'PEER_SUPPORT_VOLUNTEER';
+    | 'PROFESSIONAL_PSYCHOLOGIST'
+    | 'PSYCHOLOGY_STUDENT_VOLUNTEER'
+    | 'PEER_SUPPORT_VOLUNTEER'
+    | 'COACH_MENTOR';
   careTeamType?: string;
   fullName: string;
   email: string;

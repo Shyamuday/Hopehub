@@ -1770,8 +1770,8 @@
     >
       <h2>Direct announcement</h2>
       <p>
-        This sends a normal Telegram message to the configured group. It does not change GroupHelp
-        internal settings.
+        Choose a reusable post, edit it if needed, then send it to the configured Telegram group.
+        Edits are saved before publishing.
       </p>
       <div class="direct-form">
         <label>
@@ -1781,6 +1781,18 @@
             [ngModel]="selectedDirectMessageKey()"
             (ngModelChange)="selectedDirectMessageKey.set($event)"
           ></app-form-dropdown>
+        </label>
+        <label>
+          Edit selected message
+          <textarea
+            rows="14"
+            maxlength="4000"
+            [ngModel]="value(selectedDirectMessageKey())"
+            (ngModelChange)="update(selectedDirectMessageKey(), $event)"
+          ></textarea>
+          <small>
+            Review the role, responsibilities, and application link before publishing.
+          </small>
         </label>
         @if (imageUrlForMessageKey(selectedDirectMessageKey())) {
           <div class="direct-image-preview">
@@ -1808,7 +1820,7 @@
           Pin after sending
         </label>
         <button type="button" class="primary" (click)="sendDirect()" [disabled]="sending()">
-          {{ sending() ? 'Sending…' : 'Send to group' }}
+          {{ sending() ? 'Saving and sending…' : 'Save and send to group' }}
         </button>
       </div>
     </section>

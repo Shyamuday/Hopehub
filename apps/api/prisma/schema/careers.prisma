@@ -29,6 +29,7 @@ enum CounsellorApplicationTrack {
   PROFESSIONAL_PSYCHOLOGIST
   PSYCHOLOGY_STUDENT_VOLUNTEER
   PEER_SUPPORT_VOLUNTEER
+  COACH_MENTOR
 }
 
 // This is deliberately separate from User/Doctor. Creating an onboarding record
@@ -45,6 +46,7 @@ enum CareContributorServiceScope {
   CLINICAL_PSYCHOLOGY
   SUPERVISED_STUDENT_SUPPORT
   NON_CLINICAL_PEER_SUPPORT
+  COACH_MENTORING
 }
 
 enum CredentialVerificationStatus {

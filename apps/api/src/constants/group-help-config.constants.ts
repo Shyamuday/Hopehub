@@ -74,6 +74,27 @@ A place for healing, connection, listening and emotional guidance.
 
 Our goal is to make support more accessible, human and available when people need someone to talk to.`;
 
+export const HOPEHUB_TELEGRAM_ADMIN_RECRUITMENT_MESSAGE = `🛡️ Help us keep the Hope Hub community safe
+
+We are inviting applications for Telegram Community Admins.
+
+What you will help with:
+• Welcome members and encourage respectful conversations
+• Apply community rules fairly and consistently
+• Remove spam, harassment, and unsafe content
+• Respond to member reports and escalate serious concerns
+• Protect member privacy
+• Support community and voice-chat activities when available
+
+Admins must not diagnose, provide medical advice, or promise emergency support. Safety or crisis concerns must be escalated to the Hope Hub team.
+
+We are looking for calm, reliable, empathetic adults who can give some time regularly. Previous moderation experience is helpful but not required.
+
+Submitting the form does not automatically make someone an admin. Every application is reviewed before access is granted.
+
+Apply here: https://hopehub.in/careers
+Choose “Telegram community admin” and complete the form.`;
+
 export const DEFAULT_COMMUNITY_VC_TOPIC_ROOTS = `setting boundaries without guilt
 handling loneliness when people are around
 asking for support without feeling like a burden
@@ -203,6 +224,16 @@ const GROUP_HELP_CORE_ACTIONS: GroupHelpAction[] = [
     description: 'Post and pin the current introduction directly in the configured group.',
     valueKey: 'telegramGroupHelpPinnedMessage',
     imageUrlKey: 'telegramGroupHelpPinnedImageUrl',
+    templateKey: 'telegramGroupHelpPinnedCommandTemplate',
+    placeholder: 'message',
+    applyMode: 'DIRECT_PIN'
+  },
+  {
+    id: 'admin-recruitment',
+    title: 'Telegram admin recruitment',
+    description: 'Post and pin the editable Telegram community admin recruitment message.',
+    valueKey: 'telegramGroupHelpAdminRecruitmentMessage',
+    imageUrlKey: 'telegramGroupHelpAdminRecruitmentImageUrl',
     templateKey: 'telegramGroupHelpPinnedCommandTemplate',
     placeholder: 'message',
     applyMode: 'DIRECT_PIN'
@@ -797,6 +828,26 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
     key: 'telegramGroupHelpPinnedImageUrl',
     label: 'Pinned intro media URL',
     description: 'Optional uploaded image, GIF, or short video attached to the pinned intro.',
+    section: 'messages',
+    type: 'text',
+    maxLength: 1000,
+    placeholder: 'https://...',
+    defaultValue: ''
+  },
+  {
+    key: 'telegramGroupHelpAdminRecruitmentMessage',
+    label: 'Telegram admin recruitment post',
+    description:
+      'Reusable recruitment message that admins can edit and publish from Announcements.',
+    section: 'messages',
+    type: 'textarea',
+    maxLength: 4000,
+    defaultValue: HOPEHUB_TELEGRAM_ADMIN_RECRUITMENT_MESSAGE
+  },
+  {
+    key: 'telegramGroupHelpAdminRecruitmentImageUrl',
+    label: 'Telegram admin recruitment media URL',
+    description: 'Optional image, GIF, or short video attached to the recruitment post.',
     section: 'messages',
     type: 'text',
     maxLength: 1000,

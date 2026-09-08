@@ -52,3 +52,14 @@ test('Group Help capability map covers the main management areas', () => {
     true
   );
 });
+
+test('Telegram admin recruitment is an editable, sendable Group Help post', () => {
+  const action = GROUP_HELP_ACTIONS.find((item) => item.id === 'admin-recruitment');
+  const message = GROUP_HELP_CONFIG_DEFAULTS.telegramGroupHelpAdminRecruitmentMessage;
+
+  assert.equal(action?.valueKey, 'telegramGroupHelpAdminRecruitmentMessage');
+  assert.equal(action?.applyMode, 'DIRECT_PIN');
+  assert.match(message, /Telegram Community Admins/i);
+  assert.match(message, /responsibilities|help with/i);
+  assert.match(message, /https:\/\/hopehub\.in\/careers/);
+});

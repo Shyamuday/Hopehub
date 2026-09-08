@@ -1,10 +1,14 @@
-<main class="telegram-admin-page">
+<div class="telegram-admin-page" [class.telegram-admin-page--embedded]="embedded()">
   <section class="telegram-admin-page__intro">
-    <a routerLink="/telegram" class="telegram-admin-page__back">← Telegram Hub</a>
+    @if (!embedded()) {
+      <a routerLink="/telegram" class="telegram-admin-page__back">← Telegram Hub</a>
+    }
     <span class="telegram-admin-page__icon" aria-hidden="true">🛡️</span>
     <p class="telegram-admin-page__eyebrow">Hope Hub community</p>
     <h1>Become a Hope Hub Community Admin</h1>
-    <p>Help keep our Telegram group kind, safe, and welcoming. It takes about two minutes to apply.</p>
+    <p>
+      Help keep our Telegram group kind, safe, and welcoming. It takes about two minutes to apply.
+    </p>
   </section>
 
   <section class="telegram-admin-page__content">
@@ -13,7 +17,9 @@
         <span aria-hidden="true">✓</span>
         <h2>Application received</h2>
         <p>Our team will review it and contact you through Telegram or the details you shared.</p>
-        <app-button routerLink="/telegram" variant="outline">Back to Telegram Hub</app-button>
+        <app-button [routerLink]="embedded() ? '/careers' : '/telegram'" variant="outline">
+          {{ embedded() ? 'Back to opportunities' : 'Back to Telegram Hub' }}
+        </app-button>
       </div>
     } @else {
       <form [formGroup]="applicationForm" (ngSubmit)="submit()" class="telegram-admin-form">
@@ -93,7 +99,8 @@
             I will follow and fairly enforce the Hope Hub community rules.
           </app-form-checkbox>
           <app-form-checkbox formControlName="safetyAccepted">
-            I understand privacy, crisis escalation, and that admins must not diagnose or provide medical advice.
+            I understand privacy, crisis escalation, and that admins must not diagnose or provide
+            medical advice.
           </app-form-checkbox>
           @if (
             hasError('ageConfirmed') || hasError('rulesAccepted') || hasError('safetyAccepted')
@@ -111,4 +118,4 @@
       </form>
     }
   </section>
-</main>
+</div>

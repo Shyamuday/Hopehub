@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, input, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { LeadService, TelegramAdminApplicationPayload } from '../../core/services/lead.service';
@@ -32,6 +32,7 @@ export class TelegramAdminApplicationComponent {
   private readonly leadService = inject(LeadService);
   private readonly notifications = inject(NotificationService);
 
+  readonly embedded = input(false);
   readonly submitting = signal(false);
   readonly submitted = signal(false);
   readonly availabilityOptions: FormDropdownOption[] = [

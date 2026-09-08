@@ -7,7 +7,8 @@ import { adminUrl } from './telegram-bots.ui.js';
 const providerTrackLabels: Record<CounsellorApplicationTrack, string> = {
   PROFESSIONAL_PSYCHOLOGIST: 'Professional psychologist',
   PSYCHOLOGY_STUDENT_VOLUNTEER: 'Psychology student emotional support listener',
-  PEER_SUPPORT_VOLUNTEER: 'Peer emotional support listener'
+  PEER_SUPPORT_VOLUNTEER: 'Peer emotional support listener',
+  COACH_MENTOR: 'Coach / mentor'
 };
 
 const careTeamTypeLabels: Record<CareTeamMemberType, string> = {

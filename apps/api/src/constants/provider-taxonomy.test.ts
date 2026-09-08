@@ -10,6 +10,7 @@ import {
   providerClassificationFromLegacy,
   providerConsumerSessionModeListLabel,
   providerHasRoleCategory,
+  providerApplicationTrackForRole,
   providerSessionModeFromValue,
   providerSessionModeMatchesText
 } from '@hopehub/contracts';
@@ -36,6 +37,19 @@ test('every provider role has one complete canonical definition', () => {
     assert.ok(definition.description.length > 10);
     assert.ok(definition.scope.length > 10);
   }
+});
+
+test('provider applications map into the three canonical career pathways', () => {
+  assert.equal(
+    providerApplicationTrackForRole('MENTAL_WELLNESS_PROFESSIONAL'),
+    'PROFESSIONAL_PSYCHOLOGIST'
+  );
+  assert.equal(providerApplicationTrackForRole('LIFE_COACH'), 'COACH_MENTOR');
+  assert.equal(
+    providerApplicationTrackForRole('PSYCHOLOGY_STUDENT_VOLUNTEER'),
+    'PSYCHOLOGY_STUDENT_VOLUNTEER'
+  );
+  assert.equal(providerApplicationTrackForRole('PEER_SUPPORT_VOLUNTEER'), 'PEER_SUPPORT_VOLUNTEER');
 });
 
 test('database assignments support future role codes without changing frontend enums', () => {

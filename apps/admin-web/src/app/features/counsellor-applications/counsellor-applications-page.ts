@@ -174,6 +174,13 @@ export class CounsellorApplicationsPage implements OnInit {
     return PROVIDER_APPLICATION_TRACK_LABELS[track as ProviderApplicationTrack] || track;
   }
 
+  isListenerApplication(application: any): boolean {
+    return (
+      application.applicationTrack === 'PSYCHOLOGY_STUDENT_VOLUNTEER' ||
+      application.applicationTrack === 'PEER_SUPPORT_VOLUNTEER'
+    );
+  }
+
   careTeamTypeLabel(type: string): string {
     return providerRoleLabel(type) || type || 'Care team member';
   }
@@ -196,7 +203,7 @@ export class CounsellorApplicationsPage implements OnInit {
   }
 
   listenerRiskFlags(application: any): string[] {
-    if (application.applicationTrack === 'PROFESSIONAL_PSYCHOLOGIST') return [];
+    if (!this.isListenerApplication(application)) return [];
     const flags: string[] = [];
     if (application.listenerScreeningPassed === false) flags.push('Screening not passed');
     if ((application.listenerRecentFailedAttempts || 0) >= 2) {
@@ -234,6 +241,7 @@ export class CounsellorApplicationsPage implements OnInit {
       CLINICAL_PSYCHOLOGY: 'Clinical psychology (account pending)',
       SUPERVISED_STUDENT_SUPPORT: 'Supervised student support',
       NON_CLINICAL_PEER_SUPPORT: 'Non-clinical peer support',
+      COACH_MENTORING: 'Non-clinical coaching / mentoring',
     };
     return labels[scope] || scope;
   }

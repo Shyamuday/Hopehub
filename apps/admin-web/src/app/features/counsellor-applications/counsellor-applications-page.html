@@ -2,17 +2,27 @@
   <div class="page-head">
     <div>
       <h1>Care contributor applications</h1>
-  <p>Review professional psychologist, student listener, and peer emotional support listener applications.</p>
+      <p>Review professional-care, emotional-listener, and coach or mentor applications.</p>
     </div>
   </div>
 
   <div class="summary">
     <button (click)="setFilter('ALL')" [class.active]="statusFilter() === 'ALL'">All</button>
-    <button (click)="setFilter('NEW')" [class.active]="statusFilter() === 'NEW'">New {{ summary().NEW }}</button>
-    <button (click)="setFilter('REVIEWING')" [class.active]="statusFilter() === 'REVIEWING'">Reviewing {{ summary().REVIEWING }}</button>
-    <button (click)="setFilter('SHORTLISTED')" [class.active]="statusFilter() === 'SHORTLISTED'">Shortlisted {{ summary().SHORTLISTED }}</button>
-    <button (click)="setFilter('ONBOARDED')" [class.active]="statusFilter() === 'ONBOARDED'">Onboarded {{ summary().ONBOARDED }}</button>
-    <button (click)="setFilter('REJECTED')" [class.active]="statusFilter() === 'REJECTED'">Rejected {{ summary().REJECTED }}</button>
+    <button (click)="setFilter('NEW')" [class.active]="statusFilter() === 'NEW'">
+      New {{ summary().NEW }}
+    </button>
+    <button (click)="setFilter('REVIEWING')" [class.active]="statusFilter() === 'REVIEWING'">
+      Reviewing {{ summary().REVIEWING }}
+    </button>
+    <button (click)="setFilter('SHORTLISTED')" [class.active]="statusFilter() === 'SHORTLISTED'">
+      Shortlisted {{ summary().SHORTLISTED }}
+    </button>
+    <button (click)="setFilter('ONBOARDED')" [class.active]="statusFilter() === 'ONBOARDED'">
+      Onboarded {{ summary().ONBOARDED }}
+    </button>
+    <button (click)="setFilter('REJECTED')" [class.active]="statusFilter() === 'REJECTED'">
+      Rejected {{ summary().REJECTED }}
+    </button>
   </div>
 
   @if (error()) {
@@ -34,7 +44,8 @@
                 <span [class]="statusClass(application.status)">{{ application.status }}</span>
               </div>
               <p class="muted">
-                {{ careTeamTypeLabel(application.careTeamType) }} • {{ application.specialization || 'General support' }} • {{ application.city }}
+                {{ careTeamTypeLabel(application.careTeamType) }} •
+                {{ application.specialization || 'General support' }} • {{ application.city }}
               </p>
               <p class="muted">{{ application.email }} • {{ application.phone }}</p>
             </div>
@@ -47,31 +58,51 @@
             <div class="detail">
               <div class="grid">
                 <p><strong>Pathway:</strong> {{ trackLabel(application.applicationTrack) }}</p>
-                <p><strong>Care team type:</strong> {{ careTeamTypeLabel(application.careTeamType) }}</p>
-                <p><strong>Qualification:</strong> {{ application.qualification || 'Not required for this pathway' }}</p>
-                <p><strong>Qualified from:</strong> {{ application.qualifiedFrom || 'Not provided' }}</p>
-                <p><strong>Experience:</strong> {{ application.experienceYears || 'Not provided' }}</p>
+                <p>
+                  <strong>Care team type:</strong> {{ careTeamTypeLabel(application.careTeamType) }}
+                </p>
+                <p>
+                  <strong>Qualification:</strong>
+                  {{ application.qualification || 'Not required for this pathway' }}
+                </p>
+                <p>
+                  <strong>Qualified from:</strong> {{ application.qualifiedFrom || 'Not provided' }}
+                </p>
+                <p>
+                  <strong>Experience:</strong> {{ application.experienceYears || 'Not provided' }}
+                </p>
                 <p><strong>Gender:</strong> {{ genderLabel(application.gender) }}</p>
                 <p><strong>Languages:</strong> {{ application.languages }}</p>
                 <p><strong>Availability:</strong> {{ application.availability }}</p>
                 <p><strong>Preferred contact:</strong> {{ application.preferredChannel }}</p>
-                <p><strong>Registration:</strong> {{ application.registrationDetails || 'Not provided' }}</p>
+                <p>
+                  <strong>Registration:</strong>
+                  {{ application.registrationDetails || 'Not provided' }}
+                </p>
                 <p><strong>Applied:</strong> {{ application.createdAt | date: 'medium' }}</p>
               </div>
 
               @if (application.supervisionDetails) {
-                <p class="why"><strong>Supervision details:</strong> {{ application.supervisionDetails }}</p>
+                <p class="why">
+                  <strong>Supervision details:</strong> {{ application.supervisionDetails }}
+                </p>
               }
 
               @if (application.livedExperienceSummary) {
-                <p class="why"><strong>Peer listening experience:</strong> {{ application.livedExperienceSummary }}</p>
+                <p class="why">
+                  <strong>Peer listening experience:</strong>
+                  {{ application.livedExperienceSummary }}
+                </p>
               }
 
               @if (application.applicationTrack !== 'PROFESSIONAL_PSYCHOLOGIST') {
-                <p class="why"><strong>Non-clinical agreement:</strong> {{ application.agreesToNonClinicalRole ? 'Accepted' : 'Not accepted' }}</p>
+                <p class="why">
+                  <strong>Non-clinical agreement:</strong>
+                  {{ application.agreesToNonClinicalRole ? 'Accepted' : 'Not accepted' }}
+                </p>
               }
 
-              @if (application.applicationTrack !== 'PROFESSIONAL_PSYCHOLOGIST') {
+              @if (isListenerApplication(application)) {
                 @if (listenerRiskFlags(application).length) {
                   <div class="risk-flags">
                     @for (flag of listenerRiskFlags(application); track flag) {
@@ -86,12 +117,18 @@
                     <strong>
                       {{
                         application.listenerScreeningScore != null
-                          ? application.listenerScreeningScore + '/' + application.listenerScreeningMaxScore
+                          ? application.listenerScreeningScore +
+                            '/' +
+                            application.listenerScreeningMaxScore
                           : 'Not completed'
                       }}
                     </strong>
                     <small>
-                      {{ application.listenerScreeningPassed ? 'Passed' : 'Manual review / not passed' }}
+                      {{
+                        application.listenerScreeningPassed
+                          ? 'Passed'
+                          : 'Manual review / not passed'
+                      }}
                       @if (application.listenerScreeningReview?.questionSetVersion) {
                         · {{ application.listenerScreeningReview.questionSetVersion }}
                       }
@@ -99,12 +136,18 @@
                   </div>
                   <div>
                     <span>Guidelines</span>
-                    <strong>{{ application.listenerGuidelinesAccepted ? 'Accepted' : 'Not accepted' }}</strong>
-                    <small>{{ application.listenerGuidelinesVersion || 'No version stored' }}</small>
+                    <strong>{{
+                      application.listenerGuidelinesAccepted ? 'Accepted' : 'Not accepted'
+                    }}</strong>
+                    <small>{{
+                      application.listenerGuidelinesVersion || 'No version stored'
+                    }}</small>
                   </div>
                   <div>
                     <span>Reading time</span>
-                    <strong>{{ formatReadSeconds(application.listenerGuidelinesReadSeconds) }}</strong>
+                    <strong>{{
+                      formatReadSeconds(application.listenerGuidelinesReadSeconds)
+                    }}</strong>
                     <small>
                       Started:
                       {{
@@ -127,7 +170,9 @@
                   </div>
                   <div>
                     <span>Training</span>
-                    <strong>{{ application.listenerTrainingCompleted ? 'Completed' : 'Not completed' }}</strong>
+                    <strong>{{
+                      application.listenerTrainingCompleted ? 'Completed' : 'Not completed'
+                    }}</strong>
                     <small>{{ application.listenerTrainingVersion || 'No version stored' }}</small>
                   </div>
                   <div>
@@ -152,12 +197,18 @@
                   <section class="listener-review-panel">
                     <h3>Missed screening topics</h3>
                     <p class="muted">
-                      Use this for manual review, coaching, or rejection notes. Correct answers stay admin-only.
+                      Use this for manual review, coaching, or rejection notes. Correct answers stay
+                      admin-only.
                     </p>
                     @for (item of listenerIncorrectAnswers(application); track item.questionId) {
                       <article>
                         <strong>{{ item.questionText }}</strong>
-                        <span>Selected: {{ item.selectedOptionText || item.selectedOptionId || 'No answer' }}</span>
+                        <span
+                          >Selected:
+                          {{
+                            item.selectedOptionText || item.selectedOptionId || 'No answer'
+                          }}</span
+                        >
                         <span>Expected: {{ item.correctOptionText || item.correctOptionId }}</span>
                       </article>
                     }
@@ -168,7 +219,8 @@
                   <section class="listener-review-panel">
                     <h3>Listener public profile checklist</h3>
                     <p class="muted">
-                      Auto-approved listeners stay hidden until the provider profile meets these safety/trust requirements.
+                      Auto-approved listeners stay hidden until the provider profile meets these
+                      safety/trust requirements.
                     </p>
                     <div class="checklist-grid">
                       @for (item of listenerChecklistItems(application); track item.key) {
@@ -185,10 +237,14 @@
 
               <div class="links">
                 @if (application.resumeLink) {
-                  <a [href]="application.resumeLink" target="_blank" rel="noopener">Open resume/profile</a>
+                  <a [href]="application.resumeLink" target="_blank" rel="noopener"
+                    >Open resume/profile</a
+                  >
                 }
                 @if (application.portfolioLink) {
-                  <a [href]="application.portfolioLink" target="_blank" rel="noopener">Open portfolio</a>
+                  <a [href]="application.portfolioLink" target="_blank" rel="noopener"
+                    >Open portfolio</a
+                  >
                 }
               </div>
 
@@ -203,8 +259,18 @@
 
               <div class="actions">
                 @if (!application.onboardedContributor) {
-                  <button (click)="updateStatus(application, 'REVIEWING')" [disabled]="savingId() === application.id">Reviewing</button>
-                  <button (click)="updateStatus(application, 'SHORTLISTED')" [disabled]="savingId() === application.id">Shortlist</button>
+                  <button
+                    (click)="updateStatus(application, 'REVIEWING')"
+                    [disabled]="savingId() === application.id"
+                  >
+                    Reviewing
+                  </button>
+                  <button
+                    (click)="updateStatus(application, 'SHORTLISTED')"
+                    [disabled]="savingId() === application.id"
+                  >
+                    Shortlist
+                  </button>
                   @if (application.status === 'SHORTLISTED') {
                     <div class="onboarding-checks">
                       @if (application.applicationTrack === 'PROFESSIONAL_PSYCHOLOGIST') {
@@ -212,7 +278,13 @@
                           <input
                             type="checkbox"
                             [checked]="onboardingChecks()[application.id]?.credentialVerified"
-                            (change)="setOnboardingCheck(application.id, 'credentialVerified', $any($event.target).checked)"
+                            (change)="
+                              setOnboardingCheck(
+                                application.id,
+                                'credentialVerified',
+                                $any($event.target).checked
+                              )
+                            "
                           />
                           I verified the professional credential and registration.
                         </label>
@@ -222,7 +294,13 @@
                           <input
                             type="checkbox"
                             [checked]="onboardingChecks()[application.id]?.supervisionVerified"
-                            (change)="setOnboardingCheck(application.id, 'supervisionVerified', $any($event.target).checked)"
+                            (change)="
+                              setOnboardingCheck(
+                                application.id,
+                                'supervisionVerified',
+                                $any($event.target).checked
+                              )
+                            "
                           />
                           I verified the student supervision or faculty details.
                         </label>
@@ -231,7 +309,13 @@
                         <input
                           type="checkbox"
                           [checked]="onboardingChecks()[application.id]?.orientationCompleted"
-                          (change)="setOnboardingCheck(application.id, 'orientationCompleted', $any($event.target).checked)"
+                          (change)="
+                            setOnboardingCheck(
+                              application.id,
+                              'orientationCompleted',
+                              $any($event.target).checked
+                            )
+                          "
                         />
                         Orientation is complete; activate this contributor now.
                       </label>
@@ -244,17 +328,31 @@
                       Create contributor profile
                     </button>
                   }
-                  <button class="danger" (click)="updateStatus(application, 'REJECTED')" [disabled]="savingId() === application.id">Reject</button>
+                  <button
+                    class="danger"
+                    (click)="updateStatus(application, 'REJECTED')"
+                    [disabled]="savingId() === application.id"
+                  >
+                    Reject
+                  </button>
                 } @else {
                   <div class="contributor-panel">
                     <p>
                       <strong>Contributor profile:</strong>
-                      <span [class]="contributorStatusClass(application.onboardedContributor.status)">
+                      <span
+                        [class]="contributorStatusClass(application.onboardedContributor.status)"
+                      >
                         {{ application.onboardedContributor.status }}
                       </span>
                     </p>
-                    <p><strong>Scope:</strong> {{ contributorScopeLabel(application.onboardedContributor.serviceScope) }}</p>
-                    <p><strong>Credential:</strong> {{ application.onboardedContributor.credentialVerificationStatus }}</p>
+                    <p>
+                      <strong>Scope:</strong>
+                      {{ contributorScopeLabel(application.onboardedContributor.serviceScope) }}
+                    </p>
+                    <p>
+                      <strong>Credential:</strong>
+                      {{ application.onboardedContributor.credentialVerificationStatus }}
+                    </p>
                     <p class="muted">No user or provider account is created from this action.</p>
                     @if (application.onboardedContributor.status === 'PENDING_ORIENTATION') {
                       <button
@@ -273,7 +371,10 @@
                       >
                         Suspend contributor
                       </button>
-                    } @else if (application.onboardedContributor.status === 'SUSPENDED' || application.onboardedContributor.status === 'INACTIVE') {
+                    } @else if (
+                      application.onboardedContributor.status === 'SUSPENDED' ||
+                      application.onboardedContributor.status === 'INACTIVE'
+                    ) {
                       <button
                         class="onboard"
                         (click)="updateContributorStatus(application, 'ACTIVE')"

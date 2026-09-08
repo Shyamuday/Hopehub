@@ -204,7 +204,7 @@ export class GroupHelpPage {
   readonly telegramApplyUrl = signal('');
   readonly message = signal('');
   readonly error = signal('');
-  readonly selectedDirectMessageKey = signal('telegramGroupHelpPinnedMessage');
+  readonly selectedDirectMessageKey = signal('telegramGroupHelpAdminRecruitmentMessage');
   readonly pinDirectMessage = signal(false);
   readonly capabilityGroups = signal<Array<{ title: string; options: readonly string[] }>>([]);
   readonly actionHistory = signal<GroupHelpActivityEntry[]>([]);
@@ -1691,10 +1691,14 @@ export class GroupHelpPage {
   }
 
   async sendDirect() {
-    const message = this.value(this.selectedDirectMessageKey()).trim();
+    let message = this.value(this.selectedDirectMessageKey()).trim();
     if (!message) {
       this.error.set('Select a message with content first.');
       return;
+    }
+    if (this.hasUnsavedConfigChanges()) {
+      if (!(await this.saveAll())) return;
+      message = this.value(this.selectedDirectMessageKey()).trim();
     }
     this.sending.set(true);
     this.error.set('');
@@ -1706,7 +1710,9 @@ export class GroupHelpPage {
         pin: this.pinDirectMessage(),
       });
       this.message.set(
-        this.pinDirectMessage() ? 'Message sent and pinned in Telegram.' : 'Message sent.',
+        this.pinDirectMessage()
+          ? 'Saved, sent, and pinned in Telegram.'
+          : 'Saved and sent to Telegram.',
       );
     } catch {
       this.error.set(

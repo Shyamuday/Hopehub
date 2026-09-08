@@ -9,6 +9,7 @@ import {
   type ProviderRoleDefinitionDto,
   type ProviderTaxonomyResponse,
   type ProviderApplicationTrack,
+  type ProviderRoleCategory,
 } from '@hopehub/contracts';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -31,9 +32,11 @@ import {
   FormFieldComponent,
   SelectableCardComponent,
 } from '../../shared/components';
+import { TelegramAdminApplicationComponent } from '../telegram-admin-application/telegram-admin-application.component';
 
 type CareContributorTrack = ProviderApplicationTrack;
 type CareTeamMemberType = string;
+type ApplicationKind = 'CARE_TEAM' | 'TELEGRAM_ADMIN';
 type ListenerScreeningQuestion = {
   id: string;
   text: string;
@@ -51,6 +54,7 @@ type ListenerScreeningQuestion = {
     FormDropdownComponent,
     FormFieldComponent,
     SelectableCardComponent,
+    TelegramAdminApplicationComponent,
   ],
   templateUrl: './careers.component.html',
   styleUrl: './careers.component.scss',
@@ -66,6 +70,8 @@ export class CareersComponent implements OnInit, OnDestroy {
   readonly isSubmitting = signal(false);
   readonly successMessage = signal('');
   readonly errorMessage = signal('');
+  readonly applicationKind = signal<ApplicationKind>('CARE_TEAM');
+  readonly selectedPathway = signal<ProviderRoleCategory>('PROFESSIONAL_CARE');
   readonly selectedTrack = signal<CareContributorTrack>('PROFESSIONAL_PSYCHOLOGIST');
   readonly listenerScreeningAnswers = signal<Record<string, string>>({});
   readonly listenerGuidelinesScrolled = signal(false);
@@ -90,12 +96,37 @@ export class CareersComponent implements OnInit, OnDestroy {
     track: CareContributorTrack;
     title: string;
     description: string;
+    category: ProviderRoleCategory;
+    requiresCredentials: boolean;
   }> = PROVIDER_ROLE_CODES.map((value) => ({
     value,
     track: providerApplicationTrackForRole(value),
     title: PROVIDER_ROLE_DEFINITIONS[value].label,
     description: PROVIDER_ROLE_DEFINITIONS[value].description,
+    category: PROVIDER_ROLE_DEFINITIONS[value].category,
+    requiresCredentials: PROVIDER_ROLE_DEFINITIONS[value].requiresCredentials,
   }));
+  readonly careerPathways: Array<{
+    value: ProviderRoleCategory;
+    title: string;
+    description: string;
+  }> = [
+    {
+      value: 'PROFESSIONAL_CARE',
+      title: 'Professional care',
+      description: 'For qualified psychologists, mental-wellness professionals, and counsellors.',
+    },
+    {
+      value: 'EMOTIONAL_LISTENER',
+      title: 'Emotional listener',
+      description: 'For psychology students and peer-support listeners in non-clinical roles.',
+    },
+    {
+      value: 'COACH_MENTOR',
+      title: 'Coach / mentor',
+      description: 'For coaching, meditation, breathwork, career, and study guidance.',
+    },
+  ];
   readonly specializationOptions: FormDropdownOption[] = [
     { value: '', label: 'Select specialization' },
     { value: 'Anxiety and stress', label: 'Anxiety and stress' },
@@ -106,6 +137,40 @@ export class CareersComponent implements OnInit, OnDestroy {
     { value: 'General emotional support', label: 'General emotional support' },
     { value: 'Other', label: 'Other' },
   ];
+  readonly coachMentorFocusOptions: Record<string, FormDropdownOption[]> = {
+    NLP_COACH: [
+      { value: '', label: 'Select coaching focus' },
+      { value: 'Mindset and reframing', label: 'Mindset and reframing' },
+      { value: 'Confidence building', label: 'Confidence building' },
+      { value: 'Habit change', label: 'Habit change' },
+      { value: 'Goal clarity', label: 'Goal clarity' },
+      { value: 'Other', label: 'Other' },
+    ],
+    LIFE_COACH: [
+      { value: '', label: 'Select coaching focus' },
+      { value: 'Life direction', label: 'Life direction' },
+      { value: 'Motivation and accountability', label: 'Motivation and accountability' },
+      { value: 'Routine planning', label: 'Routine planning' },
+      { value: 'Decision support', label: 'Decision support' },
+      { value: 'Other', label: 'Other' },
+    ],
+    MEDITATION_BREATHWORK_GUIDE: [
+      { value: '', label: 'Select guided practice' },
+      { value: 'Meditation and mindfulness', label: 'Meditation and mindfulness' },
+      { value: 'Breathwork', label: 'Breathwork' },
+      { value: 'Grounding and relaxation', label: 'Grounding and relaxation' },
+      { value: 'Sleep and calming routines', label: 'Sleep and calming routines' },
+      { value: 'Other', label: 'Other' },
+    ],
+    CAREER_STUDY_MENTOR: [
+      { value: '', label: 'Select mentoring focus' },
+      { value: 'Career direction', label: 'Career direction' },
+      { value: 'Study planning', label: 'Study planning' },
+      { value: 'Exam and performance pressure', label: 'Exam and performance pressure' },
+      { value: 'Focus and productivity', label: 'Focus and productivity' },
+      { value: 'Other', label: 'Other' },
+    ],
+  };
   readonly experienceOptions: FormDropdownOption[] = [
     { value: '', label: 'Select experience' },
     { value: '0-1 years', label: '0-1 years' },
@@ -179,6 +244,8 @@ export class CareersComponent implements OnInit, OnDestroy {
         track: this.applicationTrackForDefinition(role),
         title: role.label,
         description: role.description,
+        category: role.category as ProviderRoleCategory,
+        requiresCredentials: role.requiresCredentials,
       }));
     } catch {
       // Built-in roles remain as a resilient fallback during staggered deployments.
@@ -192,6 +259,9 @@ export class CareersComponent implements OnInit, OnDestroy {
     if (role.requiresListenerScreening || role.category === 'EMOTIONAL_LISTENER') {
       return 'PEER_SUPPORT_VOLUNTEER';
     }
+    if (role.category === 'COACH_MENTOR') {
+      return 'COACH_MENTOR';
+    }
     return 'PROFESSIONAL_PSYCHOLOGIST';
   }
 
@@ -200,14 +270,45 @@ export class CareersComponent implements OnInit, OnDestroy {
   }
 
   selectTrack(type: CareTeamMemberType): void {
-    const track =
-      this.applicationTracks.find((item) => item.value === type)?.track ??
-      'PROFESSIONAL_PSYCHOLOGIST';
+    const previousType = this.applicationForm.controls.careTeamType.value;
+    const selectedRole = this.applicationTracks.find((item) => item.value === type);
+    const track = selectedRole?.track ?? 'PROFESSIONAL_PSYCHOLOGIST';
+    if (previousType !== type) {
+      this.applicationForm.patchValue({
+        qualification: '',
+        qualifiedFrom: '',
+        specialization: '',
+        experienceYears: '',
+        registrationDetails: '',
+        resumeLink: '',
+        portfolioLink: '',
+        supervisionDetails: '',
+        livedExperienceSummary: '',
+        agreesToNonClinicalRole: false,
+      });
+    }
+    if (selectedRole) this.selectedPathway.set(selectedRole.category);
     this.selectedTrack.set(track);
     this.applicationForm.controls.careTeamType.setValue(type);
     this.applicationForm.controls.applicationTrack.setValue(track);
     this.updateTrackValidators(track);
     this.resetListenerScreeningAndGuidelines();
+  }
+
+  selectPathway(pathway: ProviderRoleCategory): void {
+    this.selectedPathway.set(pathway);
+    const firstRole = this.applicationTracks.find((role) => role.category === pathway);
+    if (firstRole) this.selectTrack(firstRole.value);
+  }
+
+  rolesForSelectedPathway() {
+    return this.applicationTracks.filter((role) => role.category === this.selectedPathway());
+  }
+
+  selectApplicationKind(kind: ApplicationKind): void {
+    this.applicationKind.set(kind);
+    this.successMessage.set('');
+    this.errorMessage.set('');
   }
 
   isTrack(track: CareContributorTrack): boolean {
@@ -216,6 +317,106 @@ export class CareersComponent implements OnInit, OnDestroy {
 
   isType(type: CareTeamMemberType): boolean {
     return this.applicationForm.controls.careTeamType.value === type;
+  }
+
+  selectedRole() {
+    const selectedType = this.applicationForm.controls.careTeamType.value;
+    return this.applicationTracks.find((item) => item.value === selectedType) ?? null;
+  }
+
+  selectedRoleTitle(): string {
+    return this.selectedRole()?.title || 'Care team member';
+  }
+
+  isClinicalCareRole(): boolean {
+    return this.selectedRole()?.category === 'PROFESSIONAL_CARE';
+  }
+
+  isCoachMentorRole(): boolean {
+    return this.selectedRole()?.category === 'COACH_MENTOR';
+  }
+
+  isNonClinicalRole(): boolean {
+    return !this.isClinicalCareRole();
+  }
+
+  isProfessionalOrCoachTrack(): boolean {
+    return (
+      this.selectedTrack() === 'PROFESSIONAL_PSYCHOLOGIST' ||
+      this.selectedTrack() === 'COACH_MENTOR'
+    );
+  }
+
+  requiresProfessionalCredentials(): boolean {
+    return this.isClinicalCareRole() && Boolean(this.selectedRole()?.requiresCredentials);
+  }
+
+  roleFormGuidance(): string {
+    if (this.isClinicalCareRole()) {
+      return 'Share your professional qualification, credentials, specialization, and clinical experience for verification.';
+    }
+    if (this.isCoachMentorRole()) {
+      return 'Share the training, focus area, and practical experience relevant to this coaching or mentoring role.';
+    }
+    if (this.isTrack('PSYCHOLOGY_STUDENT_VOLUNTEER')) {
+      return 'Share your current psychology course and supervision details, then complete the listener safety steps.';
+    }
+    return 'Share the listening or lived experience that prepares you for safe peer support, then complete the listener safety steps.';
+  }
+
+  qualificationLabel(): string {
+    switch (this.applicationForm.controls.careTeamType.value) {
+      case 'NLP_COACH':
+        return 'NLP training / certification';
+      case 'LIFE_COACH':
+        return 'Coaching training / certification';
+      case 'MEDITATION_BREATHWORK_GUIDE':
+        return 'Meditation / breathwork training';
+      case 'CAREER_STUDY_MENTOR':
+        return 'Mentoring training / relevant qualification';
+    }
+    if (this.isTrack('PSYCHOLOGY_STUDENT_VOLUNTEER')) return 'Current course / qualification';
+    return 'Highest professional qualification';
+  }
+
+  qualificationSourceLabel(): string {
+    if (this.isCoachMentorRole()) return 'Training or certification provider';
+    if (this.isTrack('PSYCHOLOGY_STUDENT_VOLUNTEER')) return 'College / institution';
+    return 'University / institution';
+  }
+
+  specializationLabel(): string {
+    switch (this.applicationForm.controls.careTeamType.value) {
+      case 'NLP_COACH':
+        return 'NLP coaching focus *';
+      case 'LIFE_COACH':
+        return 'Life-coaching focus *';
+      case 'MEDITATION_BREATHWORK_GUIDE':
+        return 'Practices you guide *';
+      case 'CAREER_STUDY_MENTOR':
+        return 'Mentoring focus *';
+    }
+    if (this.isTrack('PSYCHOLOGY_STUDENT_VOLUNTEER')) return 'Area of interest *';
+    return 'Professional specialization *';
+  }
+
+  specializationOptionsForRole(): FormDropdownOption[] {
+    const role = this.applicationForm.controls.careTeamType.value || '';
+    return this.coachMentorFocusOptions[role] || this.specializationOptions;
+  }
+
+  experienceLabel(): string {
+    switch (this.applicationForm.controls.careTeamType.value) {
+      case 'MEDITATION_BREATHWORK_GUIDE':
+        return 'Experience guiding practices *';
+      case 'CAREER_STUDY_MENTOR':
+        return 'Relevant mentoring experience *';
+      case 'NLP_COACH':
+      case 'LIFE_COACH':
+        return 'Relevant coaching experience *';
+      default:
+        return 'Professional experience *';
+    }
   }
 
   isListenerTrack(): boolean {
@@ -453,6 +654,7 @@ export class CareersComponent implements OnInit, OnDestroy {
                 consent: false,
               });
               this.resetListenerScreeningAndGuidelines();
+              this.selectedPathway.set('PROFESSIONAL_CARE');
               this.selectedTrack.set('PROFESSIONAL_PSYCHOLOGIST');
               this.updateTrackValidators('PROFESSIONAL_PSYCHOLOGIST');
             } else {
@@ -491,22 +693,25 @@ export class CareersComponent implements OnInit, OnDestroy {
     };
 
     const professional = track === 'PROFESSIONAL_PSYCHOLOGIST';
+    const coachTrack = track === 'COACH_MENTOR';
+    const clinical = this.isClinicalCareRole();
+    const coachMentor = this.isCoachMentorRole();
     const student = track === 'PSYCHOLOGY_STUDENT_VOLUNTEER';
     const peer = track === 'PEER_SUPPORT_VOLUNTEER';
-    const needsRegistration =
-      professional &&
-      this.applicationForm.controls.careTeamType.value === 'MENTAL_WELLNESS_PROFESSIONAL';
+    const needsRegistration = clinical && Boolean(this.selectedRole()?.requiresCredentials);
 
-    setRequired('qualification', professional || student);
-    setRequired('specialization', professional || student);
-    setRequired('experienceYears', professional);
+    setRequired('qualification', clinical || coachMentor || student);
+    setRequired('specialization', clinical || coachMentor || student);
+    setRequired('experienceYears', professional || coachTrack);
     setRequired('registrationDetails', needsRegistration);
-    setRequired('resumeLink', professional);
+    setRequired('resumeLink', professional || coachTrack);
     setRequired('supervisionDetails', student);
     setRequired('livedExperienceSummary', peer);
 
     const nonClinicalAgreement = this.applicationForm.controls.agreesToNonClinicalRole;
-    nonClinicalAgreement.setValidators(student || peer ? [Validators.requiredTrue] : []);
+    nonClinicalAgreement.setValidators(
+      coachMentor || student || peer ? [Validators.requiredTrue] : [],
+    );
     nonClinicalAgreement.updateValueAndValidity({ emitEvent: false });
   }
 
@@ -624,6 +829,9 @@ export class CareersComponent implements OnInit, OnDestroy {
     }
     if (track === 'PROFESSIONAL_PSYCHOLOGIST') {
       return 'Application submitted. Our team will verify your profile before discussing paid Hope Hub consultations.';
+    }
+    if (track === 'COACH_MENTOR') {
+      return 'Coach or mentor application submitted. We will review your training, experience, and non-clinical scope before contacting shortlisted applicants.';
     }
     if (track === 'PSYCHOLOGY_STUDENT_VOLUNTEER') {
       return score != null && maxScore != null

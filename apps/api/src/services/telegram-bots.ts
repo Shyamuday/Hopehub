@@ -1423,27 +1423,38 @@ async function handleProviderApplicationText(
       text:
         track === 'PROFESSIONAL_PSYCHOLOGIST'
           ? [
-              'Send professional details in 5 lines:',
+              'Send professional details in 6 lines:',
               '',
               'Qualification',
               'Qualified from / institute',
               'Specialization',
               'Experience years',
-              'Registration/license details, if any'
+              'Registration/license or credential details',
+              'Public resume/profile link'
             ].join('\n')
-          : track === 'PSYCHOLOGY_STUDENT_VOLUNTEER'
+          : track === 'COACH_MENTOR'
             ? [
-                'Send student listener details in 3 lines:',
+                'Send coaching or mentoring details in 5 lines:',
                 '',
-                'Current course/qualification',
-                'Area of interest',
-                'Supervisor/faculty details'
+                'Relevant training or certification',
+                'Training provider / institute',
+                'Coaching or mentoring focus',
+                'Relevant experience',
+                'Public resume/profile link'
               ].join('\n')
-            : [
-                'Briefly share your peer-support or life-experience background.',
-                '',
-                'Do not include private medical details. Keep it safe and general.'
-              ].join('\n'),
+            : track === 'PSYCHOLOGY_STUDENT_VOLUNTEER'
+              ? [
+                  'Send student listener details in 3 lines:',
+                  '',
+                  'Current course/qualification',
+                  'Area of interest',
+                  'Supervisor/faculty details'
+                ].join('\n')
+              : [
+                  'Briefly share your peer-support or life-experience background.',
+                  '',
+                  'Do not include private medical details. Keep it safe and general.'
+                ].join('\n'),
       reply_markup: { inline_keyboard: menuCancelRows() }
     });
     return true;
@@ -1459,28 +1470,46 @@ async function handleProviderApplicationText(
             qualifiedFrom: lines[1] || '',
             specialization: lines[2] || '',
             experienceYears: lines[3] || '',
-            registrationDetails: lines.slice(4).join(' ') || ''
+            registrationDetails: lines[4] || '',
+            resumeLink: lines.slice(5).join(' ') || ''
           }
-        : track === 'PSYCHOLOGY_STUDENT_VOLUNTEER'
+        : track === 'COACH_MENTOR'
           ? {
               qualification: lines[0] || '',
-              specialization: lines[1] || '',
-              registrationDetails: lines.slice(2).join(' ') || '',
-              experienceYears: 'Student listener'
-            }
-          : {
-              qualification: 'Peer support experience',
-              specialization: 'Non-clinical peer support',
-              experienceYears: 'Life experience',
+              qualifiedFrom: lines[1] || '',
+              specialization: lines[2] || '',
+              experienceYears: lines[3] || '',
               registrationDetails: '',
-              livedExperienceSummary: text.trim().slice(0, 3000)
-            };
+              resumeLink: lines.slice(4).join(' ') || ''
+            }
+          : track === 'PSYCHOLOGY_STUDENT_VOLUNTEER'
+            ? {
+                qualification: lines[0] || '',
+                specialization: lines[1] || '',
+                registrationDetails: lines.slice(2).join(' ') || '',
+                experienceYears: 'Student listener'
+              }
+            : {
+                qualification: 'Peer support experience',
+                specialization: 'Non-clinical peer support',
+                experienceYears: 'Life experience',
+                registrationDetails: '',
+                livedExperienceSummary: text.trim().slice(0, 3000)
+              };
     const requiredValues =
       track === 'PROFESSIONAL_PSYCHOLOGIST'
-        ? [next.qualification, next.specialization, next.experienceYears, next.registrationDetails]
-        : track === 'PSYCHOLOGY_STUDENT_VOLUNTEER'
-          ? [next.qualification, next.specialization, next.registrationDetails]
-          : [next.livedExperienceSummary];
+        ? [
+            next.qualification,
+            next.specialization,
+            next.experienceYears,
+            next.registrationDetails,
+            next.resumeLink
+          ]
+        : track === 'COACH_MENTOR'
+          ? [next.qualification, next.specialization, next.experienceYears, next.resumeLink]
+          : track === 'PSYCHOLOGY_STUDENT_VOLUNTEER'
+            ? [next.qualification, next.specialization, next.registrationDetails]
+            : [next.livedExperienceSummary];
     if (requiredValues.some((value) => typeof value === 'string' && !value.trim())) {
       await sendTelegramMessage(kind, {
         chat_id: session.chatId,
@@ -1542,7 +1571,9 @@ async function handleProviderApplicationText(
       text: [
         'Last step: tell us why you want to work with Hope Hub.',
         '',
-        'Please write at least 40 characters. Also confirm you understand listeners/student supporters are non-clinical and must follow safety escalation.'
+        pending.applicationTrack === 'PROFESSIONAL_PSYCHOLOGIST'
+          ? 'Please write at least 40 characters and describe the professional care you hope to provide.'
+          : 'Please write at least 40 characters. Also confirm you understand listeners, coaches, mentors, and student supporters are non-clinical and must follow safety escalation.'
       ].join('\n'),
       reply_markup: { inline_keyboard: menuCancelRows() }
     });
@@ -1592,9 +1623,10 @@ async function finishProviderApplication(
       specialization: pending.specialization || null,
       experienceYears: pending.experienceYears || null,
       registrationDetails:
-        pending.applicationTrack === 'PSYCHOLOGY_STUDENT_VOLUNTEER'
-          ? null
-          : pending.registrationDetails || null,
+        pending.applicationTrack === 'PROFESSIONAL_PSYCHOLOGIST'
+          ? pending.registrationDetails || null
+          : null,
+      resumeLink: pending.resumeLink || null,
       languages: pending.languages || 'Not provided',
       availability: pending.availability || 'Not provided',
       preferredChannel: pending.preferredChannel || 'telegram',

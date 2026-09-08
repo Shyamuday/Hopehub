@@ -28,15 +28,21 @@ const contributorStatusSchema = z.object({
   onboardingNote: z.string().trim().max(3000).optional().or(z.literal(''))
 });
 
-function serviceScopeFor(track: string) {
+export function careContributorServiceScopeForTrack(track: string) {
   switch (track) {
     case 'PROFESSIONAL_PSYCHOLOGIST':
       return 'CLINICAL_PSYCHOLOGY' as const;
+    case 'COACH_MENTOR':
+      return 'COACH_MENTORING' as const;
     case 'PSYCHOLOGY_STUDENT_VOLUNTEER':
       return 'SUPERVISED_STUDENT_SUPPORT' as const;
     default:
       return 'NON_CLINICAL_PEER_SUPPORT' as const;
   }
+}
+
+function isListenerApplicationTrack(track: string) {
+  return track === 'PSYCHOLOGY_STUDENT_VOLUNTEER' || track === 'PEER_SUPPORT_VOLUNTEER';
 }
 
 function normalizeListenerAnswers(raw: unknown): Array<{ questionId: string; optionId: string }> {
@@ -176,7 +182,7 @@ export function registerAdminCounsellorApplicationRoutes(router: Router) {
         _count: { id: true }
       });
       const listenerEmails = applications
-        .filter((application) => application.applicationTrack !== 'PROFESSIONAL_PSYCHOLOGIST')
+        .filter((application) => isListenerApplicationTrack(application.applicationTrack))
         .map((application) => application.email.toLowerCase());
       const recentFailedAttempts = listenerEmails.length
         ? await prisma.listenerScreeningAttempt.groupBy({
@@ -400,7 +406,7 @@ export function registerAdminCounsellorApplicationRoutes(router: Router) {
             applicationId: application.id,
             applicationTrack: application.applicationTrack,
             careTeamType: application.careTeamType,
-            serviceScope: serviceScopeFor(application.applicationTrack),
+            serviceScope: careContributorServiceScopeForTrack(application.applicationTrack),
             status,
             credentialVerificationStatus,
             fullName: application.fullName,

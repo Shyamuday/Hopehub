@@ -21,12 +21,16 @@ export type ProviderRoleCategory = 'PROFESSIONAL_CARE' | 'EMOTIONAL_LISTENER' | 
 export type ProviderRoleTone =
   'professional' | 'student' | 'listener' | 'coach' | 'wellness' | 'mentor';
 export type ProviderApplicationTrack =
-  'PROFESSIONAL_PSYCHOLOGIST' | 'PSYCHOLOGY_STUDENT_VOLUNTEER' | 'PEER_SUPPORT_VOLUNTEER';
+  | 'PROFESSIONAL_PSYCHOLOGIST'
+  | 'PSYCHOLOGY_STUDENT_VOLUNTEER'
+  | 'PEER_SUPPORT_VOLUNTEER'
+  | 'COACH_MENTOR';
 
 export const PROVIDER_APPLICATION_TRACK_LABELS: Record<ProviderApplicationTrack, string> = {
   PROFESSIONAL_PSYCHOLOGIST: 'Professional care provider',
   PSYCHOLOGY_STUDENT_VOLUNTEER: 'Psychology student listener',
-  PEER_SUPPORT_VOLUNTEER: 'Peer support listener'
+  PEER_SUPPORT_VOLUNTEER: 'Peer support listener',
+  COACH_MENTOR: 'Coach / mentor'
 };
 
 export type ProviderRoleDefinition = {
@@ -278,5 +282,6 @@ export function supportPathForProviderRole(role?: string | null): ProviderRoleCa
 export function providerApplicationTrackForRole(role: ProviderRoleCode): ProviderApplicationTrack {
   if (role === 'PSYCHOLOGY_STUDENT_VOLUNTEER') return 'PSYCHOLOGY_STUDENT_VOLUNTEER';
   if (role === 'PEER_SUPPORT_VOLUNTEER') return 'PEER_SUPPORT_VOLUNTEER';
+  if (PROVIDER_ROLE_DEFINITIONS[role].category === 'COACH_MENTOR') return 'COACH_MENTOR';
   return 'PROFESSIONAL_PSYCHOLOGIST';
 }

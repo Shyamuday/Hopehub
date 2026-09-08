@@ -28,7 +28,12 @@ import {
   MINIMUM_LISTENER_GUIDELINES_READ_SECONDS
 } from '../constants/listener-onboarding.constants.js';
 import { asyncRoute, hashToken, randomToken, writeAuditLog } from '../utils/helpers.js';
-import { providerRoleLabel } from '@hopehub/contracts';
+import {
+  providerApplicationTrackForRole,
+  providerRoleDefinition,
+  providerRoleLabel,
+  type ProviderRoleCode
+} from '@hopehub/contracts';
 
 export const counsellorApplicationsRouter = Router();
 
@@ -54,7 +59,8 @@ export const counsellorApplicationSchema = z
     applicationTrack: z.enum([
       'PROFESSIONAL_PSYCHOLOGIST',
       'PSYCHOLOGY_STUDENT_VOLUNTEER',
-      'PEER_SUPPORT_VOLUNTEER'
+      'PEER_SUPPORT_VOLUNTEER',
+      'COACH_MENTOR'
     ]),
     careTeamType: z.nativeEnum(CareTeamMemberType).optional(),
     fullName: z.string().trim().min(2).max(120),
@@ -99,6 +105,19 @@ export const counsellorApplicationSchema = z
       if (!value?.trim()) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [path], message });
     };
 
+    const careTeamType = body.careTeamType || CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL;
+    const roleDefinition = providerRoleDefinition(careTeamType);
+    const expectedTrack = roleDefinition
+      ? providerApplicationTrackForRole(careTeamType as ProviderRoleCode)
+      : null;
+    if (expectedTrack && body.applicationTrack !== expectedTrack) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['applicationTrack'],
+        message: `${roleDefinition?.label || 'Selected role'} must use the ${expectedTrack} pathway.`
+      });
+    }
+
     if (body.applicationTrack === 'PROFESSIONAL_PSYCHOLOGIST') {
       requireText(
         body.qualification,
@@ -115,10 +134,7 @@ export const counsellorApplicationSchema = z
         'experienceYears',
         'Experience is required for professional care team applications.'
       );
-      if (
-        (body.careTeamType || CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL) ===
-        CareTeamMemberType.MENTAL_WELLNESS_PROFESSIONAL
-      ) {
+      if (roleDefinition?.requiresCredentials) {
         requireText(
           body.registrationDetails,
           'registrationDetails',
@@ -126,6 +142,28 @@ export const counsellorApplicationSchema = z
         );
       }
       requireText(body.resumeLink, 'resumeLink', 'A resume or profile link is required.');
+    }
+
+    if (body.applicationTrack === 'COACH_MENTOR') {
+      requireText(body.qualification, 'qualification', 'Relevant training is required.');
+      requireText(
+        body.specialization,
+        'specialization',
+        'A coaching or mentoring focus is required.'
+      );
+      requireText(body.experienceYears, 'experienceYears', 'Relevant experience is required.');
+      requireText(
+        body.resumeLink,
+        'resumeLink',
+        'A coaching or mentoring profile link is required.'
+      );
+      if (!body.agreesToNonClinicalRole) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['agreesToNonClinicalRole'],
+          message: 'Coaches and mentors must accept the non-clinical role agreement.'
+        });
+      }
     }
 
     if (body.applicationTrack === 'PSYCHOLOGY_STUDENT_VOLUNTEER') {
