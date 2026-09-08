@@ -939,22 +939,11 @@ async function main() {
     connectionRetries: 5
   });
   await client.connect();
+  // This is a short-lived polling worker that makes explicit API requests. It
+  // does not consume Telegram updates; allowing the update manager to replay a
+  // large channel backlog can keep a one-shot scheduler alive indefinitely.
+  client.updateManager.stop();
   try {
-    try {
-      const memberSync = await synchronizeConfiguredTelegramGroupMembers(client);
-      for (const result of memberSync) {
-        if (result.skipped) continue;
-        console.log(
-          `Synchronized ${result.scope} Telegram directory ${result.chatId}: ${result.active} active, ${result.administrators} administrators, ${result.departed} departed.`
-        );
-      }
-    } catch (error) {
-      // Member synchronization must not block native VC scheduling. A later
-      // scheduler run retries because a failed sync never advances its state.
-      console.warn(
-        `Telegram member directory sync failed: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
     await sendVoiceHostReminders(now);
     await expireMissedVoiceChats(client, now);
     await monitorEmptyActiveVoiceChats(client, now);
@@ -1164,6 +1153,25 @@ async function main() {
         );
         await notifyVoiceScheduleFailure(event, message);
       }
+    }
+
+    // Directory maintenance is lower priority than VC lifecycle work. Run it
+    // last so a slow Telegram participant listing can never delay occupancy
+    // checks, live reminders, empty-room recovery, or the next scheduled VC.
+    try {
+      const memberSync = await synchronizeConfiguredTelegramGroupMembers(client);
+      for (const result of memberSync) {
+        if (result.skipped) continue;
+        console.log(
+          `Synchronized ${result.scope} Telegram directory ${result.chatId}: ${result.active} active, ${result.administrators} administrators, ${result.departed} departed.`
+        );
+      }
+    } catch (error) {
+      // A later scheduler run retries because a failed sync never advances its
+      // state. The systemd runtime limit also protects against a stalled call.
+      console.warn(
+        `Telegram member directory sync failed: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   } finally {
     await client.disconnect();

@@ -233,7 +233,11 @@ sudo install -m 644 "$APP_DIR/deploy/systemd/hopehub-telegram-voice-scheduler.se
 sudo install -m 644 "$APP_DIR/deploy/systemd/hopehub-telegram-voice-scheduler.timer" /etc/systemd/system/hopehub-telegram-voice-scheduler.timer
 sudo systemctl daemon-reload
 if sudo test -s /etc/hopehub-telegram-user-session; then
-  sudo systemctl enable --now hopehub-telegram-voice-scheduler.timer
+  # Replace any previous one-shot process that was left waiting on Telegram.
+  # The restarted timer launches the newly deployed scheduler after OnBootSec.
+  sudo systemctl stop hopehub-telegram-voice-scheduler.service >/dev/null 2>&1 || true
+  sudo systemctl enable hopehub-telegram-voice-scheduler.timer
+  sudo systemctl restart hopehub-telegram-voice-scheduler.timer
 else
   sudo systemctl disable --now hopehub-telegram-voice-scheduler.timer >/dev/null 2>&1 || true
   echo "Telegram native voice scheduler is awaiting its one-time user login."

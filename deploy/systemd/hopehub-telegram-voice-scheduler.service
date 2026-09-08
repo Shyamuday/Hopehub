@@ -8,3 +8,6 @@ Type=oneshot
 User=root
 WorkingDirectory=/opt/hopehub/apps/api
 ExecStart=/usr/bin/npm run telegram:voice:schedule
+TimeoutStartSec=50s
+TimeoutStopSec=5s
+KillMode=control-group
