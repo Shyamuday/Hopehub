@@ -450,9 +450,6 @@ jobs:
         if: github.event.inputs.restrict_telegram_pin_rights == 'true'
         run: |
           set -euo pipefail
-          export TELEGRAM_USER_API_ID="$(sudo cat /etc/hopehub-telegram-user-api-id)"
-          export TELEGRAM_USER_API_HASH="$(sudo cat /etc/hopehub-telegram-user-api-hash)"
-          export TELEGRAM_USER_SESSION="$(sudo cat /etc/hopehub-telegram-user-session)"
           cd /opt/hopehub/apps/api
           npm run telegram:restrict-pin-admins -- --apply
 

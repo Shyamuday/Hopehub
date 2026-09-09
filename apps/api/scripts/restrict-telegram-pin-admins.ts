@@ -1,7 +1,4 @@
 import 'dotenv/config';
-import { readFileSync } from 'node:fs';
-import { Api, TelegramClient } from 'teleproto';
-import { StringSession } from 'teleproto/sessions';
 import { prisma } from '../src/db.js';
 import { getSiteConfigMap } from '../src/services/site-config.service.js';
 import { callCommunityTelegramApi } from '../src/services/telegram-community-bots.client.js';
@@ -12,97 +9,58 @@ import {
   isExclusiveGroupHelpPinAdminUsername
 } from '../src/services/telegram-group-help.pin-rights.js';
 
-const SESSION_PATH = '/etc/hopehub-telegram-user-session';
 const APPLY = process.argv.includes('--apply');
-
-type AdminRights = {
-  changeInfo?: boolean;
-  postMessages?: boolean;
-  editMessages?: boolean;
-  deleteMessages?: boolean;
-  banUsers?: boolean;
-  inviteUsers?: boolean;
-  pinMessages?: boolean;
-  addAdmins?: boolean;
-  anonymous?: boolean;
-  manageCall?: boolean;
-  other?: boolean;
-  manageTopics?: boolean;
-  postStories?: boolean;
-  editStories?: boolean;
-  deleteStories?: boolean;
-  manageDirectMessages?: boolean;
-  manageRanks?: boolean;
-  manageLinkedPeers?: boolean;
-};
-
-type AdminRecord = {
-  id: string | number | bigint;
-  username?: string;
-  bot?: boolean;
-  participant?: {
-    className?: string;
-    adminRights?: AdminRights;
-    rank?: string;
-  };
-};
 
 type BotAdministrator = {
   status?: string;
   user: { id: number; username?: string; is_bot?: boolean };
+  is_anonymous?: boolean;
+  custom_title?: string;
+  can_manage_chat?: boolean;
+  can_delete_messages?: boolean;
+  can_manage_video_chats?: boolean;
+  can_restrict_members?: boolean;
+  can_promote_members?: boolean;
+  can_change_info?: boolean;
+  can_invite_users?: boolean;
+  can_post_stories?: boolean;
+  can_edit_stories?: boolean;
+  can_delete_stories?: boolean;
   can_pin_messages?: boolean;
+  can_manage_topics?: boolean;
+  can_manage_tags?: boolean;
+  can_send_welcome_messages?: boolean;
 };
 
-const secret = (environmentName: string, fileName: string) =>
-  process.env[environmentName]?.trim() || readFileSync(`/etc/${fileName}`, 'utf8').trim();
+function isOwner(admin: BotAdministrator) {
+  return ['creator', 'owner'].includes(admin.status?.toLowerCase() || '');
+}
 
-function editAdminParams(rights: AdminRights, pinMessages: boolean, rank?: string) {
+function desiredPinRight(admin: BotAdministrator) {
+  return canManageGroupHelpPins({
+    status: admin.status,
+    username: admin.user.username
+  });
+}
+
+function preservedAdministratorRights(admin: BotAdministrator, canPinMessages: boolean) {
   return {
-    changeInfo: rights.changeInfo === true,
-    postMessages: rights.postMessages === true,
-    editMessages: rights.editMessages === true,
-    deleteMessages: rights.deleteMessages === true,
-    banUsers: rights.banUsers === true,
-    inviteUsers: rights.inviteUsers === true,
-    pinMessages,
-    addAdmins: rights.addAdmins === true,
-    anonymous: rights.anonymous === true,
-    manageCall: rights.manageCall === true,
-    other: rights.other === true,
-    manageTopics: rights.manageTopics === true,
-    postStories: rights.postStories === true,
-    editStories: rights.editStories === true,
-    deleteStories: rights.deleteStories === true,
-    manageDirectMessages: rights.manageDirectMessages === true,
-    manageRanks: rights.manageRanks === true,
-    manageLinkedPeers: rights.manageLinkedPeers === true,
-    ...(rank ? { rank } : {})
+    is_anonymous: admin.is_anonymous === true,
+    can_manage_chat: admin.can_manage_chat === true,
+    can_delete_messages: admin.can_delete_messages === true,
+    can_manage_video_chats: admin.can_manage_video_chats === true,
+    can_restrict_members: admin.can_restrict_members === true,
+    can_promote_members: admin.can_promote_members === true,
+    can_change_info: admin.can_change_info === true,
+    can_invite_users: admin.can_invite_users === true,
+    can_post_stories: admin.can_post_stories === true,
+    can_edit_stories: admin.can_edit_stories === true,
+    can_delete_stories: admin.can_delete_stories === true,
+    can_pin_messages: canPinMessages,
+    can_manage_topics: admin.can_manage_topics === true,
+    can_manage_tags: admin.can_manage_tags === true,
+    can_send_welcome_messages: admin.can_send_welcome_messages === true
   };
-}
-
-async function administrators(
-  client: TelegramClient,
-  entity: Awaited<ReturnType<TelegramClient['getInputEntity']>>
-) {
-  const result: AdminRecord[] = [];
-  for await (const user of client.iterParticipants(entity, {
-    filter: new Api.ChannelParticipantsAdmins(undefined)
-  })) {
-    result.push(user as unknown as AdminRecord);
-  }
-  return result;
-}
-
-function isOwner(admin: AdminRecord, botAdministrators: Map<string, BotAdministrator>) {
-  const botStatus = botAdministrators.get(String(admin.id))?.status || '';
-  return (
-    /(?:creator|owner)/i.test(admin.participant?.className || '') ||
-    ['creator', 'owner'].includes(botStatus.toLowerCase())
-  );
-}
-
-function usernameFor(admin: AdminRecord, botAdministrators: Map<string, BotAdministrator>) {
-  return botAdministrators.get(String(admin.id))?.user.username || admin.username;
 }
 
 async function main() {
@@ -110,111 +68,85 @@ async function main() {
   const chatId = values.telegramGroupHelpGroupChatId?.trim();
   if (!chatId) throw new Error('The Hope Hub main Telegram group is not configured.');
 
-  const apiId = Number(secret('TELEGRAM_USER_API_ID', 'hopehub-telegram-user-api-id'));
-  const apiHash = secret('TELEGRAM_USER_API_HASH', 'hopehub-telegram-user-api-hash');
-  const session =
-    process.env.TELEGRAM_USER_SESSION?.trim() || readFileSync(SESSION_PATH, 'utf8').trim();
-  if (!Number.isInteger(apiId) || !apiHash || !session) {
-    throw new Error('The Telegram owner session is incomplete.');
-  }
-
-  const [serviceBot, botAdministratorList] = await Promise.all([
+  const [serviceBot, administrators] = await Promise.all([
     callCommunityTelegramApi<{ id: number }>(GROUP_HELP_BOT_SLUG, 'getMe', {}),
     callCommunityTelegramApi<BotAdministrator[]>(GROUP_HELP_BOT_SLUG, 'getChatAdministrators', {
       chat_id: chatId
     })
   ]);
-  const botAdministrators = new Map(
-    botAdministratorList.map((administrator) => [String(administrator.user.id), administrator])
+  const effectiveServiceMembership = administrators.find(
+    (admin) => admin.user.id === serviceBot.id
   );
-  const client = new TelegramClient(new StringSession(session), apiId, apiHash, {
-    connectionRetries: 5
-  });
-  await client.connect();
-  try {
-    const entity = await client.getInputEntity(/^[-]?\d+$/.test(chatId) ? Number(chatId) : chatId);
-    const current = await administrators(client, entity);
-    const ownerCount = current.filter((admin) => isOwner(admin, botAdministrators)).length;
-    const exclusiveAdmins = botAdministratorList.filter(
-      (admin) =>
-        isExclusiveGroupHelpPinAdminUsername(admin.user.username) &&
-        !['creator', 'owner'].includes(admin.status?.toLowerCase() || '')
-    );
-    if (ownerCount < 1) throw new Error('The group owner was not found in the administrator list.');
-    if (exclusiveAdmins.length !== 1) {
-      throw new Error(
-        `Expected exactly one @${GROUP_HELP_EXCLUSIVE_PIN_ADMIN_USERNAME} administrator; found ${exclusiveAdmins.length}.`
-      );
-    }
-    const changes = current.filter((admin) => {
-      if (isOwner(admin, botAdministrators) || String(admin.id) === String(serviceBot.id))
-        return false;
-      const desired = canManageGroupHelpPins({
-        status: 'administrator',
-        username: usernameFor(admin, botAdministrators)
-      });
-      const currentPinRight =
-        botAdministrators.get(String(admin.id))?.can_pin_messages ??
-        admin.participant?.adminRights?.pinMessages;
-      return Boolean(currentPinRight) !== desired;
-    });
-    console.log(
-      JSON.stringify({
-        apply: APPLY,
-        administrators: current.length,
-        owners: ownerCount,
-        exclusivePinAdministrators: exclusiveAdmins.length,
-        rightsToChange: changes.length,
-        serviceBotExcluded: current.some((admin) => String(admin.id) === String(serviceBot.id))
-      })
-    );
-    if (!APPLY) return;
-
-    for (const admin of changes) {
-      const desired = canManageGroupHelpPins({
-        status: 'administrator',
-        username: usernameFor(admin, botAdministrators)
-      });
-      await client.editAdmin(
-        entity,
-        admin as never,
-        editAdminParams(admin.participant?.adminRights || {}, desired, admin.participant?.rank)
-      );
-    }
-
-    const verified = await callCommunityTelegramApi<BotAdministrator[]>(
-      GROUP_HELP_BOT_SLUG,
-      'getChatAdministrators',
-      { chat_id: chatId }
-    );
-    const violations = verified.filter((admin) => {
-      if (
-        ['creator', 'owner'].includes(admin.status?.toLowerCase() || '') ||
-        String(admin.user.id) === String(serviceBot.id)
-      )
-        return false;
-      const expected = canManageGroupHelpPins({
-        status: 'administrator',
-        username: admin.user.username
-      });
-      return Boolean(admin.can_pin_messages) !== expected;
-    });
-    if (violations.length) {
-      throw new Error(
-        `Telegram pin-right verification failed for ${violations.length} administrator(s).`
-      );
-    }
-    console.log(
-      JSON.stringify({
-        applied: true,
-        changed: changes.length,
-        verifiedAdministrators: verified.length,
-        violations: 0
-      })
-    );
-  } finally {
-    await client.disconnect();
+  if (!effectiveServiceMembership?.can_promote_members) {
+    throw new Error('The Hope Hub bot does not have permission to edit administrator rights.');
   }
+
+  const ownerCount = administrators.filter(isOwner).length;
+  const exclusiveAdmins = administrators.filter(
+    (admin) => isExclusiveGroupHelpPinAdminUsername(admin.user.username) && !isOwner(admin)
+  );
+  if (ownerCount < 1) throw new Error('The group owner was not found in the administrator list.');
+  if (exclusiveAdmins.length !== 1) {
+    throw new Error(
+      `Expected exactly one @${GROUP_HELP_EXCLUSIVE_PIN_ADMIN_USERNAME} Mindcraft administrator; found ${exclusiveAdmins.length}.`
+    );
+  }
+
+  const changes = administrators.filter(
+    (admin) =>
+      !isOwner(admin) &&
+      admin.user.id !== serviceBot.id &&
+      Boolean(admin.can_pin_messages) !== desiredPinRight(admin)
+  );
+  console.log(
+    JSON.stringify({
+      apply: APPLY,
+      administrators: administrators.length,
+      owners: ownerCount,
+      exclusivePinAdministrators: exclusiveAdmins.length,
+      rightsToChange: changes.length,
+      serviceBotExcluded: administrators.some((admin) => admin.user.id === serviceBot.id)
+    })
+  );
+  if (!APPLY) return;
+
+  const editFailures: string[] = [];
+  for (const admin of changes) {
+    try {
+      await callCommunityTelegramApi(GROUP_HELP_BOT_SLUG, 'promoteChatMember', {
+        chat_id: chatId,
+        user_id: admin.user.id,
+        ...preservedAdministratorRights(admin, desiredPinRight(admin))
+      });
+    } catch {
+      editFailures.push(String(admin.user.id));
+    }
+  }
+
+  const verified = await callCommunityTelegramApi<BotAdministrator[]>(
+    GROUP_HELP_BOT_SLUG,
+    'getChatAdministrators',
+    { chat_id: chatId }
+  );
+  const violations = verified.filter(
+    (admin) =>
+      !isOwner(admin) &&
+      admin.user.id !== serviceBot.id &&
+      Boolean(admin.can_pin_messages) !== desiredPinRight(admin)
+  );
+  if (violations.length || editFailures.length) {
+    throw new Error(
+      `Telegram pin-right verification failed: ${violations.length} violation(s), ${editFailures.length} edit failure(s).`
+    );
+  }
+  console.log(
+    JSON.stringify({
+      applied: true,
+      changed: changes.length,
+      verifiedAdministrators: verified.length,
+      violations: 0
+    })
+  );
 }
 
 main()
