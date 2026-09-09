@@ -46,7 +46,8 @@ type AdminRecord = {
   };
 };
 
-const secret = (name: string) => readFileSync(`/etc/${name}`, 'utf8').trim();
+const secret = (environmentName: string, fileName: string) =>
+  process.env[environmentName]?.trim() || readFileSync(`/etc/${fileName}`, 'utf8').trim();
 const normalizeUsername = (value: string | undefined) =>
   value?.trim().replace(/^@/, '').toLowerCase() || '';
 
@@ -96,9 +97,10 @@ async function main() {
   const chatId = values.telegramGroupHelpGroupChatId?.trim();
   if (!chatId) throw new Error('The Hope Hub main Telegram group is not configured.');
 
-  const apiId = Number(secret('hopehub-telegram-user-api-id'));
-  const apiHash = secret('hopehub-telegram-user-api-hash');
-  const session = readFileSync(SESSION_PATH, 'utf8').trim();
+  const apiId = Number(secret('TELEGRAM_USER_API_ID', 'hopehub-telegram-user-api-id'));
+  const apiHash = secret('TELEGRAM_USER_API_HASH', 'hopehub-telegram-user-api-hash');
+  const session =
+    process.env.TELEGRAM_USER_SESSION?.trim() || readFileSync(SESSION_PATH, 'utf8').trim();
   if (!Number.isInteger(apiId) || !apiHash || !session) {
     throw new Error('The Telegram owner session is incomplete.');
   }
