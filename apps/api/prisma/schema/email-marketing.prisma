@@ -90,6 +90,11 @@ model EmailMarketingContact {
   @@index([lastOrderAt])
   @@index([orderCount])
   @@index([totalOrderValue])
+  @@index([sourceSegments], type: Gin, map: "EmailMarketingContact_sourceSegments_gin_idx")
+  @@index([tags], type: Gin, map: "EmailMarketingContact_tags_gin_idx")
+  @@index([productSkus], type: Gin, map: "EmailMarketingContact_productSkus_gin_idx")
+  @@index([paymentMethods], type: Gin, map: "EmailMarketingContact_paymentMethods_gin_idx")
+  @@index([orderStatuses], type: Gin, map: "EmailMarketingContact_orderStatuses_gin_idx")
   @@index([registeredUserId])
   @@index([importedById])
 }
@@ -118,7 +123,7 @@ model EmailCampaign {
   registeredRole Role?
   audienceFilter Json?
   templateId     String?
-  template       EmailMarketingTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  template       EmailMarketingTemplate?  @relation(fields: [templateId], references: [id], onDelete: SetNull)
   status         EmailCampaignStatus      @default(DRAFT)
   scheduledAt    DateTime?
   queuedAt       DateTime?
