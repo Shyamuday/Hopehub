@@ -33,6 +33,7 @@
     "telegram:voice:login": "tsx scripts/login-telegram-voice-scheduler.ts",
     "telegram:voice:schedule": "tsx scripts/run-telegram-voice-scheduler.ts",
     "telegram:members:sync": "tsx scripts/sync-telegram-group-members.ts",
+    "telegram:restrict-pin-admins": "tsx scripts/restrict-telegram-pin-admins.ts",
     "telegram:managed-bot:create": "tsx scripts/create-telegram-managed-bot.ts",
     "telegram:botfather-bot:create": "tsx scripts/create-telegram-botfather-bot.ts",
     "telegram:content:channels:create": "tsx scripts/create-telegram-content-channels.ts",

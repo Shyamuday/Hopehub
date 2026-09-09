@@ -19,6 +19,11 @@ on:
         description: 'Optional private hopehub-contact-inbox object key containing one normalized email per line'
         required: false
         default: ''
+      restrict_telegram_pin_rights:
+        description: 'Restrict main-group pin rights to the owner and @spiritualspirit after API deploy'
+        required: false
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths:
@@ -440,6 +445,13 @@ jobs:
             --s3-region "us-east-1" \
             --source "Downloads/emails historical exports (2026-09-08)" \
             --basis "Administrator-directed import from historical customer/order exports on 2026-09-08; promotional consent not independently verified."
+
+      - name: Restrict Telegram pin administrator rights
+        if: steps.api-changes.outputs.deploy == 'true' && github.event.inputs.restrict_telegram_pin_rights == 'true'
+        run: |
+          set -euo pipefail
+          cd /opt/hopehub/apps/api
+          npm run telegram:restrict-pin-admins -- --apply
 
   notify-deployment-failure:
     name: Notify admin about failed deployment
