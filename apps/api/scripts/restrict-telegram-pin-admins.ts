@@ -111,6 +111,7 @@ async function main() {
   if (!APPLY) return;
 
   const editFailures: string[] = [];
+  const editFailureReasons = new Set<string>();
   for (const admin of changes) {
     try {
       await callCommunityTelegramApi(GROUP_HELP_BOT_SLUG, 'promoteChatMember', {
@@ -118,8 +119,9 @@ async function main() {
         user_id: admin.user.id,
         ...preservedAdministratorRights(admin, desiredPinRight(admin))
       });
-    } catch {
+    } catch (error) {
       editFailures.push(String(admin.user.id));
+      editFailureReasons.add(error instanceof Error ? error.message : 'Unknown Telegram error.');
     }
   }
 
@@ -135,8 +137,9 @@ async function main() {
       Boolean(admin.can_pin_messages) !== desiredPinRight(admin)
   );
   if (violations.length || editFailures.length) {
+    const reasons = [...editFailureReasons].join(' | ');
     throw new Error(
-      `Telegram pin-right verification failed: ${violations.length} violation(s), ${editFailures.length} edit failure(s).`
+      `Telegram pin-right verification failed: ${violations.length} violation(s), ${editFailures.length} edit failure(s).${reasons ? ` Telegram: ${reasons}` : ''}`
     );
   }
   console.log(
