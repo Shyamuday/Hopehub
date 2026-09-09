@@ -41,9 +41,9 @@
     "assets:migrate:s3": "tsx scripts/migrate-local-assets-to-s3.ts"
   },
   "dependencies": {
-    "@hopehub/contracts": "file:../../libs/contracts",
     "@aws-sdk/client-s3": "^3.1098.0",
     "@aws-sdk/s3-request-presigner": "^3.1103.0",
+    "@hopehub/contracts": "file:../../libs/contracts",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.2.0",
     "@socket.io/redis-adapter": "^8.3.0",
@@ -64,6 +64,7 @@
     "pdfkit": "^0.19.1",
     "pg": "^8.20.0",
     "razorpay": "^2.9.6",
+    "read-excel-file": "^9.3.10",
     "redis": "^4.7.1",
     "socket.io": "^4.8.1",
     "teleproto": "^1.228.5",

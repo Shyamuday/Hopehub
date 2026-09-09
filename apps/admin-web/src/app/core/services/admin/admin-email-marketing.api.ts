@@ -151,6 +151,28 @@ export type EmailMarketingTemplateDraft = Pick<
   | 'sortOrder'
 >;
 
+export type MarketingSpreadsheetPreview = {
+  fileName: string;
+  format: 'CSV' | 'XLSX';
+  sheets: Array<{ name: string; rows: number; columns: string[] }>;
+  sourceRows: number;
+  validContacts: number;
+  skippedRows: number;
+  mappedFields: string[];
+};
+
+export type EmailMarketingFilterOptions = {
+  states: string[];
+  cities: string[];
+  postalCodes: string[];
+  sourceLabels: string[];
+  sourceChannels: string[];
+  sourceSegments: string[];
+  paymentMethods: string[];
+  orderStatuses: string[];
+  tags: string[];
+};
+
 export type EmailCampaignDelivery = {
   id: string;
   email: string;
@@ -277,6 +299,14 @@ export class AdminEmailMarketingApi extends AdminApiBase {
     );
   }
 
+  filterOptions() {
+    return firstValueFrom(
+      this.http.get<EmailMarketingFilterOptions>(
+        `${this.apiBase}${API_PATHS.ADMIN.EMAIL_MARKETING_FILTER_OPTIONS}`,
+      ),
+    );
+  }
+
   importContacts(payload: {
     contacts: string;
     sourceLabel: string;
@@ -291,6 +321,38 @@ export class AdminEmailMarketingApi extends AdminApiBase {
         converted: number;
         suppressed: number;
       }>(`${this.apiBase}${API_PATHS.ADMIN.EMAIL_MARKETING_CONTACTS_IMPORT}`, payload),
+    );
+  }
+
+  previewContactFile(file: File) {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    return firstValueFrom(
+      this.http.post<MarketingSpreadsheetPreview>(
+        `${this.apiBase}${API_PATHS.ADMIN.EMAIL_MARKETING_CONTACTS_IMPORT_FILE_PREVIEW}`,
+        formData,
+      ),
+    );
+  }
+
+  importContactFile(
+    file: File,
+    payload: { sourceLabel: string; consentBasis: string; consentConfirmed: true },
+  ) {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    formData.append('sourceLabel', payload.sourceLabel);
+    formData.append('consentBasis', payload.consentBasis);
+    formData.append('consentConfirmed', String(payload.consentConfirmed));
+    return firstValueFrom(
+      this.http.post<{
+        found: number;
+        imported: number;
+        updated: number;
+        converted: number;
+        suppressed: number;
+        preview: MarketingSpreadsheetPreview;
+      }>(`${this.apiBase}${API_PATHS.ADMIN.EMAIL_MARKETING_CONTACTS_IMPORT_FILE}`, formData),
     );
   }
 

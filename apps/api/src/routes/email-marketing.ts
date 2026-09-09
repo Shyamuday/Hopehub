@@ -4,6 +4,7 @@ import {
   recordMarketingOpen,
   unsubscribeWithToken
 } from '../services/email-marketing.js';
+import { processSesSnsMessage } from '../services/email-marketing-ses-feedback.js';
 
 export const emailMarketingRouter = Router();
 
@@ -47,4 +48,25 @@ emailMarketingRouter.get('/email-marketing/click', (req, res, next) => {
       return res.redirect(302, url);
     })
     .catch(next);
+});
+
+emailMarketingRouter.post('/email-marketing/ses-feedback', (req, res, next) => {
+  const raw = typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {});
+  if (Buffer.byteLength(raw) > 256 * 1024) {
+    return res.status(413).json({ message: 'Notification is too large.' });
+  }
+  let message: unknown;
+  try {
+    message = JSON.parse(raw);
+  } catch {
+    return res.status(400).json({ message: 'Invalid notification.' });
+  }
+  void processSesSnsMessage(message as Parameters<typeof processSesSnsMessage>[0])
+    .then((result) => res.json({ ok: true, ...result }))
+    .catch((error) => {
+      if (error instanceof Error && error.message.startsWith('INVALID_SNS_')) {
+        return res.status(403).json({ message: 'Invalid notification signature.' });
+      }
+      next(error);
+    });
 });

@@ -73,8 +73,35 @@ async function main() {
     console.log(`Imported batch ${Math.floor(offset / 5000) + 1}: ${result.found} contacts.`);
   }
 
-  const stored = await prisma.emailMarketingContact.count({ where: { sourceLabel } });
-  console.log(JSON.stringify({ ...totals, stored }));
+  const sourceWhere = { sourceLabel };
+  const [stored, withMobile, withAddress, withLocation, withOrders, withProducts, repeatCustomers] =
+    await Promise.all([
+      prisma.emailMarketingContact.count({ where: sourceWhere }),
+      prisma.emailMarketingContact.count({
+        where: { ...sourceWhere, normalizedMobile: { not: null } }
+      }),
+      prisma.emailMarketingContact.count({
+        where: { ...sourceWhere, addressLine1: { not: null } }
+      }),
+      prisma.emailMarketingContact.count({
+        where: {
+          ...sourceWhere,
+          OR: [{ city: { not: null } }, { state: { not: null } }, { postalCode: { not: null } }]
+        }
+      }),
+      prisma.emailMarketingContact.count({ where: { ...sourceWhere, orderCount: { gt: 0 } } }),
+      prisma.emailMarketingContact.count({
+        where: { ...sourceWhere, productSearchText: { not: null } }
+      }),
+      prisma.emailMarketingContact.count({ where: { ...sourceWhere, orderCount: { gte: 2 } } })
+    ]);
+  console.log(
+    JSON.stringify({
+      ...totals,
+      stored,
+      coverage: { withMobile, withAddress, withLocation, withOrders, withProducts, repeatCustomers }
+    })
+  );
 
   if (s3 && s3Bucket && s3Key) {
     await s3.send(new DeleteObjectCommand({ Bucket: s3Bucket, Key: s3Key }));

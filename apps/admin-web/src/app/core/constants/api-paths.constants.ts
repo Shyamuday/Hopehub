@@ -112,7 +112,11 @@ export const API_PATHS = {
       `/admin/email-marketing/templates/${id}/duplicate`,
     EMAIL_MARKETING_AUDIENCE_PREVIEW: '/admin/email-marketing/audience-preview',
     EMAIL_MARKETING_CONTACTS: '/admin/email-marketing/contacts',
+    EMAIL_MARKETING_FILTER_OPTIONS: '/admin/email-marketing/filter-options',
     EMAIL_MARKETING_CONTACTS_IMPORT: '/admin/email-marketing/contacts/import',
+    EMAIL_MARKETING_CONTACTS_IMPORT_FILE: '/admin/email-marketing/contacts/import-file',
+    EMAIL_MARKETING_CONTACTS_IMPORT_FILE_PREVIEW:
+      '/admin/email-marketing/contacts/import-file/preview',
     EMAIL_MARKETING_CONTACT_SUPPRESS: (id: string) =>
       `/admin/email-marketing/contacts/${id}/suppress`,
     EMAIL_MARKETING_CAMPAIGNS: '/admin/email-marketing/campaigns',

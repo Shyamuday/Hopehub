@@ -271,6 +271,50 @@ export function buildMarketingContactWhere(input: {
   };
 }
 
+let filterOptionsCache:
+  { expiresAt: number; value: Awaited<ReturnType<typeof loadMarketingFilterOptions>> } | undefined;
+
+async function loadMarketingFilterOptions() {
+  const contacts = await prisma.emailMarketingContact.findMany({
+    where: { status: EmailMarketingContactStatus.ACTIVE },
+    select: {
+      state: true,
+      city: true,
+      postalCode: true,
+      sourceLabel: true,
+      sourceChannel: true,
+      sourceSegments: true,
+      paymentMethods: true,
+      orderStatuses: true,
+      tags: true
+    }
+  });
+  const values = (items: Array<string | null | undefined>, limit = 500) =>
+    [...new Set(items.map((item) => item?.trim()).filter((item): item is string => Boolean(item)))]
+      .sort((left, right) => left.localeCompare(right))
+      .slice(0, limit);
+  return {
+    states: values(contacts.map((contact) => contact.state)),
+    cities: values(contacts.map((contact) => contact.city)),
+    postalCodes: values(contacts.map((contact) => contact.postalCode)),
+    sourceLabels: values(contacts.map((contact) => contact.sourceLabel)),
+    sourceChannels: values(contacts.map((contact) => contact.sourceChannel)),
+    sourceSegments: values(contacts.flatMap((contact) => contact.sourceSegments)),
+    paymentMethods: values(contacts.flatMap((contact) => contact.paymentMethods)),
+    orderStatuses: values(contacts.flatMap((contact) => contact.orderStatuses)),
+    tags: values(contacts.flatMap((contact) => contact.tags))
+  };
+}
+
+export async function marketingFilterOptions() {
+  if (filterOptionsCache && filterOptionsCache.expiresAt > Date.now()) {
+    return filterOptionsCache.value;
+  }
+  const value = await loadMarketingFilterOptions();
+  filterOptionsCache = { expiresAt: Date.now() + 5 * 60_000, value };
+  return value;
+}
+
 export function parseMarketingContacts(value: string): ImportedEmailContact[] {
   const contacts = new Map<string, ImportedEmailContact>();
   const add = (rawEmail: string, rawName = '') => {
@@ -584,6 +628,7 @@ export async function importStructuredMarketingContacts(input: {
     if (existing) updated++;
     else imported++;
   }
+  filterOptionsCache = undefined;
   return { found: contacts.length, imported, updated, converted, suppressed: suppressedCount };
 }
 

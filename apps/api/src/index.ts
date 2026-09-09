@@ -273,6 +273,10 @@ app.use(
   })
 );
 app.use('/payments/razorpay-webhook', express.raw({ type: 'application/json' }));
+app.use(
+  '/email-marketing/ses-feedback',
+  express.text({ type: ['text/plain', 'application/json'], limit: '256kb' })
+);
 app.use(express.json({ limit: '8mb' }));
 
 // Rate limiting

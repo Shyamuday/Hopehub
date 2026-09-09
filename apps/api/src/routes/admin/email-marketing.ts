@@ -11,11 +11,18 @@ import {
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
 import { asyncRoute, routeParam, writeAuditLog } from '../../utils/helpers.js';
+import { parseMultipartForm } from '../../utils/multipart.js';
 import { getEmailConfigStatus, isEmailConfigured, sendEmail } from '../../services/mail.js';
+import {
+  parseMarketingSpreadsheet,
+  publicMarketingSpreadsheetPreview
+} from '../../services/email-marketing-spreadsheet.js';
 import {
   buildMarketingContactWhere,
   campaignCreateData,
   importMarketingContacts,
+  importStructuredMarketingContacts,
+  marketingFilterOptions,
   personalizeMarketingContent,
   previewEmailCampaignAudience,
   queueEmailCampaign,
@@ -69,6 +76,11 @@ const importSchema = z.object({
   sourceLabel: z.string().trim().min(2).max(120),
   consentBasis: z.string().trim().min(5).max(500),
   consentConfirmed: z.literal(true)
+});
+const fileImportFieldsSchema = z.object({
+  sourceLabel: z.string().trim().min(2).max(120),
+  consentBasis: z.string().trim().min(5).max(500),
+  consentConfirmed: z.literal('true')
 });
 const previewSchema = z.object({
   audience: z.nativeEnum(EmailCampaignAudience),
@@ -138,6 +150,17 @@ function contactFiltersFromQuery(query: Record<string, unknown>): EmailAudienceF
     lastOrderTo: dateValue('lastOrderTo', true),
     hasMobile: hasMobileRaw === 'true' ? true : hasMobileRaw === 'false' ? false : undefined
   });
+}
+
+function marketingSpreadsheetError(error: unknown) {
+  const detail = error instanceof Error ? error.message : '';
+  if (detail === 'FILE_TOO_LARGE') {
+    return { status: 413, message: 'Spreadsheet files must be 25 MB or smaller.' };
+  }
+  if (/^(Only |A file |A worksheet |No worksheet )/.test(detail)) {
+    return { status: 400, message: detail };
+  }
+  return { status: 400, message: 'Could not read this spreadsheet. Check that the file is valid.' };
 }
 
 export function registerAdminEmailMarketingRoutes(router: Router) {
@@ -339,6 +362,15 @@ export function registerAdminEmailMarketingRoutes(router: Router) {
     })
   );
 
+  router.get(
+    '/admin/email-marketing/filter-options',
+    authRequired,
+    allowRoles(...ACCESS_ROLES),
+    asyncRoute(async (_req, res) => {
+      res.json(await marketingFilterOptions());
+    })
+  );
+
   router.post(
     '/admin/email-marketing/contacts/import',
     authRequired,
@@ -361,6 +393,76 @@ export function registerAdminEmailMarketingRoutes(router: Router) {
         metadata: { ...result, sourceLabel: body.sourceLabel }
       });
       res.status(201).json(result);
+    })
+  );
+
+  router.post(
+    '/admin/email-marketing/contacts/import-file/preview',
+    authRequired,
+    allowRoles(...ACCESS_ROLES),
+    asyncRoute(async (req, res) => {
+      try {
+        const form = await parseMultipartForm(req, { maxFileBytes: 25 * 1024 * 1024 });
+        if (!form.file?.fileName) {
+          return res.status(400).json({ message: 'Select a CSV or XLSX file.' });
+        }
+        const preview = await parseMarketingSpreadsheet({
+          buffer: form.file.buffer,
+          fileName: form.file.fileName,
+          mimeType: form.file.mimeType
+        });
+        res.json(publicMarketingSpreadsheetPreview(preview));
+      } catch (error) {
+        const response = marketingSpreadsheetError(error);
+        res.status(response.status).json({ message: response.message });
+      }
+    })
+  );
+
+  router.post(
+    '/admin/email-marketing/contacts/import-file',
+    authRequired,
+    allowRoles(...ACCESS_ROLES),
+    asyncRoute(async (req, res) => {
+      try {
+        const form = await parseMultipartForm(req, { maxFileBytes: 25 * 1024 * 1024 });
+        if (!form.file?.fileName) {
+          return res.status(400).json({ message: 'Select a CSV or XLSX file.' });
+        }
+        const fields = fileImportFieldsSchema.parse(form.fields);
+        const preview = await parseMarketingSpreadsheet({
+          buffer: form.file.buffer,
+          fileName: form.file.fileName,
+          mimeType: form.file.mimeType
+        });
+        const totals = { found: 0, imported: 0, updated: 0, converted: 0, suppressed: 0 };
+        for (let offset = 0; offset < preview.contacts.length; offset += 5000) {
+          const result = await importStructuredMarketingContacts({
+            contacts: preview.contacts.slice(offset, offset + 5000),
+            sourceLabel: fields.sourceLabel,
+            consentBasis: fields.consentBasis,
+            importedById: req.user!.id
+          });
+          for (const key of Object.keys(totals) as Array<keyof typeof totals>) {
+            totals[key] += result[key];
+          }
+        }
+        const safePreview = publicMarketingSpreadsheetPreview(preview);
+        await writeAuditLog({
+          actorId: req.user!.id,
+          actorRole: req.user!.role,
+          action: 'EMAIL_MARKETING_SPREADSHEET_IMPORTED',
+          targetType: 'EmailMarketingContact',
+          targetId: fields.sourceLabel,
+          summary: `Imported ${totals.imported} new contacts from ${preview.format}`,
+          metadata: { ...totals, ...safePreview, sourceLabel: fields.sourceLabel }
+        });
+        res.status(201).json({ ...totals, preview: safePreview });
+      } catch (error) {
+        if (error instanceof z.ZodError) throw error;
+        const response = marketingSpreadsheetError(error);
+        res.status(response.status).json({ message: response.message });
+      }
     })
   );
 

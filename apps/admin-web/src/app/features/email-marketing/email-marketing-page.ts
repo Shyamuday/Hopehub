@@ -8,7 +8,9 @@ import {
   type EmailCampaignDelivery,
   type EmailCampaignDraft,
   type EmailMarketingContact,
+  type EmailMarketingFilterOptions,
   type EmailMarketingOverview,
+  type MarketingSpreadsheetPreview,
   type EmailMarketingTemplate,
   type EmailMarketingTemplateDraft,
 } from '../../core/services/admin/admin-email-marketing.api';
@@ -18,6 +20,17 @@ type DraftState = Omit<EmailCampaignDraft, 'complianceConfirmed' | 'scheduledAt'
 };
 
 const emptyFilter = (): EmailAudienceFilter => ({});
+const emptyFilterOptions = (): EmailMarketingFilterOptions => ({
+  states: [],
+  cities: [],
+  postalCodes: [],
+  sourceLabels: [],
+  sourceChannels: [],
+  sourceSegments: [],
+  paymentMethods: [],
+  orderStatuses: [],
+  tags: [],
+});
 
 const emptyDraft = (): DraftState => ({
   name: '',
@@ -70,6 +83,7 @@ export class EmailMarketingPage implements OnInit {
   readonly contactSearch = signal('');
   readonly contactStatus = signal('');
   readonly contactFilter = signal<EmailAudienceFilter>(emptyFilter());
+  readonly filterOptions = signal<EmailMarketingFilterOptions>(emptyFilterOptions());
   readonly deliveries = signal<EmailCampaignDelivery[]>([]);
   readonly deliveriesTotal = signal(0);
   readonly deliveriesPage = signal(1);
@@ -88,6 +102,8 @@ export class EmailMarketingPage implements OnInit {
   readonly sourceLabel = signal('');
   readonly consentBasis = signal('');
   readonly importText = signal('');
+  readonly importFile = signal<File | null>(null);
+  readonly spreadsheetPreview = signal<MarketingSpreadsheetPreview | null>(null);
   readonly importConsentConfirmed = signal(false);
   readonly loading = signal(false);
   readonly saving = signal(false);
@@ -109,7 +125,7 @@ export class EmailMarketingPage implements OnInit {
 
   readonly importReady = computed(
     () =>
-      Boolean(this.importText().trim()) &&
+      Boolean(this.importText().trim() || this.importFile()) &&
       Boolean(this.sourceLabel().trim()) &&
       this.consentBasis().trim().length >= 5 &&
       this.importConsentConfirmed(),
@@ -163,14 +179,16 @@ export class EmailMarketingPage implements OnInit {
     this.loading.set(true);
     this.error.set('');
     try {
-      const [overview, campaigns, templates] = await Promise.all([
+      const [overview, campaigns, templates, filterOptions] = await Promise.all([
         this.api.overview(),
         this.api.campaigns(),
         this.api.templates(true),
+        this.api.filterOptions(),
       ]);
       this.overview.set(overview);
       this.campaigns.set(campaigns.campaigns || []);
       this.templates.set(templates.templates || []);
+      this.filterOptions.set(filterOptions);
       await this.loadContacts();
     } catch (error: any) {
       this.error.set(error?.error?.message || error?.message || 'Could not load email marketing.');
@@ -562,16 +580,25 @@ export class EmailMarketingPage implements OnInit {
     this.error.set('');
     this.success.set('');
     try {
-      const response = await this.api.importContacts({
-        contacts: this.importText(),
-        sourceLabel: this.sourceLabel().trim(),
-        consentBasis: this.consentBasis().trim(),
-        consentConfirmed: true,
-      });
+      const file = this.importFile();
+      const imported = file
+        ? await this.api.importContactFile(file, {
+            sourceLabel: this.sourceLabel().trim(),
+            consentBasis: this.consentBasis().trim(),
+            consentConfirmed: true,
+          })
+        : await this.api.importContacts({
+            contacts: this.importText(),
+            sourceLabel: this.sourceLabel().trim(),
+            consentBasis: this.consentBasis().trim(),
+            consentConfirmed: true,
+          });
       this.success.set(
-        `Processed ${response.found}: ${response.imported} new, ${response.updated} updated, ${response.converted} registered, ${response.suppressed} suppressed.`,
+        `Processed ${imported.found}: ${imported.imported} new, ${imported.updated} updated, ${imported.converted} registered, ${imported.suppressed} suppressed.`,
       );
       this.importText.set('');
+      this.importFile.set(null);
+      this.spreadsheetPreview.set(null);
       this.importConsentConfirmed.set(false);
       await this.refresh();
     } catch (error: any) {
@@ -585,14 +612,36 @@ export class EmailMarketingPage implements OnInit {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
-    if (file.size > 500_000) {
-      this.error.set('Import files must be 500 KB or smaller. Split larger lists into batches.');
+    if (!/\.(csv|xlsx)$/i.test(file.name)) {
+      this.error.set('Choose a .csv or .xlsx file. Save legacy .xls files as .xlsx first.');
+      input.value = '';
+      return;
+    }
+    if (file.size > 25 * 1024 * 1024) {
+      this.error.set('Spreadsheet files must be 25 MB or smaller.');
       input.value = '';
       return;
     }
     this.error.set('');
-    this.importText.set(await file.text());
+    this.importFile.set(file);
+    this.importText.set('');
+    this.spreadsheetPreview.set(null);
     if (!this.sourceLabel().trim()) this.sourceLabel.set(file.name.replace(/\.[^.]+$/, ''));
+    this.activeAction.set('file-preview');
+    try {
+      this.spreadsheetPreview.set(await this.api.previewContactFile(file));
+    } catch (error: any) {
+      this.importFile.set(null);
+      this.error.set(error?.error?.message || error?.message || 'Could not analyze spreadsheet.');
+      input.value = '';
+    } finally {
+      this.activeAction.set('');
+    }
+  }
+
+  clearImportFile() {
+    this.importFile.set(null);
+    this.spreadsheetPreview.set(null);
   }
 
   async suppress(contact: EmailMarketingContact) {

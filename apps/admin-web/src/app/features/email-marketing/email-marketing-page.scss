@@ -186,6 +186,47 @@ textarea {
 .contact-segments {
   margin-bottom: 0.75rem;
 }
+.spreadsheet-preview {
+  background: #f0fdfa;
+  border: 1px solid #99f6e4;
+  border-radius: 10px;
+  margin-bottom: 0.9rem;
+  padding: 0.8rem;
+}
+.spreadsheet-preview .panel-heading {
+  margin-bottom: 0.6rem;
+}
+.spreadsheet-preview .panel-heading > div {
+  display: grid;
+  gap: 0.15rem;
+}
+.spreadsheet-preview .panel-heading span,
+.spreadsheet-preview small {
+  color: #64748b;
+  font-size: 0.75rem;
+}
+.loading-preview {
+  color: #0f766e;
+  font-weight: 700;
+}
+.preview-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+.preview-metrics span {
+  background: #fff;
+  border-radius: 7px;
+  color: #64748b;
+  font-size: 0.72rem;
+  padding: 0.5rem;
+}
+.preview-metrics b {
+  color: #0f766e;
+  display: block;
+  font-size: 1rem;
+}
 .audience-row {
   justify-content: flex-start;
   background: #f8fafc;

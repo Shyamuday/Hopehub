@@ -66,6 +66,52 @@
     </button>
   </div>
 
+  <datalist id="email-filter-states">
+    @for (value of filterOptions().states; track value) {
+      <option [value]="value"></option>
+    }
+  </datalist>
+  <datalist id="email-filter-cities">
+    @for (value of filterOptions().cities; track value) {
+      <option [value]="value"></option>
+    }
+  </datalist>
+  <datalist id="email-filter-postal-codes">
+    @for (value of filterOptions().postalCodes; track value) {
+      <option [value]="value"></option>
+    }
+  </datalist>
+  <datalist id="email-filter-source-labels">
+    @for (value of filterOptions().sourceLabels; track value) {
+      <option [value]="value"></option>
+    }
+  </datalist>
+  <datalist id="email-filter-source-segments">
+    @for (value of filterOptions().sourceSegments; track value) {
+      <option [value]="value"></option>
+    }
+  </datalist>
+  <datalist id="email-filter-source-channels">
+    @for (value of filterOptions().sourceChannels; track value) {
+      <option [value]="value"></option>
+    }
+  </datalist>
+  <datalist id="email-filter-payment-methods">
+    @for (value of filterOptions().paymentMethods; track value) {
+      <option [value]="value"></option>
+    }
+  </datalist>
+  <datalist id="email-filter-order-statuses">
+    @for (value of filterOptions().orderStatuses; track value) {
+      <option [value]="value"></option>
+    }
+  </datalist>
+  <datalist id="email-filter-tags">
+    @for (value of filterOptions().tags; track value) {
+      <option [value]="value"></option>
+    }
+  </datalist>
+
   @if (tab() === 'campaigns') {
     <div class="campaign-layout">
       <section class="panel composer">
@@ -151,36 +197,42 @@
             <div class="field-grid three">
               <label
                 >State(s)<input
+                  list="email-filter-states"
                   [value]="filterListValue(draft().audienceFilter, 'states')"
                   (input)="setAudienceList('states', inputValue($event))"
                   placeholder="Maharashtra, Delhi"
               /></label>
               <label
                 >City(s)<input
+                  list="email-filter-cities"
                   [value]="filterListValue(draft().audienceFilter, 'cities')"
                   (input)="setAudienceList('cities', inputValue($event))"
                   placeholder="Mumbai, Pune"
               /></label>
               <label
                 >PIN code(s)<input
+                  list="email-filter-postal-codes"
                   [value]="filterListValue(draft().audienceFilter, 'postalCodes')"
                   (input)="setAudienceList('postalCodes', inputValue($event))"
                   placeholder="400001, 411001"
               /></label>
               <label
                 >Source/list(s)<input
+                  list="email-filter-source-labels"
                   [value]="filterListValue(draft().audienceFilter, 'sourceLabels')"
                   (input)="setAudienceList('sourceLabels', inputValue($event))"
                   placeholder="Historical exports"
               /></label>
               <label
                 >Store/segment(s)<input
+                  list="email-filter-source-segments"
                   [value]="filterListValue(draft().audienceFilter, 'sourceSegments')"
                   (input)="setAudienceList('sourceSegments', inputValue($event))"
                   placeholder="SIGHTOMETER, SASSY CLOTHES"
               /></label>
               <label
                 >Channel(s)<input
+                  list="email-filter-source-channels"
                   [value]="filterListValue(draft().audienceFilter, 'sourceChannels')"
                   (input)="setAudienceList('sourceChannels', inputValue($event))"
                   placeholder="CUSTOM, SHOPIFY"
@@ -193,12 +245,14 @@
               /></label>
               <label
                 >Payment method(s)<input
+                  list="email-filter-payment-methods"
                   [value]="filterListValue(draft().audienceFilter, 'paymentMethods')"
                   (input)="setAudienceList('paymentMethods', inputValue($event))"
                   placeholder="COD, PREPAID"
               /></label>
               <label
                 >Order status(es)<input
+                  list="email-filter-order-statuses"
                   [value]="filterListValue(draft().audienceFilter, 'orderStatuses')"
                   (input)="setAudienceList('orderStatuses', inputValue($event))"
                   placeholder="DELIVERED, SHIPPED"
@@ -248,6 +302,7 @@
               /></label>
               <label
                 >Tag(s)<input
+                  list="email-filter-tags"
                   [value]="filterListValue(draft().audienceFilter, 'tags')"
                   (input)="setAudienceList('tags', inputValue($event))"
                   placeholder="VIP, REPEAT"
@@ -452,16 +507,53 @@
           </div>
         </div>
         <p class="help">
-          Paste one address per line, comma-separated addresses, or
-          <code>Name &lt;email@example.com&gt;</code>. You can also load a CSV or text file.
-          Duplicate and registered addresses are reconciled automatically.
+          Upload a CSV/XLSX file to automatically detect contact, address, source, product, payment,
+          status, and order fields. You can also paste a simple email list. Duplicate and registered
+          addresses are reconciled automatically.
         </p>
         <label
-          >Load list file (optional)<input
+          >Upload CSV or XLSX (optional)<input
             type="file"
-            accept=".csv,.txt,text/csv,text/plain"
+            accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             (change)="loadImportFile($event)"
         /></label>
+        @if (activeAction() === 'file-preview') {
+          <div class="spreadsheet-preview loading-preview">
+            Analyzing columns and customer rows…
+          </div>
+        }
+        @if (spreadsheetPreview(); as preview) {
+          <div class="spreadsheet-preview">
+            <div class="panel-heading">
+              <div>
+                <strong>{{ preview.fileName }}</strong>
+                <span>{{ preview.format }} · {{ preview.sheets.length }} sheet(s)</span>
+              </div>
+              <button type="button" class="link danger-text" (click)="clearImportFile()">
+                Remove
+              </button>
+            </div>
+            <div class="preview-metrics">
+              <span
+                ><b>{{ preview.validContacts }}</b> unique contacts</span
+              >
+              <span
+                ><b>{{ preview.sourceRows }}</b> source rows</span
+              >
+              <span
+                ><b>{{ preview.skippedRows }}</b> skipped rows</span
+              >
+            </div>
+            <p class="help"><strong>Mapped:</strong> {{ preview.mappedFields.join(', ') }}</p>
+            <p class="help">
+              <strong>Sheets:</strong>
+              @for (sheet of preview.sheets; track sheet.name) {
+                {{ sheet.name }} ({{ sheet.rows }} rows){{ $last ? '' : ' · ' }}
+              }
+            </p>
+            <small>The workbook is parsed in memory and is not stored on the server.</small>
+          </div>
+        }
         <label
           >Source / list name<input
             [value]="sourceLabel()"
@@ -476,15 +568,17 @@
             placeholder="Opted in on the workshop registration form on 8 September 2026"
           ></textarea>
         </label>
-        <label
-          >Email addresses<textarea
-            class="code"
-            rows="14"
-            [value]="importText()"
-            (input)="importText.set(inputValue($event))"
-            placeholder="Asha &lt;asha@example.com&gt;&#10;rahul@example.com"
-          ></textarea>
-        </label>
+        @if (!importFile()) {
+          <label
+            >Email addresses<textarea
+              class="code"
+              rows="14"
+              [value]="importText()"
+              (input)="importText.set(inputValue($event))"
+              placeholder="Asha &lt;asha@example.com&gt;&#10;rahul@example.com"
+            ></textarea>
+          </label>
+        }
         <label class="consent-check">
           <input
             type="checkbox"
@@ -492,17 +586,19 @@
             (change)="importConsentConfirmed.set(checked($event))"
           />
           <span
-            >I confirm these people agreed to receive promotional email. Purchased, scraped, or
-            unrelated lists must not be imported.</span
+            >I confirm this audience has a documented consent or prior customer-relationship basis.
+            Purchased, scraped, or unrelated lists must not be imported.</span
           >
         </label>
         <button
           type="button"
           class="button primary"
           (click)="importContacts()"
-          [disabled]="!importReady() || activeAction() === 'import'"
+          [disabled]="
+            !importReady() || activeAction() !== '' || (importFile() && !spreadsheetPreview())
+          "
         >
-          Import and reconcile
+          {{ importFile() ? 'Import spreadsheet and reconcile' : 'Import and reconcile' }}
         </button>
       </section>
 
@@ -540,26 +636,31 @@
           <div class="field-grid three">
             <label
               >State(s)<input
+                list="email-filter-states"
                 [value]="filterListValue(contactFilter(), 'states')"
                 (input)="setContactList('states', inputValue($event))"
             /></label>
             <label
               >City(s)<input
+                list="email-filter-cities"
                 [value]="filterListValue(contactFilter(), 'cities')"
                 (input)="setContactList('cities', inputValue($event))"
             /></label>
             <label
               >PIN(s)<input
+                list="email-filter-postal-codes"
                 [value]="filterListValue(contactFilter(), 'postalCodes')"
                 (input)="setContactList('postalCodes', inputValue($event))"
             /></label>
             <label
               >Store/segment(s)<input
+                list="email-filter-source-segments"
                 [value]="filterListValue(contactFilter(), 'sourceSegments')"
                 (input)="setContactList('sourceSegments', inputValue($event))"
             /></label>
             <label
               >Channel(s)<input
+                list="email-filter-source-channels"
                 [value]="filterListValue(contactFilter(), 'sourceChannels')"
                 (input)="setContactList('sourceChannels', inputValue($event))"
             /></label>
@@ -570,16 +671,19 @@
             /></label>
             <label
               >Payment method(s)<input
+                list="email-filter-payment-methods"
                 [value]="filterListValue(contactFilter(), 'paymentMethods')"
                 (input)="setContactList('paymentMethods', inputValue($event))"
             /></label>
             <label
               >Order status(es)<input
+                list="email-filter-order-statuses"
                 [value]="filterListValue(contactFilter(), 'orderStatuses')"
                 (input)="setContactList('orderStatuses', inputValue($event))"
             /></label>
             <label
               >Tag(s)<input
+                list="email-filter-tags"
                 [value]="filterListValue(contactFilter(), 'tags')"
                 (input)="setContactList('tags', inputValue($event))"
             /></label>

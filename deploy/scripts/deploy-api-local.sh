@@ -44,6 +44,10 @@ SES_SMTP_PORT="$(sudo cat /etc/hopehub-ses-smtp-port 2>/dev/null || echo 587)"
 SES_SMTP_USER="$(sudo cat /etc/hopehub-ses-smtp-username 2>/dev/null || true)"
 SES_SMTP_PASS="$(sudo cat /etc/hopehub-ses-smtp-password 2>/dev/null || true)"
 SMTP_FROM="$(sudo cat /etc/hopehub-ses-from 2>/dev/null || echo noreply@hopehub.in)"
+EMAIL_MARKETING_SES_SNS_TOPIC_ARNS_VALUE="$(sudo cat /etc/hopehub-email-marketing-ses-sns-topic-arns 2>/dev/null || echo "${EMAIL_MARKETING_SES_SNS_TOPIC_ARNS:-}")"
+if [ -n "$EMAIL_MARKETING_SES_SNS_TOPIC_ARNS_VALUE" ]; then
+  printf '%s\n' "$EMAIL_MARKETING_SES_SNS_TOPIC_ARNS_VALUE" | sudo tee /etc/hopehub-email-marketing-ses-sns-topic-arns >/dev/null
+fi
 TURN_URL="$(sudo cat /etc/hopehub-turn-url 2>/dev/null || true)"
 TURN_URLS="$(sudo cat /etc/hopehub-turn-urls 2>/dev/null || echo "${TURN_URL}")"
 TURN_USERNAME="$(sudo cat /etc/hopehub-turn-username 2>/dev/null || true)"
@@ -139,6 +143,7 @@ DATABASE_URL="postgresql://hopehub_app:${DB_PASS}@localhost:5432/hopehub_clinic?
 JWT_SECRET="${JWT_SECRET}"
 NODE_ENV="production"
 EMAIL_MARKETING_BATCH_SIZE="10"
+EMAIL_MARKETING_SES_SNS_TOPIC_ARNS="${EMAIL_MARKETING_SES_SNS_TOPIC_ARNS_VALUE}"
 PORT=4000
 API_PUBLIC_URL="https://api.hopehub.in"
 API_URL="https://api.hopehub.in"
