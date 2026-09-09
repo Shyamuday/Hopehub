@@ -105,6 +105,8 @@ async function main() {
       owners: ownerCount,
       exclusivePinAdministrators: exclusiveAdmins.length,
       rightsToChange: changes.length,
+      pinRightsToGrant: changes.filter(desiredPinRight).length,
+      pinRightsToRevoke: changes.filter((admin) => !desiredPinRight(admin)).length,
       serviceBotExcluded: administrators.some((admin) => admin.user.id === serviceBot.id)
     })
   );
