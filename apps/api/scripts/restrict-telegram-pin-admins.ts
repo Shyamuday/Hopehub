@@ -8,7 +8,8 @@ import { callCommunityTelegramApi } from '../src/services/telegram-community-bot
 import { GROUP_HELP_BOT_SLUG } from '../src/constants/telegram-community-bot.constants.js';
 import {
   canManageGroupHelpPins,
-  GROUP_HELP_EXCLUSIVE_PIN_ADMIN_USERNAME
+  GROUP_HELP_EXCLUSIVE_PIN_ADMIN_USERNAME,
+  isExclusiveGroupHelpPinAdminUsername
 } from '../src/services/telegram-group-help.pin-rights.js';
 
 const SESSION_PATH = '/etc/hopehub-telegram-user-session';
@@ -54,8 +55,6 @@ type BotAdministrator = {
 
 const secret = (environmentName: string, fileName: string) =>
   process.env[environmentName]?.trim() || readFileSync(`/etc/${fileName}`, 'utf8').trim();
-const normalizeUsername = (value: string | undefined) =>
-  value?.trim().replace(/^@/, '').toLowerCase() || '';
 
 function editAdminParams(rights: AdminRights, pinMessages: boolean, rank?: string) {
   return {
@@ -138,7 +137,7 @@ async function main() {
     const ownerCount = current.filter((admin) => isOwner(admin, botAdministrators)).length;
     const exclusiveAdmins = botAdministratorList.filter(
       (admin) =>
-        normalizeUsername(admin.user.username) === GROUP_HELP_EXCLUSIVE_PIN_ADMIN_USERNAME &&
+        isExclusiveGroupHelpPinAdminUsername(admin.user.username) &&
         !['creator', 'owner'].includes(admin.status?.toLowerCase() || '')
     );
     if (ownerCount < 1) throw new Error('The group owner was not found in the administrator list.');

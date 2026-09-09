@@ -10,6 +10,10 @@ test('only the owner and spiritualspirit receive human pin permission', () => {
     true
   );
   assert.equal(
+    canManageGroupHelpPins({ status: 'administrator', username: '@spiritualspirirt' }),
+    true
+  );
+  assert.equal(
     canManageGroupHelpPins({ status: 'administrator', username: 'anotheradmin' }),
     false
   );
