@@ -46,6 +46,12 @@ type AdminRecord = {
   };
 };
 
+type BotAdministrator = {
+  status?: string;
+  user: { id: number; username?: string; is_bot?: boolean };
+  can_pin_messages?: boolean;
+};
+
 const secret = (environmentName: string, fileName: string) =>
   process.env[environmentName]?.trim() || readFileSync(`/etc/${fileName}`, 'utf8').trim();
 const normalizeUsername = (value: string | undefined) =>
@@ -88,8 +94,16 @@ async function administrators(
   return result;
 }
 
-function isOwner(admin: AdminRecord) {
-  return /(?:creator|owner)/i.test(admin.participant?.className || '');
+function isOwner(admin: AdminRecord, botAdministrators: Map<string, BotAdministrator>) {
+  const botStatus = botAdministrators.get(String(admin.id))?.status || '';
+  return (
+    /(?:creator|owner)/i.test(admin.participant?.className || '') ||
+    ['creator', 'owner'].includes(botStatus.toLowerCase())
+  );
+}
+
+function usernameFor(admin: AdminRecord, botAdministrators: Map<string, BotAdministrator>) {
+  return botAdministrators.get(String(admin.id))?.user.username || admin.username;
 }
 
 async function main() {
@@ -105,10 +119,14 @@ async function main() {
     throw new Error('The Telegram owner session is incomplete.');
   }
 
-  const serviceBot = await callCommunityTelegramApi<{ id: number }>(
-    GROUP_HELP_BOT_SLUG,
-    'getMe',
-    {}
+  const [serviceBot, botAdministratorList] = await Promise.all([
+    callCommunityTelegramApi<{ id: number }>(GROUP_HELP_BOT_SLUG, 'getMe', {}),
+    callCommunityTelegramApi<BotAdministrator[]>(GROUP_HELP_BOT_SLUG, 'getChatAdministrators', {
+      chat_id: chatId
+    })
+  ]);
+  const botAdministrators = new Map(
+    botAdministratorList.map((administrator) => [String(administrator.user.id), administrator])
   );
   const client = new TelegramClient(new StringSession(session), apiId, apiHash, {
     connectionRetries: 5
@@ -117,20 +135,29 @@ async function main() {
   try {
     const entity = await client.getInputEntity(/^[-]?\d+$/.test(chatId) ? Number(chatId) : chatId);
     const current = await administrators(client, entity);
-    const ownerCount = current.filter(isOwner).length;
-    const exclusiveAdmins = current.filter(
+    const ownerCount = current.filter((admin) => isOwner(admin, botAdministrators)).length;
+    const exclusiveAdmins = botAdministratorList.filter(
       (admin) =>
-        normalizeUsername(admin.username) === GROUP_HELP_EXCLUSIVE_PIN_ADMIN_USERNAME &&
-        !isOwner(admin)
+        normalizeUsername(admin.user.username) === GROUP_HELP_EXCLUSIVE_PIN_ADMIN_USERNAME &&
+        !['creator', 'owner'].includes(admin.status?.toLowerCase() || '')
     );
     if (ownerCount < 1) throw new Error('The group owner was not found in the administrator list.');
+    if (exclusiveAdmins.length !== 1) {
+      throw new Error(
+        `Expected exactly one @${GROUP_HELP_EXCLUSIVE_PIN_ADMIN_USERNAME} administrator; found ${exclusiveAdmins.length}.`
+      );
+    }
     const changes = current.filter((admin) => {
-      if (isOwner(admin) || String(admin.id) === String(serviceBot.id)) return false;
+      if (isOwner(admin, botAdministrators) || String(admin.id) === String(serviceBot.id))
+        return false;
       const desired = canManageGroupHelpPins({
         status: 'administrator',
-        username: admin.username
+        username: usernameFor(admin, botAdministrators)
       });
-      return Boolean(admin.participant?.adminRights?.pinMessages) !== desired;
+      const currentPinRight =
+        botAdministrators.get(String(admin.id))?.can_pin_messages ??
+        admin.participant?.adminRights?.pinMessages;
+      return Boolean(currentPinRight) !== desired;
     });
     console.log(
       JSON.stringify({
@@ -147,7 +174,7 @@ async function main() {
     for (const admin of changes) {
       const desired = canManageGroupHelpPins({
         status: 'administrator',
-        username: admin.username
+        username: usernameFor(admin, botAdministrators)
       });
       await client.editAdmin(
         entity,
@@ -156,14 +183,22 @@ async function main() {
       );
     }
 
-    const verified = await administrators(client, entity);
+    const verified = await callCommunityTelegramApi<BotAdministrator[]>(
+      GROUP_HELP_BOT_SLUG,
+      'getChatAdministrators',
+      { chat_id: chatId }
+    );
     const violations = verified.filter((admin) => {
-      if (isOwner(admin) || String(admin.id) === String(serviceBot.id)) return false;
+      if (
+        ['creator', 'owner'].includes(admin.status?.toLowerCase() || '') ||
+        String(admin.user.id) === String(serviceBot.id)
+      )
+        return false;
       const expected = canManageGroupHelpPins({
         status: 'administrator',
-        username: admin.username
+        username: admin.user.username
       });
-      return Boolean(admin.participant?.adminRights?.pinMessages) !== expected;
+      return Boolean(admin.can_pin_messages) !== expected;
     });
     if (violations.length) {
       throw new Error(
