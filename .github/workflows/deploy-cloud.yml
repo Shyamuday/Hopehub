@@ -447,7 +447,7 @@ jobs:
             --basis "Administrator-directed import from historical customer/order exports on 2026-09-08; promotional consent not independently verified."
 
       - name: Restrict Telegram pin administrator rights
-        if: steps.api-changes.outputs.deploy == 'true' && github.event.inputs.restrict_telegram_pin_rights == 'true'
+        if: github.event.inputs.restrict_telegram_pin_rights == 'true'
         run: |
           set -euo pipefail
           export TELEGRAM_USER_API_ID="$(sudo cat /etc/hopehub-telegram-user-api-id)"

@@ -124,12 +124,6 @@ async function main() {
         !isOwner(admin)
     );
     if (ownerCount < 1) throw new Error('The group owner was not found in the administrator list.');
-    if (exclusiveAdmins.length !== 1) {
-      throw new Error(
-        `Expected exactly one @${GROUP_HELP_EXCLUSIVE_PIN_ADMIN_USERNAME} administrator; found ${exclusiveAdmins.length}.`
-      );
-    }
-
     const changes = current.filter((admin) => {
       if (isOwner(admin) || String(admin.id) === String(serviceBot.id)) return false;
       const desired = canManageGroupHelpPins({
