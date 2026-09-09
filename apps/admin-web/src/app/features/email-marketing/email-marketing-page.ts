@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import {
   AdminEmailMarketingApi,
+  type EmailAudienceFilter,
   type EmailCampaign,
   type EmailCampaignAudience,
   type EmailCampaignDelivery,
@@ -16,6 +17,8 @@ type DraftState = Omit<EmailCampaignDraft, 'complianceConfirmed' | 'scheduledAt'
   scheduledAt: string;
 };
 
+const emptyFilter = (): EmailAudienceFilter => ({});
+
 const emptyDraft = (): DraftState => ({
   name: '',
   subject: '',
@@ -26,6 +29,7 @@ const emptyDraft = (): DraftState => ({
     'A little support for your week\n\nWrite your Hope Hub update here.\n\nVisit https://hopehub.in',
   audience: 'REGISTERED_USERS',
   registeredRole: 'PATIENT',
+  audienceFilter: emptyFilter(),
   templateId: null,
   scheduledAt: '',
 });
@@ -65,6 +69,7 @@ export class EmailMarketingPage implements OnInit {
   readonly contactsPages = signal(1);
   readonly contactSearch = signal('');
   readonly contactStatus = signal('');
+  readonly contactFilter = signal<EmailAudienceFilter>(emptyFilter());
   readonly deliveries = signal<EmailCampaignDelivery[]>([]);
   readonly deliveriesTotal = signal(0);
   readonly deliveriesPage = signal(1);
@@ -179,6 +184,7 @@ export class EmailMarketingPage implements OnInit {
       const response = await this.api.contacts({
         q: this.contactSearch().trim() || undefined,
         status: this.contactStatus() || undefined,
+        filter: this.contactFilter(),
         page,
       });
       this.contacts.set(response.contacts || []);
@@ -224,6 +230,99 @@ export class EmailMarketingPage implements OnInit {
     if (key === 'audience' || key === 'registeredRole') this.audiencePreview.set(null);
   }
 
+  setAudienceList(key: keyof EmailAudienceFilter, value: string) {
+    this.setFilterList(this.draft().audienceFilter, key, value, (filter) =>
+      this.draft.update((current) => ({ ...current, audienceFilter: filter })),
+    );
+    this.audiencePreview.set(null);
+  }
+
+  setAudienceValue(key: keyof EmailAudienceFilter, value: string | boolean | undefined) {
+    const filter = this.withFilterValue(this.draft().audienceFilter, key, value);
+    this.draft.update((current) => ({ ...current, audienceFilter: filter }));
+    this.audiencePreview.set(null);
+  }
+
+  setContactList(key: keyof EmailAudienceFilter, value: string) {
+    this.setFilterList(this.contactFilter(), key, value, (filter) =>
+      this.contactFilter.set(filter),
+    );
+  }
+
+  setContactValue(key: keyof EmailAudienceFilter, value: string | boolean | undefined) {
+    this.contactFilter.set(this.withFilterValue(this.contactFilter(), key, value));
+  }
+
+  filterListValue(filter: EmailAudienceFilter, key: keyof EmailAudienceFilter) {
+    const value = filter[key];
+    return Array.isArray(value) ? value.join(', ') : '';
+  }
+
+  filterValue(filter: EmailAudienceFilter, key: keyof EmailAudienceFilter) {
+    const value = filter[key];
+    return value === undefined || Array.isArray(value) ? '' : String(value);
+  }
+
+  filterDateValue(filter: EmailAudienceFilter, key: 'lastOrderFrom' | 'lastOrderTo') {
+    return filter[key]?.slice(0, 10) || '';
+  }
+
+  setFilterDate(
+    target: 'audience' | 'contacts',
+    key: 'lastOrderFrom' | 'lastOrderTo',
+    value: string,
+  ) {
+    const iso = value
+      ? `${value}${key === 'lastOrderTo' ? 'T23:59:59.999Z' : 'T00:00:00.000Z'}`
+      : undefined;
+    if (target === 'audience') this.setAudienceValue(key, iso);
+    else this.setContactValue(key, iso);
+  }
+
+  resetAudienceFilter() {
+    this.draft.update((current) => ({ ...current, audienceFilter: emptyFilter() }));
+    this.audiencePreview.set(null);
+  }
+
+  resetContactFilter() {
+    this.contactFilter.set(emptyFilter());
+    void this.loadContacts(1);
+  }
+
+  private setFilterList(
+    current: EmailAudienceFilter,
+    key: keyof EmailAudienceFilter,
+    value: string,
+    apply: (filter: EmailAudienceFilter) => void,
+  ) {
+    const values = [
+      ...new Set(
+        value
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean),
+      ),
+    ];
+    apply(this.withFilterValue(current, key, values.length ? values : undefined));
+  }
+
+  private withFilterValue(
+    current: EmailAudienceFilter,
+    key: keyof EmailAudienceFilter,
+    value: string | string[] | boolean | undefined,
+  ) {
+    const next = { ...current } as Record<string, unknown>;
+    if (value === undefined || value === '') delete next[key];
+    else if (
+      ['minOrderCount', 'maxOrderCount', 'minTotalOrderValue', 'maxTotalOrderValue'].includes(key)
+    ) {
+      const number = Number(value);
+      if (Number.isFinite(number) && number >= 0) next[key] = number;
+      else delete next[key];
+    } else next[key] = value;
+    return next as EmailAudienceFilter;
+  }
+
   setTemplateDraft<K extends keyof EmailMarketingTemplateDraft>(
     key: K,
     value: EmailMarketingTemplateDraft[K],
@@ -239,6 +338,7 @@ export class EmailMarketingPage implements OnInit {
         ...emptyDraft(),
         audience: current.audience,
         registeredRole: current.registeredRole,
+        audienceFilter: current.audienceFilter,
         scheduledAt: current.scheduledAt,
       });
       this.success.set('Started a blank campaign.');
@@ -358,7 +458,11 @@ export class EmailMarketingPage implements OnInit {
     try {
       const value = this.draft();
       this.audiencePreview.set(
-        await this.api.previewAudience(value.audience, value.registeredRole || null),
+        await this.api.previewAudience(
+          value.audience,
+          value.registeredRole || null,
+          value.audienceFilter,
+        ),
       );
     } catch (error: any) {
       this.error.set(error?.error?.message || error?.message || 'Could not preview audience.');
@@ -513,6 +617,40 @@ export class EmailMarketingPage implements OnInit {
 
   openRate(campaign: EmailCampaign) {
     return campaign.sentCount ? Math.round((campaign.openedCount / campaign.sentCount) * 100) : 0;
+  }
+
+  contactLocation(contact: EmailMarketingContact) {
+    const cityState = [contact.city, contact.state].filter(Boolean).join(', ');
+    return [cityState, contact.postalCode].filter(Boolean).join(' · ') || 'Location unavailable';
+  }
+
+  campaignFilterSummary(campaign: EmailCampaign) {
+    const filter = campaign.audienceFilter || {};
+    const labels: Record<string, string> = {
+      states: 'states',
+      cities: 'cities',
+      postalCodes: 'PINs',
+      sourceLabels: 'lists',
+      sourceChannels: 'channels',
+      sourceSegments: 'segments',
+      paymentMethods: 'payment',
+      orderStatuses: 'statuses',
+      tags: 'tags',
+      productQuery: 'product',
+      minOrderCount: 'min orders',
+      maxOrderCount: 'max orders',
+      minTotalOrderValue: 'min spend',
+      maxTotalOrderValue: 'max spend',
+      lastOrderFrom: 'ordered from',
+      lastOrderTo: 'ordered to',
+      hasMobile: 'mobile',
+    };
+    return Object.entries(filter)
+      .map(
+        ([key, value]) =>
+          `${labels[key] || key}: ${Array.isArray(value) ? value.join('/') : value}`,
+      )
+      .join(' · ');
   }
 
   private replaceCampaign(campaign: EmailCampaign) {

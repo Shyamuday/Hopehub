@@ -161,6 +161,31 @@ textarea {
 .field-grid.two {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
+.field-grid.three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.segment-builder {
+  background: #f8fafc;
+  border: 1px solid #dbe5e2;
+  border-radius: 10px;
+  margin-bottom: 0.9rem;
+  padding: 0.8rem;
+}
+.segment-builder summary {
+  color: #0f766e;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+.segment-builder .help {
+  margin: 0.65rem 0 0.8rem;
+}
+.segment-builder label {
+  margin-bottom: 0;
+}
+.contact-segments {
+  margin-bottom: 0.75rem;
+}
 .audience-row {
   justify-content: flex-start;
   background: #f8fafc;
@@ -364,6 +389,16 @@ td > small {
   padding: 0;
   text-decoration: underline;
 }
+.filter-summary {
+  background: #f0fdfa;
+  border-left: 3px solid #14b8a6;
+  color: #115e59;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  margin-top: 0.55rem;
+  overflow-wrap: anywhere;
+  padding: 0.45rem 0.6rem;
+}
 .error-text {
   color: #b91c1c !important;
   max-width: 280px;
@@ -451,6 +486,7 @@ code {
     grid-template-columns: repeat(2, 1fr);
   }
   .field-grid.two,
+  .field-grid.three,
   .filters {
     grid-template-columns: 1fr;
   }

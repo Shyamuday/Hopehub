@@ -1,14 +1,88 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { EmailCampaignAudience, EmailMarketingContactStatus } from '@prisma/client';
 import {
+  buildMarketingContactWhere,
+  campaignCreateData,
   createEmailTrackingToken,
   normalizeMarketingEmail,
+  normalizeEmailAudienceFilter,
+  normalizeStructuredMarketingContact,
   parseMarketingContacts,
   personalizeMarketingContent,
   readEmailTrackingToken,
   renderMarketingEmail,
   sanitizeMarketingHtml
 } from './email-marketing.js';
+
+test('normalizes structured contact data for repeatable filtering', () => {
+  const contact = normalizeStructuredMarketingContact({
+    email: ' Buyer@Example.com ',
+    name: ' Asha ',
+    mobile: '+91 98765-43210',
+    state: 'Maharashtra',
+    sourceSegments: ['Sightometer', 'sightometer'],
+    paymentMethods: ['cod', 'COD'],
+    productNames: ['Blue Shirt'],
+    productSkus: [' sku-1 '],
+    orderCount: 2.9,
+    totalOrderValue: 1499.5
+  });
+  assert.equal(contact.normalizedEmail, 'buyer@example.com');
+  assert.equal(contact.normalizedMobile, '919876543210');
+  assert.deepEqual(contact.sourceSegments, ['SIGHTOMETER']);
+  assert.deepEqual(contact.paymentMethods, ['COD']);
+  assert.deepEqual(contact.productSkus, ['SKU-1']);
+  assert.equal(contact.orderCount, 2);
+  assert.equal(contact.totalOrderValue, 1499.5);
+});
+
+test('builds one AND-combined query for contact browsing and campaign selection', () => {
+  const where = buildMarketingContactWhere({
+    activeUnregisteredOnly: true,
+    filter: {
+      states: [' Maharashtra '],
+      sourceSegments: ['Sightometer'],
+      paymentMethods: ['cod'],
+      productQuery: 'shirt',
+      minOrderCount: 2,
+      minTotalOrderValue: 1000,
+      hasMobile: true
+    }
+  });
+  assert.equal(where.status, EmailMarketingContactStatus.ACTIVE);
+  assert.equal(where.registeredUserId, null);
+  assert.deepEqual(where.AND, [
+    { OR: [{ state: { equals: 'Maharashtra', mode: 'insensitive' } }] },
+    { sourceSegments: { hasSome: ['SIGHTOMETER'] } },
+    { paymentMethods: { hasSome: ['COD'] } },
+    { productSearchText: { contains: 'shirt', mode: 'insensitive' } },
+    { orderCount: { gte: 2, lte: undefined } },
+    { totalOrderValue: { gte: 1000, lte: undefined } },
+    { normalizedMobile: { not: null } }
+  ]);
+});
+
+test('stores the normalized audience filter on a campaign snapshot', () => {
+  const filter = normalizeEmailAudienceFilter({
+    cities: [' Mumbai ', 'Mumbai'],
+    orderStatuses: ['delivered'],
+    minOrderCount: 2
+  });
+  const data = campaignCreateData({
+    name: 'Repeat customers',
+    subject: 'Hello',
+    htmlBody: '<p>Hello</p>',
+    textBody: 'Hello',
+    audience: EmailCampaignAudience.PROMOTIONAL_CONTACTS,
+    audienceFilter: filter
+  });
+  assert.deepEqual(data.audienceFilter, {
+    cities: ['Mumbai'],
+    orderStatuses: ['DELIVERED'],
+    minOrderCount: 2
+  });
+});
 
 test('normalizes and deduplicates pasted marketing contacts', () => {
   assert.equal(normalizeMarketingEmail(' Person@Example.COM '), 'person@example.com');

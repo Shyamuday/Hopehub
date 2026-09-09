@@ -36,8 +36,239 @@ type TrackingPayload = {
 
 export type ImportedEmailContact = { email: string; normalizedEmail: string; name?: string };
 
+export type StructuredMarketingContact = {
+  email: string;
+  name?: string | null;
+  mobile?: string | null;
+  alternatePhone?: string | null;
+  addressLine1?: string | null;
+  addressLine2?: string | null;
+  landmark?: string | null;
+  city?: string | null;
+  state?: string | null;
+  postalCode?: string | null;
+  country?: string | null;
+  sourceChannel?: string | null;
+  sourceSegments?: string[];
+  tags?: string[];
+  productNames?: string[];
+  productSkus?: string[];
+  paymentMethods?: string[];
+  orderStatuses?: string[];
+  firstOrderAt?: string | Date | null;
+  lastOrderAt?: string | Date | null;
+  orderCount?: number;
+  totalOrderValue?: number;
+  currency?: string | null;
+};
+
+export type EmailAudienceFilter = {
+  states?: string[];
+  cities?: string[];
+  postalCodes?: string[];
+  sourceLabels?: string[];
+  sourceChannels?: string[];
+  sourceSegments?: string[];
+  paymentMethods?: string[];
+  orderStatuses?: string[];
+  tags?: string[];
+  productQuery?: string;
+  minOrderCount?: number;
+  maxOrderCount?: number;
+  minTotalOrderValue?: number;
+  maxTotalOrderValue?: number;
+  lastOrderFrom?: string;
+  lastOrderTo?: string;
+  hasMobile?: boolean;
+};
+
 export function normalizeMarketingEmail(value: string) {
   return value.trim().toLowerCase();
+}
+
+export function normalizeMarketingMobile(value: string) {
+  const digits = value.replace(/\D/g, '');
+  return digits.length >= 7 ? digits.slice(-15) : '';
+}
+
+const cleanText = (value?: string | null) => value?.trim() || undefined;
+const canonicalValues = (values?: string[], limit = 100) =>
+  [...new Set((values || []).map((value) => value.trim().toUpperCase()).filter(Boolean))].slice(
+    0,
+    limit
+  );
+const displayValues = (values?: string[], limit = 100) =>
+  [...new Set((values || []).map((value) => value.trim()).filter(Boolean))].slice(0, limit);
+const safeDate = (value?: string | Date | null) => {
+  if (!value) return undefined;
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+};
+
+export function normalizeStructuredMarketingContact(
+  contact: StructuredMarketingContact
+): StructuredMarketingContact & { normalizedEmail: string; normalizedMobile?: string } {
+  const email = normalizeMarketingEmail(contact.email);
+  const mobile = cleanText(contact.mobile);
+  const productNames = displayValues(contact.productNames);
+  const productSkus = canonicalValues(contact.productSkus);
+  return {
+    email,
+    normalizedEmail: email,
+    name: cleanText(contact.name),
+    mobile,
+    normalizedMobile: mobile ? normalizeMarketingMobile(mobile) || undefined : undefined,
+    alternatePhone: cleanText(contact.alternatePhone),
+    addressLine1: cleanText(contact.addressLine1),
+    addressLine2: cleanText(contact.addressLine2),
+    landmark: cleanText(contact.landmark),
+    city: cleanText(contact.city),
+    state: cleanText(contact.state),
+    postalCode: cleanText(contact.postalCode),
+    country: cleanText(contact.country),
+    sourceChannel: cleanText(contact.sourceChannel)?.toUpperCase(),
+    sourceSegments: canonicalValues(contact.sourceSegments),
+    tags: canonicalValues(contact.tags),
+    productNames,
+    productSkus,
+    paymentMethods: canonicalValues(contact.paymentMethods),
+    orderStatuses: canonicalValues(contact.orderStatuses),
+    firstOrderAt: safeDate(contact.firstOrderAt),
+    lastOrderAt: safeDate(contact.lastOrderAt),
+    orderCount:
+      contact.orderCount === undefined ? undefined : Math.max(0, Math.floor(contact.orderCount)),
+    totalOrderValue:
+      contact.totalOrderValue === undefined
+        ? undefined
+        : Math.max(0, Number(contact.totalOrderValue) || 0),
+    currency: cleanText(contact.currency)?.toUpperCase() || 'INR'
+  };
+}
+
+const normalizedFilterList = (values?: string[], uppercase = false) =>
+  [...new Set((values || []).map((value) => value.trim()).filter(Boolean))].map((value) =>
+    uppercase ? value.toUpperCase() : value
+  );
+
+export function normalizeEmailAudienceFilter(
+  filter?: EmailAudienceFilter | null
+): EmailAudienceFilter {
+  if (!filter) return {};
+  const normalized: EmailAudienceFilter = {};
+  const listFields: Array<[keyof EmailAudienceFilter, boolean]> = [
+    ['states', false],
+    ['cities', false],
+    ['postalCodes', false],
+    ['sourceLabels', false],
+    ['sourceChannels', true],
+    ['sourceSegments', true],
+    ['paymentMethods', true],
+    ['orderStatuses', true],
+    ['tags', true]
+  ];
+  for (const [key, uppercase] of listFields) {
+    const values = normalizedFilterList(filter[key] as string[] | undefined, uppercase).slice(
+      0,
+      50
+    );
+    if (values.length) (normalized as Record<string, unknown>)[key] = values;
+  }
+  const productQuery = filter.productQuery?.trim();
+  if (productQuery) normalized.productQuery = productQuery.slice(0, 120);
+  for (const key of [
+    'minOrderCount',
+    'maxOrderCount',
+    'minTotalOrderValue',
+    'maxTotalOrderValue'
+  ] as const) {
+    const value = filter[key];
+    if (value !== undefined && Number.isFinite(value) && value >= 0) normalized[key] = value;
+  }
+  for (const key of ['lastOrderFrom', 'lastOrderTo'] as const) {
+    const date = safeDate(filter[key]);
+    if (date) normalized[key] = date.toISOString();
+  }
+  if (filter.hasMobile !== undefined) normalized.hasMobile = filter.hasMobile;
+  return normalized;
+}
+
+function insensitiveAny(field: 'state' | 'city' | 'postalCode' | 'sourceLabel', values?: string[]) {
+  return (values || []).map((value) => ({
+    [field]: { equals: value, mode: 'insensitive' as const }
+  }));
+}
+
+export function buildMarketingContactWhere(input: {
+  filter?: EmailAudienceFilter | null;
+  query?: string;
+  status?: EmailMarketingContactStatus;
+  activeUnregisteredOnly?: boolean;
+}): Prisma.EmailMarketingContactWhereInput {
+  const filter = normalizeEmailAudienceFilter(input.filter);
+  const and: Prisma.EmailMarketingContactWhereInput[] = [];
+  for (const [field, values] of [
+    ['state', filter.states],
+    ['city', filter.cities],
+    ['postalCode', filter.postalCodes],
+    ['sourceLabel', filter.sourceLabels]
+  ] as const) {
+    if (values?.length) and.push({ OR: insensitiveAny(field, values) });
+  }
+  if (filter.sourceChannels?.length) and.push({ sourceChannel: { in: filter.sourceChannels } });
+  if (filter.sourceSegments?.length)
+    and.push({ sourceSegments: { hasSome: filter.sourceSegments } });
+  if (filter.paymentMethods?.length)
+    and.push({ paymentMethods: { hasSome: filter.paymentMethods } });
+  if (filter.orderStatuses?.length) and.push({ orderStatuses: { hasSome: filter.orderStatuses } });
+  if (filter.tags?.length) and.push({ tags: { hasSome: filter.tags } });
+  if (filter.productQuery)
+    and.push({ productSearchText: { contains: filter.productQuery, mode: 'insensitive' } });
+  if (filter.minOrderCount !== undefined || filter.maxOrderCount !== undefined) {
+    and.push({
+      orderCount: { gte: filter.minOrderCount, lte: filter.maxOrderCount }
+    });
+  }
+  if (filter.minTotalOrderValue !== undefined || filter.maxTotalOrderValue !== undefined) {
+    and.push({
+      totalOrderValue: {
+        gte: filter.minTotalOrderValue,
+        lte: filter.maxTotalOrderValue
+      }
+    });
+  }
+  if (filter.lastOrderFrom || filter.lastOrderTo) {
+    and.push({
+      lastOrderAt: {
+        gte: filter.lastOrderFrom ? new Date(filter.lastOrderFrom) : undefined,
+        lte: filter.lastOrderTo ? new Date(filter.lastOrderTo) : undefined
+      }
+    });
+  }
+  if (filter.hasMobile === true) and.push({ normalizedMobile: { not: null } });
+  if (filter.hasMobile === false) and.push({ normalizedMobile: null });
+  const query = input.query?.trim();
+  if (query) {
+    and.push({
+      OR: [
+        { email: { contains: query, mode: 'insensitive' } },
+        { name: { contains: query, mode: 'insensitive' } },
+        { mobile: { contains: query, mode: 'insensitive' } },
+        { city: { contains: query, mode: 'insensitive' } },
+        { state: { contains: query, mode: 'insensitive' } },
+        { postalCode: { contains: query, mode: 'insensitive' } },
+        { sourceLabel: { contains: query, mode: 'insensitive' } },
+        { productSearchText: { contains: query, mode: 'insensitive' } }
+      ]
+    });
+  }
+  return {
+    ...(input.activeUnregisteredOnly
+      ? { status: EmailMarketingContactStatus.ACTIVE, registeredUserId: null }
+      : input.status
+        ? { status: input.status }
+        : {}),
+    ...(and.length ? { AND: and } : {})
+  };
 }
 
 export function parseMarketingContacts(value: string): ImportedEmailContact[] {
@@ -175,9 +406,11 @@ export function renderMarketingEmail(input: {
   const preview = personalizedPreview
     ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0">${escapeHtml(personalizedPreview)}</div>`
     : '';
-  const html = `<!doctype html><html><body style="margin:0;background:#f5f7f9;color:#17202a;font-family:Arial,sans-serif"><div style="max-width:640px;margin:0 auto;padding:24px"><div style="background:#ffffff;border-radius:14px;padding:28px">${preview}<div style="font-size:20px;font-weight:700;color:#0f766e;margin-bottom:20px">Hope Hub</div>${body}<hr style="border:0;border-top:1px solid #e2e8f0;margin:28px 0 18px"><p style="font-size:12px;line-height:1.5;color:#64748b">You received this email because you registered with Hope Hub or explicitly agreed to receive updates. <a href="${unsubscribeUrl}" style="color:#0f766e">Unsubscribe</a> at any time.</p></div></div><img src="${openUrl}" width="1" height="1" alt="" style="display:block;border:0" /></body></html>`;
+  const reason =
+    'You received this email because you registered with Hope Hub, requested updates, or had a prior customer relationship.';
+  const html = `<!doctype html><html><body style="margin:0;background:#f5f7f9;color:#17202a;font-family:Arial,sans-serif"><div style="max-width:640px;margin:0 auto;padding:24px"><div style="background:#ffffff;border-radius:14px;padding:28px">${preview}<div style="font-size:20px;font-weight:700;color:#0f766e;margin-bottom:20px">Hope Hub</div>${body}<hr style="border:0;border-top:1px solid #e2e8f0;margin:28px 0 18px"><p style="font-size:12px;line-height:1.5;color:#64748b">${reason} <a href="${unsubscribeUrl}" style="color:#0f766e">Unsubscribe</a> at any time.</p></div></div><img src="${openUrl}" width="1" height="1" alt="" style="display:block;border:0" /></body></html>`;
   const textBody = personalizeMarketingContent(input.textBody, recipient);
-  const text = `${textBody.trim()}\n\n---\nYou received this email because you registered with Hope Hub or explicitly agreed to receive updates.\nUnsubscribe: ${unsubscribeUrl}`;
+  const text = `${textBody.trim()}\n\n---\n${reason}\nUnsubscribe: ${unsubscribeUrl}`;
   return { subject, html, text, unsubscribeUrl };
 }
 
@@ -228,20 +461,50 @@ export async function importMarketingContacts(input: {
 }) {
   const parsed = parseMarketingContacts(input.rawContacts);
   if (!parsed.length) throw new Error('No valid email addresses were found.');
-  if (parsed.length > 5000) throw new Error('Import at most 5,000 unique contacts at a time.');
-  const users = await registeredUsersByEmail();
-  const suppressions = await prisma.emailSuppression.findMany({
-    where: { normalizedEmail: { in: parsed.map((item) => item.normalizedEmail) } },
-    select: { normalizedEmail: true }
+  return importStructuredMarketingContacts({
+    contacts: parsed,
+    sourceLabel: input.sourceLabel,
+    consentBasis: input.consentBasis,
+    importedById: input.importedById
   });
+}
+
+const mergedValues = (existing: string[], incoming: string[], limit = 100) =>
+  [...new Set([...existing, ...incoming])].slice(0, limit);
+
+export async function importStructuredMarketingContacts(input: {
+  contacts: StructuredMarketingContact[];
+  sourceLabel: string;
+  consentBasis: string;
+  importedById?: string;
+}) {
+  const parsed = input.contacts
+    .map(normalizeStructuredMarketingContact)
+    .filter((contact) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact.normalizedEmail));
+  const deduplicated = new Map(parsed.map((contact) => [contact.normalizedEmail, contact]));
+  const contacts = [...deduplicated.values()];
+  if (!contacts.length) throw new Error('No valid email addresses were found.');
+  if (contacts.length > 5000) throw new Error('Import at most 5,000 unique contacts at a time.');
+  const users = await registeredUsersByEmail();
+  const normalizedEmails = contacts.map((item) => item.normalizedEmail);
+  const [suppressions, existingContacts] = await Promise.all([
+    prisma.emailSuppression.findMany({
+      where: { normalizedEmail: { in: normalizedEmails } },
+      select: { normalizedEmail: true }
+    }),
+    prisma.emailMarketingContact.findMany({
+      where: { normalizedEmail: { in: normalizedEmails } }
+    })
+  ]);
   const suppressed = new Set(suppressions.map((item) => item.normalizedEmail));
+  const existingByEmail = new Map(existingContacts.map((item) => [item.normalizedEmail, item]));
   const now = new Date();
   let imported = 0;
   let updated = 0;
   let converted = 0;
   let suppressedCount = 0;
 
-  for (const contact of parsed) {
+  for (const contact of contacts) {
     const user = users.get(contact.normalizedEmail);
     const status = suppressed.has(contact.normalizedEmail)
       ? EmailMarketingContactStatus.SUPPRESSED
@@ -250,16 +513,54 @@ export async function importMarketingContacts(input: {
         : EmailMarketingContactStatus.ACTIVE;
     if (status === EmailMarketingContactStatus.CONVERTED) converted++;
     if (status === EmailMarketingContactStatus.SUPPRESSED) suppressedCount++;
-    const existing = await prisma.emailMarketingContact.findUnique({
-      where: { normalizedEmail: contact.normalizedEmail },
-      select: { id: true }
-    });
+    const existing = existingByEmail.get(contact.normalizedEmail);
+    const sourceSegments = mergedValues(
+      existing?.sourceSegments || [],
+      contact.sourceSegments || []
+    );
+    const tags = mergedValues(existing?.tags || [], contact.tags || []);
+    const productNames = mergedValues(existing?.productNames || [], contact.productNames || []);
+    const productSkus = mergedValues(existing?.productSkus || [], contact.productSkus || []);
+    const paymentMethods = mergedValues(
+      existing?.paymentMethods || [],
+      contact.paymentMethods || []
+    );
+    const orderStatuses = mergedValues(existing?.orderStatuses || [], contact.orderStatuses || []);
+    const productSearchText = [...productNames, ...productSkus].join(' | ') || undefined;
+    const richData = {
+      ...(contact.name ? { name: contact.name } : {}),
+      ...(contact.mobile ? { mobile: contact.mobile } : {}),
+      ...(contact.normalizedMobile ? { normalizedMobile: contact.normalizedMobile } : {}),
+      ...(contact.alternatePhone ? { alternatePhone: contact.alternatePhone } : {}),
+      ...(contact.addressLine1 ? { addressLine1: contact.addressLine1 } : {}),
+      ...(contact.addressLine2 ? { addressLine2: contact.addressLine2 } : {}),
+      ...(contact.landmark ? { landmark: contact.landmark } : {}),
+      ...(contact.city ? { city: contact.city } : {}),
+      ...(contact.state ? { state: contact.state } : {}),
+      ...(contact.postalCode ? { postalCode: contact.postalCode } : {}),
+      ...(contact.country ? { country: contact.country } : {}),
+      ...(contact.sourceChannel ? { sourceChannel: contact.sourceChannel } : {}),
+      sourceSegments,
+      tags,
+      productNames,
+      productSkus,
+      paymentMethods,
+      orderStatuses,
+      productSearchText,
+      ...(contact.firstOrderAt ? { firstOrderAt: contact.firstOrderAt } : {}),
+      ...(contact.lastOrderAt ? { lastOrderAt: contact.lastOrderAt } : {}),
+      ...(contact.orderCount !== undefined ? { orderCount: contact.orderCount } : {}),
+      ...(contact.totalOrderValue !== undefined
+        ? { totalOrderValue: contact.totalOrderValue }
+        : {}),
+      ...(contact.currency ? { currency: contact.currency } : {})
+    };
     await prisma.emailMarketingContact.upsert({
       where: { normalizedEmail: contact.normalizedEmail },
       create: {
         email: contact.email,
         normalizedEmail: contact.normalizedEmail,
-        name: contact.name,
+        ...richData,
         sourceLabel: input.sourceLabel,
         consentBasis: input.consentBasis,
         consentCapturedAt: now,
@@ -270,7 +571,7 @@ export async function importMarketingContacts(input: {
       },
       update: {
         email: contact.email,
-        ...(contact.name ? { name: contact.name } : {}),
+        ...richData,
         sourceLabel: input.sourceLabel,
         consentBasis: input.consentBasis,
         consentCapturedAt: now,
@@ -283,7 +584,7 @@ export async function importMarketingContacts(input: {
     if (existing) updated++;
     else imported++;
   }
-  return { found: parsed.length, imported, updated, converted, suppressed: suppressedCount };
+  return { found: contacts.length, imported, updated, converted, suppressed: suppressedCount };
 }
 
 type AudienceRecipient = {
@@ -297,6 +598,7 @@ type AudienceRecipient = {
 async function eligibleCampaignAudience(campaign: {
   audience: EmailCampaignAudience;
   registeredRole: Role | null;
+  audienceFilter?: Prisma.JsonValue | EmailAudienceFilter | null;
 }) {
   await reconcileRegisteredMarketingContacts();
   const recipients = new Map<string, AudienceRecipient>();
@@ -331,7 +633,10 @@ async function eligibleCampaignAudience(campaign: {
     campaign.audience === EmailCampaignAudience.ALL_ELIGIBLE
   ) {
     const contacts = await prisma.emailMarketingContact.findMany({
-      where: { status: EmailMarketingContactStatus.ACTIVE, registeredUserId: null },
+      where: buildMarketingContactWhere({
+        filter: (campaign.audienceFilter || {}) as EmailAudienceFilter,
+        activeUnregisteredOnly: true
+      }),
       select: { id: true, email: true, normalizedEmail: true, name: true },
       orderBy: { createdAt: 'asc' }
     });
@@ -356,9 +661,10 @@ async function eligibleCampaignAudience(campaign: {
 
 export async function previewEmailCampaignAudience(
   audience: EmailCampaignAudience,
-  registeredRole: Role | null
+  registeredRole: Role | null,
+  audienceFilter?: EmailAudienceFilter | null
 ) {
-  const eligible = await eligibleCampaignAudience({ audience, registeredRole });
+  const eligible = await eligibleCampaignAudience({ audience, registeredRole, audienceFilter });
   const registered = eligible.filter((item) => item.userId).length;
   const promotional = eligible.filter((item) => item.contactId).length;
   return { eligible: eligible.length, registered, promotional };
@@ -776,6 +1082,7 @@ export function campaignCreateData(input: {
   textBody: string;
   audience: EmailCampaignAudience;
   registeredRole?: Role | null;
+  audienceFilter?: EmailAudienceFilter | null;
   templateId?: string | null;
   scheduledAt?: Date | null;
   createdById?: string;
@@ -788,6 +1095,7 @@ export function campaignCreateData(input: {
     textBody: input.textBody.trim(),
     audience: input.audience,
     registeredRole: input.registeredRole || null,
+    audienceFilter: normalizeEmailAudienceFilter(input.audienceFilter) as Prisma.InputJsonValue,
     templateId: input.templateId || null,
     scheduledAt: input.scheduledAt || null,
     status: input.scheduledAt ? EmailCampaignStatus.SCHEDULED : EmailCampaignStatus.DRAFT,

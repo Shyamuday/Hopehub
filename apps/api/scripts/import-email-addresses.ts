@@ -2,7 +2,11 @@ import 'dotenv/config';
 import { DeleteObjectCommand, GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { readFile } from 'node:fs/promises';
 import { prisma } from '../src/db.js';
-import { importMarketingContacts } from '../src/services/email-marketing.js';
+import {
+  importMarketingContacts,
+  importStructuredMarketingContacts,
+  type StructuredMarketingContact
+} from '../src/services/email-marketing.js';
 
 const getArgument = (name: string) => {
   const index = process.argv.indexOf(name);
@@ -13,6 +17,11 @@ async function main() {
   const file = getArgument('--file');
   const s3Bucket = getArgument('--s3-bucket');
   const s3Key = getArgument('--s3-key');
+  const s3Region =
+    getArgument('--s3-region') ||
+    process.env.AWS_REGION ||
+    process.env.AWS_DEFAULT_REGION ||
+    'us-east-1';
   const sourceLabel = getArgument('--source') || 'Historical email exports';
   const consentBasis =
     getArgument('--basis') ||
@@ -22,7 +31,7 @@ async function main() {
     throw new Error('Pass --file or both --s3-bucket and --s3-key.');
   }
 
-  const s3 = s3Bucket && s3Key ? new S3Client({}) : null;
+  const s3 = s3Bucket && s3Key ? new S3Client({ region: s3Region }) : null;
   const sourceText = file
     ? await readFile(file, 'utf8')
     : await (async () => {
@@ -31,22 +40,35 @@ async function main() {
         return response.Body.transformToString('utf-8');
       })();
 
-  const emails = [
-    ...new Set(
-      sourceText
-        .split(/\r?\n/)
-        .map((value) => value.trim().toLowerCase())
-        .filter(Boolean)
-    )
-  ];
+  const lines = sourceText
+    .split(/\r?\n/)
+    .map((value) => value.trim())
+    .filter(Boolean);
+  const structured = lines[0]?.startsWith('{');
+  const contacts = structured
+    ? lines.map((line, index) => {
+        try {
+          return JSON.parse(line) as StructuredMarketingContact;
+        } catch {
+          throw new Error(`Invalid JSONL contact at line ${index + 1}.`);
+        }
+      })
+    : [...new Set(lines.map((value) => value.toLowerCase()))];
 
   const totals = { found: 0, imported: 0, updated: 0, converted: 0, suppressed: 0 };
-  for (let offset = 0; offset < emails.length; offset += 5000) {
-    const result = await importMarketingContacts({
-      rawContacts: emails.slice(offset, offset + 5000).join('\n'),
-      sourceLabel,
-      consentBasis
-    });
+  for (let offset = 0; offset < contacts.length; offset += 5000) {
+    const batch = contacts.slice(offset, offset + 5000);
+    const result = structured
+      ? await importStructuredMarketingContacts({
+          contacts: batch as StructuredMarketingContact[],
+          sourceLabel,
+          consentBasis
+        })
+      : await importMarketingContacts({
+          rawContacts: (batch as string[]).join('\n'),
+          sourceLabel,
+          consentBasis
+        });
     for (const key of Object.keys(totals) as Array<keyof typeof totals>) totals[key] += result[key];
     console.log(`Imported batch ${Math.floor(offset / 5000) + 1}: ${result.found} contacts.`);
   }

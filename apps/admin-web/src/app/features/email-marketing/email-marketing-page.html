@@ -141,6 +141,135 @@
             </label>
           }
         </div>
+        @if (draft().audience !== 'REGISTERED_USERS') {
+          <details class="segment-builder" open>
+            <summary>Filter promotional contacts (optional)</summary>
+            <p class="help">
+              Different fields combine with AND. Comma-separated values inside one field combine
+              with OR. These filters apply only to the promotional-contact portion of the audience.
+            </p>
+            <div class="field-grid three">
+              <label
+                >State(s)<input
+                  [value]="filterListValue(draft().audienceFilter, 'states')"
+                  (input)="setAudienceList('states', inputValue($event))"
+                  placeholder="Maharashtra, Delhi"
+              /></label>
+              <label
+                >City(s)<input
+                  [value]="filterListValue(draft().audienceFilter, 'cities')"
+                  (input)="setAudienceList('cities', inputValue($event))"
+                  placeholder="Mumbai, Pune"
+              /></label>
+              <label
+                >PIN code(s)<input
+                  [value]="filterListValue(draft().audienceFilter, 'postalCodes')"
+                  (input)="setAudienceList('postalCodes', inputValue($event))"
+                  placeholder="400001, 411001"
+              /></label>
+              <label
+                >Source/list(s)<input
+                  [value]="filterListValue(draft().audienceFilter, 'sourceLabels')"
+                  (input)="setAudienceList('sourceLabels', inputValue($event))"
+                  placeholder="Historical exports"
+              /></label>
+              <label
+                >Store/segment(s)<input
+                  [value]="filterListValue(draft().audienceFilter, 'sourceSegments')"
+                  (input)="setAudienceList('sourceSegments', inputValue($event))"
+                  placeholder="SIGHTOMETER, SASSY CLOTHES"
+              /></label>
+              <label
+                >Channel(s)<input
+                  [value]="filterListValue(draft().audienceFilter, 'sourceChannels')"
+                  (input)="setAudienceList('sourceChannels', inputValue($event))"
+                  placeholder="CUSTOM, SHOPIFY"
+              /></label>
+              <label
+                >Product or SKU<input
+                  [value]="filterValue(draft().audienceFilter, 'productQuery')"
+                  (input)="setAudienceValue('productQuery', inputValue($event))"
+                  placeholder="Product name or SKU"
+              /></label>
+              <label
+                >Payment method(s)<input
+                  [value]="filterListValue(draft().audienceFilter, 'paymentMethods')"
+                  (input)="setAudienceList('paymentMethods', inputValue($event))"
+                  placeholder="COD, PREPAID"
+              /></label>
+              <label
+                >Order status(es)<input
+                  [value]="filterListValue(draft().audienceFilter, 'orderStatuses')"
+                  (input)="setAudienceList('orderStatuses', inputValue($event))"
+                  placeholder="DELIVERED, SHIPPED"
+              /></label>
+              <label
+                >Minimum orders<input
+                  type="number"
+                  min="0"
+                  [value]="filterValue(draft().audienceFilter, 'minOrderCount')"
+                  (input)="setAudienceValue('minOrderCount', inputValue($event))"
+              /></label>
+              <label
+                >Maximum orders<input
+                  type="number"
+                  min="0"
+                  [value]="filterValue(draft().audienceFilter, 'maxOrderCount')"
+                  (input)="setAudienceValue('maxOrderCount', inputValue($event))"
+              /></label>
+              <label
+                >Phone availability<select
+                  [value]="filterValue(draft().audienceFilter, 'hasMobile')"
+                  (change)="
+                    setAudienceValue(
+                      'hasMobile',
+                      inputValue($event) === '' ? undefined : inputValue($event) === 'true'
+                    )
+                  "
+                >
+                  <option value="">Any</option>
+                  <option value="true">Has mobile</option>
+                  <option value="false">No mobile</option>
+                </select></label
+              >
+              <label
+                >Minimum spend<input
+                  type="number"
+                  min="0"
+                  [value]="filterValue(draft().audienceFilter, 'minTotalOrderValue')"
+                  (input)="setAudienceValue('minTotalOrderValue', inputValue($event))"
+              /></label>
+              <label
+                >Maximum spend<input
+                  type="number"
+                  min="0"
+                  [value]="filterValue(draft().audienceFilter, 'maxTotalOrderValue')"
+                  (input)="setAudienceValue('maxTotalOrderValue', inputValue($event))"
+              /></label>
+              <label
+                >Tag(s)<input
+                  [value]="filterListValue(draft().audienceFilter, 'tags')"
+                  (input)="setAudienceList('tags', inputValue($event))"
+                  placeholder="VIP, REPEAT"
+              /></label>
+              <label
+                >Last order from<input
+                  type="date"
+                  [value]="filterDateValue(draft().audienceFilter, 'lastOrderFrom')"
+                  (input)="setFilterDate('audience', 'lastOrderFrom', inputValue($event))"
+              /></label>
+              <label
+                >Last order to<input
+                  type="date"
+                  [value]="filterDateValue(draft().audienceFilter, 'lastOrderTo')"
+                  (input)="setFilterDate('audience', 'lastOrderTo', inputValue($event))"
+              /></label>
+            </div>
+            <button type="button" class="link" (click)="resetAudienceFilter()">
+              Clear segment filters
+            </button>
+          </details>
+        }
         <div class="audience-row">
           <button
             type="button"
@@ -257,6 +386,9 @@
                 · Sends {{ campaign.scheduledAt | date: 'medium' }}
               }
             </p>
+            @if (campaignFilterSummary(campaign); as summary) {
+              <p class="filter-summary">Segment: {{ summary }}</p>
+            }
             <div class="actions">
               @if (campaign.recipientCount) {
                 <button
@@ -402,11 +534,127 @@
           </select>
           <button type="button" class="button secondary" (click)="loadContacts(1)">Search</button>
         </div>
+        <details class="segment-builder contact-segments">
+          <summary>Advanced contact filters</summary>
+          <p class="help">Combine location, purchase, source, and contact-data filters.</p>
+          <div class="field-grid three">
+            <label
+              >State(s)<input
+                [value]="filterListValue(contactFilter(), 'states')"
+                (input)="setContactList('states', inputValue($event))"
+            /></label>
+            <label
+              >City(s)<input
+                [value]="filterListValue(contactFilter(), 'cities')"
+                (input)="setContactList('cities', inputValue($event))"
+            /></label>
+            <label
+              >PIN(s)<input
+                [value]="filterListValue(contactFilter(), 'postalCodes')"
+                (input)="setContactList('postalCodes', inputValue($event))"
+            /></label>
+            <label
+              >Store/segment(s)<input
+                [value]="filterListValue(contactFilter(), 'sourceSegments')"
+                (input)="setContactList('sourceSegments', inputValue($event))"
+            /></label>
+            <label
+              >Channel(s)<input
+                [value]="filterListValue(contactFilter(), 'sourceChannels')"
+                (input)="setContactList('sourceChannels', inputValue($event))"
+            /></label>
+            <label
+              >Product/SKU<input
+                [value]="filterValue(contactFilter(), 'productQuery')"
+                (input)="setContactValue('productQuery', inputValue($event))"
+            /></label>
+            <label
+              >Payment method(s)<input
+                [value]="filterListValue(contactFilter(), 'paymentMethods')"
+                (input)="setContactList('paymentMethods', inputValue($event))"
+            /></label>
+            <label
+              >Order status(es)<input
+                [value]="filterListValue(contactFilter(), 'orderStatuses')"
+                (input)="setContactList('orderStatuses', inputValue($event))"
+            /></label>
+            <label
+              >Tag(s)<input
+                [value]="filterListValue(contactFilter(), 'tags')"
+                (input)="setContactList('tags', inputValue($event))"
+            /></label>
+            <label
+              >Min orders<input
+                type="number"
+                min="0"
+                [value]="filterValue(contactFilter(), 'minOrderCount')"
+                (input)="setContactValue('minOrderCount', inputValue($event))"
+            /></label>
+            <label
+              >Max orders<input
+                type="number"
+                min="0"
+                [value]="filterValue(contactFilter(), 'maxOrderCount')"
+                (input)="setContactValue('maxOrderCount', inputValue($event))"
+            /></label>
+            <label
+              >Phone<select
+                [value]="filterValue(contactFilter(), 'hasMobile')"
+                (change)="
+                  setContactValue(
+                    'hasMobile',
+                    inputValue($event) === '' ? undefined : inputValue($event) === 'true'
+                  )
+                "
+              >
+                <option value="">Any</option>
+                <option value="true">Has mobile</option>
+                <option value="false">No mobile</option>
+              </select></label
+            >
+            <label
+              >Min spend<input
+                type="number"
+                min="0"
+                [value]="filterValue(contactFilter(), 'minTotalOrderValue')"
+                (input)="setContactValue('minTotalOrderValue', inputValue($event))"
+            /></label>
+            <label
+              >Max spend<input
+                type="number"
+                min="0"
+                [value]="filterValue(contactFilter(), 'maxTotalOrderValue')"
+                (input)="setContactValue('maxTotalOrderValue', inputValue($event))"
+            /></label>
+            <label
+              >Last order from<input
+                type="date"
+                [value]="filterDateValue(contactFilter(), 'lastOrderFrom')"
+                (input)="setFilterDate('contacts', 'lastOrderFrom', inputValue($event))"
+            /></label>
+            <label
+              >Last order to<input
+                type="date"
+                [value]="filterDateValue(contactFilter(), 'lastOrderTo')"
+                (input)="setFilterDate('contacts', 'lastOrderTo', inputValue($event))"
+            /></label>
+          </div>
+          <div class="actions">
+            <button type="button" class="button primary" (click)="loadContacts(1)">
+              Apply filters
+            </button>
+            <button type="button" class="button secondary" (click)="resetContactFilter()">
+              Clear
+            </button>
+          </div>
+        </details>
         <div class="table-wrap">
           <table>
             <thead>
               <tr>
                 <th>Contact</th>
+                <th>Phone and location</th>
+                <th>Purchase profile</th>
                 <th>Source and consent</th>
                 <th>Status</th>
                 <th>Last sent</th>
@@ -421,8 +669,27 @@
                     ><span>{{ contact.email }}</span>
                   </td>
                   <td>
+                    <strong>{{ contact.mobile || 'No mobile' }}</strong>
+                    <span>{{ contactLocation(contact) }}</span>
+                  </td>
+                  <td>
+                    <strong
+                      >{{ contact.orderCount }} order(s) · {{ contact.currency || 'INR' }}
+                      {{ contact.totalOrderValue }}</strong
+                    >
+                    <span>{{
+                      contact.productNames.slice(0, 2).join(', ') || 'No product data'
+                    }}</span>
+                    @if (contact.lastOrderAt) {
+                      <small>Last order {{ contact.lastOrderAt | date: 'shortDate' }}</small>
+                    }
+                  </td>
+                  <td>
                     <strong>{{ contact.sourceLabel }}</strong
-                    ><span>{{ contact.consentBasis }}</span>
+                    ><span>{{
+                      contact.sourceSegments.join(', ') || contact.sourceChannel || 'No segment'
+                    }}</span>
+                    <small>{{ contact.consentBasis }}</small>
                   </td>
                   <td>
                     <span class="status" [attr.data-status]="contact.status">{{
@@ -443,7 +710,7 @@
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="5" class="empty">No contacts match this filter.</td>
+                  <td colspan="7" class="empty">No contacts match this filter.</td>
                 </tr>
               }
             </tbody>

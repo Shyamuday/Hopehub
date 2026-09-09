@@ -5,6 +5,26 @@ import { AdminApiBase } from './admin-api-base';
 
 export type EmailCampaignAudience = 'REGISTERED_USERS' | 'PROMOTIONAL_CONTACTS' | 'ALL_ELIGIBLE';
 
+export type EmailAudienceFilter = {
+  states?: string[];
+  cities?: string[];
+  postalCodes?: string[];
+  sourceLabels?: string[];
+  sourceChannels?: string[];
+  sourceSegments?: string[];
+  paymentMethods?: string[];
+  orderStatuses?: string[];
+  tags?: string[];
+  productQuery?: string;
+  minOrderCount?: number;
+  maxOrderCount?: number;
+  minTotalOrderValue?: number;
+  maxTotalOrderValue?: number;
+  lastOrderFrom?: string;
+  lastOrderTo?: string;
+  hasMobile?: boolean;
+};
+
 export type EmailMarketingOverview = {
   registered: number;
   promotional: number;
@@ -27,7 +47,28 @@ export type EmailMarketingContact = {
   email: string;
   normalizedEmail: string;
   name?: string | null;
+  mobile?: string | null;
+  alternatePhone?: string | null;
+  addressLine1?: string | null;
+  addressLine2?: string | null;
+  landmark?: string | null;
+  city?: string | null;
+  state?: string | null;
+  postalCode?: string | null;
+  country?: string | null;
   sourceLabel: string;
+  sourceChannel?: string | null;
+  sourceSegments: string[];
+  tags: string[];
+  productNames: string[];
+  productSkus: string[];
+  paymentMethods: string[];
+  orderStatuses: string[];
+  firstOrderAt?: string | null;
+  lastOrderAt?: string | null;
+  orderCount: number;
+  totalOrderValue: string;
+  currency?: string | null;
   consentBasis: string;
   consentCapturedAt: string;
   status: 'ACTIVE' | 'CONVERTED' | 'UNSUBSCRIBED' | 'SUPPRESSED';
@@ -47,6 +88,7 @@ export type EmailCampaign = {
   textBody: string;
   audience: EmailCampaignAudience;
   registeredRole?: string | null;
+  audienceFilter?: EmailAudienceFilter | null;
   templateId?: string | null;
   template?: { id: string; name: string } | null;
   status: 'DRAFT' | 'SCHEDULED' | 'QUEUED' | 'SENDING' | 'COMPLETED' | 'CANCELLED' | 'FAILED';
@@ -72,6 +114,7 @@ export type EmailCampaignDraft = {
   textBody: string;
   audience: EmailCampaignAudience;
   registeredRole: string | null;
+  audienceFilter: EmailAudienceFilter;
   templateId: string | null;
   scheduledAt: string | null;
   complianceConfirmed: true;
@@ -179,20 +222,51 @@ export class AdminEmailMarketingApi extends AdminApiBase {
     );
   }
 
-  previewAudience(audience: EmailCampaignAudience, registeredRole: string | null) {
+  previewAudience(
+    audience: EmailCampaignAudience,
+    registeredRole: string | null,
+    audienceFilter: EmailAudienceFilter = {},
+  ) {
     return firstValueFrom(
       this.http.post<{ eligible: number; registered: number; promotional: number }>(
         `${this.apiBase}${API_PATHS.ADMIN.EMAIL_MARKETING_AUDIENCE_PREVIEW}`,
-        { audience, registeredRole },
+        { audience, registeredRole, audienceFilter },
       ),
     );
   }
 
-  contacts(params: { q?: string; status?: string; page?: number } = {}) {
+  contacts(
+    params: { q?: string; status?: string; page?: number; filter?: EmailAudienceFilter } = {},
+  ) {
     const query: Record<string, string> = {};
     if (params.q) query['q'] = params.q;
     if (params.status) query['status'] = params.status;
     if (params.page) query['page'] = String(params.page);
+    const filter = params.filter || {};
+    const addList = (key: string, values?: string[]) => {
+      if (values?.length) query[key] = values.join(',');
+    };
+    addList('state', filter.states);
+    addList('city', filter.cities);
+    addList('postalCode', filter.postalCodes);
+    addList('sourceLabel', filter.sourceLabels);
+    addList('sourceChannel', filter.sourceChannels);
+    addList('sourceSegment', filter.sourceSegments);
+    addList('paymentMethod', filter.paymentMethods);
+    addList('orderStatus', filter.orderStatuses);
+    addList('tag', filter.tags);
+    if (filter.productQuery) query['product'] = filter.productQuery;
+    for (const key of [
+      'minOrderCount',
+      'maxOrderCount',
+      'minTotalOrderValue',
+      'maxTotalOrderValue',
+      'lastOrderFrom',
+      'lastOrderTo',
+      'hasMobile',
+    ] as const) {
+      if (filter[key] !== undefined) query[key] = String(filter[key]);
+    }
     return firstValueFrom(
       this.http.get<{
         contacts: EmailMarketingContact[];

@@ -13,6 +13,7 @@ import { prisma } from '../../db.js';
 import { asyncRoute, routeParam, writeAuditLog } from '../../utils/helpers.js';
 import { getEmailConfigStatus, isEmailConfigured, sendEmail } from '../../services/mail.js';
 import {
+  buildMarketingContactWhere,
   campaignCreateData,
   importMarketingContacts,
   personalizeMarketingContent,
@@ -21,10 +22,31 @@ import {
   reconcileRegisteredMarketingContacts,
   refreshEmailCampaignMetrics,
   sanitizeMarketingHtml,
-  suppressMarketingEmail
+  suppressMarketingEmail,
+  type EmailAudienceFilter
 } from '../../services/email-marketing.js';
 
 const ACCESS_ROLES = [Role.ADMIN, Role.HR] as const;
+const filterList = z.array(z.string().trim().min(1).max(120)).max(50).optional();
+const audienceFilterSchema = z.object({
+  states: filterList,
+  cities: filterList,
+  postalCodes: filterList,
+  sourceLabels: filterList,
+  sourceChannels: filterList,
+  sourceSegments: filterList,
+  paymentMethods: filterList,
+  orderStatuses: filterList,
+  tags: filterList,
+  productQuery: z.string().trim().max(120).optional(),
+  minOrderCount: z.coerce.number().int().min(0).max(1_000_000).optional(),
+  maxOrderCount: z.coerce.number().int().min(0).max(1_000_000).optional(),
+  minTotalOrderValue: z.coerce.number().min(0).max(1_000_000_000).optional(),
+  maxTotalOrderValue: z.coerce.number().min(0).max(1_000_000_000).optional(),
+  lastOrderFrom: z.string().datetime().optional(),
+  lastOrderTo: z.string().datetime().optional(),
+  hasMobile: z.boolean().optional()
+});
 const campaignSchema = z.object({
   name: z.string().trim().min(2).max(120),
   subject: z.string().trim().min(2).max(180),
@@ -33,6 +55,7 @@ const campaignSchema = z.object({
   textBody: z.string().trim().min(1).max(100_000),
   audience: z.nativeEnum(EmailCampaignAudience),
   registeredRole: z.nativeEnum(Role).nullable().optional(),
+  audienceFilter: audienceFilterSchema.optional().default({}),
   templateId: z.string().trim().min(1).nullable().optional(),
   scheduledAt: z.coerce.date().nullable().optional(),
   complianceConfirmed: z.literal(true)
@@ -49,7 +72,8 @@ const importSchema = z.object({
 });
 const previewSchema = z.object({
   audience: z.nativeEnum(EmailCampaignAudience),
-  registeredRole: z.nativeEnum(Role).nullable().optional()
+  registeredRole: z.nativeEnum(Role).nullable().optional(),
+  audienceFilter: audienceFilterSchema.optional().default({})
 });
 const testSchema = z.object({ to: z.string().trim().email() });
 const suppressSchema = z.object({ reason: z.string().trim().min(3).max(300).optional() });
@@ -71,6 +95,49 @@ function campaignInclude() {
     createdBy: { select: { id: true, name: true, email: true } },
     template: { select: { id: true, name: true } }
   } as const;
+}
+
+const commaList = (value: unknown) =>
+  String(value || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+function contactFiltersFromQuery(query: Record<string, unknown>): EmailAudienceFilter {
+  const numberValue = (key: string) => {
+    const raw = String(query[key] || '').trim();
+    if (!raw) return undefined;
+    const value = Number(raw);
+    return Number.isFinite(value) && value >= 0 ? value : undefined;
+  };
+  const dateValue = (key: string, endOfDay = false) => {
+    const raw = String(query[key] || '').trim();
+    if (!raw) return undefined;
+    const date = new Date(
+      endOfDay && /^\d{4}-\d{2}-\d{2}$/.test(raw) ? `${raw}T23:59:59.999Z` : raw
+    );
+    return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+  };
+  const hasMobileRaw = String(query.hasMobile || '').trim();
+  return audienceFilterSchema.parse({
+    states: commaList(query.state),
+    cities: commaList(query.city),
+    postalCodes: commaList(query.postalCode),
+    sourceLabels: commaList(query.sourceLabel),
+    sourceChannels: commaList(query.sourceChannel),
+    sourceSegments: commaList(query.sourceSegment),
+    paymentMethods: commaList(query.paymentMethod),
+    orderStatuses: commaList(query.orderStatus),
+    tags: commaList(query.tag),
+    productQuery: String(query.product || '').trim() || undefined,
+    minOrderCount: numberValue('minOrderCount'),
+    maxOrderCount: numberValue('maxOrderCount'),
+    minTotalOrderValue: numberValue('minTotalOrderValue'),
+    maxTotalOrderValue: numberValue('maxTotalOrderValue'),
+    lastOrderFrom: dateValue('lastOrderFrom'),
+    lastOrderTo: dateValue('lastOrderTo', true),
+    hasMobile: hasMobileRaw === 'true' ? true : hasMobileRaw === 'false' ? false : undefined
+  });
 }
 
 export function registerAdminEmailMarketingRoutes(router: Router) {
@@ -233,7 +300,13 @@ export function registerAdminEmailMarketingRoutes(router: Router) {
     allowRoles(...ACCESS_ROLES),
     asyncRoute(async (req, res) => {
       const body = previewSchema.parse(req.body);
-      res.json(await previewEmailCampaignAudience(body.audience, body.registeredRole || null));
+      res.json(
+        await previewEmailCampaignAudience(
+          body.audience,
+          body.registeredRole || null,
+          body.audienceFilter
+        )
+      );
     })
   );
 
@@ -247,18 +320,11 @@ export function registerAdminEmailMarketingRoutes(router: Router) {
       const status = z.nativeEnum(EmailMarketingContactStatus).safeParse(req.query.status);
       const page = Math.max(1, Number(req.query.page || 1));
       const take = Math.min(100, Math.max(10, Number(req.query.limit || 50)));
-      const where = {
-        ...(status.success ? { status: status.data } : {}),
-        ...(query
-          ? {
-              OR: [
-                { email: { contains: query, mode: 'insensitive' as const } },
-                { name: { contains: query, mode: 'insensitive' as const } },
-                { sourceLabel: { contains: query, mode: 'insensitive' as const } }
-              ]
-            }
-          : {})
-      };
+      const where = buildMarketingContactWhere({
+        query,
+        status: status.success ? status.data : undefined,
+        filter: contactFiltersFromQuery(req.query as Record<string, unknown>)
+      });
       const [contacts, total] = await Promise.all([
         prisma.emailMarketingContact.findMany({
           where,
@@ -434,7 +500,11 @@ export function registerAdminEmailMarketingRoutes(router: Router) {
         targetType: 'EmailCampaign',
         targetId: campaign.id,
         summary: `${body.scheduledAt ? 'Scheduled' : 'Created'} email campaign ${campaign.name}`,
-        metadata: { audience: campaign.audience, scheduledAt: campaign.scheduledAt }
+        metadata: {
+          audience: campaign.audience,
+          audienceFilter: campaign.audienceFilter,
+          scheduledAt: campaign.scheduledAt
+        }
       });
       res.status(201).json({ campaign });
     })
@@ -472,6 +542,7 @@ export function registerAdminEmailMarketingRoutes(router: Router) {
           ...(body.textBody !== undefined ? { textBody: body.textBody.trim() } : {}),
           ...(body.audience !== undefined ? { audience: body.audience } : {}),
           ...(body.registeredRole !== undefined ? { registeredRole: body.registeredRole } : {}),
+          ...(body.audienceFilter !== undefined ? { audienceFilter: body.audienceFilter } : {}),
           ...(body.templateId !== undefined ? { templateId: body.templateId } : {})
         },
         include: campaignInclude()
@@ -535,7 +606,11 @@ export function registerAdminEmailMarketingRoutes(router: Router) {
         targetType: 'EmailCampaign',
         targetId: campaign.id,
         summary: `Queued ${campaign.name} for ${campaign.recipientCount} recipients`,
-        metadata: { audience: campaign.audience, recipientCount: campaign.recipientCount }
+        metadata: {
+          audience: campaign.audience,
+          audienceFilter: campaign.audienceFilter,
+          recipientCount: campaign.recipientCount
+        }
       });
       res.json({ campaign });
     })

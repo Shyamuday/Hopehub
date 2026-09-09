@@ -436,6 +436,7 @@ jobs:
           npm run email-marketing:import -- \
             --s3-bucket "hopehub-contact-inbox" \
             --s3-key "$EMAIL_IMPORT_S3_KEY" \
+            --s3-region "us-east-1" \
             --source "Downloads/emails historical exports (2026-09-08)" \
             --basis "Administrator-directed import from historical customer/order exports on 2026-09-08; promotional consent not independently verified."
 
