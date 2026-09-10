@@ -216,8 +216,14 @@ TELEGRAM_TOXIC_MOVIE_BOT_TOKEN="${TELEGRAM_TOXIC_MOVIE_BOT_TOKEN_VALUE}"
 ENV
 chmod 600 .env
 
-npm ci --no-audit --no-fund
-npm run prisma:generate
+# Scheduler runs skip this short window instead of starting with missing dependencies.
+# Use the same lock as the systemd service and release it even if installation fails.
+sudo touch "$APP_DIR/.telegram-runtime.lock"
+(
+  flock --exclusive 9
+  npm ci --no-audit --no-fund
+  npm run prisma:generate
+) 9<"$APP_DIR/.telegram-runtime.lock"
 # Production runs the API through tsx, and the repository CI performs the
 # TypeScript validation. Compiling the full monorepo API on this 911 MB host
 # exhausts V8's heap and prevents an otherwise valid deployment from reaching

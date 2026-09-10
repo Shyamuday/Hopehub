@@ -6,6 +6,17 @@ import {
   shouldPersistCallEvent
 } from './call-event-tracker.js';
 
+test('connection negotiation diagnostics survive sanitization without exposing SDP', () => {
+  const metadata = {
+    signalingState: 'have-local-offer',
+    iceGatheringState: 'complete',
+    hasLocalDescription: true,
+    hasRemoteDescription: false,
+    queuedRemoteCandidateCount: 3
+  };
+  assert.deepEqual(safeCallEventMetadata({ ...metadata, sdp: 'secret' }), metadata);
+});
+
 test('call event tracker keeps useful diagnostics and strips signaling/media secrets', () => {
   assert.deepEqual(
     safeCallEventMetadata({

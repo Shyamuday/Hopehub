@@ -1989,6 +1989,12 @@ export class ConsultationWebrtcCallService {
       return;
     }
 
+    // Do not overwrite an offer that is still awaiting its answer.
+    if (this.makingOffer || this.pc.signalingState !== 'stable') {
+      this.scheduleIceRestart();
+      return;
+    }
+
     this.iceRestartInProgress = true;
     this.iceRestartAttempts += 1;
     this.totalReconnectCount += 1;
@@ -2009,10 +2015,19 @@ export class ConsultationWebrtcCallService {
         }
       });
     } catch {
-      if (this.iceRestartAttempts < MAX_ICE_RESTART_ATTEMPTS) this.scheduleIceRestart();
+      if (this.callContext) {
+        this.emitSignal(CALL_SOCKET_EVENTS.DIAGNOSTIC, {
+          ...this.callContext,
+          reason: 'ice_restart_failed',
+          metadata: { ...this.callMetadata(), diagnosticReason: 'ice_restart_failed' }
+        });
+      }
     } finally {
       this.makingOffer = false;
       this.iceRestartInProgress = false;
+      if (this.state() === 'reconnecting' && this.iceRestartAttempts < MAX_ICE_RESTART_ATTEMPTS) {
+        this.scheduleIceRestart();
+      }
     }
   }
 
@@ -2397,10 +2412,22 @@ export class ConsultationWebrtcCallService {
       if (this.peerHasConnected() || this.state() === 'ended' || this.state() === 'reconnecting') {
         return;
       }
-      void this.failCall(
-        'media_timeout',
-        'Call could not connect. Please try again or continue in chat.'
-      );
+      // A stalled initial connection deserves the same bounded recovery as a dropped call.
+      if (this.pc && this.socket && this.callContext) {
+        this.emitSignal(CALL_SOCKET_EVENTS.DIAGNOSTIC, {
+          ...this.callContext,
+          reason: 'media_connection_stalled',
+          metadata: { ...this.callMetadata(), diagnosticReason: 'media_connection_stalled' }
+        });
+        this.state.set('reconnecting');
+        this.startReconnectTimeout();
+        void this.attemptIceRestart();
+      } else {
+        void this.failCall(
+          'media_timeout',
+          'Call could not connect. Please try again or continue in chat.'
+        );
+      }
     }, MEDIA_CONNECT_TIMEOUT_MS);
   }
 
@@ -2617,6 +2644,11 @@ export class ConsultationWebrtcCallService {
           : undefined,
       connectionState: this.pc?.connectionState,
       iceConnectionState: this.pc?.iceConnectionState,
+      signalingState: this.pc?.signalingState,
+      iceGatheringState: this.pc?.iceGatheringState,
+      hasLocalDescription: Boolean(this.pc?.localDescription),
+      hasRemoteDescription: Boolean(this.pc?.remoteDescription),
+      queuedRemoteCandidateCount: this.iceQueue.length,
       mode: this.callMode(),
       privacyRelay: this.privacyRelay(),
       gatheredCandidateCount: this.gatheredCandidateCount,

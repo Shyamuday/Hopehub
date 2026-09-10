@@ -64,7 +64,11 @@
             <button
               type="button"
               [class.call-compact__action--active]="speakerOutputActive()"
-              [attr.aria-label]="speakerOutputActive() ? 'Use phone earpiece' : 'Turn loudspeaker on'"
+              [class.call-compact__action--speaker-on]="speakerOutputActive()"
+              [attr.title]="speakerOutputActive() ? 'Speaker on' : 'Speaker off'"
+              [attr.aria-label]="
+                speakerOutputActive() ? 'Use phone earpiece' : 'Turn loudspeaker on'
+              "
               [attr.aria-pressed]="speakerOutputActive()"
               (click)="toggleSpeakerOutput()"
             >
@@ -336,15 +340,18 @@
               type="button"
               class="control"
               [class.control--active]="speakerOutputActive()"
+              [class.control--speaker-on]="speakerOutputActive()"
               [attr.aria-pressed]="speakerOutputActive()"
-              [attr.aria-label]="speakerOutputActive() ? 'Use phone earpiece' : 'Turn loudspeaker on'"
+              [attr.aria-label]="
+                speakerOutputActive() ? 'Use phone earpiece' : 'Turn loudspeaker on'
+              "
               (click)="toggleSpeakerOutput()"
             >
               <span aria-hidden="true"
                 ><svg viewBox="0 0 24 24">
                   <path d="M5 9.25h3.25L13 5.5v13l-4.75-3.75H5a2 2 0 0 1-2-2v-1.5a2 2 0 0 1 2-2Z" />
                   <path d="M16 9a4.25 4.25 0 0 1 0 6M18.5 6.5a7.75 7.75 0 0 1 0 11" /></svg></span
-              >{{ speakerOutputActive() ? 'Loudspeaker' : 'Phone' }}
+              >{{ speakerOutputActive() ? 'Speaker on' : 'Speaker off' }}
             </button>
             @if (call.callMode() === 'video') {
               <button

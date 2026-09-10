@@ -24,6 +24,8 @@ const STRING_METADATA_KEYS = [
   'platform',
   'connectionState',
   'iceConnectionState',
+  'signalingState',
+  'iceGatheringState',
   'mode',
   'selectedCandidatePairId',
   'localCandidateType',
@@ -39,6 +41,7 @@ const STRING_METADATA_KEYS = [
 
 const NUMBER_METADATA_KEYS = [
   'attempt',
+  'queuedRemoteCandidateCount',
   'currentRoundTripTime',
   'bytesSent',
   'bytesReceived',
@@ -63,6 +66,8 @@ const NUMBER_METADATA_KEYS = [
 
 const BOOLEAN_METADATA_KEYS = [
   'iceRestart',
+  'hasLocalDescription',
+  'hasRemoteDescription',
   'usedTurnRelay',
   'privacyRelay',
   'lowDataMode',

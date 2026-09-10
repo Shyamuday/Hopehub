@@ -387,6 +387,71 @@ describe('ConsultationWebrtcCallService resilient signaling', () => {
 });
 
 describe('ConsultationWebrtcCallService premium recovery automation', () => {
+  it('tries recovery before ending a stalled initial audio connection', async () => {
+    vi.useFakeTimers();
+    const service = new ConsultationWebrtcCallService();
+    const internals = service as any;
+    internals.pc = { connectionState: 'new', iceConnectionState: 'new', close: vi.fn() };
+    internals.socket = { emit: vi.fn(), on: vi.fn() };
+    internals.callContext = { consultationId: 'consultation', targetUserId: 'receiver' };
+    internals.emitSignal = vi.fn();
+    internals.attemptIceRestart = vi.fn().mockResolvedValue(undefined);
+    internals.failCall = vi.fn().mockResolvedValue(undefined);
+    service.state.set('connecting');
+    internals.startMediaTimeout();
+    await vi.advanceTimersByTimeAsync(25_000);
+    expect(service.state()).toBe('reconnecting');
+    expect(internals.attemptIceRestart).toHaveBeenCalledOnce();
+    expect(internals.failCall).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(20_000);
+    expect(internals.failCall).toHaveBeenCalledWith('reconnect_timeout', expect.any(String));
+    service.cleanup();
+    vi.useRealTimers();
+  });
+
+  it('retries a failed ICE restart after releasing the in-progress flag', async () => {
+    vi.useFakeTimers();
+    const service = new ConsultationWebrtcCallService();
+    const internals = service as any;
+    const createOffer = vi.fn().mockRejectedValue(new Error('temporary negotiation failure'));
+    internals.pc = { signalingState: 'stable', createOffer, close: vi.fn() };
+    internals.socket = { emit: vi.fn(), on: vi.fn() };
+    internals.callContext = { consultationId: 'consultation', targetUserId: 'receiver' };
+    internals.emitSignal = vi.fn();
+    service.state.set('reconnecting');
+    await internals.attemptIceRestart();
+    await vi.advanceTimersByTimeAsync(1_500);
+    expect(createOffer).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(createOffer).toHaveBeenCalledTimes(2);
+    service.cleanup();
+    vi.useRealTimers();
+  });
+
+  it('waits for a pending offer before attempting an ICE restart', async () => {
+    vi.useFakeTimers();
+    const service = new ConsultationWebrtcCallService();
+    const internals = service as any;
+    const createOffer = vi.fn().mockResolvedValue({ type: 'offer', sdp: 'restart' });
+    internals.pc = {
+      signalingState: 'have-local-offer',
+      createOffer,
+      setLocalDescription: vi.fn(),
+      close: vi.fn(),
+    };
+    internals.socket = { emit: vi.fn(), on: vi.fn() };
+    internals.callContext = { consultationId: 'consultation', targetUserId: 'receiver' };
+    internals.emitSignal = vi.fn();
+    service.state.set('reconnecting');
+    await internals.attemptIceRestart();
+    expect(createOffer).not.toHaveBeenCalled();
+    internals.pc.signalingState = 'stable';
+    await vi.advanceTimersByTimeAsync(1_500);
+    expect(createOffer).toHaveBeenCalledOnce();
+    service.cleanup();
+    vi.useRealTimers();
+  });
+
   it('does not let the initial media timeout end a call that already connected', () => {
     vi.useFakeTimers();
     const service = new ConsultationWebrtcCallService();
