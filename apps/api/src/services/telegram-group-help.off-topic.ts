@@ -7,7 +7,7 @@ import { TELEGRAM_BOT_URLS } from '../constants/telegram-community-bot.constants
 
 export const HOPE_HUB_OFF_TOPIC_GROUP_TITLE = TELEGRAM_OFF_TOPIC_GROUP_TITLE;
 export const HOPE_HUB_OFF_TOPIC_GROUP_DESCRIPTION =
-  'Love\nGf\nIndia\nViral\nVideo\nTrending\nTrading\nLove\nRelationship\nChatting group\nFriendship\nVoice chat\nMental health\nDepression\nAnxiety\nOcd\n\nJoin our main group for lot of fun @hopehubindia';
+  'Chat, laugh and make new friends!\nTalk love, relationships, life in India, trending videos and voice chats. Feeling lonely or anxious? Find a kind ear here.\nBe kind. No spam or unwanted DMs.\n\nJoin our main group for more fun: @hopehubindia';
 
 export const HOPE_HUB_OFF_TOPIC_WELCOME_BUTTONS = `Talk privately | https://hopehub.in/#live-connect | success && Share anonymously | ${TELEGRAM_BOT_URLS.CONFESSION} | success
 Group rules | ${TELEGRAM_BOT_URLS.RULES} | success && HopeHub website | https://hopehub.in/ | success`;
@@ -91,7 +91,13 @@ That’s it — relax, talk and enjoy the community.`,
     'For private emotional support, visit https://hopehub.in/#live-connect. You can choose chat, voice or video based on provider availability. This group is not an emergency service.',
   telegramGroupHelpPinnedMessage: `*Welcome to ${TELEGRAM_OFF_TOPIC_GROUP_TITLE}*
 
-Chat freely and share safe photos, videos, GIFs, stickers, music and voice notes. Be kind, avoid unwanted DMs and use /report if something feels unsafe.
+Chat, laugh and make new friends! Talk about love, relationships, life in India, trending videos and the little things that make your day. Join a voice chat or share what is on your mind.
+
+Feeling lonely or anxious? You are welcome here. A friendly conversation can make a difference.
+
+Keep it kind: no spam, scams, bullying or unwanted DMs. Respect privacy and use /report when you need moderator help.
+
+Join our main group for more fun: @hopehubindia
 
 Private support: https://hopehub.in/#live-connect`,
   telegramGroupHelpRecurringMessage:
