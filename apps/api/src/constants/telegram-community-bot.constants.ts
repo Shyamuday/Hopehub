@@ -48,6 +48,11 @@ export const TELEGRAM_BOT_URLS = Object.fromEntries(
 export const GROUP_HELP_BOT_SLUG = COMMUNITY_BOT_SLUGS.GROUP_HELP;
 export const GROUP_HELP_BOT_DISPLAY_NAME = 'Hope Hub community bot';
 
+export const TELEGRAM_OFF_TOPIC_GROUP_USERNAME = 'AnxietyDepressionlonelyindia';
+export const TELEGRAM_OFF_TOPIC_GROUP_TITLE = 'chatfrendshiplovevc';
+export const TELEGRAM_OFF_TOPIC_GROUP_HANDLE = `@${TELEGRAM_OFF_TOPIC_GROUP_USERNAME}`;
+export const TELEGRAM_OFF_TOPIC_GROUP_URL = `https://t.me/${TELEGRAM_OFF_TOPIC_GROUP_USERNAME}`;
+
 /**
  * Trusted private-staff identities that receive full bot powers when first detected.
  * Values are normalized without @. The historical spelling is retained because it

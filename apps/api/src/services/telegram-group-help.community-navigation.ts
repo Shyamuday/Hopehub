@@ -1,3 +1,4 @@
+import { TELEGRAM_OFF_TOPIC_GROUP_TITLE } from '../constants/telegram-community-bot.constants.js';
 import type { TelegramKeyboard } from './telegram-community-bots.types.js';
 
 function normalizedChat(value: string | undefined) {
@@ -20,7 +21,7 @@ export function crossCommunityButton(values: Record<string, string>, chatId?: st
   const groupTitle = (values.telegramGroupHelpGroupTitle || '').trim().toLocaleLowerCase();
   const inOffTopicGroup =
     (configuredOffTopic && normalizedCurrent === configuredOffTopic) ||
-    groupTitle === 'hopehub chit-chat';
+    groupTitle === TELEGRAM_OFF_TOPIC_GROUP_TITLE.toLowerCase();
   const inMainGroup = configuredMain && normalizedCurrent === configuredMain;
 
   if (inOffTopicGroup) {

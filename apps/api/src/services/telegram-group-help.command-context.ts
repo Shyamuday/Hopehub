@@ -1,3 +1,4 @@
+import { TELEGRAM_OFF_TOPIC_GROUP_TITLE } from '../constants/telegram-community-bot.constants.js';
 import { getSiteConfigMap } from './site-config.service.js';
 import type { CommunityTelegramMessage } from './telegram-community-bots.types.js';
 
@@ -43,8 +44,7 @@ export function groupHelpCommandContextFromConfig(
       ...(offTopicGroupId
         ? {}
         : {
-            configurationError:
-              'The HopeHub Chit-Chat group is not configured. Set telegramGroupHelpOffTopicGroupChatId before using its private moderation group.'
+            configurationError: `The ${TELEGRAM_OFF_TOPIC_GROUP_TITLE} group is not configured. Set telegramGroupHelpOffTopicGroupChatId before using its private moderation group.`
           })
     };
   }

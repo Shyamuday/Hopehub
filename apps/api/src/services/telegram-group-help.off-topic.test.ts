@@ -10,7 +10,7 @@ import {
 } from './telegram-group-help.off-topic.js';
 
 test('off-topic community has an independent, production-safe policy', () => {
-  assert.equal(HOPE_HUB_OFF_TOPIC_GROUP_TITLE, 'HopeHub Chit-Chat');
+  assert.equal(HOPE_HUB_OFF_TOPIC_GROUP_TITLE, 'chatfrendshiplovevc');
   assert.match(HOPE_HUB_OFF_TOPIC_GROUP_POLICY.telegramGroupHelpWelcomeMessage, /off-topic/i);
   assert.equal(
     HOPE_HUB_OFF_TOPIC_GROUP_POLICY.telegramGroupHelpWelcomeButtons,

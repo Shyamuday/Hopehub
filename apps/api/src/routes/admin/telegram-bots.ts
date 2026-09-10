@@ -1,3 +1,4 @@
+import { TELEGRAM_OFF_TOPIC_GROUP_TITLE } from '../../constants/telegram-community-bot.constants.js';
 import { Router } from 'express';
 import { Prisma, Role, TelegramBotKind } from '@prisma/client';
 import { z } from 'zod';
@@ -461,7 +462,7 @@ function managedGroupHelpTarget(values: Record<string, string>, scope: ManagedGr
         : values.telegramGroupHelpGroupChatId
       )?.trim() || '',
     label: offTopic
-      ? 'HopeHub Chit-Chat'
+      ? TELEGRAM_OFF_TOPIC_GROUP_TITLE
       : values.telegramGroupHelpGroupTitle || 'Main support group'
   };
 }
@@ -597,7 +598,8 @@ async function persistScopedGroupHelpConfig(
 
   const globalValues = await groupHelpConfigMap();
   const target = managedGroupHelpTarget(globalValues, scope);
-  if (!target.chatId) throw new Error('HopeHub Chit-Chat group ID is not configured.');
+  if (!target.chatId)
+    throw new Error(`${TELEGRAM_OFF_TOPIC_GROUP_TITLE} group ID is not configured.`);
 
   const allowedKeys = new Set(editableGroupHelpConfigKeys(scope));
   const updates = validateGroupHelpConfigEntries(entries).filter(({ key }) => allowedKeys.has(key));
@@ -614,7 +616,7 @@ async function persistScopedGroupHelpConfig(
     action: 'telegram_group_help.config_update',
     targetType: 'telegram_group_help',
     targetId: 'config:off-topic',
-    summary: `Updated ${updates.length} HopeHub Chit-Chat config item(s).`,
+    summary: `Updated ${updates.length} ${TELEGRAM_OFF_TOPIC_GROUP_TITLE} config item(s).`,
     metadata: {
       scope,
       chatId: target.chatId,

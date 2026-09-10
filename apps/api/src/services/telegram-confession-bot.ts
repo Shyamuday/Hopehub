@@ -1,3 +1,4 @@
+import { TELEGRAM_OFF_TOPIC_GROUP_TITLE } from '../constants/telegram-community-bot.constants.js';
 import {
   answerCommunityCallback,
   callCommunityTelegramApi,
@@ -373,7 +374,7 @@ export async function publishApprovedConfession(input: {
     {
       enabled: groupConfig.telegramCommunityConfessionsInOffTopicGroup !== 'Disabled',
       chatId: offTopicChatId,
-      fallbackName: 'HopeHub Chit-Chat',
+      fallbackName: TELEGRAM_OFF_TOPIC_GROUP_TITLE,
       messageThreadId: undefined
     }
   ].filter(

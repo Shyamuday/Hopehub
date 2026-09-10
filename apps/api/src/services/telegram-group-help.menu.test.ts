@@ -1,3 +1,4 @@
+import { TELEGRAM_OFF_TOPIC_GROUP_TITLE } from '../constants/telegram-community-bot.constants.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { groupHelpMainMenuKeyboard } from './telegram-group-help.menu.js';
@@ -7,7 +8,7 @@ test('member menu contains useful actions without exposing admin controls', () =
     telegramGroupHelpGroupChatId: '-100-main',
     telegramGroupHelpOffTopicGroupChatId: '-100-chat',
     telegramGroupHelpMainGroupUrl: 'https://t.me/hopehubindia',
-    telegramGroupHelpGroupTitle: 'HopeHub Chit-Chat'
+    telegramGroupHelpGroupTitle: TELEGRAM_OFF_TOPIC_GROUP_TITLE
   });
   const buttons = keyboard.inline_keyboard.flat();
   assert.equal(

@@ -1,4 +1,9 @@
-import { TELEGRAM_BOT_URLS } from './telegram-community-bot.constants.js';
+import { TELEGRAM_OFF_TOPIC_GROUP_TITLE } from './telegram-community-bot.constants.js';
+import {
+  TELEGRAM_BOT_URLS,
+  TELEGRAM_OFF_TOPIC_GROUP_HANDLE,
+  TELEGRAM_OFF_TOPIC_GROUP_URL
+} from './telegram-community-bot.constants.js';
 
 export type GroupHelpConfigFieldType = 'text' | 'textarea' | 'number' | 'select';
 
@@ -505,12 +510,12 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
   {
     key: 'telegramGroupHelpOffTopicGroupChatId',
     label: 'Off-topic Telegram group ID',
-    description: 'Permanent HopeHub Chit-Chat group managed independently by the Hope Hub bot.',
+    description: `Permanent ${TELEGRAM_OFF_TOPIC_GROUP_TITLE} group managed independently by the Hope Hub bot.`,
     section: 'connection',
     type: 'text',
     maxLength: 80,
-    placeholder: '@hopehubtalks or -1001234567890',
-    defaultValue: '@hopehubtalks'
+    placeholder: `${TELEGRAM_OFF_TOPIC_GROUP_HANDLE} or -1001234567890`,
+    defaultValue: TELEGRAM_OFF_TOPIC_GROUP_HANDLE
   },
   {
     key: 'telegramGroupHelpOffTopicLogGroupId',
@@ -542,8 +547,8 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
     section: 'connection',
     type: 'text',
     maxLength: 300,
-    placeholder: 'https://t.me/hopehubtalks',
-    defaultValue: 'https://t.me/hopehubtalks'
+    placeholder: TELEGRAM_OFF_TOPIC_GROUP_URL,
+    defaultValue: TELEGRAM_OFF_TOPIC_GROUP_URL
   },
   {
     key: 'telegramLiveChatBridgeEnabled',

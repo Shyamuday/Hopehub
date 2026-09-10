@@ -1,12 +1,13 @@
+import { TELEGRAM_OFF_TOPIC_GROUP_TITLE } from '../constants/telegram-community-bot.constants.js';
 import {
   getTelegramCommunityGroupPolicy,
   saveTelegramCommunityGroupPolicy
 } from './telegram-community-group-policy.js';
 import { TELEGRAM_BOT_URLS } from '../constants/telegram-community-bot.constants.js';
 
-export const HOPE_HUB_OFF_TOPIC_GROUP_TITLE = 'HopeHub Chit-Chat';
+export const HOPE_HUB_OFF_TOPIC_GROUP_TITLE = TELEGRAM_OFF_TOPIC_GROUP_TITLE;
 export const HOPE_HUB_OFF_TOPIC_GROUP_DESCRIPTION =
-  'Hope Hub’s friendly off-topic community for everyday conversation, connection and safe chit-chat. Managed by HopeHubAI.';
+  'Love\nGf\nIndia\nViral\nVideo\nTrending\nTrading\nLove\nRelationship\nChatting group\nFriendship\nVoice chat\nMental health\nDepression\nAnxiety\nOcd\n\nJoin our main group for lot of fun @hopehubindia';
 
 export const HOPE_HUB_OFF_TOPIC_WELCOME_BUTTONS = `Talk privately | https://hopehub.in/#live-connect | success && Share anonymously | ${TELEGRAM_BOT_URLS.CONFESSION} | success
 Group rules | ${TELEGRAM_BOT_URLS.RULES} | success && HopeHub website | https://hopehub.in/ | success`;
@@ -54,7 +55,7 @@ export const HOPE_HUB_OFF_TOPIC_GROUP_POLICY: Record<string, string> = {
   telegramGroupHelpWelcomeButtons: HOPE_HUB_OFF_TOPIC_WELCOME_BUTTONS,
   telegramGroupHelpWelcomeMessage: `Hi {mention} 👋
 
-Welcome to *HopeHub Chit-Chat* — a relaxed off-topic place to talk and have fun.
+Welcome to *${TELEGRAM_OFF_TOPIC_GROUP_TITLE}* — a relaxed off-topic place to talk and have fun.
 
 You can share everyday updates, hobbies, jokes, memes, photos, videos, GIFs, stickers, music and voice notes.
 
@@ -65,7 +66,7 @@ Just keep it friendly:
 • Use /report if something feels unsafe.
 
 For private emotional support, use HopeHub Live through the button below.`,
-  telegramGroupHelpAboutMessage: `*About HopeHub Chit-Chat*
+  telegramGroupHelpAboutMessage: `*About ${TELEGRAM_OFF_TOPIC_GROUP_TITLE}*
 
 This is Hope Hub’s community room for friendly, informal and off-topic conversation.
 
@@ -76,7 +77,7 @@ You can use it to:
 • Find the official Hope Hub routes when you need a listener or professional care.
 
 This group is managed by the Hope Hub bot for safety. It is not therapy, medical care or an emergency service.`,
-  telegramGroupHelpRulesMessage: `*HopeHub Chit-Chat — simple rules*
+  telegramGroupHelpRulesMessage: `*${TELEGRAM_OFF_TOPIC_GROUP_TITLE} — simple rules*
 
 1. Be kind. No bullying, hate, threats or harassment.
 2. Photos, videos, GIFs, stickers, music, documents and voice notes are welcome.
@@ -88,7 +89,7 @@ This group is managed by the Hope Hub bot for safety. It is not therapy, medical
 That’s it — relax, talk and enjoy the community.`,
   telegramGroupHelpSupportMessage:
     'For private emotional support, visit https://hopehub.in/#live-connect. You can choose chat, voice or video based on provider availability. This group is not an emergency service.',
-  telegramGroupHelpPinnedMessage: `*Welcome to HopeHub Chit-Chat*
+  telegramGroupHelpPinnedMessage: `*Welcome to ${TELEGRAM_OFF_TOPIC_GROUP_TITLE}*
 
 Chat freely and share safe photos, videos, GIFs, stickers, music and voice notes. Be kind, avoid unwanted DMs and use /report if something feels unsafe.
 

@@ -1,3 +1,4 @@
+import { TELEGRAM_OFF_TOPIC_GROUP_TITLE } from '../src/constants/telegram-community-bot.constants.js';
 import 'dotenv/config';
 import { chmodSync, readFileSync, writeFileSync } from 'node:fs';
 import { TelegramClient } from 'teleproto';
@@ -40,7 +41,7 @@ async function sendConfirmation(token: string, chatId: string) {
       text: [
         'Chit-Chat moderation room connected.',
         '',
-        'Warnings, mutes, bans, message deletions, reports and undo controls from HopeHub Chit-Chat will arrive only in this private group.',
+        `Warnings, mutes, bans, message deletions, reports and undo controls from ${TELEGRAM_OFF_TOPIC_GROUP_TITLE} will arrive only in this private group.`,
         'Main support-group moderation logs will not be copied here.'
       ].join('\n')
     })
@@ -115,7 +116,9 @@ async function main() {
       ?.value.trim() ||
     '';
   if (!offTopicChatId) {
-    throw new Error('Configure the HopeHub Chit-Chat group before creating its moderation room.');
+    throw new Error(
+      `Configure the ${TELEGRAM_OFF_TOPIC_GROUP_TITLE} group before creating its moderation room.`
+    );
   }
 
   const existing = await prisma.siteConfig.findUnique({
@@ -142,9 +145,8 @@ async function main() {
 
     const botUsername = await hopeHubBotUsername(botToken);
     const group = await client.createChannel({
-      title: 'HopeHub Chit-Chat Moderation',
-      about:
-        'Private HopeHubAI moderation room for HopeHub Chit-Chat. Contains safety logs and reversible moderation controls.',
+      title: `${TELEGRAM_OFF_TOPIC_GROUP_TITLE} Moderation`,
+      about: `Private HopeHubAI moderation room for ${TELEGRAM_OFF_TOPIC_GROUP_TITLE}. Contains safety logs and reversible moderation controls.`,
       megagroup: true
     });
     const groupPeer = await client.getInputEntity(group);

@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { TELEGRAM_OFF_TOPIC_GROUP_URL } from '../constants/telegram-community-bot.constants.js';
 import { withPublicCommunityLinks } from './telegram-public-community-links.js';
 
 const links = {
   telegramGroupHelpMainGroupUrl: 'https://t.me/hopehubindia',
-  telegramGroupHelpOffTopicGroupUrl: 'https://t.me/hopehubtalks'
+  telegramGroupHelpOffTopicGroupUrl: TELEGRAM_OFF_TOPIC_GROUP_URL
 };
 
 test('public bot menus include both Hope Hub communities', () => {
@@ -14,7 +15,7 @@ test('public bot menus include both Hope Hub communities', () => {
   );
   assert.deepEqual(keyboard?.inline_keyboard.at(-1), [
     { text: 'HopeHub group', url: 'https://t.me/hopehubindia', style: 'success' },
-    { text: 'Off-topic group', url: 'https://t.me/hopehubtalks', style: 'success' }
+    { text: 'Off-topic group', url: TELEGRAM_OFF_TOPIC_GROUP_URL, style: 'success' }
   ]);
 });
 

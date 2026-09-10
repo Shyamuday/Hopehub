@@ -1,4 +1,8 @@
-import { TELEGRAM_BOT_URLS, TELEGRAM_BOT_USERNAMES } from './telegram-community-bot.constants.js';
+import {
+  TELEGRAM_BOT_URLS,
+  TELEGRAM_BOT_USERNAMES,
+  TELEGRAM_OFF_TOPIC_GROUP_URL
+} from './telegram-community-bot.constants.js';
 
 export type TelegramBotControlType = 'boolean' | 'number' | 'text' | 'textarea';
 
@@ -21,7 +25,7 @@ export const TELEGRAM_BOT_CONTROL_DEFAULTS = {
   telegramEngagementRetentionDays: '90',
   telegramDeliveryRetentionDays: '180',
   telegramGroupHelpMainGroupUrl: 'https://t.me/hopehubindia',
-  telegramGroupHelpOffTopicGroupUrl: 'https://t.me/hopehubtalks',
+  telegramGroupHelpOffTopicGroupUrl: TELEGRAM_OFF_TOPIC_GROUP_URL,
   telegramConfessionDailyLimit: '5',
   telegramContactDailyLimit: '10',
   telegramConfessionMinCharacters: '5',
