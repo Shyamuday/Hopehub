@@ -17,8 +17,16 @@ def extract(path):
     reader = PdfReader(path)
     tokens = []
     pages = []
+    def clean(text):
+        # PostgreSQL JSONB rejects U+0000. Preserve its location visibly while the
+        # byte-exact source PDF remains available in the archive.
+        return text.replace("\x00", "[NUL]")
+
     for page in reader.pages:
-        pages.append(page.extract_text(visitor_text=lambda text, *_: tokens.append(text.strip()) if text.strip() else None))
+        page_text = page.extract_text(
+            visitor_text=lambda text, *_: tokens.append(clean(text.strip())) if text.strip() else None
+        )
+        pages.append(clean(page_text))
     starts = [i for i, token in enumerate(tokens) if re.fullmatch(r"\d{10}-\d+", token)]
     if not starts:
         raise ValueError("No directory records found; unsupported PDF layout")
@@ -55,4 +63,4 @@ def extract(path):
 
 if __name__ == "__main__":
     sys.stdout.reconfigure(encoding="utf-8")
-    json.dump(extract(sys.argv[1]), sys.stdout, ensure_ascii=False)
+    json.dump(extract(sys.argv[1]), sys.stdout, ensure_ascii=True)

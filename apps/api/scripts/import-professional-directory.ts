@@ -15,6 +15,7 @@ if (!process.argv.includes('--stdin') && (fileIndex < 0 || !process.argv[fileInd
   throw new Error('Usage: --file <private-json> or --stdin [--apply]');
 }
 
+let importStage = 'read-input';
 try {
   let input: string;
   if (process.argv.includes('--stdin')) {
@@ -24,6 +25,7 @@ try {
   } else {
     input = await readFile(process.argv[fileIndex + 1], 'utf8');
   }
+  importStage = 'validate-archive';
   let decoded: unknown;
   try {
     decoded = JSON.parse(input.replace(/^\uFEFF/, ''));
@@ -75,9 +77,11 @@ try {
   if (!process.argv.includes('--apply')) {
     console.log(JSON.stringify({ dryRun: true, ...summary }));
   } else {
+    importStage = 'archive-and-templates';
     // Archive commit is atomic. A failed contact import can safely be retried.
     await prisma.$transaction(
       async (tx) => {
+        importStage = 'source-archive';
         const source = await tx.professionalDirectorySource.upsert({
           where: { sha256: archive.sha256 },
           create: {
@@ -88,10 +92,12 @@ try {
           },
           update: {}
         });
+        importStage = 'directory-records';
         await tx.professionalDirectoryRecord.createMany({
           data: archive.records.map((record) => ({ ...record, sourceId: source.id })),
           skipDuplicates: true
         });
+        importStage = 'templates';
         for (const template of professionalInvitationTemplates()) {
           // Never replace an admin's edits on subsequent imports.
           await tx.emailMarketingTemplate.upsert({
@@ -103,6 +109,7 @@ try {
       },
       { timeout: 30_000 }
     );
+    importStage = 'email-contacts';
     const result = contacts.length
       ? await importStructuredMarketingContacts({
           contacts,
@@ -119,14 +126,27 @@ try {
     error && typeof error === 'object' && 'code' in error && typeof error.code === 'string'
       ? error.code
       : undefined;
+  const errorType =
+    error && typeof error === 'object' && 'name' in error ? String(error.name) : typeof error;
+  const cause = error && typeof error === 'object' && 'cause' in error ? error.cause : undefined;
+  const driverDetail =
+    cause && typeof cause === 'object'
+      ? [
+          'kind' in cause ? String(cause.kind) : '',
+          'originalCode' in cause ? String(cause.originalCode) : '',
+          'originalMessage' in cause ? String(cause.originalMessage).slice(0, 240) : ''
+        ]
+          .filter(Boolean)
+          .join(', ')
+      : '';
   console.error(
     error instanceof Error && error.name === 'ZodError'
       ? 'Directory validation failed. Check source fields and email formatting.'
       : databaseCode
-        ? `Directory database operation failed (${databaseCode}).`
+        ? `Directory database operation failed at ${importStage} (${databaseCode}, ${errorType}).`
         : error instanceof Error && error.name === 'Error'
           ? error.message
-          : 'Directory import failed. Check the database schema and connection.'
+          : `Directory import failed at ${importStage} (${errorType}${driverDetail ? `: ${driverDetail}` : ''}). Check the database schema and connection.`
   );
   process.exitCode = 1;
 } finally {

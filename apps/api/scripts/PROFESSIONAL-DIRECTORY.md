@@ -18,6 +18,8 @@ python scripts/extract-professional-directory.py /private/path/directory.pdf | n
 This validates the whole document and prints counts only. The extractor supports
 the iCALL spreadsheet-export layout and rejects unexpected layouts rather than
 silently misassigning fields. To import, append `--apply` to the Node command.
+Embedded PDF null characters are represented as `[NUL]` in extracted searchable
+text because PostgreSQL JSONB cannot store U+0000; the original PDF remains byte exact.
 Alternatively supply an extracted UTF-8 JSON file with `--file /private/path/data.json`.
 Check the database target before applying; do not reset a divergent local database.
 
