@@ -541,3 +541,16 @@ code {
     flex: 1;
   }
 }
+.directory-record {
+  padding: 1rem 0;
+  border-bottom: 1px solid #dbe3e8;
+  summary {
+    cursor: pointer;
+  }
+}
+
+.directory-data {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 0.85rem;
+}

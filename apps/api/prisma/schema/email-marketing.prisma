@@ -5,6 +5,36 @@ enum EmailMarketingContactStatus {
   SUPPRESSED
 }
 
+// Private source archive: retains every field, including records without email.
+model ProfessionalDirectorySource {
+  id        String   @id @default(cuid())
+  sha256    String   @unique
+  filename  String
+  pdf       Bytes
+  pageTexts Json
+  createdAt DateTime @default(now())
+  records   ProfessionalDirectoryRecord[]
+}
+
+model ProfessionalDirectoryRecord {
+  id                String @id @default(cuid())
+  sourceId          String
+  source            ProfessionalDirectorySource @relation(fields: [sourceId], references: [id], onDelete: Restrict)
+  sourceRecordId    String
+  category          String
+  name              String
+  city              String
+  professionalTitle String
+  emails            String[] @default([])
+  fields            Json
+  rawCells          Json
+  createdAt         DateTime @default(now())
+
+  @@unique([sourceId, sourceRecordId])
+  @@index([category, city])
+  @@index([emails], type: Gin)
+}
+
 enum EmailSuppressionReason {
   UNSUBSCRIBED
   HARD_BOUNCE

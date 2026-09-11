@@ -1,4 +1,4 @@
-import { DatePipe } from '@angular/common';
+import { DatePipe, JsonPipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import {
   AdminEmailMarketingApi,
@@ -13,6 +13,7 @@ import {
   type MarketingSpreadsheetPreview,
   type EmailMarketingTemplate,
   type EmailMarketingTemplateDraft,
+  type ProfessionalDirectoryRecord,
 } from '../../core/services/admin/admin-email-marketing.api';
 
 type DraftState = Omit<EmailCampaignDraft, 'complianceConfirmed' | 'scheduledAt'> & {
@@ -63,14 +64,44 @@ const emptyTemplate = (): EmailMarketingTemplateDraft => ({
 @Component({
   selector: 'app-email-marketing-page',
   standalone: true,
-  imports: [DatePipe],
+  imports: [DatePipe, JsonPipe],
   templateUrl: './email-marketing-page.html',
   styleUrl: './email-marketing-page.scss',
 })
 export class EmailMarketingPage implements OnInit {
   private readonly api = inject(AdminEmailMarketingApi);
 
-  readonly tab = signal<'campaigns' | 'templates' | 'contacts' | 'deliveries'>('campaigns');
+  readonly tab = signal<'campaigns' | 'templates' | 'contacts' | 'deliveries' | 'directory'>(
+    'campaigns',
+  );
+  readonly directoryRecords = signal<ProfessionalDirectoryRecord[]>([]);
+  readonly directoryTotal = signal(0);
+  readonly directoryPage = signal(1);
+  readonly directoryPages = signal(1);
+  readonly directoryCategory = signal('');
+  readonly directorySearch = signal('');
+  readonly directoryLoading = signal(false);
+
+  async openDirectory(page = 1) {
+    this.tab.set('directory');
+    this.directoryLoading.set(true);
+    this.error.set('');
+    try {
+      const response = await this.api.professionalDirectory(
+        page,
+        this.directoryCategory(),
+        this.directorySearch(),
+      );
+      this.directoryRecords.set(response.records);
+      this.directoryTotal.set(response.total);
+      this.directoryPage.set(response.page);
+      this.directoryPages.set(response.pages);
+    } catch {
+      this.error.set('Could not load the professional directory. Please try again.');
+    } finally {
+      this.directoryLoading.set(false);
+    }
+  }
   readonly overview = signal<EmailMarketingOverview | null>(null);
   readonly campaigns = signal<EmailCampaign[]>([]);
   readonly templates = signal<EmailMarketingTemplate[]>([]);
@@ -375,7 +406,16 @@ export class EmailMarketingPage implements OnInit {
       previewText: template.previewText || '',
       htmlBody: template.htmlBody,
       textBody: template.textBody,
+      ...(template.category === 'MENTAL_HEALTH_PROFESSIONALS'
+        ? {
+            audience: 'PROMOTIONAL_CONTACTS' as const,
+            registeredRole: null,
+            audienceFilter: { sourceSegments: ['MENTAL_HEALTH_PROFESSIONALS'] },
+          }
+        : {}),
     }));
+    this.complianceConfirmed.set(false);
+    this.audiencePreview.set(null);
     this.tab.set('campaigns');
     this.success.set(
       `Loaded “${template.name}” from the database. You can edit this campaign copy.`,

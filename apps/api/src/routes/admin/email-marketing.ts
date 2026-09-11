@@ -165,6 +165,44 @@ function marketingSpreadsheetError(error: unknown) {
 
 export function registerAdminEmailMarketingRoutes(router: Router) {
   router.get(
+    '/admin/email-marketing/professional-directory',
+    authRequired,
+    allowRoles(...ACCESS_ROLES),
+    asyncRoute(async (req, res) => {
+      const query = z
+        .object({
+          page: z.coerce.number().int().min(1).max(100000).default(1),
+          category: z.enum(['PSYCHOLOGIST', 'PSYCHIATRIST', 'THERAPIST']).optional(),
+          q: z.string().trim().max(200).optional()
+        })
+        .parse(req.query);
+      const where = {
+        ...(query.category ? { category: query.category } : {}),
+        ...(query.q
+          ? {
+              OR: [
+                { name: { contains: query.q, mode: 'insensitive' as const } },
+                { city: { contains: query.q, mode: 'insensitive' as const } },
+                { professionalTitle: { contains: query.q, mode: 'insensitive' as const } }
+              ]
+            }
+          : {})
+      };
+      const [total, records] = await Promise.all([
+        prisma.professionalDirectoryRecord.count({ where }),
+        prisma.professionalDirectoryRecord.findMany({
+          where,
+          skip: (query.page - 1) * 50,
+          take: 50,
+          orderBy: [{ name: 'asc' }, { id: 'asc' }],
+          include: { source: { select: { filename: true, createdAt: true } } }
+        })
+      ]);
+      res.setHeader('Cache-Control', 'no-store');
+      res.json({ records, total, page: query.page, pages: Math.max(1, Math.ceil(total / 50)) });
+    })
+  );
+  router.get(
     '/admin/email-marketing/overview',
     authRequired,
     allowRoles(...ACCESS_ROLES),

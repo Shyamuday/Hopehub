@@ -52,6 +52,9 @@
   }
 
   <div class="tabs" role="tablist">
+    <button type="button" [class.active]="tab() === 'directory'" (click)="openDirectory()">
+      Professional directory
+    </button>
     <button type="button" [class.active]="tab() === 'campaigns'" (click)="tab.set('campaigns')">
       Campaigns
     </button>
@@ -65,6 +68,86 @@
       Delivery log
     </button>
   </div>
+
+  @if (tab() === 'directory') {
+    <section class="panel">
+      <h2>Professional directory ({{ directoryTotal() }})</h2>
+      <p>
+        All imported entries, including those without email. Source notes are unverified directory
+        data, not verified clinical credentials or marketing consent.
+      </p>
+      <p>
+        To draft an invitation, choose a Mental Health Professionals template. Then narrow the
+        campaign source segment to PSYCHOLOGIST, PSYCHIATRIST or THERAPIST if needed.
+      </p>
+      <label
+        >Professional role
+        <select
+          [value]="directoryCategory()"
+          (change)="directoryCategory.set(inputValue($event)); openDirectory()"
+        >
+          <option value="">All professionals</option>
+          <option value="PSYCHOLOGIST">Psychologists</option>
+          <option value="PSYCHIATRIST">Psychiatrists</option>
+          <option value="THERAPIST">Other therapists</option>
+        </select>
+      </label>
+      <label
+        >Search name, city or professional title
+        <input
+          [value]="directorySearch()"
+          (input)="directorySearch.set(inputValue($event))"
+          (keyup.enter)="openDirectory()"
+        />
+      </label>
+      <button
+        type="button"
+        class="button secondary"
+        (click)="openDirectory()"
+        [disabled]="directoryLoading()"
+      >
+        Search
+      </button>
+      @if (directoryLoading()) {
+        <p>Loading directory…</p>
+      }
+      @for (record of directoryRecords(); track record.id) {
+        <details class="directory-record">
+          <summary>
+            {{ record.name }} · {{ record.professionalTitle }} · {{ record.city }} ·
+            {{ record.emails.length ? record.emails.join(', ') : 'No email listed' }}
+          </summary>
+          <p>Source: {{ record.source.filename }}</p>
+          <pre class="directory-data">{{ record.fields | json }}</pre>
+          <details>
+            <summary>All original source cells</summary>
+            <pre class="directory-data">{{ record.rawCells | json }}</pre>
+          </details>
+        </details>
+      } @empty {
+        @if (!directoryLoading()) {
+          <p>No matching directory entries.</p>
+        }
+      }
+      <button
+        type="button"
+        class="button secondary"
+        (click)="openDirectory(directoryPage() - 1)"
+        [disabled]="directoryLoading() || directoryPage() <= 1"
+      >
+        Previous
+      </button>
+      <span>Page {{ directoryPage() }} of {{ directoryPages() }}</span>
+      <button
+        type="button"
+        class="button secondary"
+        (click)="openDirectory(directoryPage() + 1)"
+        [disabled]="directoryLoading() || directoryPage() >= directoryPages()"
+      >
+        Next
+      </button>
+    </section>
+  }
 
   <datalist id="email-filter-states">
     @for (value of filterOptions().states; track value) {

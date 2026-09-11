@@ -5,6 +5,18 @@ import { AdminApiBase } from './admin-api-base';
 
 export type EmailCampaignAudience = 'REGISTERED_USERS' | 'PROMOTIONAL_CONTACTS' | 'ALL_ELIGIBLE';
 
+export type ProfessionalDirectoryRecord = {
+  id: string;
+  name: string;
+  city: string;
+  category: string;
+  professionalTitle: string;
+  emails: string[];
+  fields: Record<string, string>;
+  rawCells: string[];
+  source: { filename: string };
+};
+
 export type EmailAudienceFilter = {
   states?: string[];
   cities?: string[];
@@ -200,6 +212,18 @@ export type EmailCampaignDelivery = {
 
 @Injectable({ providedIn: 'root' })
 export class AdminEmailMarketingApi extends AdminApiBase {
+  professionalDirectory(page = 1, category = '', q = '') {
+    return firstValueFrom(
+      this.http.get<{
+        records: ProfessionalDirectoryRecord[];
+        total: number;
+        page: number;
+        pages: number;
+      }>(`${this.apiBase}${API_PATHS.ADMIN.EMAIL_MARKETING_PROFESSIONAL_DIRECTORY}`, {
+        params: { page: String(page), ...(category ? { category } : {}), ...(q ? { q } : {}) },
+      }),
+    );
+  }
   overview() {
     return firstValueFrom(
       this.http.get<EmailMarketingOverview>(
