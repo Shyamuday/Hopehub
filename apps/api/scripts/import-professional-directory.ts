@@ -115,12 +115,18 @@ try {
   }
 } catch (error) {
   // Do not print source data or database queries containing private directory notes.
+  const databaseCode =
+    error && typeof error === 'object' && 'code' in error && typeof error.code === 'string'
+      ? error.code
+      : undefined;
   console.error(
     error instanceof Error && error.name === 'ZodError'
       ? 'Directory validation failed. Check source fields and email formatting.'
-      : error instanceof Error && error.name === 'Error'
-        ? error.message
-        : 'Directory import failed. Check the database schema and connection.'
+      : databaseCode
+        ? `Directory database operation failed (${databaseCode}).`
+        : error instanceof Error && error.name === 'Error'
+          ? error.message
+          : 'Directory import failed. Check the database schema and connection.'
   );
   process.exitCode = 1;
 } finally {
