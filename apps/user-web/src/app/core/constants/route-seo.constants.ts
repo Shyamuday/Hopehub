@@ -28,7 +28,7 @@ export const ROUTE_SEO_CONTENT = {
   blog: {
     seoTitle: 'Health Blog | HopeHub Care and Research Centre',
     seoDescription:
-      'Evidence-informed articles on homeopathy, common diseases, mental wellness, and healthy living from the HopeHub Care clinical team.',
+      'Doctor-reviewed articles about homeopathy, common health conditions, consultation preparation, and safe care from the HopeHub Care clinical team.',
   },
   testimonials: {
     seoTitle: 'Patient Stories | HopeHub Care and Research Centre',
@@ -38,7 +38,7 @@ export const ROUTE_SEO_CONTENT = {
   careers: {
     seoTitle: 'Careers | HopeHub Care and Research Centre',
     seoDescription:
-      'Join the HopeHub Care team. We are hiring homeopathic doctors, care coordinators, pharmacists, and operations staff who are passionate about patient-first healthcare.',
+      'Join HopeHub Care. We hire homeopathic doctors, care coordinators, pharmacists, and operations staff committed to patient-first healthcare.',
   },
   'chronic-care': {
     seoTitle: 'Homeopathic Treatment | HopeHub Care',
@@ -51,13 +51,18 @@ export const ROUTE_SEO_CONTENT = {
       'Frequently asked questions about consultations, treatment flow, and patient support at HopeHub Care.',
   },
   'why-successful': {
-    seoTitle: 'Why HopeHub Works | HopeHub Care',
+    seoTitle: 'Homeopathy Approaches | HopeHub Care',
     seoDescription:
-      'See how HopeHub Care combines structured case-taking, method-led decision making, and disciplined follow-up.',
+      'Explore HopeHub Care homeopathy approaches, including structured case frameworks, strengths, limitations, safety, and follow-up.',
   },
   contact: {
     seoTitle: 'Contact | HopeHub Care',
     seoDescription: 'Contact HopeHub Care for consultation help, guidance, and patient support.',
+  },
+  'editorial-policy': {
+    seoTitle: 'Editorial Policy | HopeHub Care',
+    seoDescription:
+      'How HopeHub Care creates, reviews, updates, and corrects its public health information.',
   },
   'privacy-terms': {
     seoTitle: 'Privacy and Terms | HopeHub Care',

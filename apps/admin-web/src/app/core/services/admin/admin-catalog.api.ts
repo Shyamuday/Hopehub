@@ -119,6 +119,7 @@ export class AdminCatalogApi extends AdminApiBase {
           isActive: boolean;
           intakeQuestions: string[];
           publicCategory: string | null;
+          publicDomains: Array<'HOMEOPATHY' | 'HOPE_HUB'>;
         }>;
         categories?: Array<{
           key: string;
@@ -196,6 +197,7 @@ export class AdminCatalogApi extends AdminApiBase {
     feeInPaise: number;
     intakeQuestions: string[];
     publicCategory?: string;
+    publicDomain: 'HOMEOPATHY' | 'HOPE_HUB';
   }) {
     return firstValueFrom(this.http.post(`${this.apiBase}${API_PATHS.ADMIN.DISEASES}`, payload));
   }
@@ -215,6 +217,7 @@ export class AdminCatalogApi extends AdminApiBase {
       isActive: boolean;
       intakeQuestions: string[];
       publicCategory?: string | null;
+      publicDomain: 'HOMEOPATHY' | 'HOPE_HUB';
     },
   ) {
     return firstValueFrom(
@@ -363,6 +366,23 @@ export class AdminCatalogApi extends AdminApiBase {
         issues: Array<any>;
         meta: { source: string; total: number; healthy: boolean };
       }>(`${this.apiBase}${API_PATHS.ADMIN.HOPE_HUB_CONSUMER_FLOWS}`),
+    );
+  }
+
+  getConsumerConcernsAdmin() {
+    return firstValueFrom(
+      this.http.get<{ concerns: Array<any>; supportPaths: string[] }>(
+        `${this.apiBase}${API_PATHS.ADMIN.CONSUMER_CONCERNS}`,
+      ),
+    );
+  }
+
+  updateConsumerConcern(id: string, payload: Record<string, unknown>) {
+    return firstValueFrom(
+      this.http.patch<{ concern: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.CONSUMER_CONCERN_BY_ID(id)}`,
+        payload,
+      ),
     );
   }
 

@@ -21,10 +21,14 @@ test('every Group Help action is backed by stored configuration fields', () => {
   }
 });
 
-test('HopeHubAI has a safe default test group separate from production', () => {
-  assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramGroupHelpTestGroupChatId, '@hopehubtalks');
+test('HopeHubAI has a permanent off-topic group separate from the main support community', () => {
+  assert.equal(
+    GROUP_HELP_CONFIG_DEFAULTS.telegramGroupHelpOffTopicGroupChatId,
+    '@AnxietyDepressionlonelyindia'
+  );
+  assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramCommunityConfessionsInOffTopicGroup, 'Enabled');
   assert.notEqual(
-    GROUP_HELP_CONFIG_DEFAULTS.telegramGroupHelpTestGroupChatId,
+    GROUP_HELP_CONFIG_DEFAULTS.telegramGroupHelpOffTopicGroupChatId,
     GROUP_HELP_CONFIG_DEFAULTS.telegramGroupHelpGroupChatId
   );
 });
@@ -50,4 +54,15 @@ test('Group Help capability map covers the main management areas', () => {
     GROUP_HELP_CAPABILITY_GROUPS.every((group) => group.title && group.options.length >= 4),
     true
   );
+});
+
+test('Telegram admin recruitment is an editable, sendable Group Help post', () => {
+  const action = GROUP_HELP_ACTIONS.find((item) => item.id === 'admin-recruitment');
+  const message = GROUP_HELP_CONFIG_DEFAULTS.telegramGroupHelpAdminRecruitmentMessage;
+
+  assert.equal(action?.valueKey, 'telegramGroupHelpAdminRecruitmentMessage');
+  assert.equal(action?.applyMode, 'DIRECT_PIN');
+  assert.match(message, /Telegram Community Admins/i);
+  assert.match(message, /responsibilities|help with/i);
+  assert.match(message, /https:\/\/hopehub\.in\/careers\/tgadmin/);
 });

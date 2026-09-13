@@ -36,6 +36,7 @@ import { PageHeaderComponent } from '../page-header/page-header.component';
         <app-page-header
           title="Mental health exercises"
           description="Discover evidence-based exercises to improve your mental well-being. Practice regularly for best results."
+          [level]="1"
         />
 
         <app-filter-bar

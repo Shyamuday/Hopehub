@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { RouterTestingModule } from '@angular/router/testing';
 import { of } from 'rxjs';
-import { LeadService } from '../../core/services';
+import { AuthService, BookingService, LeadService } from '../../core/services';
 import { ContactComponent } from './contact.component';
 
 describe('ContactComponent', () => {
@@ -10,6 +10,7 @@ describe('ContactComponent', () => {
   let fixture: ComponentFixture<ContactComponent>;
 
   beforeEach(async () => {
+    sessionStorage.clear();
     await TestBed.configureTestingModule({
       imports: [ContactComponent, ReactiveFormsModule, RouterTestingModule],
     }).compileComponents();
@@ -23,15 +24,20 @@ describe('ContactComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should initialize form with empty values', () => {
+  it('should initialize direct booking with quick defaults', () => {
     expect(component.contactForm.get('name')?.value).toBe('');
     expect(component.contactForm.get('email')?.value).toBe('');
     expect(component.contactForm.get('phone')?.value).toBe('');
-    expect(component.contactForm.get('serviceInterest')?.value).toBe('');
+    expect(component.contactForm.get('serviceInterest')?.value).toBe('Mental wellness session');
     expect(component.contactForm.get('urgencyLevel')?.value).toBe('normal');
-    expect(component.contactForm.get('preferredTime')?.value).toBe('');
+    expect(component.contactForm.get('preferredTime')?.value).toBe(
+      'Earliest available, at least one hour from now',
+    );
+    expect(component.contactForm.get('concernCategory')?.value).toBe('Depression and anxiety');
+    expect(component.contactForm.get('autoMatchProvider')?.value).toBe(false);
     expect(component.contactForm.get('message')?.value).toBe('');
-    expect(component.contactForm.get('preferredContact')?.value).toBe('telegram');
+    expect(component.contactForm.get('preferredContact')?.value).toBe('phone');
+    expect(component.bookingStep()).toBe(2);
   });
 
   it('should validate required fields', () => {
@@ -61,7 +67,21 @@ describe('ContactComponent', () => {
     expect(messageControl?.valid).toBeTruthy();
   });
 
+  it('uses assessment context as the initial booking message', () => {
+    component.prefilledData.set({
+      source: 'assessment-result-voice',
+      message: 'I completed the anxiety test and got Moderate. I want support with this.',
+    });
+
+    expect((component as any).generateInitialMessage()).toBe(
+      'I completed the anxiety test and got Moderate. I want support with this.',
+    );
+  });
+
   it('should keep the user on support until a service is selected', () => {
+    component.directBooking.set(false);
+    component.bookingStep.set(1);
+    component.contactForm.patchValue({ serviceInterest: '' });
     component.goToBookingStep(2);
 
     expect(component.bookingStep()).toBe(1);
@@ -77,6 +97,17 @@ describe('ContactComponent', () => {
     expect(component.bookingStepError()).toContain('available time');
   });
 
+  it('allows a specifically selected provider booking to reach confirmation without a slot', () => {
+    component.prefilledData.set({ providerId: 'provider-1', consultant: 'Selected Provider' });
+    component.contactForm.patchValue({ serviceInterest: 'Hope Hub Consultation' });
+    component.bookingStep.set(2);
+
+    component.goToBookingStep(3);
+
+    expect(component.bookingStep()).toBe(3);
+    expect(component.bookingStepError()).toBe('');
+  });
+
   it('should mark all fields as touched when submitting invalid form', () => {
     component.onSubmit();
 
@@ -84,6 +115,42 @@ describe('ContactComponent', () => {
     expect(component.contactForm.get('email')?.touched).toBeTruthy();
     expect(component.contactForm.get('message')?.touched).toBeTruthy();
     expect(component.contactForm.get('preferredContact')?.touched).toBeTruthy();
+    expect(component.bookingValidationIssues()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ field: 'name', message: 'Name is required.' }),
+        expect.objectContaining({ field: 'email', message: 'Email is required.' }),
+      ]),
+    );
+    expect(component.bookingStep()).toBe(3);
+  });
+
+  it('maps API validation issues to clear booking field messages', () => {
+    const issues = (component as any).readValidationIssues({
+      error: {
+        message: 'Validation failed',
+        issues: [
+          {
+            code: 'invalid_format',
+            path: ['visitorEmail'],
+            message: 'Invalid email address',
+          },
+          {
+            code: 'invalid_value',
+            path: ['preferredProviderGender'],
+            message: 'Invalid option',
+          },
+        ],
+      },
+    });
+
+    expect(issues).toEqual([
+      { field: 'email', label: 'Email', message: 'Enter a valid email address.' },
+      {
+        field: 'preferredProviderGender',
+        label: 'Provider gender',
+        message: 'Choose a listed option or leave provider gender as no preference.',
+      },
+    ]);
   });
 
   it('should submit a valid enquiry', async () => {
@@ -94,6 +161,7 @@ describe('ContactComponent', () => {
     form.patchValue({
       name: 'John Doe',
       email: 'john@example.com',
+      serviceInterest: '',
       message: 'This is a test message that is long enough',
       preferredContact: 'email',
     });
@@ -105,5 +173,124 @@ describe('ContactComponent', () => {
     expect(sendContactForm).toHaveBeenCalledOnce();
     expect(component.showSuccessMessage()).toBeTruthy();
     expect(component.isSubmitting()).toBeFalsy();
+  });
+
+  it('saves a guest booking before offering email verification and completes it with OTP', async () => {
+    const leadService = TestBed.inject(LeadService);
+    const authService = TestBed.inject(AuthService);
+    const saveBookingRequest = vi
+      .spyOn(leadService, 'saveBookingRequest')
+      .mockReturnValue(of({ id: 'lead-1', success: true }));
+    const requestOtp = vi.spyOn(authService, 'requestOtp').mockResolvedValue();
+    const loginWithOtp = vi.spyOn(authService, 'loginWithOtp').mockResolvedValue({} as any);
+
+    component.contactForm.patchValue({
+      name: 'John Doe',
+      email: 'john@example.com',
+      preferredContact: 'email',
+    });
+    component.selectedAppointment.set({
+      date: new Date(2030, 0, 2),
+      time: '10:00 AM',
+    });
+
+    await component.onSubmit();
+
+    expect(saveBookingRequest).toHaveBeenCalledOnce();
+    expect(requestOtp).not.toHaveBeenCalled();
+    expect(component.guestBookingSubmitted()).toBe(true);
+    expect(component.guestWebsiteLeadId()).toBe('lead-1');
+    expect(component.bookingVerificationState()).toBe('IDLE');
+
+    await component.requestBookingVerification();
+    expect(requestOtp).toHaveBeenCalledWith('john@example.com');
+    expect(component.bookingVerificationState()).toBe('CODE_SENT');
+
+    const completeSavedBooking = vi
+      .spyOn(component as any, 'submitBooking')
+      .mockResolvedValue(undefined);
+    component.setBookingVerificationCode('123456');
+    await component.completeBookingVerification();
+
+    expect(loginWithOtp).toHaveBeenCalledWith('john@example.com', '123456', undefined, 'John Doe');
+    expect(completeSavedBooking).toHaveBeenCalledWith(
+      expect.objectContaining({ email: 'john@example.com' }),
+      expect.objectContaining({ time: '10:00 AM' }),
+    );
+  });
+
+  it('saves a guest provider booking without a slot before email verification', async () => {
+    const leadService = TestBed.inject(LeadService);
+    const saveBookingRequest = vi
+      .spyOn(leadService, 'saveBookingRequest')
+      .mockReturnValue(of({ id: 'lead-provider-1', success: true }));
+    component.prefilledData.set({
+      providerId: 'provider-1',
+      consultant: 'Selected Provider',
+      serviceName: 'Private support',
+    });
+    component.directBooking.set(false);
+    component.selectedAppointment.set(null);
+    component.contactForm.patchValue({
+      name: 'John Doe',
+      email: 'john@example.com',
+      serviceInterest: 'Private support',
+      preferredContact: 'email',
+    });
+
+    await component.onSubmit();
+
+    expect(saveBookingRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        requestedProviderId: 'provider-1',
+        selectedConsultant: 'Selected Provider',
+        appointmentDate: undefined,
+        appointmentTime: undefined,
+      }),
+    );
+    expect(component.guestBookingSubmitted()).toBe(true);
+  });
+
+  it('does not require name or email fields again for an authenticated user', () => {
+    (component as any).updateContactIdentityValidators({ id: 'patient-1' });
+    component.contactForm.patchValue({ name: '', email: '' });
+
+    expect(component.contactForm.get('name')?.hasError('required')).toBe(false);
+    expect(component.contactForm.get('email')?.hasError('required')).toBe(false);
+  });
+
+  it('assigns a selected provider slot only after the booking is paid', async () => {
+    const bookingService = TestBed.inject(BookingService);
+    const assignBookingSlot = vi
+      .spyOn(bookingService, 'assignBookingSlot')
+      .mockReturnValue(of({ consultation: { id: 'booking-1' } }));
+    component.prefilledData.set({
+      providerId: 'provider-1',
+      consultant: 'Selected Provider',
+    });
+    component.directBooking.set(false);
+    (component as any).beginPostPaymentScheduling({ id: 'booking-1' });
+    component.onPostPaymentAppointmentSelected({
+      date: new Date(2030, 0, 3),
+      time: '11:00 AM',
+    });
+
+    await component.confirmPostPaymentSlot();
+
+    expect(assignBookingSlot).toHaveBeenCalledWith('booking-1', {
+      appointmentDate: '2030-01-03',
+      appointmentTime: '11:00 AM',
+    });
+    expect(component.postPaymentScheduling()).toBe(false);
+    expect(component.errorMessage()).toContain('confirmed for 11:00 AM');
+  });
+
+  it('keeps a direct booking unassigned even if a provider suggestion exists', () => {
+    component.matchedProvider.set({ id: 'provider-1', name: 'Suggested provider' } as any);
+
+    expect(component.activeProviderId()).toBe('');
+    expect(component.activeProviderName()).toBe('');
+    expect(component.selectedSessionProvider()).toBe('');
+    expect(component.bookingSummaryItems().some((item) => item.includes('Provider:'))).toBe(false);
   });
 });

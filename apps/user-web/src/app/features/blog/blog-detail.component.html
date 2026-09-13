@@ -25,6 +25,10 @@
             @if (authorLabel(article)) {
               <p class="blog-author">By {{ authorLabel(article) }}</p>
             }
+            <p class="blog-author">
+              Published {{ postDate(article) }} · Updated {{ updatedDate(article) }} ·
+              <a routerLink="/editorial-policy">How we review health content</a>
+            </p>
             <p class="blog-lead">{{ article.excerpt }}</p>
             @if (article.content?.trim()) {
               <div class="blog-body" [innerHTML]="article.content | simpleMarkdown"></div>

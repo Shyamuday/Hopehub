@@ -22,6 +22,7 @@ import {
 import { sendGroupHelpPermissionDenied } from './telegram-group-help.permissions.js';
 import { requestGroupHelpCommandConfirmation } from './telegram-group-help.command-confirmation.js';
 import { telegramPersonLogLabel } from './telegram-group-help.people.js';
+import { canManageGroupHelpPins } from './telegram-group-help.pin-rights.js';
 
 export async function handleGroupHelpAdminCommand(
   message: CommunityTelegramMessage,
@@ -57,6 +58,28 @@ export async function handleGroupHelpAdminCommand(
   if (!message.from || !(await canUseGroupHelpAdminCommand(permissionMessage, values, command))) {
     await sendGroupHelpPermissionDenied(message, 'ADMIN', chatId, values);
     return true;
+  }
+  if (['/pin', '/unpin', '/unpinall'].includes(command)) {
+    const membership = await callCommunityTelegramApi<{
+      status?: string;
+      user?: { username?: string };
+    }>(GROUP_HELP_BOT_SLUG, 'getChatMember', {
+      chat_id: targetChatId,
+      user_id: message.from.id
+    }).catch(() => null);
+    if (
+      !canManageGroupHelpPins({
+        status: membership?.status,
+        username: membership?.user?.username || message.from.username
+      })
+    ) {
+      await sendTemporaryGroupHelpMessage(
+        chatId,
+        'Only the group owner and @spiritualspirit can change pinned messages.',
+        values
+      );
+      return true;
+    }
   }
   if (
     ['/unpinall', '/promote', '/demote', '/unadmin', '/lockdown'].includes(command) &&
@@ -179,7 +202,10 @@ export async function handleGroupHelpAdminCommand(
       can_delete_messages: true,
       can_restrict_members: true,
       can_invite_users: true,
-      can_pin_messages: true,
+      can_pin_messages: canManageGroupHelpPins({
+        status: 'administrator',
+        username: target.username
+      }),
       can_manage_video_chats: true
     });
     if (title) {

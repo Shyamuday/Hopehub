@@ -1,224 +1,121 @@
+<app-header [subtitle]="title()" [user]="auth.user()" [whatsappLink]="whatsappLink()" (logout)="logout()" />
 
-    <app-header [subtitle]="title()" [user]="auth.user()" [whatsappLink]="whatsappLink()" (logout)="logout()" />
+<main class="dashboard">
+  <app-role-task-guide appKey="user-web" />
 
-    <main class="dashboard">
-      @if (auth.user()?.role === 'PATIENT') {
-        <app-role-task-guide appKey="user-web" />
+  @if (isLoading()) {
+    <section class="panel"><p class="loading-text">Loading clinic data…</p></section>
+  }
+
+  <section class="panel hero">
+    <div>
+      @if (heroDisease(); as disease) {
+        <p class="eyebrow">Your consultation</p>
+        <h2>{{ disease.name }}</h2>
+        <p>Book a private homeopathy consultation for assessment, prescription, and follow-up guidance.</p>
+      } @else {
+        <p class="eyebrow">Book care</p>
+        <h2>Book a consultation</h2>
+        <p>Choose a health concern and complete a short intake to get started.</p>
       }
-
-      @if (isLoading()) {
-        <section class="panel">
-          <p class="loading-text">Loading clinic data…</p>
-        </section>
+      @if (preferredDoctorUserId()) {
+        <p class="preferred-doctor-banner">Doctor preference: <strong>{{ preferredDoctorName() || 'Selected doctor' }}</strong></p>
       }
-
-      @if (auth.user()?.role === 'PATIENT') {
-        <section class="panel hero">
-          <div>
-            @if (heroDisease(); as disease) {
-              <p class="eyebrow">Your consultation</p>
-              <h2>{{ disease.name }}</h2>
-              <p>Book a chat consultation for diagnosis, prescription, and follow-up guidance.</p>
-            } @else {
-              <p class="eyebrow">Book care</p>
-              <h2>Book a consultation</h2>
-              <p>Choose a health concern below and complete a short intake to get started.</p>
-            }
-          </div>
-          @if (heroDisease(); as disease) {
-            <strong>{{ disease.feeInPaise / 100 | currency: currencyCode }}</strong>
-          } @else {
-            <strong>Fee shown at payment</strong>
-          }
-        </section>
-
-        @if (walletBalanceInPaise() > 0) {
-          <section class="panel wallet-chip">
-            <span class="eyebrow">Rewards wallet</span>
-            <strong>{{ formatInr(walletBalanceInPaise()) }}</strong>
-            <a class="btn-link" routerLink="/patient/account/rewards">View rewards</a>
-          </section>
-        }
-
-        <section class="grid two">
-          <app-book-consultation-panel
-            [diseases]="diseases()"
-            [plans]="billingPlans()"
-            [initialDiseaseId]="pendingDiseaseIdValue()"
-            [initialClinicStoreId]="selectedClinicStoreId()"
-            [disabled]="isProcessing()"
-            (booked)="onBooked($event)"
-            (clinicStoreChange)="onClinicStoreChange($event)"
-          />
-          <app-consultation-list
-            [consultations]="consultations()"
-            [activeId]="activeConsultation()?.id ?? null"
-            [userRole]="auth.user()?.role ?? null"
-            [disabled]="isProcessing()"
-            [paymentIdle]="paymentFlowState() === 'IDLE'"
-            (selected)="setActive($event)"
-            (pay)="pay($event)"
-          />
-        </section>
-
-        @if (activeConsultation()) {
-          <section class="grid two">
-            <app-consultation-detail
-              [consultation]="activeConsultation()"
-              [userRole]="auth.user()?.role ?? null"
-              [disabled]="isProcessing()"
-              [realtimeSocket]="realtimeChannel?.socket ?? null"
-              [iceServers]="iceServers()"
-              [ensureMediaAccess]="ensureMediaAccess"
-              (messageSent)="onMessageSent($event)"
-            />
-          </section>
-        }
-
-        <section class="grid two">
-          <app-today-medicines
-            [todayDoses]="todayDoseEvents()"
-            [historyDoses]="historyDoseEvents()"
-            [historyLoading]="historyDosesLoading()"
-            [needingReason]="dosesNeedingReason()"
-            [disabled]="isProcessing()"
-            [snoozeMinutes]="snoozeMinutes()"
-            (snoozeMinutesChange)="snoozeMinutes.set($event)"
-            (taken)="markDoseTaken($event)"
-            (skipped)="skipDose($event)"
-            (snoozed)="snoozeDose($event)"
-            (explained)="explainDose($event)"
-          />
-          <app-reminder-preferences
-            [prefs]="reminderPreferences"
-            [disabled]="isProcessing()"
-            (saved)="onSavePreferences($event)"
-          />
-          <app-prescription-history [prescriptions]="patientPrescriptions()" />
-          <app-lab-results [referrals]="patientLabResults()" />
-        </section>
-
-        <section class="grid two">
-          <app-download-qr [compact]="true" />
-          <section class="panel account-shortcut">
-            <p class="eyebrow">My Account</p>
-            <h2>Profile &amp; addresses</h2>
-            <p>Update your health profile, delivery addresses, and account settings in one place.</p>
-            <div class="account-shortcut-links">
-              <a class="btn-primary" routerLink="/patient/account">Open my account</a>
-              <a class="btn-link" routerLink="/patient/account/profile">Edit profile</a>
-            </div>
-          </section>
-        </section>
-      }
-
-      @if (auth.user()?.role === 'DOCTOR') {
-        <section class="grid two">
-          <app-consultation-list
-            [consultations]="consultations()"
-            [activeId]="activeConsultation()?.id ?? null"
-            [userRole]="auth.user()?.role ?? null"
-            [disabled]="isProcessing()"
-            (selected)="setActive($event)"
-          />
-          <app-consultation-detail
-            [consultation]="activeConsultation()"
-            [userRole]="auth.user()?.role ?? null"
-            [disabled]="isProcessing()"
-            [realtimeSocket]="realtimeChannel?.socket ?? null"
-            [iceServers]="iceServers()"
-            [ensureMediaAccess]="ensureMediaAccess"
-            (messageSent)="onMessageSent($event)"
-            (uploadPrescription)="onUploadPrescription($event)"
-            (complete)="onComplete()"
-          />
-        </section>
-      }
-
-      @if (auth.user()?.role === 'ADMIN') {
-        <app-admin-stats
-          [revenueInPaise]="report()?.revenueInPaise || 0"
-          [activeDoctors]="report()?.activeDoctors || 0"
-          [consultationsCount]="consultations().length"
-        />
-
-        <section class="grid two">
-          <div class="panel">
-            <h2>Add Doctor</h2>
-            <label>Name <input [formField]="doctorForm.name" /></label>
-            <label>Email <input [formField]="doctorForm.email" /></label>
-            <label>Mobile <input [formField]="doctorForm.mobile" /></label>
-            <label>Specialty <input [formField]="doctorForm.specialty" /></label>
-            <label>Password
-              <span class="password-input-wrap">
-                <input #doctorPassword type="password" [formField]="doctorForm.password" />
-                <button type="button" class="password-toggle" (click)="doctorPassword.type = doctorPassword.type === 'password' ? 'text' : 'password'">
-                  {{ doctorPassword.type === 'password' ? 'Show' : 'Hide' }}
-                </button>
-              </span>
-            </label>
-            <button class="primary" (click)="createDoctor()">Create doctor</button>
-          </div>
-
-          <div class="panel">
-            <h2>Manual Assignment</h2>
-            <label>
-              Consultation
-              <select [formField]="assignmentForm.consultationId">
-                @for (consultation of consultations(); track consultation.id) {
-                  <option [value]="consultation.id">
-                    {{ consultation.patient.name }} - {{ consultation.disease.name }} - {{ consultation.status }}
-                  </option>
-                }
-              </select>
-            </label>
-            <label>
-              Doctor
-              <select [formField]="assignmentForm.doctorId">
-                @for (doctor of doctors(); track doctor.id) {
-                  <option [value]="doctor.id">{{ doctor.name }} - {{ doctor.doctorProfile?.specialty }}</option>
-                }
-              </select>
-            </label>
-            <button class="primary" (click)="assignDoctor()">Assign doctor</button>
-          </div>
-        </section>
-
-        <section class="grid two">
-          <app-consultation-list
-            [consultations]="consultations()"
-            [activeId]="activeConsultation()?.id ?? null"
-            [userRole]="auth.user()?.role ?? null"
-            [disabled]="isProcessing()"
-            (selected)="setActive($event)"
-          />
-          <app-consultation-detail
-            [consultation]="activeConsultation()"
-            [userRole]="auth.user()?.role ?? null"
-            [disabled]="isProcessing()"
-            [realtimeSocket]="realtimeChannel?.socket ?? null"
-            [iceServers]="iceServers()"
-            [ensureMediaAccess]="ensureMediaAccess"
-            (messageSent)="onMessageSent($event)"
-            (uploadPrescription)="onUploadPrescription($event)"
-            (complete)="onComplete()"
-          />
-        </section>
-      }
-    </main>
-
-    <app-payment-status-overlay
-      [state]="paymentFlowState()"
-      [title]="paymentFlowTitle()"
-      [message]="paymentFlowMessage()"
-      [canRetry]="!!paymentFlowConsultation()"
-      (retry)="retryPayment()"
-      (close)="closePaymentOverlay()"
-    />
-
-    @if (notice()) {
-      <div class="toast">{{ notice() }}</div>
+    </div>
+    @if (heroDisease(); as disease) {
+      <strong>{{ disease.feeInPaise / 100 | currency: currencyCode }}</strong>
+    } @else {
+      <strong>Clear price before payment</strong>
     }
+  </section>
 
-    <app-footer [whatsappLink]="whatsappLink()" />
-  
+  @if (walletBalanceInPaise() > 0) {
+    <section class="panel wallet-chip">
+      <span class="eyebrow">Rewards wallet</span>
+      <strong>{{ formatInr(walletBalanceInPaise()) }}</strong>
+      <a class="btn-link" routerLink="/patient/account/rewards">View rewards</a>
+    </section>
+  }
+
+  <section class="grid two">
+    <app-book-consultation-panel
+      [diseases]="diseases()"
+      [plans]="billingPlans()"
+      [initialDiseaseId]="pendingDiseaseIdValue()"
+      [initialClinicStoreId]="selectedClinicStoreId()"
+      [preferredDoctorUserId]="preferredDoctorUserId()"
+      [preferredDoctorName]="preferredDoctorName()"
+      [disabled]="isProcessing()"
+      (booked)="onBooked($event)"
+      (clinicStoreChange)="onClinicStoreChange($event)"
+    />
+    <app-consultation-list
+      [consultations]="consultations()"
+      [activeId]="activeConsultation()?.id ?? null"
+      userRole="PATIENT"
+      [disabled]="isProcessing()"
+      [paymentIdle]="paymentFlowState() === 'IDLE'"
+      (selected)="setActive($event)"
+      (pay)="pay($event)"
+    />
+  </section>
+
+  @if (activeConsultation()) {
+    <section class="grid two">
+      <app-consultation-detail
+        [consultation]="activeConsultation()"
+        userRole="PATIENT"
+        [disabled]="isProcessing()"
+        [realtimeSocket]="realtimeChannel?.socket ?? null"
+        [iceServers]="iceServers()"
+        [ensureMediaAccess]="ensureMediaAccess"
+        (messageSent)="onMessageSent($event)"
+      />
+    </section>
+  }
+
+  <section class="grid two">
+    <app-today-medicines
+      [todayDoses]="todayDoseEvents()"
+      [historyDoses]="historyDoseEvents()"
+      [historyLoading]="historyDosesLoading()"
+      [needingReason]="dosesNeedingReason()"
+      [disabled]="isProcessing()"
+      [snoozeMinutes]="snoozeMinutes()"
+      (snoozeMinutesChange)="snoozeMinutes.set($event)"
+      (taken)="markDoseTaken($event)"
+      (skipped)="skipDose($event)"
+      (snoozed)="snoozeDose($event)"
+      (explained)="explainDose($event)"
+    />
+    <app-reminder-preferences [prefs]="reminderPreferences" [disabled]="isProcessing()" (saved)="onSavePreferences($event)" />
+    <app-prescription-history [prescriptions]="patientPrescriptions()" />
+    <app-lab-results [referrals]="patientLabResults()" />
+  </section>
+
+  <section class="grid two">
+    <app-download-qr [compact]="true" />
+    <section class="panel account-shortcut">
+      <p class="eyebrow">My Account</p>
+      <h2>Profile &amp; addresses</h2>
+      <p>Update your health profile, delivery addresses, and account settings in one place.</p>
+      <div class="account-shortcut-links">
+        <a class="btn-primary" routerLink="/patient/account">Open my account</a>
+        <a class="btn-link" routerLink="/patient/account/profile">Edit profile</a>
+      </div>
+    </section>
+  </section>
+</main>
+
+<app-payment-status-overlay
+  [state]="paymentFlowState()"
+  [title]="paymentFlowTitle()"
+  [message]="paymentFlowMessage()"
+  [canRetry]="!!paymentFlowConsultation()"
+  (retry)="retryPayment()"
+  (close)="closePaymentOverlay()"
+/>
+
+@if (notice()) { <div class="toast">{{ notice() }}</div> }
+
+<app-footer [whatsappLink]="whatsappLink()" />

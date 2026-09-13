@@ -693,7 +693,7 @@ async function seedCampaigns(chatId: string) {
   }
 }
 
-async function sendPromotionPreviewToTestGroup() {
+async function sendPromotionPreviewToStaffGroup() {
   const previewVersion = 'daily-discovery-buttons-v1';
   const priorPreview = await prisma.siteConfig.findUnique({
     where: { key: 'telegramCampaignPromotionPreviewVersion' },
@@ -701,17 +701,17 @@ async function sendPromotionPreviewToTestGroup() {
   });
   if (priorPreview?.value === previewVersion) return;
 
-  const [testGroupConfig, token] = await Promise.all([
+  const [staffGroupConfig, token] = await Promise.all([
     prisma.siteConfig.findUnique({
-      where: { key: 'telegramGroupHelpTestGroupChatId' },
+      where: { key: 'telegramGroupHelpStaffGroupId' },
       select: { value: true }
     }),
     Promise.resolve(process.env.TELEGRAM_HOPEHUBBOT_TOKEN?.trim())
   ]);
-  const testGroupChatId = testGroupConfig?.value?.trim();
-  if (!testGroupChatId || !token) {
+  const staffGroupChatId = staffGroupConfig?.value?.trim();
+  if (!staffGroupChatId || !token) {
     console.warn(
-      '[telegram-seed] Promotion preview skipped: test group or HopeHubAI token is missing.'
+      '[telegram-seed] Promotion preview skipped: private staff group or HopeHubAI token is missing.'
     );
     return;
   }
@@ -724,7 +724,7 @@ async function sendPromotionPreviewToTestGroup() {
   for (const item of discoveryCampaign.items.slice(0, 3)) {
     const buttons = 'buttons' in item && Array.isArray(item.buttons) ? item.buttons : [];
     await telegramApi(token, 'sendMessage', {
-      chat_id: testGroupChatId,
+      chat_id: staffGroupChatId,
       text: `🧪 Scheduled post preview\n\n${'text' in item ? item.text : ''}`,
       disable_web_page_preview: true,
       ...(buttons.length
@@ -742,7 +742,7 @@ async function sendPromotionPreviewToTestGroup() {
     update: { value: previewVersion }
   });
   console.log(
-    `[telegram-seed] Sent the three daily discovery post previews to ${testGroupChatId}.`
+    `[telegram-seed] Sent the three daily discovery post previews to private staff group ${staffGroupChatId}.`
   );
 }
 
@@ -807,7 +807,7 @@ try {
   const chatId = await resolveGroupChatId();
   await seedSiteConfig(chatId);
   await seedCampaigns(chatId);
-  await sendPromotionPreviewToTestGroup();
+  await sendPromotionPreviewToStaffGroup();
   await retireRoseBot(chatId);
   console.log(
     `[telegram-seed] Configured ${GROUP_USERNAME} (${chatId}) with ${campaigns(chatId).length} active campaigns.`

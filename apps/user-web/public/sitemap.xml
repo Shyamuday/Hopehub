@@ -1,185 +1,108 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://hopehub.in/</loc>
-    <changefreq>daily</changefreq>
-    <priority>1.0</priority>
+    <loc>https://care.hopehub.in/</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/talk-to-doctor</loc>
-    <changefreq>daily</changefreq>
-    <priority>0.95</priority>
+    <loc>https://care.hopehub.in/talk-to-doctor</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/treatments</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
+    <loc>https://care.hopehub.in/treatments</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/about</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
+    <loc>https://care.hopehub.in/our-doctors</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/our-doctors</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <loc>https://care.hopehub.in/chronic-care</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/chronic-care</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <loc>https://care.hopehub.in/about</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/blog</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.75</priority>
+    <loc>https://care.hopehub.in/testimonials</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/testimonials</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <loc>https://care.hopehub.in/why-successful</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/why-successful</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <loc>https://care.hopehub.in/faq</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/careers</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.65</priority>
+    <loc>https://care.hopehub.in/safety</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/faq</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <loc>https://care.hopehub.in/editorial-policy</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/contact</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <!-- Patient app page kept out of the sitemap until mobile launch.
-  <url>
-    <loc>https://hopehub.in/get-app</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.55</priority>
-  </url>
-  -->
-  <url>
-    <loc>https://hopehub.in/safety</loc>
-    <changefreq>yearly</changefreq>
-    <priority>0.5</priority>
+    <loc>https://care.hopehub.in/contact</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/legal</loc>
-    <changefreq>yearly</changefreq>
-    <priority>0.4</priority>
+    <loc>https://care.hopehub.in/careers</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/privacy-policy</loc>
-    <changefreq>yearly</changefreq>
-    <priority>0.4</priority>
+    <loc>https://care.hopehub.in/legal</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/terms-and-conditions</loc>
-    <changefreq>yearly</changefreq>
-    <priority>0.4</priority>
+    <loc>https://care.hopehub.in/privacy-policy</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/cancellation-and-refund-policy</loc>
-    <changefreq>yearly</changefreq>
-    <priority>0.4</priority>
+    <loc>https://care.hopehub.in/terms-and-conditions</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/return-and-exchange-policy</loc>
-    <changefreq>yearly</changefreq>
-    <priority>0.4</priority>
+    <loc>https://care.hopehub.in/cancellation-and-refund-policy</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/shipping-policy</loc>
-    <changefreq>yearly</changefreq>
-    <priority>0.4</priority>
+    <loc>https://care.hopehub.in/return-and-exchange-policy</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/payment-policy</loc>
-    <changefreq>yearly</changefreq>
-    <priority>0.4</priority>
+    <loc>https://care.hopehub.in/shipping-policy</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/treatments/hair-fall</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.75</priority>
+    <loc>https://care.hopehub.in/payment-policy</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/treatments/skin-care</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.75</priority>
+    <loc>https://care.hopehub.in/treatments/respiratory-disease</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/treatments/chronic-care</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <loc>https://care.hopehub.in/treatments/chronic-care</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/treatments/diabetes-mellitus</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <loc>https://care.hopehub.in/treatments/musculoskeletal-disease</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/treatments/hypertension</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <loc>https://care.hopehub.in/treatments/chronic-kidney-disease</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/treatments/chronic-kidney-disease</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <loc>https://care.hopehub.in/treatments/gallstone</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/treatments/gallstone</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <loc>https://care.hopehub.in/treatments/liver-cirrhosis</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/treatments/liver-cirrhosis</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <loc>https://care.hopehub.in/treatments/cardiovascular-disease</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/treatments/piles</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <loc>https://care.hopehub.in/treatments/diabetes-mellitus</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/treatments/kidney-stone</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <loc>https://care.hopehub.in/treatments/hypertension</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/treatments/mental-health</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <loc>https://care.hopehub.in/treatments/piles</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/treatments/sexual-health</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <loc>https://care.hopehub.in/treatments/mental-health</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/treatments/respiratory-disease</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <loc>https://care.hopehub.in/treatments/sexual-health</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/treatments/musculoskeletal-disease</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <loc>https://care.hopehub.in/treatments/skin-care</loc>
   </url>
   <url>
-    <loc>https://hopehub.in/treatments/cardiovascular-disease</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.7</priority>
+    <loc>https://care.hopehub.in/treatments/kidney-stone</loc>
+  </url>
+  <url>
+    <loc>https://care.hopehub.in/treatments/hair-fall</loc>
   </url>
 </urlset>

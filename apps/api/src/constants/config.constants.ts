@@ -15,6 +15,7 @@ const configuredOrigins = parseOriginList(
 const defaultCorsOrigins = [
   'https://hopehub.in',
   'https://www.hopehub.in',
+  'https://care.hopehub.in',
   'http://localhost:4200',
   'http://127.0.0.1:4200',
   'http://localhost:4201',
@@ -34,6 +35,7 @@ const productionCorsOrigins = [
   'https://www.hopehub.in',
   'https://admin.hopehub.in',
   'https://earn.hopehub.in',
+  'https://doctor.hopehub.in',
   'https://ops.hopehub.in',
   'https://support.hopehub.in'
 ];

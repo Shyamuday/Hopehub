@@ -54,6 +54,8 @@ export class AppointmentCalendarComponent implements OnInit {
   selectedService = input<string | undefined>(undefined);
   providerId = input<string | undefined>(undefined);
   careTeamServiceId = input<string | undefined>(undefined);
+  daysToShow = input<number>(7);
+  autoSelectEarliest = input(false);
 
   selectedDate = signal<Date | null>(null);
   selectedTime = signal<string | null>(null);
@@ -61,7 +63,7 @@ export class AppointmentCalendarComponent implements OnInit {
   isLoadingSlots = signal(false);
 
   ngOnInit() {
-    this.loadNextThreeDays();
+    this.loadNextDays();
   }
 
   selectDate(date: Date) {
@@ -71,10 +73,6 @@ export class AppointmentCalendarComponent implements OnInit {
     const day = this.appointmentDays().find(
       (item) => item.date.toDateString() === date.toDateString(),
     );
-    const firstAvailableSlot = day?.slots.find((slot) => slot.available);
-    if (firstAvailableSlot) {
-      this.selectTimeSlot(firstAvailableSlot);
-    }
   }
 
   selectTimeSlot(slot: TimeSlot) {
@@ -86,7 +84,6 @@ export class AppointmentCalendarComponent implements OnInit {
       this.appointmentSelected.emit({
         date: this.selectedDate()!,
         time: this.selectedTime()!,
-        consultant: this.selectedService(),
       });
     }
   }
@@ -129,14 +126,15 @@ export class AppointmentCalendarComponent implements OnInit {
     if (capacityMessage) return capacityMessage;
     const hasSlots = days.some((day) => day.slots.length);
     if (!hasSlots && this.providerId()) {
-      return 'This provider has not opened slots in the next three days.';
+      return `This provider has not opened slots in the next ${this.daysWindowLabel()}.`;
     }
-    if (!hasSlots) return 'No open slots in the next three days.';
-    return 'All listed slots are booked in the next three days.';
+    if (!hasSlots) return `No open slots in the next ${this.daysWindowLabel()}.`;
+    return `All listed slots are booked in the next ${this.daysWindowLabel()}.`;
   }
 
-  private loadNextThreeDays(): void {
-    const days = Array.from({ length: 3 }, (_, index) => {
+  private loadNextDays(): void {
+    const count = Math.max(1, Math.min(14, Number(this.daysToShow()) || 7));
+    const days = Array.from({ length: count }, (_, index) => {
       const date = new Date();
       date.setHours(0, 0, 0, 0);
       date.setDate(date.getDate() + index);
@@ -192,7 +190,7 @@ export class AppointmentCalendarComponent implements OnInit {
 
         this.appointmentDays.set(updatedDays);
         this.isLoadingSlots.set(false);
-        this.autoSelectFirstAvailableSlot(updatedDays);
+        this.selectRecommendedDate(updatedDays);
       },
       error: () => {
         this.appointmentDays.set(days.map((day) => ({ ...day, loading: false })));
@@ -202,14 +200,52 @@ export class AppointmentCalendarComponent implements OnInit {
     });
   }
 
-  private autoSelectFirstAvailableSlot(days: AppointmentDay[]): void {
-    const firstAvailableDay = days.find((day) => day.slots.some((slot) => slot.available));
-    const firstAvailableSlot = firstAvailableDay?.slots.find((slot) => slot.available);
-
-    if (!firstAvailableDay || !firstAvailableSlot) return;
+  private selectRecommendedDate(days: AppointmentDay[]): void {
+    const recommendation = this.recommendedAppointment(days);
+    const firstAvailableDay = recommendation?.day;
+    if (!firstAvailableDay) return;
 
     this.selectedDate.set(new Date(firstAvailableDay.date));
-    this.selectTimeSlot(firstAvailableSlot);
+    if (!this.autoSelectEarliest() || !recommendation) {
+      this.selectedTime.set(null);
+      return;
+    }
+
+    this.selectedTime.set(recommendation.slot.time);
+    this.appointmentSelected.emit({
+      date: new Date(firstAvailableDay.date),
+      time: recommendation.slot.time,
+    });
+  }
+
+  private recommendedAppointment(
+    days: AppointmentDay[],
+  ): { day: AppointmentDay; slot: TimeSlot } | null {
+    const minimumTime = Date.now() + 60 * 60 * 1000;
+    for (const day of days) {
+      for (const slot of day.slots) {
+        if (!slot.available) continue;
+        if (!this.autoSelectEarliest() || this.slotDateTime(day.date, slot.time) >= minimumTime) {
+          return { day, slot };
+        }
+      }
+    }
+    return null;
+  }
+
+  private slotDateTime(date: Date, time: string): number {
+    const match = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(time.trim());
+    if (!match) return Number.POSITIVE_INFINITY;
+    let hour = Number(match[1]) % 12;
+    if (match[3].toUpperCase() === 'PM') hour += 12;
+    const value = new Date(date);
+    value.setHours(hour, Number(match[2]), 0, 0);
+    return value.getTime();
+  }
+
+  private daysWindowLabel(): string {
+    const count = Math.max(1, Math.min(14, Number(this.daysToShow()) || 7));
+    return `${count} day${count === 1 ? '' : 's'}`;
   }
 
   private formatLocalDate(date: Date): string {

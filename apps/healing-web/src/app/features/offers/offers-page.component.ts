@@ -45,7 +45,7 @@ export class OffersPageComponent implements OnInit {
     ) {
       return `/events/${offer.slug}`;
     }
-    if (offer.type === 'RECORDED_SESSION') return `/resources/${offer.slug}`;
+    if (offer.type === 'RECORDED_SESSION') return `/recorded-sessions/${offer.slug}`;
     if (offer.type === 'ORGANISATION_PROGRAM') return '/organization';
     return `/packages/${offer.slug}`;
   }

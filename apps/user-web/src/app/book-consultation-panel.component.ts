@@ -29,6 +29,7 @@ export type BookConsultationPayload = {
   walletRedeemInPaise?: number;
   promoCode?: string;
   clinicStoreId?: string | null;
+  preferredDoctorUserId?: string | null;
 };
 
 type ClinicOption = {
@@ -90,6 +91,8 @@ export class BookConsultationPanelComponent implements OnChanges, OnInit {
   @Input() disabled = false;
   @Input() initialDiseaseId = '';
   @Input() initialClinicStoreId = '';
+  @Input() preferredDoctorUserId = '';
+  @Input() preferredDoctorName = '';
   @Output() booked = new EventEmitter<BookConsultationPayload>();
   @Output() clinicStoreChange = new EventEmitter<string>();
 
@@ -279,6 +282,7 @@ export class BookConsultationPanelComponent implements OnChanges, OnInit {
         : {}),
       ...(this.promoCode().trim() ? { promoCode: this.promoCode().trim() } : {}),
       clinicStoreId: this.selectedClinicStoreId(),
+      ...(this.preferredDoctorUserId ? { preferredDoctorUserId: this.preferredDoctorUserId } : {}),
     });
   }
 

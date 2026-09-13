@@ -7,6 +7,7 @@ import {
   HomeopathicDoctorType,
   PatientGender,
   Prisma,
+  ProviderDomain,
   Role
 } from '@prisma/client';
 import bcrypt from 'bcryptjs';
@@ -27,6 +28,19 @@ import {
 import { assertMethodOptionId } from '../../services/doctor-prescribing-preferences.js';
 import { PSYCHOLOGIST_CONSULTATION_SHARE_PERCENT } from '../../services/doctor-compensation.js';
 import { notifyAdminsAboutDoctorSignup } from '../../services/doctor-signup-notifications.js';
+import {
+  HOMEOPATHY_CREDENTIAL_REVIEW_PREFIX,
+  HOMEOPATHY_PROFILE_DRAFT_REASON,
+  submitHomeopathyProviderForApprovalIfReady
+} from '../../services/homeopathy-provider-approval.js';
+import { normalizeProfessionalRegistrationNumber } from '../../constants/homeopathy-provider-approval.constants.js';
+import { parseMultipartForm } from '../../utils/multipart.js';
+import {
+  deleteProviderCredential,
+  MAX_PROVIDER_CREDENTIAL_BYTES,
+  readProviderCredential,
+  saveProviderCredential
+} from '../../services/provider-credential-storage.js';
 import { asyncRoute, publicUserSelect, logAuthEvent, writeAuditLog } from '../../utils/helpers.js';
 import { enrichWithProfileImageUrl, userProfileImagePath } from '../../utils/profile-image-url.js';
 import { createEmailVerificationToken } from '../../services/email-verification.js';
@@ -50,6 +64,24 @@ import {
 } from '../../services/provider-taxonomy.service.js';
 
 const LISTENER_SAFETY_ACKNOWLEDGEMENT_VERSION = 'listener-safety-v1-2026-08-07';
+
+async function registrationNumberBelongsToAnotherProvider(userId: string, value?: string | null) {
+  const normalized = normalizeProfessionalRegistrationNumber(value);
+  if (!normalized) return false;
+  const candidates = await prisma.doctor.findMany({
+    where: {
+      userId: { not: userId },
+      providerDomain: ProviderDomain.HOMEOPATHY,
+      registrationNo: { not: null }
+    },
+    select: { registrationNo: true, registrationNoNormalized: true }
+  });
+  return candidates.some(
+    (candidate) =>
+      (candidate.registrationNoNormalized ||
+        normalizeProfessionalRegistrationNumber(candidate.registrationNo)) === normalized
+  );
+}
 
 function pricingAuditSnapshot(services: Array<Record<string, any>>) {
   return services.map((service) => ({
@@ -266,7 +298,7 @@ const mentalHealthProviderProfilePatchSchema = mentalHealthProviderProfileFields
 });
 
 export const doctorProfileStepPatchSchema = z.object({
-  step: z.enum(['identity', 'public', 'care', 'safety', 'services']),
+  step: z.enum(['identity', 'credentials', 'public', 'care', 'safety', 'services']),
   name: providerDisplayNameSchema.optional(),
   gender: z.nativeEnum(PatientGender).optional().nullable(),
   mobile: indianMobileSchema.optional().or(z.literal('')),
@@ -398,8 +430,9 @@ export function registerAuthDoctorRoutes(router: Router) {
           email: z.string().email(),
           mobile: indianMobileSchema,
           password: providerPasswordSchema,
+          providerDomain: z.nativeEnum(ProviderDomain).optional().default(ProviderDomain.HOPE_HUB),
           specialty: z.string().min(2).optional(),
-          registrationNo: z.string().optional(),
+          registrationNo: z.string().trim().optional(),
           careTeamType: z.nativeEnum(CareTeamMemberType).optional(),
           careTeamTypes: z.array(z.nativeEnum(CareTeamMemberType)).max(12).optional()
         })
@@ -409,51 +442,119 @@ export function registerAuthDoctorRoutes(router: Router) {
       // A new provider starts with a simple account only. Their support path is selected
       // in the guided onboarding conversation after their first sign-in.
       const careTeamTypes = normalizeCareTeamTypes(body.careTeamType, body.careTeamTypes);
-      const isHopeHubProvider = true;
+      const isHopeHubProvider = body.providerDomain === ProviderDomain.HOPE_HUB;
       const primaryCareTeamType = careTeamTypes[0];
-      const inferredDoctorType = HomeopathicDoctorType.PSYCHOLOGIST;
-      const specialty = body.specialty || 'Hope Hub Support';
-      const doctor = await prisma.user.create({
-        data: {
-          name: body.name,
-          email: body.email,
-          mobile: body.mobile,
-          passwordHash,
-          role: Role.DOCTOR,
-          isActive: true,
-          doctorProfile: {
-            create: {
-              ...toDoctorProfilePayload({
-                doctorType: inferredDoctorType,
-                specialty,
-                registrationNo: body.registrationNo
-              }),
-              ...(isHopeHubProvider
-                ? {
-                    mentalHealthProfile: {
-                      create: {
-                        careTeamType: primaryCareTeamType,
-                        careTeamTypes,
-                        acceptingNewUsers: true,
-                        autoMatchEnabled: true
+      const inferredDoctorType = isHopeHubProvider
+        ? HomeopathicDoctorType.PSYCHOLOGIST
+        : HomeopathicDoctorType.JUNIOR_DOCTOR;
+      const specialty = body.specialty || (isHopeHubProvider ? 'Hope Hub Support' : 'Homeopathy');
+      const requiresCredentialApproval = !isHopeHubProvider;
+      const registrationNoNormalized = normalizeProfessionalRegistrationNumber(body.registrationNo);
+      if (registrationNoNormalized) {
+        const registrationCandidates = await prisma.doctor.findMany({
+          where: { providerDomain: ProviderDomain.HOMEOPATHY, registrationNo: { not: null } },
+          select: { registrationNo: true, registrationNoNormalized: true }
+        });
+        if (
+          registrationCandidates.some(
+            (candidate) =>
+              (candidate.registrationNoNormalized ||
+                normalizeProfessionalRegistrationNumber(candidate.registrationNo)) ===
+              registrationNoNormalized
+          )
+        ) {
+          return res.status(409).json({
+            code: 'REGISTRATION_NUMBER_IN_USE',
+            message: 'This professional registration number is already connected to an account.'
+          });
+        }
+      }
+      let doctor;
+      try {
+        doctor = await prisma.user.create({
+          data: {
+            name: body.name,
+            email: body.email,
+            mobile: body.mobile,
+            passwordHash,
+            role: Role.DOCTOR,
+            isActive: true,
+            doctorProfile: {
+              create: {
+                ...toDoctorProfilePayload({
+                  doctorType: inferredDoctorType,
+                  specialty,
+                  registrationNo: body.registrationNo
+                }),
+                providerDomain: body.providerDomain,
+                approvalStatus: requiresCredentialApproval ? 'DRAFT' : 'NOT_REQUIRED',
+                isAvailable: !requiresCredentialApproval,
+                ...(requiresCredentialApproval
+                  ? {
+                      suspendedAt: new Date(),
+                      suspendedReason: HOMEOPATHY_PROFILE_DRAFT_REASON,
+                      showOnWebsite: false,
+                      isOnline: false
+                    }
+                  : {}),
+                ...(isHopeHubProvider
+                  ? {
+                      mentalHealthProfile: {
+                        create: {
+                          careTeamType: primaryCareTeamType,
+                          careTeamTypes,
+                          acceptingNewUsers: true,
+                          autoMatchEnabled: true
+                        }
                       }
                     }
-                  }
-                : {})
+                  : {})
+              }
             }
+          },
+          select: publicUserSelect
+        });
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+          const target = error.meta?.target;
+          const fields = Array.isArray(target)
+            ? target.map(String)
+            : typeof target === 'string'
+              ? [target]
+              : [];
+          if (fields.some((field) => field.toLowerCase().includes('email'))) {
+            return res.status(409).json({
+              code: 'EMAIL_IN_USE',
+              message: 'This email is already connected to an account.'
+            });
           }
-        },
-        select: publicUserSelect
-      });
+          if (fields.some((field) => field.toLowerCase().includes('mobile'))) {
+            return res.status(409).json({
+              code: 'MOBILE_IN_USE',
+              message: 'This mobile number is already connected to an account.'
+            });
+          }
+          if (fields.some((field) => field.toLowerCase().includes('registration'))) {
+            return res.status(409).json({
+              code: 'REGISTRATION_NUMBER_IN_USE',
+              message: 'This professional registration number is already connected to an account.'
+            });
+          }
+        }
+        throw error;
+      }
 
-      await notifyAdminsAboutDoctorSignup({
-        id: doctor.id,
-        name: body.name,
-        email: body.email,
-        mobile: doctor.mobile,
-        specialty,
-        registrationNo: body.registrationNo || null
-      });
+      if (!requiresCredentialApproval) {
+        await notifyAdminsAboutDoctorSignup({
+          id: doctor.id,
+          name: body.name,
+          email: body.email,
+          mobile: doctor.mobile,
+          specialty,
+          registrationNo: body.registrationNo || null,
+          requiresCredentialApproval: false
+        });
+      }
 
       const verification = await createEmailVerificationToken({
         userId: doctor.id,
@@ -470,18 +571,21 @@ export function registerAuthDoctorRoutes(router: Router) {
         metadata: {
           userId: doctor.id,
           careTeamTypes,
+          providerDomain: body.providerDomain,
+          requiresCredentialApproval,
           emailVerificationSent: verification.sent
         }
       });
 
       res.status(201).json({
         doctor,
-        approvalStatus: 'ACTIVE',
+        approvalStatus: requiresCredentialApproval ? 'PROFILE_REQUIRED' : 'ACTIVE',
         emailVerificationRequired: true,
         emailVerificationSent: verification.sent,
         ...(verification.devVerifyUrl ? { devVerifyUrl: verification.devVerifyUrl } : {}),
-        message:
-          'Provider account created. Log in to complete your setup before appearing on Hope Hub.'
+        message: requiresCredentialApproval
+          ? 'Account created. Verify your email, sign in, and complete your full profile. Admin approval is requested automatically only after the required profile fields are complete.'
+          : 'Provider account created. Log in to complete your setup before appearing on Hope Hub.'
       });
     })
   );
@@ -593,6 +697,7 @@ export function registerAuthDoctorRoutes(router: Router) {
         where: { id: req.user!.id },
         select: {
           ...publicUserSelect,
+          emailVerified: true,
           gender: true,
           profileImageKey: true,
           profileImageUrl: true,
@@ -624,13 +729,127 @@ export function registerAuthDoctorRoutes(router: Router) {
     })
   );
 
+  router.put(
+    '/doctor/credential-document',
+    authRequired,
+    allowRoles(Role.DOCTOR),
+    asyncRoute(async (req, res) => {
+      const provider = await prisma.doctor.findUnique({
+        where: { userId: req.user!.id },
+        select: { providerDomain: true, credentialDocumentKey: true, approvalStatus: true }
+      });
+      if (!provider || provider.providerDomain !== ProviderDomain.HOMEOPATHY) {
+        return res
+          .status(400)
+          .json({ message: 'Credentials are only required for homeopathy providers.' });
+      }
+      try {
+        const form = await parseMultipartForm(req, { maxFileBytes: MAX_PROVIDER_CREDENTIAL_BYTES });
+        if (!form.file) throw new Error('EMPTY_FILE');
+        const saved = await saveProviderCredential({
+          userId: req.user!.id,
+          mimeType: form.file.mimeType,
+          fileName: form.fields['fileName'] || form.file.fileName || 'credential',
+          data: form.file.buffer
+        });
+        await prisma.doctor.update({
+          where: { userId: req.user!.id },
+          data: {
+            credentialDocumentKey: saved.storageKey,
+            credentialDocumentFileName: saved.fileName,
+            credentialDocumentMimeType: saved.mimeType,
+            credentialDocumentUploadedAt: new Date(),
+            approvalStatus: 'DRAFT',
+            approvalRequestedAt: null,
+            approvedAt: null,
+            approvedById: null,
+            ...(provider.approvalStatus === 'APPROVED'
+              ? {
+                  suspendedAt: new Date(),
+                  suspendedReason: `${HOMEOPATHY_CREDENTIAL_REVIEW_PREFIX}.`,
+                  showOnWebsite: false,
+                  isAvailable: false,
+                  isOnline: false
+                }
+              : {})
+          }
+        });
+        if (provider.credentialDocumentKey && provider.credentialDocumentKey !== saved.storageKey) {
+          await deleteProviderCredential(provider.credentialDocumentKey);
+        }
+        await writeAuditLog({
+          actorId: req.user!.id,
+          actorRole: req.user!.role,
+          action: 'provider.credential.upload',
+          targetType: 'doctor',
+          targetId: req.user!.id,
+          summary: 'Provider registration credential uploaded.',
+          metadata: { fileName: saved.fileName, mimeType: saved.mimeType, byteSize: saved.byteSize }
+        });
+        const approvalSubmission = await submitHomeopathyProviderForApprovalIfReady(req.user!.id);
+        res.json({
+          message: 'Credential uploaded securely.',
+          credential: { fileName: saved.fileName, mimeType: saved.mimeType },
+          approvalSubmission
+        });
+      } catch (error) {
+        const code = error instanceof Error ? error.message : '';
+        const message =
+          code === 'UNSUPPORTED_MIME'
+            ? 'Upload a PDF, JPEG, PNG, or WebP file.'
+            : code === 'FILE_TOO_LARGE'
+              ? 'Credential file must be 5 MB or smaller.'
+              : code === 'EMPTY_FILE'
+                ? 'Choose a credential file to upload.'
+                : 'Could not save the credential document.';
+        res
+          .status(
+            code === 'UNSUPPORTED_MIME' || code === 'FILE_TOO_LARGE' || code === 'EMPTY_FILE'
+              ? 400
+              : 500
+          )
+          .json({ message });
+      }
+    })
+  );
+
+  router.get(
+    '/doctor/credential-document',
+    authRequired,
+    allowRoles(Role.DOCTOR),
+    asyncRoute(async (req, res) => {
+      const provider = await prisma.doctor.findUnique({
+        where: { userId: req.user!.id },
+        select: {
+          credentialDocumentKey: true,
+          credentialDocumentMimeType: true,
+          credentialDocumentFileName: true
+        }
+      });
+      if (!provider?.credentialDocumentKey)
+        return res.status(404).json({ message: 'Credential not found.' });
+      const data = await readProviderCredential(provider.credentialDocumentKey);
+      res.setHeader(
+        'Content-Type',
+        provider.credentialDocumentMimeType || 'application/octet-stream'
+      );
+      res.setHeader(
+        'Content-Disposition',
+        `inline; filename="${(provider.credentialDocumentFileName || 'credential').replace(/["\r\n]/g, '')}"`
+      );
+      res.setHeader('Cache-Control', 'private, no-store');
+      res.send(data);
+    })
+  );
+
   router.get(
     '/doctor/readiness',
     authRequired,
     allowRoles(Role.DOCTOR),
     asyncRoute(async (req, res) => {
+      const approvalSubmission = await submitHomeopathyProviderForApprovalIfReady(req.user!.id);
       const readiness = await providerPublicReadiness(req.user!.id);
-      res.json({ readiness });
+      res.json({ readiness, approvalSubmission });
     })
   );
 
@@ -776,12 +995,13 @@ export function registerAuthDoctorRoutes(router: Router) {
         }
       });
 
+      const approvalSubmission = await submitHomeopathyProviderForApprovalIfReady(req.user!.id);
       const readiness = await providerPublicReadiness(req.user!.id);
       await prisma.doctor.update({
         where: { userId: req.user!.id },
         data: { showOnWebsite: readiness.ready }
       });
-      res.status(201).json({ result: { ...result, review }, readiness });
+      res.status(201).json({ result: { ...result, review }, readiness, approvalSubmission });
     })
   );
 
@@ -832,6 +1052,9 @@ export function registerAuthDoctorRoutes(router: Router) {
         select: {
           id: true,
           doctorType: true,
+          providerDomain: true,
+          approvalStatus: true,
+          registrationNoNormalized: true,
           mentalHealthProfile: {
             select: { careTeamType: true, careTeamTypes: true, services: true }
           }
@@ -841,6 +1064,15 @@ export function registerAuthDoctorRoutes(router: Router) {
       if (body.defaultMethodOptionId) {
         const method = await assertMethodOptionId(body.defaultMethodOptionId);
         if (!method) return res.status(400).json({ message: 'Invalid prescribing approach.' });
+      }
+      if (
+        body.registrationNo !== undefined &&
+        (await registrationNumberBelongsToAnotherProvider(req.user!.id, body.registrationNo))
+      ) {
+        return res.status(409).json({
+          code: 'REGISTRATION_NUMBER_IN_USE',
+          message: 'This professional registration number is already connected to an account.'
+        });
       }
 
       const userData: Record<string, unknown> = {};
@@ -857,6 +1089,35 @@ export function registerAuthDoctorRoutes(router: Router) {
         if (body.gender !== undefined) userData.gender = body.gender;
         if (body.mobile !== undefined) userData.mobile = body.mobile || null;
         if (body.isAvailable !== undefined) doctorData.isAvailable = body.isAvailable;
+      }
+
+      // Accept professional fields on identity for older clients while new clients
+      // use the dedicated credentials step.
+      if (body.step === 'identity' || body.step === 'credentials') {
+        if (body.specialty !== undefined) doctorData.specialty = body.specialty;
+        if (body.registrationNo !== undefined) {
+          doctorData.registrationNo = body.registrationNo || null;
+          doctorData.registrationNoNormalized = normalizeProfessionalRegistrationNumber(
+            body.registrationNo
+          );
+          if (
+            existing.providerDomain === ProviderDomain.HOMEOPATHY &&
+            existing.approvalStatus === 'APPROVED' &&
+            doctorData.registrationNoNormalized !== existing.registrationNoNormalized
+          ) {
+            Object.assign(doctorData, {
+              approvalStatus: 'DRAFT',
+              approvalRequestedAt: null,
+              approvedAt: null,
+              approvedById: null,
+              suspendedAt: new Date(),
+              suspendedReason: HOMEOPATHY_PROFILE_DRAFT_REASON,
+              showOnWebsite: false,
+              isAvailable: false,
+              isOnline: false
+            });
+          }
+        }
         if (body.defaultMethodOptionId !== undefined) {
           doctorData.defaultMethodOptionId = body.defaultMethodOptionId;
         }
@@ -896,6 +1157,9 @@ export function registerAuthDoctorRoutes(router: Router) {
         if (body.specialty !== undefined) doctorData.specialty = body.specialty;
         if (body.registrationNo !== undefined) {
           doctorData.registrationNo = body.registrationNo || null;
+          doctorData.registrationNoNormalized = normalizeProfessionalRegistrationNumber(
+            body.registrationNo
+          );
         }
         mentalData.careTeamType = primary;
         mentalData.careTeamTypes = legacyRoles.length ? legacyRoles : [primary];
@@ -1136,6 +1400,7 @@ export function registerAuthDoctorRoutes(router: Router) {
         });
       }
 
+      const approvalSubmission = await submitHomeopathyProviderForApprovalIfReady(req.user!.id);
       const readiness = await providerPublicReadiness(req.user!.id);
       await prisma.doctor.update({
         where: { userId: req.user!.id },
@@ -1162,7 +1427,7 @@ export function registerAuthDoctorRoutes(router: Router) {
           });
         }
       }
-      res.json({ message: 'Profile step saved.', readiness });
+      res.json({ message: 'Profile step saved.', readiness, approvalSubmission });
     })
   );
 
@@ -1193,12 +1458,21 @@ export function registerAuthDoctorRoutes(router: Router) {
           return res.status(400).json({ message: 'Invalid prescribing approach.' });
         }
       }
+      if (await registrationNumberBelongsToAnotherProvider(req.user!.id, body.registrationNo)) {
+        return res.status(409).json({
+          code: 'REGISTRATION_NUMBER_IN_USE',
+          message: 'This professional registration number is already connected to an account.'
+        });
+      }
 
       const existing = await prisma.doctor.findUnique({
         where: { userId: req.user!.id },
         select: {
           doctorType: true,
           specialtyFocus: true,
+          providerDomain: true,
+          approvalStatus: true,
+          registrationNoNormalized: true,
           user: { select: { profileImageKey: true, profileImageUrl: true } },
           mentalHealthProfile: {
             select: {
@@ -1216,6 +1490,22 @@ export function registerAuthDoctorRoutes(router: Router) {
         registrationNo: body.registrationNo,
         isAvailable: body.isAvailable
       });
+      const approvalResetFields =
+        existing?.providerDomain === ProviderDomain.HOMEOPATHY &&
+        existing.approvalStatus === 'APPROVED' &&
+        profilePayload.registrationNoNormalized !== existing.registrationNoNormalized
+          ? {
+              approvalStatus: 'DRAFT' as const,
+              approvalRequestedAt: null,
+              approvedAt: null,
+              approvedById: null,
+              suspendedAt: new Date(),
+              suspendedReason: HOMEOPATHY_PROFILE_DRAFT_REASON,
+              showOnWebsite: false,
+              isAvailable: false,
+              isOnline: false
+            }
+          : {};
 
       const publicFields = {
         bio: body.bio ?? null,
@@ -1367,7 +1657,9 @@ export function registerAuthDoctorRoutes(router: Router) {
               update: {
                 specialty: profilePayload.specialty,
                 registrationNo: profilePayload.registrationNo,
+                registrationNoNormalized: profilePayload.registrationNoNormalized,
                 isAvailable: profilePayload.isAvailable,
+                ...approvalResetFields,
                 ...compensationFields,
                 ...(body.defaultMethodOptionId !== undefined
                   ? { defaultMethodOptionId: body.defaultMethodOptionId }
@@ -1406,6 +1698,7 @@ export function registerAuthDoctorRoutes(router: Router) {
         });
       }
 
+      const approvalSubmission = await submitHomeopathyProviderForApprovalIfReady(req.user!.id);
       const readiness = await providerPublicReadiness(req.user!.id);
       if (updated.doctorProfile?.showOnWebsite !== readiness.ready) {
         await prisma.doctor.update({
@@ -1434,7 +1727,8 @@ export function registerAuthDoctorRoutes(router: Router) {
             doctorProfile: withListenerScreening(doctorProfile, refreshedListenerScreening)
           },
           userProfileImagePath
-        )
+        ),
+        approvalSubmission
       });
     })
   );

@@ -295,6 +295,9 @@ export interface AuthError {
 // ── API response shapes ────────────────────────────────────────────────────────
 export interface ApiAuthResponse {
   token: string;
+  refreshToken?: string;
+  sessionId?: string;
+  refreshTokenExpiresAt?: string;
   user: {
     id: string;
     name: string;

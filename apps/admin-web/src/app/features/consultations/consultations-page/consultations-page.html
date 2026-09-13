@@ -1,17 +1,14 @@
 <div class="cp">
-  <div class="cp-hdr">
-    <div>
-      <h2 class="cp-title">
-        {{
-          workspaceKey() === 'hope-hub' ? 'Hope Hub work queue' : sessionPluralLabel() + ' queue'
-        }}
-      </h2>
-      <p class="cp-sub">Unassigned work is shown first.</p>
-    </div>
-    <div class="hdr-stats">
-      <div class="stat-pill unassigned">{{ unassignedCount() }} Unassigned</div>
-    </div>
-  </div>
+  <app-admin-page-header
+    eyebrow="Care operations"
+    [title]="workspaceKey() === 'hope-hub' ? 'Hope Hub work queue' : sessionPluralLabel() + ' queue'"
+    description="Unassigned work is shown first. Search, filter, assign, and record outcomes without leaving the queue."
+    tone="dark"
+    [metrics]="headerMetrics()"
+  >
+    <a adminPageActions class="queue-header-action" [routerLink]="clinicalRecordsRoute">Clinical records</a>
+    <button adminPageActions type="button" class="queue-header-action queue-header-action--primary" (click)="load()" [disabled]="loading()">Refresh queue</button>
+  </app-admin-page-header>
 
   <div class="queue-tools">
     <input

@@ -105,7 +105,7 @@ export const ANXIETY_ARTICLES: Article[] = [
     sources: [
       'American Psychiatric Association. (2022). Diagnostic and Statistical Manual of Mental Disorders (5th ed.)',
       'Anxiety and Depression Association of America. (2023). Facts & Statistics.',
-      'National Institute of Mental Health. (2023). Anxiety Disorders.',
+      'National Institute of Mental Health. Anxiety Disorders. https://www.nimh.nih.gov/health/topics/anxiety-disorders',
     ],
 
     relatedArticles: ['managing-panic-attacks', 'social-anxiety-tips'],
@@ -123,7 +123,7 @@ export const ANXIETY_ARTICLES: Article[] = [
     category: [ArticleCategory.ANXIETY],
     difficulty: ArticleDifficulty.INTERMEDIATE,
     readingTime: '8 min read',
-    author: 'Dr. James Wilson, Anxiety Specialist',
+    author: 'Hope Hub Editorial Team',
     publishedDate: new Date('2024-02-15'),
     tags: ['panic-attacks', 'anxiety', 'coping-strategies', 'breathing', 'grounding'],
 
@@ -230,6 +230,11 @@ export const ANXIETY_ARTICLES: Article[] = [
     conclusion:
       'Remember, panic attacks feel overwhelming but they are manageable. With the right strategies and support, you can reduce their frequency and impact on your life.',
 
+    sources: [
+      'National Institute of Mental Health. Panic Disorder: When Fear Overwhelms. https://www.nimh.nih.gov/health/publications/panic-disorder-when-fear-overwhelms',
+      'National Health Service. Panic disorder. https://www.nhs.uk/mental-health/conditions/panic-disorder/',
+    ],
+
     relatedArticles: ['understanding-anxiety-disorders', 'breathing-exercises-anxiety'],
   },
 
@@ -243,7 +248,7 @@ export const ANXIETY_ARTICLES: Article[] = [
     category: [ArticleCategory.ANXIETY, ArticleCategory.RELATIONSHIPS],
     difficulty: ArticleDifficulty.BEGINNER,
     readingTime: '7 min read',
-    author: 'Dr. Rachel Green, Social Psychology Expert',
+    author: 'Hope Hub Editorial Team',
     publishedDate: new Date('2024-03-10'),
     tags: ['social-anxiety', 'confidence', 'social-skills', 'exposure-therapy'],
 
@@ -311,6 +316,11 @@ export const ANXIETY_ARTICLES: Article[] = [
 
     conclusion:
       "Overcoming social anxiety takes time and practice, but it's absolutely possible. Be patient with yourself and celebrate small victories along the way.",
+
+    sources: [
+      'National Institute of Mental Health. Social Anxiety Disorder. https://www.nimh.nih.gov/health/publications/social-anxiety-disorder-more-than-just-shyness',
+      'National Health Service. Social anxiety. https://www.nhs.uk/mental-health/conditions/social-anxiety/',
+    ],
 
     relatedArticles: ['understanding-anxiety-disorders', 'building-confidence'],
   },

@@ -65,6 +65,125 @@
 </section>
 
 <section class="panel">
+  <h2>Provider service catalog</h2>
+  <p class="page-hint">
+    These names appear in the provider service dropdown. Add as many custom services as needed;
+    built-in defaults stay available.
+  </p>
+
+  <article class="service-option-card service-option-card--new" [adminCan]="managePermissions" adminCanMatch="any">
+    <input
+      [value]="serviceOptionDraft().title"
+      placeholder="Service name"
+      (input)="updateServiceOptionDraft('title', $any($event.target).value)"
+    />
+    <input
+      [value]="serviceOptionDraft().description || ''"
+      placeholder="Short description (optional)"
+      (input)="updateServiceOptionDraft('description', $any($event.target).value)"
+    />
+    <input
+      type="number"
+      [value]="serviceOptionDraft().sortOrder"
+      placeholder="Sort"
+      (input)="updateServiceOptionDraft('sortOrder', $any($event.target).value)"
+    />
+    <fieldset class="template-role-scope">
+      <legend>Available to roles (none selected = all roles)</legend>
+      @for (role of providerRoles(); track role.code) {
+        <label>
+          <input
+            type="checkbox"
+            [checked]="serviceOptionDraft().applicableRoleCodes.includes(role.code)"
+            (change)="toggleServiceOptionRole(serviceOptionDraft(), role.code, $any($event.target).checked)"
+          />
+          {{ role.label }}
+        </label>
+      }
+    </fieldset>
+    <button
+      type="button"
+      (click)="createServiceOption()"
+      [disabled]="savingServiceOption() === 'new' || !serviceOptionDraft().title.trim()"
+    >
+      {{ savingServiceOption() === 'new' ? 'Adding…' : 'Add service' }}
+    </button>
+  </article>
+
+  <div class="service-option-list">
+    @for (option of serviceOptions(); track option.id; let i = $index) {
+      <article class="service-option-card" [class.service-option-card--inactive]="!option.isActive">
+        <div class="service-option-title">
+          <input
+            [value]="option.title"
+            placeholder="Service name"
+            (input)="updateServiceOption(i, 'title', $any($event.target).value)"
+          />
+          @if (option.isDefault) {
+            <span class="default-badge">Built-in default</span>
+          }
+        </div>
+        <input
+          [value]="option.description || ''"
+          placeholder="Short description (optional)"
+          (input)="updateServiceOption(i, 'description', $any($event.target).value)"
+        />
+        <input
+          type="number"
+          [value]="option.sortOrder"
+          placeholder="Sort"
+          (input)="updateServiceOption(i, 'sortOrder', $any($event.target).value)"
+        />
+        <fieldset class="template-role-scope">
+          <legend>Available to roles (none selected = all roles)</legend>
+          @for (role of providerRoles(); track role.code) {
+            <label>
+              <input
+                type="checkbox"
+                [checked]="option.applicableRoleCodes.includes(role.code)"
+                (change)="toggleServiceOptionRole(option, role.code, $any($event.target).checked, i)"
+              />
+              {{ role.label }}
+            </label>
+          }
+        </fieldset>
+        @if (!option.isDefault) {
+          <label class="template-toggle">
+            <input
+              type="checkbox"
+              [checked]="option.isActive"
+              (change)="updateServiceOption(i, 'isActive', $any($event.target).checked)"
+            />
+            Active
+          </label>
+        }
+        <button
+          type="button"
+          [adminCan]="managePermissions"
+          adminCanMatch="any"
+          (click)="saveServiceOption(option)"
+          [disabled]="savingServiceOption() === option.id || !option.title.trim()"
+        >
+          {{ savingServiceOption() === option.id ? 'Saving…' : 'Save' }}
+        </button>
+        @if (!option.isDefault) {
+          <button
+            type="button"
+            class="danger"
+            [adminCan]="managePermissions"
+            adminCanMatch="any"
+            (click)="deactivateServiceOption(option)"
+            [disabled]="savingServiceOption() === option.id || !option.isActive"
+          >
+            Deactivate
+          </button>
+        }
+      </article>
+    }
+  </div>
+</section>
+
+<section class="panel">
   <h2>Care pricing templates</h2>
   <p class="page-hint">Providers can choose these ready plans and still customize per service.</p>
 

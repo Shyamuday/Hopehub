@@ -4,6 +4,7 @@ import { form, FormField } from '@angular/forms/signals';
 import { FormsModule } from '@angular/forms';
 import { AdminApi } from '../../../core/services/admin-api';
 import { TOAST_DURATION_MS } from '../../../core/constants/timing.constants';
+import { AdminPageHeaderComponent } from '../../../shared/ui/admin-page-header.component';
 
 function emptyAdminForm() {
   return { name: '', email: '', password: '', mobile: '' };
@@ -11,7 +12,7 @@ function emptyAdminForm() {
 
 @Component({
   selector: 'app-admin-users-page',
-  imports: [FormField, FormsModule, DatePipe],
+  imports: [FormField, FormsModule, DatePipe, AdminPageHeaderComponent],
   templateUrl: './admin-users-page.html',
   styleUrl: './admin-users-page.scss',
 })
@@ -37,6 +38,15 @@ export class AdminUsersPage implements OnInit {
   sortBy = signal('createdAt');
   sortDirection = signal('desc');
   readonly totalUsers = computed(() => this.pagination().total);
+  readonly headerMetrics = computed(() => [
+    { label: 'All users', value: this.totalUsers() },
+    { label: 'Admins', value: this.admins().length },
+    {
+      label: 'Active admins',
+      value: this.admins().filter((admin) => admin.isActive).length,
+      tone: 'success' as const,
+    },
+  ]);
 
   readonly draftModel = signal(emptyAdminForm());
   readonly draftForm = form(this.draftModel);
@@ -139,6 +149,9 @@ export class AdminUsersPage implements OnInit {
   }
 
   async toggleStatus(admin: any) {
+    const action = admin.isActive ? 'deactivate' : 'activate';
+    if (!confirm(`${action[0].toUpperCase() + action.slice(1)} admin access for ${admin.name}?`))
+      return;
     try {
       await this.api.setAdminStatus(admin.id, !admin.isActive);
       this.admins.update((list) =>
@@ -155,6 +168,7 @@ export class AdminUsersPage implements OnInit {
 
   async changeUserRole(user: any, role: string) {
     if (!role || role === user.role) return;
+    if (!confirm(`Change ${user.name}'s role from ${user.role} to ${role}?`)) return;
     const previousRole = user.role;
     this.userUpdating.set(user.id);
     this.users.update((list) => list.map((row) => (row.id === user.id ? { ...row, role } : row)));
@@ -178,6 +192,7 @@ export class AdminUsersPage implements OnInit {
 
   async toggleUserStatus(user: any) {
     const nextStatus = !user.isActive;
+    if (!confirm(`${nextStatus ? 'Activate' : 'Deactivate'} ${user.name}'s account?`)) return;
     this.userUpdating.set(user.id);
     try {
       const response = await this.api.setUserStatus(user.id, nextStatus);

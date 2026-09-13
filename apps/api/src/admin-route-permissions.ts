@@ -97,6 +97,10 @@ const ADMIN_ROUTE_RULES: Array<{ pattern: RegExp; rules: RouteRule[] }> = [
     rules: [all([PERMISSIONS.NOTIFICATIONS_WRITE])]
   },
   {
+    pattern: /^\/admin\/email-marketing/,
+    rules: [all([PERMISSIONS.NOTIFICATIONS_WRITE])]
+  },
+  {
     pattern: /^\/admin\/contact-mail/,
     rules: [all([PERMISSIONS.CONTACT_MAIL_WRITE])]
   },
@@ -118,7 +122,7 @@ const ADMIN_ROUTE_RULES: Array<{ pattern: RegExp; rules: RouteRule[] }> = [
   },
   {
     pattern:
-      /^\/admin\/(assessment-definitions|listener-screening|practices|practice-rules|lifestyle-tips|lifestyle-tip-rules)/,
+      /^\/admin\/(assessment-definitions|listener-screening|consumer-concerns|practices|practice-rules|lifestyle-tips|lifestyle-tip-rules)/,
     rules: [all([PERMISSIONS.CATALOG_READ], 'GET'), all([PERMISSIONS.CATALOG_WRITE])]
   },
   {

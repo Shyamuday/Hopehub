@@ -69,6 +69,7 @@ export class GroupChatTeaserComponent implements OnInit {
   readonly isAuthenticated = signal(false);
   readonly draft = signal('');
   readonly sending = signal(false);
+  readonly sendError = signal('');
   readonly loadingGroup = signal(true);
   readonly activeGroup = signal<HopeHubLiveGroup | null>(null);
   readonly realMessages = signal<TeaserMessage[]>([]);
@@ -225,6 +226,7 @@ export class GroupChatTeaserComponent implements OnInit {
       const group = this.activeGroup();
       if (!group) return;
       this.sending.set(true);
+      this.sendError.set('');
       this.bookingService.sendLiveGroupMessage(group.slug || group.id, reply).subscribe({
         next: (res) => {
           this.realMessages.update((messages) =>
@@ -235,14 +237,22 @@ export class GroupChatTeaserComponent implements OnInit {
           this.sending.set(false);
           this.scrollToLatest();
         },
-        error: () => {
-          this.draft.set('');
+        error: (error) => {
           this.sending.set(false);
-          this.askToJoin();
+          this.sendError.set(this.readErrorMessage(error));
         },
       });
       return;
     }
+  }
+
+  private readErrorMessage(error: unknown): string {
+    if (error && typeof error === 'object' && 'error' in error) {
+      const response = (error as { error?: { message?: string } }).error;
+      if (response?.message) return response.message;
+    }
+    if (error instanceof Error && error.message) return error.message;
+    return 'This message could not be posted. Please try again.';
   }
 
   private openTeaserAfterAuth(): void {

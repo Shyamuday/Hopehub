@@ -17,6 +17,7 @@ import {
 import bcrypt from 'bcryptjs';
 import { authRequired, allowRoles } from '../../auth.js';
 import { getAuthorizedAdminWorkspace } from '../../admin-workspace-access.js';
+import { staffCanAccessWorkspace } from '../../staff-permissions.js';
 import { providerPublicReadiness } from '../../doctor-capabilities.js';
 import { prisma } from '../../db.js';
 import {
@@ -45,6 +46,17 @@ import {
 } from '../../constants/doctor-hr-defaults.js';
 import { PSYCHOLOGIST_CONSULTATION_SHARE_PERCENT } from '../../services/doctor-compensation.js';
 import { syncProviderRoleAssignments } from '../../services/provider-taxonomy.service.js';
+import {
+  approveHomeopathyProviderAccount,
+  HomeopathyProviderApprovalError
+} from '../../services/homeopathy-provider-approval.js';
+import { notifyProviderApprovalStatus } from '../../services/provider-approval-notifications.js';
+import { readProviderCredential } from '../../services/provider-credential-storage.js';
+import {
+  HOMEOPATHY_CREDENTIAL_CHANGES_PREFIX,
+  HOMEOPATHY_CREDENTIAL_REVIEW_PREFIX,
+  isHomeopathyCredentialReview
+} from '../../constants/homeopathy-provider-approval.constants.js';
 
 const textArraySchema = z.array(z.string().trim().min(1).max(160)).max(40).optional();
 const careTeamServiceSchema = z.object({
@@ -450,33 +462,21 @@ export function registerAdminDoctorRoutes(router: Router) {
       const workspace = getAuthorizedAdminWorkspace(req, res);
       if (workspace === null) return;
 
-      const where: Prisma.UserWhereInput = {
-        role: Role.DOCTOR,
-        isActive: false,
-        ...doctorWorkspaceWhere(workspace),
-        ...(supportPathTypes.length
+      const approvalQueueWhere: Prisma.UserWhereInput =
+        workspace === 'homeopathy'
           ? {
-              AND: [
+              OR: [
+                { isActive: false },
                 {
                   doctorProfile: {
                     is: {
                       OR: [
+                        { approvalStatus: 'PENDING' },
                         {
-                          roleAssignments: {
-                            some: {
-                              status: 'ACTIVE',
-                              role: { category: supportPath, isActive: true }
-                            }
-                          }
-                        },
-                        {
-                          mentalHealthProfile: {
-                            is: {
-                              OR: [
-                                { careTeamType: { in: supportPathTypes } },
-                                { careTeamTypes: { hasSome: supportPathTypes } }
-                              ]
-                            }
+                          suspendedAt: { not: null },
+                          suspendedReason: {
+                            startsWith: HOMEOPATHY_CREDENTIAL_REVIEW_PREFIX,
+                            mode: 'insensitive'
                           }
                         }
                       ]
@@ -485,17 +485,52 @@ export function registerAdminDoctorRoutes(router: Router) {
                 }
               ]
             }
-          : {}),
-        ...(query
-          ? {
+          : { isActive: false };
+
+      const andFilters: Prisma.UserWhereInput[] = [approvalQueueWhere];
+      if (supportPathTypes.length) {
+        andFilters.push({
+          doctorProfile: {
+            is: {
               OR: [
-                { name: { contains: query, mode: 'insensitive' as const } },
-                { email: { contains: query, mode: 'insensitive' as const } },
-                { mobile: { contains: query, mode: 'insensitive' as const } },
-                { doctorProfile: { specialty: { contains: query, mode: 'insensitive' as const } } }
+                {
+                  roleAssignments: {
+                    some: {
+                      status: 'ACTIVE',
+                      role: { category: supportPath, isActive: true }
+                    }
+                  }
+                },
+                {
+                  mentalHealthProfile: {
+                    is: {
+                      OR: [
+                        { careTeamType: { in: supportPathTypes } },
+                        { careTeamTypes: { hasSome: supportPathTypes } }
+                      ]
+                    }
+                  }
+                }
               ]
             }
-          : {})
+          }
+        });
+      }
+      if (query) {
+        andFilters.push({
+          OR: [
+            { name: { contains: query, mode: 'insensitive' as const } },
+            { email: { contains: query, mode: 'insensitive' as const } },
+            { mobile: { contains: query, mode: 'insensitive' as const } },
+            { doctorProfile: { specialty: { contains: query, mode: 'insensitive' as const } } }
+          ]
+        });
+      }
+
+      const where: Prisma.UserWhereInput = {
+        role: Role.DOCTOR,
+        ...doctorWorkspaceWhere(workspace),
+        AND: andFilters
       };
 
       const total = await prisma.user.count({ where });
@@ -530,10 +565,72 @@ export function registerAdminDoctorRoutes(router: Router) {
     allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const doctorId = routeParam(req, 'id');
-      const doctor = await prisma.user.update({
+      const existing = await prisma.user.findUnique({
         where: { id: doctorId },
-        data: { isActive: true },
-        select: { ...publicUserSelect, isActive: true, doctorProfile: true }
+        select: {
+          role: true,
+          doctorProfile: {
+            select: {
+              providerDomain: true,
+              suspendedAt: true,
+              suspendedReason: true,
+              approvalStatus: true
+            }
+          }
+        }
+      });
+      if (!existing || existing.role !== Role.DOCTOR || !existing.doctorProfile) {
+        return res.status(404).json({ message: 'Provider application not found.' });
+      }
+
+      const workspace =
+        existing.doctorProfile.providerDomain === ProviderDomain.HOPE_HUB
+          ? 'hope-hub'
+          : 'homeopathy';
+      if (!staffCanAccessWorkspace(req.user, workspace)) {
+        return res.status(403).json({
+          message: 'You do not have access to approve providers in this workspace.',
+          workspace
+        });
+      }
+
+      const credentialReview =
+        workspace === 'homeopathy' &&
+        Boolean(existing.doctorProfile.suspendedAt) &&
+        (existing.doctorProfile.approvalStatus === 'PENDING' ||
+          isHomeopathyCredentialReview(existing.doctorProfile.suspendedReason));
+
+      if (credentialReview) {
+        try {
+          const result = await approveHomeopathyProviderAccount({
+            doctorId,
+            actorId: req.user!.id,
+            actorRole: req.user!.role
+          });
+          return res.json({
+            doctor: result.doctor,
+            message: result.alreadyApproved
+              ? 'This provider was already approved.'
+              : 'Homeopathy credentials approved. The provider is now active and public.'
+          });
+        } catch (error) {
+          if (error instanceof HomeopathyProviderApprovalError) {
+            return res.status(error.code === 'PROVIDER_NOT_FOUND' ? 404 : 409).json({
+              message: error.message,
+              code: error.code,
+              blockers: error.blockers
+            });
+          }
+          throw error;
+        }
+      }
+
+      const doctor = await prisma.$transaction(async (tx) => {
+        await tx.user.update({ where: { id: doctorId }, data: { isActive: true } });
+        return tx.user.findUniqueOrThrow({
+          where: { id: doctorId },
+          select: { ...publicUserSelect, isActive: true, doctorProfile: true }
+        });
       });
       await writeAuditLog({
         actorId: req.user!.id,
@@ -541,9 +638,13 @@ export function registerAdminDoctorRoutes(router: Router) {
         action: 'doctor.approve',
         targetType: 'doctor',
         targetId: doctor.id,
-        summary: 'Provider account activated by admin.'
+        summary: 'Provider account activated by admin.',
+        metadata: { workspace, credentialReview }
       });
-      res.json({ doctor, message: 'Provider account activated successfully.' });
+      res.json({
+        doctor,
+        message: 'Provider account activated successfully.'
+      });
     })
   );
 
@@ -553,10 +654,70 @@ export function registerAdminDoctorRoutes(router: Router) {
     allowRoles(Role.ADMIN, Role.HR),
     asyncRoute(async (req, res) => {
       const doctorId = routeParam(req, 'id');
-      const doctor = await prisma.user.update({
+      const body = z
+        .object({ reason: z.string().trim().max(1000).optional().nullable() })
+        .parse(req.body ?? {});
+      const existing = await prisma.user.findUnique({
         where: { id: doctorId },
-        data: { isActive: false },
-        select: { ...publicUserSelect, isActive: true, doctorProfile: true }
+        select: {
+          role: true,
+          doctorProfile: {
+            select: {
+              providerDomain: true,
+              suspendedAt: true,
+              suspendedReason: true,
+              approvalStatus: true
+            }
+          }
+        }
+      });
+      if (!existing || existing.role !== Role.DOCTOR || !existing.doctorProfile) {
+        return res.status(404).json({ message: 'Provider application not found.' });
+      }
+      const workspace =
+        existing.doctorProfile.providerDomain === ProviderDomain.HOPE_HUB
+          ? 'hope-hub'
+          : 'homeopathy';
+      if (!staffCanAccessWorkspace(req.user, workspace)) {
+        return res.status(403).json({
+          message: 'You do not have access to review providers in this workspace.',
+          workspace
+        });
+      }
+      const credentialReview =
+        workspace === 'homeopathy' &&
+        Boolean(existing.doctorProfile.suspendedAt) &&
+        (existing.doctorProfile.approvalStatus === 'PENDING' ||
+          isHomeopathyCredentialReview(existing.doctorProfile.suspendedReason));
+      const reason = body.reason?.trim() || '';
+      const doctor = await prisma.$transaction(async (tx) => {
+        if (credentialReview) {
+          await tx.user.update({ where: { id: doctorId }, data: { isActive: true } });
+          await tx.doctor.update({
+            where: { userId: doctorId },
+            data: {
+              suspendedAt: new Date(),
+              suspendedReason: reason
+                ? `${HOMEOPATHY_CREDENTIAL_CHANGES_PREFIX}: ${reason}`
+                : `${HOMEOPATHY_CREDENTIAL_CHANGES_PREFIX}. Please contact Hope Hub support.`,
+              suspendedById: req.user!.id,
+              approvalStatus: 'CHANGES_REQUESTED',
+              approvalNote: reason || 'Please contact Hope Hub support.',
+              approvalRequestedAt: null,
+              approvedAt: null,
+              approvedById: null,
+              showOnWebsite: false,
+              isAvailable: false,
+              isOnline: false
+            }
+          });
+        } else {
+          await tx.user.update({ where: { id: doctorId }, data: { isActive: false } });
+        }
+        return tx.user.findUniqueOrThrow({
+          where: { id: doctorId },
+          select: { ...publicUserSelect, isActive: true, doctorProfile: true }
+        });
       });
       await writeAuditLog({
         actorId: req.user!.id,
@@ -564,9 +725,24 @@ export function registerAdminDoctorRoutes(router: Router) {
         action: 'doctor.deactivate',
         targetType: 'doctor',
         targetId: doctor.id,
-        summary: 'Provider account deactivated by admin.'
+        summary: credentialReview
+          ? 'Homeopathy credential application returned for changes.'
+          : 'Provider account deactivated by admin.',
+        metadata: { workspace, credentialReview, reason: reason || null }
       });
-      res.json({ doctor, message: 'Provider account deactivated.' });
+      if (credentialReview) {
+        await notifyProviderApprovalStatus({
+          userId: doctor.id,
+          status: 'CHANGES_REQUESTED',
+          note: reason || null
+        });
+      }
+      res.json({
+        doctor,
+        message: credentialReview
+          ? 'Credential application returned for changes.'
+          : 'Provider account deactivated.'
+      });
     })
   );
 
@@ -679,6 +855,50 @@ export function registerAdminDoctorRoutes(router: Router) {
       }
       const readiness = await providerPublicReadiness(doctor.id);
       res.json({ readiness });
+    })
+  );
+
+  router.get(
+    '/admin/doctors/:id/credential-document',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (req, res) => {
+      const doctorId = routeParam(req, 'id');
+      const provider = await prisma.user.findFirst({
+        where: { id: doctorId, role: Role.DOCTOR },
+        select: {
+          doctorProfile: {
+            select: {
+              providerDomain: true,
+              credentialDocumentKey: true,
+              credentialDocumentMimeType: true,
+              credentialDocumentFileName: true
+            }
+          }
+        }
+      });
+      if (!provider?.doctorProfile) return res.status(404).json({ message: 'Provider not found.' });
+      const workspace =
+        provider.doctorProfile.providerDomain === ProviderDomain.HOPE_HUB
+          ? 'hope-hub'
+          : 'homeopathy';
+      if (!staffCanAccessWorkspace(req.user, workspace)) {
+        return res.status(403).json({ message: 'You cannot review this workspace.' });
+      }
+      if (!provider.doctorProfile.credentialDocumentKey) {
+        return res.status(404).json({ message: 'Credential document not uploaded.' });
+      }
+      const data = await readProviderCredential(provider.doctorProfile.credentialDocumentKey);
+      res.setHeader(
+        'Content-Type',
+        provider.doctorProfile.credentialDocumentMimeType || 'application/octet-stream'
+      );
+      res.setHeader(
+        'Content-Disposition',
+        `inline; filename="${(provider.doctorProfile.credentialDocumentFileName || 'credential').replace(/["\r\n]/g, '')}"`
+      );
+      res.setHeader('Cache-Control', 'private, no-store');
+      res.send(data);
     })
   );
 

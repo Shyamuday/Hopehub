@@ -26,8 +26,8 @@ export const FOOTER_CONTENT = {
       'Pincode — 834001',
     ],
     phoneLabel: 'Contact',
-    phone: '+91-98765-43210',
-    phoneHref: 'tel:+919876543210',
+    phone: '+91 93044 71227',
+    phoneHref: 'tel:+919304471227',
     email: PUBLIC_CONTACT.EMAIL,
     emailHref: PUBLIC_CONTACT.EMAIL_HREF,
   },
@@ -44,6 +44,7 @@ export const FOOTER_CONTENT = {
         { label: 'Blogs', href: '/blog' },
         { label: 'Patient Stories', href: '/testimonials' },
         { label: 'Safety & Trust', href: '/safety' },
+        { label: 'Editorial Policy', href: '/editorial-policy' },
       ],
     },
     {

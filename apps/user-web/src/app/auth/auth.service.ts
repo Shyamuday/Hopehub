@@ -28,12 +28,22 @@ export class AuthService {
 
   readonly user = this.patientAuth.user.asReadonly();
   readonly isLoggedIn = computed(() => Boolean(this.user()));
+  private bootstrapPromise: Promise<User | null> | null = null;
 
   constructor() {
     void this.bootstrapSession();
   }
 
-  async bootstrapSession() {
+  bootstrapSession(): Promise<User | null> {
+    const authenticatedUser = this.user();
+    if (authenticatedUser) return Promise.resolve(authenticatedUser);
+    if (!this.bootstrapPromise) {
+      this.bootstrapPromise = this.restoreSession();
+    }
+    return this.bootstrapPromise;
+  }
+
+  private async restoreSession(): Promise<User | null> {
     const token = this.token;
     if (!token) {
       this.patientAuth.setAuthenticatedUser(null);
@@ -58,11 +68,13 @@ export class AuthService {
   }
 
   get token() {
-    return localStorage.getItem(AUTH_TOKEN_KEY);
+    return typeof localStorage === 'undefined' ? null : localStorage.getItem(AUTH_TOKEN_KEY);
   }
 
   get refreshToken() {
-    return localStorage.getItem(AUTH_REFRESH_TOKEN_KEY);
+    return typeof localStorage === 'undefined'
+      ? null
+      : localStorage.getItem(AUTH_REFRESH_TOKEN_KEY);
   }
 
   requestOtp(
@@ -120,7 +132,12 @@ export class AuthService {
     ).pipe(tap((response) => this.persistSession(response)));
   }
 
-  patientRegister(payload: { name?: string; email: string; password: string }) {
+  patientRegister(payload: {
+    name?: string;
+    email: string;
+    password: string;
+    referralCode?: string;
+  }) {
     return from(this.patientAuth.register(payload)).pipe(
       tap((response) => this.persistSession(response)),
     );
@@ -155,6 +172,7 @@ export class AuthService {
     }
     this.clearSession();
     this.patientAuth.setAuthenticatedUser(null);
+    this.bootstrapPromise = null;
   }
 
   async refreshAuthSession() {
@@ -186,6 +204,11 @@ export class AuthService {
   }
 
   private persistSession(response: AuthResponse) {
+    if (typeof localStorage === 'undefined') {
+      this.patientAuth.setAuthenticatedUser(response.user);
+      this.bootstrapPromise = Promise.resolve(response.user);
+      return;
+    }
     if (response.token) {
       localStorage.setItem(AUTH_TOKEN_KEY, response.token);
     }
@@ -197,9 +220,11 @@ export class AuthService {
     }
 
     this.patientAuth.setAuthenticatedUser(response.user);
+    this.bootstrapPromise = Promise.resolve(response.user);
   }
 
   private clearSession() {
+    if (typeof localStorage === 'undefined') return;
     localStorage.removeItem(AUTH_TOKEN_KEY);
     localStorage.removeItem(AUTH_REFRESH_TOKEN_KEY);
     localStorage.removeItem(AUTH_SESSION_ID_KEY);

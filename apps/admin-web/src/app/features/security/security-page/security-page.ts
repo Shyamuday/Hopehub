@@ -1,13 +1,14 @@
 import { DatePipe } from '@angular/common';
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { form, FormField } from '@angular/forms/signals';
 import { AdminApi } from '../../../core/services/admin-api';
 import { TOAST_DURATION_MS } from '../../../core/constants/timing.constants';
+import { AdminPageHeaderComponent } from '../../../shared/ui/admin-page-header.component';
 
 @Component({
   selector: 'app-security-page',
-  imports: [FormField, DatePipe, FormsModule],
+  imports: [FormField, DatePipe, FormsModule, AdminPageHeaderComponent],
   templateUrl: './security-page.html',
   styleUrl: './security-page.scss',
 })
@@ -53,6 +54,15 @@ export class SecurityPage implements OnInit {
   sessionPageSize = signal(20);
   sessionSearch = signal('');
   sessionStatus = signal('active');
+  readonly headerMetrics = computed(() => [
+    { label: 'Roles', value: this.roles().length },
+    { label: 'Capabilities', value: this.capabilities().length },
+    {
+      label: 'Audit records',
+      value: this.retention()?.total ?? 0,
+      tone: 'default' as const,
+    },
+  ]);
 
   ngOnInit(): void {
     void this.load();
@@ -167,6 +177,8 @@ export class SecurityPage implements OnInit {
 
   async revokeSession(session: any) {
     if (!session?.id || session.status !== 'active') return;
+    if (!confirm(`Revoke this session for ${session.user?.name || session.userId || 'this user'}?`))
+      return;
     this.saving.set(true);
     try {
       await this.api.revokeAuthSession(session.id);
@@ -181,6 +193,12 @@ export class SecurityPage implements OnInit {
 
   async revokeUserSessions(session: any) {
     if (!session?.userId) return;
+    if (
+      !confirm(
+        `Revoke every active session for ${session.user?.name || session.userId}? The user will need to sign in again.`,
+      )
+    )
+      return;
     this.saving.set(true);
     try {
       const response = await this.api.revokeUserAuthSessions(session.userId);
@@ -210,6 +228,11 @@ export class SecurityPage implements OnInit {
   }
 
   async purge(dryRun = false) {
+    if (
+      !dryRun &&
+      !confirm(`Permanently delete audit logs older than ${this.purgeModel().days} days?`)
+    )
+      return;
     this.saving.set(true);
     this.error.set('');
     try {

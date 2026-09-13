@@ -153,12 +153,22 @@
 
 @media (max-width: 640px) {
   .quick-access {
-    display: none;
+    bottom: max(0.65rem, env(safe-area-inset-bottom));
+    display: flex;
+    right: 0.65rem;
   }
 
   .quick-access__main {
-    height: 3.25rem;
-    width: 3.25rem;
+    height: 3rem;
+    touch-action: manipulation;
+    width: 3rem;
+  }
+
+  // The website chat launcher must remain available after the mobile overlay
+  // is closed. Keep the separate Telegram outbound shortcut on desktop so the
+  // mobile corner has one clear action instead of another floating stack.
+  .quick-access__main--telegram {
+    display: none;
   }
 
   .quick-access__label {
@@ -218,4 +228,3 @@
     white-space: nowrap;
   }
 }
-

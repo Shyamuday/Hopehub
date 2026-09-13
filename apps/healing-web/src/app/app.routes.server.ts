@@ -1,13 +1,80 @@
-// SSR server routes — commented out for static S3 build, uncomment to re-enable SSR
-// import { RenderMode, ServerRoute } from '@angular/ssr';
-//
-// export const serverRoutes: ServerRoute[] = [
-//   {
-//     path: 'services/:id',
-//     renderMode: RenderMode.Server
-//   },
-//   {
-//     path: '**',
-//     renderMode: RenderMode.Prerender
-//   }
-// ];
+import { RenderMode, ServerRoute } from '@angular/ssr';
+import { ALL_ARTICLES } from './core/data/article-configs';
+import {
+  CONSUMER_CONCERN_FLOWS,
+  CONSUMER_CONCERN_ORDER,
+} from './core/constants/consumer-concerns.constants';
+import { CAREER_DEEP_LINK_SLUGS } from './features/careers/career-deep-links.constants';
+
+const googleAssessmentRoutes = [
+  'anxiety-test',
+  'depression-test',
+  'stress-test',
+  'breakup-test',
+  'sleep-test',
+  'relationship-test',
+  'burnout-test',
+  'wellbeing-test',
+  'mental-health-test',
+  'panic-test',
+  'social-anxiety-test',
+  'loneliness-test',
+  'self-esteem-test',
+  'anger-test',
+  'grief-test',
+] as const;
+
+const googleLandingRoutes = [
+  '',
+  'services',
+  'support',
+  'care-team',
+  'packages',
+  'events',
+  'resources',
+  'recorded-sessions',
+  'organization',
+  'community',
+  'telegram',
+  'telegram-group-admin',
+  'about',
+  'contact',
+  'faq',
+  'careers',
+  'listener-guidelines',
+  'listener-training',
+  'privacy',
+  'terms',
+  'refund-policy',
+  'payment-policy',
+  'shipping-policy',
+  'assessments',
+  'exercises',
+  'lifestyle-tips',
+  'articles',
+  'editorial-policy',
+  'donate',
+  ...googleAssessmentRoutes,
+  '404',
+] as const;
+
+export const serverRoutes: ServerRoute[] = [
+  ...googleLandingRoutes.map((path): ServerRoute => ({ path, renderMode: RenderMode.Prerender })),
+  ...CAREER_DEEP_LINK_SLUGS.map((selection): ServerRoute => ({
+    path: `careers/${selection}`,
+    renderMode: RenderMode.Prerender,
+  })),
+  {
+    path: 'articles/:slug',
+    renderMode: RenderMode.Prerender,
+    getPrerenderParams: async () => ALL_ARTICLES.map((article) => ({ slug: article.id })),
+  },
+  {
+    path: 'concerns/:slug',
+    renderMode: RenderMode.Prerender,
+    getPrerenderParams: async () =>
+      CONSUMER_CONCERN_ORDER.map((key) => ({ slug: CONSUMER_CONCERN_FLOWS[key].slug })),
+  },
+  // User-specific and data-parameter routes stay client-rendered on the static host.
+  { path: '**', renderMode: RenderMode.Client },
+];

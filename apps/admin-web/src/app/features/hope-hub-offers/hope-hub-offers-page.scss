@@ -2,6 +2,8 @@
   display: grid;
   gap: 1rem;
   padding: 1rem;
+  max-width: 1600px;
+  margin: 0 auto;
 }
 
 .page-head,
@@ -36,6 +38,10 @@
   flex-wrap: wrap;
   gap: 0.5rem;
 }
+.tabs--sticky { position: sticky; top: .5rem; z-index: 20; border: 1px solid #e2e8f0; border-radius: .75rem; background: rgba(248, 250, 252, .94); box-shadow: 0 8px 20px rgba(15, 23, 42, .06); padding: .5rem; backdrop-filter: blur(12px); }
+.tabs button { display: inline-flex; align-items: center; gap: .4rem; }
+.tabs button span { border-radius: 999px; background: #f1f5f9; color: #475569; padding: .08rem .4rem; font-size: .72rem; }
+.tabs button.active span { background: rgba(255,255,255,.22); color: #fff; }
 
 .tabs button,
 .actions button,
@@ -363,6 +369,10 @@ textarea {
 }
 
 @media (max-width: 900px) {
+  .offers-page { padding: .5rem; }
+  .tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .tabs button { flex: 0 0 auto; }
+
   .grid-layout,
   .two,
   .price-preview {

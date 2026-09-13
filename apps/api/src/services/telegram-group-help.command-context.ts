@@ -1,9 +1,11 @@
+import { TELEGRAM_OFF_TOPIC_GROUP_TITLE } from '../constants/telegram-community-bot.constants.js';
 import { getSiteConfigMap } from './site-config.service.js';
 import type { CommunityTelegramMessage } from './telegram-community-bots.types.js';
 
 const COMMAND_GROUP_KEYS = [
   'telegramGroupHelpGroupChatId',
-  'telegramGroupHelpTestGroupChatId',
+  'telegramGroupHelpOffTopicGroupChatId',
+  'telegramGroupHelpOffTopicLogGroupId',
   'telegramGroupHelpStaffGroupId',
   'telegramGroupHelpLogChannelId'
 ] as const;
@@ -18,7 +20,8 @@ export type GroupHelpCommandContext = {
 export function configuredGroupHelpChatIds(values: Record<string, string>) {
   return [
     values.telegramGroupHelpGroupChatId,
-    values.telegramGroupHelpTestGroupChatId,
+    values.telegramGroupHelpOffTopicGroupChatId,
+    values.telegramGroupHelpOffTopicLogGroupId,
     values.telegramGroupHelpStaffGroupId,
     values.telegramGroupHelpLogChannelId
   ]
@@ -31,6 +34,20 @@ export function groupHelpCommandContextFromConfig(
   values: Record<string, string>
 ): GroupHelpCommandContext {
   const normalizedSource = sourceChatId.trim().toLowerCase();
+  const offTopicLogGroup = values.telegramGroupHelpOffTopicLogGroupId?.trim().toLowerCase() || '';
+  const offTopicGroupId = values.telegramGroupHelpOffTopicGroupChatId?.trim() || '';
+  if (offTopicLogGroup && normalizedSource === offTopicLogGroup) {
+    return {
+      sourceChatId,
+      targetChatId: offTopicGroupId,
+      isControlGroup: true,
+      ...(offTopicGroupId
+        ? {}
+        : {
+            configurationError: `The ${TELEGRAM_OFF_TOPIC_GROUP_TITLE} group is not configured. Set telegramGroupHelpOffTopicGroupChatId before using its private moderation group.`
+          })
+    };
+  }
   const controlGroups = [values.telegramGroupHelpStaffGroupId, values.telegramGroupHelpLogChannelId]
     .map((value) => value?.trim().toLowerCase())
     .filter(Boolean);

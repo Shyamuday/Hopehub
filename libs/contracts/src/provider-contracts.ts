@@ -219,6 +219,14 @@ export type ProviderProfileSummaryDto = {
   providerDomain?: 'HOMEOPATHY' | 'HOPE_HUB' | null;
   specialty?: string;
   registrationNo?: string | null;
+  approvalStatus?:
+    'NOT_REQUIRED' | 'DRAFT' | 'PENDING' | 'CHANGES_REQUESTED' | 'APPROVED' | 'REJECTED';
+  approvalRequestedAt?: string | null;
+  approvedAt?: string | null;
+  approvalNote?: string | null;
+  credentialDocumentFileName?: string | null;
+  credentialDocumentMimeType?: string | null;
+  credentialDocumentUploadedAt?: string | null;
   isAvailable?: boolean;
   doctorType?: string;
   specialtyFocus?: string | null;
@@ -281,6 +289,18 @@ export type CarePricingTemplateDto = {
   pricePerMinuteInPaise?: number | null;
   durationMinutes: number;
   isFree: boolean;
+  isActive: boolean;
+  sortOrder: number;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type CareServiceCatalogItemDto = {
+  id: string;
+  applicableRoleCodes: string[];
+  title: string;
+  description?: string | null;
+  isDefault: boolean;
   isActive: boolean;
   sortOrder: number;
   createdAt?: string;

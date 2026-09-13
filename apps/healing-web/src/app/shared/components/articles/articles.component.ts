@@ -1,7 +1,7 @@
 import { Component, OnInit, Inject, PLATFORM_ID, computed, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SEOService } from '../../../core/services';
@@ -16,6 +16,7 @@ import {
   ARTICLES_BY_CATEGORY,
   ARTICLES_BY_TYPE,
   getArticlesByIds,
+  getArticleById,
   getArticlesByCategory,
   searchArticles,
   getRelatedArticles,
@@ -28,6 +29,10 @@ import { AppButtonComponent } from '../app-button/app-button.component';
 import { EmptyStateComponent } from '../empty-state/empty-state.component';
 import { FilterBarComponent } from '../filter-bar/filter-bar.component';
 import { PageHeaderComponent } from '../page-header/page-header.component';
+import {
+  CONSUMER_CONCERN_FLOWS,
+  ConsumerConcernKey,
+} from '../../../core/constants/consumer-concerns.constants';
 
 @Component({
   selector: 'app-articles',
@@ -46,6 +51,7 @@ import { PageHeaderComponent } from '../page-header/page-header.component';
 })
 export class ArticlesComponent implements OnInit {
   private route = inject(ActivatedRoute);
+  private router = inject(Router);
   private platformId = inject(PLATFORM_ID);
   private seoService = inject(SEOService);
   private isBrowser = isPlatformBrowser(this.platformId);
@@ -78,6 +84,22 @@ export class ArticlesComponent implements OnInit {
   } | null>(null);
 
   constructor() {
+    this.route.paramMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      const slug = params.get('slug');
+      if (!slug) {
+        this.selectedArticle.set(null);
+        this.relatedArticles.set([]);
+        return;
+      }
+
+      const article = getArticleById(slug);
+      if (!article) {
+        void this.router.navigate(['/404'], { replaceUrl: true });
+        return;
+      }
+      this.displayArticle(article);
+    });
+
     // Check for recommended articles from assessment results
     this.route.queryParams
       .pipe(takeUntilDestroyed())
@@ -103,11 +125,15 @@ export class ArticlesComponent implements OnInit {
           }
         }
 
+        if (params['concern']) {
+          this.filterByConcern(String(params['concern']));
+        }
+
         // Check for specific article
         if (params['article']) {
           const article = this.allArticles().find((a) => a.id === params['article']);
           if (article) {
-            this.selectArticle(article);
+            void this.router.navigate(['/articles', article.id], { replaceUrl: true });
           }
         }
       });
@@ -181,7 +207,42 @@ export class ArticlesComponent implements OnInit {
     }
   }
 
+  private filterByConcern(value: string): void {
+    const normalized = value.trim().toLowerCase();
+    const flow = Object.values(CONSUMER_CONCERN_FLOWS).find(
+      (item) => item.key.toLowerCase() === normalized || item.slug === normalized,
+    );
+    if (!flow) return;
+    const terms = new Set(
+      [flow.key, flow.label, flow.shortLabel, ...flow.searchTerms].map((term) =>
+        term.toLowerCase(),
+      ),
+    );
+    this.currentFilter.set(`concern:${flow.key as ConsumerConcernKey}`);
+    this.filteredArticles.set(
+      this.allArticles().filter((article) => {
+        const text = [
+          article.title,
+          article.subtitle,
+          article.description,
+          article.introduction,
+          ...article.category,
+          ...article.tags,
+          ...(article.keywords ?? []),
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        return [...terms].some((term) => text.includes(term));
+      }),
+    );
+  }
+
   selectArticle(article: Article) {
+    void this.router.navigate(['/articles', article.id]);
+  }
+
+  private displayArticle(article: Article) {
     this.selectedArticle.set(article);
     this.relatedArticles.set(getRelatedArticles(article.id));
 
@@ -193,9 +254,11 @@ export class ArticlesComponent implements OnInit {
       type: 'article',
       author: article.author,
       publishedTime: article.publishedDate.toISOString(),
-      modifiedTime: article.publishedDate.toISOString(),
+      modifiedTime: (article.lastUpdated || article.publishedDate).toISOString(),
       section: article.category[0],
       tags: article.tags,
+      url: `https://hopehub.in/articles/${article.id}`,
+      canonicalUrl: `https://hopehub.in/articles/${article.id}`,
     });
 
     // Add article structured data
@@ -205,8 +268,9 @@ export class ArticlesComponent implements OnInit {
       image: article.featuredImage,
       author: article.author,
       datePublished: article.publishedDate.toISOString(),
-      dateModified: article.publishedDate.toISOString(),
+      dateModified: (article.lastUpdated || article.publishedDate).toISOString(),
       articleSection: article.category[0],
+      url: `https://hopehub.in/articles/${article.id}`,
     });
 
     // Scroll to top
@@ -216,8 +280,11 @@ export class ArticlesComponent implements OnInit {
   }
 
   goBack() {
-    this.selectedArticle.set(null);
-    this.relatedArticles.set([]);
+    void this.router.navigate(['/articles']);
+  }
+
+  sourceUrl(source: string): string | null {
+    return source.match(/https:\/\/[^\s)]+/)?.[0] || null;
   }
 
   getCategoryCount(category: ArticleCategory): number {

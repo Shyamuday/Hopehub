@@ -9,6 +9,7 @@ import {
   HopeHubOfferingType,
   LivePresenceStatus,
   PaymentStatus,
+  ProviderDomain,
   Role
 } from '@prisma/client';
 import { authOptional, authRequired, allowRoles } from '../auth.js';
@@ -42,6 +43,7 @@ import { isFirstPaidConsultation, redeemReferralFreeCall } from '../services/ref
 import { getSiteConfigMap, getSiteConfigValue } from '../services/site-config.service.js';
 import { upsertProviderEarningForPayment } from '../services/provider-earnings.js';
 import { settleConsultationPaymentRewards } from '../services/reward-settlement.js';
+import { canAttachSubmittedWebsiteLead } from '../services/website-lead-booking.js';
 import { notifyConsultationBooked } from '../services/consultation-reminders.js';
 import {
   claimDoctorForInstantConsultation,
@@ -49,6 +51,8 @@ import {
 } from '../services/online-doctor-presence.js';
 import { emitHopeHubLiveGroupMessage } from '../services/hope-hub-live-groups-realtime.js';
 import { mirrorHopeHubLiveChatMessageToTelegram } from '../services/telegram-live-chat-bridge.js';
+import { moderateWebsiteLiveChatMessage } from '../services/hope-hub-live-chat-moderation.js';
+import { serializePublicHopeHubLiveGroupMessage } from '../services/hope-hub-live-group-message-public.js';
 import { emitConsultationAssignedToDoctor } from '../services/consultation-realtime.js';
 import { INSTANT_ASSIGNMENT_RESPONSE_TIMEOUT_MS } from '../constants/online-doctor.constants.js';
 import {
@@ -91,6 +95,12 @@ type HopeHubPublicDefaults = {
   sessionLabel: string;
   careRoleLabel: string;
 };
+
+function jsonRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
 
 function positiveConfigInt(value: string | undefined, fallback: number) {
   const parsed = Number(value);
@@ -144,10 +154,10 @@ const HOPE_HUB_TIME_SLOTS = [
 
 const hopeHubBookingSchema = z.object({
   serviceName: z.string().trim().min(2).max(160),
-  servicePriceInPaise: z.number().int().min(100).max(10000000).optional(),
+  servicePriceInPaise: z.number().int().min(0).max(10000000).optional(),
   message: z.string().trim().max(3000).optional().or(z.literal('')),
-  appointmentDate: z.string().trim().min(1).max(80),
-  appointmentTime: z.string().trim().min(1).max(80),
+  appointmentDate: z.string().trim().max(80).optional().or(z.literal('')),
+  appointmentTime: z.string().trim().max(80).optional().or(z.literal('')),
   consultantName: z.string().trim().max(160).optional().or(z.literal('')),
   consultantPhone: z.string().trim().max(30).optional().or(z.literal('')),
   sessionDuration: z.string().trim().max(80).optional().or(z.literal('')),
@@ -177,7 +187,16 @@ const hopeHubBookingSchema = z.object({
   previousTherapyOrMedication: z.string().trim().max(1000).optional().or(z.literal('')),
   emergencyConsent: z.boolean().optional(),
   listenerSupportConsent: z.boolean().optional().default(false),
+  websiteLeadId: z.string().trim().min(1).max(120).optional().or(z.literal('')),
   entryPage: z.string().trim().max(500).optional().or(z.literal(''))
+});
+
+const hopeHubBookingSlotSchema = z.object({
+  appointmentDate: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/),
+  appointmentTime: z.string().trim().min(1).max(80)
 });
 
 const hopeHubQuickTalkSchema = z.object({
@@ -1698,7 +1717,11 @@ async function activeHopeHubOfferings(params: { type?: string; featured?: boolea
 async function activeHopeHubServices() {
   const [services, defaults] = await Promise.all([
     prisma.disease.findMany({
-      where: { isActive: true, publicCategory: 'Hope Hub' },
+      where: {
+        isActive: true,
+        publicCategory: 'Hope Hub',
+        publicDomains: { has: ProviderDomain.HOPE_HUB }
+      },
       select: hopeHubServiceSelect,
       orderBy: [{ name: 'asc' }]
     }),
@@ -2210,18 +2233,7 @@ function serializeLiveGroupMessage(message: {
   deletedByUserId?: string | null;
   createdAt: Date;
 }) {
-  return {
-    id: message.id,
-    groupId: message.groupId,
-    senderId: message.senderId,
-    senderName: message.senderName,
-    senderRole: message.senderRole,
-    body: message.isDeleted ? 'Message removed by moderator.' : message.body,
-    isDeleted: Boolean(message.isDeleted),
-    deletedAt: message.deletedAt?.toISOString() ?? null,
-    deletedByUserId: message.deletedByUserId ?? null,
-    createdAt: message.createdAt.toISOString()
-  };
+  return serializePublicHopeHubLiveGroupMessage(message);
 }
 
 async function liveGroupModerationFor(groupId: string, userId: string) {
@@ -2263,6 +2275,7 @@ hopeHubRouter.get(
   '/hope-hub/live-groups',
   authOptional,
   asyncRoute(async (_req, res) => {
+    res.set('Cache-Control', 'private, no-store');
     const groups = await prisma.hopeHubLiveGroup.findMany({
       where: {
         isActive: true,
@@ -2320,6 +2333,7 @@ hopeHubRouter.get(
   '/hope-hub/live-groups/:id',
   authOptional,
   asyncRoute(async (req, res) => {
+    res.set('Cache-Control', 'private, no-store');
     const id = routeParam(req, 'id');
     const group = await prisma.hopeHubLiveGroup.findFirst({
       where: {
@@ -2374,6 +2388,7 @@ hopeHubRouter.post(
     if (isMuted(moderation)) {
       return res.status(403).json({ message: 'You are muted in this group room.' });
     }
+
     if (group.slowModeSeconds > 0) {
       const recentMessage = await prisma.hopeHubLiveGroupMessage.findFirst({
         where: {
@@ -2388,6 +2403,23 @@ hopeHubRouter.post(
           message: `Slow mode is on. Please wait ${group.slowModeSeconds} seconds between messages.`
         });
       }
+    }
+
+    const automaticModeration = await moderateWebsiteLiveChatMessage({
+      groupId: group.id,
+      groupTitle: group.title,
+      userId: req.user!.id,
+      userName: req.user!.name,
+      userRole: req.user!.role,
+      text: body.body
+    });
+    if (!automaticModeration.allowed) {
+      return res
+        .status(['mute', 'kick', 'ban'].includes(automaticModeration.action) ? 403 : 422)
+        .json({
+          message: automaticModeration.message,
+          moderation: automaticModeration
+        });
     }
 
     const message = await prisma.hopeHubLiveGroupMessage.create({
@@ -2448,8 +2480,10 @@ hopeHubRouter.post(
         messageId: message?.id ?? null,
         reporterUserId: req.user!.id,
         reporterName: req.user!.name,
-        targetUserId: body.targetUserId || message?.senderId || null,
-        targetDisplayName: body.targetDisplayName || message?.senderName || null,
+        // Resolve reported message identity from the private database record.
+        // Never trust or require the anonymized identity sent to public clients.
+        targetUserId: message?.senderId || body.targetUserId || null,
+        targetDisplayName: message?.senderName || body.targetDisplayName || null,
         reason: body.reason,
         details: body.details || null
       }
@@ -2855,6 +2889,7 @@ hopeHubRouter.get(
       where: {
         isActive: true,
         publicCategory: 'Hope Hub',
+        publicDomains: { has: ProviderDomain.HOPE_HUB },
         OR: [{ id }, { slug: id }]
       },
       select: hopeHubServiceSelect
@@ -2975,7 +3010,10 @@ hopeHubRouter.get(
 
     const consultations = await prisma.consultation.findMany({
       where: {
-        disease: { publicCategory: 'Hope Hub' },
+        disease: {
+          publicCategory: 'Hope Hub',
+          publicDomains: { has: ProviderDomain.HOPE_HUB }
+        },
         status: { not: 'CANCELLED' }
       },
       select: { intakeAnswers: true }
@@ -3199,6 +3237,40 @@ hopeHubRouter.get(
 );
 
 hopeHubRouter.get(
+  '/hope-hub/care-team-service-options',
+  asyncRoute(async (req, res) => {
+    const roleCodes = queryText(req, 'roleCodes')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
+    const options = await prisma.careTeamServiceCatalogItem.findMany({
+      where: {
+        isActive: true,
+        ...(roleCodes.length
+          ? {
+              OR: [
+                { applicableRoleCodes: { isEmpty: true } },
+                { applicableRoleCodes: { hasSome: roleCodes } }
+              ]
+            }
+          : {})
+      },
+      orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
+      select: {
+        id: true,
+        applicableRoleCodes: true,
+        title: true,
+        description: true,
+        isDefault: true,
+        isActive: true,
+        sortOrder: true
+      }
+    });
+    res.json({ options });
+  })
+);
+
+hopeHubRouter.get(
   '/hope-hub/care-team-pricing-templates',
   asyncRoute(async (req, res) => {
     const roleCodes = queryText(req, 'roleCodes')
@@ -3418,6 +3490,7 @@ hopeHubRouter.post(
         description: defaultDescription(effectiveServiceName),
         publicDescription: defaultDescription(effectiveServiceName),
         publicCategory: 'Hope Hub',
+        publicDomains: [ProviderDomain.HOPE_HUB],
         feeInPaise: amountInPaise,
         intakeQuestions: [
           { id: 'concern', label: 'What would you like support with?' },
@@ -3426,6 +3499,7 @@ hopeHubRouter.post(
       },
       update: {
         publicCategory: 'Hope Hub',
+        publicDomains: [ProviderDomain.HOPE_HUB],
         feeInPaise: amountInPaise
       }
     });
@@ -3830,6 +3904,16 @@ hopeHubRouter.post(
   allowRoles(Role.PATIENT),
   asyncRoute(async (req, res) => {
     const body = hopeHubBookingSchema.parse(req.body);
+    const hasAppointmentDate = Boolean(body.appointmentDate);
+    const hasAppointmentTime = Boolean(body.appointmentTime);
+    if (hasAppointmentDate !== hasAppointmentTime) {
+      return res.status(400).json({ message: 'Choose both an appointment date and time.' });
+    }
+    if (!hasAppointmentDate && !body.providerId) {
+      return res.status(400).json({
+        message: 'Choose an appointment slot unless you are booking a specific care team member.'
+      });
+    }
     const defaults = await hopeHubPublicDefaults();
     const selectedOffering =
       body.offeringId || body.offeringSlug
@@ -3904,6 +3988,7 @@ hopeHubRouter.post(
       where: {
         isActive: true,
         publicCategory: 'Hope Hub',
+        publicDomains: { has: ProviderDomain.HOPE_HUB },
         OR: [{ name: effectiveServiceName }, { slug }]
       },
       select: { id: true, feeInPaise: true }
@@ -4030,7 +4115,7 @@ hopeHubRouter.post(
             select: { id: true, startTime: true, endTime: true }
           })
         : null;
-    if (requestedProvider && !requestedSlot) {
+    if (requestedProvider && hasAppointmentDate && !requestedSlot) {
       return res.status(409).json({ message: 'Selected expert slot is no longer available.' });
     }
     if (
@@ -4062,6 +4147,7 @@ hopeHubRouter.post(
             description: defaultDescription(effectiveServiceName),
             publicDescription: defaultDescription(effectiveServiceName),
             publicCategory: 'Hope Hub',
+            publicDomains: [ProviderDomain.HOPE_HUB],
             feeInPaise: amountInPaise,
             intakeQuestions: [
               { id: 'concern', label: 'What would you like support with?' },
@@ -4070,6 +4156,7 @@ hopeHubRouter.post(
           },
           update: {
             publicCategory: 'Hope Hub',
+            publicDomains: [ProviderDomain.HOPE_HUB],
             feeInPaise: amountInPaise
           }
         });
@@ -4170,8 +4257,9 @@ hopeHubRouter.post(
             source: 'hope-hub',
             serviceName: effectiveServiceName,
             message: body.message || '',
-            appointmentDate: body.appointmentDate,
-            appointmentTime: body.appointmentTime,
+            appointmentDate: body.appointmentDate || '',
+            appointmentTime: body.appointmentTime || '',
+            scheduleStatus: hasAppointmentDate ? 'CONFIRMED' : 'AWAITING_SLOT_SELECTION',
             consultantName: body.consultantName || '',
             consultantPhone: body.consultantPhone || '',
             offeringId: selectedOffering?.id || body.offeringId || '',
@@ -4402,8 +4490,8 @@ hopeHubRouter.post(
               {
                 consultationId: consultation.id,
                 redeemedAt: new Date().toISOString(),
-                appointmentDate: body.appointmentDate,
-                appointmentTime: body.appointmentTime,
+                appointmentDate: body.appointmentDate || '',
+                appointmentTime: body.appointmentTime || '',
                 providerId: requestedProvider?.id || body.providerId || ''
               }
             ]
@@ -4412,42 +4500,59 @@ hopeHubRouter.post(
       });
     }
 
-    await prisma.websiteLead.create({
-      data: {
-        source: 'HOME_BOOKING',
-        followUpStatus: 'BOOKED',
-        visitorName: body.visitorName || req.user!.name,
-        visitorEmail: body.visitorEmail || req.user!.email,
-        visitorPhone: body.visitorPhone || req.user!.mobile,
-        concern: [
-          `Service: ${effectiveServiceName}`,
-          selectedOffering ? `Offer: ${selectedOffering.title}` : '',
-          selectedCareTeamService ? `Care team service: ${selectedCareTeamService.title}` : '',
-          careTeamServicePricing?.label ? `Pricing: ${careTeamServicePricing.label}` : '',
-          `Appointment: ${body.appointmentDate} ${body.appointmentTime}`,
-          body.preferredContact ? `Preferred contact: ${body.preferredContact}` : '',
-          body.urgencyLevel ? `Urgency: ${body.urgencyLevel}` : '',
-          body.concernCategory ? `Concern category: ${body.concernCategory}` : '',
-          body.preferredExpertType ? `Preferred expert: ${body.preferredExpertType}` : '',
-          body.preferredLanguage ? `Preferred language: ${body.preferredLanguage}` : '',
-          body.preferredProviderGender
-            ? `Preferred provider gender: ${body.preferredProviderGender}`
-            : '',
-          body.safetyRisk ? `Safety risk: ${body.safetyRisk}` : '',
-          body.preferredTime ? `Preferred callback time: ${body.preferredTime}` : '',
-          requestedProvider ? `Requested expert: ${requestedProvider.user.name}` : '',
-          body.preferAnonymousTelegram ? 'Low-identity Telegram follow-up requested' : '',
-          body.message ? `Message: ${body.message}` : ''
-        ]
-          .filter(Boolean)
-          .join('\n'),
-        entryPage: body.entryPage || null,
-        userId: req.user!.id,
-        registeredAt: new Date(),
-        bookedAt: new Date(),
-        consultationId: consultation.id
-      }
-    });
+    const websiteLeadData = {
+      source: 'HOME_BOOKING' as const,
+      followUpStatus: 'BOOKED' as const,
+      visitorName: body.visitorName || req.user!.name,
+      visitorEmail: body.visitorEmail || req.user!.email,
+      visitorPhone: body.visitorPhone || req.user!.mobile,
+      concern: [
+        `Service: ${effectiveServiceName}`,
+        selectedOffering ? `Offer: ${selectedOffering.title}` : '',
+        selectedCareTeamService ? `Care team service: ${selectedCareTeamService.title}` : '',
+        careTeamServicePricing?.label ? `Pricing: ${careTeamServicePricing.label}` : '',
+        hasAppointmentDate
+          ? `Appointment: ${body.appointmentDate} ${body.appointmentTime}`
+          : 'Appointment: Paid booking; slot to be selected or arranged',
+        body.preferredContact ? `Preferred contact: ${body.preferredContact}` : '',
+        body.urgencyLevel ? `Urgency: ${body.urgencyLevel}` : '',
+        body.concernCategory ? `Concern category: ${body.concernCategory}` : '',
+        body.preferredExpertType ? `Preferred expert: ${body.preferredExpertType}` : '',
+        body.preferredLanguage ? `Preferred language: ${body.preferredLanguage}` : '',
+        body.preferredProviderGender
+          ? `Preferred provider gender: ${body.preferredProviderGender}`
+          : '',
+        body.safetyRisk ? `Safety risk: ${body.safetyRisk}` : '',
+        body.preferredTime ? `Preferred callback time: ${body.preferredTime}` : '',
+        requestedProvider ? `Requested expert: ${requestedProvider.user.name}` : '',
+        body.preferAnonymousTelegram ? 'Low-identity Telegram follow-up requested' : '',
+        body.message ? `Message: ${body.message}` : ''
+      ]
+        .filter(Boolean)
+        .join('\n'),
+      entryPage: body.entryPage || null,
+      userId: req.user!.id,
+      registeredAt: new Date(),
+      bookedAt: new Date(),
+      consultationId: consultation.id
+    };
+
+    const submittedLead = body.websiteLeadId
+      ? await prisma.websiteLead.findUnique({
+          where: { id: body.websiteLeadId },
+          select: { id: true, visitorEmail: true }
+        })
+      : null;
+    const canAttachSubmittedLead = canAttachSubmittedWebsiteLead(submittedLead, req.user!.email);
+
+    if (canAttachSubmittedLead) {
+      await prisma.websiteLead.update({
+        where: { id: submittedLead!.id },
+        data: websiteLeadData
+      });
+    } else {
+      await prisma.websiteLead.create({ data: websiteLeadData });
+    }
 
     void trackProductEvent({
       name: PRODUCT_EVENTS.CONSULTATION_BOOKED,
@@ -4466,6 +4571,144 @@ hopeHubRouter.post(
     });
 
     res.status(201).json({ consultation });
+  })
+);
+
+hopeHubRouter.post(
+  '/hope-hub/bookings/:id/slot',
+  authRequired,
+  allowRoles(Role.PATIENT),
+  asyncRoute(async (req, res) => {
+    const consultationId = routeParam(req, 'id');
+    const body = hopeHubBookingSlotSchema.parse(req.body);
+    const consultation = await prisma.consultation.findFirst({
+      where: { id: consultationId, patientId: req.user!.id },
+      include: { payment: true }
+    });
+    if (!consultation) {
+      return res.status(404).json({ message: 'Booking not found.' });
+    }
+    if (consultation.payment?.status !== PaymentStatus.PAID) {
+      return res.status(409).json({ message: 'Complete payment before choosing a slot.' });
+    }
+
+    const intake = jsonRecord(consultation.intakeAnswers);
+    const providerId = String(intake['providerId'] || '').trim();
+    if (!providerId || !consultation.assignedDoctorId) {
+      return res
+        .status(409)
+        .json({ message: 'This booking is not linked to a specific provider.' });
+    }
+    if (intake['scheduleStatus'] === 'CONFIRMED') {
+      return res.status(409).json({ message: 'A slot is already confirmed for this booking.' });
+    }
+
+    const provider = await prisma.doctor.findFirst({
+      where: {
+        id: providerId,
+        userId: consultation.assignedDoctorId,
+        showOnWebsite: true,
+        suspendedAt: null,
+        user: { isActive: true }
+      },
+      select: { id: true, userId: true }
+    });
+    if (!provider) {
+      return res.status(409).json({ message: 'The selected provider is no longer available.' });
+    }
+
+    const capacity = await providerBookingCapacityStatus(provider.id, body.appointmentDate);
+    if (!capacity.available) {
+      return res.status(409).json({ message: capacity.message });
+    }
+
+    const careTeamServiceId = String(intake['careTeamServiceId'] || '').trim();
+    const careTeamService = careTeamServiceId
+      ? await prisma.careTeamService.findFirst({
+          where: {
+            id: careTeamServiceId,
+            isActive: true,
+            mentalHealthProfile: { doctorId: provider.id }
+          },
+          select: { id: true, durationMinutes: true }
+        })
+      : null;
+    const slot = await prisma.doctorSlot.findFirst({
+      where: {
+        doctorId: provider.id,
+        date: new Date(body.appointmentDate),
+        startTime: time24HourFromDisplay(body.appointmentTime),
+        isBooked: false,
+        isBlocked: false,
+        ...(careTeamService
+          ? { OR: [{ careTeamServiceId: null }, { careTeamServiceId: careTeamService.id }] }
+          : {})
+      },
+      select: { id: true, startTime: true, endTime: true }
+    });
+    if (!slot) {
+      return res.status(409).json({ message: 'Selected expert slot is no longer available.' });
+    }
+    if (
+      careTeamService &&
+      minutesBetweenTimes(slot.startTime, slot.endTime) < careTeamService.durationMinutes
+    ) {
+      return res
+        .status(409)
+        .json({ message: 'Selected expert slot is too short for this service.' });
+    }
+
+    const nextIntakeAnswers = {
+      ...intake,
+      appointmentDate: body.appointmentDate,
+      appointmentTime: body.appointmentTime,
+      scheduleStatus: 'CONFIRMED',
+      slotAssignedAt: new Date().toISOString(),
+      slotAssignmentSource: 'PATIENT_AFTER_PAYMENT'
+    };
+    let updated;
+    try {
+      updated = await prisma.$transaction(async (tx) => {
+        const claimed = await tx.consultation.updateMany({
+          where: {
+            id: consultation.id,
+            intakeAnswers: { path: ['scheduleStatus'], equals: 'AWAITING_SLOT_SELECTION' }
+          },
+          data: {
+            intakeAnswers: nextIntakeAnswers
+          }
+        });
+        if (claimed.count !== 1) return null;
+        const reserved = await tx.doctorSlot.updateMany({
+          where: { id: slot.id, isBooked: false, isBlocked: false },
+          data: { isBooked: true }
+        });
+        if (reserved.count !== 1) {
+          throw new Error('SLOT_ALREADY_BOOKED');
+        }
+        return tx.consultation.findUnique({
+          where: { id: consultation.id },
+          include: includeConsultationRelations()
+        });
+      });
+    } catch (error) {
+      if (error instanceof Error && error.message === 'SLOT_ALREADY_BOOKED') {
+        return res
+          .status(409)
+          .json({ message: 'Selected expert slot was just booked. Choose another.' });
+      }
+      throw error;
+    }
+    if (!updated) {
+      return res
+        .status(409)
+        .json({ message: 'Selected expert slot was just booked. Choose another.' });
+    }
+
+    void notifyConsultationBooked(updated.id).catch((error) =>
+      console.error('[booking-reminders] Post-payment slot notification failed', error)
+    );
+    res.json({ consultation: updated });
   })
 );
 

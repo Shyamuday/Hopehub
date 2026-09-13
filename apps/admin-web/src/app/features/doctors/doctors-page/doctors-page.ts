@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, HostListener, inject, signal } from '@angular/core';
 import { form, FormField } from '@angular/forms/signals';
 import { RouterLink } from '@angular/router';
 import { buildDetailRows, DetailRowsComponent, MultiSelectComponent } from '@hopehub/platform-ui';
@@ -8,6 +8,7 @@ import {
   PROVIDER_ROLE_OPTIONS,
   providerHasRoleCategory,
   type CarePricingTemplateDto,
+  type CareServiceCatalogItemDto,
   type CareTeamServiceDto,
   type ProviderReadinessDto,
   type ProviderRoleCategory,
@@ -58,6 +59,10 @@ type Doctor = {
   doctorProfile?: {
     specialty?: string;
     registrationNo?: string;
+    approvalStatus?: string;
+    approvalNote?: string | null;
+    credentialDocumentFileName?: string | null;
+    credentialDocumentUploadedAt?: string | null;
     isAvailable?: boolean;
     doctorType?: HomeopathicDoctorType;
     providerDomain?: 'HOMEOPATHY' | 'HOPE_HUB' | null;
@@ -123,6 +128,7 @@ type ProviderGender = 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY';
 type CareTeamMemberType = string;
 type CareTeamService = CareTeamServiceDto;
 type CareTeamPricingTemplate = CarePricingTemplateDto;
+type CareTeamServiceOption = CareServiceCatalogItemDto;
 type HopeHubSupportPath = ProviderRoleCategory;
 type HopeHubSupportPathFilter = '' | HopeHubSupportPath;
 
@@ -255,6 +261,7 @@ function emptyEditModel() {
   styleUrl: './doctors-page.scss',
 })
 export class DoctorsPage {
+  readonly customServiceTitleValue = '__CUSTOM_SERVICE__';
   private readonly auth = inject(AdminAuth);
   readonly manageProviderPermission = ADMIN_PERMISSIONS.DOCTORS_WRITE;
   readonly manageDirectoryPermissions = [
@@ -358,13 +365,16 @@ export class DoctorsPage {
 
   readonly siteConfig = signal<SiteConfigEntry[]>([]);
   readonly carePricingTemplates = signal<CareTeamPricingTemplate[]>([]);
+  readonly careServiceOptions = signal<CareTeamServiceOption[]>([]);
   readonly savingConfig = signal(false);
   readonly configMessage = signal('');
   readonly doctorListLimitValue = signal('12');
   readonly showDirectorySettings = signal(false);
-  readonly showSetupReview = signal(false);
+  readonly showSetupReview = signal(true);
   readonly showCreateProviderForm = signal(false);
   readonly createProviderStep = signal(0);
+  private editBaseline = '';
+  private createBaseline = '';
   readonly createProviderSteps: readonly AdminFormStep[] = [
     { id: 'account', label: 'Account' },
     { id: 'role', label: 'Role' },
@@ -383,6 +393,7 @@ export class DoctorsPage {
     });
     void this.loadSiteConfig();
     void this.loadCarePricingTemplates();
+    void this.loadCareServiceOptions();
     void this.loadProviderRoles();
   }
 
@@ -446,6 +457,10 @@ export class DoctorsPage {
   }
 
   onListFilterChange() {
+    if (this.editHasUnsavedChanges()) {
+      this.error.set('Save the open provider profile before applying different list filters.');
+      return;
+    }
     void this.setDoctorsPage(1);
   }
 
@@ -460,12 +475,37 @@ export class DoctorsPage {
     this.mutating.set(true);
     try {
       await this.api.approveDoctor(doctorId);
-      this.message.set(`${this.providerSingularTitle()} account activated.`);
+      this.message.set(`${this.providerSingularTitle()} approved and activated.`);
       await this.load();
-    } catch {
-      this.error.set(`Could not activate ${this.providerSingularLabel()}.`);
+    } catch (error: any) {
+      const blockers = Array.isArray(error?.error?.blockers)
+        ? error.error.blockers
+            .map((item: { label?: string }) => item?.label)
+            .filter(Boolean)
+            .slice(0, 6)
+        : [];
+      this.error.set(
+        [
+          error?.error?.message || `Could not activate ${this.providerSingularLabel()}.`,
+          blockers.length ? `Missing: ${blockers.join(', ')}.` : '',
+        ]
+          .filter(Boolean)
+          .join(' '),
+      );
     } finally {
       this.mutating.set(false);
+    }
+  }
+
+  async openCredentialDocument(doctor: Doctor) {
+    this.error.set('');
+    try {
+      const response = await this.api.getDoctorCredentialDocument(doctor.id);
+      const url = URL.createObjectURL(response.body || new Blob());
+      window.open(url, '_blank', 'noopener');
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    } catch (error: any) {
+      this.error.set(error?.error?.message || 'Could not open the credential document.');
     }
   }
 
@@ -494,12 +534,24 @@ export class DoctorsPage {
 
   async rejectDoctor(doctorId: string) {
     if (!this.canManageProviders()) return;
+    const doctor =
+      this.pendingDoctors().find((item) => item.id === doctorId) ||
+      this.doctors().find((item) => item.id === doctorId);
+    const credentialReview = doctor ? this.isCredentialReviewPending(doctor) : false;
+    const reason = credentialReview
+      ? window.prompt('What should the homeopathy provider correct before approval?', '')
+      : '';
+    if (credentialReview && reason === null) return;
     this.message.set('');
     this.error.set('');
     this.mutating.set(true);
     try {
-      await this.api.rejectDoctor(doctorId);
-      this.message.set(`${this.providerSingularTitle()} account deactivated.`);
+      await this.api.rejectDoctor(doctorId, reason || undefined);
+      this.message.set(
+        credentialReview
+          ? 'Credential application returned to the provider with your reason.'
+          : `${this.providerSingularTitle()} account deactivated.`,
+      );
       await this.load();
     } catch {
       this.error.set(`Could not update ${this.providerSingularLabel()} status.`);
@@ -739,14 +791,21 @@ export class DoctorsPage {
   }
 
   openCreateProvider(): void {
+    this.createModel.set(emptyCreateModel());
+    this.createCareServices.set([]);
     this.createProviderStep.set(0);
     this.showCreateProviderForm.set(true);
+    this.createBaseline = this.createDraftSnapshot();
   }
 
   closeCreateProvider(): void {
     if (this.mutating()) return;
+    if (this.createHasUnsavedChanges() && !confirm('Discard the unsaved provider details?')) return;
     this.showCreateProviderForm.set(false);
     this.createProviderStep.set(0);
+    this.createModel.set(emptyCreateModel());
+    this.createCareServices.set([]);
+    this.createBaseline = '';
   }
 
   nextCreateProviderStep(): void {
@@ -939,7 +998,11 @@ export class DoctorsPage {
     const isClinical = !types.length || providerHasRoleCategory(types, 'PROFESSIONAL_CARE');
     const activeServices = mental?.services?.filter((service) => service.isActive !== false) ?? [];
     const issues = [
-      profile?.suspendedAt ? 'account suspended' : '',
+      profile?.suspendedAt
+        ? this.isCredentialReviewPending(doctor)
+          ? 'credential review pending'
+          : 'account suspended'
+        : '',
       !doctor.isActive ? 'account inactive' : '',
       !profile ? 'provider profile missing' : '',
       !doctor.mobile ? 'mobile missing' : '',
@@ -961,7 +1024,11 @@ export class DoctorsPage {
     const hidden = !doctor.doctorProfile?.showOnWebsite;
     const badges: Array<{ label: string; tone: 'good' | 'warn' | 'muted' | 'danger' }> = [];
     if (doctor.doctorProfile?.suspendedAt) {
-      badges.push({ label: 'Suspended', tone: 'danger' });
+      badges.push(
+        this.isCredentialReviewPending(doctor)
+          ? { label: 'Credential review', tone: 'warn' }
+          : { label: 'Suspended', tone: 'danger' },
+      );
     }
     badges.push(
       doctor.isActive
@@ -984,6 +1051,17 @@ export class DoctorsPage {
       badges.push({ label: 'Setup ready', tone: 'good' });
     }
     return badges;
+  }
+
+  isCredentialReviewPending(doctor: Doctor): boolean {
+    return Boolean(
+      doctor.doctorProfile?.suspendedAt &&
+      (doctor.doctorProfile?.approvalStatus === 'PENDING' ||
+        doctor.doctorProfile?.suspendedReason
+          ?.trim()
+          .toLowerCase()
+          .startsWith('awaiting homeopathy credential verification')),
+    );
   }
 
   providerReadinessSummary(doctor: Doctor) {
@@ -1060,6 +1138,9 @@ export class DoctorsPage {
   }
 
   setSelectedDoctor(doctorId: string) {
+    if (doctorId === this.selectedDoctorId) return;
+    if (this.editHasUnsavedChanges() && !confirm('Discard the unsaved provider profile changes?'))
+      return;
     this.selectedDoctorId = doctorId;
     this.suspensionReason.set('');
     this.syncEditFormFromSelectedDoctor();
@@ -1182,6 +1263,36 @@ export class DoctorsPage {
     this.editCareServices.set(
       this.normalizeServiceList(selected.doctorProfile?.mentalHealthProfile?.services ?? []),
     );
+    this.editBaseline = this.editDraftSnapshot();
+  }
+
+  editHasUnsavedChanges(): boolean {
+    return (
+      Boolean(this.selectedDoctorId && this.editBaseline) &&
+      this.editDraftSnapshot() !== this.editBaseline
+    );
+  }
+
+  createHasUnsavedChanges(): boolean {
+    return this.showCreateProviderForm() && this.createDraftSnapshot() !== this.createBaseline;
+  }
+
+  hasUnsavedChanges(): boolean {
+    return this.editHasUnsavedChanges() || this.createHasUnsavedChanges();
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  protectUnsavedChanges(event: BeforeUnloadEvent): void {
+    if (!this.hasUnsavedChanges()) return;
+    event.preventDefault();
+  }
+
+  private editDraftSnapshot(): string {
+    return JSON.stringify({ profile: this.editModel(), services: this.editCareServices() });
+  }
+
+  private createDraftSnapshot(): string {
+    return JSON.stringify({ profile: this.createModel(), services: this.createCareServices() });
   }
 
   addCareService(target: 'create' | 'edit') {
@@ -1288,12 +1399,53 @@ export class DoctorsPage {
     );
   }
 
+  serviceTitleOptions(service?: Pick<CareTeamService, 'providerRole'>): string[] {
+    return [
+      ...new Set(
+        this.careServiceOptions()
+          .filter(
+            (option) =>
+              !option.applicableRoleCodes.length ||
+              Boolean(
+                service?.providerRole && option.applicableRoleCodes.includes(service.providerRole),
+              ),
+          )
+          .map((option) => option.title.trim())
+          .filter(Boolean),
+      ),
+    ];
+  }
+
+  serviceTitleChoice(service: Pick<CareTeamService, 'title' | 'providerRole'>): string {
+    const title = service.title?.trim() || '';
+    if (!title) return '';
+    if (title === this.customServiceTitleValue) return this.customServiceTitleValue;
+    return this.serviceTitleOptions(service).includes(title) ? title : this.customServiceTitleValue;
+  }
+
+  setServiceTitleChoice(target: 'create' | 'edit', index: number, value: string): void {
+    this.updateCareService(target, index, 'title', value);
+  }
+
+  customServiceTitle(service: Pick<CareTeamService, 'title'>): string {
+    return service.title === this.customServiceTitleValue ? '' : service.title || '';
+  }
+
   async loadCarePricingTemplates() {
     try {
       const res = await this.api.listCareTeamPricingTemplates();
       this.carePricingTemplates.set(res.templates as CareTeamPricingTemplate[]);
     } catch {
       this.carePricingTemplates.set([]);
+    }
+  }
+
+  async loadCareServiceOptions() {
+    try {
+      const res = await this.api.listCareTeamServiceOptions();
+      this.careServiceOptions.set(res.options as CareTeamServiceOption[]);
+    } catch {
+      this.careServiceOptions.set([]);
     }
   }
 
@@ -1348,7 +1500,9 @@ export class DoctorsPage {
   }
 
   private servicesForSave(services: CareTeamService[], legacyText: string) {
-    const structured = services.filter((service) => service.title.trim());
+    const structured = services.filter(
+      (service) => service.title.trim() && service.title.trim() !== this.customServiceTitleValue,
+    );
     const normalized = structured.length
       ? this.normalizeServiceList(structured)
       : this.parseServiceOffers(legacyText);

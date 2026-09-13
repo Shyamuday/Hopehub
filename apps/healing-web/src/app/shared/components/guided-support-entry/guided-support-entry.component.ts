@@ -1,4 +1,5 @@
-import { Component, Input, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, Input, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, RouterModule } from '@angular/router';
 import {
   CONSUMER_CONCERN_FLOWS,
@@ -16,6 +17,7 @@ import {
 } from '../../../core/services/consumer-flow-preferences.service';
 import { AppButtonComponent } from '../app-button/app-button.component';
 import { SelectableCardComponent } from '../selectable-card/selectable-card.component';
+import { ConsumerFlowsService } from '../../../core/services/consumer-flows.service';
 
 type GuidedAction = 'live' | 'test' | 'book' | 'providers';
 
@@ -41,22 +43,33 @@ export class GuidedSupportEntryComponent {
     { value: 'voice', label: CONSUMER_CONNECT_MODE_META.voice.label, hint: 'Talk now' },
     { value: 'video', label: CONSUMER_CONNECT_MODE_META.video.label, hint: 'Face-to-face' },
   ];
-  readonly concerns = [
+  readonly concerns = signal([
     CONSUMER_CONCERN_FLOWS.anxiety,
     CONSUMER_CONCERN_FLOWS.depression,
     CONSUMER_CONCERN_FLOWS.stress,
     CONSUMER_CONCERN_FLOWS.relationship,
     CONSUMER_CONCERN_FLOWS.breakup,
     CONSUMER_CONCERN_FLOWS.sleep,
-  ];
+  ]);
 
   private readonly router = inject(Router);
   private readonly preferences = inject(ConsumerFlowPreferencesService);
+  private readonly consumerFlows = inject(ConsumerFlowsService);
+  private readonly destroyRef = inject(DestroyRef);
 
   selectedMode = signal<ConsumerFlowPreferenceMode>(this.preferences.read().mode || 'voice');
   selectedConcern = signal<ConsumerConcernFlow>(
     this.findFlow(this.preferences.read().concern) || CONSUMER_CONCERN_FLOWS.anxiety,
   );
+
+  constructor() {
+    this.consumerFlows.state$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((state) => {
+      const concerns = Object.values(state.flows)
+        .filter((flow) => flow.isActive && flow.showInSupportGuide)
+        .sort((a, b) => a.sortOrder - b.sortOrder);
+      if (concerns.length) this.concerns.set(concerns);
+    });
+  }
 
   selectedSummary = computed(() => {
     const concern = this.contextConcern || this.selectedConcern().label;

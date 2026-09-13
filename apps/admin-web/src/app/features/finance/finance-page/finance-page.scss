@@ -4,6 +4,7 @@
 .period-filters label { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.85rem; color: #64748b; }
 .period-filters input, .period-filters select { padding: 0.45rem; border: 1px solid #cbd5e1; border-radius: 8px; }
 .fin-hdr { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; gap: 1rem; flex-wrap: wrap; }
+.fin-page { display: grid; gap: 1rem; max-width: 1600px; margin: 0 auto; }
 .fin-actions { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
 .branch-filter { padding: 0.45rem 0.6rem; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; max-width: 220px; }
 .btn-export { border: 1px solid #0f766e; background: #fff; color: #0f766e; border-radius: 8px; padding: 0.55rem 0.9rem; cursor: pointer; font-weight: 600; }
@@ -16,7 +17,8 @@
 .branch-table .totals-row { background: #f8fafc; }
 .fin-hdr h2 { margin: 0; }
 .fin-hdr p { margin: 0.25rem 0 0; color: #64748b; }
-.tabs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+.tabs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0; }
+.tabs--sticky { position: sticky; top: .5rem; z-index: 20; border: 1px solid #e2e8f0; border-radius: 12px; background: rgba(248,250,252,.94); box-shadow: 0 8px 20px rgba(15,23,42,.06); padding: .5rem; backdrop-filter: blur(12px); }
 .tab { border: 1px solid #cbd5e1; background: #fff; border-radius: 999px; padding: 0.45rem 0.9rem; cursor: pointer; }
 .tab.active { background: #0f766e; color: #fff; border-color: #0f766e; }
 .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }
@@ -77,6 +79,8 @@ th, td { padding: 0.65rem; border-bottom: 1px solid #f1f5f9; text-align: left; }
 @media (max-width: 768px) {
   .fin-hdr { flex-direction: column; align-items: stretch; }
   .fin-actions { width: 100%; }
+  .tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .tab { flex: 0 0 auto; }
   .branch-filter { max-width: none; width: 100%; }
   .panel table { min-width: 36rem; }
   .cards { grid-template-columns: 1fr 1fr; }

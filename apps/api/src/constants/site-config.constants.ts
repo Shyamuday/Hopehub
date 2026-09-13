@@ -157,6 +157,34 @@ export const SITE_CONFIG_META: Record<string, { label: string; description: stri
   homeHeroLead: {
     label: 'Home hero lead text',
     description: 'Supporting paragraph under the homepage headline.'
+  },
+  googleAdsTagId: {
+    label: 'Google Ads tag ID',
+    description: 'Public Google Ads tag ID used by Healing Hub. E.g. AW-123456789.'
+  },
+  googleAdsenseClientId: {
+    label: 'Google AdSense publisher ID',
+    description: 'Public AdSense client ID used by Healing Hub. E.g. ca-pub-1234567890123456.'
+  },
+  googleAdsConversionTelegram: {
+    label: 'Conversion label: Telegram',
+    description: 'Google Ads conversion label for outbound Telegram visits.'
+  },
+  googleAdsConversionBookingStarted: {
+    label: 'Conversion label: booking started',
+    description: 'Google Ads conversion label for a care booking being started.'
+  },
+  googleAdsConversionPaymentSuccess: {
+    label: 'Conversion label: payment success',
+    description: 'Google Ads conversion label for successful payments.'
+  },
+  googleAdsConversionLiveSupport: {
+    label: 'Conversion label: live support',
+    description: 'Google Ads conversion label for starting a live support request.'
+  },
+  googleAdsConversionRegistration: {
+    label: 'Conversion label: registration',
+    description: 'Google Ads conversion label for completed user registrations.'
   }
 };
 
@@ -173,7 +201,14 @@ export const SITE_CONFIG_DEFAULTS: Record<string, string> = {
   hopeHubDefaultCareRoleLabel: 'Hope Hub care guide',
   careTeamPricingApprovalRequiredForFree: 'true',
   careTeamPricingApprovalMaxPriceInPaise: '100000',
-  careTeamPricingApprovalMaxDiscountPercent: '50'
+  careTeamPricingApprovalMaxDiscountPercent: '50',
+  googleAdsTagId: '',
+  googleAdsenseClientId: 'ca-pub-4932263295519623',
+  googleAdsConversionTelegram: '',
+  googleAdsConversionBookingStarted: '',
+  googleAdsConversionPaymentSuccess: '',
+  googleAdsConversionLiveSupport: '',
+  googleAdsConversionRegistration: ''
 };
 
 export const PUBLIC_SITE_CONFIG_KEYS = [
@@ -209,7 +244,14 @@ export const PUBLIC_SITE_CONFIG_KEYS = [
   'statPatientsTreated',
   'statConditionsTreated',
   'statImprovement',
-  'statSatisfaction'
+  'statSatisfaction',
+  'googleAdsTagId',
+  'googleAdsenseClientId',
+  'googleAdsConversionTelegram',
+  'googleAdsConversionBookingStarted',
+  'googleAdsConversionPaymentSuccess',
+  'googleAdsConversionLiveSupport',
+  'googleAdsConversionRegistration'
 ] as const;
 
 export const REQUIRED_PUBLIC_SITE_CONFIG_KEYS = [

@@ -10,8 +10,8 @@ import {
 
 const sourceRoot = path.dirname(fileURLToPath(import.meta.url));
 
-test('step profile contract accepts the five guided profile steps', () => {
-  for (const step of ['identity', 'public', 'care', 'safety', 'services'] as const) {
+test('step profile contract accepts the guided provider profile steps', () => {
+  for (const step of ['identity', 'credentials', 'public', 'care', 'safety', 'services'] as const) {
     assert.equal(doctorProfileStepPatchSchema.parse({ step }).step, step);
   }
   assert.throws(() => doctorProfileStepPatchSchema.parse({ step: 'everything' }));

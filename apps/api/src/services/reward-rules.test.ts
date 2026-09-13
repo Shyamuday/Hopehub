@@ -21,13 +21,13 @@ test('FIRSTCHAT makes an eligible consultation fully free and remains reusable',
   assert.equal(computeDiscountAmount(rule as unknown as RewardProgramRule, 9_900), 9_900);
 });
 
-test('WELCOME100 is the featured free coupon for every live service', () => {
+test('WELCOMEFREE is the featured free coupon for every live service', () => {
   const rule = DEFAULT_REWARD_RULES.find(
-    (candidate) => candidate.code === 'WELCOME100_ALL_LIVE_SERVICES'
+    (candidate) => candidate.code === 'WELCOMEFREE_ALL_LIVE_SERVICES'
   );
 
-  assert.ok(rule, 'WELCOME100 must be present in the default reward rules');
-  assert.equal(rule.promoCode, 'WELCOME100');
+  assert.ok(rule, 'WELCOMEFREE must be present in the default reward rules');
+  assert.equal(rule.promoCode, 'WELCOMEFREE');
   assert.equal(rule.maxUsesPerPatient, null);
   assert.equal(rule.minPayableInPaise, 0);
   assert.equal(rule.conditions.targetPayableInPaise, 0);

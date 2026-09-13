@@ -310,24 +310,6 @@ import {
             </div>
           }
 
-          @if (resultLocked()) {
-            <div
-              class="mt-4 rounded-lg border border-primary-100 bg-white p-5 text-center shadow-sm"
-            >
-              <h2 class="text-xl font-semibold text-gray-950">Your answers are ready</h2>
-              <p class="mx-auto mt-2 max-w-xl text-sm leading-6 text-gray-700">
-                Sign in or create an account to view and save your result privately. We kept your
-                answers on this device, so you will not need to retake the test.
-              </p>
-              <div class="mt-4 flex flex-col justify-center gap-3 sm:flex-row">
-                <app-button type="button" variant="outline" size="sm" (click)="openLogin()">
-                  Sign in
-                </app-button>
-                <app-button type="button" size="sm" (click)="openRegister()"> Sign up </app-button>
-              </div>
-            </div>
-          }
-
           @if (showResults() && result()) {
             <div class="rounded-lg border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
               <div class="text-center">
@@ -339,6 +321,24 @@ import {
                   {{ result()!.description }}
                 </p>
               </div>
+
+              @if (resultLocked()) {
+                <div class="mt-5 rounded-lg border border-primary-100 bg-primary-50 p-4">
+                  <h2 class="text-base font-semibold text-gray-950">Your result is ready</h2>
+                  <p class="mt-1 text-sm leading-6 text-gray-700">
+                    You can use this result and book support now. Sign in only if you want to save
+                    it privately and compare future attempts.
+                  </p>
+                  <div class="mt-3 flex flex-col gap-2 sm:flex-row">
+                    <app-button type="button" size="sm" (click)="openLogin()">
+                      Sign in to save
+                    </app-button>
+                    <app-button type="button" variant="outline" size="sm" (click)="openRegister()">
+                      Create account to save
+                    </app-button>
+                  </div>
+                </div>
+              }
 
               <div class="mt-5 grid gap-3 sm:grid-cols-3">
                 <div class="rounded-lg bg-gray-50 p-4 text-center">
@@ -400,8 +400,8 @@ import {
                 <p class="mt-1 text-sm leading-6 text-gray-700">
                   {{ UX.assessment.nextCopy }}
                 </p>
-                <app-button type="button" class="mt-4 block" (click)="connectFromResult('chat')">
-                  Talk to a caring listener
+                <app-button type="button" class="mt-4 block" (click)="connectFromResult('book')">
+                  Book call support
                 </app-button>
                 <details class="mt-3 rounded-lg border border-primary-100 bg-white px-3 py-2">
                   <summary class="cursor-pointer text-sm font-semibold text-primary-700">
@@ -1132,8 +1132,8 @@ export class DirectAssessmentComponent implements OnInit {
 
     if (!this.authService.getToken()) {
       this.resultLocked.set(true);
-      this.notificationService.info('Sign up or log in to save your test result.');
-      this.authModalService.openRegister();
+      this.showResults.set(true);
+      void this.loadMatchingProviders();
       return;
     }
 
@@ -1449,6 +1449,8 @@ export class DirectAssessmentComponent implements OnInit {
       this.answers.set(parsed.answers);
       this.result.set({ ...parsed.result, completedAt: new Date(parsed.result.completedAt) });
       this.resultLocked.set(true);
+      this.showResults.set(true);
+      void this.loadMatchingProviders();
     } catch {
       this.clearPendingResult();
     }

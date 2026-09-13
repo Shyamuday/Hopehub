@@ -6,6 +6,17 @@ import {
   shouldPersistCallEvent
 } from './call-event-tracker.js';
 
+test('connection negotiation diagnostics survive sanitization without exposing SDP', () => {
+  const metadata = {
+    signalingState: 'have-local-offer',
+    iceGatheringState: 'complete',
+    hasLocalDescription: true,
+    hasRemoteDescription: false,
+    queuedRemoteCandidateCount: 3
+  };
+  assert.deepEqual(safeCallEventMetadata({ ...metadata, sdp: 'secret' }), metadata);
+});
+
 test('call event tracker keeps useful diagnostics and strips signaling/media secrets', () => {
   assert.deepEqual(
     safeCallEventMetadata({
@@ -17,7 +28,17 @@ test('call event tracker keeps useful diagnostics and strips signaling/media sec
       pushAttempted: 2,
       pushDelivered: 1,
       pushDisabled: 1,
+      audioChannelCount: 1,
+      audioSampleRate: 48000,
+      audioEchoCancellation: true,
+      audioNoiseSuppression: true,
+      audioAutoGainControl: true,
       videoPausedForNetwork: true,
+      gatheredCandidateTypes: 'host,srflx,relay',
+      gatheredCandidateCount: 6,
+      gatheredRelayCandidateCount: 2,
+      audioPlaybackBlocked: true,
+      speakerOutputChangeFailed: false,
       sdp: 'private-session-description',
       candidate: 'candidate with an IP address',
       authorization: 'secret'
@@ -31,7 +52,17 @@ test('call event tracker keeps useful diagnostics and strips signaling/media sec
       pushAttempted: 2,
       pushDelivered: 1,
       pushDisabled: 1,
-      videoPausedForNetwork: true
+      audioChannelCount: 1,
+      audioSampleRate: 48000,
+      audioEchoCancellation: true,
+      audioNoiseSuppression: true,
+      audioAutoGainControl: true,
+      videoPausedForNetwork: true,
+      gatheredCandidateTypes: 'host,srflx,relay',
+      gatheredCandidateCount: 6,
+      gatheredRelayCandidateCount: 2,
+      audioPlaybackBlocked: true,
+      speakerOutputChangeFailed: false
     }
   );
   assert.deepEqual(

@@ -1,11 +1,13 @@
 <section class="professional-page">
   <div class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
-    <app-page-header
-      [level]="1"
-      title="Mental health articles"
-      description="Evidence-based articles to help you understand and improve your mental health."
-    />
+    @if (!selectedArticle()) {
+      <app-page-header
+        [level]="1"
+        title="Mental health articles"
+        description="Evidence-informed articles to help you understand mental wellness and choose a safe next step."
+      />
+    }
 
     <!-- Recommended Articles (if coming from assessment) -->
     @if (recommendedArticles().length > 0) {
@@ -29,9 +31,9 @@
 
       <div class="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
         @for (article of recommendedArticles(); track article.id) {
-        <div
-          class="cursor-pointer rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6"
-          (click)="selectArticle(article)">
+        <a
+          class="block rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6"
+          [routerLink]="['/articles', article.id]">
 
           <!-- Article Header -->
           <div>
@@ -54,7 +56,7 @@
               <span>{{ article.difficulty }}</span>
             </div>
           </div>
-        </div>
+        </a>
         }
       </div>
     </div>
@@ -66,8 +68,8 @@
       <h2 class="mb-5 text-xl font-semibold text-gray-950">Featured articles</h2>
       <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
         @for (article of featuredArticles(); track article.id) {
-        <div class="cursor-pointer rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6"
-          (click)="selectArticle(article)">
+        <a class="block rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6"
+          [routerLink]="['/articles', article.id]">
 
           <div>
             <div class="flex items-center justify-between mb-4">
@@ -88,7 +90,7 @@
               <span class="text-slate-500">{{ article.publishedDate | date:'mediumDate' }}</span>
             </div>
           </div>
-        </div>
+        </a>
         }
       </div>
     </div>
@@ -117,8 +119,8 @@
     @if (!selectedArticle()) {
     <div class="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
       @for (article of filteredArticles(); track article.id) {
-      <div class="flex h-full cursor-pointer flex-col rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6"
-        (click)="selectArticle(article)">
+      <a class="flex h-full flex-col rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6"
+        [routerLink]="['/articles', article.id]">
 
         <div class="flex flex-1 flex-col">
           <!-- Type and Reading Time -->
@@ -139,9 +141,13 @@
             <span>{{ article.publishedDate | date:'mediumDate' }}</span>
           </div>
 
-          <app-button size="sm" block>Read</app-button>
+          <span
+            class="inline-flex w-full items-center justify-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white"
+          >
+            Read article
+          </span>
         </div>
-      </div>
+      </a>
       }
     </div>
     @if (filteredArticles().length === 0) {
@@ -162,7 +168,7 @@
     <div class="mx-auto max-w-4xl rounded-lg border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
 
       <!-- Back Button -->
-      <app-button variant="link" size="sm" class="mb-6" (click)="goBack()">
+      <app-button variant="link" size="sm" class="mb-6" routerLink="/articles">
         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
         </svg>
@@ -187,8 +193,13 @@
         }
 
         <div class="flex items-center justify-between text-slate-600 mb-6">
-          <span>By {{ selectedArticle()!.author }}</span>
-          <span>{{ selectedArticle()!.publishedDate | date:'mediumDate' }}</span>
+          <span>
+            By {{ selectedArticle()!.author }} ·
+            <a class="font-medium text-primary-700 underline" routerLink="/editorial-policy">How we review content</a>
+          </span>
+          <span>
+            Updated {{ (selectedArticle()!.lastUpdated || selectedArticle()!.publishedDate) | date:'mediumDate' }}
+          </span>
         </div>
 
         <div class="flex flex-wrap gap-2 mb-6">
@@ -204,6 +215,12 @@
       <div class="mb-8">
         <p class="text-base leading-7 text-gray-700 sm:text-lg">{{ selectedArticle()!.introduction }}</p>
       </div>
+
+      <aside class="mb-8 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
+        This educational article is not a diagnosis or treatment plan. A qualified professional can
+        help with personal medical decisions. If someone may be in immediate danger, contact local
+        emergency services; in India, Tele-MANAS is available at <a class="font-semibold underline" href="tel:14416">14416</a>.
+      </aside>
 
       <!-- Article Sections -->
       <div class="mb-8 space-y-6">
@@ -292,7 +309,15 @@
         <h3 class="text-xl font-semibold text-slate-800 mb-4">Sources</h3>
         <ul class="space-y-2 text-sm text-slate-600">
           @for (source of selectedArticle()!.sources!; track source) {
-          <li>{{ source }}</li>
+          <li>
+            @if (sourceUrl(source); as url) {
+              <a class="font-medium text-primary-700 underline" [href]="url" target="_blank" rel="noopener noreferrer">
+                {{ source }}
+              </a>
+            } @else {
+              {{ source }}
+            }
+          </li>
           }
         </ul>
       </div>
@@ -304,15 +329,15 @@
         <h3 class="text-2xl font-semibold text-slate-800 mb-6">Related Articles</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           @for (relatedArticle of relatedArticles(); track relatedArticle.id) {
-          <div class="bg-slate-50 rounded-lg p-4 hover:bg-slate-100 cursor-pointer transition-colors"
-            (click)="selectArticle(relatedArticle)">
+          <a class="block rounded-lg bg-slate-50 p-4 transition-colors hover:bg-slate-100"
+            [routerLink]="['/articles', relatedArticle.id]">
             <h4 class="font-semibold text-slate-800 mb-2">{{ relatedArticle.title }}</h4>
             <p class="text-slate-600 text-sm line-clamp-2">{{ relatedArticle.description }}</p>
             <div class="flex items-center justify-between mt-3 text-xs text-slate-500">
               <span>{{ relatedArticle.type }}</span>
               <span>{{ relatedArticle.readingTime }}</span>
             </div>
-          </div>
+          </a>
           }
         </div>
       </div>
@@ -320,7 +345,7 @@
 
       <!-- Action Buttons -->
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <app-button variant="outline" size="sm" (click)="goBack()">
+        <app-button variant="outline" size="sm" routerLink="/articles">
           Browse More Articles
         </app-button>
         <app-button routerLink="/exercises" size="sm">

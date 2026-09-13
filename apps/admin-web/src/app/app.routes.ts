@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { adminAuthGuard } from './core/guards/admin-auth-guard';
 import { adminPermissionGuard } from './core/guards/admin-permission.guard';
+import { unsavedChangesGuard } from './core/guards/unsaved-changes.guard';
 import { ROUTE_PATHS } from './core/constants/app-routes.constants';
 
 const guard = [adminPermissionGuard];
@@ -37,6 +38,7 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/doctors/doctors-page/doctors-page').then((m) => m.DoctorsPage),
         canActivate: guard,
+        canDeactivate: [unsavedChangesGuard],
       },
       {
         path: ROUTE_PATHS.CONSUMERS,
@@ -71,6 +73,7 @@ export const routes: Routes = [
             (m) => m.HopeHubOffersPage,
           ),
         canActivate: guard,
+        canDeactivate: [unsavedChangesGuard],
       },
       {
         path: ROUTE_PATHS.CONSUMER_FLOWS,
@@ -85,6 +88,7 @@ export const routes: Routes = [
             (m) => m.ListenerScreeningPage,
           ),
         canActivate: guard,
+        canDeactivate: [unsavedChangesGuard],
       },
       {
         path: ROUTE_PATHS.PROVIDER_ROLES,
@@ -215,18 +219,37 @@ export const routes: Routes = [
         canActivate: guard,
       },
       {
+        path: ROUTE_PATHS.EMAIL_MARKETING,
+        loadComponent: () =>
+          import('./features/email-marketing/email-marketing-page').then(
+            (m) => m.EmailMarketingPage,
+          ),
+        canActivate: guard,
+      },
+      {
         path: ROUTE_PATHS.TELEGRAM_BOTS,
         loadComponent: () =>
           import('./features/telegram-bots/telegram-bots-page/telegram-bots-page').then(
             (m) => m.TelegramBotsPage,
           ),
         canActivate: guard,
+        canDeactivate: [unsavedChangesGuard],
       },
       {
         path: ROUTE_PATHS.GROUP_HELP,
         loadComponent: () =>
           import('./features/group-help/group-help-page').then((m) => m.GroupHelpPage),
         canActivate: guard,
+        canDeactivate: [unsavedChangesGuard],
+      },
+      {
+        path: ROUTE_PATHS.TELEGRAM_CONTENT_NETWORK,
+        loadComponent: () =>
+          import('./features/telegram-content-network/telegram-content-network-page').then(
+            (m) => m.TelegramContentNetworkPage,
+          ),
+        canActivate: guard,
+        canDeactivate: [unsavedChangesGuard],
       },
       {
         path: ROUTE_PATHS.ADMIN_USERS,
@@ -325,6 +348,7 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/finance/finance-page/finance-page').then((m) => m.FinancePage),
         canActivate: guard,
+        canDeactivate: [unsavedChangesGuard],
       },
       {
         path: ROUTE_PATHS.PAYROLL,

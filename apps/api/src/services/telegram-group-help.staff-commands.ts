@@ -36,6 +36,7 @@ import {
   recordGroupHelpBanCooldown
 } from './telegram-group-help.ban-guard.js';
 import { recordGroupHelpCommandAudit } from './telegram-group-help.command-audit.js';
+import { shouldDeleteModerationTarget } from './telegram-group-help.command-cleanup.js';
 
 export async function handleGroupHelpStaffCommand(
   message: CommunityTelegramMessage,
@@ -144,9 +145,7 @@ export async function handleGroupHelpStaffCommand(
       return true;
     }
 
-    const deleteFirst = ['delete', 'del', 'delwarn', 'delmute', 'delban', 'delkick'].includes(
-      commandName
-    );
+    const deleteFirst = shouldDeleteModerationTarget(commandName);
     const effectiveAction =
       canonicalName === 'delete' ? 'delete' : canonicalName.replace(/^del/, '') || 'delete';
 
@@ -276,6 +275,9 @@ export async function handleGroupHelpStaffCommand(
       }
     }
 
+    // Plain /warn records a warning but deliberately keeps the member's
+    // message. Commands prefixed with /del remain the explicit delete+action
+    // variants for content that must be removed from the public group.
     if (deleteFirst) {
       const messageId = isCrossGroup
         ? crossGroupMessageId
@@ -316,7 +318,20 @@ export async function handleGroupHelpStaffCommand(
             chatId,
             `The warning was recorded, but the configured follow-up action failed. ${groupHelpCommandFailureMessage(error)}`
           );
-          await sendModerationLog(values, permissionMessage, reason, 'warn');
+          if (isCrossGroup) {
+            await sendGroupHelpActivityLog(values, 'Warning follow-up action failed', [
+              'Action: warn',
+              `Main group ID: ${targetChatId}`,
+              `Member: ${telegramPersonLogLabel(target)}`,
+              `Reason: ${reason}`,
+              `By: ${telegramPersonLogLabel(message.from, 'Administrator')}`,
+              `Failure: ${groupHelpCommandFailureMessage(error)}`
+            ]);
+          } else if (message.reply_to_message) {
+            await sendModerationLog(values, message.reply_to_message, reason, 'warn', {
+              performedBy: message.from
+            });
+          }
           return true;
         }
       }
@@ -376,9 +391,10 @@ export async function handleGroupHelpStaffCommand(
     } else {
       await sendModerationLog(
         values,
-        { ...message, from: target as typeof message.from },
+        message.reply_to_message || { ...message, from: target as typeof message.from },
         reason,
-        effectiveAction
+        effectiveAction,
+        { performedBy: message.from }
       );
     }
 

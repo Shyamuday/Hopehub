@@ -236,6 +236,11 @@ export class CallHealthPage {
       connectivityCheckMs: 'Network check',
       mediaAcquisitionMs: 'Media access',
       preparedStreamReused: 'Prepared media reused',
+      gatheredCandidateTypes: 'ICE routes found',
+      gatheredCandidateCount: 'ICE candidates',
+      gatheredRelayCandidateCount: 'TURN candidates',
+      audioPlaybackBlocked: 'Audio blocked',
+      speakerOutputChangeFailed: 'Speaker switch failed',
     };
     return Object.entries(labels).flatMap(([key, display]) => {
       const value = metadata[key];

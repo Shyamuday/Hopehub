@@ -4,6 +4,7 @@ import {
   HomeopathicDoctorType,
   PrescriptionOptionType,
   PrescriptionStatus,
+  ProviderDomain,
   Role
 } from '@prisma/client';
 import { authRequired, allowRoles } from '../../auth.js';
@@ -27,7 +28,12 @@ function paginationMeta(page: number, pageSize: number, total: number) {
 }
 
 const homeopathyProviderWhere = {
-  doctorProfile: { is: { doctorType: { not: HomeopathicDoctorType.PSYCHOLOGIST } } }
+  doctorProfile: {
+    is: {
+      providerDomain: ProviderDomain.HOMEOPATHY,
+      doctorType: { not: HomeopathicDoctorType.PSYCHOLOGIST }
+    }
+  }
 } as const;
 
 export function registerAdminClinicalRecordsRoutes(router: Router) {

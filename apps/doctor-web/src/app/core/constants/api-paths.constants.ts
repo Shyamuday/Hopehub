@@ -13,6 +13,7 @@ export const API_PATHS = {
     READINESS: '/doctor/readiness',
     LISTENER_SCREENING: '/doctor/listener-screening',
     PROFILE_IMAGE: '/me/profile-image',
+    CREDENTIAL_DOCUMENT: '/doctor/credential-document',
     PAYMENTS_SUMMARY: '/doctor/payments/summary',
     MY_PAYSLIP: '/doctor/my-payslip',
     SLOTS: '/doctor/slots',

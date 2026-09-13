@@ -63,12 +63,15 @@
         <input
           name="teaserReply"
           [ngModel]="draft()"
-          (ngModelChange)="draft.set($event)"
+          (ngModelChange)="draft.set($event); sendError.set('')"
           placeholder="Type a reply..."
           autocomplete="off"
         />
         <button type="submit" [disabled]="sending()">{{ sending() ? 'Sending...' : 'Reply' }}</button>
       </form>
+      @if (sendError()) {
+        <p class="chat-teaser__send-error" role="alert">{{ sendError() }}</p>
+      }
 
       <div class="chat-teaser__footer">
         <button type="button" class="chat-teaser__primary" (click)="askToJoin()">

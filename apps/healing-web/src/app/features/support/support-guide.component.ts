@@ -35,7 +35,9 @@ export class SupportGuideComponent implements OnInit {
   readonly flowSource = signal<'backend' | 'fallback'>('fallback');
 
   readonly concernOptions = computed(() =>
-    CONSUMER_CONCERN_ORDER.map((key) => this.flows()[key]).filter(Boolean),
+    CONSUMER_CONCERN_ORDER.map((key) => this.flows()[key]).filter(
+      (flow) => flow?.isActive && flow.showInSupportGuide,
+    ),
   );
   readonly concernSelectionOptions = computed(() =>
     this.concernOptions().map((concern) => ({

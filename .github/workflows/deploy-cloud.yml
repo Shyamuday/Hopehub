@@ -15,6 +15,15 @@ on:
         description: 'Optional known partially-applied Prisma migration to repair before an API deploy'
         required: false
         default: ''
+      email_import_s3_key:
+        description: 'Optional private hopehub-contact-inbox object key containing one normalized email per line'
+        required: false
+        default: ''
+      restrict_telegram_pin_rights:
+        description: 'Restrict main-group pin rights to the owner and @spiritualspirit after API deploy'
+        required: false
+        type: boolean
+        default: false
   push:
     branches: [main]
     paths:
@@ -117,6 +126,7 @@ jobs:
             echo "LIGHTSAIL_APP_DIR=${LIGHTSAIL_APP_DIR}"
             echo "HOPEHUB_API_PUBLIC_URL=${HOPEHUB_API_PUBLIC_URL}"
             echo "HOPEHUB_WEB_ORIGIN=${HOPEHUB_WEB_ORIGIN}"
+            echo "HOPEHUB_PATIENT_ORIGIN=${HOPEHUB_PATIENT_ORIGIN}"
             echo "HOPEHUB_ADMIN_ORIGIN=${HOPEHUB_ADMIN_ORIGIN}"
             echo "HOPEHUB_DOCTOR_ORIGIN=${HOPEHUB_DOCTOR_ORIGIN}"
             echo "HOPEHUB_OPERATIONS_ORIGIN=${HOPEHUB_OPERATIONS_ORIGIN}"
@@ -405,6 +415,7 @@ jobs:
           RAZORPAY_KEY_SECRET: ${{ secrets.RAZORPAY_KEY_SECRET }}
           RAZORPAY_WEBHOOK_SECRET: ${{ secrets.RAZORPAY_WEBHOOK_SECRET }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          EMAIL_MARKETING_SES_SNS_TOPIC_ARNS: ${{ secrets.EMAIL_MARKETING_SES_SNS_TOPIC_ARNS }}
           TELEGRAM_USER_BOT_TOKEN: ${{ secrets.TELEGRAM_USER_BOT_TOKEN }}
           TELEGRAM_DOCTOR_BOT_TOKEN: ${{ secrets.TELEGRAM_DOCTOR_BOT_TOKEN }}
           TELEGRAM_ADMIN_BOT_TOKEN: ${{ secrets.TELEGRAM_ADMIN_BOT_TOKEN }}
@@ -413,6 +424,34 @@ jobs:
           TELEGRAM_WEBHOOK_SECRET: ${{ secrets.TELEGRAM_WEBHOOK_SECRET }}
           TELEGRAM_SETUP_SECRET: ${{ secrets.TELEGRAM_SETUP_SECRET }}
         run: bash deploy/scripts/deploy-api-local.sh
+
+      - name: Import email marketing contacts from private S3 transfer
+        if: steps.api-changes.outputs.deploy == 'true' && github.event.inputs.email_import_s3_key != ''
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+          EMAIL_IMPORT_S3_KEY: ${{ github.event.inputs.email_import_s3_key }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$EMAIL_IMPORT_S3_KEY" =~ ^imports/email-marketing/[A-Za-z0-9._/-]+\.txt$ ]]; then
+            echo "Invalid email import object key."
+            exit 1
+          fi
+          cd /opt/hopehub/apps/api
+          npm run email-marketing:import -- \
+            --s3-bucket "hopehub-contact-inbox" \
+            --s3-key "$EMAIL_IMPORT_S3_KEY" \
+            --s3-region "us-east-1" \
+            --source "Downloads/emails historical exports (2026-09-08)" \
+            --basis "Administrator-directed import from historical customer/order exports on 2026-09-08; promotional consent not independently verified."
+
+      - name: Restrict Telegram pin administrator rights
+        if: github.event.inputs.restrict_telegram_pin_rights == 'true'
+        run: |
+          set -euo pipefail
+          cd /opt/hopehub/apps/api
+          npm run telegram:restrict-pin-admins -- --apply
 
   notify-deployment-failure:
     name: Notify admin about failed deployment

@@ -5,6 +5,7 @@ import { AUTH_MESSAGES, DEFAULT_JWT_SECRET, JWT_EXPIRY } from './constants/auth.
 import { prisma } from './db.js';
 import type { StaffProfileSummary } from './permission-capabilities.js';
 import { loadStaffProfileForUser } from './staff-profile.js';
+import { isHomeopathyOnboardingSuspension } from './constants/homeopathy-provider-approval.constants.js';
 
 export type AuthUser = {
   id: string;
@@ -95,14 +96,23 @@ async function resolveAuthUser(token: string): Promise<AuthUser | null> {
       isActive: true,
       doctorProfile: {
         select: {
-          suspendedAt: true
+          providerDomain: true,
+          suspendedAt: true,
+          suspendedReason: true,
+          approvalStatus: true
         }
       }
     }
   });
 
   if (!user?.isActive) return null;
-  if (user.role === Role.DOCTOR && user.doctorProfile?.suspendedAt) return null;
+  if (
+    user.role === Role.DOCTOR &&
+    user.doctorProfile?.suspendedAt &&
+    !isHomeopathyOnboardingSuspension(user.doctorProfile)
+  ) {
+    return null;
+  }
 
   const staffProfile = await loadStaffProfileForUser(user.id, user.role);
   const { doctorProfile: _doctorProfile, ...authUser } = user;

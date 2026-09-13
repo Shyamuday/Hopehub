@@ -1,6 +1,6 @@
 import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
-import { isPlatformBrowser } from '@angular/common';
+import { DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { APP_CONSTANTS } from '../constants/app.constants';
 
 export interface SEOData {
@@ -36,6 +36,7 @@ export class SEOService {
     private titleService: Title,
     private metaService: Meta,
     @Inject(PLATFORM_ID) private platformId: object,
+    @Inject(DOCUMENT) private document: Document,
   ) {}
 
   /**
@@ -49,13 +50,16 @@ export class SEOService {
       : data.keywords || this.defaultKeywords;
     const image = data.image || this.defaultImage;
     const url =
-      data.url || (isPlatformBrowser(this.platformId) ? window.location.href : this.siteUrl);
+      data.canonicalUrl ||
+      data.url ||
+      (isPlatformBrowser(this.platformId) ? window.location.href : this.siteUrl);
     const type = data.type || 'website';
 
     // Update title
     this.titleService.setTitle(title);
 
     // Basic meta tags
+    this.updateOrCreateTag('name', 'title', title);
     this.updateOrCreateTag('name', 'description', description);
     this.updateOrCreateTag('name', 'keywords', keywords);
     this.updateOrCreateTag('name', 'author', data.author || 'Hope Hub');
@@ -68,13 +72,14 @@ export class SEOService {
     this.updateOrCreateTag('property', 'og:image', this.getAbsoluteUrl(image));
     this.updateOrCreateTag('property', 'og:url', url);
     this.updateOrCreateTag('property', 'og:site_name', 'Hope Hub');
-    this.updateOrCreateTag('property', 'og:locale', 'en_US');
+    this.updateOrCreateTag('property', 'og:locale', 'en_IN');
 
     // Twitter Card tags
     this.updateOrCreateTag('name', 'twitter:card', 'summary_large_image');
     this.updateOrCreateTag('name', 'twitter:title', title);
     this.updateOrCreateTag('name', 'twitter:description', description);
     this.updateOrCreateTag('name', 'twitter:image', this.getAbsoluteUrl(image));
+    this.updateOrCreateTag('name', 'twitter:url', url);
 
     // Article-specific meta tags
     if (type === 'article') {
@@ -91,7 +96,7 @@ export class SEOService {
         this.updateOrCreateTag('property', 'article:section', data.section);
       }
       if (data.tags && data.tags.length > 0) {
-        data.tags.forEach((tag, index) => {
+        data.tags.forEach((tag) => {
           this.updateOrCreateTag('property', `article:tag`, tag);
         });
       }
@@ -106,20 +111,19 @@ export class SEOService {
   /**
    * Add structured data (JSON-LD) to the page
    */
-  addStructuredData(data: any): void {
-    if (!isPlatformBrowser(this.platformId)) return;
-
-    // Remove existing structured data script
-    const existingScript = document.querySelector('script[type="application/ld+json"]');
+  addStructuredData(data: any, key = 'page'): void {
+    const selector = `script[type="application/ld+json"][data-hopehub-schema="${key}"]`;
+    const existingScript = this.document.querySelector(selector);
     if (existingScript) {
       existingScript.remove();
     }
 
     // Add new structured data
-    const script = document.createElement('script');
+    const script = this.document.createElement('script');
     script.type = 'application/ld+json';
+    script.setAttribute('data-hopehub-schema', key);
     script.text = JSON.stringify(data);
-    document.head.appendChild(script);
+    this.document.head.appendChild(script);
   }
 
   /**
@@ -146,7 +150,7 @@ export class SEOService {
       },
     };
 
-    this.addStructuredData(organizationData);
+    this.addStructuredData(organizationData, 'organization');
   }
 
   /**
@@ -174,7 +178,7 @@ export class SEOService {
       url: `${this.siteUrl}/services/${service.name.toLowerCase().replace(/\s+/g, '-')}`,
     };
 
-    this.addStructuredData(serviceData);
+    this.addStructuredData(serviceData, 'service');
   }
 
   /**
@@ -188,6 +192,7 @@ export class SEOService {
     datePublished: string;
     dateModified?: string;
     articleSection?: string;
+    url?: string;
   }): void {
     const articleData = {
       '@context': 'https://schema.org',
@@ -195,13 +200,13 @@ export class SEOService {
       headline: article.headline,
       description: article.description,
       image: article.image ? this.getAbsoluteUrl(article.image) : this.defaultImage,
-      author: {
-        '@type': 'Person',
-        name: article.author,
-      },
+      author: /(?:editorial|wellness|content) team/i.test(article.author)
+        ? { '@type': 'Organization', name: article.author, url: `${this.siteUrl}/editorial-policy` }
+        : { '@type': 'Person', name: article.author },
       publisher: {
         '@type': 'Organization',
         name: 'Hope Hub',
+        url: this.siteUrl,
         logo: {
           '@type': 'ImageObject',
           url: this.getAbsoluteUrl(APP_CONSTANTS.BRAND.LOGO_PATH),
@@ -210,13 +215,15 @@ export class SEOService {
       datePublished: article.datePublished,
       dateModified: article.dateModified || article.datePublished,
       articleSection: article.articleSection || 'Mental Health',
+      inLanguage: 'en-IN',
       mainEntityOfPage: {
         '@type': 'WebPage',
-        '@id': isPlatformBrowser(this.platformId) ? window.location.href : this.siteUrl,
+        '@id':
+          article.url || (isPlatformBrowser(this.platformId) ? window.location.href : this.siteUrl),
       },
     };
 
-    this.addStructuredData(articleData);
+    this.addStructuredData(articleData, 'article');
   }
 
   /**
@@ -234,7 +241,7 @@ export class SEOService {
       })),
     };
 
-    this.addStructuredData(breadcrumbData);
+    this.addStructuredData(breadcrumbData, 'breadcrumb');
   }
 
   /**
@@ -254,7 +261,7 @@ export class SEOService {
       })),
     };
 
-    this.addStructuredData(faqData);
+    this.addStructuredData(faqData, 'faq');
   }
 
   /**
@@ -273,13 +280,11 @@ export class SEOService {
    * Update canonical URL
    */
   private updateCanonicalUrl(url: string): void {
-    if (!isPlatformBrowser(this.platformId)) return;
-
-    let link: HTMLLinkElement | null = document.querySelector('link[rel="canonical"]');
+    let link: HTMLLinkElement | null = this.document.querySelector('link[rel="canonical"]');
     if (!link) {
-      link = document.createElement('link');
+      link = this.document.createElement('link');
       link.setAttribute('rel', 'canonical');
-      document.head.appendChild(link);
+      this.document.head.appendChild(link);
     }
     link.setAttribute('href', url);
   }
@@ -318,8 +323,14 @@ export class SEOService {
    * Clear all structured data
    */
   clearStructuredData(): void {
-    if (!isPlatformBrowser(this.platformId)) return;
-    const scripts = document.querySelectorAll('script[type="application/ld+json"]');
+    const scripts = this.document.querySelectorAll('script[type="application/ld+json"]');
+    scripts.forEach((script) => script.remove());
+  }
+
+  clearPageStructuredData(): void {
+    const scripts = this.document.querySelectorAll(
+      'script[type="application/ld+json"][data-hopehub-schema]',
+    );
     scripts.forEach((script) => script.remove());
   }
 }

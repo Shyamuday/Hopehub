@@ -8,19 +8,22 @@ import { AuthService } from '../services/auth.service';
  * that targets our own API. Skips third-party URLs.
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-    const auth = inject(AuthService);
+  const auth = inject(AuthService);
 
-    // Only attach token to our own API calls
-    if (!req.url.startsWith(environment.apiUrl)) {
-        return next(req);
-    }
+  // Authentication endpoints use their own credentials. In particular, a
+  // failed login must not be mistaken for an expired existing session.
+  if (!req.url.startsWith(environment.apiUrl) || req.url.includes('/auth/')) {
+    return next(req);
+  }
 
-    const token = auth.getToken();
-    if (!token) {
-        return next(req);
-    }
+  const token = auth.getToken();
+  if (!token) {
+    return next(req);
+  }
 
-    return next(req.clone({
-        setHeaders: { Authorization: `Bearer ${token}` }
-    }));
+  return next(
+    req.clone({
+      setHeaders: { Authorization: `Bearer ${token}` },
+    }),
+  );
 };

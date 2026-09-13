@@ -19,13 +19,16 @@ export const BLOG_PUBLIC_SELECT = {
   title: true,
   excerpt: true,
   category: true,
+  concernSlugs: true,
+  publicDomains: true,
   readTime: true,
   authorName: true,
   authorRole: true,
   viewCount: true,
   isFeatured: true,
   publishedAt: true,
-  createdAt: true
+  createdAt: true,
+  updatedAt: true
 } as const;
 
 export const BLOG_DETAIL_SELECT = {

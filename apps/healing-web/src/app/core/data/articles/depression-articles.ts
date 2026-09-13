@@ -103,8 +103,8 @@ export const DEPRESSION_ARTICLES: Article[] = [
 
     sources: [
       'American Psychiatric Association. (2022). Diagnostic and Statistical Manual of Mental Disorders (5th ed.)',
-      'National Institute of Mental Health. (2023). Depression Basics.',
-      'World Health Organization. (2023). Depression Fact Sheet.',
+      'National Institute of Mental Health. Depression. https://www.nimh.nih.gov/health/topics/depression',
+      'World Health Organization. Depression fact sheet. https://www.who.int/news-room/fact-sheets/detail/depression',
     ],
 
     relatedArticles: ['coping-strategies-depression', 'depression-myths-facts'],
@@ -250,8 +250,8 @@ export const DEPRESSION_ARTICLES: Article[] = [
 
     sources: [
       'Beck, A. T. (2021). Cognitive Therapy of Depression.',
-      'Cuijpers, P. et al. (2023). Exercise therapy for depression. Cochrane Reviews.',
-      'Mindfulness-Based Cognitive Therapy Collaborative. (2023). MBCT Research Updates.',
+      'National Institute for Health and Care Excellence. Depression in adults: treatment and management. https://www.nice.org.uk/guidance/ng222',
+      'World Health Organization. Depression fact sheet. https://www.who.int/news-room/fact-sheets/detail/depression',
     ],
 
     relatedArticles: ['understanding-depression-basics', 'building-support-network'],
@@ -268,7 +268,7 @@ export const DEPRESSION_ARTICLES: Article[] = [
     category: [ArticleCategory.DEPRESSION, ArticleCategory.GENERAL_WELLBEING],
     difficulty: ArticleDifficulty.BEGINNER,
     readingTime: '6 min read',
-    author: 'Dr. Lisa Rodriguez, Psychiatrist',
+    author: 'Hope Hub Editorial Team',
     publishedDate: new Date('2024-03-05'),
     tags: ['depression', 'myths', 'facts', 'stigma', 'awareness'],
 
@@ -324,6 +324,11 @@ export const DEPRESSION_ARTICLES: Article[] = [
 
     conclusion:
       'By understanding the facts about depression, we can create a more supportive environment for those who are struggling. If you or someone you know is dealing with depression, remember that help is available and recovery is possible.',
+
+    sources: [
+      'World Health Organization. Depression fact sheet. https://www.who.int/news-room/fact-sheets/detail/depression',
+      'National Institute of Mental Health. Depression. https://www.nimh.nih.gov/health/topics/depression',
+    ],
 
     relatedArticles: ['understanding-depression-basics', 'seeking-help-depression'],
   },

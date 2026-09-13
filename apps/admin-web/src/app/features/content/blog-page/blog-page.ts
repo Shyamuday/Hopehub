@@ -12,6 +12,8 @@ type BlogPost = {
   excerpt: string;
   content?: string | null;
   category: string;
+  concernSlugs: string[];
+  publicDomains: Array<'HOMEOPATHY' | 'HOPE_HUB'>;
   readTime?: string | null;
   authorName?: string | null;
   authorRole?: string | null;
@@ -51,6 +53,8 @@ function emptyModel() {
     excerpt: '',
     content: '',
     category: '',
+    concernSlugsText: '',
+    publicDomain: 'HOMEOPATHY' as 'HOMEOPATHY' | 'HOPE_HUB' | 'BOTH',
     readTime: '',
     authorName: '',
     authorRole: '',
@@ -144,6 +148,8 @@ export class BlogPage {
     try {
       await this.api.createBlogPost({
         ...m,
+        concernSlugs: this.parseList(m.concernSlugsText),
+        publicDomains: this.domainsForVisibility(m.publicDomain),
         content: m.content || null,
         readTime: m.readTime || null,
         authorName: m.authorName || null,
@@ -168,6 +174,8 @@ export class BlogPage {
       excerpt: p.excerpt,
       content: p.content || '',
       category: p.category,
+      concernSlugsText: (p.concernSlugs ?? []).join(', '),
+      publicDomain: this.visibilityForDomains(p.publicDomains),
       readTime: p.readTime || '',
       authorName: p.authorName || '',
       authorRole: p.authorRole || '',
@@ -190,6 +198,8 @@ export class BlogPage {
     try {
       await this.api.updateBlogPost(id, {
         ...m,
+        concernSlugs: this.parseList(m.concernSlugsText),
+        publicDomains: this.domainsForVisibility(m.publicDomain),
         content: m.content || null,
         readTime: m.readTime || null,
         authorName: m.authorName || null,
@@ -281,5 +291,21 @@ export class BlogPage {
     if (p.isHidden) return 'Hidden';
     if (p.isPublished) return 'Published';
     return 'Draft';
+  }
+
+  private parseList(value: string): string[] {
+    return value
+      .split(/[\n,]/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  private domainsForVisibility(value: 'HOMEOPATHY' | 'HOPE_HUB' | 'BOTH') {
+    return value === 'BOTH' ? ['HOMEOPATHY', 'HOPE_HUB'] : [value];
+  }
+
+  private visibilityForDomains(domains: Array<'HOMEOPATHY' | 'HOPE_HUB'>) {
+    if (domains.includes('HOMEOPATHY') && domains.includes('HOPE_HUB')) return 'BOTH' as const;
+    return domains.includes('HOPE_HUB') ? ('HOPE_HUB' as const) : ('HOMEOPATHY' as const);
   }
 }

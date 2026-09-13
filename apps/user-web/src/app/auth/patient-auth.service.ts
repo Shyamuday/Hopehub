@@ -22,6 +22,7 @@ export class PatientAuthService {
     name?: string;
     email: string;
     password: string;
+    referralCode?: string;
   }): Promise<AuthResponse> {
     return firstValueFrom(
       this.http.post<AuthResponse>(`${this.apiBase}${AUTH_PATHS.PATIENT_REGISTER}`, payload),

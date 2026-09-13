@@ -8,6 +8,7 @@ import {
   recordTelegramCommunityReaction
 } from './telegram-community-campaigns.js';
 import { COMMUNITY_BOT_SLUGS } from '../constants/telegram-community-bot.constants.js';
+import { withPublicCommunityLinks } from './telegram-public-community-links.js';
 
 const slug = COMMUNITY_BOT_SLUGS.RULES;
 function mainMenu(controls: TelegramBotControls): TelegramKeyboard {
@@ -16,27 +17,27 @@ function mainMenu(controls: TelegramBotControls): TelegramKeyboard {
   for (let index = 0; index < linkButtons.length; index += 2) {
     linkRows.push(linkButtons.slice(index, index + 2));
   }
-  return {
-    inline_keyboard: [
-      [
-        { text: 'About us', callback_data: 'about' },
-        { text: 'Community rules', callback_data: 'rules' }
-      ],
-      [
-        { text: 'Disclaimer', callback_data: 'disclaimer' },
-        { text: 'Privacy guide', callback_data: 'privacy' }
-      ],
-      [
-        { text: 'How to report', callback_data: 'report' },
-        { text: 'Helplines', callback_data: 'helpline' }
-      ],
-      ...linkRows
-    ]
-  };
+  return withPublicCommunityLinks(
+    {
+      inline_keyboard: [
+        [
+          { text: 'About us', callback_data: 'about' },
+          { text: 'Community rules', callback_data: 'rules' }
+        ],
+        [
+          { text: 'Disclaimer', callback_data: 'disclaimer' },
+          { text: 'Privacy guide', callback_data: 'privacy' }
+        ],
+        [
+          { text: 'How to report', callback_data: 'report' },
+          { text: 'Helplines', callback_data: 'helpline' }
+        ],
+        ...linkRows
+      ]
+    },
+    controls
+  )!;
 }
-const backMenu: TelegramKeyboard = {
-  inline_keyboard: [[{ text: '« Back to Menu', callback_data: 'menu' }]]
-};
 
 const content = (controls: TelegramBotControls): Record<string, string> => ({
   about: controls.telegramRulesAboutText,
@@ -66,7 +67,10 @@ async function showSection(
   if (sectionContent)
     await sendCommunityMessage(slug, chatId, sectionContent, {
       parse_mode: 'Markdown',
-      reply_markup: backMenu
+      reply_markup: withPublicCommunityLinks(
+        { inline_keyboard: [[{ text: '« Back to Menu', callback_data: 'menu' }]] },
+        controls
+      )
     });
 }
 

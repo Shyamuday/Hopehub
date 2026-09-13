@@ -1,12 +1,20 @@
 import { Component, inject, signal } from '@angular/core';
+import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
-import { form, FormField, required } from '@angular/forms/signals';
+import {
+  email as emailValidator,
+  form,
+  FormField,
+  maxLength,
+  required,
+  validate,
+} from '@angular/forms/signals';
 import { DEFAULT_AUTHED_ROUTE, ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
 import {
   buildProviderOnboardingStatus,
   needsProviderPathSelection,
 } from '../../../core/constants/provider-onboarding.constants';
-import { PH_PROVIDER_LANGUAGE } from '../../../core/constants/provider-language.constants';
+import { providerPortalForHost } from '../../../core/constants/provider-portal.constants';
 import { Auth } from '../../../core/services/auth';
 import { DoctorSessionService } from '../../../core/services/doctor-session';
 import { AppButtonComponent } from '../../../shared/ui/app-button.component';
@@ -30,6 +38,14 @@ export class Login {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly session = inject(DoctorSessionService);
+  private readonly title = inject(Title);
+
+  readonly portal = providerPortalForHost(
+    typeof window === 'undefined' ? '' : window.location.hostname,
+    this.route.snapshot.queryParamMap.get('portal'),
+  );
+  readonly providerLanguage = this.portal.language;
+  readonly isHomeopathyPortal = this.portal.id === 'HOMEOPATHY';
 
   mode = signal<'signin' | 'signup'>('signup');
   signupStep = signal<1 | 2>(1);
@@ -45,18 +61,50 @@ export class Login {
     password: '',
   });
   readonly signInForm = form(this.signInModel, (schema) => {
-    required(schema.email, { message: 'Email is required' });
-    required(schema.password, { message: 'Password is required' });
+    required(schema.email, { message: 'Email is required.' });
+    emailValidator(schema.email, { message: 'Enter a valid email address.' });
+    maxLength(schema.email, 254, { message: 'Email must be 254 characters or fewer.' });
+    required(schema.password, { message: 'Password is required.' });
+    maxLength(schema.password, 128, { message: 'Password must be 128 characters or fewer.' });
+    validate(schema.password, ({ value }) =>
+      this.mode() !== 'signup' || !value() || isStrongProviderPassword(value())
+        ? undefined
+        : {
+            kind: 'strongPassword',
+            message: 'Use at least 8 characters with one letter and one number.',
+          },
+    );
   });
 
   readonly enrollModel = signal({
     name: '',
     mobile: indianMobileDisplay(''),
+    specialty: this.isHomeopathyPortal ? this.portal.defaultSpecialty : '',
     confirmPassword: '',
   });
   readonly enrollForm = form(this.enrollModel, (schema) => {
-    required(schema.name, { message: 'Name is required' });
-    required(schema.mobile, { message: 'Mobile number is required' });
+    required(schema.name, { message: 'Full name is required.' });
+    maxLength(schema.name, 80, { message: 'Full name must be 80 characters or fewer.' });
+    validate(schema.name, ({ value }) =>
+      !value() || isProviderDisplayName(value())
+        ? undefined
+        : { kind: 'displayName', message: 'Enter your real name using at least 2 letters.' },
+    );
+    required(schema.mobile, { message: 'Mobile number is required.' });
+    validate(schema.mobile, ({ value }) =>
+      !value() || indianMobileE164(value())
+        ? undefined
+        : { kind: 'indianMobile', message: 'Enter a valid 10-digit Indian mobile number.' },
+    );
+    required(schema.confirmPassword, {
+      message: 'Confirm your password.',
+      when: () => this.signupStep() === 2,
+    });
+    validate(schema.confirmPassword, ({ value }) =>
+      this.signupStep() !== 2 || !value() || value() === this.signInModel().password
+        ? undefined
+        : { kind: 'passwordMatch', message: 'Passwords do not match.' },
+    );
   });
 
   error = signal('');
@@ -65,12 +113,19 @@ export class Login {
   /** Keeps the OTP controls honest: only the action being performed spins. */
   sendingOtp = signal(false);
   verifyingOtp = signal(false);
-  readonly phLanguage = PH_PROVIDER_LANGUAGE;
+  otpTouched = signal(false);
+  fieldErrors = signal<Record<string, string>>({});
+
+  constructor() {
+    this.title.setTitle(this.portal.pageTitle);
+  }
 
   setMode(mode: 'signin' | 'signup'): void {
     this.mode.set(mode);
     this.error.set('');
     this.message.set('');
+    this.fieldErrors.set({});
+    this.otpTouched.set(false);
     if (mode === 'signup') this.signupStep.set(1);
   }
 
@@ -78,11 +133,54 @@ export class Login {
     this.loginMode.set(mode);
     this.error.set('');
     this.message.set('');
+    this.fieldErrors.set({});
+    this.otpTouched.set(false);
     if (mode === 'password') {
       this.otp.set('');
       this.otpSent.set(false);
       this.otpSentTo.set('');
     }
+  }
+
+  fieldError(field: string): string {
+    return this.fieldErrors()[field] || '';
+  }
+
+  clearFieldError(field: string): void {
+    if (!this.fieldErrors()[field]) return;
+    const next = { ...this.fieldErrors() };
+    delete next[field];
+    this.fieldErrors.set(next);
+    this.error.set('');
+  }
+
+  updateOtp(value: string): void {
+    this.otp.set(value.replace(/\D/g, '').slice(0, 8));
+    this.otpTouched.set(true);
+    this.clearFieldError('otp');
+  }
+
+  otpError(): string {
+    if (this.fieldError('otp')) return this.fieldError('otp');
+    if (!this.otpTouched()) return '';
+    if (!this.otp()) return 'OTP is required.';
+    if (!/^\d{4,8}$/.test(this.otp())) return 'Enter the 4–8 digit OTP from your email.';
+    return '';
+  }
+
+  private applyFailure(result: { message: string; fieldErrors?: Record<string, string> }): void {
+    const fieldErrors = result.fieldErrors || {};
+    this.fieldErrors.set(fieldErrors);
+
+    if (
+      this.mode() === 'signup' &&
+      this.signupStep() === 2 &&
+      ['name', 'email', 'mobile', 'specialty', 'registrationNo'].some((field) => fieldErrors[field])
+    ) {
+      this.signupStep.set(1);
+    }
+
+    this.error.set(result.message);
   }
 
   canSignup(): boolean {
@@ -109,10 +207,11 @@ export class Login {
   }
 
   continueSignup(): void {
+    this.signInForm.email().markAsTouched();
+    this.enrollForm.name().markAsTouched();
+    this.enrollForm.mobile().markAsTouched();
     if (!this.canContinueSignup()) {
-      this.error.set(
-        'Add your name, a valid email, and a valid 10-digit Indian mobile number to continue.',
-      );
+      this.error.set('Add your name, a valid email, and a valid 10-digit Indian mobile number.');
       return;
     }
     this.error.set('');
@@ -165,7 +264,12 @@ export class Login {
       return;
     }
 
-    if (this.signInForm().invalid()) return;
+    this.signInForm.email().markAsTouched();
+    this.signInForm.password().markAsTouched();
+    if (this.signInForm().invalid()) {
+      this.error.set('Please correct the highlighted fields.');
+      return;
+    }
     const { email, password } = this.signInModel();
     this.error.set('');
     this.message.set('');
@@ -173,7 +277,7 @@ export class Login {
     try {
       const result = await this.auth.login(email, password);
       if (!result.ok) {
-        this.error.set(result.message);
+        this.applyFailure(result);
         return;
       }
       await this.navigateAfterLogin();
@@ -201,6 +305,7 @@ export class Login {
   async sendOtp() {
     const { email } = this.signInModel();
     const normalizedEmail = email.trim().toLowerCase();
+    this.signInForm.email().markAsTouched();
     if (!normalizedEmail) {
       this.error.set('Email is required');
       return;
@@ -212,10 +317,12 @@ export class Login {
     try {
       const result = await this.auth.requestOtp(normalizedEmail);
       if (!result.ok) {
-        this.error.set(result.message);
+        this.applyFailure(result);
         return;
       }
       this.otp.set('');
+      this.otpTouched.set(false);
+      this.clearFieldError('otp');
       this.otpSent.set(true);
       this.otpSentTo.set(normalizedEmail);
       this.message.set('OTP sent to your email.');
@@ -229,6 +336,8 @@ export class Login {
     const { email } = this.signInModel();
     const normalizedEmail = email.trim().toLowerCase();
     const otp = this.otp().trim();
+    this.signInForm.email().markAsTouched();
+    this.otpTouched.set(true);
     if (!normalizedEmail) {
       this.error.set('Email is required');
       return;
@@ -248,7 +357,7 @@ export class Login {
     try {
       const result = await this.auth.loginWithOtp(normalizedEmail, otp);
       if (!result.ok) {
-        this.error.set(result.message);
+        this.applyFailure(result);
         return;
       }
       await this.navigateAfterLogin();
@@ -259,6 +368,11 @@ export class Login {
   }
 
   async enroll() {
+    this.signInForm.email().markAsTouched();
+    this.signInForm.password().markAsTouched();
+    this.enrollForm.name().markAsTouched();
+    this.enrollForm.mobile().markAsTouched();
+    this.enrollForm.confirmPassword().markAsTouched();
     if (!this.canSignup()) {
       this.error.set(
         'Use a real name and a password with at least 8 characters, including a letter and a number.',
@@ -266,7 +380,7 @@ export class Login {
       return;
     }
     const { email, password } = this.signInModel();
-    const { name, mobile } = this.enrollModel();
+    const { name, mobile, specialty } = this.enrollModel();
     const normalizedMobile = indianMobileE164(mobile);
     if (!normalizedMobile) {
       this.error.set('Enter a valid 10-digit Indian mobile number.');
@@ -281,21 +395,26 @@ export class Login {
         email,
         mobile: normalizedMobile,
         password,
-        registrationNo: undefined,
+        providerDomain: this.portal.id,
+        specialty: this.isHomeopathyPortal ? specialty.trim() : undefined,
       });
 
       if (!result.ok) {
-        this.error.set(result.message);
+        this.applyFailure(result);
         return;
       }
 
       const login = await this.auth.login(email, password);
       if (login.ok) {
-        await this.router.navigate(['/welcome']);
+        await this.navigateAfterLogin();
         return;
       }
       this.setMode('signin');
-      this.message.set('Account created. Sign in to choose your support path.');
+      this.message.set(
+        this.isHomeopathyPortal
+          ? result.message
+          : 'Account created. Sign in to choose your support path.',
+      );
     } finally {
       this.submitting.set(false);
     }

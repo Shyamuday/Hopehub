@@ -14,8 +14,8 @@ export type HopeHubBookingPayload = {
   promoCode?: string;
   walletRedeemInPaise?: number;
   message?: string;
-  appointmentDate: string;
-  appointmentTime: string;
+  appointmentDate?: string;
+  appointmentTime?: string;
   consultantName?: string;
   consultantPhone?: string;
   sessionDuration?: string;
@@ -37,6 +37,7 @@ export type HopeHubBookingPayload = {
   previousTherapyOrMedication?: string;
   emergencyConsent?: boolean;
   listenerSupportConsent?: boolean;
+  websiteLeadId?: string;
   entryPage?: string;
 };
 
@@ -466,6 +467,16 @@ export class BookingService {
         ? payload.careTeamServiceId
         : undefined,
     });
+  }
+
+  assignBookingSlot(
+    consultationId: string,
+    payload: { appointmentDate: string; appointmentTime: string },
+  ): Observable<{ consultation: any }> {
+    return this.http.post<{ consultation: any }>(
+      `${this.apiUrl}/hope-hub/bookings/${encodeURIComponent(consultationId)}/slot`,
+      payload,
+    );
   }
 
   createQuickTalk(payload: {

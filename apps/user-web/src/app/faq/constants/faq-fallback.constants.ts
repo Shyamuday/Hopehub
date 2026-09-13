@@ -10,13 +10,13 @@ export const FAQ_FALLBACK_ENTRIES: FaqAccordionItem[] = [
     category: 'Booking',
     question: 'How do I book a consultation?',
     answer:
-      'Tap Book consultation on the home page, sign in with your email OTP, and complete the short intake. Our team assigns a doctor from the internal panel based on your concern and availability.',
+      'Tap Book consultation, sign in with your email OTP, and complete the short intake. You may choose an available doctor or let our clinical team match you based on your concern and availability.',
   },
   {
     category: 'Booking',
     question: 'Can I choose my doctor?',
     answer:
-      'No. HopeHub Care assigns from the internal doctor panel based on your concern, medical history, and availability.',
+      'Yes. You can choose an available doctor or share a preference. If that doctor is unavailable, HopeHub Care can match you with another suitable homeopathy doctor so treatment is not delayed.',
   },
   {
     category: 'Consultation',

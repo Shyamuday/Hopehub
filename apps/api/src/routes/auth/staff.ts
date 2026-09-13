@@ -1,6 +1,6 @@
 import { Router, type Request } from 'express';
 import { z } from 'zod';
-import { Prisma, Role } from '@prisma/client';
+import { Prisma, ProviderApprovalStatus, ProviderDomain, Role } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../../db.js';
 import { getMailTransporter, smtpFrom } from '../../services/mail.js';
@@ -30,11 +30,15 @@ import {
 import { googleClient, googleClientId } from './shared.js';
 import { recordAuthProcess } from '../../services/auth-process-log.js';
 import { issueAuthSession, revokeAllAuthSessionsForUser } from '../../services/auth-sessions.js';
+import { isHomeopathyOnboardingSuspension } from '../../constants/homeopathy-provider-approval.constants.js';
+import { staffPasswordLoginSchema } from '../../services/staff-login-validation.js';
 
 const staffOtpKey = (email: string) => `staff:${email.trim().toLowerCase()}`;
 const providerSuspensionSelect = {
+  providerDomain: true,
   suspendedAt: true,
-  suspendedReason: true
+  suspendedReason: true,
+  approvalStatus: true
 } as const;
 const staffUserSelect = {
   ...publicUserSelect,
@@ -78,9 +82,17 @@ async function activateProviderAccountForLogin<
 
 function providerSuspensionResponse(user: {
   role: Role;
-  doctorProfile?: { suspendedAt?: Date | null; suspendedReason?: string | null } | null;
+  doctorProfile?: {
+    providerDomain?: ProviderDomain;
+    suspendedAt?: Date | null;
+    suspendedReason?: string | null;
+    approvalStatus?: ProviderApprovalStatus;
+  } | null;
 }) {
   if (user.role !== Role.DOCTOR || !user.doctorProfile?.suspendedAt) return null;
+  if (isHomeopathyOnboardingSuspension(user.doctorProfile)) {
+    return null;
+  }
   const reason = user.doctorProfile.suspendedReason?.trim();
   return {
     errorStatus: 403 as const,
@@ -495,9 +507,7 @@ export function registerAuthStaffRoutes(router: Router) {
   router.post(
     '/auth/staff-login',
     asyncRoute(async (req, res) => {
-      const body = z
-        .object({ email: z.string().email(), password: z.string().min(8) })
-        .parse(req.body);
+      const body = staffPasswordLoginSchema.parse(req.body);
       const email = body.email.trim().toLowerCase();
       const user = await prisma.user.findFirst({
         where: { email, role: { not: Role.PATIENT } },

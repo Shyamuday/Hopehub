@@ -1,12 +1,14 @@
 
 <div class="page">
-  <div class="page-header">
-    <div>
-      <h2>Users</h2>
-      <p class="muted">Search and filter every account across all roles</p>
-    </div>
-    <button type="button" class="btn-primary" (click)="openCreate()">+ Add admin</button>
-  </div>
+  <app-admin-page-header
+    eyebrow="Access management"
+    title="Users & administrators"
+    description="Find any account, change authorised roles, control access, and manage the admin team."
+    [metrics]="headerMetrics()"
+  >
+    <button adminPageActions type="button" class="btn-sec" (click)="applyFilters()" [disabled]="usersLoading()">Refresh</button>
+    <button adminPageActions type="button" class="btn-primary" (click)="openCreate()">Add admin</button>
+  </app-admin-page-header>
 
   <section class="directory">
     <div class="filters">

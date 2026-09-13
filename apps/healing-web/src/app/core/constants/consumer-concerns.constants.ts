@@ -24,13 +24,20 @@ export type ConsumerConcernKey =
 
 export type ConsumerConcernFlow = {
   key: ConsumerConcernKey;
+  slug: string;
   label: string;
   shortLabel: string;
+  description: string;
   searchTerms: string[];
   serviceSearchTerms: string[];
   assessmentId: ConsumerAssessmentRouteMatch['id'];
   assessmentLabel: string;
   supportPath: ConsumerSupportPath;
+  isActive: boolean;
+  showOnHome: boolean;
+  showInResourceHub: boolean;
+  showInSupportGuide: boolean;
+  sortOrder: number;
   assessment: ConsumerAssessmentRouteMatch;
   careTeamQueryParams: Record<string, string>;
   bookingQueryParams: Record<string, string>;
@@ -49,18 +56,26 @@ function concernFlow(params: {
   serviceSearchTerms?: string[];
   assessment: ConsumerAssessmentRouteMatch;
   supportPath?: ConsumerSupportPath;
+  slug?: string;
 }): ConsumerConcernFlow {
   const concern = params.label;
   const supportPath = params.supportPath || 'PROFESSIONAL_CARE';
   return {
     key: params.key,
+    slug: params.slug || params.key.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase(),
     label: concern,
     shortLabel: params.shortLabel || concern,
+    description: `Explore self-help and human support for ${concern.toLowerCase()}.`,
     searchTerms: params.searchTerms,
     serviceSearchTerms: params.serviceSearchTerms || params.searchTerms,
     assessmentId: params.assessment.id,
     assessmentLabel: params.assessment.label,
     supportPath,
+    isActive: true,
+    showOnHome: true,
+    showInResourceHub: true,
+    showInSupportGuide: true,
+    sortOrder: 0,
     assessment: params.assessment,
     careTeamQueryParams: {
       concern,

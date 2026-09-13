@@ -38,6 +38,7 @@ export class ConsultationCallInviteComponent implements OnDestroy {
   readonly surfaceSwipeY = signal(0);
   readonly actionMessage = signal('');
   readonly settingsMessage = signal('');
+  readonly audioPlaybackBlocked = signal(false);
 
   private remoteAudioElement: HTMLAudioElement | null = null;
   private remoteVideoElement: HTMLVideoElement | null = null;
@@ -104,8 +105,9 @@ export class ConsultationCallInviteComponent implements OnDestroy {
     effect(() => {
       const state = this.call.state();
       this.call.localStream();
-      this.call.remoteStream();
+      const remoteStream = this.call.remoteStream();
       this.call.selectedAudioOutputId();
+      if (!remoteStream) this.audioPlaybackBlocked.set(false);
       this.attachStreams();
       if (state === 'ringing' && this.call.incomingCall()) {
         this.minimized.set(false);
@@ -298,8 +300,7 @@ export class ConsultationCallInviteComponent implements OnDestroy {
     const selectedId = this.call.selectedAudioOutputId();
     if (selectedId) {
       this.lastSpeakerOutputId = selectedId;
-      await this.chooseAudioOutput('');
-      this.showActionFeedback('Phone audio');
+      if (await this.chooseAudioOutput('')) this.showActionFeedback('Phone audio');
       return;
     }
 
@@ -314,8 +315,9 @@ export class ConsultationCallInviteComponent implements OnDestroy {
       return;
     }
     this.lastSpeakerOutputId = preferred.deviceId;
-    await this.chooseAudioOutput(preferred.deviceId);
-    this.showActionFeedback('Speaker on');
+    if (await this.chooseAudioOutput(preferred.deviceId)) {
+      this.showActionFeedback('Loudspeaker on');
+    }
   }
 
   speakerOutputActive() {
@@ -456,12 +458,24 @@ export class ConsultationCallInviteComponent implements OnDestroy {
   }
 
   async chooseAudioOutput(deviceId: string) {
+    const previousDeviceId = this.call.selectedAudioOutputId();
     this.call.selectAudioOutput(deviceId);
-    await this.applyAudioOutput(this.remoteAudioElement);
-    await this.applyAudioOutput(this.remoteVideoElement);
+    const activeElement =
+      this.call.callMode() === 'video' ? this.remoteVideoElement : this.remoteAudioElement;
+    const applied = await this.applyAudioOutput(activeElement);
+    if (!applied) {
+      this.call.selectAudioOutput(previousDeviceId);
+      await this.applyAudioOutput(activeElement);
+      this.showActionFeedback('Could not change speaker on this phone');
+      await this.call.reportActiveCallProblem('speaker_output_change_failed', {
+        speakerOutputChangeFailed: true
+      });
+      return false;
+    }
+    await this.playRemoteMedia(activeElement);
     this.speakerPickerOpen.set(false);
-    this.showActionFeedback('Speaker changed');
     this.scheduleControlsHide();
+    return true;
   }
 
   supportsSpeakerSelection() {
@@ -566,16 +580,43 @@ export class ConsultationCallInviteComponent implements OnDestroy {
     if (this.remoteAudioElement) {
       this.remoteAudioElement.srcObject = remote;
       void this.applyAudioOutput(this.remoteAudioElement);
-      if (remote) void this.remoteAudioElement.play().catch(() => undefined);
+      if (remote) void this.playRemoteMedia(this.remoteAudioElement);
     }
     if (this.remoteVideoElement) {
       this.remoteVideoElement.srcObject = remote;
       void this.applyAudioOutput(this.remoteVideoElement);
-      if (remote) void this.remoteVideoElement.play().catch(() => undefined);
+      if (remote) void this.playRemoteMedia(this.remoteVideoElement);
     }
     if (this.localVideoElement) {
       this.localVideoElement.srcObject = local;
       if (local) void this.localVideoElement.play().catch(() => undefined);
+    }
+  }
+
+  async resumeRemoteAudio() {
+    const activeElement =
+      this.call.callMode() === 'video' ? this.remoteVideoElement : this.remoteAudioElement;
+    const resumed = await this.playRemoteMedia(activeElement);
+    if (resumed) {
+      this.showActionFeedback('Call sound on');
+      return;
+    }
+    await this.call.reportActiveCallProblem('remote_audio_playback_blocked', {
+      audioPlaybackBlocked: true
+    });
+  }
+
+  private async playRemoteMedia(element: HTMLMediaElement | null) {
+    if (!element || !element.srcObject) return false;
+    try {
+      element.muted = false;
+      element.volume = 1;
+      await element.play();
+      this.audioPlaybackBlocked.set(false);
+      return true;
+    } catch {
+      this.audioPlaybackBlocked.set(true);
+      return false;
     }
   }
 
@@ -586,8 +627,13 @@ export class ConsultationCallInviteComponent implements OnDestroy {
           setSinkId?: (sinkId: string) => Promise<void>;
         })
       | null;
-    if (!output?.setSinkId) return;
-    await output.setSinkId(deviceId).catch(() => undefined);
+    if (!output?.setSinkId) return deviceId === '';
+    try {
+      await output.setSinkId(deviceId);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   private startDuration() {

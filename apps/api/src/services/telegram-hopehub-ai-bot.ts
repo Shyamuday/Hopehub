@@ -50,7 +50,7 @@ import {
 import { moderateGroupHelpMessage as moderate } from './telegram-group-help.moderation.js';
 import {
   registerGroupHelpLogGroup as registerLogGroup,
-  registerGroupHelpTestGroup as registerTestGroup
+  registerGroupHelpOffTopicGroup as registerOffTopicGroup
 } from './telegram-group-help.registration.js';
 import { handleGroupHelpCallback } from './telegram-group-help.callbacks.js';
 import {
@@ -77,6 +77,10 @@ import {
 import { publicIdentityChangeAlert } from './telegram-group-help.identity-alert.js';
 import { notifyTelegramBotFailure } from './telegram-bot-failure-alerts.js';
 import { forwardGroupHelpAdminMention } from './telegram-group-help.admin-mentions.js';
+import {
+  groupCommandDeleteDelaySeconds,
+  shouldAutoDeleteGroupCommand
+} from './telegram-group-help.command-cleanup.js';
 
 const BOT = GROUP_HELP_BOT_SLUG;
 
@@ -122,6 +126,7 @@ function distinctNonEmpty(values: Array<string | null | undefined>) {
 
 async function handleCommand(message: CommunityTelegramMessage, values: Record<string, string>) {
   const chatId = String(message.chat.id);
+  if (message.chat.type === 'private') message._groupHelpPrivateControl = true;
   try {
     const handled = await handleGroupHelpCommand(message, values);
     if (!handled) {
@@ -147,17 +152,45 @@ async function handleCommand(message: CommunityTelegramMessage, values: Record<s
       updateId: message.message_id
     });
     const context = groupHelpCommandContextFromConfig(chatId, values);
+    const auditValues = context.targetChatId
+      ? await config(context.targetChatId).catch(() => values)
+      : values;
     await recordGroupHelpCommandAudit({
       message,
       targetChatId: context.targetChatId || undefined,
       status: 'FAILED',
       detail: error instanceof Error ? error.message : String(error),
-      logChatId: values.telegramGroupHelpLogChannelId
+      logChatId: auditValues.telegramGroupHelpLogChannelId
     }).catch(() => null);
     await sendCommunityMessage(BOT, chatId, groupHelpCommandFailureMessage(error)).catch(
       () => null
     );
     return true;
+  } finally {
+    const context = groupHelpCommandContextFromConfig(chatId, values);
+    const delaySeconds = groupCommandDeleteDelaySeconds(
+      values.telegramGroupHelpCommandDeleteSeconds
+    );
+    if (
+      shouldAutoDeleteGroupCommand({
+        chatType: message.chat.type,
+        isControlGroup: context.isControlGroup,
+        delaySeconds
+      })
+    ) {
+      // Do not delay Telegram's webhook acknowledgement while the short
+      // privacy timer runs. A failed cleanup is non-fatal; the command audit
+      // remains available in the private moderation log.
+      setTimeout(() => {
+        void deleteMessage(chatId, message.message_id).catch((error) => {
+          console.warn('[telegram-group-help] Could not remove group command.', {
+            chatId,
+            messageId: message.message_id,
+            error: error instanceof Error ? error.message : String(error)
+          });
+        });
+      }, delaySeconds * 1000).unref();
+    }
   }
 }
 
@@ -186,7 +219,7 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
     message?.sender_chat && String(message.sender_chat.id) === String(message.chat.id)
   );
   if (message && message.from?.is_bot && !anonymousAdminMessage) return;
-  if (message && (await registerTestGroup(message))) return;
+  if (message && (await registerOffTopicGroup(message))) return;
   if (message && (await registerLogGroup(message))) return;
   const chatId = String(chat.id);
   const values = await config(chatId);
@@ -216,12 +249,15 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
   }
   const commandContext = groupHelpCommandContextFromConfig(chatId, values);
   if (commandContext.isControlGroup) {
+    const targetValues = commandContext.targetChatId
+      ? await config(commandContext.targetChatId).catch(() => values)
+      : values;
     await recordGroupHelpStaffGroupMember(
       update,
-      values.telegramGroupHelpStaffGroupId || '',
-      values.telegramGroupHelpGroupChatId || '',
+      targetValues.telegramGroupHelpStaffGroupId || '',
+      commandContext.targetChatId || '',
       GROUP_HELP_DEFAULT_STAFF_COMMANDS,
-      values.telegramGroupHelpLogChannelId || ''
+      targetValues.telegramGroupHelpLogChannelId || ''
     );
     if (commandContext.configurationError) {
       if (message?.text?.startsWith('/')) {

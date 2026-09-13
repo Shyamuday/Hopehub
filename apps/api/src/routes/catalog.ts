@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { Role } from '@prisma/client';
+import { HomeopathicDoctorType, ProviderDomain, Role } from '@prisma/client';
 import { authRequired, allowRoles } from '../auth.js';
 import { prisma } from '../db.js';
 import { DEFAULT_BILLING_PLANS } from '../constants/billing.constants.js';
@@ -26,6 +26,10 @@ import {
 } from '../services/disease-catalog.js';
 import { resolveDiseaseConsultationFee } from '../services/consultation-pricing.js';
 import {
+  enrichWithProfileImageAccessUrl,
+  userProfileImagePath
+} from '../utils/profile-image-url.js';
+import {
   getDiseasePublicPageEditPayload,
   mergeDiseasePublicPage,
   parsePublicPageContent,
@@ -34,6 +38,15 @@ import {
 import { diseasePublicPageUpdateSchema } from '../types/disease-public-page.js';
 
 export const router = Router();
+
+const adminDiseaseCategorySchema = z
+  .enum(DISEASE_PUBLIC_CATEGORY_KEYS as [string, ...string[]])
+  .or(z.literal('Hope Hub'));
+
+function categoryForAudience(domain: ProviderDomain, category: string | null | undefined) {
+  if (domain === ProviderDomain.HOPE_HUB) return 'Hope Hub';
+  return category === 'Hope Hub' ? 'miscellaneous' : category;
+}
 
 const diseaseFaqSchema = z.array(
   z.object({
@@ -88,7 +101,9 @@ export async function ensureBillingPlans() {
 router.get(
   '/diseases/categories',
   asyncRoute(async (_req, res) => {
-    res.json({ categories: DISEASE_PUBLIC_CATEGORIES });
+    res.json({
+      categories: [...DISEASE_PUBLIC_CATEGORIES, { key: 'Hope Hub', label: 'Hope Hub services' }]
+    });
   })
 );
 
@@ -100,7 +115,12 @@ router.get(
     const grouped = queryText(req, 'grouped') !== 'false';
     const clinicStoreId = queryText(req, 'clinicStoreId').trim() || undefined;
 
-    const diseases = await listDiseases({ q, category, activeOnly: true });
+    const diseases = await listDiseases({
+      q,
+      category,
+      activeOnly: true,
+      domains: [ProviderDomain.HOMEOPATHY]
+    });
     const withFees = await Promise.all(
       diseases.map(async (disease) => {
         const feeInPaise = await resolveDiseaseConsultationFee(disease.id, clinicStoreId ?? null);
@@ -123,7 +143,7 @@ router.get(
 router.get(
   '/diseases/by-slug/:slug',
   asyncRoute(async (req, res) => {
-    const disease = await getDiseaseBySlug(routeParam(req, 'slug'));
+    const disease = await getDiseaseBySlug(routeParam(req, 'slug'), [ProviderDomain.HOMEOPATHY]);
     if (!disease || !disease.isActive) {
       res.status(404).json({ message: 'Disease not found.' });
       return;
@@ -193,6 +213,7 @@ router.get(
         seoDescription: disease.seoDescription,
         publicFaq: parsePublicFaq(disease.publicFaq),
         publicCategory: disease.publicCategory,
+        publicDomains: disease.publicDomains,
         feeInPaise: disease.feeInPaise,
         isActive: disease.isActive
       }));
@@ -273,7 +294,8 @@ router.post(
         description: z.string().min(3),
         feeInPaise: z.number().int().positive(),
         intakeQuestions: z.array(z.string().min(3)).min(1),
-        publicCategory: z.enum(DISEASE_PUBLIC_CATEGORY_KEYS as [string, ...string[]]).optional(),
+        publicCategory: adminDiseaseCategorySchema.optional(),
+        publicDomain: z.nativeEnum(ProviderDomain).default(ProviderDomain.HOMEOPATHY),
         ...diseaseMarketingFields
       })
       .parse(req.body);
@@ -284,7 +306,8 @@ router.post(
         description: body.description,
         feeInPaise: body.feeInPaise,
         intakeQuestions: body.intakeQuestions,
-        publicCategory: body.publicCategory,
+        publicCategory: categoryForAudience(body.publicDomain, body.publicCategory),
+        publicDomains: [body.publicDomain],
         publicDescription: body.publicDescription ?? null,
         publicImageUrl: body.publicImageUrl ?? null,
         seoTitle: body.seoTitle ?? null,
@@ -310,10 +333,8 @@ router.put(
         feeInPaise: z.number().int().positive(),
         isActive: z.boolean(),
         intakeQuestions: z.array(z.string().min(1)).min(1),
-        publicCategory: z
-          .enum(DISEASE_PUBLIC_CATEGORY_KEYS as [string, ...string[]])
-          .nullable()
-          .optional(),
+        publicCategory: adminDiseaseCategorySchema.nullable().optional(),
+        publicDomain: z.nativeEnum(ProviderDomain),
         ...diseaseMarketingFields
       })
       .parse(req.body);
@@ -332,7 +353,8 @@ router.put(
         feeInPaise: body.feeInPaise,
         isActive: body.isActive,
         intakeQuestions: body.intakeQuestions,
-        publicCategory: body.publicCategory,
+        publicCategory: categoryForAudience(body.publicDomain, body.publicCategory),
+        publicDomains: [body.publicDomain],
         publicDescription: body.publicDescription,
         publicImageUrl: body.publicImageUrl ?? null,
         seoTitle: body.seoTitle ?? null,
@@ -355,11 +377,22 @@ router.get(
       ? Math.max(1, Math.min(50, parseInt(limitConfig.value, 10) || 12))
       : 12;
 
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
     const doctors = await prisma.doctor.findMany({
-      where: { showOnWebsite: true, suspendedAt: null, user: { isActive: true } },
+      where: {
+        providerDomain: ProviderDomain.HOMEOPATHY,
+        doctorType: { not: HomeopathicDoctorType.PSYCHOLOGIST },
+        showOnWebsite: true,
+        suspendedAt: null,
+        user: { isActive: true }
+      },
       select: {
         id: true,
+        userId: true,
         specialty: true,
+        registrationNo: true,
+        isAvailable: true,
         doctorType: true,
         specialtyFocus: true,
         bio: true,
@@ -367,13 +400,36 @@ router.get(
         focusAreas: true,
         designation: true,
         websiteOrder: true,
-        user: { select: { id: true, name: true } }
+        slots: {
+          where: { date: { gte: today }, isBooked: false, isBlocked: false },
+          orderBy: [{ date: 'asc' }, { startTime: 'asc' }],
+          take: 1,
+          select: { id: true, date: true, startTime: true, endTime: true }
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            profileImageKey: true,
+            profileImageUrl: true
+          }
+        }
       },
       orderBy: [{ websiteOrder: { sort: 'asc', nulls: 'last' } }, { user: { name: 'asc' } }],
       take: limit
     });
 
-    res.json({ doctors, limit });
+    const publicDoctors = await Promise.all(
+      doctors.map(async ({ slots, registrationNo, user, ...doctor }) => ({
+        ...doctor,
+        registrationNo,
+        credentialVerified: Boolean(registrationNo?.trim()),
+        nextAvailableSlot: slots[0] ?? null,
+        user: await enrichWithProfileImageAccessUrl(user, userProfileImagePath)
+      }))
+    );
+
+    res.json({ doctors: publicDoctors, limit });
   })
 );
 

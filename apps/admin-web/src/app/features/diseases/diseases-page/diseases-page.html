@@ -53,6 +53,14 @@
           </select>
         </label>
         <label class="field">
+          Website visibility
+          <select [formField]="newDiseaseForm.publicDomain">
+            <option value="HOMEOPATHY">Homeopathy site only</option>
+            <option value="HOPE_HUB">Hope Hub only</option>
+          </select>
+          <span class="field-hint">Hope Hub content is automatically kept out of care.hopehub.in.</span>
+        </label>
+        <label class="field">
           Consultation fee (₹)
           <input type="number" [formField]="newDiseaseForm.feeRupees" placeholder="e.g. 500" />
         </label>
@@ -174,6 +182,9 @@
           <span class="inactive-badge">Inactive</span>
         }
         <span class="category-badge">{{ categoryLabel(disease.publicCategory) }}</span>
+        <span class="category-badge">
+          {{ disease.publicDomains.includes('HOMEOPATHY') ? 'Homeopathy' : 'Hope Hub' }}
+        </span>
       </div>
       <button type="button" class="btn-edit" [adminCan]="managePermissions" adminCanMatch="any" (click)="startEdit(diseaseById(disease.id) || disease)">Edit</button>
     </div>
@@ -213,6 +224,14 @@
             <option [value]="category.key">{{ category.label }}</option>
           }
         </select>
+      </label>
+      <label class="field">
+        Website visibility
+        <select [formField]="draftForm.publicDomain">
+          <option value="HOMEOPATHY">Homeopathy site only</option>
+          <option value="HOPE_HUB">Hope Hub only</option>
+        </select>
+        <span class="field-hint">Changing this controls which public website can load the service.</span>
       </label>
       <label class="field">
         Consultation fee (₹)

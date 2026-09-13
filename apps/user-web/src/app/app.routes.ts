@@ -22,8 +22,9 @@ export const routes: Routes = [
     path: 'talk-to-doctor',
     loadComponent: () => import('./talk-to-doctor.component').then((m) => m.TalkToDoctorComponent),
     data: {
-      title: 'Talk to a doctor now',
-      description: 'Instant online consultation with live doctors.',
+      seoTitle: 'Talk to a Doctor Online | HopeHub Care',
+      seoDescription:
+        'Check doctor availability and request an online homeopathic consultation through HopeHub Care.',
     },
   },
   {
@@ -86,6 +87,12 @@ export const routes: Routes = [
     path: 'contact',
     loadComponent: () => import('./contact.component').then((m) => m.ContactComponent),
     data: ROUTE_SEO_CONTENT.contact,
+  },
+  {
+    path: 'editorial-policy',
+    loadComponent: () =>
+      import('./editorial-policy.component').then((m) => m.EditorialPolicyComponent),
+    data: ROUTE_SEO_CONTENT['editorial-policy'],
   },
   {
     path: 'legal',
@@ -307,6 +314,7 @@ export const routes: Routes = [
     data: {
       seoTitle: 'Page not found | HopeHub Care',
       seoDescription: 'The page you requested could not be found.',
+      noIndex: true,
     },
   },
 ];

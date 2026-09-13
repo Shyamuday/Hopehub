@@ -9,6 +9,7 @@ import type { DoctorSortField } from '../../../features/doctors/constants/doctor
 import type { SortDirection } from '../../../shared/constants/filter.constants';
 import type {
   CarePricingTemplateDto,
+  CareServiceCatalogItemDto,
   ProviderReadinessDto,
   ProviderRoleDefinitionDto,
 } from '@hopehub/contracts';
@@ -100,6 +101,15 @@ export class AdminDoctorsApi extends AdminApiBase {
     );
   }
 
+  getDoctorCredentialDocument(doctorId: string) {
+    return firstValueFrom(
+      this.http.get(`${this.apiBase}${API_PATHS.ADMIN.DOCTORS}/${doctorId}/credential-document`, {
+        observe: 'response',
+        responseType: 'blob',
+      }),
+    );
+  }
+
   reviewServicePricing(serviceId: string, decision: 'APPROVED' | 'REJECTED', reason?: string) {
     return firstValueFrom(
       this.http.patch(`${this.apiBase}/admin/doctors/services/${serviceId}/pricing-approval`, {
@@ -115,9 +125,11 @@ export class AdminDoctorsApi extends AdminApiBase {
     );
   }
 
-  rejectDoctor(doctorId: string) {
+  rejectDoctor(doctorId: string, reason?: string) {
     return firstValueFrom(
-      this.http.post(`${this.apiBase}${API_PATHS.ADMIN.DOCTORS}/${doctorId}/reject`, {}),
+      this.http.post(`${this.apiBase}${API_PATHS.ADMIN.DOCTORS}/${doctorId}/reject`, {
+        reason: reason || null,
+      }),
     );
   }
 
@@ -330,6 +342,55 @@ export class AdminDoctorsApi extends AdminApiBase {
     return firstValueFrom(
       this.http.get<{ templates: CarePricingTemplateDto[] }>(
         `${this.apiBase}/hope-hub/care-team-pricing-templates`,
+      ),
+    );
+  }
+
+  listCareTeamServiceOptions() {
+    return firstValueFrom(
+      this.http.get<{ options: CareServiceCatalogItemDto[] }>(
+        `${this.apiBase}/hope-hub/care-team-service-options`,
+      ),
+    );
+  }
+
+  listAdminCareTeamServiceOptions() {
+    return firstValueFrom(
+      this.http.get<{ options: CareServiceCatalogItemDto[] }>(
+        `${this.apiBase}/admin/hope-hub/care-service-options`,
+      ),
+    );
+  }
+
+  createCareTeamServiceOption(
+    payload: Omit<CareServiceCatalogItemDto, 'id' | 'isDefault' | 'createdAt' | 'updatedAt'>,
+  ) {
+    return firstValueFrom(
+      this.http.post<{ option: CareServiceCatalogItemDto }>(
+        `${this.apiBase}/admin/hope-hub/care-service-options`,
+        payload,
+      ),
+    );
+  }
+
+  updateCareTeamServiceOption(
+    id: string,
+    payload: Partial<
+      Omit<CareServiceCatalogItemDto, 'id' | 'isDefault' | 'createdAt' | 'updatedAt'>
+    >,
+  ) {
+    return firstValueFrom(
+      this.http.put<{ option: CareServiceCatalogItemDto }>(
+        `${this.apiBase}/admin/hope-hub/care-service-options/${encodeURIComponent(id)}`,
+        payload,
+      ),
+    );
+  }
+
+  deactivateCareTeamServiceOption(id: string) {
+    return firstValueFrom(
+      this.http.delete<{ option: CareServiceCatalogItemDto }>(
+        `${this.apiBase}/admin/hope-hub/care-service-options/${encodeURIComponent(id)}`,
       ),
     );
   }

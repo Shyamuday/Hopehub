@@ -120,7 +120,8 @@ export async function handleGroupHelpCommandConfirmationCallback(
         message_id: pending.sourceMessageId || callback.message.message_id,
         text: pending.text,
         chat: pending.chat,
-        from: callback.from
+        from: callback.from,
+        _groupHelpPrivateControl: pending.chat.type === 'private'
       },
       targetChatId: pending.targetChatId,
       status: 'CANCELLED',
@@ -136,7 +137,8 @@ export async function handleGroupHelpCommandConfirmationCallback(
     chat: pending.chat,
     from: callback.from,
     reply_to_message: pending.replyToMessage,
-    _groupHelpConfirmed: true
+    _groupHelpConfirmed: true,
+    _groupHelpPrivateControl: pending.chat.type === 'private'
   });
   return true;
 }

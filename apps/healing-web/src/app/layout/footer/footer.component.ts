@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { APP_CONSTANTS } from '../../core';
+import { CookieConsentService } from '../../core/services/cookie-consent.service';
 
 type FooterLink = {
   label: string;
@@ -114,6 +115,9 @@ type FooterSection = {
             @for (link of bottomLinks; track link.label) {
               <a [routerLink]="link.routerLink" class="footer-link">{{ link.label }}</a>
             }
+            <button type="button" class="footer-link" (click)="consent.openSettings()">
+              Cookie settings
+            </button>
           </div>
         </div>
       </div>
@@ -123,8 +127,13 @@ type FooterSection = {
     `
       .footer-link {
         color: #4b5f6a;
+        padding: 0;
+        background: transparent;
+        border: 0;
+        font: inherit;
         text-decoration: none;
         transition: color 160ms ease;
+        cursor: pointer;
       }
 
       .footer-link:hover,
@@ -137,6 +146,7 @@ type FooterSection = {
 export class FooterComponent {
   currentYear = new Date().getFullYear();
   APP_CONSTANTS = APP_CONSTANTS;
+  readonly consent = inject(CookieConsentService);
 
   readonly footerSections: FooterSection[] = [
     {
@@ -167,6 +177,7 @@ export class FooterComponent {
     {
       title: 'Resources & tests',
       links: [
+        { label: 'Resources library', routerLink: '/resources' },
         { label: 'Assessments', routerLink: '/assessments' },
         { label: 'Mental health test', routerLink: '/mental-health-test' },
         { label: 'Anxiety test', routerLink: '/anxiety-test' },
@@ -175,13 +186,14 @@ export class FooterComponent {
         { label: 'Exercises', routerLink: '/exercises' },
         { label: 'Lifestyle tips', routerLink: '/lifestyle-tips' },
         { label: 'Articles', routerLink: '/articles' },
-        { label: 'Recorded sessions', routerLink: '/resources' },
+        { label: 'Recorded sessions', routerLink: '/recorded-sessions' },
       ],
     },
     {
       title: 'Company & legal',
       links: [
         { label: 'About Hope Hub', routerLink: '/about' },
+        { label: 'Editorial policy', routerLink: '/editorial-policy' },
         { label: 'Share feedback', routerLink: '/feedback' },
         { label: 'Privacy policy', routerLink: '/privacy' },
         { label: 'Terms of service', routerLink: '/terms' },
@@ -200,6 +212,7 @@ export class FooterComponent {
   readonly bottomLinks: FooterLink[] = [
     { label: 'Telegram', routerLink: '/telegram' },
     { label: 'About', routerLink: '/about' },
+    { label: 'Editorial policy', routerLink: '/editorial-policy' },
     { label: 'Careers', routerLink: '/careers' },
     { label: 'Listener guidelines', routerLink: '/listener-guidelines' },
     { label: 'Listener training', routerLink: '/listener-training' },

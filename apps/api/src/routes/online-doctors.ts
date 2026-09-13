@@ -92,6 +92,8 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
           doctor: {
             select: {
               specialty: true,
+              providerDomain: true,
+              registrationNo: true,
               doctorType: true,
               specialtyFocus: true,
               bio: true,
@@ -209,6 +211,8 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
           doctor: {
             select: {
               specialty: true,
+              providerDomain: true,
+              registrationNo: true,
               doctorType: true,
               specialtyFocus: true,
               bio: true,
@@ -527,6 +531,8 @@ export function createOnlineDoctorsRouter(io: SocketIoServer) {
             doctor: {
               select: {
                 specialty: true,
+                providerDomain: true,
+                registrationNo: true,
                 doctorType: true,
                 specialtyFocus: true,
                 bio: true,

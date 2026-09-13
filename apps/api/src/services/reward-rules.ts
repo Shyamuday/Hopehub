@@ -10,8 +10,8 @@ import { prisma } from '../db.js';
 
 export const DEFAULT_REWARD_RULES = [
   {
-    code: 'WELCOME100_ALL_LIVE_SERVICES',
-    name: 'Welcome 100% live-service access',
+    code: 'WELCOMEFREE_ALL_LIVE_SERVICES',
+    name: 'Welcome Free live-service access',
     description: 'Reusable 100% coupon for all Hope Hub live chat, voice, and video services.',
     kind: RewardProgramKind.PROMO,
     trigger: RewardTrigger.CONSULTATION_PAID,
@@ -19,7 +19,7 @@ export const DEFAULT_REWARD_RULES = [
     valueType: RewardValueType.CHECKOUT_DISCOUNT_PERCENT,
     valueAmount: 10_000,
     appliesTo: RewardAppliesTo.CONSULTATION,
-    promoCode: 'WELCOME100',
+    promoCode: 'WELCOMEFREE',
     priority: 1_000,
     maxUsesPerPatient: null,
     minPayableInPaise: 0,
@@ -27,7 +27,7 @@ export const DEFAULT_REWARD_RULES = [
       targetPayableInPaise: 0,
       showToConsumers: true,
       featured: true,
-      publicLabel: 'Welcome100 — your first connection is free',
+      publicLabel: 'WelcomeFree — your live connection is free',
       publicDescription:
         'Use this welcome coupon for a free Hope Hub chat, voice, or video session.'
     }

@@ -11,6 +11,7 @@ import {
   PROVIDER_SESSION_MODE_DEFINITIONS,
   providerSessionModeFromValue,
   type CarePricingTemplateDto,
+  type CareServiceCatalogItemDto,
   type ProviderRoleDefinitionDto,
   type ProviderSessionMode,
   type ProviderTaxonomyResponse,
@@ -18,7 +19,7 @@ import {
 import { environment } from '../../../../environments/environment';
 import { API_PATHS } from '../../../core/constants/api-paths.constants';
 import { ROUTE_PATHS } from '../../../core/constants/app-routes.constants';
-import { AUTH_TOKEN_KEY } from '../../../core/constants/auth.constants';
+import { AUTH_PATHS, AUTH_TOKEN_KEY } from '../../../core/constants/auth.constants';
 import {
   CARE_TEAM_TYPE_LABELS,
   capabilitiesForProvider,
@@ -51,7 +52,17 @@ const LISTENER_SAFETY_ACKNOWLEDGEMENT_VERSION = 'listener-safety-v1-2026-08-07';
 const CARE_TEAM_TYPE_OPTIONS = PROVIDER_ROLE_CODES;
 type ProfileCareTeamType = string;
 type SelectableProfileCareTeamType = ProfileCareTeamType | 'OTHER';
-type ProfileSetupStepId = 'identity' | 'public' | 'care' | 'safety' | 'services';
+export type ProfileSetupStepId =
+  'identity' | 'credentials' | 'public' | 'care' | 'safety' | 'services';
+
+export function providerProfileSetupStepIds(
+  isPsychologist: boolean,
+  isHomeopathyProvider: boolean,
+): ProfileSetupStepId[] {
+  if (isPsychologist) return ['identity', 'public', 'care', 'safety', 'services'];
+  if (isHomeopathyProvider) return ['identity', 'credentials', 'public'];
+  return ['identity', 'public'];
+}
 
 export function resolveProviderServiceRole(
   providerRole: string | null | undefined,
@@ -120,6 +131,7 @@ function emptyProfileModel() {
   styleUrl: './profile-page.scss',
 })
 export class ProfilePage implements OnDestroy {
+  readonly customServiceTitleValue = '__CUSTOM_SERVICE__';
   readonly sessionModes = PROVIDER_SESSION_MODES;
   readonly languageSuggestions = PROVIDER_LANGUAGE_SUGGESTIONS;
   readonly ageGroupSuggestions = PROVIDER_AGE_GROUP_SUGGESTIONS;
@@ -132,6 +144,13 @@ export class ProfilePage implements OnDestroy {
   readonly authTokenKey = AUTH_TOKEN_KEY;
   readonly profileImageUploadPath = API_PATHS.DOCTOR.PROFILE_IMAGE;
   profileImageUrl: string | null = null;
+  approvalStatus = 'NOT_REQUIRED';
+  approvalNote = '';
+  credentialDocumentFileName = '';
+  credentialUploading = false;
+  emailVerified = false;
+  verificationSending = false;
+  verificationRefreshing = false;
 
   readonly profileModel = signal(emptyProfileModel());
   readonly profileForm = form(this.profileModel);
@@ -150,6 +169,7 @@ export class ProfilePage implements OnDestroy {
   readonly careServices = signal<Array<any>>([]);
   readonly pricingHistory = signal<Array<any>>([]);
   readonly carePricingTemplates = signal<CarePricingTemplateDto[]>([]);
+  readonly careServiceOptions = signal<CareServiceCatalogItemDto[]>([]);
   readonly commonServiceDurations = [15, 20, 30, 45, 60, 90, 120];
   readonly customDurationServiceIndexes = signal<Set<number>>(new Set());
   readonly telegramConnection = signal<{
@@ -175,6 +195,7 @@ export class ProfilePage implements OnDestroy {
   listenerScreeningPassed = false;
   canPrescribe = false;
   isPsychologist = false;
+  isHomeopathyProvider = false;
   message = '';
   error = '';
   isLoading = false;
@@ -193,6 +214,7 @@ export class ProfilePage implements OnDestroy {
     void this.loadTelegramConnection();
     void this.loadProviderTaxonomy();
     void this.loadCarePricingTemplates();
+    void this.loadCareServiceOptions();
     void this.loadPricingHistory();
     effect(() => {
       const model = this.profileModel();
@@ -318,13 +340,6 @@ export class ProfilePage implements OnDestroy {
     );
   }
 
-  specialtyFieldLabel(): string {
-    if (!this.isPsychologist) return 'Specialty';
-    if (this.isListenerProfile()) return 'Listening focus';
-    if (this.isCoachGuideProfile()) return 'Coaching / guide focus';
-    return 'Professional focus';
-  }
-
   registrationFieldLabel(): string {
     return this.isPsychologist ? 'Registration / certification number' : 'Registration Number';
   }
@@ -364,21 +379,35 @@ export class ProfilePage implements OnDestroy {
   suggestedServicesForSelectedSubtypes() {
     const seen = new Set<string>();
     const selectedRoles = this.selectedStructuredCareTeamTypes();
-    return this.carePricingTemplates()
+    return this.careServiceOptions()
       .filter(
-        (template) =>
-          !template.applicableRoleCodes.length ||
-          template.applicableRoleCodes.some((role) => selectedRoles.includes(role)),
+        (option) =>
+          !option.applicableRoleCodes.length ||
+          option.applicableRoleCodes.some((role) => selectedRoles.includes(role)),
       )
-      .map((template) => {
+      .map((option) => {
         const providerRole =
-          template.applicableRoleCodes.find((role) => selectedRoles.includes(role)) ||
+          option.applicableRoleCodes.find((role) => selectedRoles.includes(role)) ||
           selectedRoles[0] ||
           this.profileModel().careTeamType;
+        const pricing = this.pricingTemplatesForRole(providerRole)[0];
         return {
-          ...template,
+          id: option.id,
+          title: option.title,
+          description: option.description || pricing?.description || '',
           providerRole,
           subtype: this.roleLabel(providerRole),
+          pricingMode: pricing?.pricingMode || ('FIXED' as const),
+          priceInPaise: pricing?.priceInPaise ?? 0,
+          firstSessionPriceInPaise: pricing?.firstSessionPriceInPaise ?? null,
+          followUpPriceInPaise: pricing?.followUpPriceInPaise ?? null,
+          introSessionLimit: pricing?.introSessionLimit ?? 1,
+          packageSessionCount: pricing?.packageSessionCount ?? null,
+          packagePriceInPaise: pricing?.packagePriceInPaise ?? null,
+          freeMinutes: pricing?.freeMinutes ?? 0,
+          pricePerMinuteInPaise: pricing?.pricePerMinuteInPaise ?? null,
+          durationMinutes: pricing?.durationMinutes ?? 30,
+          isFree: pricing?.isFree ?? false,
         };
       })
       .filter((service) => {
@@ -631,7 +660,12 @@ export class ProfilePage implements OnDestroy {
       !isProviderDisplayName(form.name) ? 'valid name' : '',
       !indianMobileE164(form.mobile) ? 'valid 10-digit Indian mobile number' : '',
       !form.gender ? 'gender' : '',
-      !form.specialty.trim() && !this.isPsychologist ? 'specialty/focus' : '',
+    ].filter(Boolean);
+    const credentialsMissing = [
+      form.specialty.trim().length < 2 ? 'specialty/focus' : '',
+      form.registrationNo.trim().length < 3 ? 'professional registration number' : '',
+      !this.emailVerified ? 'verified email' : '',
+      !this.credentialDocumentFileName ? 'registration credential document' : '',
     ].filter(Boolean);
     const publicMissing = [
       form.bio.trim().length < 80 ? 'bio of at least 80 characters' : '',
@@ -669,9 +703,22 @@ export class ProfilePage implements OnDestroy {
           Boolean(this.profileImageUrl) &&
           isProviderDisplayName(form.name) &&
           Boolean(indianMobileE164(form.mobile)) &&
-          Boolean(form.gender) &&
-          Boolean(form.specialty.trim() || this.isPsychologist),
+          Boolean(form.gender),
         missing: identityMissing,
+      },
+      {
+        id: 'credentials' as const,
+        label: 'Credentials',
+        title: 'Professional credentials',
+        description:
+          'Add the registration details Hope Hub needs to review your provider application.',
+        complete:
+          !this.isHomeopathyProvider ||
+          (form.specialty.trim().length >= 2 &&
+            form.registrationNo.trim().length >= 3 &&
+            this.emailVerified &&
+            Boolean(this.credentialDocumentFileName)),
+        missing: credentialsMissing,
       },
       {
         id: 'public' as const,
@@ -721,9 +768,11 @@ export class ProfilePage implements OnDestroy {
       },
     ];
 
-    return this.isPsychologist
-      ? steps
-      : steps.filter((step) => step.id === 'identity' || step.id === 'public');
+    const visibleStepIds = providerProfileSetupStepIds(
+      this.isPsychologist,
+      this.isHomeopathyProvider,
+    );
+    return visibleStepIds.map((id) => steps.find((step) => step.id === id)!);
   }
 
   setupCompletionPercent() {
@@ -779,6 +828,7 @@ export class ProfilePage implements OnDestroy {
     const nextStep = this.nextSetupStep();
     if (
       (step === 'identity' ||
+        step === 'credentials' ||
         step === 'public' ||
         step === 'care' ||
         step === 'safety' ||
@@ -929,6 +979,24 @@ export class ProfilePage implements OnDestroy {
     }
   }
 
+  async loadCareServiceOptions() {
+    try {
+      const res = await firstValueFrom(
+        this.http.get<{ options: CareServiceCatalogItemDto[] }>(
+          `${this.apiBase}/hope-hub/care-team-service-options`,
+        ),
+      );
+      this.careServiceOptions.set(
+        res.options.map((option) => ({
+          ...option,
+          applicableRoleCodes: option.applicableRoleCodes ?? [],
+        })),
+      );
+    } catch {
+      this.careServiceOptions.set([]);
+    }
+  }
+
   async loadProviderTaxonomy() {
     try {
       const taxonomy = await firstValueFrom(
@@ -955,6 +1023,7 @@ export class ProfilePage implements OnDestroy {
           profile: {
             name: string;
             email?: string | null;
+            emailVerified?: boolean;
             gender?: 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY' | null;
             mobile?: string | null;
             doctorProfile?: DoctorProfileSummary | null;
@@ -963,8 +1032,13 @@ export class ProfilePage implements OnDestroy {
       );
 
       const profile = response.profile;
+      this.emailVerified = Boolean(profile.emailVerified);
       this.canPrescribe = capabilitiesForProvider(profile.doctorProfile).prescribe;
       this.isPsychologist = profile.doctorProfile?.doctorType === 'PSYCHOLOGIST';
+      this.isHomeopathyProvider = profile.doctorProfile?.providerDomain === 'HOMEOPATHY';
+      this.approvalStatus = profile.doctorProfile?.approvalStatus || 'NOT_REQUIRED';
+      this.approvalNote = profile.doctorProfile?.approvalNote || '';
+      this.credentialDocumentFileName = profile.doctorProfile?.credentialDocumentFileName || '';
       const mental = profile.doctorProfile?.mentalHealthProfile;
       this.methodOptions = this.canPrescribe
         ? (
@@ -996,7 +1070,8 @@ export class ProfilePage implements OnDestroy {
         email: profile.email || '',
         gender: profile.gender || '',
         mobile: indianMobileDisplay(profile.mobile),
-        specialty: profile.doctorProfile?.specialty || '',
+        specialty:
+          profile.doctorProfile?.specialty || (this.isPsychologist ? '' : 'General Homeopathy'),
         registrationNo: profile.doctorProfile?.registrationNo || '',
         isAvailable: profile.doctorProfile?.isAvailable ?? true,
         bio: profile.doctorProfile?.bio || '',
@@ -1104,6 +1179,83 @@ export class ProfilePage implements OnDestroy {
     }
   }
 
+  async uploadCredentialDocument(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    this.message = '';
+    this.error = '';
+    this.credentialUploading = true;
+    try {
+      const formData = new FormData();
+      formData.append('file', file, file.name);
+      formData.append('fileName', file.name);
+      const response = await firstValueFrom(
+        this.http.put<{ message: string }>(
+          `${this.apiBase}${API_PATHS.DOCTOR.CREDENTIAL_DOCUMENT}`,
+          formData,
+        ),
+      );
+      this.credentialDocumentFileName = file.name;
+      this.message = response.message;
+      await this.loadProfile();
+    } catch (error: any) {
+      this.error = error?.error?.message || 'Could not upload the credential document.';
+    } finally {
+      this.credentialUploading = false;
+      input.value = '';
+    }
+  }
+
+  async resendVerificationEmail(): Promise<void> {
+    const email = this.profileModel().email.trim();
+    if (!email) {
+      this.error = 'Your account email is unavailable. Reload the page and try again.';
+      return;
+    }
+    this.message = '';
+    this.error = '';
+    this.verificationSending = true;
+    try {
+      const response = await firstValueFrom(
+        this.http.post<{ message: string }>(`${this.apiBase}${AUTH_PATHS.RESEND_VERIFICATION}`, {
+          email,
+          role: 'DOCTOR',
+        }),
+      );
+      this.message = response.message;
+    } catch (error: any) {
+      this.error = error?.error?.message || 'Could not send a verification email. Please retry.';
+    } finally {
+      this.verificationSending = false;
+    }
+  }
+
+  async refreshEmailVerificationStatus(): Promise<void> {
+    this.message = '';
+    this.error = '';
+    this.verificationRefreshing = true;
+    await this.loadProfile();
+    if (!this.error) {
+      this.message = this.emailVerified
+        ? 'Email verified successfully.'
+        : 'Email is still waiting for verification. Open the newest link in your inbox.';
+    }
+    this.verificationRefreshing = false;
+  }
+
+  approvalStatusTitle(): string {
+    return (
+      {
+        DRAFT: 'Complete your profile for review',
+        PENDING: 'Credential review in progress',
+        CHANGES_REQUESTED: 'Changes requested by Hope Hub',
+        APPROVED: 'Provider profile approved',
+        REJECTED: 'Application not approved',
+      }[this.approvalStatus] || ''
+    );
+  }
+
   async saveProfile(
     options: { step?: ProfileSetupStepId; refreshProfile?: boolean } = {},
   ): Promise<boolean> {
@@ -1155,6 +1307,7 @@ export class ProfilePage implements OnDestroy {
 
   private profileSetupStep(value?: string | null): ProfileSetupStepId | null {
     return value === 'identity' ||
+      value === 'credentials' ||
       value === 'public' ||
       value === 'care' ||
       value === 'safety' ||
@@ -1214,6 +1367,23 @@ export class ProfilePage implements OnDestroy {
         gender: form.gender || null,
         mobile: indianMobileE164(form.mobile) || form.mobile,
         isAvailable: form.isAvailable,
+        ...(!this.isPsychologist && !this.isHomeopathyProvider
+          ? {
+              specialty: this.specialtyForProfileSave(form),
+              registrationNo: form.registrationNo.trim(),
+            }
+          : {}),
+        ...(this.canPrescribe && !this.isHomeopathyProvider
+          ? { defaultMethodOptionId: form.defaultMethodOptionId || null }
+          : {}),
+      };
+    }
+
+    if (step === 'credentials') {
+      return {
+        step,
+        specialty: this.specialtyForProfileSave(form).trim(),
+        registrationNo: form.registrationNo.trim(),
         ...(this.canPrescribe ? { defaultMethodOptionId: form.defaultMethodOptionId || null } : {}),
       };
     }
@@ -1658,6 +1828,38 @@ export class ProfilePage implements OnDestroy {
     );
   }
 
+  serviceTitleOptions(service: { providerRole?: string | null }): string[] {
+    return [
+      ...new Set(
+        this.careServiceOptions()
+          .filter(
+            (option) =>
+              !option.applicableRoleCodes.length ||
+              Boolean(
+                service.providerRole && option.applicableRoleCodes.includes(service.providerRole),
+              ),
+          )
+          .map((option) => option.title.trim())
+          .filter(Boolean),
+      ),
+    ];
+  }
+
+  serviceTitleChoice(service: { title?: string; providerRole?: string | null }): string {
+    const title = service.title?.trim() || '';
+    if (!title) return '';
+    if (title === this.customServiceTitleValue) return this.customServiceTitleValue;
+    return this.serviceTitleOptions(service).includes(title) ? title : this.customServiceTitleValue;
+  }
+
+  selectCareServiceTitle(index: number, value: string): void {
+    this.updateCareService(index, 'title', value);
+  }
+
+  customServiceTitle(service: { title?: string }): string {
+    return service.title === this.customServiceTitleValue ? '' : service.title || '';
+  }
+
   rupees(value: number | null | undefined) {
     return value == null ? '' : String(value / 100);
   }
@@ -1709,7 +1911,9 @@ export class ProfilePage implements OnDestroy {
   }
 
   private servicesForSave(legacyText: string) {
-    const structured = this.careServices().filter((service) => service.title?.trim());
+    const structured = this.careServices().filter(
+      (service) => service.title?.trim() && service.title.trim() !== this.customServiceTitleValue,
+    );
     return structured.length
       ? this.normalizeServiceList(structured)
       : this.parseServiceOffers(legacyText);

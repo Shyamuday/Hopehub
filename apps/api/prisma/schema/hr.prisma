@@ -67,48 +67,67 @@ enum ProviderEarningModel {
   HYBRID_PLATFORM_FEE
 }
 
-model Doctor {
-  id             String                     @id @default(cuid())
-  userId         String                     @unique
-  doctorType     HomeopathicDoctorType      @default(JUNIOR_DOCTOR)
-  providerDomain ProviderDomain             @default(HOMEOPATHY)
-  specialtyFocus HomeopathicSpecialtyFocus?
-  specialty      String
-  registrationNo String?
-  isAvailable    Boolean                    @default(true)
-  isOnline       Boolean                    @default(true)
-  clinicStoreId  String?
-  clinicStore    Store?                     @relation("DoctorClinic", fields: [clinicStoreId], references: [id])
-  user           User                       @relation(fields: [userId], references: [id])
+enum ProviderApprovalStatus {
+  NOT_REQUIRED
+  DRAFT
+  PENDING
+  CHANGES_REQUESTED
+  APPROVED
+  REJECTED
+}
 
-  employeeId               String?                 @unique
-  designation              String?
-  department               String?
-  joiningDate              DateTime?
-  probationEndDate         DateTime?
-  salaryPerMonth           Int?
-  consultationFee          Int?
+model Doctor {
+  id                           String                     @id @default(cuid())
+  userId                       String                     @unique
+  doctorType                   HomeopathicDoctorType      @default(JUNIOR_DOCTOR)
+  providerDomain               ProviderDomain             @default(HOMEOPATHY)
+  specialtyFocus               HomeopathicSpecialtyFocus?
+  specialty                    String
+  registrationNo               String?
+  registrationNoNormalized     String?                    @unique
+  approvalStatus               ProviderApprovalStatus     @default(NOT_REQUIRED)
+  approvalRequestedAt          DateTime?
+  approvedAt                   DateTime?
+  approvedById                 String?
+  approvalNote                 String?                    @db.Text
+  credentialDocumentKey        String?
+  credentialDocumentFileName   String?
+  credentialDocumentMimeType   String?
+  credentialDocumentUploadedAt DateTime?
+  isAvailable                  Boolean                    @default(true)
+  isOnline                     Boolean                    @default(true)
+  clinicStoreId                String?
+  clinicStore                  Store?                     @relation("DoctorClinic", fields: [clinicStoreId], references: [id])
+  user                         User                       @relation(fields: [userId], references: [id])
+
+  employeeId                    String?                 @unique
+  designation                   String?
+  department                    String?
+  joiningDate                   DateTime?
+  probationEndDate              DateTime?
+  salaryPerMonth                Int?
+  consultationFee               Int?
   /// How this doctor is paid: fixed salary, per-consultation only, or both.
-  compensationModel        DoctorCompensationModel @default(HYBRID)
+  compensationModel             DoctorCompensationModel @default(HYBRID)
   /// Share of paid consultation revenue (percent). Defaults to 60 when unset in logic.
-  consultationSharePercent Int                     @default(60)
-  providerEarningModel       ProviderEarningModel  @default(PROVIDER_PERCENTAGE)
-  providerFixedEarningInPaise Int                  @default(0)
-  platformFeePercent         Int                   @default(40)
-  platformFixedFeeInPaise    Int                   @default(0)
+  consultationSharePercent      Int                     @default(60)
+  providerEarningModel          ProviderEarningModel    @default(PROVIDER_PERCENTAGE)
+  providerFixedEarningInPaise   Int                     @default(0)
+  platformFeePercent            Int                     @default(40)
+  platformFixedFeeInPaise       Int                     @default(0)
   minimumProviderEarningInPaise Int?
-  maximumPlatformFeeInPaise  Int?
-  compensationUpdatedAt      DateTime?
-  compensationUpdatedById    String?
-  workShift                WorkShift               @default(FULL_DAY)
-  shiftStart               String?
-  shiftEnd                 String?
-  weeklyOffDays            String[]                @default([])
-  employeeStatus           EmployeeStatus          @default(ACTIVE)
-  phone                    String?
-  address                  String?
-  emergencyContact         String?
-  emergencyPhone           String?
+  maximumPlatformFeeInPaise     Int?
+  compensationUpdatedAt         DateTime?
+  compensationUpdatedById       String?
+  workShift                     WorkShift               @default(FULL_DAY)
+  shiftStart                    String?
+  shiftEnd                      String?
+  weeklyOffDays                 String[]                @default([])
+  employeeStatus                EmployeeStatus          @default(ACTIVE)
+  phone                         String?
+  address                       String?
+  emergencyContact              String?
+  emergencyPhone                String?
 
   /// Public-facing fields shown on the clinic website
   bio               String?   @db.Text
@@ -138,6 +157,7 @@ model Doctor {
 
   @@index([suspendedAt])
   @@index([suspendedById])
+  @@index([approvalStatus, providerDomain])
 }
 
 model HrProfile {

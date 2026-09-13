@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminApi } from '../../core/services/admin-api';
 import { AdminCanDirective } from '../../core/directives/admin-can.directive';
@@ -9,6 +9,7 @@ import {
 } from '../../shared/ui/admin-form-drawer.component';
 import { AdminFeedbackComponent } from '../../shared/ui/admin-feedback.component';
 import { AdminContentStateComponent } from '../../shared/ui/admin-content-state.component';
+import { AdminPageHeaderComponent } from '../../shared/ui/admin-page-header.component';
 
 type ListenerScreeningOptionForm = {
   id: string;
@@ -41,6 +42,7 @@ type ListenerScreeningSetForm = {
     AdminFormDrawerComponent,
     AdminFeedbackComponent,
     AdminContentStateComponent,
+    AdminPageHeaderComponent,
   ],
   templateUrl: './listener-screening-page.html',
   styleUrl: './listener-screening-page.scss',
@@ -61,6 +63,7 @@ export class ListenerScreeningPage implements OnInit {
   readonly validationIssues = signal<string[]>([]);
   readonly editorOpen = signal(false);
   readonly editorStep = signal(0);
+  private editorBaseline = '';
   readonly editorSteps: readonly AdminFormStep[] = [
     { id: 'basics', label: 'Basics' },
     { id: 'questions', label: 'Questions' },
@@ -69,6 +72,19 @@ export class ListenerScreeningPage implements OnInit {
   readonly editorTitle = computed(() =>
     this.form().id ? `Edit ${this.form().version}` : 'Create listener test',
   );
+  readonly headerMetrics = computed(() => [
+    { label: 'Versions', value: this.questionSets().length },
+    {
+      label: 'Published',
+      value: this.questionSets().filter((set) => set.isActive).length,
+      tone: 'success' as const,
+    },
+    {
+      label: 'Reports',
+      value: this.liveGroupReports().length,
+      tone: this.liveGroupReports().length ? ('warning' as const) : ('default' as const),
+    },
+  ]);
 
   ngOnInit(): void {
     void this.load();
@@ -110,6 +126,7 @@ export class ListenerScreeningPage implements OnInit {
         })),
       })),
     });
+    this.editorBaseline = JSON.stringify(this.form());
     if (openEditor) {
       this.editorStep.set(0);
       this.editorOpen.set(true);
@@ -122,6 +139,7 @@ export class ListenerScreeningPage implements OnInit {
     this.validationIssues.set([]);
     this.editorStep.set(0);
     this.editorOpen.set(true);
+    this.editorBaseline = JSON.stringify(this.form());
   }
 
   duplicateAsDraft(questionSet: any | null): void {
@@ -136,10 +154,21 @@ export class ListenerScreeningPage implements OnInit {
 
   closeEditor(): void {
     if (this.saving()) return;
+    if (this.hasUnsavedChanges() && !confirm('Discard the unsaved screening test changes?')) return;
     this.editorOpen.set(false);
     this.editorStep.set(0);
     this.previewOpen.set(false);
     this.validationIssues.set([]);
+  }
+
+  hasUnsavedChanges(): boolean {
+    return this.editorOpen() && JSON.stringify(this.form()) !== this.editorBaseline;
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  protectUnsavedChanges(event: BeforeUnloadEvent): void {
+    if (!this.hasUnsavedChanges()) return;
+    event.preventDefault();
   }
 
   nextEditorStep(): void {

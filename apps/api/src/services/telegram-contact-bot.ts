@@ -30,6 +30,7 @@ import {
 import { configuredUrlButtons } from './telegram-keyboard-config.js';
 import { getSiteConfigValue } from './site-config.service.js';
 import { COMMUNITY_BOT_SLUGS } from '../constants/telegram-community-bot.constants.js';
+import { withPublicCommunityLinks } from './telegram-public-community-links.js';
 
 const slug = COMMUNITY_BOT_SLUGS.CONTACT;
 const SUPPORT_GROUP_CONFIG_KEY = 'telegramContactSupportGroupId';
@@ -309,20 +310,23 @@ function mainKeyboard(controls: TelegramBotControls): TelegramKeyboard {
   for (let index = 0; index < linkButtons.length; index += 2) {
     linkRows.push(linkButtons.slice(index, index + 2));
   }
-  return {
-    inline_keyboard: [
-      [
-        { text: 'Suggestion', callback_data: 'cat_suggestion' },
-        { text: 'Complaint', callback_data: 'cat_complaint' }
-      ],
-      [
-        { text: 'General enquiry', callback_data: 'cat_enquiry' },
-        { text: 'Report a bug', callback_data: 'cat_bug' }
-      ],
-      [{ text: 'Partnership', callback_data: 'cat_partnership' }],
-      ...linkRows
-    ]
-  };
+  return withPublicCommunityLinks(
+    {
+      inline_keyboard: [
+        [
+          { text: 'Suggestion', callback_data: 'cat_suggestion' },
+          { text: 'Complaint', callback_data: 'cat_complaint' }
+        ],
+        [
+          { text: 'General enquiry', callback_data: 'cat_enquiry' },
+          { text: 'Report a bug', callback_data: 'cat_bug' }
+        ],
+        [{ text: 'Partnership', callback_data: 'cat_partnership' }],
+        ...linkRows
+      ]
+    },
+    controls
+  )!;
 }
 const cancelKeyboard: TelegramKeyboard = {
   inline_keyboard: [[{ text: 'Cancel', callback_data: 'cancel' }]]

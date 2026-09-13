@@ -22,12 +22,14 @@ import { Component, input } from '@angular/core';
     .context {
       border: 1px solid #dbeafe;
       border-radius: 14px;
-      background: linear-gradient(135deg, #eff6ff, #fff);
-      padding: 1rem 1.1rem;
+      background: radial-gradient(circle at 100% 0, rgba(37, 99, 235, 0.12), transparent 38%), #fff;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+      padding: 1.1rem 1.2rem;
     }
     .context--hope {
       border-color: #ccfbf1;
-      background: linear-gradient(135deg, #f0fdfa, #fff);
+      background:
+        radial-gradient(circle at 100% 0, rgba(20, 184, 166, 0.14), transparent 38%), #fff;
     }
     p,
     h1,

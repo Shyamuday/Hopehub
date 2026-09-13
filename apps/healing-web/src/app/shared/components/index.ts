@@ -38,3 +38,4 @@ export * from './page-header/page-header.component';
 export * from './consumer-page-shell/consumer-page-shell.component';
 export * from './consumer-selection-rail/consumer-selection-rail.component';
 export * from './filter-bar/filter-bar.component';
+export * from './cookie-consent/cookie-consent.component';

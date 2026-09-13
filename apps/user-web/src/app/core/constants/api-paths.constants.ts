@@ -5,7 +5,7 @@ export const API_PATHS = {
   BILLING_PLANS: '/billing/plans',
   PAYMENTS: {
     CREATE_ORDER: (consultationId: string) => `/payments/${consultationId}/create-order`,
-    VERIFY: (consultationId: string) => `/payments/${consultationId}/verify`
+    VERIFY: (consultationId: string) => `/payments/${consultationId}/verify`,
   },
   PATIENT: {
     PRESCRIPTIONS: '/patient/prescriptions',
@@ -36,20 +36,16 @@ export const API_PATHS = {
     REWARDS: CROSS_APP_API_PATHS.PATIENT.REWARDS,
     REWARDS_CHECKOUT_QUOTE: CROSS_APP_API_PATHS.PATIENT.REWARDS_CHECKOUT_QUOTE,
     DELIVERIES: '/patient/deliveries',
-    DELIVERY: (id: string) => `/patient/deliveries/${id}`
-  },
-  ADMIN: {
-    DOCTORS: '/admin/doctors',
-    REPORTS: '/admin/reports'
+    DELIVERY: (id: string) => `/patient/deliveries/${id}`,
   },
   ANALYTICS: {
-    EVENTS: '/analytics/events'
+    EVENTS: '/analytics/events',
   },
   CHAT: {
     START: '/chat/start',
     SESSION: (id: string) => `/chat/${id}`,
     MESSAGE: (id: string) => `/chat/${id}/message`,
-    LINK: (id: string) => `/chat/${id}/link`
+    LINK: (id: string) => `/chat/${id}/link`,
   },
   VACANCIES: '/vacancies',
   DOCTORS: '/doctors',
@@ -63,5 +59,5 @@ export const API_PATHS = {
   RTC_ICE_SERVERS: '/rtc/ice-servers',
   DISEASES: '/diseases',
   CLINICS: '/clinics',
-  PUBLIC_CONFIG: '/public-config'
+  PUBLIC_CONFIG: '/public-config',
 } as const;

@@ -301,6 +301,9 @@ export class ConsultationWebrtcCallService {
   private answerReceivedAt = 0;
   private firstRemoteMediaAt = 0;
   private connectedAt = 0;
+  private gatheredCandidateCount = 0;
+  private gatheredRelayCandidateCount = 0;
+  private readonly gatheredCandidateTypes = new Set<string>();
   private manualLowDataMode = false;
   private readonly connectivityChecks = new Map<string, Promise<ConnectivityResult>>();
   private connectivityPreflightSource = 'none';
@@ -1080,6 +1083,23 @@ export class ConsultationWebrtcCallService {
     return true;
   }
 
+  async reportActiveCallProblem(
+    reason: string,
+    metadata: Record<string, unknown> = {}
+  ): Promise<boolean> {
+    if (!this.socket || !this.callContext || !this.activeCallId) return false;
+    this.emitSignal(CALL_SOCKET_EVENTS.DIAGNOSTIC, {
+      ...this.callContext,
+      reason,
+      metadata: {
+        ...this.callMetadata(),
+        ...metadata,
+        diagnosticReason: reason
+      }
+    });
+    return true;
+  }
+
   async resumeRecoverableCall(iceServers: IceServerConfig[] = DEFAULT_STUN) {
     const recovery = this.recoverableCall();
     if (!recovery || !this.socket) return;
@@ -1220,6 +1240,9 @@ export class ConsultationWebrtcCallService {
     this.answerReceivedAt = 0;
     this.firstRemoteMediaAt = 0;
     this.connectedAt = 0;
+    this.gatheredCandidateCount = 0;
+    this.gatheredRelayCandidateCount = 0;
+    this.gatheredCandidateTypes.clear();
     this.pendingRecoveryRestart = null;
     this.networkQuality.set('unknown');
     this.voiceFallbackSuggested.set(false);
@@ -1590,6 +1613,10 @@ export class ConsultationWebrtcCallService {
 
     this.pc.onicecandidate = (event) => {
       if (!event.candidate || !this.socket || !this.callContext) return;
+      const candidateType = event.candidate.type || 'unknown';
+      this.gatheredCandidateCount += 1;
+      this.gatheredCandidateTypes.add(candidateType);
+      if (candidateType === 'relay') this.gatheredRelayCandidateCount += 1;
       this.emitSignal(CALL_SOCKET_EVENTS.ICE, {
         consultationId: this.callContext.consultationId,
         targetUserId: this.callContext.targetUserId,
@@ -1611,15 +1638,9 @@ export class ConsultationWebrtcCallService {
   }
 
   private mediaConstraints(mode: CallMode): MediaStreamConstraints {
-    const audioDeviceId = this.selectedAudioInputId();
     const videoDeviceId = this.selectedVideoInputId();
     return {
-      audio: {
-        ...(audioDeviceId ? { deviceId: { exact: audioDeviceId } } : {}),
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true
-      },
+      audio: this.audioConstraints(),
       video:
         mode === 'video'
           ? videoDeviceId
@@ -1635,6 +1656,20 @@ export class ConsultationWebrtcCallService {
                 frameRate: { ideal: 24, max: 30 }
               }
           : false
+    };
+  }
+
+  private audioConstraints(deviceId = this.selectedAudioInputId()): MediaTrackConstraints {
+    return {
+      ...(deviceId ? { deviceId: { exact: deviceId } } : {}),
+      // Speech calls should remain mono. This gives mobile echo cancellers one clean channel
+      // and prevents stereo capture from doubling room/background noise.
+      channelCount: { ideal: 1 },
+      sampleRate: { ideal: 48_000 },
+      sampleSize: { ideal: 16 },
+      echoCancellation: { ideal: true },
+      noiseSuppression: { ideal: true },
+      autoGainControl: { ideal: true }
     };
   }
 
@@ -1690,7 +1725,9 @@ export class ConsultationWebrtcCallService {
     }
 
     const replacementStream = await navigator.mediaDevices.getUserMedia({
-      audio: kind === 'audio' ? (deviceId ? { deviceId: { exact: deviceId } } : true) : false,
+      // Keep the same speech-processing profile when changing microphones mid-call. Using
+      // only a deviceId here caused some mobile browsers to drop echo/noise processing.
+      audio: kind === 'audio' ? this.audioConstraints(deviceId) : false,
       video: kind === 'video' ? (deviceId ? { deviceId: { exact: deviceId } } : true) : false
     });
     const replacementTrack =
@@ -1700,6 +1737,9 @@ export class ConsultationWebrtcCallService {
     if (!replacementTrack) {
       replacementStream.getTracks().forEach((track) => track.stop());
       throw new Error(`No ${kind} device is available.`);
+    }
+    if (kind === 'audio' && 'contentHint' in replacementTrack) {
+      replacementTrack.contentHint = 'speech';
     }
 
     const currentStream = this.localStream();
@@ -1949,6 +1989,12 @@ export class ConsultationWebrtcCallService {
       return;
     }
 
+    // Do not overwrite an offer that is still awaiting its answer.
+    if (this.makingOffer || this.pc.signalingState !== 'stable') {
+      this.scheduleIceRestart();
+      return;
+    }
+
     this.iceRestartInProgress = true;
     this.iceRestartAttempts += 1;
     this.totalReconnectCount += 1;
@@ -1969,10 +2015,19 @@ export class ConsultationWebrtcCallService {
         }
       });
     } catch {
-      if (this.iceRestartAttempts < MAX_ICE_RESTART_ATTEMPTS) this.scheduleIceRestart();
+      if (this.callContext) {
+        this.emitSignal(CALL_SOCKET_EVENTS.DIAGNOSTIC, {
+          ...this.callContext,
+          reason: 'ice_restart_failed',
+          metadata: { ...this.callMetadata(), diagnosticReason: 'ice_restart_failed' }
+        });
+      }
     } finally {
       this.makingOffer = false;
       this.iceRestartInProgress = false;
+      if (this.state() === 'reconnecting' && this.iceRestartAttempts < MAX_ICE_RESTART_ATTEMPTS) {
+        this.scheduleIceRestart();
+      }
     }
   }
 
@@ -2347,13 +2402,46 @@ export class ConsultationWebrtcCallService {
 
   private startMediaTimeout() {
     this.clearMediaTimeout();
+    // setRemoteDescription()/ICE callbacks can mark the peer connected before this method runs.
+    // Never arm the initial-connection timer after media has already connected; otherwise a later
+    // temporary disconnect can let this stale timer end a healthy call as `media_timeout` while
+    // the dedicated reconnect timer is already recovering it.
+    if (this.peerHasConnected()) return;
     this.mediaTimeout = setTimeout(() => {
-      if (this.state() === 'connected' || this.state() === 'ended') return;
-      void this.failCall(
-        'media_timeout',
-        'Call could not connect. Please try again or continue in chat.'
-      );
+      this.mediaTimeout = null;
+      if (this.peerHasConnected() || this.state() === 'ended' || this.state() === 'reconnecting') {
+        return;
+      }
+      // A stalled initial connection deserves the same bounded recovery as a dropped call.
+      if (this.pc && this.socket && this.callContext) {
+        this.emitSignal(CALL_SOCKET_EVENTS.DIAGNOSTIC, {
+          ...this.callContext,
+          reason: 'media_connection_stalled',
+          metadata: { ...this.callMetadata(), diagnosticReason: 'media_connection_stalled' }
+        });
+        this.state.set('reconnecting');
+        this.startReconnectTimeout();
+        void this.attemptIceRestart();
+      } else {
+        void this.failCall(
+          'media_timeout',
+          'Call could not connect. Please try again or continue in chat.'
+        );
+      }
     }, MEDIA_CONNECT_TIMEOUT_MS);
+  }
+
+  private peerHasConnected() {
+    const connectionState = this.pc?.connectionState;
+    const iceState = this.pc?.iceConnectionState;
+    return Boolean(
+      this.connectedAt ||
+      this.firstRemoteMediaAt ||
+      this.state() === 'connected' ||
+      connectionState === 'connected' ||
+      iceState === 'connected' ||
+      iceState === 'completed'
+    );
   }
 
   private startReconnectTimeout() {
@@ -2544,6 +2632,7 @@ export class ConsultationWebrtcCallService {
   }
 
   private callMetadata(): Record<string, unknown> {
+    const audioSettings = this.localStream()?.getAudioTracks()[0]?.getSettings?.();
     return {
       userAgent:
         typeof navigator !== 'undefined' && 'userAgent' in navigator
@@ -2555,7 +2644,16 @@ export class ConsultationWebrtcCallService {
           : undefined,
       connectionState: this.pc?.connectionState,
       iceConnectionState: this.pc?.iceConnectionState,
+      signalingState: this.pc?.signalingState,
+      iceGatheringState: this.pc?.iceGatheringState,
+      hasLocalDescription: Boolean(this.pc?.localDescription),
+      hasRemoteDescription: Boolean(this.pc?.remoteDescription),
+      queuedRemoteCandidateCount: this.iceQueue.length,
       mode: this.callMode(),
+      privacyRelay: this.privacyRelay(),
+      gatheredCandidateCount: this.gatheredCandidateCount,
+      gatheredRelayCandidateCount: this.gatheredRelayCandidateCount,
+      gatheredCandidateTypes: [...this.gatheredCandidateTypes].sort().join(',') || undefined,
       lowDataMode: this.lowDataMode(),
       backgroundBlurEnabled: this.backgroundBlurEnabled(),
       networkType: this.networkProfile().type,
@@ -2566,6 +2664,11 @@ export class ConsultationWebrtcCallService {
       connectivityCheckMs: this.connectivityCheckMs,
       mediaAcquisitionMs: this.mediaAcquisitionMs,
       preparedStreamReused: this.preparedStreamReused,
+      audioEchoCancellation: audioSettings?.echoCancellation,
+      audioNoiseSuppression: audioSettings?.noiseSuppression,
+      audioAutoGainControl: audioSettings?.autoGainControl,
+      audioChannelCount: audioSettings?.channelCount,
+      audioSampleRate: audioSettings?.sampleRate,
       videoPausedForNetwork: this.videoPausedForNetwork(),
       setupToRingAckMs:
         this.callStartedAt && this.ringAcknowledgedAt

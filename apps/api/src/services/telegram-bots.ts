@@ -24,7 +24,11 @@ import {
   supportChannelOptions,
   volunteerConcernOptions
 } from './telegram-bots.config.js';
-import { answerTelegramCallback, sendTelegramMessage } from './telegram-bots.client.js';
+import {
+  answerTelegramCallback,
+  editTelegramMessageReplyMarkup,
+  sendTelegramMessage
+} from './telegram-bots.client.js';
 import { adminUrl, callbackRows, menuCancelRows, webUrl } from './telegram-bots.ui.js';
 import {
   cancelPending,
@@ -117,6 +121,12 @@ import {
   type TelegramSession
 } from './telegram-bots.sessions.js';
 import { notifyAdminsAboutProviderApplication } from './provider-application-notifications.js';
+import {
+  approveHomeopathyProviderAccount,
+  HomeopathyProviderApprovalError
+} from './homeopathy-provider-approval.js';
+import { loadStaffProfileForUser } from '../staff-profile.js';
+import { staffCanAccessWorkspace } from '../staff-permissions.js';
 import type {
   InlineButton,
   SessionMetadata,
@@ -1144,6 +1154,83 @@ async function markTelegramLeadFollowUp(
   });
 }
 
+async function approveProviderFromAdminBot(
+  kind: TelegramBotKind,
+  session: TelegramSession,
+  doctorId: string,
+  messageId?: number
+) {
+  if (kind !== TelegramBotKind.ADMIN || !(await requireLinked(kind, session))) return;
+  if (!session.linkedUser || session.linkedUser.role !== 'ADMIN') {
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: 'Only a linked Hope Hub admin account can approve providers.'
+    });
+    return;
+  }
+
+  const staffProfile = await loadStaffProfileForUser(
+    session.linkedUser.id,
+    session.linkedUser.role
+  );
+  if (
+    !staffCanAccessWorkspace(
+      {
+        ...session.linkedUser,
+        staffProfile
+      },
+      'homeopathy'
+    )
+  ) {
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: 'Your admin account does not have access to the homeopathy workspace.'
+    });
+    return;
+  }
+
+  try {
+    const result = await approveHomeopathyProviderAccount({
+      doctorId,
+      actorId: session.linkedUser.id,
+      actorRole: session.linkedUser.role
+    });
+    if (messageId) {
+      await editTelegramMessageReplyMarkup(kind, {
+        chat_id: session.chatId,
+        message_id: messageId,
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: 'Approved — open providers', url: adminUrl('/doctors'), style: 'success' }]
+          ]
+        }
+      }).catch(() => undefined);
+    }
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: result.alreadyApproved
+        ? 'This provider is already approved.'
+        : `Provider approved by ${escapeHtml(session.linkedUser.name)}. The profile is now active and public.`,
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [[{ text: 'Review providers', url: adminUrl('/doctors') }]]
+      }
+    });
+  } catch (error) {
+    const message =
+      error instanceof HomeopathyProviderApprovalError
+        ? [error.message, ...error.blockers.slice(0, 6).map((item) => `• ${item.label}`)].join('\n')
+        : 'Could not approve this provider right now. The error was recorded for review.';
+    await sendTelegramMessage(kind, {
+      chat_id: session.chatId,
+      text: message,
+      reply_markup: {
+        inline_keyboard: [[{ text: 'Open full review', url: adminUrl('/doctors') }]]
+      }
+    });
+  }
+}
+
 const providerTrackLabels = PROVIDER_APPLICATION_TRACK_LABELS;
 
 const careTeamTypeOptions: Array<{
@@ -1336,27 +1423,38 @@ async function handleProviderApplicationText(
       text:
         track === 'PROFESSIONAL_PSYCHOLOGIST'
           ? [
-              'Send professional details in 5 lines:',
+              'Send professional details in 6 lines:',
               '',
               'Qualification',
               'Qualified from / institute',
               'Specialization',
               'Experience years',
-              'Registration/license details, if any'
+              'Registration/license or credential details',
+              'Public resume/profile link'
             ].join('\n')
-          : track === 'PSYCHOLOGY_STUDENT_VOLUNTEER'
+          : track === 'COACH_MENTOR'
             ? [
-                'Send student listener details in 3 lines:',
+                'Send coaching or mentoring details in 5 lines:',
                 '',
-                'Current course/qualification',
-                'Area of interest',
-                'Supervisor/faculty details'
+                'Relevant training or certification',
+                'Training provider / institute',
+                'Coaching or mentoring focus',
+                'Relevant experience',
+                'Public resume/profile link'
               ].join('\n')
-            : [
-                'Briefly share your peer-support or life-experience background.',
-                '',
-                'Do not include private medical details. Keep it safe and general.'
-              ].join('\n'),
+            : track === 'PSYCHOLOGY_STUDENT_VOLUNTEER'
+              ? [
+                  'Send student listener details in 3 lines:',
+                  '',
+                  'Current course/qualification',
+                  'Area of interest',
+                  'Supervisor/faculty details'
+                ].join('\n')
+              : [
+                  'Briefly share your peer-support or life-experience background.',
+                  '',
+                  'Do not include private medical details. Keep it safe and general.'
+                ].join('\n'),
       reply_markup: { inline_keyboard: menuCancelRows() }
     });
     return true;
@@ -1372,28 +1470,46 @@ async function handleProviderApplicationText(
             qualifiedFrom: lines[1] || '',
             specialization: lines[2] || '',
             experienceYears: lines[3] || '',
-            registrationDetails: lines.slice(4).join(' ') || ''
+            registrationDetails: lines[4] || '',
+            resumeLink: lines.slice(5).join(' ') || ''
           }
-        : track === 'PSYCHOLOGY_STUDENT_VOLUNTEER'
+        : track === 'COACH_MENTOR'
           ? {
               qualification: lines[0] || '',
-              specialization: lines[1] || '',
-              registrationDetails: lines.slice(2).join(' ') || '',
-              experienceYears: 'Student listener'
-            }
-          : {
-              qualification: 'Peer support experience',
-              specialization: 'Non-clinical peer support',
-              experienceYears: 'Life experience',
+              qualifiedFrom: lines[1] || '',
+              specialization: lines[2] || '',
+              experienceYears: lines[3] || '',
               registrationDetails: '',
-              livedExperienceSummary: text.trim().slice(0, 3000)
-            };
+              resumeLink: lines.slice(4).join(' ') || ''
+            }
+          : track === 'PSYCHOLOGY_STUDENT_VOLUNTEER'
+            ? {
+                qualification: lines[0] || '',
+                specialization: lines[1] || '',
+                registrationDetails: lines.slice(2).join(' ') || '',
+                experienceYears: 'Student listener'
+              }
+            : {
+                qualification: 'Peer support experience',
+                specialization: 'Non-clinical peer support',
+                experienceYears: 'Life experience',
+                registrationDetails: '',
+                livedExperienceSummary: text.trim().slice(0, 3000)
+              };
     const requiredValues =
       track === 'PROFESSIONAL_PSYCHOLOGIST'
-        ? [next.qualification, next.specialization, next.experienceYears, next.registrationDetails]
-        : track === 'PSYCHOLOGY_STUDENT_VOLUNTEER'
-          ? [next.qualification, next.specialization, next.registrationDetails]
-          : [next.livedExperienceSummary];
+        ? [
+            next.qualification,
+            next.specialization,
+            next.experienceYears,
+            next.registrationDetails,
+            next.resumeLink
+          ]
+        : track === 'COACH_MENTOR'
+          ? [next.qualification, next.specialization, next.experienceYears, next.resumeLink]
+          : track === 'PSYCHOLOGY_STUDENT_VOLUNTEER'
+            ? [next.qualification, next.specialization, next.registrationDetails]
+            : [next.livedExperienceSummary];
     if (requiredValues.some((value) => typeof value === 'string' && !value.trim())) {
       await sendTelegramMessage(kind, {
         chat_id: session.chatId,
@@ -1455,7 +1571,9 @@ async function handleProviderApplicationText(
       text: [
         'Last step: tell us why you want to work with Hope Hub.',
         '',
-        'Please write at least 40 characters. Also confirm you understand listeners/student supporters are non-clinical and must follow safety escalation.'
+        pending.applicationTrack === 'PROFESSIONAL_PSYCHOLOGIST'
+          ? 'Please write at least 40 characters and describe the professional care you hope to provide.'
+          : 'Please write at least 40 characters. Also confirm you understand listeners, coaches, mentors, and student supporters are non-clinical and must follow safety escalation.'
       ].join('\n'),
       reply_markup: { inline_keyboard: menuCancelRows() }
     });
@@ -1505,9 +1623,10 @@ async function finishProviderApplication(
       specialization: pending.specialization || null,
       experienceYears: pending.experienceYears || null,
       registrationDetails:
-        pending.applicationTrack === 'PSYCHOLOGY_STUDENT_VOLUNTEER'
-          ? null
-          : pending.registrationDetails || null,
+        pending.applicationTrack === 'PROFESSIONAL_PSYCHOLOGIST'
+          ? pending.registrationDetails || null
+          : null,
+      resumeLink: pending.resumeLink || null,
       languages: pending.languages || 'Not provided',
       availability: pending.availability || 'Not provided',
       preferredChannel: pending.preferredChannel || 'telegram',
@@ -2833,6 +2952,13 @@ async function handleCallback(
   } else if (data === 'admin:leads') await adminLeads(kind, session);
   else if (data === 'admin:community_admins') await adminCommunityAdminApplications(kind, session);
   else if (data === 'admin:contributors') await adminContributors(kind, session);
+  else if (data.startsWith('admin:provider_approve:'))
+    await approveProviderFromAdminBot(
+      kind,
+      session,
+      data.slice('admin:provider_approve:'.length),
+      query.message?.message_id
+    );
   else if (data.startsWith('admin:safety_reviewed:'))
     await markSafetyFlagReviewed(kind, session, data.slice('admin:safety_reviewed:'.length));
   else if (data.startsWith('lead:assign:')) {

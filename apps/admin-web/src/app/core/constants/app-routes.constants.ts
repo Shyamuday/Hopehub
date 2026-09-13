@@ -33,11 +33,13 @@ export const ROUTE_PATHS = {
   ADMIN_USERS: 'admin-users',
   TELEGRAM_BOTS: 'telegram-bots',
   GROUP_HELP: 'group-help',
+  TELEGRAM_CONTENT_NETWORK: 'telegram-content-network',
   SUPPLIERS: 'suppliers',
   MEDICINES: 'medicines',
   INVENTORY: 'inventory',
   NOTIFICATIONS: 'notifications',
   NOTIFICATIONS_INBOX: 'notifications-inbox',
+  EMAIL_MARKETING: 'email-marketing',
   SECURITY: 'security',
   ECOSYSTEM_USERS: 'ecosystem-users',
   STAFF: 'staff',
@@ -131,7 +133,7 @@ export const NAV_ITEMS = [
   },
   {
     path: adminNavPath(ROUTE_PATHS.CONSUMER_FLOWS),
-    label: '🧭 Consumer Flows',
+    label: '🧭 Concern Routing',
     workspaces: ['hope-hub'],
   },
   {
@@ -212,6 +214,11 @@ export const NAV_ITEMS = [
     workspaces: ['shared'],
   },
   {
+    path: adminNavPath(ROUTE_PATHS.EMAIL_MARKETING),
+    label: '✉️ Email Marketing',
+    workspaces: ['shared'],
+  },
+  {
     path: adminNavPath(ROUTE_PATHS.TELEGRAM_BOTS),
     label: '🤖 Telegram Bots',
     workspaces: ['shared'],
@@ -219,6 +226,11 @@ export const NAV_ITEMS = [
   {
     path: adminNavPath(ROUTE_PATHS.GROUP_HELP),
     label: '🛡️ Group Help',
+    workspaces: ['hope-hub'],
+  },
+  {
+    path: adminNavPath(ROUTE_PATHS.TELEGRAM_CONTENT_NETWORK),
+    label: '🗞️ Telegram Content',
     workspaces: ['hope-hub'],
   },
   { path: adminNavPath(ROUTE_PATHS.ADMIN_USERS), label: '🔐 Admin Users', workspaces: ['shared'] },
@@ -324,6 +336,7 @@ const MORE_NAV_SECTIONS: readonly AdminNavSection[] = [
     segments: [
       ROUTE_PATHS.NOTIFICATIONS,
       ROUTE_PATHS.NOTIFICATIONS_INBOX,
+      ROUTE_PATHS.EMAIL_MARKETING,
       ROUTE_PATHS.TELEGRAM_BOTS,
     ],
   },

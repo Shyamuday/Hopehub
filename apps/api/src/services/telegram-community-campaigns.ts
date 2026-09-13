@@ -20,13 +20,24 @@ import {
 import { sendGroupHelpActivityLog } from './telegram-group-help.actions.js';
 import { observeTelegramCommunityMember } from './telegram-community-member-identity.js';
 import { telegramPersonLogLabel } from './telegram-group-help.people.js';
+import { telegramGroupCallButton } from './telegram-group-call-link.js';
+import { runTelegramContentNetworkScheduler } from './telegram-content-network.js';
+import { runTelegramDailyVcTopicPlanner } from './telegram-community-vc-topics.js';
 import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
 import { TELEGRAM_BOT_URLS } from '../constants/telegram-community-bot.constants.js';
 import {
   endTelegramCommunityLockdown,
   expiredTelegramCommunityLockdowns,
+  getTelegramCommunityGroupPolicy,
   savedLockdownPermissions
 } from './telegram-community-group-policy.js';
+import { withCrossCommunityButton } from './telegram-group-help.community-navigation.js';
+import {
+  EMPTY_VOICE_CHAT_RECOVERY_MS,
+  EMPTY_VOICE_CHAT_RECOVERY_REASON,
+  type VoiceParticipantSnapshot,
+  voiceStarterSnapshot
+} from './telegram-voice-empty-timeout.js';
 
 const CAMPAIGN_BOT = GROUP_HELP_BOT_SLUG;
 const MAX_DELIVERIES_PER_SWEEP = 20;
@@ -46,6 +57,8 @@ type NativeVoiceStatePayload = {
   startedEarly?: boolean;
   endedAt?: string;
   recoveryAfter?: string;
+  reason?: string;
+  startedBy?: VoiceParticipantSnapshot;
 };
 
 function nativeVoiceStatePayload(
@@ -132,6 +145,11 @@ const COMMUNITY_CONFIG_KEYS = [
   'telegramGroupHelpWelcomeMessage',
   'telegramGroupHelpWelcomeImageUrl',
   'telegramGroupHelpWelcomeButtons',
+  'telegramGroupHelpGroupChatId',
+  'telegramGroupHelpOffTopicGroupChatId',
+  'telegramGroupHelpMainGroupUrl',
+  'telegramGroupHelpOffTopicGroupUrl',
+  'telegramGroupHelpGroupTitle',
   'telegramGroupHelpGoodbyeMessage',
   'telegramGroupHelpJoinProtection',
   'telegramGroupHelpCaptchaMode',
@@ -161,8 +179,12 @@ const SMART_SCHEDULE_CONFIG_KEYS = [
   'telegramCommunityContentRepeatDays'
 ] as const;
 
-async function communityConfig() {
-  const values = await getSiteConfigMap(COMMUNITY_CONFIG_KEYS);
+async function communityConfig(chatId?: string) {
+  const [stored, policy] = await Promise.all([
+    getSiteConfigMap(COMMUNITY_CONFIG_KEYS),
+    chatId ? getTelegramCommunityGroupPolicy(chatId) : Promise.resolve({} as Record<string, string>)
+  ]);
+  const values: Record<string, string> = { ...stored, ...policy };
   return {
     welcomeEnabled: values.telegramCommunityWelcomeEnabled !== 'Disabled',
     autoDeleteSeconds: boundedNumber(values.telegramGroupHelpAutoDeleteSeconds, 300, 0, 604_800),
@@ -172,13 +194,17 @@ async function communityConfig() {
       values.telegramGroupHelpWelcomeMessage ||
       'Welcome to Hope Hub 💙 Participate at your own pace and protect your personal details.',
     welcomeMediaUrl: values.telegramGroupHelpWelcomeImageUrl?.trim() || '',
-    welcomeKeyboard: {
-      inline_keyboard: [
-        [{ text: 'About Hope Hub', callback_data: 'hh_welcome_about', style: 'success' }],
-        ...(configuredUrlKeyboard(values.telegramGroupHelpWelcomeButtons || '')?.inline_keyboard ||
-          [])
-      ]
-    },
+    welcomeKeyboard: withCrossCommunityButton(
+      {
+        inline_keyboard: [
+          [{ text: 'About Hope Hub', callback_data: 'hh_welcome_about', style: 'success' }],
+          ...(configuredUrlKeyboard(values.telegramGroupHelpWelcomeButtons || '')
+            ?.inline_keyboard || [])
+        ]
+      },
+      values,
+      chatId
+    ),
     goodbyeText: values.telegramGroupHelpGoodbyeMessage?.trim() || '',
     joinProtection: values.telegramGroupHelpJoinProtection || 'off',
     captchaMode: values.telegramGroupHelpCaptchaMode || 'on',
@@ -592,7 +618,7 @@ async function performCampaignDelivery(input: {
   now: Date;
 }) {
   const { deliveryId, campaign, item, now } = input;
-  const config = await communityConfig();
+  const config = await communityConfig(campaign.chatId);
   const messageThreadId = item.messageThreadId || config.defaultTopicId || undefined;
   await prisma.telegramCampaignDelivery.update({
     where: { id: deliveryId },
@@ -764,6 +790,21 @@ export async function runTelegramCampaignScheduler(now = new Date()) {
   await runCommunityDataRetentionCleanupHourly(now);
   await restoreExpiredCommunityLockdowns(now);
   if (!telegramCampaignSweepEnabled) return;
+  await runTelegramContentNetworkScheduler(now);
+  try {
+    await runTelegramDailyVcTopicPlanner(now);
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    console.error('[telegram-vc-topics] Daily topic planner failed.', error);
+    await communityConfig()
+      .then((config) =>
+        logCommunityActivity(config, 'Daily VC topic planner failed', [
+          `Reason: ${detail}`,
+          'The normal VC scheduler and community campaigns will continue.'
+        ])
+      )
+      .catch(() => null);
+  }
   await runTelegramCommunityEventScheduler(now);
   await closeExpiredPolls(now);
   const retries = await prisma.telegramCampaignDelivery.findMany({
@@ -788,10 +829,14 @@ export async function handleTelegramCommunityVoiceChatEnded(message: CommunityTe
   }
   const chatId = String(message.chat.id);
   const now = new Date();
-  const recoveryAfter = new Date(now.getTime() + VOICE_EVENT_RECOVERY_DELAY_MS);
   const stateKey = { bot_chatId: { bot: NATIVE_VOICE_SCHEDULER_STATE, chatId } };
   const nativeState = await prisma.telegramCommunityState.findUnique({ where: stateKey });
   const nativePayload = nativeVoiceStatePayload(nativeState?.payload);
+  const wasClosedBecauseEmpty = nativePayload.reason === EMPTY_VOICE_CHAT_RECOVERY_REASON;
+  const recoveryAfter = new Date(
+    now.getTime() +
+      (wasClosedBecauseEmpty ? EMPTY_VOICE_CHAT_RECOVERY_MS : VOICE_EVENT_RECOVERY_DELAY_MS)
+  );
   const linkedEvent = nativePayload.eventId
     ? await prisma.telegramCommunityEvent.findUnique({ where: { id: nativePayload.eventId } })
     : null;
@@ -825,7 +870,8 @@ export async function handleTelegramCommunityVoiceChatEnded(message: CommunityTe
       payload: {
         eventId: nativePayload.eventId,
         endedAt: now.toISOString(),
-        recoveryAfter: recoveryAfter.toISOString()
+        recoveryAfter: recoveryAfter.toISOString(),
+        ...(wasClosedBecauseEmpty ? { reason: EMPTY_VOICE_CHAT_RECOVERY_REASON } : {})
       },
       expiresAt: recoveryAfter
     },
@@ -834,7 +880,8 @@ export async function handleTelegramCommunityVoiceChatEnded(message: CommunityTe
       payload: {
         eventId: nativePayload.eventId,
         endedAt: now.toISOString(),
-        recoveryAfter: recoveryAfter.toISOString()
+        recoveryAfter: recoveryAfter.toISOString(),
+        ...(wasClosedBecauseEmpty ? { reason: EMPTY_VOICE_CHAT_RECOVERY_REASON } : {})
       },
       expiresAt: recoveryAfter
     }
@@ -880,9 +927,9 @@ export async function handleTelegramCommunityVoiceChatStarted(message: Community
     orderBy: { startsAt: 'desc' }
   });
   const activeEvent = linkedEvent || current;
-  if (!activeEvent) return false;
-  const startedEarly = activeEvent.startsAt > now;
-  if (!startedEarly) {
+  const startedEarly = Boolean(activeEvent && activeEvent.startsAt > now);
+  const startedBy = voiceStarterSnapshot(message.from) || nativePayload.startedBy;
+  if (activeEvent && !startedEarly) {
     await prisma.telegramCommunityEvent.update({
       where: { id: activeEvent.id },
       data: { status: 'IN_PROGRESS' }
@@ -896,25 +943,52 @@ export async function handleTelegramCommunityVoiceChatStarted(message: Community
       state: 'NATIVE_VOICE_ACTIVE',
       payload: {
         ...nativePayload,
-        eventId: activeEvent.id,
+        ...(activeEvent ? { eventId: activeEvent.id } : {}),
         startedAt: now.toISOString(),
-        startedEarly
+        startedEarly,
+        ...(startedBy ? { startedBy } : {})
       },
-      // Event updates are primary. This is only a 15-minute fallback in case
-      // Telegram does not deliver the eventual video_chat_ended update.
+      // The native worker checks occupancy on its managed cadence. Keep the longer
+      // expiry as a recovery boundary if Telegram cannot be read temporarily.
       expiresAt: new Date(now.getTime() + VOICE_EVENT_RECOVERY_DELAY_MS)
     },
     update: {
       state: 'NATIVE_VOICE_ACTIVE',
       payload: {
         ...nativePayload,
-        eventId: activeEvent.id,
+        ...(activeEvent ? { eventId: activeEvent.id } : {}),
         startedAt: now.toISOString(),
-        startedEarly
+        startedEarly,
+        ...(startedBy ? { startedBy } : {})
       },
       expiresAt: new Date(now.getTime() + VOICE_EVENT_RECOVERY_DELAY_MS)
     }
   });
+
+  // The announcement may have been posted before the host started the VC.
+  // Refresh its markup now so even existing announcements open Telegram's
+  // native active-call join screen for public groups.
+  if (activeEvent?.telegramMessageId) {
+    try {
+      const rsvpCount = await prisma.telegramCommunityEventRsvp.count({
+        where: { eventId: activeEvent.id, status: 'GOING' }
+      });
+      await editCommunityReplyMarkup(
+        CAMPAIGN_BOT,
+        activeEvent.chatId,
+        activeEvent.telegramMessageId,
+        await telegramCommunityEventKeyboard(activeEvent, rsvpCount, true)
+      );
+    } catch (error) {
+      // Telegram's Bot API update already records the active call. A markup
+      // refresh failure must never prevent the scheduler from tracking it.
+      console.warn(
+        `Could not refresh Join VC button for ${activeEvent.id}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
   return true;
 }
 
@@ -1045,7 +1119,7 @@ export async function welcomeTelegramCommunityMembers(update: CommunityTelegramU
   if (!members.length) return true;
   const chat = message?.chat || membership?.chat;
   if (!chat) return false;
-  const config = await communityConfig();
+  const config = await communityConfig(String(chat.id));
   await Promise.all(
     members.map((member) =>
       observeTelegramCommunityMember({
@@ -1240,7 +1314,7 @@ export async function recordTelegramCommunityDeparture(update: CommunityTelegram
     where: { chatId: String(chat.id), telegramUserId: String(member.id) },
     data: { leftAt: new Date() }
   });
-  const config = await communityConfig();
+  const config = await communityConfig(String(chat.id));
   if (config.joinLeaveMessages === 'join and leave' && config.goodbyeText) {
     const goodbye = config.goodbyeText
       .replaceAll('{mention}', memberMention(member))
@@ -1296,7 +1370,7 @@ export async function handleTelegramCommunityJoinVerificationCallback(
     });
     if (!state || state.expiresAt <= new Date()) return false;
     const approvalPayload = (state.payload || {}) as { welcomeMessageId?: number };
-    const config = await communityConfig();
+    const config = await communityConfig(chatId);
     const chat = await callCommunityTelegramApi<{ permissions?: Record<string, boolean> }>(
       CAMPAIGN_BOT,
       'getChat',
@@ -1346,7 +1420,7 @@ export async function handleTelegramCommunityJoinVerificationCallback(
     welcomeMessageId?: number;
   };
   if (data.startsWith('hh_join_captcha:') && Number(selectedAnswer) !== payload.captchaAnswer) {
-    const config = await communityConfig();
+    const config = await communityConfig(chatId);
     const attempts = Number(payload.attempts || 0) + 1;
     if (config.joinProtection === 'strict' && attempts >= 3) {
       const action = config.failedVerificationAction;
@@ -1408,7 +1482,7 @@ export async function handleTelegramCommunityJoinVerificationCallback(
     });
     return 'incorrect';
   }
-  const config = await communityConfig();
+  const config = await communityConfig(chatId);
   const chat = await callCommunityTelegramApi<{ permissions?: Record<string, boolean> }>(
     CAMPAIGN_BOT,
     'getChat',
@@ -1442,14 +1516,15 @@ export async function handleTelegramCommunityJoinVerificationCallback(
 
 async function telegramCommunityEventKeyboard(
   event: { id: string; joinUrl: string },
-  rsvpCount: number
+  rsvpCount: number,
+  isLive = false
 ) {
   const config = await communityConfig();
   return {
     inline_keyboard: [
       [{ text: `I’ll join (${rsvpCount})`, callback_data: `event:rsvp:${event.id}` }],
       [
-        { text: 'Join voice circle', url: event.joinUrl },
+        telegramGroupCallButton(event.joinUrl, isLive),
         { text: 'Talk privately (paid)', url: config.supportUrl }
       ]
     ]
@@ -1461,7 +1536,7 @@ async function telegramCommunityEventReminderKeyboard(event: { joinUrl: string }
   return {
     inline_keyboard: [
       [
-        { text: 'Join voice circle', url: event.joinUrl },
+        telegramGroupCallButton(event.joinUrl, false),
         { text: 'Talk privately (paid)', url: config.supportUrl }
       ]
     ]
@@ -1497,27 +1572,22 @@ export async function announceTelegramCommunityEvent(eventId: string) {
   });
 }
 
-export async function refreshTelegramCommunityEventAnnouncement(eventId: string) {
+export async function refreshTelegramCommunityEventAnnouncement(
+  eventId: string,
+  options: { active?: boolean } = {}
+) {
   const event = await prisma.telegramCommunityEvent.findUnique({
     where: { id: eventId },
     include: { _count: { select: { rsvps: { where: { status: 'GOING' } } } } }
   });
   if (!event) return null;
   if (!event.telegramMessageId) return announceTelegramCommunityEvent(event.id);
-  const keyboard = await telegramCommunityEventKeyboard(event, event._count.rsvps);
-  await callCommunityTelegramApi(CAMPAIGN_BOT, 'editMessageText', {
-    chat_id: event.chatId,
-    message_id: event.telegramMessageId,
-    text: [
-      `🎧 ${event.title}`,
-      event.description,
-      '',
-      `Starts: ${event.startsAt.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`
-    ]
-      .filter(Boolean)
-      .join('\n'),
-    reply_markup: keyboard
-  });
+  const keyboard = await telegramCommunityEventKeyboard(
+    event,
+    event._count.rsvps,
+    Boolean(options.active)
+  );
+  await editCommunityReplyMarkup(CAMPAIGN_BOT, event.chatId, event.telegramMessageId, keyboard);
   return event;
 }
 
@@ -1574,7 +1644,16 @@ export async function handleTelegramCommunityEventCallback(update: CommunityTele
     where: { eventId, status: 'GOING' }
   });
   if (callback.message) {
-    const keyboard = await telegramCommunityEventKeyboard(event, total);
+    const nativeState = await prisma.telegramCommunityState.findUnique({
+      where: {
+        bot_chatId: { bot: NATIVE_VOICE_SCHEDULER_STATE, chatId: event.chatId }
+      },
+      select: { state: true, payload: true }
+    });
+    const nativePayload = nativeVoiceStatePayload(nativeState?.payload);
+    const isLive =
+      nativeState?.state === 'NATIVE_VOICE_ACTIVE' && nativePayload.eventId === event.id;
+    const keyboard = await telegramCommunityEventKeyboard(event, total, isLive);
     await editCommunityReplyMarkup(
       CAMPAIGN_BOT,
       callback.message.chat.id,

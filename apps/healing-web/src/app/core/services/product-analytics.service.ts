@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { GoogleAdsService } from './google-ads.service';
 
 export const HOPE_HUB_ANALYTICS_EVENTS = {
   SERVICE_VIEWED: 'hope_hub.service_viewed',
@@ -17,18 +18,22 @@ export const HOPE_HUB_ANALYTICS_EVENTS = {
   FOLLOW_UP_REQUESTED: 'hope_hub.follow_up_requested',
   CONTENT_LOCKED_VIEWED: 'hope_hub.content_locked_viewed',
   CONTENT_UNLOCKED_CLICKED: 'hope_hub.content_unlocked_clicked',
+  TELEGRAM_OUTBOUND_CLICKED: 'hope_hub.telegram_outbound_clicked',
+  REGISTRATION_COMPLETED: 'hope_hub.registration_completed',
 } as const;
 
 @Injectable({ providedIn: 'root' })
 export class ProductAnalyticsService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = environment.apiUrl;
+  private readonly googleAds = inject(GoogleAdsService);
 
   track(
     name: string,
     properties: Record<string, unknown> = {},
     category: 'FUNNEL' | 'ENGAGEMENT' | 'SYSTEM' = 'FUNNEL',
   ): void {
+    this.trackGoogleAdsConversion(name, properties);
     this.http
       .post(`${this.apiUrl}/analytics/events`, {
         name,
@@ -37,6 +42,34 @@ export class ProductAnalyticsService {
         properties,
       })
       .subscribe({ error: () => undefined });
+  }
+
+  private trackGoogleAdsConversion(name: string, properties: Record<string, unknown>): void {
+    if (name === HOPE_HUB_ANALYTICS_EVENTS.TELEGRAM_OUTBOUND_CLICKED) {
+      this.googleAds.trackConversion('telegram');
+      return;
+    }
+    if (name === HOPE_HUB_ANALYTICS_EVENTS.BOOKING_FORM_OPENED) {
+      this.googleAds.trackConversion('bookingStarted');
+      return;
+    }
+    if (name === HOPE_HUB_ANALYTICS_EVENTS.LIVE_SESSION_OPENED) {
+      this.googleAds.trackConversion('liveSupport');
+      return;
+    }
+    if (name === HOPE_HUB_ANALYTICS_EVENTS.REGISTRATION_COMPLETED) {
+      this.googleAds.trackConversion('registration');
+      return;
+    }
+    if (name !== HOPE_HUB_ANALYTICS_EVENTS.PAYMENT_SUCCESS) return;
+
+    const payableInPaise = Number(properties['payableInPaise']);
+    const consultationId = String(properties['consultationId'] || '').trim();
+    this.googleAds.trackConversion('paymentSuccess', {
+      value: Number.isFinite(payableInPaise) ? payableInPaise / 100 : undefined,
+      currency: 'INR',
+      transactionId: consultationId || undefined,
+    });
   }
 
   private sessionId(): string {

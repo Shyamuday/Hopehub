@@ -8,7 +8,7 @@ import { FreeConsultationPromoComponent } from './free-consultation-promo.compon
 @Component({
   selector: 'app-promo-popup-host',
   standalone: true,
-  template: ''
+  template: '',
 })
 export class PromoPopupHostComponent implements OnInit {
   private readonly auth = inject(AuthService);
@@ -20,6 +20,7 @@ export class PromoPopupHostComponent implements OnInit {
   }
 
   private schedulePromo() {
+    if (typeof window === 'undefined') return;
     if (this.auth.isLoggedIn()) return;
     if (!this.promo.canShow()) return;
 
@@ -30,7 +31,7 @@ export class PromoPopupHostComponent implements OnInit {
       this.promo.markShown();
       this.overlay.open(FreeConsultationPromoComponent, {
         width: '460px',
-        panelClass: 'app-overlay-panel promo-overlay-panel'
+        panelClass: 'app-overlay-panel promo-overlay-panel',
       });
     }, PROMO_POPUP_DELAY_MS);
   }

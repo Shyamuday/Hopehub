@@ -5,7 +5,8 @@ import {
   LifestyleTipType,
   PracticeDifficulty,
   PracticeStatus,
-  PracticeType
+  PracticeType,
+  ProviderDomain
 } from '@prisma/client';
 import { prisma } from '../src/db.js';
 
@@ -155,6 +156,7 @@ async function syncArticles(articles: Article[]) {
         excerpt: article.description,
         content: toArticleContent(article),
         category: article.category[0] || 'General Well-being',
+        publicDomains: [ProviderDomain.HOPE_HUB],
         readTime: article.readingTime,
         authorName: article.author,
         isPublished: true,
@@ -167,6 +169,7 @@ async function syncArticles(articles: Article[]) {
         excerpt: article.description,
         content: toArticleContent(article),
         category: article.category[0] || 'General Well-being',
+        publicDomains: [ProviderDomain.HOPE_HUB],
         readTime: article.readingTime,
         authorName: article.author,
         isPublished: true,

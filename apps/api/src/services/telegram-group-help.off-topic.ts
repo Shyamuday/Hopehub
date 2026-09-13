@@ -1,0 +1,170 @@
+import { TELEGRAM_OFF_TOPIC_GROUP_TITLE } from '../constants/telegram-community-bot.constants.js';
+import {
+  getTelegramCommunityGroupPolicy,
+  saveTelegramCommunityGroupPolicy
+} from './telegram-community-group-policy.js';
+import { TELEGRAM_BOT_URLS } from '../constants/telegram-community-bot.constants.js';
+
+export const HOPE_HUB_OFF_TOPIC_GROUP_TITLE = TELEGRAM_OFF_TOPIC_GROUP_TITLE;
+export const HOPE_HUB_OFF_TOPIC_GROUP_DESCRIPTION =
+  'Chat, laugh and make new friends!\nTalk love, relationships, life in India, trending videos and voice chats. Feeling lonely or anxious? Find a kind ear here.\nBe kind. No spam or unwanted DMs.\n\nJoin our main group for more fun: @hopehubindia';
+
+export const HOPE_HUB_OFF_TOPIC_WELCOME_BUTTONS = `Talk privately | https://hopehub.in/#live-connect | success && Share anonymously | ${TELEGRAM_BOT_URLS.CONFESSION} | success
+Group rules | ${TELEGRAM_BOT_URLS.RULES} | success && HopeHub website | https://hopehub.in/ | success`;
+
+// Chit-Chat permits ordinary informal language. Keep automatic blocking
+// limited to unambiguous sexual solicitation, explicit-content promotion and
+// severe targeted abuse; moderators can still act on anything else via report.
+export const HOPE_HUB_OFF_TOPIC_BANNED_PHRASES = [
+  'teri maa ki chut',
+  'teri behen ki chut',
+  'fuck you',
+  'i want pussy',
+  'i want sex',
+  'sex video',
+  'xxx video',
+  'porn video',
+  'pornstar',
+  'xvideos',
+  'xnxx',
+  'xhamster',
+  'callgirl',
+  'call girl',
+  'escort service',
+  'hot girl available',
+  'nude video',
+  'nudes available',
+  'sexy service',
+  'video call sex',
+  'send nudes'
+].join('\n');
+
+// Broad entries such as "dm me", "my number" and "call me now" create too
+// many false positives in a social group. Review only direct requests for a
+// member's private contact details.
+export const HOPE_HUB_OFF_TOPIC_REVIEW_PHRASES = [
+  'send me your number',
+  'share your number',
+  'dm me your number',
+  'msg me your number',
+  'whatsapp me privately'
+].join('\n');
+
+export const HOPE_HUB_OFF_TOPIC_GROUP_POLICY: Record<string, string> = {
+  telegramGroupHelpGroupTitle: HOPE_HUB_OFF_TOPIC_GROUP_TITLE,
+  telegramGroupHelpWelcomeButtons: HOPE_HUB_OFF_TOPIC_WELCOME_BUTTONS,
+  telegramGroupHelpWelcomeMessage: `Hi {mention} 👋
+
+Welcome to *${TELEGRAM_OFF_TOPIC_GROUP_TITLE}* — a relaxed off-topic place to talk and have fun.
+
+You can share everyday updates, hobbies, jokes, memes, photos, videos, GIFs, stickers, music and voice notes.
+
+Just keep it friendly:
+• Be kind and respect people’s privacy.
+• No adult/graphic content, bullying, hate, scams or repeated spam.
+• Ask before sending someone a private message.
+• Use /report if something feels unsafe.
+
+For private emotional support, use HopeHub Live through the button below.`,
+  telegramGroupHelpAboutMessage: `*About ${TELEGRAM_OFF_TOPIC_GROUP_TITLE}*
+
+This is Hope Hub’s community room for friendly, informal and off-topic conversation.
+
+You can use it to:
+• Meet and talk with community members.
+• Share everyday moments, interests and positive updates.
+• Join light conversations without turning every discussion into a support session.
+• Find the official Hope Hub routes when you need a listener or professional care.
+
+This group is managed by the Hope Hub bot for safety. It is not therapy, medical care or an emergency service.`,
+  telegramGroupHelpRulesMessage: `*${TELEGRAM_OFF_TOPIC_GROUP_TITLE} — simple rules*
+
+1. Be kind. No bullying, hate, threats or harassment.
+2. Photos, videos, GIFs, stickers, music, documents and voice notes are welcome.
+3. Keep media safe: no adult, graphic, illegal or privacy-breaking content.
+4. No scams, repeated spam or unwanted promotion.
+5. No unwanted private messages — ask before messaging another member.
+6. Reply with /report when moderator help is needed.
+
+That’s it — relax, talk and enjoy the community.`,
+  telegramGroupHelpSupportMessage:
+    'For private emotional support, visit https://hopehub.in/#live-connect. You can choose chat, voice or video based on provider availability. This group is not an emergency service.',
+  telegramGroupHelpPinnedMessage: `*Welcome to ${TELEGRAM_OFF_TOPIC_GROUP_TITLE}*
+
+Chat, laugh and make new friends! Talk about love, relationships, life in India, trending videos and the little things that make your day. Join a voice chat or share what is on your mind.
+
+Feeling lonely or anxious? You are welcome here. A friendly conversation can make a difference.
+
+Keep it kind: no spam, scams, bullying or unwanted DMs. Respect privacy and use /report when you need moderator help.
+
+Join our main group for more fun: @hopehubindia
+
+Private support: https://hopehub.in/#live-connect`,
+  telegramGroupHelpRecurringMessage:
+    'Community reminder: keep conversations respectful, protect personal details, avoid unsolicited DMs and report unsafe behaviour to the admins.',
+  // Chit-Chat is intentionally frictionless: welcome new members immediately
+  // without restricting them or asking for a captcha/confirmation tap.
+  telegramGroupHelpJoinProtection: 'off',
+  telegramGroupHelpCaptchaMode: 'off',
+  telegramGroupHelpJoinLeaveMessages: 'join only',
+  telegramGroupHelpWelcomeCleanup: 'on',
+  telegramGroupHelpFirstMessageReview: 'off',
+  telegramGroupHelpNewMemberAction: 'staff review',
+  telegramGroupHelpAntiFloodAction: 'mute',
+  telegramGroupHelpAntiFloodLimit: '5 2',
+  telegramGroupHelpAntiSpamAction: 'warn',
+  telegramGroupHelpBannedWords: HOPE_HUB_OFF_TOPIC_BANNED_PHRASES,
+  telegramGroupHelpReviewPhrases: HOPE_HUB_OFF_TOPIC_REVIEW_PHRASES,
+  // Telegram does not classify media as NSFW. "review" therefore removes
+  // every media message, including ordinary photos and stickers. Chit-Chat
+  // allows media and relies on member reports plus normal moderation instead.
+  telegramGroupHelpAntiPornAction: 'off',
+  telegramGroupHelpLinkPolicy: 'allow',
+  telegramGroupHelpMediaPolicy: 'allow',
+  telegramGroupHelpAllowedMedia: 'photo\nvideo\naudio\nvoice\nGIF\nsticker\ndocument\npoll',
+  telegramGroupHelpForwardPolicy: 'allow',
+  telegramGroupHelpQuotePolicy: 'allow',
+  telegramGroupHelpChannelSenderPolicy: 'delete',
+  telegramGroupHelpReportsMode: 'staff group',
+  telegramGroupHelpLogChannelId: '',
+  telegramGroupHelpStaffGroupId: '',
+  telegramGroupHelpIdentityChangeAlerts: 'staff only',
+  telegramGroupHelpNightMode: 'off',
+  telegramGroupHelpStatisticsMode: 'admins only',
+  telegramGroupHelpTimezone: 'Asia/Kolkata'
+};
+
+/**
+ * Creates the independent policy once, while preserving later changes made by
+ * this group's administrators through /settings.
+ */
+export async function ensureHopeHubOffTopicGroupPolicy(chatId: string) {
+  const existing = await getTelegramCommunityGroupPolicy(chatId);
+  return saveTelegramCommunityGroupPolicy(chatId, {
+    ...HOPE_HUB_OFF_TOPIC_GROUP_POLICY,
+    ...existing
+  });
+}
+
+export function offTopicPolicyWithPrivateModeration(
+  policy: Record<string, string>,
+  privateGroupId: string
+) {
+  return {
+    ...policy,
+    telegramGroupHelpLogChannelId: privateGroupId,
+    telegramGroupHelpStaffGroupId: privateGroupId,
+    telegramGroupHelpReportsMode: 'staff group'
+  };
+}
+
+export async function connectHopeHubOffTopicModerationGroup(
+  offTopicChatId: string,
+  privateGroupId: string
+) {
+  const existing = await getTelegramCommunityGroupPolicy(offTopicChatId);
+  return saveTelegramCommunityGroupPolicy(
+    offTopicChatId,
+    offTopicPolicyWithPrivateModeration(existing, privateGroupId)
+  );
+}

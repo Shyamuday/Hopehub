@@ -10,9 +10,7 @@ import {
   callCommunityTelegramApi,
   sendCommunityMessage
 } from './telegram-community-bots.client.js';
-import { sendGroupHelpActivityLog } from './telegram-group-help.actions.js';
 import { groupHelpConfig } from './telegram-group-help.config.js';
-import { telegramPersonLogLabel } from './telegram-group-help.people.js';
 import { canUseGroupHelpAdminCommand } from './telegram-group-help.permissions.js';
 import {
   GROUP_HELP_DEFAULT_STAFF_COMMANDS,
@@ -396,12 +394,7 @@ async function currentValue(field: GroupHelpConfigField) {
   return stored?.value ?? field.defaultValue;
 }
 
-async function saveValue(
-  field: GroupHelpConfigField,
-  value: string,
-  chatId: string,
-  actor: string
-) {
+async function saveValue(field: GroupHelpConfigField, value: string, chatId: string) {
   const normalized = value.trim();
   if (normalized.length > field.maxLength) {
     throw new Error(`${field.label} is too long. Maximum ${field.maxLength} characters.`);
@@ -417,15 +410,6 @@ async function saveValue(
     create: { key: field.key, value: normalized, label: field.label },
     update: { value: normalized, label: field.label }
   });
-  const logChannel = await prisma.siteConfig.findUnique({
-    where: { key: 'telegramGroupHelpLogChannelId' },
-    select: { value: true }
-  });
-  await sendGroupHelpActivityLog(
-    { telegramGroupHelpLogChannelId: logChannel?.value || '' },
-    'Group settings changed from Telegram',
-    [`Setting: ${field.label}`, `Group: ${chatId}`, `Admin: ${actor}`]
-  );
 }
 
 export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegramUpdate) {
@@ -652,11 +636,6 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
         fullAdmin,
         actorId: `telegram:${callback.from.id}`
       });
-      await sendGroupHelpActivityLog(values, 'Staff permissions changed privately', [
-        `Member: ${telegramUserId}`,
-        `Change: ${changeLabel}`,
-        `By: ${telegramPersonLogLabel(callback.from, 'Telegram administrator')}`
-      ]);
       await sendPrivateStaffEditor(replyChatId, chatId, staffGroupId, telegramUserId);
       await answerCommunityCallback(GROUP_HELP_BOT_SLUG, callback.id, 'Permissions updated.');
     } catch (error) {
@@ -777,12 +756,7 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
       return true;
     }
     try {
-      await saveValue(
-        field,
-        draft.value,
-        chatId,
-        telegramPersonLogLabel(callback.from, 'Telegram staff')
-      );
+      await saveValue(field, draft.value, chatId);
       await clearSettingsDraft(chatId, callback.from.id);
       await sendCommunityMessage(
         GROUP_HELP_BOT_SLUG,

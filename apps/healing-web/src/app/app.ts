@@ -10,24 +10,25 @@ import {
   AuthModalComponent,
   ScrollToTopComponent,
   NotificationCenterComponent,
+  CookieConsentComponent,
 } from './shared/components';
 import {
   ConsultationCallInviteComponent,
   ConsultationWebrtcCallService,
   type IceServerConfig,
 } from '@hopehub/platform-ui';
-import {
-  ConsumerChromeService,
-  HopeHubRealtimeService,
-  NavigationService,
-  SEOService,
-} from './core/services';
+import { ConsumerChromeService, HopeHubRealtimeService, NavigationService } from './core/services';
 import { AuthModalService } from './core/services/auth-modal.service';
 import { AuthService } from './core/services/auth.service';
 import { BookingService } from './core/services/booking.service';
 import { FontLoader } from './core/utils/font-loader.util';
 import { captureReferralAttribution } from './core/utils/referral-attribution.util';
 import { CallPushNotificationService } from './core/services/call-push-notification.service';
+import { GoogleAdsService } from './core/services/google-ads.service';
+import {
+  HOPE_HUB_ANALYTICS_EVENTS,
+  ProductAnalyticsService,
+} from './core/services/product-analytics.service';
 
 @Component({
   selector: 'app-root',
@@ -41,6 +42,7 @@ import { CallPushNotificationService } from './core/services/call-push-notificat
     AuthModalComponent,
     ScrollToTopComponent,
     NotificationCenterComponent,
+    CookieConsentComponent,
     ConsultationCallInviteComponent,
   ],
   templateUrl: './app.html',
@@ -51,7 +53,6 @@ export class App implements OnInit {
   protected readonly isOnline = signal(true);
   protected readonly chrome = inject(ConsumerChromeService);
 
-  private seoService = inject(SEOService);
   private platformId = inject(PLATFORM_ID);
   private authService = inject(AuthService);
   private authModalService = inject(AuthModalService);
@@ -60,6 +61,8 @@ export class App implements OnInit {
   private globalCall = inject(ConsultationWebrtcCallService);
   private bookingService = inject(BookingService);
   private callPush = inject(CallPushNotificationService);
+  private googleAds = inject(GoogleAdsService);
+  private productAnalytics = inject(ProductAnalyticsService);
   readonly callIceServers = signal<IceServerConfig[]>([{ urls: 'stun:stun.l.google.com:19302' }]);
 
   constructor(private navigationService: NavigationService) {}
@@ -73,12 +76,10 @@ export class App implements OnInit {
       captureReferralAttribution(new URLSearchParams(window.location.search).get('ref'));
       FontLoader.init();
 
-      // Add organization structured data for SEO
-      this.seoService.addOrganizationStructuredData();
-
       this.openAuthModalWhenSessionMissing();
       this.bindGlobalCallAlerts();
       this.callPush.init();
+      this.googleAds.initialize();
       this.loadCallIceServers();
     }
   }
@@ -106,6 +107,24 @@ export class App implements OnInit {
       if (!invalid) return;
       invalid.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
     });
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (!isPlatformBrowser(this.platformId) || !(event.target instanceof Element)) return;
+    const anchor = event.target.closest<HTMLAnchorElement>('a[href]');
+    if (!anchor) return;
+
+    try {
+      const destination = new URL(anchor.href, window.location.origin);
+      if (destination.hostname !== 't.me' && destination.hostname !== 'telegram.me') return;
+      this.productAnalytics.track(HOPE_HUB_ANALYTICS_EVENTS.TELEGRAM_OUTBOUND_CLICKED, {
+        destination: destination.pathname.replace(/^\//, '') || 'telegram',
+        source: window.location.pathname,
+      });
+    } catch {
+      // Ignore malformed third-party URLs and allow normal navigation to continue.
+    }
   }
 
   openIncomingCall(consultationId: string): void {

@@ -1,21 +1,28 @@
 import type { Server as SocketIoServer } from 'socket.io';
-import { ConsultationStatus, PaymentStatus, Role } from '@prisma/client';
+import {
+  ConsultationStatus,
+  HomeopathicDoctorType,
+  PaymentStatus,
+  ProviderDomain,
+  Role
+} from '@prisma/client';
 import { z } from 'zod';
 import { authRequired, allowRoles } from '../../auth.js';
 import { prisma } from '../../db.js';
 import { ensureBillingPlans } from '../catalog.js';
+import { asyncRoute, queryText, routeParam, writeAuditLog } from '../../utils/helpers.js';
 import {
-  asyncRoute,
-  queryText,
-  routeParam,
-  writeAuditLog
-} from '../../utils/helpers.js';
-import { enabledNotificationChannels, notificationService } from '../../services/notification-service.js';
+  enabledNotificationChannels,
+  notificationService
+} from '../../services/notification-service.js';
 import { emitConsultationAssigned } from '../../services/consultation-realtime.js';
 import { createPatientRecord, searchPatients } from '../../services/patient-identity.js';
 import { resolveDiseaseConsultationFee } from '../../services/consultation-pricing.js';
 import { getWalletBalance } from '../../services/patient-wallet.js';
-import { quoteConsultationCheckoutForPatient, settleConsultationPaymentRewards } from '../../services/reward-settlement.js';
+import {
+  quoteConsultationCheckoutForPatient,
+  settleConsultationPaymentRewards
+} from '../../services/reward-settlement.js';
 import { PRODUCT_EVENTS, trackProductEvent } from '../../services/product-analytics.js';
 import {
   consultationInclude,
@@ -178,10 +185,12 @@ export function registerReceptionRoutes(router: import('express').Router, io: So
 
       const summary = {
         total: filtered.length,
-        awaitingPayment: filtered.filter((c) => c.status === ConsultationStatus.PAYMENT_PENDING).length,
+        awaitingPayment: filtered.filter((c) => c.status === ConsultationStatus.PAYMENT_PENDING)
+          .length,
         awaitingDoctor: filtered.filter((c) => c.status === ConsultationStatus.PAID).length,
         inProgress: filtered.filter(
-          (c) => c.status === ConsultationStatus.ASSIGNED || c.status === ConsultationStatus.IN_PROGRESS
+          (c) =>
+            c.status === ConsultationStatus.ASSIGNED || c.status === ConsultationStatus.IN_PROGRESS
         ).length
       };
 
@@ -301,7 +310,8 @@ export function registerReceptionRoutes(router: import('express').Router, io: So
       const ctx = await resolveReceptionContext(req.user!.id, req.user!.role);
       const storeId = requireStoreId(ctx, body.storeId);
       const consultFeePaise = await resolveDiseaseConsultationFee(body.diseaseId, storeId);
-      const { resolveGuestConsultationCheckout } = await import('../../services/checkout-pricing.js');
+      const { resolveGuestConsultationCheckout } =
+        await import('../../services/checkout-pricing.js');
       const quote = await resolveGuestConsultationCheckout({
         grossInPaise: consultFeePaise,
         promoCode: body.promoCode
@@ -334,7 +344,9 @@ export function registerReceptionRoutes(router: import('express').Router, io: So
 
       await ensureBillingPlans();
       const disease = await prisma.disease.findUniqueOrThrow({ where: { id: body.diseaseId } });
-      const billingPlan = await prisma.billingPlan.findFirst({ where: { code: 'ONE_TIME', isActive: true } });
+      const billingPlan = await prisma.billingPlan.findFirst({
+        where: { code: 'ONE_TIME', isActive: true }
+      });
       if (!billingPlan) {
         return res.status(400).json({ error: 'Billing plan is not configured.' });
       }
@@ -465,7 +477,9 @@ export function registerReceptionRoutes(router: import('express').Router, io: So
         prisma.user.findFirstOrThrow({ where: { id: body.patientId, role: Role.PATIENT } }),
         prisma.disease.findUniqueOrThrow({ where: { id: body.diseaseId } })
       ]);
-      const billingPlan = await prisma.billingPlan.findFirst({ where: { code: 'ONE_TIME', isActive: true } });
+      const billingPlan = await prisma.billingPlan.findFirst({
+        where: { code: 'ONE_TIME', isActive: true }
+      });
       if (!billingPlan) {
         return res.status(400).json({ error: 'Billing plan is not configured.' });
       }
@@ -485,7 +499,11 @@ export function registerReceptionRoutes(router: import('express').Router, io: So
           clinicStoreId: storeId,
           intakeAnswers: body.intakeAnswers,
           billingPlanCode: billingPlan.code,
-          pricingSnapshot: { source: 'reception_booking', diseaseFeeInPaise: consultFeePaise, checkout },
+          pricingSnapshot: {
+            source: 'reception_booking',
+            diseaseFeeInPaise: consultFeePaise,
+            checkout
+          },
           payment: {
             create: {
               grossAmountInPaise: checkout.grossAmountInPaise,
@@ -561,7 +579,18 @@ export function registerReceptionRoutes(router: import('express').Router, io: So
       await assertConsultationInStore(consultationId, storeId);
 
       const doctor = await prisma.user.findFirstOrThrow({
-        where: { id: body.doctorId, role: Role.DOCTOR, isActive: true },
+        where: {
+          id: body.doctorId,
+          role: Role.DOCTOR,
+          isActive: true,
+          doctorProfile: {
+            is: {
+              providerDomain: ProviderDomain.HOMEOPATHY,
+              doctorType: { not: HomeopathicDoctorType.PSYCHOLOGIST },
+              suspendedAt: null
+            }
+          }
+        },
         include: { doctorProfile: { select: { clinicStoreId: true } } }
       });
 
@@ -625,7 +654,10 @@ export function registerReceptionRoutes(router: import('express').Router, io: So
   );
 }
 
-function storeIdFromBody(req: import('express').Request, ctx: Awaited<ReturnType<typeof resolveReceptionContext>>) {
+function storeIdFromBody(
+  req: import('express').Request,
+  ctx: Awaited<ReturnType<typeof resolveReceptionContext>>
+) {
   const bodyStoreId = typeof req.body?.storeId === 'string' ? req.body.storeId : undefined;
   return requireStoreId(ctx, bodyStoreId);
 }

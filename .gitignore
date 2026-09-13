@@ -90,3 +90,4 @@ temp/
 deploy/grouphelpbot/GroupHelp/
 *.tmp
 *.bak
+__pycache__/

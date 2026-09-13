@@ -21,7 +21,8 @@ import {
 } from './telegram-community-bots.store.js';
 import type {
   CommunityTelegramMessage,
-  CommunityTelegramUpdate
+  CommunityTelegramUpdate,
+  CommunityTelegramUser
 } from './telegram-community-bots.types.js';
 import { telegramPersonLogLabel } from './telegram-group-help.people.js';
 
@@ -73,8 +74,10 @@ export async function sendModerationLog(
   values: Record<string, string>,
   message: CommunityTelegramMessage,
   reason: string,
-  action: string
+  action: string,
+  options: { performedBy?: CommunityTelegramUser | null } = {}
 ) {
+  if (values.telegramGroupHelpPrivateControl === 'true') return;
   const staffDestination = values.telegramGroupHelpStaffGroupId?.trim() || '';
   const logDestination = values.telegramGroupHelpLogChannelId?.trim() || '';
   if (!staffDestination && !logDestination) return;
@@ -157,7 +160,9 @@ export async function sendModerationLog(
     `Action: ${action.toUpperCase()}`,
     `Rule / reason: ${reason}`,
     'Outcome: completed',
-    'Performed by: Hope Hub bot (automatic moderation)',
+    options.performedBy
+      ? `Performed by: ${telegramPersonLogLabel(options.performedBy, 'Administrator')}`
+      : 'Performed by: Hope Hub bot (automatic moderation)',
     `Group: ${message.chat.title || message.chat.id} (${message.chat.id})`,
     `Message: ${message.message_id}${message.message_thread_id ? ` · topic ${message.message_thread_id}` : ''}`,
     `Member: ${member}`,
@@ -333,6 +338,7 @@ export async function sendGroupHelpActivityLog(
   title: string,
   details: Array<string | null | undefined> = []
 ) {
+  if (values.telegramGroupHelpPrivateControl === 'true') return;
   const destinations = [
     values.telegramGroupHelpLogChannelId?.trim(),
     values.telegramGroupHelpStaffGroupId?.trim()

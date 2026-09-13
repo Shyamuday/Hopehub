@@ -127,7 +127,7 @@ export const BREAKUP_ARTICLES: Article[] = [
       "Breakup recovery is a journey of healing, growth, and rediscovery. While the pain is real and valid, it's also temporary. With the right strategies, support, and self-compassion, you can not only recover but emerge stronger, wiser, and more resilient. Remember: you are not alone, and healing is possible.",
     sources: [
       'Fisher, H. E. (2006). Broken heart: The nature and future of romantic love. Columbia University Press.',
-      'Sbarra, D. A., & Emery, R. E. (2005). The emotional sequelae of nonmarital relationship dissolution. Personal Relationships, 12(2), 213-232.',
+      'Sbarra, D. A., & Emery, R. E. (2005). The emotional sequelae of nonmarital relationship dissolution. https://doi.org/10.1111/j.1350-4126.2005.00112.x',
       'Winch, G. (2013). How to fix a broken heart. TED Books.',
       'Kübler-Ross, E., & Kessler, D. (2005). On grief and grieving: Finding the meaning of grief through the five stages of loss. Simon & Schuster.',
     ],
@@ -142,7 +142,7 @@ export const BREAKUP_ARTICLES: Article[] = [
     category: [ArticleCategory.BREAKUP, ArticleCategory.SELF_CARE],
     difficulty: ArticleDifficulty.INTERMEDIATE,
     readingTime: '10 min read',
-    author: 'Dr. Michael Thompson, Relationship Counselor',
+    author: 'Hope Hub Editorial Team',
     publishedDate: new Date('2024-02-01'),
     tags: ['breakup', 'rebuilding', 'identity', 'growth', 'self-discovery', 'life-goals'],
     introduction:
@@ -203,6 +203,7 @@ export const BREAKUP_ARTICLES: Article[] = [
     sources: [
       'Neff, K. (2011). Self-Compassion: The Proven Power of Being Kind to Yourself. William Morrow Paperbacks.',
       'Brown, B. (2012). Daring Greatly: How the Courage to Be Vulnerable Transforms the Way We Live, Love, Parent, and Lead. Gotham Books.',
+      'National Health Service. Maintaining healthy relationships and mental wellbeing. https://www.nhs.uk/every-mind-matters/lifes-challenges/maintaining-healthy-relationships-and-mental-wellbeing/',
     ],
   },
   {
@@ -279,8 +280,8 @@ export const BREAKUP_ARTICLES: Article[] = [
     conclusion:
       "Understanding the science and psychology of breakup grief can help you be more compassionate with yourself during this difficult time. Remember that grief is not a sign of weakness—it's a sign that you loved and that you're human. With time, support, and healthy processing, the pain will lessen, and you will heal.",
     sources: [
-      'Kross, E., Berman, M. G., Mischel, W., Smith, E. E., & Wager, T. D. (2011). Social rejection shares somatosensory representations with physical pain. Proceedings of the National Academy of Sciences, 108(15), 6270-6275.',
-      'Fisher, H. E., Brown, L. L., Aron, A., Strong, G., & Mashek, D. (2010). Reward, addiction, and emotion regulation systems associated with rejection in love. Journal of Neurophysiology, 104(1), 51-60.',
+      'Kross, E. et al. (2011). Social rejection shares somatosensory representations with physical pain. https://doi.org/10.1073/pnas.1102693108',
+      'Fisher, H. E. et al. (2010). Reward, addiction, and emotion regulation systems associated with rejection in love. https://doi.org/10.1152/jn.00784.2009',
     ],
   },
 ];

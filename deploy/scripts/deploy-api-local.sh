@@ -44,6 +44,10 @@ SES_SMTP_PORT="$(sudo cat /etc/hopehub-ses-smtp-port 2>/dev/null || echo 587)"
 SES_SMTP_USER="$(sudo cat /etc/hopehub-ses-smtp-username 2>/dev/null || true)"
 SES_SMTP_PASS="$(sudo cat /etc/hopehub-ses-smtp-password 2>/dev/null || true)"
 SMTP_FROM="$(sudo cat /etc/hopehub-ses-from 2>/dev/null || echo noreply@hopehub.in)"
+EMAIL_MARKETING_SES_SNS_TOPIC_ARNS_VALUE="$(sudo cat /etc/hopehub-email-marketing-ses-sns-topic-arns 2>/dev/null || echo "${EMAIL_MARKETING_SES_SNS_TOPIC_ARNS:-}")"
+if [ -n "$EMAIL_MARKETING_SES_SNS_TOPIC_ARNS_VALUE" ]; then
+  printf '%s\n' "$EMAIL_MARKETING_SES_SNS_TOPIC_ARNS_VALUE" | sudo tee /etc/hopehub-email-marketing-ses-sns-topic-arns >/dev/null
+fi
 TURN_URL="$(sudo cat /etc/hopehub-turn-url 2>/dev/null || true)"
 TURN_URLS="$(sudo cat /etc/hopehub-turn-urls 2>/dev/null || echo "${TURN_URL}")"
 TURN_USERNAME="$(sudo cat /etc/hopehub-turn-username 2>/dev/null || true)"
@@ -132,16 +136,19 @@ TELEGRAM_CONFESSION_CHANNEL_ID_VALUE="$(sudo cat /etc/hopehub-confession-channel
 TELEGRAM_CONFESSION_APPROVAL_GROUP_ID_VALUE="$(sudo cat /etc/hopehub-confession-approval-group-id 2>/dev/null || echo "${TELEGRAM_CONFESSION_APPROVAL_GROUP_ID:-}")"
 TELEGRAM_CONFESSION_START_NUMBER_VALUE="$(sudo cat /etc/hopehub-confession-start-number 2>/dev/null || echo "${TELEGRAM_CONFESSION_START_NUMBER:-1000}")"
 TELEGRAM_RULES_BOT_TOKEN_VALUE="$(sudo cat /etc/hopehub-rules-bot-token 2>/dev/null || echo "${TELEGRAM_RULES_BOT_TOKEN:-}")"
+TELEGRAM_TOXIC_MOVIE_BOT_TOKEN_VALUE="$(sudo cat /etc/hopehub-telegram-toxic-movie-token 2>/dev/null || echo "${TELEGRAM_TOXIC_MOVIE_BOT_TOKEN:-}")"
 
 cat > .env <<ENV
 DATABASE_URL="postgresql://hopehub_app:${DB_PASS}@localhost:5432/hopehub_clinic?schema=public"
 JWT_SECRET="${JWT_SECRET}"
 NODE_ENV="production"
+EMAIL_MARKETING_BATCH_SIZE="10"
+EMAIL_MARKETING_SES_SNS_TOPIC_ARNS="${EMAIL_MARKETING_SES_SNS_TOPIC_ARNS_VALUE}"
 PORT=4000
 API_PUBLIC_URL="https://api.hopehub.in"
 API_URL="https://api.hopehub.in"
 WEB_ORIGIN="https://hopehub.in"
-CORS_ORIGINS="https://hopehub.in,https://admin.hopehub.in,https://earn.hopehub.in,https://support.hopehub.in,https://ops.hopehub.in,http://localhost:4203,http://127.0.0.1:4203,http://localhost:4204,http://127.0.0.1:4204,http://localhost:4200,http://127.0.0.1:4200"
+CORS_ORIGINS="https://hopehub.in,https://care.hopehub.in,https://admin.hopehub.in,https://earn.hopehub.in,https://doctor.hopehub.in,https://support.hopehub.in,https://ops.hopehub.in,http://localhost:4203,http://127.0.0.1:4203,http://localhost:4204,http://127.0.0.1:4204,http://localhost:4200,http://127.0.0.1:4200"
 ADMIN_ORIGIN="https://admin.hopehub.in"
 DOCTOR_ORIGIN="https://earn.hopehub.in"
 OPERATIONS_ORIGIN="https://ops.hopehub.in"
@@ -205,11 +212,18 @@ TELEGRAM_CONFESSION_CHANNEL_ID="${TELEGRAM_CONFESSION_CHANNEL_ID_VALUE}"
 TELEGRAM_CONFESSION_APPROVAL_GROUP_ID="${TELEGRAM_CONFESSION_APPROVAL_GROUP_ID_VALUE}"
 TELEGRAM_CONFESSION_START_NUMBER="${TELEGRAM_CONFESSION_START_NUMBER_VALUE}"
 TELEGRAM_RULES_BOT_TOKEN="${TELEGRAM_RULES_BOT_TOKEN_VALUE}"
+TELEGRAM_TOXIC_MOVIE_BOT_TOKEN="${TELEGRAM_TOXIC_MOVIE_BOT_TOKEN_VALUE}"
 ENV
 chmod 600 .env
 
-npm ci --no-audit --no-fund
-npm run prisma:generate
+# Scheduler runs skip this short window instead of starting with missing dependencies.
+# Use the same lock as the systemd service and release it even if installation fails.
+sudo touch "$APP_DIR/.telegram-runtime.lock"
+(
+  flock --exclusive 9
+  npm ci --no-audit --no-fund
+  npm run prisma:generate
+) 9<"$APP_DIR/.telegram-runtime.lock"
 # Production runs the API through tsx, and the repository CI performs the
 # TypeScript validation. Compiling the full monorepo API on this 911 MB host
 # exhausts V8's heap and prevents an otherwise valid deployment from reaching
@@ -231,7 +245,11 @@ sudo install -m 644 "$APP_DIR/deploy/systemd/hopehub-telegram-voice-scheduler.se
 sudo install -m 644 "$APP_DIR/deploy/systemd/hopehub-telegram-voice-scheduler.timer" /etc/systemd/system/hopehub-telegram-voice-scheduler.timer
 sudo systemctl daemon-reload
 if sudo test -s /etc/hopehub-telegram-user-session; then
-  sudo systemctl enable --now hopehub-telegram-voice-scheduler.timer
+  # Replace any previous one-shot process that was left waiting on Telegram.
+  # The restarted timer launches the newly deployed scheduler after OnBootSec.
+  sudo systemctl stop hopehub-telegram-voice-scheduler.service >/dev/null 2>&1 || true
+  sudo systemctl enable hopehub-telegram-voice-scheduler.timer
+  sudo systemctl restart hopehub-telegram-voice-scheduler.timer
 else
   sudo systemctl disable --now hopehub-telegram-voice-scheduler.timer >/dev/null 2>&1 || true
   echo "Telegram native voice scheduler is awaiting its one-time user login."
@@ -343,6 +361,7 @@ start_api_candidate() {
   TELEGRAM_CONFESSION_APPROVAL_GROUP_ID="$TELEGRAM_CONFESSION_APPROVAL_GROUP_ID_VALUE" \
   TELEGRAM_CONFESSION_START_NUMBER="$TELEGRAM_CONFESSION_START_NUMBER_VALUE" \
   TELEGRAM_RULES_BOT_TOKEN="$TELEGRAM_RULES_BOT_TOKEN_VALUE" \
+  TELEGRAM_TOXIC_MOVIE_BOT_TOKEN="$TELEGRAM_TOXIC_MOVIE_BOT_TOKEN_VALUE" \
   pm2 start "$APP_DIR/node_modules/tsx/dist/cli.mjs" --name "$process_name" --cwd "$API_DIR" -- src/index.ts
 }
 
@@ -357,6 +376,36 @@ wait_for_api() {
     echo "Attempt $i: not ready yet, retrying in 2s..."
     sleep 2
   done
+  return 1
+}
+
+wait_for_nginx_api() {
+  local response_file
+  local http_code
+  response_file="$(mktemp /tmp/hopehub-api-nginx-health.XXXXXX)"
+
+  echo "Waiting for Nginx to route to the candidate API..."
+  for i in $(seq 1 15); do
+    http_code="$(
+      curl -sSk \
+        --resolve api.hopehub.in:443:127.0.0.1 \
+        --output "$response_file" \
+        --write-out '%{http_code}' \
+        https://api.hopehub.in/health/ready || true
+    )"
+    if [ "$http_code" = "200" ]; then
+      echo "Nginx reached the candidate API after ${i} attempt(s)"
+      rm -f "$response_file"
+      return 0
+    fi
+    echo "Attempt $i: Nginx readiness returned HTTP ${http_code:-transport-error}; retrying in 2s..."
+    sleep 2
+  done
+
+  echo "Nginx readiness did not recover. Last response body:"
+  head -c 1200 "$response_file" || true
+  echo
+  rm -f "$response_file"
   return 1
 }
 
@@ -385,7 +434,7 @@ if ! switch_api_upstream "$NEXT_API_PORT" "$CURRENT_API_PORT"; then
   exit 1
 fi
 
-if ! curl -fsSk --resolve api.hopehub.in:443:127.0.0.1 https://api.hopehub.in/health/ready >/dev/null; then
+if ! wait_for_nginx_api; then
   echo "Nginx did not reach the new API. Restoring port ${CURRENT_API_PORT}."
   switch_api_upstream "$CURRENT_API_PORT" "$NEXT_API_PORT" || true
   pm2 delete "$NEXT_API_PROCESS" || true
@@ -398,7 +447,7 @@ pm2 delete "hopehub-api-${CURRENT_API_PORT}" >/dev/null 2>&1 || true
 pm2 delete hopehub-api >/dev/null 2>&1 || true
 pm2 save
 
-if [ -n "${TELEGRAM_USER_BOT_TOKEN_VALUE}${TELEGRAM_DOCTOR_BOT_TOKEN_VALUE}${TELEGRAM_ADMIN_BOT_TOKEN_VALUE}${TELEGRAM_CONTACT_BOT_TOKEN_VALUE}${TELEGRAM_CONFESSION_BOT_TOKEN_VALUE}${TELEGRAM_RULES_BOT_TOKEN_VALUE}${TELEGRAM_HOPEHUBBOT_TOKEN_VALUE}" ]; then
+if [ -n "${TELEGRAM_USER_BOT_TOKEN_VALUE}${TELEGRAM_DOCTOR_BOT_TOKEN_VALUE}${TELEGRAM_ADMIN_BOT_TOKEN_VALUE}${TELEGRAM_CONTACT_BOT_TOKEN_VALUE}${TELEGRAM_CONFESSION_BOT_TOKEN_VALUE}${TELEGRAM_RULES_BOT_TOKEN_VALUE}${TELEGRAM_HOPEHUBBOT_TOKEN_VALUE}${TELEGRAM_TOXIC_MOVIE_BOT_TOKEN_VALUE}" ]; then
   echo "Configuring Telegram bot webhooks without discarding queued updates..."
   # The self-hosted Actions runner can expose a newer GitHub secret while the
   # API correctly uses the persisted production secret from /etc. dotenv does
@@ -413,6 +462,7 @@ if [ -n "${TELEGRAM_USER_BOT_TOKEN_VALUE}${TELEGRAM_DOCTOR_BOT_TOKEN_VALUE}${TEL
   TELEGRAM_CONTACT_BOT_TOKEN="$TELEGRAM_CONTACT_BOT_TOKEN_VALUE" \
   TELEGRAM_CONFESSION_BOT_TOKEN="$TELEGRAM_CONFESSION_BOT_TOKEN_VALUE" \
   TELEGRAM_RULES_BOT_TOKEN="$TELEGRAM_RULES_BOT_TOKEN_VALUE" \
+  TELEGRAM_TOXIC_MOVIE_BOT_TOKEN="$TELEGRAM_TOXIC_MOVIE_BOT_TOKEN_VALUE" \
   npm run telegram:setup
 fi
 

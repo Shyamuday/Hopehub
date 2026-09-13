@@ -13,6 +13,8 @@ const COMMUNITY_BOTS: Record<
     tokenEnv: string;
     commands: Array<{ command: string; description: string }>;
     allowedUpdates: string[];
+    description?: string;
+    shortDescription?: string;
   }
 > = {
   [COMMUNITY_BOT_SLUGS.CONTACT]: {
@@ -119,7 +121,7 @@ const COMMUNITY_BOTS: Record<
       { command: 'me', description: 'Show your group profile' },
       { command: 'report', description: 'Report a message to admins' },
       { command: 'forgot', description: 'Remove your data from this group' },
-      { command: 'settestgroup', description: 'Register test group (admins)' },
+      { command: 'setofftopic', description: 'Register off-topic group (admins)' },
       { command: 'setlog', description: 'Set moderation log channel (admins)' },
       { command: 'help', description: 'Community bot help' }
     ],
@@ -133,6 +135,22 @@ const COMMUNITY_BOTS: Record<
       'chat_member',
       'my_chat_member'
     ]
+  },
+  [COMMUNITY_BOT_SLUGS.TOXIC_MOVIE]: {
+    name: TELEGRAM_BOT_DISPLAY_NAMES.TOXIC_MOVIE,
+    tokenEnv: 'TELEGRAM_TOXIC_MOVIE_BOT_TOKEN',
+    description:
+      'Unofficial verified Toxic and Yash updates without piracy links. Join HopeHub India for friendly conversation and emotional support: https://t.me/hopehubindia',
+    shortDescription:
+      'Verified Toxic and Yash updates. Join HopeHub India: https://t.me/hopehubindia',
+    commands: [
+      { command: 'start', description: 'Open Toxic movie updates' },
+      { command: 'latest', description: 'Find the latest verified updates' },
+      { command: 'about', description: 'About this unofficial bot' },
+      { command: 'community', description: 'Join HopeHub India' },
+      { command: 'help', description: 'Show available commands' }
+    ],
+    allowedUpdates: ['message', 'callback_query', 'my_chat_member']
   }
 };
 
@@ -198,17 +216,30 @@ export function answerCommunityCallback(
   });
 }
 
-export function editCommunityReplyMarkup(
+export function isTelegramMessageNotModifiedError(error: unknown) {
+  const detail = error instanceof Error ? error.message : String(error);
+  return /message is not modified/i.test(detail);
+}
+
+export async function editCommunityReplyMarkup(
   slug: CommunityBotSlug,
   chatId: string | number,
   messageId: number,
   replyMarkup: TelegramKeyboard
 ) {
-  return callCommunityTelegramApi(slug, 'editMessageReplyMarkup', {
-    chat_id: chatId,
-    message_id: messageId,
-    reply_markup: colorizeTelegramKeyboard(replyMarkup)
-  });
+  try {
+    return await callCommunityTelegramApi(slug, 'editMessageReplyMarkup', {
+      chat_id: chatId,
+      message_id: messageId,
+      reply_markup: colorizeTelegramKeyboard(replyMarkup)
+    });
+  } catch (error) {
+    // An RSVP can be delivered twice or tapped simultaneously. Telegram
+    // already has the requested keyboard in that case, so this is success,
+    // not a failed webhook update that should be retried or alerted.
+    if (isTelegramMessageNotModifiedError(error)) return null;
+    throw error;
+  }
 }
 
 export function getCommunityWebhookInfo(slug: CommunityBotSlug) {
@@ -223,6 +254,16 @@ export async function setupCommunityBot(input: {
 }) {
   const config = COMMUNITY_BOTS[input.slug];
   await callCommunityTelegramApi(input.slug, 'setMyCommands', { commands: config.commands });
+  if (config.description) {
+    await callCommunityTelegramApi(input.slug, 'setMyDescription', {
+      description: config.description
+    });
+  }
+  if (config.shortDescription) {
+    await callCommunityTelegramApi(input.slug, 'setMyShortDescription', {
+      short_description: config.shortDescription
+    });
+  }
   // Community bots use their inline keyboards, not a stale global web-app menu button.
   await callCommunityTelegramApi(input.slug, 'setChatMenuButton', {
     menu_button: { type: 'default' }

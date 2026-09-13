@@ -111,7 +111,7 @@ export const HOME_CONTENT = {
       badgeVariant: 'primary',
       icon: '🩺',
       title: 'Homeopathy for all conditions',
-      body: 'From fever, cough, and infections to diabetes, arthritis, skin disorders, and mental health — our doctors treat the full range of acute and chronic illnesses with individualized homeopathic prescribing.',
+      body: 'From fever, cough, and infections to diabetes, arthritis, skin disorders, digestive concerns, and recurring allergies — our doctors treat a wide range of acute and chronic illnesses with individualized homeopathic prescribing.',
       features: ['Acute & chronic complaints', 'All age groups', 'Prescription & follow-up'],
       linkLabel: 'Browse all conditions →',
       linkHref: '/treatments',
@@ -278,7 +278,7 @@ export const CHRONIC_CARE_PAGE_CONTENT = {
   pillars: [
     {
       title: 'Any condition',
-      body: 'From fever and infections to diabetes, arthritis, skin, hair, and mental health.',
+      body: 'From fever and infections to diabetes, arthritis, skin, hair, digestion, and recurring allergies.',
     },
     {
       title: 'Individualized care',
@@ -314,11 +314,11 @@ export const OUR_DOCTORS_PAGE_CONTENT = {
   headerSubtitle: 'Our doctors',
   eyebrow: 'Our clinical team',
   title: 'Experienced doctors. Dedicated to patient care.',
-  body: 'HopeHub Care and Research Centre maintains an internal panel of qualified homeopathic doctors with expertise across acute illnesses, chronic diseases, skin and hair concerns, metabolic health, pediatrics, and more. Patients are matched to doctors based on their condition — not random browsing.',
+  body: 'Meet qualified homeopathic doctors for acute illnesses, chronic conditions, skin and hair concerns, metabolic health, pediatrics, and more. Choose an available doctor or ask our clinical team to match your concern.',
   matching: {
     eyebrow: 'How it works',
-    title: 'You do not choose a doctor — we match you to the right one.',
-    body: 'At HopeHub, doctor assignment is internal. This ensures patients with specific conditions receive care from the most qualified and available doctor on our panel, rather than being left to navigate listings alone.',
+    title: 'Choose a doctor or let us match your care.',
+    body: 'Select an available doctor when you have a preference. If that doctor is unavailable, our clinical team can match you with another suitable homeopathy doctor so your care is not delayed.',
   },
   cta: {
     eyebrow: 'Ready to start?',
@@ -393,7 +393,7 @@ export const ROUTE_SEO_CONTENT = {
   blog: {
     seoTitle: 'Health Blog | HopeHub Care and Research Centre',
     seoDescription:
-      'Evidence-informed articles on homeopathy, common diseases, mental wellness, and healthy living from the HopeHub Care clinical team.',
+      'Doctor-reviewed articles about homeopathy, common health conditions, consultation preparation, and safe care from the HopeHub Care clinical team.',
   },
   testimonials: {
     seoTitle: 'Patient Stories | HopeHub Care and Research Centre',

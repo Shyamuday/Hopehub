@@ -79,14 +79,12 @@ export class HomeComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((state) => {
         const flows = state.flows;
-        this.concernShortcuts.set([
-          flows.anxiety,
-          flows.depression,
-          flows.stress,
-          flows.relationship,
-          flows.sleep,
-          flows.breakup,
-        ]);
+        this.concernShortcuts.set(
+          Object.values(flows)
+            .filter((flow) => flow.isActive && flow.showOnHome)
+            .sort((a, b) => a.sortOrder - b.sortOrder)
+            .slice(0, 8),
+        );
       });
   }
 }

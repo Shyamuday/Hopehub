@@ -19,7 +19,7 @@ if [ -f "$CONFIG" ]; then
 fi
 
 API_URL="${API_PUBLIC_URL:-${HOPEHUB_API_PUBLIC_URL:-https://api.hopehub.in}}"
-PATIENT_URL="${WEB_ORIGIN:-${HOPEHUB_WEB_ORIGIN:-https://hopehub.in}}"
+PATIENT_URL="${PATIENT_ORIGIN:-${HOPEHUB_PATIENT_ORIGIN:-https://care.hopehub.in}}"
 ADMIN_URL="${ADMIN_ORIGIN:-${HOPEHUB_ADMIN_ORIGIN:-https://admin.hopehub.in}}"
 DOCTOR_URL="${DOCTOR_ORIGIN:-${HOPEHUB_DOCTOR_ORIGIN:-https://earn.hopehub.in}}"
 OPS_URL="${OPERATIONS_ORIGIN:-${HOPEHUB_OPERATIONS_ORIGIN:-https://ops.hopehub.in}}"

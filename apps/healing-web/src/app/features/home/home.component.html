@@ -47,11 +47,11 @@
         @for (concern of concernShortcuts(); track concern.key) {
           <a
             class="concern-shortcuts__chip"
-            [routerLink]="concern.assessment.link"
-            [attr.aria-label]="'Open ' + concern.assessment.label"
+            [routerLink]="['/concerns', concern.slug]"
+            [attr.aria-label]="'Open support options for ' + concern.label"
           >
             <span>{{ concern.shortLabel }}</span>
-            <small>{{ concern.assessment.label }}</small>
+            <small>See the right next steps</small>
           </a>
         }
       </div>

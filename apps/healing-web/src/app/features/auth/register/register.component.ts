@@ -11,6 +11,10 @@ import {
   captureReferralAttribution,
   clearReferralAttribution,
 } from '../../../core/utils/referral-attribution.util';
+import {
+  HOPE_HUB_ANALYTICS_EVENTS,
+  ProductAnalyticsService,
+} from '../../../core/services/product-analytics.service';
 
 @Component({
   selector: 'app-register',
@@ -26,6 +30,7 @@ export class RegisterComponent implements OnInit {
   private authModalService = inject(AuthModalService);
   private notificationService = inject(NotificationService);
   private route = inject(ActivatedRoute);
+  private productAnalytics = inject(ProductAnalyticsService);
 
   registerForm: FormGroup;
   activeAction = signal<'register' | 'google' | null>(null);
@@ -76,6 +81,9 @@ export class RegisterComponent implements OnInit {
         };
 
         await this.authService.register(credentials);
+        this.productAnalytics.track(HOPE_HUB_ANALYTICS_EVENTS.REGISTRATION_COMPLETED, {
+          method: 'email',
+        });
         clearReferralAttribution();
 
         this.successMessage.set('Account created successfully.');
@@ -110,6 +118,9 @@ export class RegisterComponent implements OnInit {
       await this.authService.loginWithGoogle(
         this.registerForm.get('referralCode')?.value?.trim() || undefined,
       );
+      this.productAnalytics.track(HOPE_HUB_ANALYTICS_EVENTS.REGISTRATION_COMPLETED, {
+        method: 'google',
+      });
       clearReferralAttribution();
       this.notificationService.success('Account ready. You are signed in with Google.');
       this.authModalService.close();

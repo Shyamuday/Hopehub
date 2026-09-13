@@ -1,4 +1,9 @@
-import { TELEGRAM_BOT_URLS } from './telegram-community-bot.constants.js';
+import { TELEGRAM_OFF_TOPIC_GROUP_TITLE } from './telegram-community-bot.constants.js';
+import {
+  TELEGRAM_BOT_URLS,
+  TELEGRAM_OFF_TOPIC_GROUP_HANDLE,
+  TELEGRAM_OFF_TOPIC_GROUP_URL
+} from './telegram-community-bot.constants.js';
 
 export type GroupHelpConfigFieldType = 'text' | 'textarea' | 'number' | 'select';
 
@@ -74,6 +79,88 @@ A place for healing, connection, listening and emotional guidance.
 
 Our goal is to make support more accessible, human and available when people need someone to talk to.`;
 
+export const HOPEHUB_TELEGRAM_ADMIN_RECRUITMENT_MESSAGE = `🛡️ Help us keep the Hope Hub community safe
+
+We are inviting applications for Telegram Community Admins.
+
+What you will help with:
+• Welcome members and encourage respectful conversations
+• Apply community rules fairly and consistently
+• Remove spam, harassment, and unsafe content
+• Respond to member reports and escalate serious concerns
+• Protect member privacy
+• Support community and voice-chat activities when available
+
+Admins must not diagnose, provide medical advice, or promise emergency support. Safety or crisis concerns must be escalated to the Hope Hub team.
+
+We are looking for calm, reliable, empathetic adults who can give some time regularly. Previous moderation experience is helpful but not required.
+
+Submitting the form does not automatically make someone an admin. Every application is reviewed before access is granted.
+
+Apply here: https://hopehub.in/careers/tgadmin
+The Telegram community admin form will open automatically.`;
+
+export const DEFAULT_COMMUNITY_VC_TOPIC_ROOTS = `setting boundaries without guilt
+handling loneliness when people are around
+asking for support without feeling like a burden
+building trust after being hurt
+coping with overthinking at night
+recovering from emotional exhaustion
+managing expectations in relationships
+finding motivation during a difficult week
+dealing with rejection in a healthy way
+understanding the difference between rest and avoidance
+communicating needs without starting a conflict
+making peace with slow progress
+coping with homesickness and feeling disconnected
+building confidence after a setback
+letting go of comparisons with other people
+recognising emotionally safe friendships
+dealing with uncertainty about the future
+creating a calming routine that is realistic
+handling criticism without losing self-worth
+moving forward after a breakup
+supporting someone without trying to fix them
+balancing work pressure and emotional health
+learning to say no respectfully
+rebuilding routines after a low period
+dealing with family pressure and expectations
+understanding emotional triggers
+making space for grief and loss
+reducing the fear of being judged
+building healthier digital and social-media habits
+coping with exam and performance pressure
+finding meaning when life feels repetitive
+handling anger before it becomes harmful
+practising self-compassion after a mistake
+staying connected without unwanted private messages
+identifying small wins during recovery
+talking openly while protecting personal privacy
+managing attachment and fear of abandonment
+creating hope during a difficult transition
+recognising burnout before it becomes severe
+building friendships as an adult
+dealing with guilt after choosing yourself
+making decisions when emotions feel intense
+coping with sleep difficulties and racing thoughts
+responding to insensitive comments
+learning from conflict without blaming yourself
+finding courage to seek professional support
+supporting a friend while protecting your own energy
+rebuilding self-esteem after emotional abuse
+handling days when nothing feels productive
+creating emotional safety in group conversations
+letting go of the need for constant reassurance
+staying grounded during panic or overwhelm
+making room for joy without feeling guilty
+understanding healthy vulnerability
+coping when plans suddenly change
+separating your identity from your achievements
+dealing with one-sided relationships
+recognising when advice is not helpful
+building patience with your healing process
+finding supportive ways to express anger`;
+
 export type GroupHelpConfigField = {
   key: string;
   label: string;
@@ -142,6 +229,16 @@ const GROUP_HELP_CORE_ACTIONS: GroupHelpAction[] = [
     description: 'Post and pin the current introduction directly in the configured group.',
     valueKey: 'telegramGroupHelpPinnedMessage',
     imageUrlKey: 'telegramGroupHelpPinnedImageUrl',
+    templateKey: 'telegramGroupHelpPinnedCommandTemplate',
+    placeholder: 'message',
+    applyMode: 'DIRECT_PIN'
+  },
+  {
+    id: 'admin-recruitment',
+    title: 'Telegram admin recruitment',
+    description: 'Post and pin the editable Telegram community admin recruitment message.',
+    valueKey: 'telegramGroupHelpAdminRecruitmentMessage',
+    imageUrlKey: 'telegramGroupHelpAdminRecruitmentImageUrl',
     templateKey: 'telegramGroupHelpPinnedCommandTemplate',
     placeholder: 'message',
     applyMode: 'DIRECT_PIN'
@@ -411,15 +508,47 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
     defaultValue: ''
   },
   {
-    key: 'telegramGroupHelpTestGroupChatId',
-    label: 'Test Telegram group ID',
-    description:
-      'Test group handle or numeric ID used for previews before publishing to the main group.',
+    key: 'telegramGroupHelpOffTopicGroupChatId',
+    label: 'Off-topic Telegram group ID',
+    description: `Permanent ${TELEGRAM_OFF_TOPIC_GROUP_TITLE} group managed independently by the Hope Hub bot.`,
     section: 'connection',
     type: 'text',
     maxLength: 80,
-    placeholder: '@hopehubtalks or -1001234567890',
-    defaultValue: '@hopehubtalks'
+    placeholder: `${TELEGRAM_OFF_TOPIC_GROUP_HANDLE} or -1001234567890`,
+    defaultValue: TELEGRAM_OFF_TOPIC_GROUP_HANDLE
+  },
+  {
+    key: 'telegramGroupHelpOffTopicLogGroupId',
+    label: 'Chit-Chat private moderation group ID',
+    description:
+      'Private group that exclusively receives Chit-Chat warnings, mutes, bans, deletions, reports and moderation controls.',
+    section: 'connection',
+    type: 'text',
+    maxLength: 80,
+    placeholder: '-1001234567890',
+    defaultValue: ''
+  },
+  {
+    key: 'telegramGroupHelpMainGroupUrl',
+    label: 'Main support group public link',
+    description:
+      'Public join link shown to members of the Chit-Chat group. Update this if the main group username changes.',
+    section: 'connection',
+    type: 'text',
+    maxLength: 300,
+    placeholder: 'https://t.me/hopehubindia',
+    defaultValue: 'https://t.me/hopehubindia'
+  },
+  {
+    key: 'telegramGroupHelpOffTopicGroupUrl',
+    label: 'Chit-Chat group public link',
+    description:
+      'Public join link shown to members of the main support group. Update this if the Chit-Chat username changes.',
+    section: 'connection',
+    type: 'text',
+    maxLength: 300,
+    placeholder: TELEGRAM_OFF_TOPIC_GROUP_URL,
+    defaultValue: TELEGRAM_OFF_TOPIC_GROUP_URL
   },
   {
     key: 'telegramLiveChatBridgeEnabled',
@@ -563,8 +692,18 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
   },
   {
     key: 'telegramCommunityConfessionsInGroup',
-    label: 'Publish approved confessions in group',
-    description: 'Allow admin-approved anonymous confessions to appear in the community group.',
+    label: 'Publish confessions in support group',
+    description: 'Allow approved anonymous confessions to appear in the main support group.',
+    section: 'content',
+    type: 'select',
+    maxLength: 20,
+    options: ['Enabled', 'Disabled'],
+    defaultValue: 'Enabled'
+  },
+  {
+    key: 'telegramCommunityConfessionsInOffTopicGroup',
+    label: 'Publish confessions in Chit-Chat',
+    description: 'Also publish approved anonymous confessions in the off-topic Chit-Chat group.',
     section: 'content',
     type: 'select',
     maxLength: 20,
@@ -694,6 +833,26 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
     key: 'telegramGroupHelpPinnedImageUrl',
     label: 'Pinned intro media URL',
     description: 'Optional uploaded image, GIF, or short video attached to the pinned intro.',
+    section: 'messages',
+    type: 'text',
+    maxLength: 1000,
+    placeholder: 'https://...',
+    defaultValue: ''
+  },
+  {
+    key: 'telegramGroupHelpAdminRecruitmentMessage',
+    label: 'Telegram admin recruitment post',
+    description:
+      'Reusable recruitment message that admins can edit and publish from Announcements.',
+    section: 'messages',
+    type: 'textarea',
+    maxLength: 4000,
+    defaultValue: HOPEHUB_TELEGRAM_ADMIN_RECRUITMENT_MESSAGE
+  },
+  {
+    key: 'telegramGroupHelpAdminRecruitmentImageUrl',
+    label: 'Telegram admin recruitment media URL',
+    description: 'Optional image, GIF, or short video attached to the recruitment post.',
     section: 'messages',
     type: 'text',
     maxLength: 1000,
@@ -1124,6 +1283,16 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
     defaultValue: '300'
   },
   {
+    key: 'telegramGroupHelpCommandDeleteSeconds',
+    label: 'Public command cleanup',
+    description:
+      'Seconds before a command sent in a managed public group is removed. Private staff and log-group commands are retained. Use 0 to keep public commands.',
+    section: 'content',
+    type: 'number',
+    maxLength: 2,
+    defaultValue: '3'
+  },
+  {
     key: 'telegramGroupHelpIdentityAlertDeleteHours',
     label: 'Profile-change alert expiry',
     description:
@@ -1142,6 +1311,38 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
     type: 'number',
     maxLength: 4,
     defaultValue: '15'
+  },
+  {
+    key: 'telegramCommunityVcTopicPlannerEnabled',
+    label: 'Daily VC topic planner',
+    description:
+      'Send today’s VC topic board to the private staff group and the public RSVP schedule to the main group.',
+    section: 'content',
+    type: 'select',
+    options: ['Enabled', 'Disabled'],
+    maxLength: 20,
+    defaultValue: 'Enabled'
+  },
+  {
+    key: 'telegramCommunityVcTopicPromptTime',
+    label: 'Daily VC topic-board time',
+    description:
+      'India time when the bot should prepare today’s topics and ask staff to choose their VC slots.',
+    section: 'content',
+    type: 'text',
+    maxLength: 5,
+    placeholder: '09:00',
+    defaultValue: '09:00'
+  },
+  {
+    key: 'telegramCommunityVcTopicRoots',
+    label: 'VC topic library',
+    description:
+      'One safe discussion theme per line. The bot creates varied titles, records prior use, and never repeats a generated topic while unused topics remain.',
+    section: 'content',
+    type: 'textarea',
+    maxLength: 20000,
+    defaultValue: DEFAULT_COMMUNITY_VC_TOPIC_ROOTS
   },
   {
     key: 'telegramCommunityAnnouncementPinMode',

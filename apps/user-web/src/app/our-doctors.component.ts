@@ -1,4 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { DetailRowsComponent, type DetailRow } from '@hopehub/platform-ui';
 import { AppFooterComponent } from './app-footer.component';
 import { AppHeaderComponent } from './app-header.component';
@@ -6,21 +7,27 @@ import { WhatsappLinkService } from './core/services/whatsapp-link.service';
 import { OUR_DOCTORS_PAGE_CONTENT } from './core/constants/public-site-content.constants';
 import { API_PATHS } from './core/constants/api-paths.constants';
 import { ClinicApiClient } from './clinic-api/clinic-api.client';
+import { environment } from '../environments/environment';
 
 interface PublicDoctor {
   id: string;
+  userId: string;
   specialty?: string;
   doctorType?: string;
   bio?: string | null;
   yearsOfExperience?: number | null;
   focusAreas?: string[];
   designation?: string | null;
-  user: { id: string; name: string };
+  registrationNo?: string | null;
+  credentialVerified?: boolean;
+  isAvailable?: boolean;
+  nextAvailableSlot?: { date: string; startTime: string; endTime: string } | null;
+  user: { id: string; name: string; profileImageUrl?: string | null };
 }
 
 @Component({
   selector: 'app-our-doctors',
-  imports: [AppHeaderComponent, AppFooterComponent, DetailRowsComponent],
+  imports: [AppHeaderComponent, AppFooterComponent, DetailRowsComponent, RouterLink],
   templateUrl: './our-doctors.component.html',
 })
 export class OurDoctorsComponent {
@@ -40,8 +47,9 @@ export class OurDoctorsComponent {
     },
     {
       step: '02',
-      title: 'We assign the right doctor',
-      detail: 'Our team matches you to the doctor best suited for your condition.',
+      title: 'Choose or let us match',
+      detail:
+        'Choose an available doctor, share a preference, or let our clinical team match your concern.',
     },
     {
       step: '03',
@@ -77,6 +85,28 @@ export class OurDoctorsComponent {
       .slice(0, 2)
       .map((w) => w[0].toUpperCase())
       .join('');
+  }
+
+  doctorImage(doctor: PublicDoctor): string | null {
+    const value = doctor.user.profileImageUrl?.trim();
+    if (!value) return null;
+    if (/^https?:\/\//i.test(value)) return value;
+    return `${environment.apiUrl.replace(/\/$/, '')}/${value.replace(/^\//, '')}`;
+  }
+
+  nextOpening(doctor: PublicDoctor): string {
+    const slot = doctor.nextAvailableSlot;
+    if (!slot)
+      return doctor.isAvailable ? 'Accepting consultation requests' : 'Availability on request';
+    const date = new Date(slot.date);
+    const dateLabel = Number.isNaN(date.getTime())
+      ? 'Upcoming'
+      : new Intl.DateTimeFormat('en-IN', {
+          weekday: 'short',
+          day: 'numeric',
+          month: 'short',
+        }).format(date);
+    return `Next opening: ${dateLabel}, ${slot.startTime}`;
   }
 
   processStepRows(step: { title: string; detail: string }): DetailRow[] {

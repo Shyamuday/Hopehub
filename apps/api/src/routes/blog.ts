@@ -2,16 +2,28 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { Role } from '@prisma/client';
 import { authRequired } from '../auth.js';
-import { BLOG_CATEGORIES, BLOG_DETAIL_SELECT, BLOG_PUBLIC_SELECT } from '../constants/blog.constants.js';
+import { BLOG_DETAIL_SELECT, BLOG_PUBLIC_SELECT } from '../constants/blog.constants.js';
 import { prisma } from '../db.js';
 import { asyncRoute, routeParam } from '../utils/helpers.js';
+import { publicContentDomainForPath } from '../services/public-content-domain.js';
 
 export const blogRouter = Router();
 
-const publicWhere = { isPublished: true, isHidden: false };
+function publicWhere(path: string) {
+  const domain = publicContentDomainForPath(path);
+  return {
+    isPublished: true,
+    isHidden: false,
+    publicDomains: { has: domain }
+  };
+}
 
 function resolveOrderBy(sort: string | undefined) {
-  if (sort === 'popular') return [{ viewCount: 'desc' as const }, { publishedAt: { sort: 'desc' as const, nulls: 'last' as const } }];
+  if (sort === 'popular')
+    return [
+      { viewCount: 'desc' as const },
+      { publishedAt: { sort: 'desc' as const, nulls: 'last' as const } }
+    ];
   if (sort === 'featured') {
     return [
       { isFeatured: 'desc' as const },
@@ -19,29 +31,34 @@ function resolveOrderBy(sort: string | undefined) {
       { publishedAt: { sort: 'desc' as const, nulls: 'last' as const } }
     ];
   }
-  return [{ sortOrder: 'asc' as const }, { publishedAt: { sort: 'desc' as const, nulls: 'last' as const } }, { createdAt: 'desc' as const }];
+  return [
+    { sortOrder: 'asc' as const },
+    { publishedAt: { sort: 'desc' as const, nulls: 'last' as const } },
+    { createdAt: 'desc' as const }
+  ];
 }
 
 blogRouter.get(
-  '/blog/categories',
-  asyncRoute(async (_req, res) => {
+  ['/blog/categories', '/hope-hub/blog/categories'],
+  asyncRoute(async (req, res) => {
+    const where = publicWhere(req.path);
     const fromDb = await prisma.blogPost.findMany({
-      where: publicWhere,
+      where,
       select: { category: true },
       distinct: ['category'],
       orderBy: { category: 'asc' }
     });
-    const merged = [...new Set([...BLOG_CATEGORIES, ...fromDb.map((c) => c.category)])].sort();
-    res.json({ categories: merged });
+    res.json({ categories: [...new Set(fromDb.map((c) => c.category))].sort() });
   })
 );
 
 blogRouter.get(
-  '/blog/most-viewed',
+  ['/blog/most-viewed', '/hope-hub/blog/most-viewed'],
   asyncRoute(async (req, res) => {
     const limit = Math.min(Math.max(Number(req.query['limit']) || 5, 1), 20);
+    const where = publicWhere(req.path);
     const posts = await prisma.blogPost.findMany({
-      where: publicWhere,
+      where,
       select: BLOG_PUBLIC_SELECT,
       orderBy: [{ viewCount: 'desc' }, { publishedAt: { sort: 'desc', nulls: 'last' } }],
       take: limit
@@ -51,16 +68,20 @@ blogRouter.get(
 );
 
 blogRouter.get(
-  '/blog',
+  ['/blog', '/hope-hub/blog'],
   asyncRoute(async (req, res) => {
     const category = typeof req.query['category'] === 'string' ? req.query['category'] : undefined;
+    const concern =
+      typeof req.query['concern'] === 'string' ? req.query['concern'].trim() : undefined;
     const sort = typeof req.query['sort'] === 'string' ? req.query['sort'] : 'recent';
     const featuredOnly = req.query['featured'] === 'true';
+    const where = publicWhere(req.path);
 
     const posts = await prisma.blogPost.findMany({
       where: {
-        ...publicWhere,
+        ...where,
         ...(category ? { category } : {}),
+        ...(concern ? { concernSlugs: { has: concern } } : {}),
         ...(featuredOnly ? { isFeatured: true } : {})
       },
       select: BLOG_PUBLIC_SELECT,
@@ -68,23 +89,24 @@ blogRouter.get(
     });
 
     const fromDb = await prisma.blogPost.findMany({
-      where: publicWhere,
+      where,
       select: { category: true },
       distinct: ['category'],
       orderBy: { category: 'asc' }
     });
-    const categories = [...new Set([...BLOG_CATEGORIES, ...fromDb.map((c) => c.category)])].sort();
+    const categories = [...new Set(fromDb.map((c) => c.category))].sort();
 
     res.json({ posts, categories });
   })
 );
 
 blogRouter.get(
-  '/blog/:slug/comments',
+  ['/blog/:slug/comments', '/hope-hub/blog/:slug/comments'],
   asyncRoute(async (req, res) => {
     const slug = routeParam(req, 'slug').trim().toLowerCase();
+    const where = publicWhere(req.path);
     const post = await prisma.blogPost.findFirst({
-      where: { slug, ...publicWhere },
+      where: { slug, ...where },
       select: { id: true }
     });
     if (!post) {
@@ -102,14 +124,15 @@ blogRouter.get(
 );
 
 blogRouter.post(
-  '/blog/:slug/comments',
+  ['/blog/:slug/comments', '/hope-hub/blog/:slug/comments'],
   authRequired,
   asyncRoute(async (req, res) => {
     const slug = routeParam(req, 'slug').trim().toLowerCase();
     const body = z.object({ body: z.string().min(2).max(2000) }).parse(req.body);
+    const where = publicWhere(req.path);
 
     const post = await prisma.blogPost.findFirst({
-      where: { slug, ...publicWhere },
+      where: { slug, ...where },
       select: { id: true }
     });
     if (!post) {
@@ -136,22 +159,29 @@ blogRouter.post(
 );
 
 blogRouter.get(
-  '/blog/:slug',
+  ['/blog/:slug', '/hope-hub/blog/:slug'],
   asyncRoute(async (req, res) => {
     const slug = routeParam(req, 'slug').trim().toLowerCase();
+    const where = publicWhere(req.path);
     const post = await prisma.blogPost.findFirst({
-      where: { slug, ...publicWhere }
+      where: { slug, ...where }
     });
     if (!post) {
       res.status(404).json({ message: 'Article not found.' });
       return;
     }
 
-    const updated = await prisma.blogPost.update({
-      where: { id: post.id },
-      data: { viewCount: { increment: 1 } },
-      select: BLOG_DETAIL_SELECT
-    });
+    const updated =
+      req.query['trackView'] === 'false'
+        ? await prisma.blogPost.findUniqueOrThrow({
+            where: { id: post.id },
+            select: BLOG_DETAIL_SELECT
+          })
+        : await prisma.blogPost.update({
+            where: { id: post.id },
+            data: { viewCount: { increment: 1 } },
+            select: BLOG_DETAIL_SELECT
+          });
 
     res.json({ post: updated });
   })

@@ -17,7 +17,7 @@ const MAXIMUM_SYNC_HOURS = 168;
 
 type MemberSyncResult = {
   chatId: string;
-  scope: 'main' | 'staff';
+  scope: 'main' | 'off-topic' | 'staff';
   active: number;
   departed: number;
   administrators: number;
@@ -150,6 +150,7 @@ export async function synchronizeConfiguredTelegramGroupMembers(
 ) {
   const values = await getSiteConfigMap([
     'telegramGroupHelpGroupChatId',
+    'telegramGroupHelpOffTopicGroupChatId',
     'telegramGroupHelpStaffGroupId',
     'telegramGroupHelpLogChannelId',
     'telegramGroupHelpMemberDirectorySync',
@@ -160,9 +161,13 @@ export async function synchronizeConfiguredTelegramGroupMembers(
   }
 
   const mainGroupId = values.telegramGroupHelpGroupChatId?.trim() || '';
+  const offTopicGroupId = values.telegramGroupHelpOffTopicGroupChatId?.trim() || '';
   const staffGroupId = values.telegramGroupHelpStaffGroupId?.trim() || '';
   const configuredGroups = [
     ...(mainGroupId ? [{ scope: 'main' as const, chatId: mainGroupId }] : []),
+    ...(offTopicGroupId && offTopicGroupId !== mainGroupId
+      ? [{ scope: 'off-topic' as const, chatId: offTopicGroupId }]
+      : []),
     ...(staffGroupId && staffGroupId !== mainGroupId
       ? [{ scope: 'staff' as const, chatId: staffGroupId }]
       : [])

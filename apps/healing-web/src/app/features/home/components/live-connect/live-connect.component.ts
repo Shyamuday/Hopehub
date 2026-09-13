@@ -114,7 +114,7 @@ const HOME_PROVIDER_SECTION_PRIORITY: readonly ConsumerSupportPath[] = [
   styleUrl: './live-connect.component.scss',
 })
 export class LiveConnectComponent implements OnInit {
-  private static readonly DEFAULT_LIVE_COUPON = 'WELCOME100';
+  private static readonly DEFAULT_LIVE_COUPON = 'WELCOMEFREE';
   private static readonly PROVIDER_CAROUSEL_INTERVAL_MS = 7000;
   private static readonly PROVIDER_CAROUSEL_INTERACTION_PAUSE_MS = 12000;
   readonly UX = CONSUMER_UX_COPY;

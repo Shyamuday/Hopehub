@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import type { Response } from 'express';
 import { z } from 'zod';
-import { Role } from '@prisma/client';
+import { HomeopathicDoctorType, ProviderDomain, Role } from '@prisma/client';
 import { authRequired, allowRoles } from '../auth.js';
 import { providerPublicReadiness, requireDoctorCapability } from '../doctor-capabilities.js';
 import { prisma } from '../db.js';
@@ -324,12 +324,20 @@ router.get(
       select: {
         id: true,
         userId: true,
+        providerDomain: true,
+        doctorType: true,
         showOnWebsite: true,
         suspendedAt: true,
         user: { select: { isActive: true } }
       }
     });
-    if (!doctor) return res.status(404).json({ message: 'Provider not found' });
+    if (
+      !doctor ||
+      doctor.providerDomain !== ProviderDomain.HOMEOPATHY ||
+      doctor.doctorType === HomeopathicDoctorType.PSYCHOLOGIST
+    ) {
+      return res.status(404).json({ message: 'Homeopathy doctor not found' });
+    }
     const readiness = await providerPublicReadiness(doctor.userId);
     if (!doctor.showOnWebsite || doctor.suspendedAt || !doctor.user.isActive || !readiness.ready) {
       return res.status(404).json({ message: 'Provider is not accepting bookings right now.' });

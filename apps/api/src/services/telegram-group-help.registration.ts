@@ -5,6 +5,11 @@ import {
   sendCommunityMessage
 } from './telegram-community-bots.client.js';
 import type { CommunityTelegramMessage } from './telegram-community-bots.types.js';
+import {
+  ensureHopeHubOffTopicGroupPolicy,
+  HOPE_HUB_OFF_TOPIC_GROUP_DESCRIPTION,
+  HOPE_HUB_OFF_TOPIC_GROUP_TITLE
+} from './telegram-group-help.off-topic.js';
 
 async function isGroupAdmin(message: CommunityTelegramMessage) {
   if (!message.from || !['group', 'supergroup'].includes(message.chat.type || '')) return false;
@@ -19,30 +24,46 @@ async function isGroupAdmin(message: CommunityTelegramMessage) {
   return Boolean(member && ['creator', 'administrator'].includes(member.status || ''));
 }
 
-export async function registerGroupHelpTestGroup(message: CommunityTelegramMessage) {
+export async function registerGroupHelpOffTopicGroup(message: CommunityTelegramMessage) {
   const command = (message.text || '').trim().split(/\s+/)[0].split('@')[0].toLowerCase();
-  if (command !== '/settestgroup') return false;
+  if (command !== '/setofftopic') return false;
   if (!(await isGroupAdmin(message))) {
     await sendCommunityMessage(
       GROUP_HELP_BOT_SLUG,
       message.chat.id,
-      'Only a group administrator can register this test group.'
+      'Only a group administrator can register this off-topic community.'
     );
     return true;
   }
   await prisma.siteConfig.upsert({
-    where: { key: 'telegramGroupHelpTestGroupChatId' },
+    where: { key: 'telegramGroupHelpOffTopicGroupChatId' },
     create: {
-      key: 'telegramGroupHelpTestGroupChatId',
+      key: 'telegramGroupHelpOffTopicGroupChatId',
       value: String(message.chat.id),
-      label: 'Test Telegram group ID'
+      label: 'Off-topic Telegram group ID'
     },
-    update: { value: String(message.chat.id), label: 'Test Telegram group ID' }
+    update: { value: String(message.chat.id), label: 'Off-topic Telegram group ID' }
   });
+  await ensureHopeHubOffTopicGroupPolicy(String(message.chat.id));
+  const groupInfoUpdates = await Promise.allSettled([
+    callCommunityTelegramApi(GROUP_HELP_BOT_SLUG, 'setChatTitle', {
+      chat_id: message.chat.id,
+      title: HOPE_HUB_OFF_TOPIC_GROUP_TITLE
+    }),
+    callCommunityTelegramApi(GROUP_HELP_BOT_SLUG, 'setChatDescription', {
+      chat_id: message.chat.id,
+      description: HOPE_HUB_OFF_TOPIC_GROUP_DESCRIPTION
+    })
+  ]);
+  const groupInfoUpdated = groupInfoUpdates.every((result) => result.status === 'fulfilled');
   await sendCommunityMessage(
     GROUP_HELP_BOT_SLUG,
     message.chat.id,
-    `✅ ${message.chat.title || 'This group'} is now the Hope Hub bot test group. Admin previews and test messages will arrive here.`
+    `${HOPE_HUB_OFF_TOPIC_GROUP_TITLE} is now a permanent Hope Hub community. HopeHubAI onboarding, safety rules, moderation, reports and group-specific settings are active.${
+      groupInfoUpdated
+        ? ''
+        : '\n\nThe settings are active, but Telegram did not allow the bot to change all group information. Give it “Change group info” permission or update the title manually.'
+    }`
   );
   return true;
 }

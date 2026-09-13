@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 import { filter, firstValueFrom } from 'rxjs';
@@ -80,6 +80,7 @@ export class DoctorShell implements OnInit, OnDestroy {
   doctorTypeKey: string | null = null;
   loadingSession = true;
   menuOpen = signal(false);
+  accountMenuOpen = signal(false);
   focusMode = signal(false);
   assignmentNotice = signal('');
   incomingAssignment = signal<ConsultationAssignedPayload | null>(null);
@@ -116,6 +117,7 @@ export class DoctorShell implements OnInit, OnDestroy {
   };
   readonly apiBase = environment.apiUrl;
   readonly authTokenKey = AUTH_TOKEN_KEY;
+  readonly routePaths = ROUTE_PATHS;
 
   constructor(
     private readonly auth: Auth,
@@ -190,6 +192,7 @@ export class DoctorShell implements OnInit, OnDestroy {
         if (this.menuOpen()) {
           this.closeMenu();
         }
+        this.closeAccountMenu();
         const url = event.urlAfterRedirects;
         this.currentUrl.set(url);
         this.syncFocusMode(url);
@@ -458,6 +461,7 @@ export class DoctorShell implements OnInit, OnDestroy {
   }
 
   async logout() {
+    this.closeAccountMenu();
     if (this.globalCall.hasActiveCall()) {
       await this.globalCall.endCurrentCall('signed_out');
     }
@@ -538,11 +542,26 @@ export class DoctorShell implements OnInit, OnDestroy {
   }
 
   openMenu() {
+    this.closeAccountMenu();
     this.menuOpen.set(true);
   }
 
   closeMenu() {
     this.menuOpen.set(false);
+  }
+
+  toggleAccountMenu(): void {
+    this.closeMenu();
+    this.accountMenuOpen.update((open) => !open);
+  }
+
+  closeAccountMenu(): void {
+    this.accountMenuOpen.set(false);
+  }
+
+  @HostListener('document:keydown.escape')
+  closeAccountMenuOnEscape(): void {
+    this.closeAccountMenu();
   }
 
   hasOverflowNav() {
