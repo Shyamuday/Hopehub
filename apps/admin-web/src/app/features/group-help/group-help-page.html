@@ -888,6 +888,15 @@
                       [placeholder]="entry.placeholder || ''"
                       (input)="update(entry.key, $any($event.target).value)"
                     ></textarea>
+                    @if (entry.key === 'telegramGroupHelpBannedWords') {
+                      <button
+                        type="button"
+                        (click)="downloadBannedWords()"
+                        title="Download banned words as a .txt file"
+                      >
+                        ⬇ Download .txt
+                      </button>
+                    }
                   } @else if (entry.type === 'select') {
                     <app-form-dropdown
                       [options]="dropdownOptions(entry)"

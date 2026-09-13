@@ -988,6 +988,22 @@ export class GroupHelpPage {
     return this.localValues()[key] ?? '';
   }
 
+  downloadBannedWords() {
+    const raw = this.value('telegramGroupHelpBannedWords');
+    const words = raw
+      .split(/[\n,]+/)
+      .map((w) => w.trim())
+      .filter(Boolean);
+    const content = words.join('\n');
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'banned-words.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   update(key: string, value: string) {
     this.localValues.update((current) => ({ ...current, [key]: value }));
   }
