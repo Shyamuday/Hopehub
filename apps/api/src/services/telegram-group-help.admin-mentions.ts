@@ -13,6 +13,7 @@ const ADMIN_MENTION_STATE = 'group-help:admin-mention';
 const ADMIN_MENTION_LIFETIME_MS = 7 * 24 * 60 * 60_000;
 const ADMIN_MENTION_PATTERN =
   /(^|[^a-z0-9_])@(admins?|admnns?|administrators?|moderators?|mods?)\b/i;
+const PLAIN_ADMIN_REQUEST_PATTERN = /^(?:admins?|admnns?)\s*[.!?]*$/i;
 
 export type GroupHelpAdminMentionTarget = {
   targetChatId: string;
@@ -23,7 +24,8 @@ export type GroupHelpAdminMentionTarget = {
 };
 
 export function hasGroupHelpAdminMention(text: string) {
-  return ADMIN_MENTION_PATTERN.test(text.normalize('NFKC'));
+  const normalized = text.normalize('NFKC').trim();
+  return ADMIN_MENTION_PATTERN.test(normalized) || PLAIN_ADMIN_REQUEST_PATTERN.test(normalized);
 }
 
 function stateKey(staffChatId: string, messageId: number) {

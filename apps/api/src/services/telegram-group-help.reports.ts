@@ -10,13 +10,18 @@ import type {
   CommunityTelegramUser
 } from './telegram-community-bots.types.js';
 import { createGroupHelpAlertActions } from './telegram-group-help.alert-actions.js';
+import { sendGroupHelpRulesMessage } from './telegram-group-help.rules-message.js';
 
 type TelegramAdministrator = { user?: CommunityTelegramUser; status?: string };
 
 export function isGroupHelpReportTrigger(text: string | undefined) {
   const trimmed = (text || '').trim();
   const command = trimmed.split(/\s+/)[0].split('@')[0].toLowerCase();
-  return command === '/report' || /^@(admins?|admnns?)$/i.test(trimmed);
+  return command === '/report' || /^@?(admins?|admnns?)$/i.test(trimmed);
+}
+
+export function isGroupHelpAdminReportTrigger(text: string | undefined) {
+  return /^@?(admins?|admnns?)$/i.test((text || '').normalize('NFKC').trim());
 }
 
 export function isTelegramGroupAdministratorStatus(status: string | undefined) {
@@ -45,6 +50,17 @@ export async function handleGroupHelpReportCommand(
   if (!isGroupHelpReportTrigger(message.text)) return false;
   const chatId = String(message.chat.id);
   const reportsMode = values.telegramGroupHelpReportsMode || 'admins';
+
+  // Whether used alone or as a reply/report shortcut, admin/admins always
+  // receives the same configured rules text and image as /rules and moderation.
+  if (isGroupHelpAdminReportTrigger(message.text)) {
+    await sendGroupHelpRulesMessage({
+      chatId,
+      values,
+      replyToMessageId: message.message_id,
+      messageThreadId: message.message_thread_id
+    });
+  }
 
   if (!message.from) return true;
 

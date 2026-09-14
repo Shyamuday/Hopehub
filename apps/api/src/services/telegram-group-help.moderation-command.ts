@@ -193,12 +193,13 @@ export function groupHelpModerationCommandSpec(commandName: string) {
   return roseCommands[commandName.trim().replace(/^\//, '').toLowerCase()];
 }
 
-/** Warns teach the rule that was broken; bans reinforce the rules for everyone still present. */
+/** Member-facing moderation repeats one canonical rules message after restrictive actions. */
 export function shouldSendGroupHelpRulesAfterModeration(
   requestedAction: string,
   appliedAction = requestedAction
 ) {
-  return requestedAction === 'warn' || requestedAction === 'ban' || appliedAction === 'ban';
+  const ruleReminderActions = new Set(['warn', 'mute', 'ban']);
+  return ruleReminderActions.has(requestedAction) || ruleReminderActions.has(appliedAction);
 }
 
 const durationUnits = { m: 60, h: 60 * 60, d: 24 * 60 * 60, w: 7 * 24 * 60 * 60 };

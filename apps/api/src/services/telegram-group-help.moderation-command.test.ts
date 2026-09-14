@@ -90,10 +90,11 @@ test('formats a moderation expiry in India time', () => {
   );
 });
 
-test('shows rules after warns and bans without changing silent action semantics', () => {
+test('shows the canonical rules after warns, mutes, and bans', () => {
   assert.equal(shouldSendGroupHelpRulesAfterModeration('warn'), true);
+  assert.equal(shouldSendGroupHelpRulesAfterModeration('mute'), true);
   assert.equal(shouldSendGroupHelpRulesAfterModeration('ban'), true);
   assert.equal(shouldSendGroupHelpRulesAfterModeration('warn', 'ban'), true);
-  assert.equal(shouldSendGroupHelpRulesAfterModeration('mute'), false);
+  assert.equal(shouldSendGroupHelpRulesAfterModeration('warn', 'mute'), true);
   assert.equal(shouldSendGroupHelpRulesAfterModeration('unban'), false);
 });

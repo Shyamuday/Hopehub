@@ -25,6 +25,8 @@ test('recognizes common administrator and moderator mention variants', () => {
       mention
     );
   }
+  assert.equal(hasGroupHelpAdminMention('admin'), true);
+  assert.equal(hasGroupHelpAdminMention('Admins!'), true);
 });
 
 test('does not treat part of a username as an administrator request', () => {
@@ -32,6 +34,7 @@ test('does not treat part of a username as an administrator request', () => {
   assert.equal(hasGroupHelpAdminMention('Please ask @adminsupport'), false);
   assert.equal(hasGroupHelpAdminMention('Please ask @moderator_team'), false);
   assert.equal(hasGroupHelpAdminMention('The administration reviewed it'), false);
+  assert.equal(hasGroupHelpAdminMention('An admin reviewed it'), false);
 });
 
 test('keeps administrator-request photo captions within Telegram limits', () => {
