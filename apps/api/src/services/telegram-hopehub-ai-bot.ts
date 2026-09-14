@@ -104,6 +104,7 @@ import {
   claimTelegramOperation,
   releaseTelegramOperation
 } from './telegram-community-operation-claims.js';
+import { handleGroupHelpFilterBuilderInput } from './telegram-group-help.filter-builder.js';
 
 const BOT = GROUP_HELP_BOT_SLUG;
 
@@ -421,6 +422,7 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
   const values = await config(chatId);
   if (message?.chat.type === 'private') {
     if (await handleGroupHelpPrivateSettingsStart(message)) return;
+    if (await handleGroupHelpFilterBuilderInput(message)) return;
     if (await handleGroupHelpBotSettingsInput(message)) return;
     if (message.text?.startsWith('/')) {
       await handleCommand(message, values);
@@ -455,6 +457,7 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
       GROUP_HELP_DEFAULT_STAFF_COMMANDS,
       targetValues.telegramGroupHelpLogChannelId || ''
     );
+    if (message && (await handleGroupHelpFilterBuilderInput(message))) return;
     if (commandContext.configurationError) {
       if (message?.text?.startsWith('/')) {
         await sendTemporaryMessage(chatId, commandContext.configurationError, {
@@ -482,6 +485,7 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
   if (await recordTelegramCommunityDeparture(update)) return;
   if (await welcomeTelegramCommunityMembers(update)) return;
   if (!message) return;
+  if (await handleGroupHelpFilterBuilderInput(message)) return;
   if (message.from && !message.from.is_bot) {
     const identity = await observeTelegramCommunityMember({
       chatId,

@@ -126,7 +126,7 @@ const COMMUNITY_BOTS: Record<
       { command: 'unpinall', description: 'Unpin all messages (admins)' },
       { command: 'pinned', description: 'Show current pinned message (admins)' },
       { command: 'welcome', description: 'Toggle welcome on/off (admins)' },
-      { command: 'filter', description: 'Add a word filter (admins)' },
+      { command: 'filter', description: 'Open keyword reply builder (admins)' },
       { command: 'stop', description: 'Remove a reply filter (admins)' },
       { command: 'stopall', description: 'Remove all reply filters (owner)' },
       { command: 'filters', description: 'List active reply filters' },

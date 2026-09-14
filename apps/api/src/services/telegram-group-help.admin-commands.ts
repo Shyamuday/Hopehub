@@ -42,6 +42,7 @@ import {
   parseGroupHelpFilters,
   serializeGroupHelpFilters
 } from './telegram-group-help.filters.js';
+import { startGroupHelpFilterBuilder } from './telegram-group-help.filter-builder.js';
 import {
   configuredCleaningTypes,
   GROUP_HELP_CLEAN_COMMAND_TYPES,
@@ -743,6 +744,24 @@ export async function handleGroupHelpAdminCommand(
   if (command === '/filter') {
     const parsed = parseGroupHelpFilterCommand(message.text || '');
     const media = groupHelpFilterMediaFromMessage(message.reply_to_message);
+    if (
+      !parsed &&
+      !(message.text || '')
+        .trim()
+        .replace(/^\/filter(?:@\w+)?/i, '')
+        .trim()
+    ) {
+      await startGroupHelpFilterBuilder({ message, targetChatId });
+      return true;
+    }
+    if (parsed?.triggers.length && !parsed.response && !media) {
+      await startGroupHelpFilterBuilder({
+        message,
+        targetChatId,
+        initialTriggers: parsed.triggers
+      });
+      return true;
+    }
     if (!parsed || (!parsed.response && !media)) {
       await sendTemporaryGroupHelpMessage(
         chatId,

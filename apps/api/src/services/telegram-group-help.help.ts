@@ -65,7 +65,7 @@ Default automated-warning mute: ${input.muteMinutes} minutes.`
 /free, /unfree — manage Free role
 /pin, /unpin, /unpinall, /pinned — manage pinned messages
 /welcome on|off — control welcome messages
-/filter — add reply; /stop or /unfilter — remove reply
+/filter — guided keyword-reply editor; /stop or /unfilter — remove a reply
 /stopall — remove all filters (owner only)
 /save, /clear, /privatenotes — manage notes
 /blockword, /unblockword, /blockwords — manage safety phrases

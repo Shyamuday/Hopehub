@@ -39,10 +39,12 @@ import {
   sendGroupHelpRulesMessage,
   sendGroupHelpSupportMessage
 } from './telegram-group-help.rules-message.js';
+import { handleGroupHelpFilterBuilderCallback } from './telegram-group-help.filter-builder.js';
 
 export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
   const callback = update.callback_query;
   if (!callback?.message || !callback.data) return false;
+  if (await handleGroupHelpFilterBuilderCallback(update)) return true;
   const alertAction = await handleGroupHelpAlertActionCallback(update).catch((error) => {
     console.error('[telegram-group-help] Private alert action failed.', error);
     return 'failed' as const;
