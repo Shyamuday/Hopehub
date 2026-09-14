@@ -25,6 +25,7 @@ import {
   sendGroupHelpActivityLog,
   sendTemporaryGroupHelpMessage
 } from './telegram-group-help.actions.js';
+import { isGroupHelpNoteMember, openGroupHelpNote } from './telegram-group-help.note-actions.js';
 import type { CommunityTelegramUpdate } from './telegram-community-bots.types.js';
 import {
   messageForGroupHelpTarget,
@@ -107,6 +108,39 @@ export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
   }
   if (await handleGroupHelpBotSettingsCallback(update)) return true;
   const chatId = String(callback.message.chat.id);
+  if (callback.data?.startsWith('hh_note:')) {
+    const parts = callback.data.split(':');
+    const hasSource = parts.length >= 3;
+    const sourceChatId = hasSource ? parts[1] : chatId;
+    const noteName = hasSource ? parts.slice(2).join(':') : parts[1];
+    if (
+      callback.message.chat.type === 'private' &&
+      !(await isGroupHelpNoteMember(sourceChatId, callback.from.id))
+    ) {
+      await answerCommunityCallback(
+        GROUP_HELP_BOT_SLUG,
+        callback.id,
+        'This note is only for current group members.'
+      );
+      return true;
+    }
+    const result = await openGroupHelpNote({
+      message: { ...callback.message, from: callback.from },
+      sourceChatId,
+      noteName,
+      forcePrivateDelivery: callback.message.chat.type === 'private'
+    });
+    await answerCommunityCallback(
+      GROUP_HELP_BOT_SLUG,
+      callback.id,
+      result === 'sent'
+        ? 'Note opened.'
+        : result === 'denied'
+          ? 'This note is restricted to administrators.'
+          : 'This note is unavailable.'
+    );
+    return true;
+  }
   if (callback.data === 'hh_welcome_about') {
     const values = await groupHelpConfig(chatId);
     const aboutMessage =

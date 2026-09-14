@@ -477,17 +477,23 @@ export async function handleGroupHelpStaffCommand(
     if (isCrossGroup) {
       await sendCommunityMessage(GROUP_HELP_BOT_SLUG, chatId, confirmText);
     } else {
-      await sendTemporaryGroupHelpMessage(chatId, confirmText, values, {
-        ...(removeWarningCallbackData
-          ? {
-              reply_markup: {
-                inline_keyboard: [
-                  [{ text: 'Remove warn', callback_data: removeWarningCallbackData }]
-                ]
+      await sendTemporaryGroupHelpMessage(
+        chatId,
+        confirmText,
+        values,
+        {
+          ...(removeWarningCallbackData
+            ? {
+                reply_markup: {
+                  inline_keyboard: [
+                    [{ text: 'Remove warn', callback_data: removeWarningCallbackData }]
+                  ]
+                }
               }
-            }
-          : {})
-      });
+            : {})
+        },
+        'action'
+      );
     }
     return true;
   }

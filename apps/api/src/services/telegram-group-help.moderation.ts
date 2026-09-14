@@ -81,7 +81,8 @@ export async function moderateGroupHelpMessage(
       ? `Community safety action applied after ${warnings} warnings. Warnings were reset.`
       : `Please follow the community rules. Warning ${warnings}/${warningPolicy.limit}.`,
     values,
-    { reply_to_message_id: message.message_id, message_thread_id: message.message_thread_id }
+    { reply_to_message_id: message.message_id, message_thread_id: message.message_thread_id },
+    'action'
   ).catch(() => null);
   return true;
 }

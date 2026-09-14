@@ -105,3 +105,26 @@ test('Rose warning commands use the expected staff roles', () => {
     ]
   );
 });
+
+test('Rose cleaning configuration is admin-only while type lists remain public', () => {
+  for (const command of [
+    '/cleancommand',
+    '/keepcommand',
+    '/cleanmsg',
+    '/keepmsg',
+    '/cleanservice',
+    '/nocleanservice'
+  ]) {
+    assert.equal(groupHelpCommandDefinition(command)?.minimumRole, 'ADMIN', command);
+  }
+  for (const command of ['/cleancommandtypes', '/cleanmsgtypes', '/cleanservicetypes']) {
+    assert.equal(groupHelpCommandDefinition(command)?.minimumRole, 'MEMBER', command);
+  }
+});
+
+test('Rose note retrieval is public while note management is admin-only', () => {
+  for (const command of ['/get', '/notes'])
+    assert.equal(groupHelpCommandDefinition(command)?.minimumRole, 'MEMBER', command);
+  for (const command of ['/save', '/clear', '/privatenotes'])
+    assert.equal(groupHelpCommandDefinition(command)?.minimumRole, 'ADMIN', command);
+});

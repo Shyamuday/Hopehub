@@ -27,6 +27,10 @@ export type CommunityTelegramMessage = {
   message_thread_id?: number;
   new_chat_members?: CommunityTelegramUser[];
   left_chat_member?: CommunityTelegramUser;
+  new_chat_title?: string;
+  new_chat_photo?: CommunityTelegramFile[];
+  delete_chat_photo?: boolean;
+  pinned_message?: CommunityTelegramMessage;
   // Telegram nests a complete message here. Keeping the full shape lets moderation
   // logs preserve the original text/caption and media details for staff review.
   reply_to_message?: CommunityTelegramMessage;
@@ -44,6 +48,17 @@ export type CommunityTelegramMessage = {
   sticker?: CommunityTelegramFile;
   video_chat_ended?: { duration: number };
   video_chat_started?: Record<string, never>;
+  video_chat_scheduled?: { start_date?: number };
+  video_chat_participants_invited?: { users?: CommunityTelegramUser[] };
+  successful_payment?: unknown;
+  proximity_alert_triggered?: unknown;
+  message_auto_delete_timer_changed?: unknown;
+  web_app_data?: unknown;
+  forum_topic_created?: unknown;
+  forum_topic_closed?: unknown;
+  forum_topic_reopened?: unknown;
+  general_forum_topic_hidden?: unknown;
+  general_forum_topic_unhidden?: unknown;
   contact?: unknown;
   location?: unknown;
   /** Internal marker used only after a staff member confirms a destructive command. */

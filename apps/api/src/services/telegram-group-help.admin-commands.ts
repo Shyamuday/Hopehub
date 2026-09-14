@@ -42,6 +42,19 @@ import {
   parseGroupHelpFilters,
   serializeGroupHelpFilters
 } from './telegram-group-help.filters.js';
+import {
+  configuredCleaningTypes,
+  GROUP_HELP_CLEAN_COMMAND_TYPES,
+  GROUP_HELP_CLEAN_MESSAGE_TYPES,
+  GROUP_HELP_CLEAN_SERVICE_TYPES,
+  updatedCleaningTypes
+} from './telegram-group-help.cleaning.js';
+import {
+  normalizeGroupHelpNoteName,
+  parseGroupHelpNotes,
+  parseGroupHelpSaveCommand,
+  serializeGroupHelpNotes
+} from './telegram-group-help.notes.js';
 
 export async function handleGroupHelpAdminCommand(
   message: CommunityTelegramMessage,
@@ -79,7 +92,16 @@ export async function handleGroupHelpAdminCommand(
       '/disable',
       '/enable',
       '/disabledel',
-      '/disableadmin'
+      '/disableadmin',
+      '/cleancommand',
+      '/keepcommand',
+      '/cleanmsg',
+      '/keepmsg',
+      '/cleanservice',
+      '/nocleanservice',
+      '/save',
+      '/clear',
+      '/privatenotes'
     ].includes(command)
   )
     return false;
@@ -141,6 +163,143 @@ export async function handleGroupHelpAdminCommand(
     }).catch(() => null);
     return member?.user;
   };
+  if (command === '/save' || command === '/clear' || command === '/privatenotes') {
+    const { saveTelegramCommunityGroupPolicy, getTelegramCommunityGroupPolicy } =
+      await import('./telegram-community-group-policy.js');
+    const policy = await getTelegramCommunityGroupPolicy(targetChatId);
+    if (command === '/privatenotes') {
+      const mode = parts[1]?.toLowerCase();
+      if (!['on', 'off'].includes(mode)) {
+        await sendTemporaryGroupHelpMessage(chatId, 'Usage: /privatenotes <on|off>', values);
+        return true;
+      }
+      await saveTelegramCommunityGroupPolicy(targetChatId, {
+        ...policy,
+        telegramGroupHelpPrivateNotes: mode
+      });
+      await sendTemporaryGroupHelpMessage(
+        chatId,
+        `✅ Private notes ${mode === 'on' ? 'enabled' : 'disabled'}.`,
+        values
+      );
+      return true;
+    }
+    const notes = parseGroupHelpNotes(values.telegramGroupHelpNotes);
+    if (command === '/clear') {
+      const name = normalizeGroupHelpNoteName(parts[1]);
+      if (!name) {
+        await sendTemporaryGroupHelpMessage(chatId, 'Usage: /clear <single_word>', values);
+        return true;
+      }
+      const updated = notes.filter((note) => note.name !== name);
+      if (updated.length === notes.length) {
+        await sendTemporaryGroupHelpMessage(chatId, `No note named #${name} exists.`, values);
+        return true;
+      }
+      await saveTelegramCommunityGroupPolicy(targetChatId, {
+        ...policy,
+        telegramGroupHelpNotes: serializeGroupHelpNotes(updated)
+      });
+      await sendTemporaryGroupHelpMessage(chatId, `✅ Cleared note #${name}.`, values);
+      return true;
+    }
+    const parsed = parseGroupHelpSaveCommand(message);
+    const media = groupHelpFilterMediaFromMessage(message.reply_to_message);
+    if (!parsed || (!parsed.text && !media)) {
+      await sendTemporaryGroupHelpMessage(
+        chatId,
+        'Usage: /save <single_word> <note>\nFor a media note, reply to the attachment with /save <single_word>.',
+        values
+      );
+      return true;
+    }
+    if (/\{(?:repeat|repeated)\s+/i.test(message.text || '') && !parsed.repeatSeconds) {
+      await sendTemporaryGroupHelpMessage(
+        chatId,
+        'Invalid repeat time. Use 15m or longer, for example {repeat 6h}.',
+        values
+      );
+      return true;
+    }
+    const note = { ...parsed, ...(media ? { media } : {}) };
+    await saveTelegramCommunityGroupPolicy(targetChatId, {
+      ...policy,
+      telegramGroupHelpNotes: serializeGroupHelpNotes([
+        ...notes.filter((item) => item.name !== note.name),
+        note
+      ])
+    });
+    await sendTemporaryGroupHelpMessage(
+      chatId,
+      `✅ ${notes.some((item) => item.name === note.name) ? 'Updated' : 'Saved'} note #${note.name}.`,
+      values
+    );
+    return true;
+  }
+  if (
+    [
+      '/cleancommand',
+      '/keepcommand',
+      '/cleanmsg',
+      '/keepmsg',
+      '/cleanservice',
+      '/nocleanservice'
+    ].includes(command)
+  ) {
+    const isCommand = command === '/cleancommand' || command === '/keepcommand';
+    const isMessage = command === '/cleanmsg' || command === '/keepmsg';
+    const allowed = isCommand
+      ? GROUP_HELP_CLEAN_COMMAND_TYPES
+      : isMessage
+        ? GROUP_HELP_CLEAN_MESSAGE_TYPES
+        : GROUP_HELP_CLEAN_SERVICE_TYPES;
+    const key = isCommand
+      ? 'telegramGroupHelpCleanCommandTypes'
+      : isMessage
+        ? 'telegramGroupHelpCleanMessageTypes'
+        : 'telegramGroupHelpCleanServiceTypes';
+    let requested = parts.slice(1).map((part) => part.toLowerCase());
+    let enable = ['/cleancommand', '/cleanmsg', '/cleanservice'].includes(command);
+    if (command === '/cleanservice' && ['on', 'off'].includes(requested[0] || '')) {
+      enable = requested[0] === 'on';
+      requested = ['all'];
+    }
+    const updated = updatedCleaningTypes({
+      current: values[key],
+      requested,
+      allowed,
+      enable,
+      defaultToAll: isCommand || isMessage
+    });
+    if (!updated) {
+      await sendTemporaryGroupHelpMessage(
+        chatId,
+        `Usage: ${command} <all|${allowed.join('|')}>`,
+        values
+      );
+      return true;
+    }
+    const { saveTelegramCommunityGroupPolicy, getTelegramCommunityGroupPolicy } =
+      await import('./telegram-community-group-policy.js');
+    const policy = await getTelegramCommunityGroupPolicy(targetChatId);
+    await saveTelegramCommunityGroupPolicy(targetChatId, {
+      ...policy,
+      [key]: updated,
+      ...(isCommand &&
+      enable &&
+      updated !== 'none' &&
+      Number(values.telegramGroupHelpCommandDeleteSeconds || 3) <= 0
+        ? { telegramGroupHelpCommandDeleteSeconds: '3' }
+        : {})
+    });
+    const active = configuredCleaningTypes(updated, allowed);
+    await sendTemporaryGroupHelpMessage(
+      chatId,
+      `✅ ${isCommand ? 'Command' : isMessage ? 'Bot-message' : 'Service-message'} cleanup updated. Active: ${active.length ? active.join(', ') : 'none'}.`,
+      values
+    );
+    return true;
+  }
   if (['/disable', '/enable', '/disabledel', '/disableadmin'].includes(command)) {
     const { saveTelegramCommunityGroupPolicy, getTelegramCommunityGroupPolicy } =
       await import('./telegram-community-group-policy.js');

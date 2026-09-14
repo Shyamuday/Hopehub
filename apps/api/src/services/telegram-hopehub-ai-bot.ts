@@ -1,4 +1,3 @@
-import { prisma } from '../db.js';
 import {
   callCommunityTelegramApi,
   sendCommunityMessage
@@ -22,10 +21,6 @@ import {
   handleTelegramCommunityVoiceChatEnded
 } from './telegram-community-campaigns.js';
 import { ingestTelegramLiveChatMessage } from './telegram-live-chat-bridge.js';
-import {
-  endTelegramCommunityLockdown,
-  startTelegramCommunityLockdown
-} from './telegram-community-group-policy.js';
 import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
 import {
   bannedPhrases,
@@ -53,6 +48,7 @@ import {
 import { handleGroupHelpCallback } from './telegram-group-help.callbacks.js';
 import {
   GROUP_HELP_DEFAULT_STAFF_COMMANDS,
+  groupHelpCommandDefinition,
   handleGroupHelpCommand
 } from './telegram-group-help.commands.js';
 import {
@@ -69,8 +65,10 @@ import { handleGroupHelpCommandConfirmationCallback } from './telegram-group-hel
 import { recordGroupHelpCommandAudit } from './telegram-group-help.command-audit.js';
 import { recordGroupHelpStaffGroupMember } from './telegram-group-help.staff-members.js';
 import {
+  claimTelegramIdentityPublicAlert,
   getTelegramCommunityMemberIdentityHistory,
-  observeTelegramCommunityMember
+  observeTelegramCommunityMember,
+  releaseTelegramIdentityPublicAlert
 } from './telegram-community-member-identity.js';
 import { publicIdentityChangeAlert } from './telegram-group-help.identity-alert.js';
 import { notifyTelegramBotFailure } from './telegram-bot-failure-alerts.js';
@@ -78,12 +76,22 @@ import { forwardGroupHelpAdminMention } from './telegram-group-help.admin-mentio
 import { handleGroupHelpReportCommand } from './telegram-group-help.reports.js';
 import {
   matchingGroupHelpFilter,
-  renderGroupHelpFilterText
+  renderGroupHelpFilterHtml
 } from './telegram-group-help.filters.js';
+import { formatGroupHelpMessage } from './telegram-group-help.formatting.js';
+import { openGroupHelpNote } from './telegram-group-help.note-actions.js';
+import { groupHelpNoteRequestedByText } from './telegram-group-help.notes.js';
 import {
   groupCommandDeleteDelaySeconds,
   shouldAutoDeleteGroupCommand
 } from './telegram-group-help.command-cleanup.js';
+import {
+  GROUP_HELP_CLEAN_COMMAND_TYPES,
+  GROUP_HELP_CLEAN_MESSAGE_TYPES,
+  GROUP_HELP_CLEAN_SERVICE_TYPES,
+  groupHelpServiceMessageType,
+  shouldCleanGroupHelpType
+} from './telegram-group-help.cleaning.js';
 
 const BOT = GROUP_HELP_BOT_SLUG;
 
@@ -100,7 +108,18 @@ async function sendMatchingGroupHelpFilter(
   });
   if (!filter) return false;
   const chatId = String(message.chat.id);
-  const text = renderGroupHelpFilterText(filter, message);
+  const formatted = formatGroupHelpMessage(filter.text || '');
+  const text = renderGroupHelpFilterHtml(formatted.text, message);
+  const generatedRows = formatted.replyMarkup?.inline_keyboard || [];
+  const replyMarkup =
+    filter.button || generatedRows.length
+      ? {
+          inline_keyboard: [
+            ...generatedRows,
+            ...(filter.button ? [[{ text: filter.button.text, url: filter.button.url }]] : [])
+          ]
+        }
+      : undefined;
   const replyMessageId =
     /\{replytag\}/i.test(filter.text || '') && message.reply_to_message
       ? message.reply_to_message.message_id
@@ -111,18 +130,21 @@ async function sendMatchingGroupHelpFilter(
     ...(message.message_thread_id ? { message_thread_id: message.message_thread_id } : {})
   };
   if (!filter.media) {
-    await sendTemporaryMessage(chatId, text, values, {
-      reply_to_message_id: replyMessageId,
-      message_thread_id: message.message_thread_id,
-      parse_mode: 'Markdown',
-      ...(filter.button
-        ? {
-            reply_markup: {
-              inline_keyboard: [[{ text: filter.button.text, url: filter.button.url }]]
-            }
-          }
-        : {})
-    });
+    await sendTemporaryMessage(
+      chatId,
+      text,
+      values,
+      {
+        reply_to_message_id: replyMessageId,
+        message_thread_id: message.message_thread_id,
+        parse_mode: 'HTML',
+        ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
+        disable_notification: formatted.disableNotification,
+        protect_content: formatted.protectContent,
+        link_preview_options: { is_disabled: !formatted.showLinkPreview }
+      },
+      'filter'
+    );
     return true;
   }
   const methodByType = {
@@ -139,14 +161,13 @@ async function sendMatchingGroupHelpFilter(
     ...base,
     [filter.media.type]: filter.media.fileId,
     ...(text && filter.media.type !== 'sticker' && filter.media.type !== 'video_note'
-      ? { caption: text, parse_mode: 'Markdown' }
+      ? { caption: text, parse_mode: 'HTML' }
       : {}),
-    ...(filter.button
-      ? {
-          reply_markup: {
-            inline_keyboard: [[{ text: filter.button.text, url: filter.button.url }]]
-          }
-        }
+    ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
+    disable_notification: formatted.disableNotification,
+    protect_content: formatted.protectContent,
+    ...(formatted.mediaSpoiler && ['photo', 'video', 'animation'].includes(filter.media.type)
+      ? { has_spoiler: true }
       : {})
   };
   const sent = await callCommunityTelegramApi<{ message_id: number }>(
@@ -154,7 +175,14 @@ async function sendMatchingGroupHelpFilter(
     methodByType[filter.media.type],
     payload
   );
-  const delaySeconds = Math.max(0, Number(values.telegramGroupHelpAutoDeleteSeconds || 300));
+  const delaySeconds = shouldCleanGroupHelpType(
+    values.telegramGroupHelpCleanMessageTypes,
+    'filter',
+    GROUP_HELP_CLEAN_MESSAGE_TYPES,
+    true
+  )
+    ? 300
+    : 0;
   if (delaySeconds > 0) {
     await scheduleCommunityMessageCleanup({
       bot: BOT,
@@ -165,18 +193,21 @@ async function sendMatchingGroupHelpFilter(
     });
   }
   if (text && (filter.media.type === 'sticker' || filter.media.type === 'video_note')) {
-    await sendTemporaryMessage(chatId, text, values, {
-      reply_to_message_id: replyMessageId,
-      message_thread_id: message.message_thread_id,
-      parse_mode: 'Markdown',
-      ...(filter.button
-        ? {
-            reply_markup: {
-              inline_keyboard: [[{ text: filter.button.text, url: filter.button.url }]]
-            }
-          }
-        : {})
-    });
+    await sendTemporaryMessage(
+      chatId,
+      text,
+      values,
+      {
+        reply_to_message_id: replyMessageId,
+        message_thread_id: message.message_thread_id,
+        parse_mode: 'HTML',
+        ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
+        disable_notification: formatted.disableNotification,
+        protect_content: formatted.protectContent,
+        link_preview_options: { is_disabled: !formatted.showLinkPreview }
+      },
+      'filter'
+    );
   }
   return true;
 }
@@ -278,12 +309,21 @@ async function handleCommand(message: CommunityTelegramMessage, values: Record<s
     const delaySeconds = groupCommandDeleteDelaySeconds(
       values.telegramGroupHelpCommandDeleteSeconds
     );
+    const commandName = (message.text || '').trim().split(/\s+/)[0].split('@')[0].toLowerCase();
+    const definition = groupHelpCommandDefinition(commandName);
+    const commandType: (typeof GROUP_HELP_CLEAN_COMMAND_TYPES)[number] = definition
+      ? definition.minimumRole === 'MEMBER'
+        ? 'user'
+        : 'admin'
+      : 'other';
     if (
       !message._groupHelpSkipCommandCleanup &&
       shouldAutoDeleteGroupCommand({
         chatType: message.chat.type,
         isControlGroup: context.isControlGroup,
-        delaySeconds
+        delaySeconds,
+        commandType,
+        configuredTypes: values.telegramGroupHelpCleanCommandTypes
       })
     ) {
       // Do not delay Telegram's webhook acknowledgement while the short
@@ -376,6 +416,18 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
     if (message?.text?.startsWith('/')) await handleCommand(message, values);
     return;
   }
+  const serviceType = message ? groupHelpServiceMessageType(message) : undefined;
+  if (
+    message &&
+    serviceType &&
+    shouldCleanGroupHelpType(
+      values.telegramGroupHelpCleanServiceTypes,
+      serviceType,
+      GROUP_HELP_CLEAN_SERVICE_TYPES
+    )
+  ) {
+    await deleteMessage(chatId, message.message_id).catch(() => null);
+  }
   if (await recordTelegramCommunityDeparture(update)) return;
   if (await welcomeTelegramCommunityMembers(update)) return;
   if (!message) return;
@@ -401,7 +453,13 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
           `Observed name changes: ${identity.nameChangeCount}`
         ]);
       }
-      if (alertMode === 'public summary' || alertMode === 'public full history') {
+      if (
+        (alertMode === 'public summary' || alertMode === 'public full history') &&
+        (await claimTelegramIdentityPublicAlert({
+          chatId,
+          telegramUserId: message.from.id
+        }))
+      ) {
         const history = await getTelegramCommunityMemberIdentityHistory(chatId, message.from.id);
         const previousNames = distinctNonEmpty(history.map((entry) => entry.previousDisplayName));
         const previousUsernames = distinctNonEmpty(
@@ -431,6 +489,12 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
         const publicAlert = await sendCommunityMessage(BOT, chatId, publicMessage).catch(
           () => null
         );
+        if (!publicAlert) {
+          await releaseTelegramIdentityPublicAlert({
+            chatId,
+            telegramUserId: message.from.id
+          }).catch(() => null);
+        }
         const identityAlertHours = Math.max(
           0,
           Math.min(720, Number(values.telegramGroupHelpIdentityAlertDeleteHours || 24))
@@ -467,6 +531,20 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
     return;
   }
   if (!message.from) return;
+  const requestedNote = groupHelpNoteRequestedByText(message.text);
+  if (requestedNote) {
+    const result = await openGroupHelpNote({
+      message,
+      sourceChatId: chatId,
+      noteName: requestedNote,
+      values
+    });
+    if (result === 'missing')
+      await sendTemporaryMessage(chatId, `No note named #${requestedNote} exists.`, values);
+    else if (result === 'denied')
+      await sendTemporaryMessage(chatId, 'That note is restricted to administrators.', values);
+    return;
+  }
   if (await handleGroupHelpReportCommand(message, values)) return;
   if (await isModerationExempt(message, values.telegramGroupHelpAdminWhitelist || '')) {
     await sendMatchingGroupHelpFilter(message, values, true);

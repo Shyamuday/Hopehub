@@ -7,6 +7,7 @@ import {
   matchingGroupHelpFilter,
   parseGroupHelpFilterCommand,
   parseGroupHelpFilters,
+  renderGroupHelpFilterHtml,
   renderGroupHelpFilterText,
   serializeGroupHelpFilters
 } from './telegram-group-help.filters.js';
@@ -141,4 +142,11 @@ test('renders safe member fillings and exposes only valid slash-command suggesti
   assert.deepEqual(groupHelpFilterCommandSuggestions(serializeGroupHelpFilters([filter])), [
     { command: 'website', description: 'Open website' }
   ]);
+  assert.equal(
+    renderGroupHelpFilterHtml('Hi {first}; {username}', {
+      ...message,
+      from: { id: 10, first_name: '<Admin>', username: undefined }
+    }),
+    'Hi &lt;Admin&gt;; <a href="tg://user?id=10">&lt;Admin&gt;</a>'
+  );
 });

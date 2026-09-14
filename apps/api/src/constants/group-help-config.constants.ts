@@ -722,7 +722,8 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
   {
     key: 'telegramGroupHelpWelcomeMessage',
     label: 'Welcome message',
-    description: 'Message new members should see after joining the Telegram group.',
+    description:
+      'Message new members see after joining. Supports Rose formatting, fillings, buttons, delivery controls, and random %%% variants.',
     section: 'messages',
     type: 'textarea',
     maxLength: 4000,
@@ -1303,6 +1304,35 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
     defaultValue: '3'
   },
   {
+    key: 'telegramGroupHelpCleanCommandTypes',
+    label: 'Clean command types',
+    description:
+      'Rose-compatible command cleanup. Use all, admin, user, other, or none. Commands remain available and are deleted only after handling.',
+    section: 'content',
+    type: 'textarea',
+    maxLength: 100,
+    defaultValue: 'all'
+  },
+  {
+    key: 'telegramGroupHelpCleanMessageTypes',
+    label: 'Clean bot-message types',
+    description: 'Bot replies removed after five minutes: all, action, filter, note, or none.',
+    section: 'content',
+    type: 'textarea',
+    maxLength: 100,
+    defaultValue: 'all'
+  },
+  {
+    key: 'telegramGroupHelpCleanServiceTypes',
+    label: 'Clean Telegram service types',
+    description:
+      'Telegram service notices to delete: all, join, leave, other, photo, pin, title, videochat, or none.',
+    section: 'content',
+    type: 'textarea',
+    maxLength: 160,
+    defaultValue: 'none'
+  },
+  {
     key: 'telegramGroupHelpIdentityAlertDeleteHours',
     label: 'Profile-change alert expiry',
     description:
@@ -1480,13 +1510,33 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
     key: 'telegramGroupHelpCustomReplies',
     label: 'Keyword replies and buttons',
     description:
-      'Rose-compatible reply filters managed with /filter, /stop, and /stopall. Existing “phrase => reply => button => https://link” entries remain supported.',
+      'Rose-compatible reply filters with formatting, fillings, buttons, delivery controls, and random %%% variants. Managed with /filter, /stop, and /stopall; existing “phrase => reply => button => https://link” entries remain supported.',
     section: 'people',
     type: 'textarea',
     maxLength: 20000,
     placeholder:
       'anyone for talk => You can find private support through Hope Hub Live. => Talk live => https://hopehub.in/#live-connect',
     defaultValue: ''
+  },
+  {
+    key: 'telegramGroupHelpNotes',
+    label: 'Saved Telegram notes',
+    description:
+      'Database-backed Rose-compatible notes managed through /save and /clear. Includes text, Telegram media file IDs, formatting, privacy, admin-only access, and repeat schedules.',
+    section: 'messages',
+    type: 'textarea',
+    maxLength: 100000,
+    defaultValue: ''
+  },
+  {
+    key: 'telegramGroupHelpPrivateNotes',
+    label: 'Open notes privately by default',
+    description: 'Use on to redirect note retrieval to HopeHubBot private chat.',
+    section: 'messages',
+    type: 'select',
+    options: ['on', 'off'],
+    maxLength: 3,
+    defaultValue: 'off'
   },
   {
     key: 'telegramGroupHelpStaffNotes',

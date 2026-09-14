@@ -30,6 +30,11 @@ export const GROUP_HELP_COMMAND_CATALOG = {
     '/disabled',
     '/disableable',
     '/filters',
+    '/get',
+    '/notes',
+    '/cleancommandtypes',
+    '/cleanmsgtypes',
+    '/cleanservicetypes',
     '/me',
     '/id',
     '/staffid',
@@ -120,7 +125,16 @@ export const GROUP_HELP_COMMAND_CATALOG = {
     '/disable',
     '/enable',
     '/disabledel',
-    '/disableadmin'
+    '/disableadmin',
+    '/cleancommand',
+    '/keepcommand',
+    '/cleanmsg',
+    '/keepmsg',
+    '/cleanservice',
+    '/nocleanservice',
+    '/save',
+    '/clear',
+    '/privatenotes'
   ],
   safety: ['/report']
 } as const;
@@ -257,6 +271,28 @@ export const GROUP_HELP_STAFF_PERMISSION_GROUPS = [
       '/unblockword',
       '/blockwords'
     ],
+    defaultEnabled: false
+  },
+  {
+    key: 'cleaning',
+    label: 'Clean commands, bot replies, and service notices',
+    commands: [
+      '/cleancommand',
+      '/keepcommand',
+      '/cleancommandtypes',
+      '/cleanmsg',
+      '/keepmsg',
+      '/cleanmsgtypes',
+      '/cleanservice',
+      '/nocleanservice',
+      '/cleanservicetypes'
+    ],
+    defaultEnabled: false
+  },
+  {
+    key: 'notes',
+    label: 'Manage saved notes',
+    commands: ['/save', '/clear', '/privatenotes', '/get', '/notes'],
     defaultEnabled: false
   },
   {

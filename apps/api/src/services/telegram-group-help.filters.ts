@@ -211,13 +211,43 @@ export function matchingGroupHelpFilter(input: {
 }
 
 function escapeMarkdown(value: string) {
-  return value.replace(/([_*`[\]])/g, '\\$1');
+  return value.replace(/([_*~|`[\]()])/g, '\\$1');
 }
 
 function mention(user: CommunityTelegramMessage['from']) {
   if (!user) return 'Telegram member';
   const label = escapeMarkdown(user.first_name || user.username || 'Telegram member');
   return `[${label}](tg://user?id=${user.id})`;
+}
+
+function escapeHtml(value: string) {
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function htmlMention(user: CommunityTelegramMessage['from']) {
+  if (!user) return 'Telegram member';
+  return `<a href="tg://user?id=${user.id}">${escapeHtml(user.first_name || user.username || 'Telegram member')}</a>`;
+}
+
+/** Applies member-controlled fillings only after authored formatting is safely parsed. */
+export function renderGroupHelpFilterHtml(text: string, message: CommunityTelegramMessage) {
+  const sender = message.from;
+  const replied = message.reply_to_message?.from;
+  const fullName = sender
+    ? [sender.first_name, sender.last_name].filter(Boolean).join(' ') || 'Telegram member'
+    : 'Telegram member';
+  return text
+    .replace(/\{first\}/gi, escapeHtml(sender?.first_name || 'Telegram member'))
+    .replace(/\{last\}/gi, escapeHtml(sender?.last_name || ''))
+    .replace(/\{fullname\}/gi, escapeHtml(fullName))
+    .replace(
+      /\{username\}/gi,
+      sender?.username ? `@${escapeHtml(sender.username)}` : htmlMention(sender)
+    )
+    .replace(/\{id\}/gi, String(sender?.id || ''))
+    .replace(/\{chatname\}/gi, escapeHtml(message.chat.title || 'this group'))
+    .replace(/\{mention\}/gi, htmlMention(sender))
+    .replace(/\{replytag\}/gi, htmlMention(replied || sender));
 }
 
 export function renderGroupHelpFilterText(

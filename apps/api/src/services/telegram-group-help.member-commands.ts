@@ -37,6 +37,19 @@ import {
   GROUP_HELP_DISABLEABLE_COMMANDS
 } from './telegram-group-help.command-disabling.js';
 import { parseGroupHelpFilters } from './telegram-group-help.filters.js';
+import {
+  configuredCleaningTypes,
+  GROUP_HELP_CLEAN_COMMAND_TYPES,
+  GROUP_HELP_CLEAN_MESSAGE_TYPES,
+  GROUP_HELP_CLEAN_SERVICE_TYPES
+} from './telegram-group-help.cleaning.js';
+import { groupHelpConfig } from './telegram-group-help.config.js';
+import {
+  isGroupHelpNoteAdmin,
+  isGroupHelpNoteMember,
+  openGroupHelpNote
+} from './telegram-group-help.note-actions.js';
+import { normalizeGroupHelpNoteName, parseGroupHelpNotes } from './telegram-group-help.notes.js';
 
 type TelegramMemberSnapshot = {
   status?: string;
@@ -144,6 +157,38 @@ export async function handleGroupHelpMemberCommand(
       message_thread_id: message.message_thread_id
     });
   };
+  if (command === '/start' && message.chat.type === 'private') {
+    const payload = commandParts.slice(1).join(' ');
+    const match = /^note_(-?\d+)_([a-z0-9_]{1,32})$/i.exec(payload);
+    if (match) {
+      const sourceChatId = match[1];
+      if (!(await isGroupHelpNoteMember(sourceChatId, message.from?.id))) {
+        await sendTemporaryGroupHelpMessage(
+          chatId,
+          'This note is available only to current members of its Telegram group.',
+          values
+        );
+        return true;
+      }
+      const sourceValues = await groupHelpConfig(sourceChatId);
+      const result = await openGroupHelpNote({
+        message,
+        sourceChatId,
+        noteName: match[2],
+        values: sourceValues,
+        forcePrivateDelivery: true
+      });
+      if (result === 'missing')
+        await sendTemporaryGroupHelpMessage(chatId, 'That note no longer exists.', values);
+      else if (result === 'denied')
+        await sendTemporaryGroupHelpMessage(
+          chatId,
+          'That note is restricted to administrators.',
+          values
+        );
+      return true;
+    }
+  }
   if (command === '/start') {
     await sendCommunityMessage(
       GROUP_HELP_BOT_SLUG,
@@ -236,6 +281,45 @@ export async function handleGroupHelpMemberCommand(
     );
     return true;
   }
+  if (
+    command === '/cleancommandtypes' ||
+    command === '/cleanmsgtypes' ||
+    command === '/cleanservicetypes'
+  ) {
+    const definition =
+      command === '/cleancommandtypes'
+        ? {
+            label: 'Command cleanup',
+            allowed: GROUP_HELP_CLEAN_COMMAND_TYPES,
+            value: values.telegramGroupHelpCleanCommandTypes,
+            defaultToAll: true
+          }
+        : command === '/cleanmsgtypes'
+          ? {
+              label: 'Bot-message cleanup',
+              allowed: GROUP_HELP_CLEAN_MESSAGE_TYPES,
+              value: values.telegramGroupHelpCleanMessageTypes,
+              defaultToAll: true
+            }
+          : {
+              label: 'Service-message cleanup',
+              allowed: GROUP_HELP_CLEAN_SERVICE_TYPES,
+              value: values.telegramGroupHelpCleanServiceTypes,
+              defaultToAll: false
+            };
+    const active = configuredCleaningTypes(
+      definition.value,
+      definition.allowed,
+      definition.defaultToAll
+    );
+    await sendTemporaryGroupHelpMessage(
+      chatId,
+      `${definition.label} types: all, ${definition.allowed.join(', ')}.\nActive: ${active.length ? active.join(', ') : 'none'}.`,
+      values,
+      { reply_to_message_id: message.message_id, message_thread_id: message.message_thread_id }
+    );
+    return true;
+  }
   if (command === '/filters') {
     const { filters } = parseGroupHelpFilters(values.telegramGroupHelpCustomReplies || '');
     const labels = filters.flatMap((filter) =>
@@ -251,6 +335,43 @@ export async function handleGroupHelpMemberCommand(
       values,
       { reply_to_message_id: message.message_id, message_thread_id: message.message_thread_id }
     );
+    return true;
+  }
+  if (command === '/notes') {
+    const isAdmin = await isGroupHelpNoteAdmin(targetChatId, message.from?.id);
+    const notes = parseGroupHelpNotes(values.telegramGroupHelpNotes).filter(
+      (note) => !note.adminOnly || isAdmin
+    );
+    await sendTemporaryGroupHelpMessage(
+      chatId,
+      notes.length
+        ? `Saved notes (${notes.length}):\n\n${notes.map((note) => `#${note.name}`).join('\n')}`
+        : 'No notes are available.',
+      values,
+      { reply_to_message_id: message.message_id, message_thread_id: message.message_thread_id }
+    );
+    return true;
+  }
+  if (command === '/get') {
+    const name = normalizeGroupHelpNoteName(commandParts[1]);
+    if (!name) {
+      await sendTemporaryGroupHelpMessage(chatId, 'Usage: /get <single_word>', values);
+      return true;
+    }
+    const result = await openGroupHelpNote({
+      message,
+      sourceChatId: targetChatId,
+      noteName: name,
+      values
+    });
+    if (result === 'missing')
+      await sendTemporaryGroupHelpMessage(chatId, `No note named #${name} exists.`, values);
+    else if (result === 'denied')
+      await sendTemporaryGroupHelpMessage(
+        chatId,
+        'That note is restricted to administrators.',
+        values
+      );
     return true;
   }
   if (command === '/warnings' && message.from) {
@@ -719,7 +840,7 @@ export async function handleGroupHelpMemberCommand(
     );
     const muteMinutes = values.telegramGroupHelpMuteMinutes || '60';
     const helpSections = [
-      `*Hope Hub bot help*\n\n*Member commands*\n/rules — community rules\n/support — private support\n/warnings — warning settings and your count\n/warns — your active warning reasons\n/disabled — current disabled commands\n/disableable — commands admins can disable\n/me — your group profile\n/id — Telegram and target-group IDs\n/report — report a replied message\n/admin or /alertadmin — alert the community team\n/forget — delete retained Group Help data`,
+      `*Hope Hub bot help*\n\n*Member commands*\n/rules — community rules\n/support — private support\n/get <name> or #name — open a saved note\n/notes — list available notes\n/warnings — warning settings and your count\n/warns — your active warning reasons\n/disabled — current disabled commands\n/disableable — commands admins can disable\n/me — your group profile\n/id — Telegram and target-group IDs\n/report — report a replied message\n/admin or /alertadmin — alert the community team\n/forget — delete retained Group Help data`,
       canUseStaffTools
         ? `*Helper tools*\n/warn <id/username/reply> [reason]\n/dwarn [reason] — reply: delete and warn\n/swarn <id/username/reply> [reason] — silent warning\n/rmwarn or /unwarn — remove latest warning\n/warns <id/username/reply> — view warning reasons\n/delete [reason], /info, /history, /perms, /geturl\n/adminlist, /staff, /stats`
         : '',
@@ -727,7 +848,7 @@ export async function handleGroupHelpMemberCommand(
         ? `*Moderator tools — Rose-compatible syntax*\nReply to a message, or add <user_id or @username> before the reason.\n/ban, /mute — permanent action; /kick — remove (the member may rejoin)\n/tban, /tmute <time> [reason] — timed action (15m, 3h, 2d, 1w)\n/dban, /dmute, /dkick — reply: delete message plus action\n/sban, /smute, /skick — silent action; deletes replied message and command\n/unban, /unmute — undo the action\n/resetwarn — remove all warnings\nLegacy /delban, /delmute, /delkick remain supported. Default automated warning mute: ${muteMinutes} minutes.`
         : '',
       canUseAdminTools
-        ? `*Administrator tools*\n/promote, /unadmin, /title, /untitle\n/helper, /unhelper, /mod, /unmod\n/pin [notify], /unpin, /unpinall, /pinned\n/filter <trigger> <reply>, /stop <trigger>, /filters\n/stopall — owner only\n/blockword, /unblockword, /blockwords — safety phrases\n/setwarnlimit <number>\n/setwarnmode <kick|ban|mute|tban TIME|tmute TIME>\n/setwarntime <time|off> (also /warntime)\n/reports <on|off>\n/disable <command>, /enable <command>\n/disabledel <on|off>, /disableadmin <on|off>\n/welcome on|off, /lockdown [minutes], /unlock\n/settings, /setlog, /setofftopic`
+        ? `*Administrator tools*\n/promote, /unadmin, /title, /untitle\n/helper, /unhelper, /mod, /unmod\n/pin [notify], /unpin, /unpinall, /pinned\n/filter <trigger> <reply>, /stop <trigger>, /filters\n/stopall — owner only\n/save <name> <note>, /clear <name>, /privatenotes <on|off>\n/blockword, /unblockword, /blockwords — safety phrases\n/cleancommand, /keepcommand <all|admin|user|other>\n/cleanmsg, /keepmsg <all|action|filter|note>\n/cleanservice, /nocleanservice <all|join|leave|other|photo|pin|title|videochat>\n/setwarnlimit <number>\n/setwarnmode <kick|ban|mute|tban TIME|tmute TIME>\n/setwarntime <time|off> (also /warntime)\n/reports <on|off>\n/disable <command>, /enable <command>\n/disabledel <on|off>, /disableadmin <on|off>\n/welcome on|off, /lockdown [minutes], /unlock\n/settings, /setlog, /setofftopic`
         : '',
       context.isControlGroup && canUseStaffTools
         ? `*Private admin-group syntax*\n/info or /history <user_id or @username>\nForward a member message directly to the bot for /history\n/perms <user_id or @username>\n/ban|mute|kick <user_id or @username> [reason]\n/tban|tmute <user_id or @username> <time> [reason]\n/sban|smute|skick <user_id or @username> [reason]\n/delete <main_message_id> [reason]\n/dban|dmute|dkick <user> <main_message_id> [reason]\n/geturl <main_message_id>\n/clearwarnings <user_id or @username>`

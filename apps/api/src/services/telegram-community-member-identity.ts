@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { prisma } from '../db.js';
 import type { CommunityTelegramUser } from './telegram-community-bots.types.js';
 
@@ -9,6 +10,55 @@ export type TelegramObservedIdentity = {
   lastName: string | null;
   username: string | null;
 };
+
+const IDENTITY_ALERT_COOLDOWN_STATE = 'group-help-identity-alert-cooldown';
+export const GROUP_HELP_IDENTITY_ALERT_COOLDOWN_MS = 24 * 60 * 60_000;
+
+function identityAlertCooldownChatId(chatId: string, telegramUserId: string | number) {
+  return `${chatId}:${telegramUserId}`;
+}
+
+export async function claimTelegramIdentityPublicAlert(input: {
+  chatId: string;
+  telegramUserId: string | number;
+  now?: Date;
+}) {
+  const now = input.now || new Date();
+  const expiresAt = new Date(now.getTime() + GROUP_HELP_IDENTITY_ALERT_COOLDOWN_MS);
+  const chatId = identityAlertCooldownChatId(input.chatId, input.telegramUserId);
+  const refreshed = await prisma.telegramCommunityState.updateMany({
+    where: { bot: IDENTITY_ALERT_COOLDOWN_STATE, chatId, expiresAt: { lte: now } },
+    data: { state: 'ACTIVE', expiresAt }
+  });
+  if (refreshed.count) return true;
+  try {
+    await prisma.telegramCommunityState.create({
+      data: {
+        bot: IDENTITY_ALERT_COOLDOWN_STATE,
+        chatId,
+        state: 'ACTIVE',
+        expiresAt
+      }
+    });
+    return true;
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002')
+      return false;
+    throw error;
+  }
+}
+
+export async function releaseTelegramIdentityPublicAlert(input: {
+  chatId: string;
+  telegramUserId: string | number;
+}) {
+  await prisma.telegramCommunityState.deleteMany({
+    where: {
+      bot: IDENTITY_ALERT_COOLDOWN_STATE,
+      chatId: identityAlertCooldownChatId(input.chatId, input.telegramUserId)
+    }
+  });
+}
 
 function cleanValue(value: string | undefined | null) {
   const trimmed = value?.trim();
@@ -75,21 +125,25 @@ export async function observeTelegramCommunityMember(input: {
     lastName: input.member.last_name,
     username: input.member.username
   });
-  const previous = await prisma.telegramCommunityMember.findUnique({
-    where: { chatId_telegramUserId: { chatId, telegramUserId } },
-    select: { firstName: true, lastName: true, username: true }
-  });
-  const existingHistory = previous
-    ? await prisma.telegramCommunityMemberIdentityHistory.findFirst({
-        where: { chatId, telegramUserId },
-        select: { id: true }
-      })
-    : null;
-  const changedFields = previous ? changedTelegramIdentityFields(previous, next) : ['initial'];
-  const changed = Boolean(previous && changedFields.length);
   const activeData = input.markActive === false ? {} : { leftAt: null };
 
-  await prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx) => {
+    // Multiple webhook updates for an active member can arrive concurrently.
+    // Lock this group/member pair before reading so one real profile change is
+    // observed and announced only once.
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${chatId}), hashtext(${telegramUserId}))`;
+    const previous = await tx.telegramCommunityMember.findUnique({
+      where: { chatId_telegramUserId: { chatId, telegramUserId } },
+      select: { firstName: true, lastName: true, username: true }
+    });
+    const existingHistory = previous
+      ? await tx.telegramCommunityMemberIdentityHistory.findFirst({
+          where: { chatId, telegramUserId },
+          select: { id: true }
+        })
+      : null;
+    const changedFields = previous ? changedTelegramIdentityFields(previous, next) : ['initial'];
+    const changed = Boolean(previous && changedFields.length);
     await tx.telegramCommunityMember.upsert({
       where: { chatId_telegramUserId: { chatId, telegramUserId } },
       create: { chatId, telegramUserId, ...next },
@@ -113,21 +167,20 @@ export async function observeTelegramCommunityMember(input: {
         }
       });
     }
+    const nameChangeCount = await tx.telegramCommunityMemberIdentityHistory.count({
+      where: { chatId, telegramUserId, changedFields: { has: 'name' } }
+    });
+    return {
+      recorded: true,
+      changed,
+      changedFields,
+      nameChangeCount,
+      previousDisplayName: previous ? telegramDisplayName(previous) : null,
+      displayName: telegramDisplayName(next),
+      previousUsername: previous?.username || null,
+      username: next.username
+    };
   });
-
-  const nameChangeCount = await prisma.telegramCommunityMemberIdentityHistory.count({
-    where: { chatId, telegramUserId, changedFields: { has: 'name' } }
-  });
-  return {
-    recorded: true,
-    changed,
-    changedFields,
-    nameChangeCount,
-    previousDisplayName: previous ? telegramDisplayName(previous) : null,
-    displayName: telegramDisplayName(next),
-    previousUsername: previous?.username || null,
-    username: next.username
-  };
 }
 
 export function identityHistoryDisplayName(input: {

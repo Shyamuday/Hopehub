@@ -1,3 +1,8 @@
+import {
+  GROUP_HELP_CLEAN_COMMAND_TYPES,
+  shouldCleanGroupHelpType
+} from './telegram-group-help.cleaning.js';
+
 /**
  * Staff commands sent in a public group reveal who performed an action. Keep
  * the public group clean while deliberately retaining commands in the private
@@ -15,8 +20,20 @@ export function shouldAutoDeleteGroupCommand(input: {
   chatType?: string;
   isControlGroup: boolean;
   delaySeconds: number;
+  commandType?: (typeof GROUP_HELP_CLEAN_COMMAND_TYPES)[number];
+  configuredTypes?: string;
 }) {
-  return input.chatType !== 'private' && !input.isControlGroup && input.delaySeconds > 0;
+  return (
+    input.chatType !== 'private' &&
+    !input.isControlGroup &&
+    input.delaySeconds > 0 &&
+    shouldCleanGroupHelpType(
+      input.configuredTypes,
+      input.commandType || 'user',
+      GROUP_HELP_CLEAN_COMMAND_TYPES,
+      true
+    )
+  );
 }
 
 /**

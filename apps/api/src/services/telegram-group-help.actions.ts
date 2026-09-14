@@ -19,6 +19,10 @@ import {
   removeLatestTelegramGroupWarning,
   scheduleCommunityMessageCleanup
 } from './telegram-community-bots.store.js';
+import {
+  GROUP_HELP_CLEAN_MESSAGE_TYPES,
+  shouldCleanGroupHelpType
+} from './telegram-group-help.cleaning.js';
 import type {
   CommunityTelegramMessage,
   CommunityTelegramUpdate,
@@ -390,14 +394,24 @@ export async function sendTemporaryGroupHelpMessage(
   chatId: string,
   text: string,
   values: Record<string, string>,
-  options: Parameters<typeof sendCommunityMessage>[3] = {}
+  options: Parameters<typeof sendCommunityMessage>[3] = {},
+  cleanType?: (typeof GROUP_HELP_CLEAN_MESSAGE_TYPES)[number]
 ) {
   const defaultTopicId = Number(values.telegramCommunityDefaultTopicId || 0) || undefined;
   const sent = await sendCommunityMessage(GROUP_HELP_BOT_SLUG, chatId, text, {
     ...options,
     ...(options.message_thread_id || !defaultTopicId ? {} : { message_thread_id: defaultTopicId })
   });
-  const delaySeconds = Math.max(0, Number(values.telegramGroupHelpAutoDeleteSeconds || 300));
+  const delaySeconds = cleanType
+    ? shouldCleanGroupHelpType(
+        values.telegramGroupHelpCleanMessageTypes,
+        cleanType,
+        GROUP_HELP_CLEAN_MESSAGE_TYPES,
+        true
+      )
+      ? 300
+      : 0
+    : Math.max(0, Number(values.telegramGroupHelpAutoDeleteSeconds || 300));
   if (delaySeconds > 0) {
     await scheduleCommunityMessageCleanup({
       bot: GROUP_HELP_BOT_SLUG,

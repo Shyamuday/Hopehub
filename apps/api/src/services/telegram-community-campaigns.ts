@@ -32,6 +32,9 @@ import {
   savedLockdownPermissions
 } from './telegram-community-group-policy.js';
 import { withCrossCommunityButton } from './telegram-group-help.community-navigation.js';
+import { formatGroupHelpMessage } from './telegram-group-help.formatting.js';
+import { renderGroupHelpFilterHtml } from './telegram-group-help.filters.js';
+import { runRepeatedGroupHelpNotes } from './telegram-group-help.note-actions.js';
 import {
   EMPTY_VOICE_CHAT_RECOVERY_MS,
   EMPTY_VOICE_CHAT_RECOVERY_REASON,
@@ -343,7 +346,7 @@ async function logCommunityActivity(
 }
 
 function escapeTelegramMarkdown(value: string) {
-  return value.replace(/[_*()[\]]/g, '\\$&');
+  return value.replace(/[_*~|`()[\]]/g, '\\$&');
 }
 
 function memberMention(member: { id: number; username?: string; first_name?: string }) {
@@ -786,6 +789,9 @@ async function restoreExpiredCommunityLockdowns(now: Date) {
 
 export async function runTelegramCampaignScheduler(now = new Date()) {
   await runScheduledCommunityMessageCleanup(now);
+  await runRepeatedGroupHelpNotes(now).catch((error) =>
+    console.error('[telegram-group-help] Repeated-note scheduler failed.', error)
+  );
   await unpinExpiredAnnouncements(now);
   await runCommunityDataRetentionCleanupHourly(now);
   await restoreExpiredCommunityLockdowns(now);
@@ -1203,10 +1209,7 @@ export async function welcomeTelegramCommunityMembers(update: CommunityTelegramU
         });
       }
     }
-    const welcomeText = config.welcomeText
-      .replaceAll('{mention}', memberMention(member))
-      .replaceAll('{id}', String(member.id));
-    const welcomeKeyboard = needsVerification
+    const baseWelcomeKeyboard = needsVerification
       ? {
           inline_keyboard: [
             ...(captchaEnabled
@@ -1224,7 +1227,21 @@ export async function welcomeTelegramCommunityMembers(update: CommunityTelegramU
     const verificationPrompt = captchaEnabled
       ? `\n\nTo join the conversation, choose the answer: ${first} + ${second} = ?`
       : '';
-    const welcomeMessageText = `${welcomeText}${verificationPrompt}`;
+    const formattedWelcome = formatGroupHelpMessage(config.welcomeText);
+    const welcomeMessageText = `${renderGroupHelpFilterHtml(formattedWelcome.text, {
+      message_id: message?.message_id || 0,
+      chat,
+      from: member
+    })}${verificationPrompt}`;
+    const welcomeKeyboard =
+      formattedWelcome.replyMarkup || baseWelcomeKeyboard
+        ? {
+            inline_keyboard: [
+              ...(formattedWelcome.replyMarkup?.inline_keyboard || []),
+              ...(baseWelcomeKeyboard?.inline_keyboard || [])
+            ]
+          }
+        : undefined;
     const media = config.welcomeMediaUrl ? communityMediaPayload(config.welcomeMediaUrl) : null;
     const sent =
       media && welcomeMessageText.length <= 1024
@@ -1232,21 +1249,30 @@ export async function welcomeTelegramCommunityMembers(update: CommunityTelegramU
             chat_id: chat.id,
             ...media.media,
             caption: welcomeMessageText,
-            parse_mode: 'Markdown',
+            parse_mode: 'HTML',
             message_thread_id: message?.message_thread_id,
-            reply_markup: welcomeKeyboard
+            reply_markup: welcomeKeyboard,
+            disable_notification: formattedWelcome.disableNotification,
+            protect_content: formattedWelcome.protectContent,
+            ...(formattedWelcome.mediaSpoiler ? { has_spoiler: true } : {})
           }).catch(async (error) => {
             console.error('[telegram-community] Could not send welcome media.', error);
             return sendCommunityMessage(CAMPAIGN_BOT, chat.id, welcomeMessageText, {
-              parse_mode: 'Markdown',
+              parse_mode: 'HTML',
               message_thread_id: message?.message_thread_id,
-              reply_markup: welcomeKeyboard
+              reply_markup: welcomeKeyboard,
+              disable_notification: formattedWelcome.disableNotification,
+              protect_content: formattedWelcome.protectContent,
+              link_preview_options: { is_disabled: !formattedWelcome.showLinkPreview }
             });
           })
         : await sendCommunityMessage(CAMPAIGN_BOT, chat.id, welcomeMessageText, {
-            parse_mode: 'Markdown',
+            parse_mode: 'HTML',
             message_thread_id: message?.message_thread_id,
-            reply_markup: welcomeKeyboard
+            reply_markup: welcomeKeyboard,
+            disable_notification: formattedWelcome.disableNotification,
+            protect_content: formattedWelcome.protectContent,
+            link_preview_options: { is_disabled: !formattedWelcome.showLinkPreview }
           });
     if (needsVerification) {
       await prisma.telegramCommunityState.update({

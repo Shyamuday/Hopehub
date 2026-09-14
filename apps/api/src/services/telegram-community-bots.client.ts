@@ -149,6 +149,20 @@ const COMMUNITY_BOTS: Record<
       { command: 'enable', description: 'Enable a member command (admins)' },
       { command: 'disabledel', description: 'Delete ignored disabled commands' },
       { command: 'disableadmin', description: 'Apply disabled commands to admins' },
+      { command: 'cleancommand', description: 'Delete selected command types (admins)' },
+      { command: 'keepcommand', description: 'Keep selected command types (admins)' },
+      { command: 'cleancommandtypes', description: 'List command cleanup types' },
+      { command: 'cleanmsg', description: 'Auto-delete selected bot replies (admins)' },
+      { command: 'keepmsg', description: 'Keep selected bot replies (admins)' },
+      { command: 'cleanmsgtypes', description: 'List bot-message cleanup types' },
+      { command: 'cleanservice', description: 'Delete Telegram service notices (admins)' },
+      { command: 'nocleanservice', description: 'Keep Telegram service notices (admins)' },
+      { command: 'cleanservicetypes', description: 'List service cleanup types' },
+      { command: 'save', description: 'Save or update a note (admins)' },
+      { command: 'clear', description: 'Delete a saved note (admins)' },
+      { command: 'privatenotes', description: 'Toggle private note delivery (admins)' },
+      { command: 'get', description: 'Open a saved note' },
+      { command: 'notes', description: 'List saved notes' },
       { command: 'forgot', description: 'Remove your data from this group' },
       { command: 'setofftopic', description: 'Register off-topic group (admins)' },
       { command: 'setlog', description: 'Set moderation log channel (admins)' },
@@ -217,10 +231,13 @@ export function sendCommunityMessage(
   chatId: string | number,
   text: string,
   options: {
-    parse_mode?: 'Markdown';
+    parse_mode?: 'Markdown' | 'HTML';
     reply_markup?: TelegramKeyboard;
     reply_to_message_id?: number;
     message_thread_id?: number;
+    disable_notification?: boolean;
+    protect_content?: boolean;
+    link_preview_options?: { is_disabled: boolean };
   } = {}
 ) {
   const replyMarkup = options.reply_markup
