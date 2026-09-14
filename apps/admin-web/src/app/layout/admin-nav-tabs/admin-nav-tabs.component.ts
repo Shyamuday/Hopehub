@@ -33,6 +33,7 @@ export class AdminNavTabsComponent implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly openGroupId = signal<string | null>(null);
+  readonly openSectionId = signal<string | null>(null);
   readonly activeGroupId = signal('');
   readonly currentPath = signal('');
   readonly searchQuery = signal('');
@@ -110,17 +111,20 @@ export class AdminNavTabsComponent implements OnInit {
   openGroup(id: string): void {
     this.cancelCloseTimer();
     this.openGroupId.set(id);
+    this.openSectionId.set(null);
   }
 
   toggleGroup(id: string, event: MouseEvent): void {
     event.stopPropagation();
     this.cancelCloseTimer();
     this.openGroupId.update((current) => (current === id ? null : id));
+    this.openSectionId.set(null);
   }
 
   onGroupEnter(id: string): void {
     if (this.layout() === 'sidebar') return;
     this.cancelCloseTimer();
+    if (this.openGroupId() !== id) this.openSectionId.set(null);
     this.openGroupId.set(id);
   }
 
@@ -134,6 +138,21 @@ export class AdminNavTabsComponent implements OnInit {
     this.closeSubmenu();
     this.searchQuery.set('');
     this.navSelected.emit();
+  }
+
+  openSection(id: string): void {
+    if (this.layout() === 'sidebar') return;
+    this.cancelCloseTimer();
+    this.openSectionId.set(id);
+  }
+
+  toggleSection(id: string, event: MouseEvent): void {
+    event.stopPropagation();
+    this.openSectionId.update((current) => (current === id ? null : id));
+  }
+
+  isSectionOpen(id: string): boolean {
+    return this.openSectionId() === id;
   }
 
   updateSearch(event: Event): void {
@@ -152,6 +171,7 @@ export class AdminNavTabsComponent implements OnInit {
   closeSubmenu(): void {
     this.cancelCloseTimer();
     this.openGroupId.set(null);
+    this.openSectionId.set(null);
   }
 
   isGroupActive(groupId: string): boolean {

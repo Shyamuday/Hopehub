@@ -29,38 +29,90 @@
         (mouseenter)="onGroupEnter(group.id)"
         (mouseleave)="onGroupLeave()"
       >
-        <button
-          type="button"
-          class="group-btn"
-          [attr.aria-expanded]="isGroupExpanded(group.id)"
-          [attr.aria-haspopup]="layout() === 'horizontal'"
-          (click)="toggleGroup(group.id, $event)"
-        >
-          <span class="group-label"
-            ><span aria-hidden="true">{{ group.icon }}</span
-            >{{ group.label }}</span
+        @if (layout() === 'horizontal' && group.items.length === 1 && !group.sections.length) {
+          <a
+            class="group-btn group-link"
+            [routerLink]="group.items[0].path"
+            [class.active]="isItemActive(group.items[0].path)"
+            (click)="onNavItemClick()"
           >
-          <span class="caret" aria-hidden="true">▾</span>
-        </button>
+            <span class="group-label"
+              ><span aria-hidden="true">{{ group.icon }}</span
+              >{{ group.label }}</span
+            >
+          </a>
+        } @else {
+          <button
+            type="button"
+            class="group-btn"
+            [attr.aria-expanded]="isGroupExpanded(group.id)"
+            [attr.aria-haspopup]="layout() === 'horizontal'"
+            (click)="toggleGroup(group.id, $event)"
+          >
+            <span class="group-label"
+              ><span aria-hidden="true">{{ group.icon }}</span
+              >{{ group.label }}</span
+            >
+            <span class="caret" aria-hidden="true">▾</span>
+          </button>
+        }
 
         @if (isGroupExpanded(group.id)) {
-          <div class="submenu" role="menu" [attr.aria-label]="group.label">
+          <div
+            class="submenu"
+            [class.has-sections]="group.sections.length > 0"
+            role="menu"
+            [attr.aria-label]="group.label"
+          >
             @if (group.sections.length) {
               @for (section of group.sections; track section.id) {
-                <section class="submenu-section">
-                  <p>{{ section.label }}</p>
-                  @for (item of section.items; track item.path) {
-                    <a
-                      [routerLink]="item.path"
-                      role="menuitem"
-                      class="submenu-link"
-                      [class.active]="isItemActive(item.path)"
-                      (click)="onNavItemClick()"
+                @if (layout() === 'horizontal') {
+                  <div
+                    class="submenu-branch"
+                    [class.is-open]="isSectionOpen(section.id)"
+                    (mouseenter)="openSection(section.id)"
+                  >
+                    <button
+                      type="button"
+                      class="submenu-link submenu-trigger"
+                      aria-haspopup="menu"
+                      [attr.aria-expanded]="isSectionOpen(section.id)"
+                      (click)="toggleSection(section.id, $event)"
                     >
-                      {{ item.label }}
-                    </a>
-                  }
-                </section>
+                      <span>{{ section.label }}</span><span aria-hidden="true">›</span>
+                    </button>
+                    @if (isSectionOpen(section.id)) {
+                      <div class="nested-menu" role="menu" [attr.aria-label]="section.label">
+                        @for (item of section.items; track item.path) {
+                          <a
+                            [routerLink]="item.path"
+                            role="menuitem"
+                            class="submenu-link"
+                            [class.active]="isItemActive(item.path)"
+                            (click)="onNavItemClick()"
+                          >
+                            {{ item.label }}
+                          </a>
+                        }
+                      </div>
+                    }
+                  </div>
+                } @else {
+                  <section class="submenu-section">
+                    <p>{{ section.label }}</p>
+                    @for (item of section.items; track item.path) {
+                      <a
+                        [routerLink]="item.path"
+                        role="menuitem"
+                        class="submenu-link"
+                        [class.active]="isItemActive(item.path)"
+                        (click)="onNavItemClick()"
+                      >
+                        {{ item.label }}
+                      </a>
+                    }
+                  </section>
+                }
               }
             } @else {
               @for (item of group.items; track item.path) {

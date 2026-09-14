@@ -1,5 +1,6 @@
 <main class="admin-shell" [class.focus-mode]="focusMode()">
-  <header class="topbar">
+  <header class="shell-header">
+    <div class="topbar">
     <div class="topbar-start">
       <button type="button" class="menu-btn" aria-label="Open menu" (click)="openMenu()">☰</button>
       <div class="topbar-brand">
@@ -35,34 +36,13 @@
       </a>
       <button type="button" class="logout-btn" (click)="logout()">Logout</button>
     </div>
+    </div>
+    <div class="desktop-nav-bar">
+      <app-admin-nav-tabs [items]="filteredNavItems()" layout="horizontal" />
+    </div>
   </header>
 
   <div class="shell-body">
-    <aside class="sidebar" aria-label="Admin navigation">
-      <div class="sidebar-brand">
-        <h1>Admin Console</h1>
-        @if (auth.user()?.name) {
-          <p class="sidebar-user">{{ auth.user()?.name }}</p>
-        }
-      </div>
-
-      <app-admin-nav-tabs [items]="filteredNavItems()" layout="sidebar" />
-
-      <div class="sidebar-footer">
-        <a class="sidebar-account" [routerLink]="accountPath">
-          <hopehub-profile-avatar
-            [apiBase]="apiBase"
-            [tokenKey]="authTokenKey"
-            [displayName]="auth.user()?.name || 'Admin'"
-            [profileImageUrl]="auth.user()?.profileImageUrl ?? null"
-            size="sm"
-          />
-          <span>Account</span>
-        </a>
-        <button type="button" class="sidebar-logout" (click)="logout()">Sign out</button>
-      </div>
-    </aside>
-
     <div class="shell-main">
       <section class="content">
         <router-outlet />

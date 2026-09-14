@@ -34,6 +34,16 @@
   min-height: 0;
 }
 
+.shell-header {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+}
+
+.desktop-nav-bar {
+  display: none;
+}
+
 .sidebar {
   display: none;
   flex-direction: column;
@@ -180,9 +190,7 @@
 }
 
 .topbar {
-  position: sticky;
-  top: 0;
-  z-index: 60;
+  position: relative;
   flex-shrink: 0;
   width: 100%;
   display: flex;
@@ -370,27 +378,21 @@
 }
 
 @media (min-width: 769px) {
-  .sidebar {
+  .desktop-nav-bar {
     display: flex;
-    position: sticky;
-    top: calc(var(--shell-topbar-height) + var(--safe-top));
-    align-self: flex-start;
-    max-height: calc(100dvh - var(--shell-topbar-height) - var(--safe-top));
-    overflow-y: auto;
-    z-index: 30;
+    min-height: 3rem;
+    padding: 0.2rem clamp(0.75rem, 2vw, 1.5rem);
+    background: #111c31;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.16);
   }
 
   .menu-btn {
     display: none;
   }
 
-  .topbar-brand {
-    display: none;
-  }
-
-  .topbar-actions .account-link,
-  .topbar-actions .logout-btn {
-    display: none;
+  .topbar-start {
+    flex: 0 1 auto;
   }
 
   .drawer,

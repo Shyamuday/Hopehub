@@ -299,6 +299,75 @@ export type AdminNavSection = {
   segments: readonly string[];
 };
 
+const WORK_NAV_SECTIONS: readonly AdminNavSection[] = [
+  {
+    id: 'care-delivery',
+    label: 'Care delivery',
+    segments: [
+      ROUTE_PATHS.CONSULTATIONS,
+      ROUTE_PATHS.FOLLOW_UPS,
+      ROUTE_PATHS.ONLINE_DOCTORS,
+      ROUTE_PATHS.CALL_HEALTH,
+    ],
+  },
+  {
+    id: 'requests-safety',
+    label: 'Requests and safety',
+    segments: [
+      ROUTE_PATHS.CHAT_INBOX,
+      ROUTE_PATHS.COUNSELLOR_APPLICATIONS,
+      ROUTE_PATHS.SAFETY_FLAGS,
+    ],
+  },
+  {
+    id: 'clinical-work',
+    label: 'Clinical work',
+    segments: [ROUTE_PATHS.SCAN, ROUTE_PATHS.CLINICAL_RECORDS],
+  },
+];
+
+const PEOPLE_NAV_SECTIONS: readonly AdminNavSection[] = [
+  {
+    id: 'community-people',
+    label: 'Providers and users',
+    segments: [ROUTE_PATHS.DOCTORS, ROUTE_PATHS.CONSUMERS, ROUTE_PATHS.ECOSYSTEM_USERS],
+  },
+  {
+    id: 'workforce',
+    label: 'Workforce',
+    segments: [
+      ROUTE_PATHS.HR,
+      ROUTE_PATHS.HR_USERS,
+      ROUTE_PATHS.EMPLOYEES,
+      ROUTE_PATHS.LEAVES,
+      ROUTE_PATHS.VACANCIES,
+    ],
+  },
+];
+
+const REPORT_NAV_SECTIONS: readonly AdminNavSection[] = [
+  {
+    id: 'insights',
+    label: 'Insights',
+    segments: [ROUTE_PATHS.ANALYTICS, ROUTE_PATHS.ADHERENCE],
+  },
+  {
+    id: 'money',
+    label: 'Money',
+    segments: [
+      ROUTE_PATHS.PAYMENTS,
+      ROUTE_PATHS.DONATIONS,
+      ROUTE_PATHS.FINANCE,
+      ROUTE_PATHS.PAYROLL,
+    ],
+  },
+  {
+    id: 'governance',
+    label: 'Governance',
+    segments: [ROUTE_PATHS.AUDIT],
+  },
+];
+
 const MORE_NAV_SECTIONS: readonly AdminNavSection[] = [
   {
     id: 'hope-hub-setup',
@@ -338,6 +407,7 @@ const MORE_NAV_SECTIONS: readonly AdminNavSection[] = [
       ROUTE_PATHS.NOTIFICATIONS_INBOX,
       ROUTE_PATHS.EMAIL_MARKETING,
       ROUTE_PATHS.TELEGRAM_BOTS,
+      ROUTE_PATHS.TELEGRAM_CONTENT_NETWORK,
     ],
   },
   {
@@ -389,6 +459,7 @@ export const NAV_GROUPS: AdminNavGroup[] = [
       ROUTE_PATHS.SCAN,
       ROUTE_PATHS.CLINICAL_RECORDS,
     ],
+    sections: WORK_NAV_SECTIONS,
   },
   {
     id: 'people',
@@ -404,6 +475,7 @@ export const NAV_GROUPS: AdminNavGroup[] = [
       ROUTE_PATHS.VACANCIES,
       ROUTE_PATHS.ECOSYSTEM_USERS,
     ],
+    sections: PEOPLE_NAV_SECTIONS,
   },
   {
     id: 'reports',
@@ -418,6 +490,7 @@ export const NAV_GROUPS: AdminNavGroup[] = [
       ROUTE_PATHS.ADHERENCE,
       ROUTE_PATHS.AUDIT,
     ],
+    sections: REPORT_NAV_SECTIONS,
   },
   {
     id: 'more',

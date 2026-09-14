@@ -67,6 +67,16 @@
     border-color 0.15s ease;
 }
 
+.group-link {
+  text-decoration: none;
+}
+
+.group-link.active {
+  color: #7dd3fc;
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(125, 211, 252, 0.25);
+}
+
 .group-btn:hover,
 .nav-group.is-open .group-btn {
   background: rgba(255, 255, 255, 0.08);
@@ -119,6 +129,11 @@
   height: 0.45rem;
 }
 
+.admin-nav:not(.layout-sidebar) .submenu.has-sections {
+  max-height: none;
+  overflow: visible;
+}
+
 .submenu-link {
   display: block;
   text-decoration: none;
@@ -138,6 +153,49 @@
   background: rgba(56, 189, 248, 0.16);
   color: #7dd3fc;
   font-weight: 600;
+}
+
+.submenu-branch {
+  position: relative;
+}
+
+.submenu-trigger {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.submenu-branch.is-open > .submenu-trigger {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.nested-menu {
+  position: absolute;
+  top: -0.35rem;
+  left: calc(100% + 0.3rem);
+  width: max-content;
+  min-width: 14rem;
+  max-width: min(20rem, 70vw);
+  max-height: min(24rem, 70vh);
+  overflow: auto;
+  padding: 0.35rem;
+  border-radius: 10px;
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.35);
+  z-index: 210;
+}
+
+.nav-group:last-child .nested-menu {
+  right: calc(100% + 0.3rem);
+  left: auto;
 }
 
 .submenu-section + .submenu-section {
