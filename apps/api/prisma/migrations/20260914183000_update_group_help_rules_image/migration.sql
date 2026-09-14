@@ -1,11 +1,10 @@
 BEGIN;
 
-INSERT INTO "SiteConfig" ("key", "value", "label", "createdAt", "updatedAt")
+INSERT INTO "SiteConfig" ("key", "value", "label", "updatedAt")
 VALUES (
   'telegramGroupHelpRulesImageUrl',
   'https://hopehub-public-assets-924479393196.s3.us-east-1.amazonaws.com/telegram/moderation/hopehub-community-rules-v2.png',
   'Rules media URL',
-  NOW(),
   NOW()
 )
 ON CONFLICT ("key") DO UPDATE
