@@ -1,6 +1,9 @@
 import { prisma } from '../db.js';
 import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
-import { sendCommunityMessage } from './telegram-community-bots.client.js';
+import {
+  callCommunityTelegramApi,
+  sendCommunityMessage
+} from './telegram-community-bots.client.js';
 import type { CommunityTelegramMessage } from './telegram-community-bots.types.js';
 import { telegramPersonLogLabel } from './telegram-group-help.people.js';
 
@@ -22,6 +25,29 @@ export function hasGroupHelpAdminMention(text: string) {
 
 function stateKey(staffChatId: string, messageId: number) {
   return `${staffChatId}:${messageId}`;
+}
+
+export function groupHelpAdminMentionPhotoCaption(text: string) {
+  const characters = Array.from(text.trim());
+  return characters.length <= 1024
+    ? characters.join('')
+    : `${characters.slice(0, 1021).join('')}...`;
+}
+
+async function sendGroupHelpAdminMentionAlert(staffChatId: string, body: string, imageUrl: string) {
+  if (imageUrl) {
+    const sent = await callCommunityTelegramApi<{ message_id: number }>(
+      GROUP_HELP_BOT_SLUG,
+      'sendPhoto',
+      {
+        chat_id: staffChatId,
+        photo: imageUrl,
+        caption: groupHelpAdminMentionPhotoCaption(body)
+      }
+    ).catch(() => null);
+    if (sent) return sent;
+  }
+  return sendCommunityMessage(GROUP_HELP_BOT_SLUG, staffChatId, body);
 }
 
 /** Sends an admin/moderator mention into the private staff group and retains its reply target. */
@@ -48,7 +74,11 @@ export async function forwardGroupHelpAdminMention(
     '',
     'Reply to this alert with /send <message> to post as Hope Hub bot in the group.'
   ].join('\n');
-  const sent = await sendCommunityMessage(GROUP_HELP_BOT_SLUG, staffChatId, body);
+  const sent = await sendGroupHelpAdminMentionAlert(
+    staffChatId,
+    body,
+    values.telegramGroupHelpAdminMentionImageUrl?.trim() || ''
+  );
   await prisma.telegramCommunityState.upsert({
     where: {
       bot_chatId: { bot: ADMIN_MENTION_STATE, chatId: stateKey(staffChatId, sent.message_id) }

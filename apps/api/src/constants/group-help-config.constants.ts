@@ -861,6 +861,18 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
     defaultValue: ''
   },
   {
+    key: 'telegramGroupHelpAdminMentionImageUrl',
+    label: 'Administrator request alert image',
+    description:
+      'Image attached to the private staff-group alert when a community member mentions @admin.',
+    section: 'messages',
+    type: 'text',
+    maxLength: 1000,
+    placeholder: 'https://...',
+    defaultValue:
+      'https://hopehub-public-assets-924479393196.s3.us-east-1.amazonaws.com/telegram/moderation/hopehub-admin-request-guide.jpeg'
+  },
+  {
     key: 'telegramGroupHelpRecurringMessage',
     label: 'Recurring reminder message',
     description: 'Reminder text for daily/weekly recurring Group Help messages.',

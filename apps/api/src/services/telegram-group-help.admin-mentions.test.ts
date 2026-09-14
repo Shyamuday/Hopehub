@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { hasGroupHelpAdminMention } from './telegram-group-help.admin-mentions.js';
+import {
+  groupHelpAdminMentionPhotoCaption,
+  hasGroupHelpAdminMention
+} from './telegram-group-help.admin-mentions.js';
 
 test('recognizes common administrator and moderator mention variants', () => {
   for (const mention of [
@@ -29,4 +32,11 @@ test('does not treat part of a username as an administrator request', () => {
   assert.equal(hasGroupHelpAdminMention('Please ask @adminsupport'), false);
   assert.equal(hasGroupHelpAdminMention('Please ask @moderator_team'), false);
   assert.equal(hasGroupHelpAdminMention('The administration reviewed it'), false);
+});
+
+test('keeps administrator-request photo captions within Telegram limits', () => {
+  assert.equal(groupHelpAdminMentionPhotoCaption('  Please help  '), 'Please help');
+  const caption = groupHelpAdminMentionPhotoCaption(`Alert ${'🙂'.repeat(1100)}`);
+  assert.equal(Array.from(caption).length, 1024);
+  assert.equal(caption.endsWith('...'), true);
 });
