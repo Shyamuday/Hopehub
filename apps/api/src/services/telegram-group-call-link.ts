@@ -43,3 +43,12 @@ export function telegramGroupCallButton(joinUrl: string, isLive: boolean) {
     ? { text: 'Join VC', url: telegramVideoChatJoinUrl(joinUrl) }
     : { text: 'Open group', url: joinUrl.trim() };
 }
+
+/** Prefer the invite exported for the exact active call over stored/group fallbacks. */
+export function telegramLiveVoiceJoinUrl(
+  activeCallInvite: string | undefined,
+  eventJoinUrl: string | undefined,
+  groupJoinUrl: string | undefined
+) {
+  return activeCallInvite?.trim() || eventJoinUrl?.trim() || groupJoinUrl?.trim() || '';
+}

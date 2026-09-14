@@ -7,9 +7,9 @@ import {
 import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
 import {
   answerCommunityCallback,
-  callCommunityTelegramApi,
-  sendCommunityMessage
+  callCommunityTelegramApi
 } from './telegram-community-bots.client.js';
+import { sendTemporaryGroupHelpMessage } from './telegram-group-help.actions.js';
 import { groupHelpConfig } from './telegram-group-help.config.js';
 import { canUseGroupHelpAdminCommand } from './telegram-group-help.permissions.js';
 import {
@@ -32,6 +32,23 @@ const DRAFT_LIFETIME_MS = 10 * 60 * 1000;
 const SETTINGS_SESSION_LIFETIME_MS = 30 * 60 * 1000;
 const SETTINGS_SESSION_STATE = 'group-help:settings-session';
 const SETTINGS_DRAFT_STATE = 'group-help:settings-draft';
+
+// Settings are operational UI, not group history. Keep the historical helper
+// call shape used throughout this module while ensuring every panel and status
+// reply is removed after one minute.
+function sendCommunityMessage(
+  _bot: string,
+  chatId: string | number,
+  text: string,
+  options: Parameters<typeof sendTemporaryGroupHelpMessage>[3] = {}
+) {
+  return sendTemporaryGroupHelpMessage(
+    String(chatId),
+    text,
+    { telegramGroupHelpAutoDeleteSeconds: '60' },
+    options
+  );
+}
 
 type SettingsDraft = { key: string; value?: string };
 

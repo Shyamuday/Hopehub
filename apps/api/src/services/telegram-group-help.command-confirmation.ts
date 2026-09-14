@@ -1,18 +1,32 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../db.js';
 import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
-import { answerCommunityCallback, sendCommunityMessage } from './telegram-community-bots.client.js';
+import { answerCommunityCallback } from './telegram-community-bots.client.js';
 import type {
   CommunityTelegramMessage,
   CommunityTelegramUpdate
 } from './telegram-community-bots.types.js';
 import { groupHelpConfig } from './telegram-group-help.config.js';
 import { recordGroupHelpCommandAudit } from './telegram-group-help.command-audit.js';
+import { sendTemporaryGroupHelpMessage } from './telegram-group-help.actions.js';
 
 const STATE_BOT = 'group-help:command-confirmation';
 const CONFIRM = 'hh_cmd_confirm';
 const CANCEL = 'hh_cmd_cancel';
-const TTL_MS = 5 * 60_000;
+const TTL_MS = 60_000;
+
+function sendConfirmationMessage(
+  chatId: string | number,
+  text: string,
+  options: Parameters<typeof sendTemporaryGroupHelpMessage>[3] = {}
+) {
+  return sendTemporaryGroupHelpMessage(
+    String(chatId),
+    text,
+    { telegramGroupHelpAutoDeleteSeconds: '60' },
+    options
+  );
+}
 
 type PendingCommand = {
   text: string;
@@ -34,8 +48,7 @@ export async function requestGroupHelpCommandConfirmation(input: {
 }) {
   if (input.message._groupHelpConfirmed) return false;
   if (!input.message.from || input.message.sender_chat) {
-    await sendCommunityMessage(
-      GROUP_HELP_BOT_SLUG,
+    await sendConfirmationMessage(
       input.message.chat.id,
       'For safety, this command must be sent from a visible administrator account so it can be confirmed.'
     );
@@ -65,10 +78,9 @@ export async function requestGroupHelpCommandConfirmation(input: {
       expiresAt: new Date(Date.now() + TTL_MS)
     }
   });
-  await sendCommunityMessage(
-    GROUP_HELP_BOT_SLUG,
+  await sendConfirmationMessage(
     input.message.chat.id,
-    `Confirm ${input.command} for the main group? This request expires in 5 minutes.`,
+    `Confirm ${input.command} for the main group? This request expires in 1 minute.`,
     {
       reply_markup: {
         inline_keyboard: [
@@ -109,11 +121,7 @@ export async function handleGroupHelpCommandConfirmationCallback(
   await prisma.telegramCommunityState.deleteMany({ where: { bot: STATE_BOT, chatId: key } });
   if (callback.data === CANCEL) {
     await answerCommunityCallback(GROUP_HELP_BOT_SLUG, callback.id, 'Command cancelled.');
-    await sendCommunityMessage(
-      GROUP_HELP_BOT_SLUG,
-      callback.message.chat.id,
-      'No action was applied.'
-    );
+    await sendConfirmationMessage(callback.message.chat.id, 'No action was applied.');
     const values = await groupHelpConfig(pending.targetChatId);
     await recordGroupHelpCommandAudit({
       message: {

@@ -604,7 +604,15 @@ export async function runScheduledCommunityMessageCleanup(now = new Date()) {
         message_id: item.messageId
       });
       await prisma.telegramCommunityMessageCleanup.delete({ where: { id: item.id } });
-    } catch {
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : String(error);
+      // Deletion is idempotent. Telegram returns this when a member/admin or
+      // another cleanup path already removed the message, so the queue row is
+      // complete and must not be retried for hours.
+      if (/message to delete not found/i.test(detail)) {
+        await prisma.telegramCommunityMessageCleanup.delete({ where: { id: item.id } });
+        continue;
+      }
       const attempts = item.attempts + 1;
       if (attempts >= 3) {
         await prisma.telegramCommunityMessageCleanup.delete({ where: { id: item.id } });

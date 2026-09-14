@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { telegramGroupCallButton, telegramVideoChatJoinUrl } from './telegram-group-call-link.js';
+import {
+  telegramGroupCallButton,
+  telegramLiveVoiceJoinUrl,
+  telegramVideoChatJoinUrl
+} from './telegram-group-call-link.js';
 
 test('uses Telegram video-chat links for public group URLs', () => {
   assert.equal(
@@ -36,4 +40,19 @@ test('scheduled event buttons do not claim that an inactive VC can be joined', (
     text: 'Join VC',
     url: 'https://t.me/hopehubindia?videochat'
   });
+});
+
+test('live reminders prefer the invite for the exact active call', () => {
+  assert.equal(
+    telegramLiveVoiceJoinUrl(
+      'https://t.me/c/123/456?thread=789',
+      'https://t.me/hopehubindia?videochat=old-call',
+      'https://t.me/hopehubindia'
+    ),
+    'https://t.me/c/123/456?thread=789'
+  );
+  assert.equal(
+    telegramLiveVoiceJoinUrl(undefined, undefined, 'https://t.me/hopehubindia'),
+    'https://t.me/hopehubindia'
+  );
 });

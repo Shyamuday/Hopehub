@@ -27,7 +27,10 @@ import {
   type VoiceParticipantSnapshot,
   voiceChatOccupancyCheckDue
 } from '../src/services/telegram-voice-empty-timeout.js';
-import { telegramGroupCallButton } from '../src/services/telegram-group-call-link.js';
+import {
+  telegramGroupCallButton,
+  telegramLiveVoiceJoinUrl
+} from '../src/services/telegram-group-call-link.js';
 import { telegramPersonLogLabel } from '../src/services/telegram-group-help.people.js';
 
 const SESSION_PATH = '/etc/hopehub-telegram-user-session';
@@ -69,6 +72,7 @@ type NativeVoiceSchedulerState = {
   emptyLeaveAlertedAt?: string;
   liveReminderMessageId?: number;
   liveReminderSentAt?: string;
+  activeJoinUrl?: string;
   reason?: string;
   error?: string;
 };
@@ -237,7 +241,20 @@ async function reconcileActiveVoiceEvent(
   now: Date,
   activeCall: NativeGroupCallStatus
 ): Promise<NativeVoiceSchedulerState> {
-  if (!payload.eventId) return payload;
+  let exportedJoinUrl = '';
+  try {
+    const invite = await client.api.phone.exportGroupCallInvite({
+      call: activeCall.inputCall as never,
+      canSelfUnmute: true
+    });
+    exportedJoinUrl = (invite as { link?: string }).link?.trim() || '';
+  } catch (error) {
+    console.warn(
+      `Could not export active VC invite: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+  const activePayload = exportedJoinUrl ? { ...payload, activeJoinUrl: exportedJoinUrl } : payload;
+  if (!payload.eventId) return activePayload;
   const event = await prisma.telegramCommunityEvent.findUnique({
     where: { id: payload.eventId },
     select: {
@@ -250,29 +267,13 @@ async function reconcileActiveVoiceEvent(
       telegramMessageId: true
     }
   });
-  if (!event) return payload;
+  if (!event) return activePayload;
 
-  try {
-    const invite = await client.api.phone.exportGroupCallInvite({
-      call: activeCall.inputCall as never,
-      canSelfUnmute: true
+  if (exportedJoinUrl && exportedJoinUrl !== event.joinUrl) {
+    await prisma.telegramCommunityEvent.update({
+      where: { id: event.id },
+      data: { joinUrl: exportedJoinUrl }
     });
-    const exportedJoinUrl = (invite as { link?: string }).link?.trim();
-    if (exportedJoinUrl && exportedJoinUrl !== event.joinUrl) {
-      await prisma.telegramCommunityEvent.update({
-        where: { id: event.id },
-        data: { joinUrl: exportedJoinUrl }
-      });
-    }
-  } catch (error) {
-    // The public-group videochat link remains a valid fallback, but the
-    // exported invite is preferable because Telegram generated it for the
-    // exact active call.
-    console.warn(
-      `Could not export active VC invite for ${event.id}: ${
-        error instanceof Error ? error.message : String(error)
-      }`
-    );
   }
 
   if (event.startsAt <= now && event.status === 'SCHEDULED') {
@@ -282,7 +283,7 @@ async function reconcileActiveVoiceEvent(
     });
   }
 
-  if (!event.telegramMessageId || payload.joinButtonRefreshedAt) return payload;
+  if (!event.telegramMessageId || payload.joinButtonRefreshedAt) return activePayload;
   try {
     await refreshTelegramCommunityEventAnnouncement(event.id, { active: true });
     await prisma.telegramCommunityState
@@ -295,7 +296,7 @@ async function reconcileActiveVoiceEvent(
     console.log(
       `Refreshed live VC Join button for event ${event.id} in Telegram chat ${event.chatId}.`
     );
-    return { ...payload, joinButtonRefreshedAt: now.toISOString() };
+    return { ...activePayload, joinButtonRefreshedAt: now.toISOString() };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.warn(`Could not refresh live VC Join button for ${event.id}: ${message}`);
@@ -338,7 +339,7 @@ async function reconcileActiveVoiceEvent(
         });
       }
     }
-    return payload;
+    return activePayload;
   }
 }
 
@@ -611,7 +612,9 @@ async function sendLiveVoiceReminder(
     config.telegramGroupHelpGroupChatId?.trim() === chatId
       ? config.telegramGroupHelpMainGroupUrl?.trim() || ''
       : '';
-  const joinUrl = event?.joinUrl?.trim() || mainGroupJoinUrl;
+  // An invite exported for the exact active call is reliable for both manual
+  // and scheduled VCs. A generic public-group URL is only the fallback.
+  const joinUrl = telegramLiveVoiceJoinUrl(payload.activeJoinUrl, event?.joinUrl, mainGroupJoinUrl);
   let sent: { message_id: number };
   try {
     sent = await sendCommunityMessage(
@@ -832,7 +835,9 @@ async function monitorEmptyActiveVoiceChats(client: TelegramClient, now: Date) {
           emptySince: undefined,
           lastParticipantCheckAt: undefined,
           participantCount: undefined,
-          emptyLeaveAlertedAt: undefined
+          emptyLeaveAlertedAt: undefined,
+          activeJoinUrl: undefined,
+          joinButtonRefreshedAt: undefined
         };
     const knownStarter = knownVoiceStarterForEmptyAlert(basePayload, currentCall.participantCount);
     const tracked = trackEmptyVoiceChat(

@@ -1617,12 +1617,18 @@ async function telegramCommunityEventReminderKeyboard(event: { joinUrl: string }
   };
 }
 
-export async function announceTelegramCommunityEvent(eventId: string) {
+export async function announceTelegramCommunityEvent(
+  eventId: string,
+  options: { active?: boolean } = {}
+) {
   const event = await prisma.telegramCommunityEvent.findUnique({
     where: { id: eventId },
     include: { _count: { select: { rsvps: true } } }
   });
-  if (!event || event.status !== 'SCHEDULED' || event.announcedAt) return null;
+  const eligibleStatus = options.active
+    ? event?.status === 'SCHEDULED' || event?.status === 'IN_PROGRESS'
+    : event?.status === 'SCHEDULED';
+  if (!event || !eligibleStatus || event.announcedAt) return null;
   const claimed = await claimTelegramOperation({
     operation: EVENT_ANNOUNCEMENT_CLAIM,
     key: event.id,
@@ -1633,7 +1639,11 @@ export async function announceTelegramCommunityEvent(eventId: string) {
   if (!claimed) return null;
   let announcementDelivered = false;
   try {
-    const keyboard = await telegramCommunityEventKeyboard(event, event._count.rsvps);
+    const keyboard = await telegramCommunityEventKeyboard(
+      event,
+      event._count.rsvps,
+      Boolean(options.active)
+    );
     const sent = await sendCommunityMessage(
       CAMPAIGN_BOT,
       event.chatId,
@@ -1674,13 +1684,29 @@ export async function refreshTelegramCommunityEventAnnouncement(
     include: { _count: { select: { rsvps: { where: { status: 'GOING' } } } } }
   });
   if (!event) return null;
-  if (!event.telegramMessageId) return announceTelegramCommunityEvent(event.id);
+  if (!event.telegramMessageId) return announceTelegramCommunityEvent(event.id, options);
   const keyboard = await telegramCommunityEventKeyboard(
     event,
     event._count.rsvps,
     Boolean(options.active)
   );
-  await editCommunityReplyMarkup(CAMPAIGN_BOT, event.chatId, event.telegramMessageId, keyboard);
+  try {
+    await editCommunityReplyMarkup(CAMPAIGN_BOT, event.chatId, event.telegramMessageId, keyboard);
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    if (!/message to edit not found/i.test(detail)) throw error;
+    // The announcement may have been manually removed or cleaned before the
+    // VC started. Clear the stale reference and recreate a live notice instead
+    // of leaving members without a working Join VC button.
+    await prisma.telegramCommunityEvent.update({
+      where: { id: event.id },
+      data: { telegramMessageId: null, announcedAt: null }
+    });
+    await releaseTelegramOperation({ operation: EVENT_ANNOUNCEMENT_CLAIM, key: event.id }).catch(
+      () => null
+    );
+    return announceTelegramCommunityEvent(event.id, options);
+  }
   return event;
 }
 

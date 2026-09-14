@@ -6,8 +6,7 @@ import {
 } from './telegram-community-campaigns.js';
 import {
   answerCommunityCallback,
-  editCommunityReplyMarkup,
-  sendCommunityMessage
+  editCommunityReplyMarkup
 } from './telegram-community-bots.client.js';
 import { groupHelpConfig } from './telegram-group-help.config.js';
 import { configuredUrlKeyboard } from './telegram-keyboard-config.js';
@@ -40,6 +39,22 @@ import {
   sendGroupHelpSupportMessage
 } from './telegram-group-help.rules-message.js';
 import { handleGroupHelpFilterBuilderCallback } from './telegram-group-help.filter-builder.js';
+
+// Callback/menu replies are temporary interface messages. Announcements,
+// moderation logs and staff alerts use their dedicated persistent paths.
+function sendCommunityMessage(
+  _bot: string,
+  chatId: string | number,
+  text: string,
+  options: Parameters<typeof sendTemporaryGroupHelpMessage>[3] = {}
+) {
+  return sendTemporaryGroupHelpMessage(
+    String(chatId),
+    text,
+    { telegramGroupHelpAutoDeleteSeconds: '60' },
+    options
+  );
+}
 
 export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
   const callback = update.callback_query;
