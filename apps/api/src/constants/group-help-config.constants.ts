@@ -870,7 +870,7 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
     maxLength: 1000,
     placeholder: 'https://...',
     defaultValue:
-      'https://hopehub-public-assets-924479393196.s3.us-east-1.amazonaws.com/telegram/moderation/hopehub-admin-request-guide.jpeg'
+      'https://hopehub-public-assets-924479393196.s3.us-east-1.amazonaws.com/telegram/moderation/hopehub-admin-help-requested.png'
   },
   {
     key: 'telegramGroupHelpRecurringMessage',
@@ -1445,6 +1445,28 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
     options: ['off', 'admins', 'staff group'],
     maxLength: 20,
     defaultValue: 'admins'
+  },
+  {
+    key: 'telegramGroupHelpAdminError',
+    label: 'Admin permission errors',
+    description:
+      'Show or suppress permission-denied replies when members try administrator commands.',
+    section: 'moderation',
+    type: 'select',
+    options: ['on', 'off'],
+    maxLength: 3,
+    defaultValue: 'on'
+  },
+  {
+    key: 'telegramGroupHelpLockedTypes',
+    label: 'Locked message types',
+    description:
+      'Message types blocked for non-admin members: links, media, forwards, commands, stickers.',
+    section: 'moderation',
+    type: 'textarea',
+    maxLength: 200,
+    placeholder: 'links\nforwards',
+    defaultValue: ''
   },
   {
     key: 'telegramGroupHelpDisabledCommands',

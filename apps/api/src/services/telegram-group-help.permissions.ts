@@ -81,11 +81,13 @@ export async function sendGroupHelpPermissionDenied(
         : requiredRole === 'MODERATOR'
           ? 'a Hope Hub Moderator or main-group administrator'
           : 'a Hope Hub Helper, Moderator, or main-group administrator';
-  await sendCommunityMessage(
-    GROUP_HELP_BOT_SLUG,
-    replyChatId,
-    `This command was not applied. It can only be used by ${label}.`
-  ).catch(() => null);
+  if (values?.telegramGroupHelpAdminError !== 'off') {
+    await sendCommunityMessage(
+      GROUP_HELP_BOT_SLUG,
+      replyChatId,
+      `This command was not applied. It can only be used by ${label}.`
+    ).catch(() => null);
+  }
   await recordGroupHelpCommandAudit({
     message,
     targetChatId:

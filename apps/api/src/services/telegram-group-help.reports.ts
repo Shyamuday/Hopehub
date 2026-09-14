@@ -9,6 +9,7 @@ import type {
   CommunityTelegramMessage,
   CommunityTelegramUser
 } from './telegram-community-bots.types.js';
+import { createGroupHelpAlertActions } from './telegram-group-help.alert-actions.js';
 
 type TelegramAdministrator = { user?: CommunityTelegramUser; status?: string };
 
@@ -129,10 +130,18 @@ export async function handleGroupHelpReportCommand(
       : values.telegramGroupHelpLogChannelId?.trim() ||
         values.telegramGroupHelpStaffGroupId?.trim();
   if (destination) {
+    const replyMarkup = await createGroupHelpAlertActions({
+      targetChatId: chatId,
+      targetMessageId: reported.message_id,
+      targetUserId: reported.from ? String(reported.from.id) : null,
+      reason,
+      moderationCaseId: reportCase.id
+    });
     await sendCommunityMessage(
       GROUP_HELP_BOT_SLUG,
       destination,
-      `🚩 Report #${reportCase.id.slice(-6)}\n\nReporter: ${message.from.first_name || 'Telegram member'} (${message.from.id})\nReported member: ${reported.from?.first_name || 'Unknown'}${reported.from ? ` (${reported.from.id})` : ''}\nGroup: ${message.chat.title || chatId}\nReason: ${reason}\n\nOpen Hope Hub Admin to review the protected message evidence and choose an action.`
+      `🚩 Report #${reportCase.id.slice(-6)}\n\nReporter: ${message.from.first_name || 'Telegram member'} (${message.from.id})\nReported member: ${reported.from?.first_name || 'Unknown'}${reported.from ? ` (${reported.from.id})` : ''}\nGroup: ${message.chat.title || chatId}\nReason: ${reason}\n\nReview the protected evidence, then use an action below.`,
+      { reply_markup: replyMarkup }
     ).catch(() => null);
   }
 

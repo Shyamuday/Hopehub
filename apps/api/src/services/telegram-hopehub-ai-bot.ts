@@ -95,6 +95,7 @@ import {
   groupHelpServiceMessageType,
   shouldCleanGroupHelpType
 } from './telegram-group-help.cleaning.js';
+import { matchedGroupHelpLock } from './telegram-group-help.locks.js';
 
 const BOT = GROUP_HELP_BOT_SLUG;
 
@@ -521,6 +522,13 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
   if (await handleTelegramCommunityVoiceChatStarted(message)) return;
   if (await handleTelegramCommunityVoiceChatEnded(message)) return;
   if (message.text?.startsWith('/')) {
+    if (
+      matchedGroupHelpLock(message, values.telegramGroupHelpLockedTypes) === 'commands' &&
+      !(await isModerationExempt(message, values.telegramGroupHelpAdminWhitelist || ''))
+    ) {
+      await moderate(message, 'Commands are currently locked', 'delete', 1, 'mute');
+      return;
+    }
     await handleCommand(message, values);
     return;
   }
@@ -574,6 +582,18 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
       message.date ? new Date(message.date * 1000) : undefined
     );
     await ingestTelegramLiveChatMessage(message);
+    return;
+  }
+
+  const lockedType = matchedGroupHelpLock(message, values.telegramGroupHelpLockedTypes);
+  if (lockedType) {
+    await moderate(
+      message,
+      `${lockedType[0].toUpperCase()}${lockedType.slice(1)} are currently locked`,
+      'delete',
+      1,
+      'mute'
+    );
     return;
   }
 

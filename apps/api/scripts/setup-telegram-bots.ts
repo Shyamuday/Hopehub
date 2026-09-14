@@ -8,6 +8,12 @@ import {
   telegramWebhookSecret
 } from '../src/services/telegram-bots.js';
 import { communityBotStatus, setupCommunityBot } from '../src/services/telegram-community-bots.js';
+import { GROUP_HELP_BOT_SLUG } from '../src/constants/telegram-community-bot.constants.js';
+import { groupHelpConfig } from '../src/services/telegram-group-help.config.js';
+import {
+  auditGroupHelpBotPermissions,
+  formatGroupHelpPermissionAudit
+} from '../src/services/telegram-group-help.permission-audit.js';
 
 const publicApiUrl = process.env.API_PUBLIC_URL || process.env.API_URL;
 
@@ -34,6 +40,16 @@ for (const status of telegramBotStatus()) {
     dropPendingUpdates
   });
   console.log(`[telegram] ${status.kind} webhook configured`);
+  if (status.slug === GROUP_HELP_BOT_SLUG) {
+    try {
+      const audit = await auditGroupHelpBotPermissions(await groupHelpConfig());
+      console.log(`[telegram] ${formatGroupHelpPermissionAudit(audit).replace(/\n/g, ' | ')}`);
+    } catch (error) {
+      console.warn(
+        `[telegram] GROUP_HELP permission audit could not run: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
 }
 
 // Configure community bots last. This keeps the community route authoritative

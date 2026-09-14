@@ -55,6 +55,15 @@ import {
   parseGroupHelpSaveCommand,
   serializeGroupHelpNotes
 } from './telegram-group-help.notes.js';
+import {
+  configuredGroupHelpLocks,
+  GROUP_HELP_LOCK_TYPES,
+  updateGroupHelpLocks
+} from './telegram-group-help.locks.js';
+import {
+  auditGroupHelpBotPermissions,
+  formatGroupHelpPermissionAudit
+} from './telegram-group-help.permission-audit.js';
 
 export async function handleGroupHelpAdminCommand(
   message: CommunityTelegramMessage,
@@ -65,6 +74,7 @@ export async function handleGroupHelpAdminCommand(
     ![
       '/settings',
       '/lockdown',
+      '/lock',
       '/unlock',
       '/pin',
       '/unpin',
@@ -89,6 +99,9 @@ export async function handleGroupHelpAdminCommand(
       '/setwarntime',
       '/warntime',
       '/reports',
+      '/adminerror',
+      '/botaudit',
+      '/smoketest',
       '/disable',
       '/enable',
       '/disabledel',
@@ -430,6 +443,51 @@ export async function handleGroupHelpAdminCommand(
       chatId,
       `✅ User reports ${mode === 'on' ? 'enabled' : 'disabled'}.`,
       values
+    );
+    return true;
+  }
+  if (command === '/adminerror') {
+    const mode = parts[1]?.toLowerCase();
+    if (!mode) {
+      await sendTemporaryGroupHelpMessage(
+        chatId,
+        `Admin permission-error replies are ${(values.telegramGroupHelpAdminError || 'on').toUpperCase()}.\nUse /adminerror on or /adminerror off.`,
+        values
+      );
+      return true;
+    }
+    if (!['on', 'off'].includes(mode)) {
+      await sendTemporaryGroupHelpMessage(chatId, 'Usage: /adminerror <on|off>', values);
+      return true;
+    }
+    const { saveTelegramCommunityGroupPolicy, getTelegramCommunityGroupPolicy } =
+      await import('./telegram-community-group-policy.js');
+    const policy = await getTelegramCommunityGroupPolicy(targetChatId);
+    await saveTelegramCommunityGroupPolicy(targetChatId, {
+      ...policy,
+      telegramGroupHelpAdminError: mode
+    });
+    await sendTemporaryGroupHelpMessage(
+      chatId,
+      `✅ Admin permission-error replies ${mode === 'on' ? 'enabled' : 'suppressed'}. Denied attempts are still recorded privately.`,
+      values
+    );
+    return true;
+  }
+  if (command === '/botaudit' || command === '/smoketest') {
+    const audit = await auditGroupHelpBotPermissions(values);
+    const routingChecks = [
+      `Main group routing: ${values.telegramGroupHelpGroupChatId?.trim() ? 'configured' : 'missing'}`,
+      `Private staff routing: ${values.telegramGroupHelpStaffGroupId?.trim() ? 'configured' : 'missing'}`,
+      `Moderation log routing: ${values.telegramGroupHelpLogChannelId?.trim() ? 'configured' : 'missing'}`,
+      `Admin alert image: ${values.telegramGroupHelpAdminMentionImageUrl?.trim() ? 'configured' : 'missing'}`
+    ];
+    await sendTemporaryGroupHelpMessage(
+      chatId,
+      command === '/smoketest'
+        ? `${formatGroupHelpPermissionAudit(audit)}\n\nSmoke checks\n${routingChecks.join('\n')}`
+        : formatGroupHelpPermissionAudit(audit),
+      { ...values, telegramGroupHelpAutoDeleteSeconds: '60' }
     );
     return true;
   }
@@ -849,6 +907,37 @@ export async function handleGroupHelpAdminCommand(
         : without.length < current.length
           ? `✅ Removed "${word}" from blocked words.`
           : `"${word}" was not in the blocked-word list.`,
+      values
+    );
+    return true;
+  }
+
+  if (command === '/lock' || (command === '/unlock' && parts.length > 1)) {
+    const updated = updateGroupHelpLocks(
+      values.telegramGroupHelpLockedTypes,
+      parts.slice(1),
+      command === '/lock'
+    );
+    if (updated === null) {
+      const active = configuredGroupHelpLocks(values.telegramGroupHelpLockedTypes);
+      await sendTemporaryGroupHelpMessage(
+        chatId,
+        `Usage: ${command} <all|${GROUP_HELP_LOCK_TYPES.join('|')}>\nCurrently locked: ${active.length ? active.join(', ') : 'none'}.`,
+        values
+      );
+      return true;
+    }
+    const { saveTelegramCommunityGroupPolicy, getTelegramCommunityGroupPolicy } =
+      await import('./telegram-community-group-policy.js');
+    const policy = await getTelegramCommunityGroupPolicy(targetChatId);
+    await saveTelegramCommunityGroupPolicy(targetChatId, {
+      ...policy,
+      telegramGroupHelpLockedTypes: updated
+    });
+    const active = configuredGroupHelpLocks(updated);
+    await sendTemporaryGroupHelpMessage(
+      chatId,
+      `✅ Group locks updated. Active: ${active.length ? active.join(', ') : 'none'}.`,
       values
     );
     return true;

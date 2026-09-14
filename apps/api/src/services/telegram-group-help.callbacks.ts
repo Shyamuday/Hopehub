@@ -34,10 +34,29 @@ import {
 import { telegramPersonLogLabel } from './telegram-group-help.people.js';
 import { canUseGroupHelpAdminCommand } from './telegram-group-help.permissions.js';
 import { groupHelpWarnPolicySummary } from './telegram-group-help.warning-policy.js';
+import { handleGroupHelpAlertActionCallback } from './telegram-group-help.alert-actions.js';
 
 export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
   const callback = update.callback_query;
   if (!callback?.message || !callback.data) return false;
+  const alertAction = await handleGroupHelpAlertActionCallback(update).catch((error) => {
+    console.error('[telegram-group-help] Private alert action failed.', error);
+    return 'failed' as const;
+  });
+  if (alertAction) {
+    await answerCommunityCallback(
+      GROUP_HELP_BOT_SLUG,
+      callback.id,
+      alertAction === 'expired'
+        ? 'This alert action has expired or was already resolved.'
+        : alertAction === 'denied'
+          ? 'You do not have permission for this action.'
+          : alertAction === 'failed'
+            ? 'The action failed. Check bot and staff permissions.'
+            : `${alertAction[0].toUpperCase()}${alertAction.slice(1)} completed.`
+    );
+    return true;
+  }
   let moderationAction: Awaited<ReturnType<typeof handleGroupHelpModerationActionCallback>>;
   try {
     moderationAction = await handleGroupHelpModerationActionCallback(update);

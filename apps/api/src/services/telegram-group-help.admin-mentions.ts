@@ -6,6 +6,8 @@ import {
 } from './telegram-community-bots.client.js';
 import type { CommunityTelegramMessage } from './telegram-community-bots.types.js';
 import { telegramPersonLogLabel } from './telegram-group-help.people.js';
+import { createGroupHelpAlertActions } from './telegram-group-help.alert-actions.js';
+import type { TelegramKeyboard } from './telegram-community-bots.types.js';
 
 const ADMIN_MENTION_STATE = 'group-help:admin-mention';
 const ADMIN_MENTION_LIFETIME_MS = 7 * 24 * 60 * 60_000;
@@ -17,6 +19,7 @@ export type GroupHelpAdminMentionTarget = {
   targetMessageId: number;
   messageThreadId?: number;
   memberLabel: string;
+  targetUserId?: string;
 };
 
 export function hasGroupHelpAdminMention(text: string) {
@@ -34,7 +37,12 @@ export function groupHelpAdminMentionPhotoCaption(text: string) {
     : `${characters.slice(0, 1021).join('')}...`;
 }
 
-async function sendGroupHelpAdminMentionAlert(staffChatId: string, body: string, imageUrl: string) {
+async function sendGroupHelpAdminMentionAlert(
+  staffChatId: string,
+  body: string,
+  imageUrl: string,
+  replyMarkup: TelegramKeyboard
+) {
   if (imageUrl) {
     const sent = await callCommunityTelegramApi<{ message_id: number }>(
       GROUP_HELP_BOT_SLUG,
@@ -42,12 +50,15 @@ async function sendGroupHelpAdminMentionAlert(staffChatId: string, body: string,
       {
         chat_id: staffChatId,
         photo: imageUrl,
-        caption: groupHelpAdminMentionPhotoCaption(body)
+        caption: groupHelpAdminMentionPhotoCaption(body),
+        reply_markup: replyMarkup
       }
     ).catch(() => null);
     if (sent) return sent;
   }
-  return sendCommunityMessage(GROUP_HELP_BOT_SLUG, staffChatId, body);
+  return sendCommunityMessage(GROUP_HELP_BOT_SLUG, staffChatId, body, {
+    reply_markup: replyMarkup
+  });
 }
 
 /** Sends an admin/moderator mention into the private staff group and retains its reply target. */
@@ -74,10 +85,17 @@ export async function forwardGroupHelpAdminMention(
     '',
     'Reply to this alert with /send <message> to post as Hope Hub bot in the group.'
   ].join('\n');
+  const replyMarkup = await createGroupHelpAlertActions({
+    targetChatId,
+    targetMessageId: message.message_id,
+    targetUserId: String(message.from.id),
+    reason: 'Administrator request review'
+  });
   const sent = await sendGroupHelpAdminMentionAlert(
     staffChatId,
     body,
-    values.telegramGroupHelpAdminMentionImageUrl?.trim() || ''
+    values.telegramGroupHelpAdminMentionImageUrl?.trim() || '',
+    replyMarkup
   );
   await prisma.telegramCommunityState.upsert({
     where: {
@@ -91,7 +109,8 @@ export async function forwardGroupHelpAdminMention(
         targetChatId,
         targetMessageId: message.message_id,
         messageThreadId: message.message_thread_id || null,
-        memberLabel
+        memberLabel,
+        targetUserId: String(message.from.id)
       },
       expiresAt: new Date(Date.now() + ADMIN_MENTION_LIFETIME_MS)
     },
@@ -101,7 +120,8 @@ export async function forwardGroupHelpAdminMention(
         targetChatId,
         targetMessageId: message.message_id,
         messageThreadId: message.message_thread_id || null,
-        memberLabel
+        memberLabel,
+        targetUserId: String(message.from.id)
       },
       expiresAt: new Date(Date.now() + ADMIN_MENTION_LIFETIME_MS)
     }
@@ -133,6 +153,7 @@ export async function groupHelpAdminMentionReplyTarget(
     targetChatId: payload.targetChatId,
     targetMessageId,
     ...(payload.messageThreadId ? { messageThreadId: payload.messageThreadId } : {}),
-    memberLabel: payload.memberLabel || 'Telegram member'
+    memberLabel: payload.memberLabel || 'Telegram member',
+    ...(payload.targetUserId ? { targetUserId: payload.targetUserId } : {})
   };
 }

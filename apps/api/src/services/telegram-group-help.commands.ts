@@ -40,8 +40,7 @@ export const GROUP_HELP_COMMAND_CATALOG = {
     '/staffid',
     '/admin',
     '/alertadmin',
-    '/forget',
-    '/forgot'
+    '/forget'
   ],
   staff: [
     '/info',
@@ -114,6 +113,7 @@ export const GROUP_HELP_COMMAND_CATALOG = {
     '/unblockword',
     '/blockwords',
     '/lockdown',
+    '/lock',
     '/unlock',
     '/setofftopic',
     '/setlog',
@@ -122,6 +122,9 @@ export const GROUP_HELP_COMMAND_CATALOG = {
     '/setwarntime',
     '/warntime',
     '/reports',
+    '/adminerror',
+    '/botaudit',
+    '/smoketest',
     '/disable',
     '/enable',
     '/disabledel',
@@ -304,7 +307,7 @@ export const GROUP_HELP_STAFF_PERMISSION_GROUPS = [
   {
     key: 'lockdown',
     label: 'Lock and unlock group',
-    commands: ['/lockdown', '/unlock'],
+    commands: ['/lockdown', '/lock', '/unlock'],
     defaultEnabled: false
   },
   {
@@ -338,6 +341,9 @@ export const GROUP_HELP_STAFF_PERMISSION_GROUPS = [
       '/setwarntime',
       '/warntime',
       '/reports',
+      '/adminerror',
+      '/botaudit',
+      '/smoketest',
       '/disable',
       '/enable',
       '/disabledel',
