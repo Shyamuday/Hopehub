@@ -6,15 +6,27 @@ import path from 'node:path';
 type AssetRoot = {
   label: string;
   root: string;
+  keyPrefix?: string;
 };
 
 const bucket = process.env.ASSET_BUCKET || process.env.S3_ASSET_BUCKET;
 const region = process.env.ASSET_BUCKET_REGION || process.env.AWS_REGION || 'us-east-1';
 const uploadRoot = path.resolve(process.cwd(), 'uploads');
+const telegramAssetRoot = path.resolve(process.cwd(), 'assets', 'telegram');
+const publicAssetRoot = path.resolve(process.cwd(), 'assets', 'public');
 
 const roots: AssetRoot[] = [
   { label: 'profile images', root: path.join(uploadRoot, 'profile-images') },
-  { label: 'clinical media', root: path.join(uploadRoot, 'clinical-media') }
+  { label: 'clinical media', root: path.join(uploadRoot, 'clinical-media') },
+  {
+    label: 'Telegram artwork',
+    root: telegramAssetRoot,
+    keyPrefix: 'telegram'
+  },
+  {
+    label: 'public website assets',
+    root: publicAssetRoot
+  }
 ];
 
 const contentTypeByExt = new Map([
@@ -51,13 +63,14 @@ async function* walk(root: string): AsyncGenerator<string> {
   }
 }
 
-function keyFor(root: string, filePath: string) {
-  return path.relative(root, filePath).split(path.sep).join('/');
+function keyFor(assetRoot: AssetRoot, filePath: string) {
+  const relativeKey = path.relative(assetRoot.root, filePath).split(path.sep).join('/');
+  return [assetRoot.keyPrefix, relativeKey].filter(Boolean).join('/');
 }
 
-async function uploadFile(root: string, filePath: string) {
+async function uploadFile(assetRoot: AssetRoot, filePath: string) {
   const body = await readFile(filePath);
-  const key = keyFor(root, filePath);
+  const key = keyFor(assetRoot, filePath);
   const contentType =
     contentTypeByExt.get(path.extname(filePath).toLowerCase()) || 'application/octet-stream';
 
@@ -89,7 +102,7 @@ for (const assetRoot of roots) {
   }
 
   for await (const filePath of walk(assetRoot.root)) {
-    const uploaded = await uploadFile(assetRoot.root, filePath);
+    const uploaded = await uploadFile(assetRoot, filePath);
     totalFiles += 1;
     totalBytes += uploaded.bytes;
     console.log(`Uploaded ${uploaded.key} (${uploaded.bytes} bytes).`);

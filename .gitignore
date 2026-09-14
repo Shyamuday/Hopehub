@@ -13,6 +13,13 @@ dist/
 apps/*/dist/
 build/
 apps/api/uploads/
+# Generated Telegram artwork is uploaded to the public asset bucket. Keep this
+# directory as a local staging area without committing large image binaries.
+apps/api/assets/telegram/
+# Legacy public-image copies are already served from the public S3 bucket.
+apps/healing-web/public/image/
+# Staging tree for future public assets; preserve the intended S3 key layout.
+apps/api/assets/public/
 apps/*/build/
 out-tsc/
 apps/*/out-tsc/
