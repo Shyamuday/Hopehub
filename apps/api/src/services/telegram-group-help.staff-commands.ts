@@ -42,6 +42,7 @@ import { recordGroupHelpCommandAudit } from './telegram-group-help.command-audit
 import { shouldDeleteModerationTarget } from './telegram-group-help.command-cleanup.js';
 import {
   groupHelpMemberModerationNotice,
+  groupHelpModerationUntilLabel,
   groupHelpModerationCommandSpec,
   groupHelpModerationUsage,
   parseGroupHelpModerationDuration
@@ -454,10 +455,21 @@ export async function handleGroupHelpStaffCommand(
     ]
       .filter(Boolean)
       .join(' ');
+    const noticeDurationSeconds =
+      duration?.seconds ||
+      (warningLimitReached ? warningPolicy.mode.durationSeconds : undefined) ||
+      (appliedAction === 'warn' ? warningPolicy.expiry.seconds : undefined);
     const clearNotice = groupHelpMemberModerationNotice({
       member: memberLabel,
       action: actionLabels[appliedAction] || appliedAction,
       duration: durationLabel,
+      ...(noticeDurationSeconds
+        ? {
+            until: groupHelpModerationUntilLabel(noticeDurationSeconds)
+          }
+        : ['mute', 'ban', 'ro'].includes(appliedAction)
+          ? { until: 'Removed by an administrator' }
+          : {}),
       reason,
       ...(effectiveAction === 'warn' && warningCount !== undefined
         ? {
@@ -474,12 +486,6 @@ export async function handleGroupHelpStaffCommand(
     };
     const shouldNotifyAffectedMember =
       ['warn', 'mute', 'ban'].includes(effectiveAction) || warningLimitReached;
-    if (shouldNotifyAffectedMember) {
-      await sendTemporaryGroupHelpMessage(String(target.id), clearNotice, oneMinuteValues).catch(
-        () => null
-      );
-    }
-
     if (commandSpec.silent) {
       await deleteGroupHelpMessage(chatId, message.message_id).catch(() => null);
       return true;
@@ -500,8 +506,7 @@ export async function handleGroupHelpStaffCommand(
               }
             }
           : {})
-      },
-      'action'
+      }
     );
     if (isCrossGroup && shouldNotifyAffectedMember) {
       await sendTemporaryGroupHelpMessage(

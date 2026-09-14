@@ -12,6 +12,47 @@ import {
   sendTemporaryGroupHelpMessage
 } from './telegram-group-help.actions.js';
 import { groupHelpWarnPolicySummary } from './telegram-group-help.warning-policy.js';
+import {
+  groupHelpMemberModerationNotice,
+  groupHelpModerationUntilLabel
+} from './telegram-group-help.moderation-command.js';
+
+function moderationMemberLabel(message: CommunityTelegramMessage) {
+  return [
+    message.from?.first_name || 'Telegram member',
+    message.from?.username ? `(@${message.from.username})` : ''
+  ]
+    .filter(Boolean)
+    .join(' ');
+}
+
+async function sendClearAutomaticModerationNotice(input: {
+  message: CommunityTelegramMessage;
+  values: Record<string, string>;
+  action: string;
+  duration: string;
+  until?: string;
+  reason: string;
+  warningStatus?: string;
+}) {
+  if (!input.message.from) return;
+  const notice = groupHelpMemberModerationNotice({
+    member: moderationMemberLabel(input.message),
+    action: input.action,
+    duration: input.duration,
+    reason: input.reason,
+    ...(input.until ? { until: input.until } : {}),
+    ...(input.warningStatus ? { warningStatus: input.warningStatus } : {})
+  });
+  await sendTemporaryGroupHelpMessage(
+    String(input.message.chat.id),
+    notice,
+    { ...input.values, telegramGroupHelpAutoDeleteSeconds: '60' },
+    input.message.message_thread_id
+      ? { message_thread_id: input.message.message_thread_id }
+      : undefined
+  ).catch(() => null);
+}
 
 export async function moderateGroupHelpMessage(
   message: CommunityTelegramMessage,
@@ -37,6 +78,13 @@ export async function moderateGroupHelpMessage(
   await deleteGroupHelpMessage(chatId, message.message_id).catch(() => null);
   if (action === 'delete') {
     await sendModerationLog(values, message, reason, 'delete');
+    await sendClearAutomaticModerationNotice({
+      message,
+      values,
+      action: 'Message removed',
+      duration: 'Immediate',
+      reason
+    });
     return true;
   }
   const warningPolicy = groupHelpWarnPolicySummary({
@@ -75,14 +123,43 @@ export async function moderateGroupHelpMessage(
     ).catch(() => null);
   }
   await sendModerationLog(values, message, finalReason, finalAction);
-  await sendTemporaryGroupHelpMessage(
-    chatId,
-    warningLimitApplied
-      ? `Community safety action applied after ${warnings} warnings. Warnings were reset.`
-      : `Please follow the community rules. Warning ${warnings}/${warningPolicy.limit}.`,
+  const actionLabels: Record<string, string> = {
+    warn: 'Warned',
+    mute: 'Muted',
+    ban: 'Banned',
+    kick: 'Removed from group'
+  };
+  const configuredMuteSeconds =
+    Math.max(1, Math.min(10_080, Number(values.telegramGroupHelpMuteMinutes || 60))) * 60;
+  const durationSeconds = warningLimitApplied
+    ? warningPolicy.mode.durationSeconds
+    : finalAction === 'mute'
+      ? configuredMuteSeconds
+      : finalAction === 'warn'
+        ? warningPolicy.expiry.seconds
+        : undefined;
+  const permanent =
+    !durationSeconds && ['mute', 'ban'].includes(finalAction) ? 'Removed by an administrator' : '';
+  await sendClearAutomaticModerationNotice({
+    message,
     values,
-    { reply_to_message_id: message.message_id, message_thread_id: message.message_thread_id },
-    'action'
-  ).catch(() => null);
+    action: actionLabels[finalAction] || finalAction,
+    duration: durationSeconds
+      ? `${Math.ceil(durationSeconds / 60)}m`
+      : finalAction === 'warn'
+        ? 'Until removed by an administrator'
+        : permanent
+          ? 'Permanent'
+          : 'Immediate',
+    ...(durationSeconds
+      ? { until: groupHelpModerationUntilLabel(durationSeconds) }
+      : permanent
+        ? { until: permanent }
+        : {}),
+    reason,
+    warningStatus: warningLimitApplied
+      ? `${warnings}/${warningPolicy.limit}; limit reached and warnings reset`
+      : `${warnings}/${warningPolicy.limit}`
+  });
   return true;
 }

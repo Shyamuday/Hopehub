@@ -220,6 +220,7 @@ export function groupHelpMemberModerationNotice(input: {
   action: string;
   reason: string;
   duration: string;
+  until?: string;
   warningStatus?: string;
 }) {
   return [
@@ -227,9 +228,23 @@ export function groupHelpMemberModerationNotice(input: {
     `Member: ${input.member}`,
     `Action: ${input.action}`,
     `Duration: ${input.duration}`,
+    input.until ? `Until: ${input.until}` : '',
     `Reason: ${input.reason}`,
     input.warningStatus ? `Warning status: ${input.warningStatus}` : ''
   ]
     .filter(Boolean)
     .join('\n');
+}
+
+export function groupHelpModerationUntilLabel(durationSeconds: number, now = new Date()) {
+  const until = new Date(now.getTime() + Math.max(0, durationSeconds) * 1000);
+  return new Intl.DateTimeFormat('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZoneName: 'short'
+  }).format(until);
 }

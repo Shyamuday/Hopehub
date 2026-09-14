@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   groupHelpMemberModerationNotice,
+  groupHelpModerationUntilLabel,
   groupHelpModerationCommandSpec,
   groupHelpModerationUsage,
   parseGroupHelpModerationDuration
@@ -67,6 +68,7 @@ test('formats a clear member-visible moderation notice with reason and duration'
       member: 'Asha (@asha)',
       action: 'Muted',
       duration: '3h',
+      until: '14 Sept 2026, 01:30 pm IST',
       reason: 'Repeated personal attacks'
     }),
     [
@@ -74,7 +76,15 @@ test('formats a clear member-visible moderation notice with reason and duration'
       'Member: Asha (@asha)',
       'Action: Muted',
       'Duration: 3h',
+      'Until: 14 Sept 2026, 01:30 pm IST',
       'Reason: Repeated personal attacks'
     ].join('\n')
+  );
+});
+
+test('formats a moderation expiry in India time', () => {
+  assert.equal(
+    groupHelpModerationUntilLabel(3 * 60 * 60, new Date('2026-09-14T05:00:00.000Z')),
+    '14 Sept 2026, 01:30 pm IST'
   );
 });
