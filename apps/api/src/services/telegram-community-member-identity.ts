@@ -26,11 +26,19 @@ export async function claimTelegramIdentityPublicAlert(input: {
   const now = input.now || new Date();
   const expiresAt = new Date(now.getTime() + GROUP_HELP_IDENTITY_ALERT_COOLDOWN_MS);
   const chatId = identityAlertCooldownChatId(input.chatId, input.telegramUserId);
-  const refreshed = await prisma.telegramCommunityState.updateMany({
-    where: { bot: IDENTITY_ALERT_COOLDOWN_STATE, chatId, expiresAt: { lte: now } },
-    data: { state: 'ACTIVE', expiresAt }
+
+  // If an active (non-expired) cooldown row already exists, the alert was
+  // already posted within the window — suppress the duplicate.
+  const suppressed = await prisma.telegramCommunityState.updateMany({
+    where: { bot: IDENTITY_ALERT_COOLDOWN_STATE, chatId, expiresAt: { gt: now } },
+    data: { state: 'ACTIVE' }
   });
-  if (refreshed.count) return true;
+  if (suppressed.count) return false;
+
+  // No active cooldown — delete any stale expired row and create a fresh one.
+  await prisma.telegramCommunityState.deleteMany({
+    where: { bot: IDENTITY_ALERT_COOLDOWN_STATE, chatId }
+  });
   try {
     await prisma.telegramCommunityState.create({
       data: {
