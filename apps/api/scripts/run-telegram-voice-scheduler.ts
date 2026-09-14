@@ -8,13 +8,20 @@ import {
   refreshTelegramCommunityEventAnnouncement,
   removeTelegramCommunityEventAnnouncement
 } from '../src/services/telegram-community-campaigns.js';
-import { sendCommunityMessage } from '../src/services/telegram-community-bots.client.js';
+import {
+  callCommunityTelegramApi,
+  sendCommunityMessage
+} from '../src/services/telegram-community-bots.client.js';
+import { scheduleCommunityMessageCleanup } from '../src/services/telegram-community-bots.store.js';
 import { getSiteConfigMap } from '../src/services/site-config.service.js';
 import { GROUP_HELP_BOT_SLUG } from '../src/constants/telegram-community-bot.constants.js';
 import { synchronizeConfiguredTelegramGroupMembers } from '../src/services/telegram-mtproto-member-sync.js';
 import {
   EMPTY_VOICE_CHAT_RECOVERY_MS,
   EMPTY_VOICE_CHAT_RECOVERY_REASON,
+  LIVE_VOICE_REMINDER_TTL_MS,
+  liveVoiceReminderExpired,
+  liveVoiceReminderText,
   knownVoiceStarterForEmptyAlert,
   trackEmptyVoiceChat,
   type VoiceParticipantSnapshot,
@@ -60,6 +67,8 @@ type NativeVoiceSchedulerState = {
   participantCount?: number;
   startedBy?: VoiceParticipantSnapshot;
   emptyLeaveAlertedAt?: string;
+  liveReminderMessageId?: number;
+  liveReminderSentAt?: string;
   reason?: string;
   error?: string;
 };
@@ -583,8 +592,12 @@ async function currentTelegramGroupCall(
 async function sendLiveVoiceReminder(
   chatId: string,
   payload: NativeVoiceSchedulerState,
-  participantCount: number
-) {
+  now: Date
+): Promise<NativeVoiceSchedulerState> {
+  const withoutPrevious = await deleteLiveVoiceReminder(chatId, payload);
+  // Never stack a new reminder when Telegram did not confirm deletion of the
+  // prior one. Its durable cleanup entry will retry independently.
+  if (!withoutPrevious) return payload;
   const [event, config] = await Promise.all([
     payload.eventId
       ? prisma.telegramCommunityEvent.findUnique({
@@ -599,17 +612,12 @@ async function sendLiveVoiceReminder(
       ? config.telegramGroupHelpMainGroupUrl?.trim() || ''
       : '';
   const joinUrl = event?.joinUrl?.trim() || mainGroupJoinUrl;
-  const memberLabel = participantCount === 1 ? 'member is' : 'members are';
+  let sent: { message_id: number };
   try {
-    await sendCommunityMessage(
+    sent = await sendCommunityMessage(
       GROUP_HELP_BOT_SLUG,
       chatId,
-      [
-        '🎙 Voice chat is live now',
-        '',
-        ...(event?.title ? [event.title] : []),
-        `${participantCount} ${memberLabel} already in the VC. Join the conversation.`
-      ].join('\n'),
+      liveVoiceReminderText(event?.title),
       joinUrl
         ? { reply_markup: { inline_keyboard: [[telegramGroupCallButton(joinUrl, true)]] } }
         : {}
@@ -620,7 +628,72 @@ async function sendLiveVoiceReminder(
         error instanceof Error ? error.message : String(error)
       }`
     );
+    return withoutPrevious;
   }
+  try {
+    await scheduleCommunityMessageCleanup({
+      bot: GROUP_HELP_BOT_SLUG,
+      chatId,
+      messageId: sent.message_id,
+      kind: 'voice-reminder',
+      deleteAfter: new Date(now.getTime() + LIVE_VOICE_REMINDER_TTL_MS)
+    });
+  } catch (error) {
+    console.warn(
+      `Could not schedule cleanup for live VC reminder ${sent.message_id}: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+  }
+  // State-based deletion still runs after 15 minutes even if durable cleanup
+  // persistence was temporarily unavailable.
+  return {
+    ...withoutPrevious,
+    liveReminderMessageId: sent.message_id,
+    liveReminderSentAt: now.toISOString()
+  };
+}
+
+async function deleteLiveVoiceReminder(
+  chatId: string,
+  payload: NativeVoiceSchedulerState
+): Promise<NativeVoiceSchedulerState | null> {
+  const messageId = payload.liveReminderMessageId;
+  if (!messageId) return payload;
+  try {
+    await callCommunityTelegramApi(GROUP_HELP_BOT_SLUG, 'deleteMessage', {
+      chat_id: chatId,
+      message_id: messageId
+    });
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    if (!/message to delete not found/i.test(detail)) {
+      console.warn(`Could not delete previous live VC reminder ${messageId}: ${detail}`);
+      return null;
+    }
+  }
+  await prisma.telegramCommunityMessageCleanup
+    .deleteMany({ where: { bot: GROUP_HELP_BOT_SLUG, chatId, messageId } })
+    .catch((error) =>
+      console.warn(
+        `Could not clear cleanup record for live VC reminder ${messageId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      )
+    );
+  const remaining = { ...payload };
+  delete remaining.liveReminderMessageId;
+  delete remaining.liveReminderSentAt;
+  return remaining;
+}
+
+async function expireLiveVoiceReminder(
+  chatId: string,
+  payload: NativeVoiceSchedulerState,
+  now: Date
+) {
+  if (!liveVoiceReminderExpired(payload, now)) return payload;
+  return (await deleteLiveVoiceReminder(chatId, payload)) || payload;
 }
 
 async function alertVoiceStarterWhoLeftItOpen(
@@ -722,8 +795,12 @@ async function monitorEmptyActiveVoiceChats(client: TelegramClient, now: Date) {
   }
 
   for (const state of statesByChatId.values()) {
-    const savedPayload = statePayload(state.payload);
+    const originalPayload = statePayload(state.payload);
+    const savedPayload = await expireLiveVoiceReminder(state.chatId, originalPayload, now);
     if (state.wasAlreadyTracked && !voiceChatOccupancyCheckDue(savedPayload, now)) {
+      if (savedPayload !== originalPayload) {
+        await retainActiveVoiceState(state.chatId, savedPayload, now);
+      }
       continue;
     }
     let currentCall: NativeGroupCallStatus | null;
@@ -770,7 +847,7 @@ async function monitorEmptyActiveVoiceChats(client: TelegramClient, now: Date) {
     let activePayload = await reconcileActiveVoiceEvent(client, tracked.payload, now, currentCall);
 
     if (currentCall.participantCount > 0) {
-      await sendLiveVoiceReminder(state.chatId, activePayload, currentCall.participantCount);
+      activePayload = await sendLiveVoiceReminder(state.chatId, activePayload, now);
     } else if (knownStarter) {
       activePayload = await alertVoiceStarterWhoLeftItOpen(activePayload, knownStarter, now);
     }

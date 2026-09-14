@@ -1,5 +1,6 @@
 export const EMPTY_VOICE_CHAT_TIMEOUT_MS = 5 * 60 * 1000;
-export const VOICE_CHAT_OCCUPANCY_CHECK_INTERVAL_MS = 10 * 60 * 1000;
+export const VOICE_CHAT_OCCUPANCY_CHECK_INTERVAL_MS = 15 * 60 * 1000;
+export const LIVE_VOICE_REMINDER_TTL_MS = 15 * 60 * 1000;
 export const EMPTY_VOICE_CHAT_RECOVERY_MS = 60 * 1000;
 export const EMPTY_VOICE_CHAT_RECOVERY_REASON =
   'Automatically closed after five continuously empty minutes';
@@ -15,6 +16,8 @@ export type EmptyVoiceTrackingPayload = {
   participantCount?: number;
   startedBy?: VoiceParticipantSnapshot;
   emptyLeaveAlertedAt?: string;
+  liveReminderMessageId?: number;
+  liveReminderSentAt?: string;
 };
 
 export type VoiceParticipantSnapshot = {
@@ -57,7 +60,7 @@ function validTimestamp(value: string | undefined) {
 }
 
 /**
- * Occupied calls use the low-frequency ten-minute check. Once an empty call
+ * Occupied calls use the low-frequency fifteen-minute check. Once an empty call
  * is observed, request the confirming check after five minutes.
  */
 export function voiceChatOccupancyCheckDue(current: EmptyVoiceTrackingPayload, now: Date) {
@@ -67,6 +70,21 @@ export function voiceChatOccupancyCheckDue(current: EmptyVoiceTrackingPayload, n
     ? EMPTY_VOICE_CHAT_TIMEOUT_MS
     : VOICE_CHAT_OCCUPANCY_CHECK_INTERVAL_MS;
   return now.getTime() - priorCheck >= interval;
+}
+
+export function liveVoiceReminderExpired(current: EmptyVoiceTrackingPayload, now: Date) {
+  if (!current.liveReminderMessageId) return false;
+  const sentAt = validTimestamp(current.liveReminderSentAt);
+  return sentAt == null || now.getTime() - sentAt >= LIVE_VOICE_REMINDER_TTL_MS;
+}
+
+export function liveVoiceReminderText(title?: string | null) {
+  return [
+    '🎙 Voice chat is live now',
+    '',
+    ...(title?.trim() ? [title.trim()] : []),
+    'Join the live voice chat when you are ready.'
+  ].join('\n');
 }
 
 /**

@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   EMPTY_VOICE_CHAT_TIMEOUT_MS,
+  liveVoiceReminderExpired,
+  liveVoiceReminderText,
   knownVoiceStarterForEmptyAlert,
   trackEmptyVoiceChat,
   voiceStarterSnapshot,
@@ -69,12 +71,31 @@ test('an invalid Telegram participant count never advances closure', () => {
   assert.deepEqual(unknown.payload, first.payload);
 });
 
-test('occupied calls are checked every ten minutes', () => {
+test('occupied calls are checked every fifteen minutes', () => {
   const start = new Date('2026-09-08T06:00:00.000Z');
   const occupied = trackEmptyVoiceChat({}, 3, start).payload;
 
-  assert.equal(voiceChatOccupancyCheckDue(occupied, at(start, 9)), false);
-  assert.equal(voiceChatOccupancyCheckDue(occupied, at(start, 10)), true);
+  assert.equal(voiceChatOccupancyCheckDue(occupied, at(start, 14)), false);
+  assert.equal(voiceChatOccupancyCheckDue(occupied, at(start, 15)), true);
+});
+
+test('live reminder expires after fifteen minutes', () => {
+  const start = new Date('2026-09-08T06:00:00.000Z');
+  const reminder = { liveReminderMessageId: 42, liveReminderSentAt: start.toISOString() };
+
+  assert.equal(liveVoiceReminderExpired(reminder, at(start, 14)), false);
+  assert.equal(liveVoiceReminderExpired(reminder, at(start, 15)), true);
+  assert.equal(liveVoiceReminderExpired({ liveReminderMessageId: 42 }, start), true);
+  assert.equal(liveVoiceReminderExpired({}, at(start, 15)), false);
+});
+
+test('live reminder does not expose the VC participant count', () => {
+  const message = liveVoiceReminderText('Evening support circle');
+  assert.equal(
+    message,
+    '🎙 Voice chat is live now\n\nEvening support circle\nJoin the live voice chat when you are ready.'
+  );
+  assert.doesNotMatch(message, /\b\d+\s+(member|participant)/i);
 });
 
 test('an empty observation requests its confirmation after five minutes', () => {
