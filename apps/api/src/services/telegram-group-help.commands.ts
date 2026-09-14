@@ -6,6 +6,13 @@ import { handleGroupHelpStaffCommand } from './telegram-group-help.staff-command
 import { resolveGroupHelpCommandContext } from './telegram-group-help.command-context.js';
 import { groupHelpConfig } from './telegram-group-help.config.js';
 import { recordGroupHelpCommandAudit } from './telegram-group-help.command-audit.js';
+import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
+import { callCommunityTelegramApi } from './telegram-community-bots.client.js';
+import { deleteGroupHelpMessage } from './telegram-group-help.actions.js';
+import {
+  disabledGroupHelpCommands,
+  shouldSuppressGroupHelpCommand
+} from './telegram-group-help.command-disabling.js';
 
 /**
  * The single source of truth for commands supported by the Hope Hub group bot.
@@ -20,6 +27,8 @@ export const GROUP_HELP_COMMAND_CATALOG = {
     '/support',
     '/warnings',
     '/warns',
+    '/disabled',
+    '/disableable',
     '/me',
     '/id',
     '/staffid',
@@ -102,7 +111,11 @@ export const GROUP_HELP_COMMAND_CATALOG = {
     '/setwarnmode',
     '/setwarntime',
     '/warntime',
-    '/reports'
+    '/reports',
+    '/disable',
+    '/enable',
+    '/disabledel',
+    '/disableadmin'
   ],
   safety: ['/report']
 } as const;
@@ -273,7 +286,11 @@ export const GROUP_HELP_STAFF_PERMISSION_GROUPS = [
       '/setwarnmode',
       '/setwarntime',
       '/warntime',
-      '/reports'
+      '/reports',
+      '/disable',
+      '/enable',
+      '/disabledel',
+      '/disableadmin'
     ],
     defaultEnabled: false
   }
@@ -294,6 +311,40 @@ export async function handleGroupHelpCommand(
   const effectiveValues = context.isControlGroup
     ? await groupHelpConfig(context.targetChatId)
     : values;
+  const configuredDisabledCommands = disabledGroupHelpCommands(
+    effectiveValues.telegramGroupHelpDisabledCommands
+  );
+  if (configuredDisabledCommands.includes(command)) {
+    const disableForAdmins = effectiveValues.telegramGroupHelpDisableAdmin === 'on';
+    let actorIsAdmin =
+      Boolean(message.sender_chat) && String(message.sender_chat?.id) === String(message.chat.id);
+    if (!disableForAdmins && !actorIsAdmin && message.from) {
+      const membership = await callCommunityTelegramApi<{ status?: string }>(
+        GROUP_HELP_BOT_SLUG,
+        'getChatMember',
+        { chat_id: context.targetChatId, user_id: message.from.id }
+      ).catch(() => null);
+      actorIsAdmin = ['creator', 'administrator', 'owner'].includes(membership?.status || '');
+    }
+    if (
+      shouldSuppressGroupHelpCommand({
+        command,
+        disabledCommands: effectiveValues.telegramGroupHelpDisabledCommands,
+        actorIsAdmin,
+        disableForAdmins
+      })
+    ) {
+      message._groupHelpSkipCommandCleanup = true;
+      if (
+        effectiveValues.telegramGroupHelpDisabledDelete === 'on' &&
+        !context.isControlGroup &&
+        (message.chat.type === 'group' || message.chat.type === 'supergroup')
+      ) {
+        await deleteGroupHelpMessage(String(message.chat.id), message.message_id).catch(() => null);
+      }
+      return true;
+    }
+  }
   // Private bot administration is intentionally discreet. Keep the durable
   // database audit, but do not publish a copy to the staff or log chats.
   const executionValues = message._groupHelpPrivateControl

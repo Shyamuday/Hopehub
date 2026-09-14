@@ -1405,6 +1405,36 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
     defaultValue: 'admins'
   },
   {
+    key: 'telegramGroupHelpDisabledCommands',
+    label: 'Disabled member commands',
+    description: 'Commands ignored for non-admin users. One command per line.',
+    section: 'moderation',
+    type: 'textarea',
+    maxLength: 1000,
+    placeholder: '/rules\n/warnings',
+    defaultValue: ''
+  },
+  {
+    key: 'telegramGroupHelpDisabledDelete',
+    label: 'Delete disabled commands',
+    description: 'Delete a member’s command message when that command is disabled.',
+    section: 'moderation',
+    type: 'select',
+    options: ['off', 'on'],
+    maxLength: 3,
+    defaultValue: 'off'
+  },
+  {
+    key: 'telegramGroupHelpDisableAdmin',
+    label: 'Disable commands for admins',
+    description: 'Apply the disabled-command list to Telegram administrators too.',
+    section: 'moderation',
+    type: 'select',
+    options: ['off', 'on'],
+    maxLength: 3,
+    defaultValue: 'off'
+  },
+  {
     key: 'telegramGroupHelpIdentityChangeAlerts',
     label: 'Profile-change alerts',
     description:

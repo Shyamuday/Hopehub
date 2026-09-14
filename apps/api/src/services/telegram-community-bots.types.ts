@@ -53,6 +53,7 @@ export type CommunityTelegramMessage = {
   _groupHelpAuditRecorded?: boolean;
   /** A direct private-bot action must never be copied into group-facing logs. */
   _groupHelpPrivateControl?: boolean;
+  _groupHelpSkipCommandCleanup?: boolean;
 };
 
 export type CommunityTelegramUpdate = {

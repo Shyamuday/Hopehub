@@ -28,6 +28,11 @@ import {
   parseGroupHelpWarnMode,
   parseGroupHelpWarnTime
 } from './telegram-group-help.warning-policy.js';
+import {
+  disabledGroupHelpCommands,
+  isGroupHelpCommandDisableable,
+  normalizeGroupHelpCommandName
+} from './telegram-group-help.command-disabling.js';
 
 export async function handleGroupHelpAdminCommand(
   message: CommunityTelegramMessage,
@@ -56,7 +61,11 @@ export async function handleGroupHelpAdminCommand(
       '/setwarnmode',
       '/setwarntime',
       '/warntime',
-      '/reports'
+      '/reports',
+      '/disable',
+      '/enable',
+      '/disabledel',
+      '/disableadmin'
     ].includes(command)
   )
     return false;
@@ -118,6 +127,59 @@ export async function handleGroupHelpAdminCommand(
     }).catch(() => null);
     return member?.user;
   };
+  if (['/disable', '/enable', '/disabledel', '/disableadmin'].includes(command)) {
+    const { saveTelegramCommunityGroupPolicy, getTelegramCommunityGroupPolicy } =
+      await import('./telegram-community-group-policy.js');
+    const policy = await getTelegramCommunityGroupPolicy(targetChatId);
+
+    if (command === '/disable' || command === '/enable') {
+      const targetCommand = normalizeGroupHelpCommandName(parts[1]);
+      if (!targetCommand || !isGroupHelpCommandDisableable(targetCommand)) {
+        await sendTemporaryGroupHelpMessage(
+          chatId,
+          `Usage: ${command} <commandname>\nUse /disableable to see supported commands.`,
+          values
+        );
+        return true;
+      }
+      const current = disabledGroupHelpCommands(values.telegramGroupHelpDisabledCommands);
+      const updated =
+        command === '/disable'
+          ? [...new Set([...current, targetCommand])].sort()
+          : current.filter((candidate) => candidate !== targetCommand);
+      await saveTelegramCommunityGroupPolicy(targetChatId, {
+        ...policy,
+        telegramGroupHelpDisabledCommands: updated.join('\n')
+      });
+      await sendTemporaryGroupHelpMessage(
+        chatId,
+        command === '/disable'
+          ? `✅ ${targetCommand} disabled for non-admin users.`
+          : `✅ ${targetCommand} enabled.`,
+        values
+      );
+      return true;
+    }
+
+    const mode = parts[1]?.toLowerCase();
+    if (!['on', 'off'].includes(mode)) {
+      await sendTemporaryGroupHelpMessage(chatId, `Usage: ${command} <on|off>`, values);
+      return true;
+    }
+    const key =
+      command === '/disabledel'
+        ? 'telegramGroupHelpDisabledDelete'
+        : 'telegramGroupHelpDisableAdmin';
+    await saveTelegramCommunityGroupPolicy(targetChatId, { ...policy, [key]: mode });
+    await sendTemporaryGroupHelpMessage(
+      chatId,
+      command === '/disabledel'
+        ? `✅ Deleting disabled commands is ${mode.toUpperCase()}.`
+        : `✅ Disabled commands now ${mode === 'on' ? 'also apply to admins' : 'allow admins to bypass them'}.`,
+      values
+    );
+    return true;
+  }
   if (['/setwarnlimit', '/setwarnmode', '/setwarntime', '/warntime'].includes(command)) {
     const { saveTelegramCommunityGroupPolicy, getTelegramCommunityGroupPolicy } =
       await import('./telegram-community-group-policy.js');

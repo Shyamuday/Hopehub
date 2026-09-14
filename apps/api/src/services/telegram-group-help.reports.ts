@@ -33,7 +33,7 @@ function hiddenAdministratorMentions(administrators: TelegramAdministrator[]) {
   return administrators
     .map((entry) => entry.user)
     .filter((user): user is CommunityTelegramUser => Boolean(user && !user.is_bot))
-    .map((user) => `<a href="tg://user?id=${user.id}">&#8288;</a>`)
+    .map((user) => `[\u2060](tg://user?id=${user.id})`)
     .join('');
 }
 
@@ -150,7 +150,7 @@ export async function handleGroupHelpReportCommand(
     `Thank you. The administrators have been notified.${mentions}`,
     values,
     {
-      parse_mode: 'HTML',
+      parse_mode: 'Markdown',
       reply_to_message_id: message.message_id,
       message_thread_id: message.message_thread_id
     }

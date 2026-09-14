@@ -32,6 +32,10 @@ import {
 } from './telegram-community-member-identity.js';
 import { telegramPersonLogLabel } from './telegram-group-help.people.js';
 import { groupHelpWarnPolicySummary } from './telegram-group-help.warning-policy.js';
+import {
+  disabledGroupHelpCommands,
+  GROUP_HELP_DISABLEABLE_COMMANDS
+} from './telegram-group-help.command-disabling.js';
 
 type TelegramMemberSnapshot = {
   status?: string;
@@ -203,6 +207,31 @@ export async function handleGroupHelpMemberCommand(
         message_thread_id: message.message_thread_id,
         reply_markup: withCrossCommunityButton(undefined, values, targetChatId)
       }
+    );
+    return true;
+  }
+  if (command === '/disableable') {
+    await sendTemporaryGroupHelpMessage(
+      chatId,
+      `Commands that can be disabled:\n${GROUP_HELP_DISABLEABLE_COMMANDS.map((item) => item.slice(1)).join('\n')}`,
+      values,
+      { reply_to_message_id: message.message_id, message_thread_id: message.message_thread_id }
+    );
+    return true;
+  }
+  if (command === '/disabled') {
+    const disabled = disabledGroupHelpCommands(values.telegramGroupHelpDisabledCommands);
+    await sendTemporaryGroupHelpMessage(
+      chatId,
+      [
+        disabled.length
+          ? `Disabled commands:\n${disabled.map((item) => item.slice(1)).join('\n')}`
+          : 'No commands are disabled.',
+        `Delete ignored command messages: ${values.telegramGroupHelpDisabledDelete === 'on' ? 'ON' : 'OFF'}`,
+        `Apply to administrators: ${values.telegramGroupHelpDisableAdmin === 'on' ? 'ON' : 'OFF'}`
+      ].join('\n\n'),
+      values,
+      { reply_to_message_id: message.message_id, message_thread_id: message.message_thread_id }
     );
     return true;
   }
@@ -672,7 +701,7 @@ export async function handleGroupHelpMemberCommand(
     );
     const muteMinutes = values.telegramGroupHelpMuteMinutes || '60';
     const helpSections = [
-      `*Hope Hub bot help*\n\n*Member commands*\n/rules — community rules\n/support — private support\n/warnings — warning settings and your count\n/warns — your active warning reasons\n/me — your group profile\n/id — Telegram and target-group IDs\n/report — report a replied message\n/admin or /alertadmin — alert the community team\n/forget — delete retained Group Help data`,
+      `*Hope Hub bot help*\n\n*Member commands*\n/rules — community rules\n/support — private support\n/warnings — warning settings and your count\n/warns — your active warning reasons\n/disabled — current disabled commands\n/disableable — commands admins can disable\n/me — your group profile\n/id — Telegram and target-group IDs\n/report — report a replied message\n/admin or /alertadmin — alert the community team\n/forget — delete retained Group Help data`,
       canUseStaffTools
         ? `*Helper tools*\n/warn <id/username/reply> [reason]\n/dwarn [reason] — reply: delete and warn\n/swarn <id/username/reply> [reason] — silent warning\n/rmwarn or /unwarn — remove latest warning\n/warns <id/username/reply> — view warning reasons\n/delete [reason], /info, /history, /perms, /geturl\n/adminlist, /staff, /stats`
         : '',
@@ -680,7 +709,7 @@ export async function handleGroupHelpMemberCommand(
         ? `*Moderator tools — Rose-compatible syntax*\nReply to a message, or add <user_id or @username> before the reason.\n/ban, /mute — permanent action; /kick — remove (the member may rejoin)\n/tban, /tmute <time> [reason] — timed action (15m, 3h, 2d, 1w)\n/dban, /dmute, /dkick — reply: delete message plus action\n/sban, /smute, /skick — silent action; deletes replied message and command\n/unban, /unmute — undo the action\n/resetwarn — remove all warnings\nLegacy /delban, /delmute, /delkick remain supported. Default automated warning mute: ${muteMinutes} minutes.`
         : '',
       canUseAdminTools
-        ? `*Administrator tools*\n/promote, /unadmin, /title, /untitle\n/helper, /unhelper, /mod, /unmod\n/pin [notify], /unpin, /unpinall, /pinned\n/filter, /unfilter, /filters\n/setwarnlimit <number>\n/setwarnmode <kick|ban|mute|tban TIME|tmute TIME>\n/setwarntime <time|off> (also /warntime)\n/reports <on|off>\n/welcome on|off, /lockdown [minutes], /unlock\n/settings, /setlog, /setofftopic`
+        ? `*Administrator tools*\n/promote, /unadmin, /title, /untitle\n/helper, /unhelper, /mod, /unmod\n/pin [notify], /unpin, /unpinall, /pinned\n/filter, /unfilter, /filters\n/setwarnlimit <number>\n/setwarnmode <kick|ban|mute|tban TIME|tmute TIME>\n/setwarntime <time|off> (also /warntime)\n/reports <on|off>\n/disable <command>, /enable <command>\n/disabledel <on|off>, /disableadmin <on|off>\n/welcome on|off, /lockdown [minutes], /unlock\n/settings, /setlog, /setofftopic`
         : '',
       context.isControlGroup && canUseStaffTools
         ? `*Private admin-group syntax*\n/info or /history <user_id or @username>\nForward a member message directly to the bot for /history\n/perms <user_id or @username>\n/ban|mute|kick <user_id or @username> [reason]\n/tban|tmute <user_id or @username> <time> [reason]\n/sban|smute|skick <user_id or @username> [reason]\n/delete <main_message_id> [reason]\n/dban|dmute|dkick <user> <main_message_id> [reason]\n/geturl <main_message_id>\n/clearwarnings <user_id or @username>`

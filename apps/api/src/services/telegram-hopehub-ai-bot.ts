@@ -173,6 +173,7 @@ async function handleCommand(message: CommunityTelegramMessage, values: Record<s
       values.telegramGroupHelpCommandDeleteSeconds
     );
     if (
+      !message._groupHelpSkipCommandCleanup &&
       shouldAutoDeleteGroupCommand({
         chatType: message.chat.type,
         isControlGroup: context.isControlGroup,
