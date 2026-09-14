@@ -99,6 +99,7 @@ import {
 import { matchedGroupHelpLock } from './telegram-group-help.locks.js';
 import {
   isGroupHelpRulesRequest,
+  isGroupHelpModerationKeywordRequest,
   sendGroupHelpRulesMessage
 } from './telegram-group-help.rules-message.js';
 import {
@@ -618,6 +619,15 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
   }
   if (!message.from) return;
   if (isGroupHelpRulesRequest(message.text)) {
+    await sendGroupHelpRulesMessage({
+      chatId,
+      values,
+      replyToMessageId: message.message_id,
+      messageThreadId: message.message_thread_id
+    });
+    return;
+  }
+  if (isGroupHelpModerationKeywordRequest(message.text)) {
     await sendGroupHelpRulesMessage({
       chatId,
       values,
