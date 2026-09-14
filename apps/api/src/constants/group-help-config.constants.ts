@@ -787,8 +787,17 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
     section: 'messages',
     type: 'textarea',
     maxLength: 4000,
-    defaultValue:
-      'Group rules:\\n1. Be kind and respectful.\\n2. Do not share anyone’s private information.\\n3. No diagnosis, medical claims, spam, promotions, or harassment.\\n4. If you are in immediate danger, contact local emergency services.'
+    defaultValue: `❌ No private DMs to members. Immediate ban. No warnings. No review.
+❌ No abuse, bullying, harassment, hate speech, arguments, debates, or religious or political discussions.
+❌ No medical advice or diagnosis. Do not target, insult, or speak against the admin, admin decisions, the group, any religion, community, LGBT, or any member by name in the group chat or voice chat.
+❌ No spam, advertising, promotions, self-promotion, or solicitation of any kind.
+
+✅ Be kind, respectful, and supportive.
+✅ Respect everyone's privacy and confidentiality.
+✅ Encourage healing and positive conversations.
+✅ Report problems to the admins.
+
+Contact Admin Team via @Contacthopehubbot`
   },
   {
     key: 'telegramGroupHelpRulesImageUrl',
