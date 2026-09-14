@@ -11,6 +11,7 @@ import {
   renderGroupHelpFilterText,
   serializeGroupHelpFilters
 } from './telegram-group-help.filters.js';
+import { GROUP_HELP_WELLBEING_FILTER_DEFINITIONS } from '../constants/group-help-wellbeing-replies.constants.js';
 
 test('parses single, quoted, typed, and multi-trigger Rose filter commands', () => {
   assert.deepEqual(parseGroupHelpFilterCommand('/filter puppies I love puppies!'), {
@@ -71,6 +72,43 @@ test('round-trips filters and keeps established Hope Hub definitions readable', 
   });
   const serialized = serializeGroupHelpFilters(legacy.filters, legacy.passthrough);
   assert.deepEqual(parseGroupHelpFilters(serialized).filters, legacy.filters);
+});
+
+test('round-trips wellbeing safety metadata and remote photo media', () => {
+  const filters = parseGroupHelpFilters(GROUP_HELP_WELLBEING_FILTER_DEFINITIONS).filters;
+  assert.equal(filters.length, 4);
+  assert.equal(filters[0].id, 'hopehub-immediate-support-v1');
+  assert.equal(filters[0].category, 'crisis');
+  assert.equal(filters[0].cooldownSeconds, 1800);
+  assert.equal(filters[0].notifyStaff, true);
+  assert.match(filters[0].media?.fileId || '', /^https:\/\/.*\.png$/);
+});
+
+test('wellbeing defaults match support-seeking phrases without matching broad discussion', () => {
+  const match = (text: string) =>
+    matchingGroupHelpFilter({
+      text,
+      definitions: GROUP_HELP_WELLBEING_FILTER_DEFINITIONS,
+      senderIsBot: false,
+      senderIsAdmin: false
+    });
+
+  assert.equal(match('I think I may have a panic attack')?.id, 'hopehub-anxiety-support-v1');
+  assert.equal(match('I am feeling hopeless today')?.id, 'hopehub-low-mood-support-v1');
+  assert.equal(match('I need someone to talk to')?.id, 'hopehub-loneliness-support-v1');
+  assert.equal(match('Mujhe bahut ghabrahat ho rahi hai')?.id, 'hopehub-anxiety-support-v1');
+  assert.equal(match('Mujhe jeena nahi hai')?.id, 'hopehub-immediate-support-v1');
+  assert.equal(match('We are discussing depression awareness'), undefined);
+  assert.equal(match('This article explains anxiety'), undefined);
+  assert.equal(
+    matchingGroupHelpFilter({
+      text: 'I want to die',
+      definitions: GROUP_HELP_WELLBEING_FILTER_DEFINITIONS,
+      senderIsBot: false,
+      senderIsAdmin: true
+    })?.id,
+    'hopehub-immediate-support-v1'
+  );
 });
 
 test('matches contains, prefix and exact filters with audience and bot controls', () => {

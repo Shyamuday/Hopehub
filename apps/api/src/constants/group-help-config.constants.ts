@@ -4,6 +4,7 @@ import {
   TELEGRAM_OFF_TOPIC_GROUP_HANDLE,
   TELEGRAM_OFF_TOPIC_GROUP_URL
 } from './telegram-community-bot.constants.js';
+import { GROUP_HELP_WELLBEING_FILTER_DEFINITIONS } from './group-help-wellbeing-replies.constants.js';
 
 export type GroupHelpConfigFieldType = 'text' | 'textarea' | 'number' | 'select';
 
@@ -1564,7 +1565,7 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
     maxLength: 20000,
     placeholder:
       'anyone for talk => You can find private support through Hope Hub Live. => Talk live => https://hopehub.in/#live-connect',
-    defaultValue: ''
+    defaultValue: GROUP_HELP_WELLBEING_FILTER_DEFINITIONS
   },
   {
     key: 'telegramGroupHelpNotes',

@@ -100,6 +100,10 @@ import {
   isGroupHelpRulesRequest,
   sendGroupHelpRulesMessage
 } from './telegram-group-help.rules-message.js';
+import {
+  claimTelegramOperation,
+  releaseTelegramOperation
+} from './telegram-community-operation-claims.js';
 
 const BOT = GROUP_HELP_BOT_SLUG;
 
@@ -116,6 +120,27 @@ async function sendMatchingGroupHelpFilter(
   });
   if (!filter) return false;
   const chatId = String(message.chat.id);
+  const cooldownClaim =
+    filter.id && message.from
+      ? {
+          operation: `${BOT}:filter-response:${filter.id}`,
+          key: `${chatId}:${message.from.id}`
+        }
+      : undefined;
+  if (filter.id && filter.cooldownSeconds && message.from) {
+    const claimed = await claimTelegramOperation({
+      operation: `${BOT}:filter-response:${filter.id}`,
+      key: `${chatId}:${message.from.id}`,
+      expiresAt: new Date(Date.now() + filter.cooldownSeconds * 1000)
+    }).catch(() => true);
+    // Treat a cooling-down support phrase as handled so it cannot accidentally
+    // fall through into ordinary word moderation.
+    if (!claimed) return true;
+  }
+  const releaseCooldownAfterFailure = async (error: unknown): Promise<never> => {
+    if (cooldownClaim) await releaseTelegramOperation(cooldownClaim).catch(() => undefined);
+    throw error;
+  };
   const formatted = formatGroupHelpMessage(filter.text || '');
   const text = renderGroupHelpFilterHtml(formatted.text, message);
   const generatedRows = formatted.replyMarkup?.inline_keyboard || [];
@@ -152,7 +177,14 @@ async function sendMatchingGroupHelpFilter(
         link_preview_options: { is_disabled: !formatted.showLinkPreview }
       },
       'filter'
-    );
+    ).catch(releaseCooldownAfterFailure);
+    if (filter.notifyStaff) {
+      await sendGroupHelpActivityLog(values, 'Immediate-support response sent', [
+        `Member: ${message.from?.first_name || 'Telegram member'} (${message.from?.id || 'unknown'})`,
+        `Group: ${message.chat.title || chatId} (${chatId})`,
+        `Response: ${filter.id || filter.category || 'custom filter'}`
+      ]);
+    }
     return true;
   }
   const methodByType = {
@@ -182,7 +214,7 @@ async function sendMatchingGroupHelpFilter(
     BOT,
     methodByType[filter.media.type],
     payload
-  );
+  ).catch(releaseCooldownAfterFailure);
   const delaySeconds = shouldCleanGroupHelpType(
     values.telegramGroupHelpCleanMessageTypes,
     'filter',
@@ -216,6 +248,13 @@ async function sendMatchingGroupHelpFilter(
       },
       'filter'
     );
+  }
+  if (filter.notifyStaff) {
+    await sendGroupHelpActivityLog(values, 'Immediate-support response sent', [
+      `Member: ${message.from?.first_name || 'Telegram member'} (${message.from?.id || 'unknown'})`,
+      `Group: ${message.chat.title || chatId} (${chatId})`,
+      `Response: ${filter.id || filter.category || 'custom filter'}`
+    ]);
   }
   return true;
 }

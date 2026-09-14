@@ -8,6 +8,10 @@ export type GroupHelpFilterMedia = {
 };
 
 export type GroupHelpFilter = {
+  id?: string;
+  category?: 'crisis' | 'wellbeing';
+  cooldownSeconds?: number;
+  notifyStaff?: boolean;
   triggers: GroupHelpFilterTrigger[];
   text?: string;
   media?: GroupHelpFilterMedia;
@@ -129,6 +133,26 @@ function validFilter(value: unknown): value is GroupHelpFilter {
     ) &&
     ['all', 'users', 'admins'].includes(filter.audience) &&
     typeof filter.allowBots === 'boolean' &&
+    (!filter.id || (typeof filter.id === 'string' && /^[a-z0-9-]{1,80}$/i.test(filter.id))) &&
+    (!filter.category || ['crisis', 'wellbeing'].includes(filter.category)) &&
+    (filter.cooldownSeconds === undefined ||
+      (Number.isInteger(filter.cooldownSeconds) &&
+        filter.cooldownSeconds >= 0 &&
+        filter.cooldownSeconds <= 86_400)) &&
+    (filter.notifyStaff === undefined || typeof filter.notifyStaff === 'boolean') &&
+    (!filter.media ||
+      ([
+        'sticker',
+        'photo',
+        'animation',
+        'video',
+        'video_note',
+        'document',
+        'audio',
+        'voice'
+      ].includes(filter.media.type) &&
+        typeof filter.media.fileId === 'string' &&
+        filter.media.fileId.length > 0)) &&
     (!filter.button ||
       (typeof filter.button.text === 'string' &&
         filter.button.text.length > 0 &&
