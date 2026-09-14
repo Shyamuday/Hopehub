@@ -1291,7 +1291,7 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
     section: 'content',
     type: 'number',
     maxLength: 8,
-    defaultValue: '300'
+    defaultValue: '60'
   },
   {
     key: 'telegramGroupHelpCommandDeleteSeconds',

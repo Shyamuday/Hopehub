@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  groupHelpMemberModerationNotice,
   groupHelpModerationCommandSpec,
   groupHelpModerationUsage,
   parseGroupHelpModerationDuration
@@ -57,5 +58,23 @@ test('formats reply and explicit-target usage in familiar Rose order', () => {
   assert.equal(
     groupHelpModerationUsage('tmute', true),
     'Usage: /tmute <time: Xm|Xh|Xd|Xw> [reason]'
+  );
+});
+
+test('formats a clear member-visible moderation notice with reason and duration', () => {
+  assert.equal(
+    groupHelpMemberModerationNotice({
+      member: 'Asha (@asha)',
+      action: 'Muted',
+      duration: '3h',
+      reason: 'Repeated personal attacks'
+    }),
+    [
+      '⚠️ Moderation notice',
+      'Member: Asha (@asha)',
+      'Action: Muted',
+      'Duration: 3h',
+      'Reason: Repeated personal attacks'
+    ].join('\n')
   );
 });

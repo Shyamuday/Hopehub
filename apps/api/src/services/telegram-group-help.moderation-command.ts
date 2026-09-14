@@ -214,3 +214,22 @@ export function groupHelpModerationUsage(commandName: string, replied: boolean) 
   const duration = spec.timed ? ' <time: Xm|Xh|Xd|Xw>' : '';
   return `Usage: ${command}${target}${duration} [reason]`;
 }
+
+export function groupHelpMemberModerationNotice(input: {
+  member: string;
+  action: string;
+  reason: string;
+  duration: string;
+  warningStatus?: string;
+}) {
+  return [
+    '⚠️ Moderation notice',
+    `Member: ${input.member}`,
+    `Action: ${input.action}`,
+    `Duration: ${input.duration}`,
+    `Reason: ${input.reason}`,
+    input.warningStatus ? `Warning status: ${input.warningStatus}` : ''
+  ]
+    .filter(Boolean)
+    .join('\n');
+}

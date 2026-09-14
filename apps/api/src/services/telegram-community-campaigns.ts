@@ -198,7 +198,7 @@ async function communityConfig(chatId?: string) {
   const values: Record<string, string> = { ...stored, ...policy };
   return {
     welcomeEnabled: values.telegramCommunityWelcomeEnabled !== 'Disabled',
-    autoDeleteSeconds: boundedNumber(values.telegramGroupHelpAutoDeleteSeconds, 300, 0, 604_800),
+    autoDeleteSeconds: boundedNumber(values.telegramGroupHelpAutoDeleteSeconds, 60, 0, 604_800),
     cleanJoinNotice: values.telegramGroupHelpWelcomeCleanup !== 'off',
     joinLeaveMessages: values.telegramGroupHelpJoinLeaveMessages || 'join only',
     welcomeText:

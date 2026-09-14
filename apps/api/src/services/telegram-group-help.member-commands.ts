@@ -119,6 +119,18 @@ export async function handleGroupHelpMemberCommand(
   const commandParts = (message.text || '').trim().split(/\s+/);
   const resolveMainGroupMember = (argument: string) =>
     resolveGroupHelpMember(targetChatId, argument);
+  const sendControlAwareMessage = (
+    text: string,
+    options: Parameters<typeof sendCommunityMessage>[3] = {}
+  ) =>
+    context.isControlGroup && message.chat.type !== 'private'
+      ? sendTemporaryGroupHelpMessage(
+          chatId,
+          text,
+          { ...values, telegramGroupHelpAutoDeleteSeconds: '60' },
+          options
+        )
+      : sendCommunityMessage(GROUP_HELP_BOT_SLUG, chatId, text, options);
   const deliverStaffResult = async (text: string) => {
     if (privateResult && message.from) {
       try {
@@ -176,9 +188,7 @@ export async function handleGroupHelpMemberCommand(
     }
   }
   if (command === '/start') {
-    await sendCommunityMessage(
-      GROUP_HELP_BOT_SLUG,
-      chatId,
+    await sendControlAwareMessage(
       'Welcome to Hope Hub 💙\n\nChoose what you need. You can still use commands whenever that feels easier.',
       {
         reply_markup: groupHelpMainMenuKeyboard(
@@ -224,22 +234,17 @@ export async function handleGroupHelpMemberCommand(
     return true;
   }
   if (command === '/rules') {
-    await sendCommunityMessage(GROUP_HELP_BOT_SLUG, chatId, values.telegramGroupHelpRulesMessage, {
+    await sendControlAwareMessage(values.telegramGroupHelpRulesMessage, {
       message_thread_id: message.message_thread_id,
       reply_markup: withCrossCommunityButton(undefined, values, targetChatId)
     });
     return true;
   }
   if (command === '/support') {
-    await sendCommunityMessage(
-      GROUP_HELP_BOT_SLUG,
-      chatId,
-      values.telegramGroupHelpSupportMessage,
-      {
-        message_thread_id: message.message_thread_id,
-        reply_markup: withCrossCommunityButton(undefined, values, targetChatId)
-      }
-    );
+    await sendControlAwareMessage(values.telegramGroupHelpSupportMessage, {
+      message_thread_id: message.message_thread_id,
+      reply_markup: withCrossCommunityButton(undefined, values, targetChatId)
+    });
     return true;
   }
   if (command === '/disableable') {

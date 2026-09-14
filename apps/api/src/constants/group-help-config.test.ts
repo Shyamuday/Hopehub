@@ -39,6 +39,7 @@ test('HopeHubAI exposes an optional moderation bypass list for trusted people', 
 });
 
 test('community automation runs around the clock with conservative engagement limits', () => {
+  assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramGroupHelpAutoDeleteSeconds, '60');
   assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramCommunitySmartScheduleEnabled, 'Enabled');
   assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramCommunityScheduleStart, '00:00');
   assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramCommunityScheduleEnd, '00:00');

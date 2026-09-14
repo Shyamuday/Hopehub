@@ -409,9 +409,9 @@ export async function sendTemporaryGroupHelpMessage(
         GROUP_HELP_CLEAN_MESSAGE_TYPES,
         true
       )
-      ? 300
+      ? 60
       : 0
-    : Math.max(0, Number(values.telegramGroupHelpAutoDeleteSeconds || 300));
+    : Math.max(0, Number(values.telegramGroupHelpAutoDeleteSeconds || 60));
   if (delaySeconds > 0) {
     await scheduleCommunityMessageCleanup({
       bot: GROUP_HELP_BOT_SLUG,

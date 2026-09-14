@@ -2,7 +2,6 @@ import { prisma } from '../db.js';
 import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
 import {
   callCommunityTelegramApi,
-  sendCommunityMessage,
   syncGroupHelpChatCommands
 } from './telegram-community-bots.client.js';
 import {
@@ -435,10 +434,10 @@ export async function handleGroupHelpAdminCommand(
     return true;
   }
   if (command === '/settings') {
-    await sendCommunityMessage(
-      GROUP_HELP_BOT_SLUG,
+    await sendTemporaryGroupHelpMessage(
       chatId,
       '⚙️ *Hope Hub group settings*\n\nOpen the editor privately. Your access is checked against this group before every change.',
+      { ...values, telegramGroupHelpAutoDeleteSeconds: '60' },
       {
         parse_mode: 'Markdown',
         reply_markup: groupHelpPrivateSettingsKeyboard(targetChatId)

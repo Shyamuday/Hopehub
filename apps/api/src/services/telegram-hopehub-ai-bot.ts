@@ -181,7 +181,7 @@ async function sendMatchingGroupHelpFilter(
     GROUP_HELP_CLEAN_MESSAGE_TYPES,
     true
   )
-    ? 300
+    ? 60
     : 0;
   if (delaySeconds > 0) {
     await scheduleCommunityMessageCleanup({
@@ -268,10 +268,10 @@ async function handleCommand(message: CommunityTelegramMessage, values: Record<s
         membership?.status || ''
       );
       if (await sendMatchingGroupHelpFilter(message, values, senderIsAdmin)) return true;
-      await sendCommunityMessage(
-        BOT,
+      await sendTemporaryMessage(
         chatId,
-        'This command is not available. Send /help to see the commands you can use.'
+        'This command is not available. Send /help to see the commands you can use.',
+        { ...values, telegramGroupHelpAutoDeleteSeconds: '60' }
       );
     }
     return true;
@@ -300,9 +300,10 @@ async function handleCommand(message: CommunityTelegramMessage, values: Record<s
       detail: error instanceof Error ? error.message : String(error),
       logChatId: auditValues.telegramGroupHelpLogChannelId
     }).catch(() => null);
-    await sendCommunityMessage(BOT, chatId, groupHelpCommandFailureMessage(error)).catch(
-      () => null
-    );
+    await sendTemporaryMessage(chatId, groupHelpCommandFailureMessage(error), {
+      ...values,
+      telegramGroupHelpAutoDeleteSeconds: '60'
+    }).catch(() => null);
     return true;
   } finally {
     const context = groupHelpCommandContextFromConfig(chatId, values);
@@ -409,7 +410,10 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
     );
     if (commandContext.configurationError) {
       if (message?.text?.startsWith('/')) {
-        await sendCommunityMessage(BOT, chatId, commandContext.configurationError);
+        await sendTemporaryMessage(chatId, commandContext.configurationError, {
+          ...values,
+          telegramGroupHelpAutoDeleteSeconds: '60'
+        });
       }
       return;
     }

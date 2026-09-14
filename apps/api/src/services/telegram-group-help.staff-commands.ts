@@ -41,6 +41,7 @@ import {
 import { recordGroupHelpCommandAudit } from './telegram-group-help.command-audit.js';
 import { shouldDeleteModerationTarget } from './telegram-group-help.command-cleanup.js';
 import {
+  groupHelpMemberModerationNotice,
   groupHelpModerationCommandSpec,
   groupHelpModerationUsage,
   parseGroupHelpModerationDuration
@@ -60,6 +61,9 @@ export async function handleGroupHelpStaffCommand(
   const targetChatId = context.targetChatId;
   const isCrossGroup = context.isControlGroup;
   const permissionMessage = messageForGroupHelpTarget(message, targetChatId);
+  const commandReplyValues = { ...values, telegramGroupHelpAutoDeleteSeconds: '60' };
+  const sendCommandReply = (text: string) =>
+    sendTemporaryGroupHelpMessage(chatId, text, commandReplyValues);
 
   if (command === '/send') {
     if (!message.from || !(await canUseGroupHelpAdminCommand(permissionMessage, values, '/send'))) {
@@ -68,9 +72,7 @@ export async function handleGroupHelpStaffCommand(
     }
     const textToSend = parts.slice(1).join(' ').trim();
     if (!textToSend) {
-      await sendCommunityMessage(
-        GROUP_HELP_BOT_SLUG,
-        chatId,
+      await sendCommandReply(
         'Usage: reply to an Administrator request with /send <message>, or use /send <message> to post in the main group as Hope Hub bot.'
       );
       return true;
@@ -94,9 +96,7 @@ export async function handleGroupHelpStaffCommand(
       `Bot message: ${posted.message_id}`
     ]);
     if (isCrossGroup) {
-      await sendCommunityMessage(
-        GROUP_HELP_BOT_SLUG,
-        chatId,
+      await sendCommandReply(
         `Posted in the main group as Hope Hub bot${replyTarget ? ` in reply to ${replyTarget.memberLabel}` : ''}.`
       );
     }
@@ -149,9 +149,7 @@ export async function handleGroupHelpStaffCommand(
     if (isCrossGroup && effectiveAction === 'delete') {
       const messageId = Number((parts[1] || '').replace(/^message:/i, ''));
       if (!Number.isInteger(messageId) || messageId <= 0) {
-        await sendCommunityMessage(
-          GROUP_HELP_BOT_SLUG,
-          chatId,
+        await sendCommandReply(
           `Usage: ${command} <main_group_message_id> [reason]\nExample: ${command} 12345 harmful content`
         );
         return true;
@@ -164,11 +162,7 @@ export async function handleGroupHelpStaffCommand(
         `Reason: ${reason}`,
         `By: ${telegramPersonLogLabel(message.from, 'Administrator')}`
       ]);
-      await sendCommunityMessage(
-        GROUP_HELP_BOT_SLUG,
-        chatId,
-        `Deleted main-group message ${messageId}. Reason: ${reason}`
-      );
+      await sendCommandReply(`Deleted main-group message ${messageId}. Reason: ${reason}`);
       return true;
     }
 
@@ -195,18 +189,14 @@ export async function handleGroupHelpStaffCommand(
     if (usesExplicitTarget) {
       const arg = parts[1] || '';
       if (!arg) {
-        await sendCommunityMessage(
-          GROUP_HELP_BOT_SLUG,
-          chatId,
+        await sendCommandReply(
           `${groupHelpModerationUsage(commandName, false)}\nExample target: @username or 123456789`
         );
         return true;
       }
       target = await resolveGroupHelpMember(targetChatId, arg);
       if (!target) {
-        await sendCommunityMessage(
-          GROUP_HELP_BOT_SLUG,
-          chatId,
+        await sendCommandReply(
           `Could not find ${arg} in the target group. Use their Telegram ID, current @username, or reply to their message.`
         );
         return true;
@@ -219,9 +209,7 @@ export async function handleGroupHelpStaffCommand(
     if (isCrossGroup && deleteFirst) {
       crossGroupMessageId = Number((parts[2] || '').replace(/^message:/i, ''));
       if (!Number.isInteger(crossGroupMessageId) || crossGroupMessageId <= 0) {
-        await sendCommunityMessage(
-          GROUP_HELP_BOT_SLUG,
-          chatId,
+        await sendCommandReply(
           `Usage: ${command} <user_id or @username> <main_group_message_id> [reason]`
         );
         return true;
@@ -234,7 +222,7 @@ export async function handleGroupHelpStaffCommand(
       : undefined;
     if (commandSpec.timed && !duration) {
       const usage = groupHelpModerationUsage(commandName, !usesExplicitTarget);
-      if (isCrossGroup) await sendCommunityMessage(GROUP_HELP_BOT_SLUG, chatId, usage);
+      if (isCrossGroup) await sendCommandReply(usage);
       else await sendTemporaryGroupHelpMessage(chatId, usage, values);
       return true;
     }
@@ -288,9 +276,7 @@ export async function handleGroupHelpStaffCommand(
           logChatId: values.telegramGroupHelpLogChannelId
         });
         message._groupHelpAuditRecorded = true;
-        await sendCommunityMessage(
-          GROUP_HELP_BOT_SLUG,
-          chatId,
+        await sendCommandReply(
           `No action was applied. This member was already banned by you recently; try again in ${remainingSeconds} seconds.`
         );
         return true;
@@ -319,7 +305,7 @@ export async function handleGroupHelpStaffCommand(
       if (!result.removed) {
         const reply = 'This member has no recorded warnings to remove.';
         if (isCrossGroup) {
-          await sendCommunityMessage(GROUP_HELP_BOT_SLUG, chatId, reply);
+          await sendCommandReply(reply);
         } else {
           await sendTemporaryGroupHelpMessage(chatId, reply, values);
         }
@@ -346,9 +332,7 @@ export async function handleGroupHelpStaffCommand(
           warningLimitReached = true;
           await clearTelegramGroupWarnings(targetChatId, String(target.id));
         } catch (error) {
-          await sendCommunityMessage(
-            GROUP_HELP_BOT_SLUG,
-            chatId,
+          await sendCommandReply(
             `The warning was recorded, but the configured follow-up action failed. ${groupHelpCommandFailureMessage(error)}`
           );
           if (isCrossGroup) {
@@ -440,37 +424,91 @@ export async function handleGroupHelpStaffCommand(
       removeWarningCallbackData = moderationLog.removeWarningCallbackData;
     }
 
+    const warningPolicy = groupHelpWarnPolicySummary(values);
+    const warningModeDuration = warningPolicy.mode.value.split(/\s+/)[1];
+    const durationLabel = warningLimitReached
+      ? warningModeDuration ||
+        (['ban', 'mute', 'ro'].includes(appliedAction) ? 'Permanent' : 'Immediate')
+      : duration?.input ||
+        (appliedAction === 'warn'
+          ? warningPolicy.expiry.value === 'off'
+            ? 'Until removed by a moderator'
+            : warningPolicy.expiry.value
+          : ['mute', 'ban', 'ro'].includes(appliedAction)
+            ? 'Permanent'
+            : 'Immediate');
+    const actionLabels: Record<string, string> = {
+      warn: 'Warned',
+      unwarn: 'Warning removed',
+      mute: 'Muted',
+      unmute: 'Unmuted',
+      ban: 'Banned',
+      unban: 'Unbanned',
+      kick: 'Removed from group',
+      ro: 'Made read-only',
+      unro: 'Read-only restriction removed'
+    };
+    const memberLabel = [
+      target.first_name || 'Telegram member',
+      target.username ? `(@${target.username})` : ''
+    ]
+      .filter(Boolean)
+      .join(' ');
+    const clearNotice = groupHelpMemberModerationNotice({
+      member: memberLabel,
+      action: actionLabels[appliedAction] || appliedAction,
+      duration: durationLabel,
+      reason,
+      ...(effectiveAction === 'warn' && warningCount !== undefined
+        ? {
+            warningStatus: warningLimitReached
+              ? `${warningCount}/${warningPolicy.limit}; limit reached and warnings reset`
+              : `${warningCount}/${warningPolicy.limit}`
+          }
+        : {})
+    });
+    const oneMinuteValues = {
+      ...values,
+      telegramGroupHelpAutoDeleteSeconds: '60',
+      telegramCommunityDefaultTopicId: '0'
+    };
+    const shouldNotifyAffectedMember =
+      ['warn', 'mute', 'ban'].includes(effectiveAction) || warningLimitReached;
+    if (shouldNotifyAffectedMember) {
+      await sendTemporaryGroupHelpMessage(String(target.id), clearNotice, oneMinuteValues).catch(
+        () => null
+      );
+    }
+
     if (commandSpec.silent) {
       await deleteGroupHelpMessage(chatId, message.message_id).catch(() => null);
       return true;
     }
 
-    const durationText = duration ? ` for ${duration.input}` : '';
-    const warningPolicy = groupHelpWarnPolicySummary(values);
-    const confirmText =
-      effectiveAction === 'warn' && warningCount !== undefined
-        ? warningLimitReached
-          ? `✅ Warning ${warningCount}/${warningPolicy.limit} reached the limit. ${warningPolicy.mode.value} applied to ${target.first_name || target.id}; warnings were reset.`
-          : `⚠️ ${target.first_name || target.id} warned (${warningCount}/${warningPolicy.limit}). Reason: ${reason}`
-        : `✅ ${effectiveAction[0].toUpperCase()}${effectiveAction.slice(1)} applied to ${target.first_name || target.id}${durationText}${isCrossGroup ? ' in main group.' : '.'}`;
-    if (isCrossGroup) {
-      await sendCommunityMessage(GROUP_HELP_BOT_SLUG, chatId, confirmText);
-    } else {
+    const publicDestination = isCrossGroup && shouldNotifyAffectedMember ? targetChatId : chatId;
+    await sendTemporaryGroupHelpMessage(
+      publicDestination,
+      clearNotice,
+      { ...values, telegramGroupHelpAutoDeleteSeconds: '60' },
+      {
+        ...(removeWarningCallbackData
+          ? {
+              reply_markup: {
+                inline_keyboard: [
+                  [{ text: 'Remove warn', callback_data: removeWarningCallbackData }]
+                ]
+              }
+            }
+          : {})
+      },
+      'action'
+    );
+    if (isCrossGroup && shouldNotifyAffectedMember) {
       await sendTemporaryGroupHelpMessage(
         chatId,
-        confirmText,
-        values,
-        {
-          ...(removeWarningCallbackData
-            ? {
-                reply_markup: {
-                  inline_keyboard: [
-                    [{ text: 'Remove warn', callback_data: removeWarningCallbackData }]
-                  ]
-                }
-              }
-            : {})
-        },
+        `✅ Action applied in the target group.\n\n${clearNotice}`,
+        oneMinuteValues,
+        {},
         'action'
       );
     }
