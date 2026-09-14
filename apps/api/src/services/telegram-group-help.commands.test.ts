@@ -58,11 +58,13 @@ test('only the requested trusted staff usernames match automatic full access', (
 test('dangerous commands are marked destructive and require the expected role', () => {
   const roseDestructiveCommands = ['/ban', '/tban', '/dban', '/sban', '/kick', '/dkick', '/skick'];
   assert.deepEqual(
-    [...roseDestructiveCommands, '/promote', '/unpinall', '/lockdown'].map((command) => ({
-      command,
-      role: groupHelpCommandDefinition(command)?.minimumRole,
-      destructive: groupHelpCommandDefinition(command)?.destructive
-    })),
+    [...roseDestructiveCommands, '/promote', '/unpinall', '/stopall', '/lockdown'].map(
+      (command) => ({
+        command,
+        role: groupHelpCommandDefinition(command)?.minimumRole,
+        destructive: groupHelpCommandDefinition(command)?.destructive
+      })
+    ),
     [
       { command: '/ban', role: 'MODERATOR', destructive: true },
       { command: '/tban', role: 'MODERATOR', destructive: true },
@@ -73,6 +75,7 @@ test('dangerous commands are marked destructive and require the expected role', 
       { command: '/skick', role: 'MODERATOR', destructive: true },
       { command: '/promote', role: 'ADMIN', destructive: true },
       { command: '/unpinall', role: 'ADMIN', destructive: true },
+      { command: '/stopall', role: 'ADMIN', destructive: true },
       { command: '/lockdown', role: 'ADMIN', destructive: true }
     ]
   );

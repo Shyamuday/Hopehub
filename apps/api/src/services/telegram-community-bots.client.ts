@@ -124,8 +124,13 @@ const COMMUNITY_BOTS: Record<
       { command: 'pinned', description: 'Show current pinned message (admins)' },
       { command: 'welcome', description: 'Toggle welcome on/off (admins)' },
       { command: 'filter', description: 'Add a word filter (admins)' },
-      { command: 'unfilter', description: 'Remove a word filter (admins)' },
-      { command: 'filters', description: 'List active word filters (admins)' },
+      { command: 'stop', description: 'Remove a reply filter (admins)' },
+      { command: 'stopall', description: 'Remove all reply filters (owner)' },
+      { command: 'unfilter', description: 'Alias for stop (admins)' },
+      { command: 'filters', description: 'List active reply filters' },
+      { command: 'blockword', description: 'Add a blocked phrase (admins)' },
+      { command: 'unblockword', description: 'Remove a blocked phrase (admins)' },
+      { command: 'blockwords', description: 'List blocked phrases (admins)' },
       { command: 'settings', description: 'Open group settings (admins)' },
       { command: 'setwarnlimit', description: 'Set warning limit (admins)' },
       { command: 'setwarnmode', description: 'Set warning punishment (admins)' },
@@ -268,6 +273,26 @@ export async function editCommunityReplyMarkup(
 
 export function getCommunityWebhookInfo(slug: CommunityBotSlug) {
   return callCommunityTelegramApi(slug, 'getWebhookInfo', {});
+}
+
+export async function syncGroupHelpChatCommands(
+  chatId: string,
+  customCommands: Array<{ command: string; description: string }>
+) {
+  const base = COMMUNITY_BOTS[COMMUNITY_BOT_SLUGS.GROUP_HELP].commands;
+  const seen = new Set(base.map((item) => item.command));
+  const commands = [
+    ...base,
+    ...customCommands.filter((item) => {
+      if (seen.has(item.command)) return false;
+      seen.add(item.command);
+      return /^[a-z0-9_]{1,32}$/.test(item.command) && Boolean(item.description.trim());
+    })
+  ].slice(0, 100);
+  return callCommunityTelegramApi(COMMUNITY_BOT_SLUGS.GROUP_HELP, 'setMyCommands', {
+    commands,
+    scope: { type: 'chat', chat_id: chatId }
+  });
 }
 
 export async function setupCommunityBot(input: {

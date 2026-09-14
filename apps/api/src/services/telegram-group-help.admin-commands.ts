@@ -2,7 +2,8 @@ import { prisma } from '../db.js';
 import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
 import {
   callCommunityTelegramApi,
-  sendCommunityMessage
+  sendCommunityMessage,
+  syncGroupHelpChatCommands
 } from './telegram-community-bots.client.js';
 import {
   endTelegramCommunityLockdown,
@@ -33,6 +34,14 @@ import {
   isGroupHelpCommandDisableable,
   normalizeGroupHelpCommandName
 } from './telegram-group-help.command-disabling.js';
+import {
+  filterControlOptions,
+  groupHelpFilterCommandSuggestions,
+  groupHelpFilterMediaFromMessage,
+  parseGroupHelpFilterCommand,
+  parseGroupHelpFilters,
+  serializeGroupHelpFilters
+} from './telegram-group-help.filters.js';
 
 export async function handleGroupHelpAdminCommand(
   message: CommunityTelegramMessage,
@@ -56,7 +65,12 @@ export async function handleGroupHelpAdminCommand(
       '/welcome',
       '/filter',
       '/unfilter',
+      '/stop',
+      '/stopall',
       '/filters',
+      '/blockword',
+      '/unblockword',
+      '/blockwords',
       '/setwarnlimit',
       '/setwarnmode',
       '/setwarntime',
@@ -524,6 +538,148 @@ export async function handleGroupHelpAdminCommand(
   }
 
   if (command === '/filters') {
+    const { filters } = parseGroupHelpFilters(values.telegramGroupHelpCustomReplies || '');
+    const labels = filters.flatMap((filter) =>
+      filter.triggers.map((trigger) =>
+        [trigger.mode === 'contains' ? '' : `${trigger.mode}:`, trigger.value].join('')
+      )
+    );
+    await sendTemporaryGroupHelpMessage(
+      chatId,
+      labels.length
+        ? `Active reply filters (${labels.length}):\n\n${labels.map((label) => `• ${label}`).join('\n')}`
+        : 'No reply filters are active.',
+      values
+    );
+    return true;
+  }
+
+  if (command === '/filter') {
+    const parsed = parseGroupHelpFilterCommand(message.text || '');
+    const media = groupHelpFilterMediaFromMessage(message.reply_to_message);
+    if (!parsed || (!parsed.response && !media)) {
+      await sendTemporaryGroupHelpMessage(
+        chatId,
+        'Usage: /filter <word|"phrase"|(one, two)> <reply>\nFor media replies, reply to the photo, sticker, or file with /filter <trigger>.',
+        values
+      );
+      return true;
+    }
+    const controls = filterControlOptions(parsed.response);
+    const current = parseGroupHelpFilters(values.telegramGroupHelpCustomReplies || '');
+    const keys = new Set(
+      parsed.triggers.map((trigger) => `${trigger.mode}:${trigger.value.toLocaleLowerCase()}`)
+    );
+    const filters = current.filters
+      .map((filter) => ({
+        ...filter,
+        triggers: filter.triggers.filter(
+          (trigger) => !keys.has(`${trigger.mode}:${trigger.value.toLocaleLowerCase()}`)
+        )
+      }))
+      .filter((filter) => filter.triggers.length);
+    filters.push({
+      triggers: parsed.triggers,
+      ...(controls.text ? { text: controls.text } : {}),
+      ...(media ? { media } : {}),
+      audience: controls.audience,
+      allowBots: controls.allowBots,
+      ...(controls.commandDescription ? { commandDescription: controls.commandDescription } : {})
+    });
+    const { saveTelegramCommunityGroupPolicy, getTelegramCommunityGroupPolicy } =
+      await import('./telegram-community-group-policy.js');
+    const policy = await getTelegramCommunityGroupPolicy(targetChatId);
+    const serialized = serializeGroupHelpFilters(filters, current.passthrough);
+    await saveTelegramCommunityGroupPolicy(targetChatId, {
+      ...policy,
+      telegramGroupHelpCustomReplies: serialized
+    });
+    await syncGroupHelpChatCommands(
+      targetChatId,
+      groupHelpFilterCommandSuggestions(serialized)
+    ).catch(() => null);
+    await sendTemporaryGroupHelpMessage(
+      chatId,
+      `✅ Saved ${parsed.triggers.length} reply filter${parsed.triggers.length === 1 ? '' : 's'}.`,
+      values
+    );
+    return true;
+  }
+
+  if (command === '/stop' || command === '/unfilter') {
+    const parsed = parseGroupHelpFilterCommand(
+      `/filter ${(message.text || '').trim().replace(/^\/(?:stop|unfilter)(?:@\w+)?\s*/i, '')}`
+    );
+    if (!parsed?.triggers.length) {
+      await sendTemporaryGroupHelpMessage(chatId, `Usage: ${command} <word or "phrase">`, values);
+      return true;
+    }
+    const keys = new Set(
+      parsed.triggers.map((trigger) => `${trigger.mode}:${trigger.value.toLocaleLowerCase()}`)
+    );
+    const current = parseGroupHelpFilters(values.telegramGroupHelpCustomReplies || '');
+    let removed = 0;
+    const filters = current.filters
+      .map((filter) => ({
+        ...filter,
+        triggers: filter.triggers.filter((trigger) => {
+          const remove = keys.has(`${trigger.mode}:${trigger.value.toLocaleLowerCase()}`);
+          if (remove) removed += 1;
+          return !remove;
+        })
+      }))
+      .filter((filter) => filter.triggers.length);
+    const { saveTelegramCommunityGroupPolicy, getTelegramCommunityGroupPolicy } =
+      await import('./telegram-community-group-policy.js');
+    const policy = await getTelegramCommunityGroupPolicy(targetChatId);
+    const serialized = serializeGroupHelpFilters(filters, current.passthrough);
+    await saveTelegramCommunityGroupPolicy(targetChatId, {
+      ...policy,
+      telegramGroupHelpCustomReplies: serialized
+    });
+    await syncGroupHelpChatCommands(
+      targetChatId,
+      groupHelpFilterCommandSuggestions(serialized)
+    ).catch(() => null);
+    await sendTemporaryGroupHelpMessage(
+      chatId,
+      removed
+        ? `✅ Removed ${removed} reply filter${removed === 1 ? '' : 's'}.`
+        : 'No matching reply filter was found.',
+      values
+    );
+    return true;
+  }
+
+  if (command === '/stopall') {
+    const membership = await callCommunityTelegramApi<{ status?: string }>(
+      GROUP_HELP_BOT_SLUG,
+      'getChatMember',
+      { chat_id: targetChatId, user_id: message.from.id }
+    ).catch(() => null);
+    if (!['creator', 'owner'].includes(membership?.status || '')) {
+      await sendTemporaryGroupHelpMessage(
+        chatId,
+        'Only the Telegram group owner can remove all reply filters.',
+        values
+      );
+      return true;
+    }
+    if (await requestGroupHelpCommandConfirmation({ message, targetChatId, command })) return true;
+    const current = parseGroupHelpFilters(values.telegramGroupHelpCustomReplies || '');
+    const { saveTelegramCommunityGroupPolicy, getTelegramCommunityGroupPolicy } =
+      await import('./telegram-community-group-policy.js');
+    const policy = await getTelegramCommunityGroupPolicy(targetChatId);
+    await saveTelegramCommunityGroupPolicy(targetChatId, {
+      ...policy,
+      telegramGroupHelpCustomReplies: current.passthrough.join('\n')
+    });
+    await syncGroupHelpChatCommands(targetChatId, []).catch(() => null);
+    await sendTemporaryGroupHelpMessage(chatId, '✅ All reply filters removed.', values);
+    return true;
+  }
+
+  if (command === '/blockwords') {
     const banned = (values.telegramGroupHelpBannedWords || '')
       .split(/[\n,]+/)
       .map((w) => w.trim())
@@ -531,14 +687,14 @@ export async function handleGroupHelpAdminCommand(
     await sendTemporaryGroupHelpMessage(
       chatId,
       banned.length
-        ? `🚫 Active word filters (${banned.length}):\n\n${banned.map((w) => `• ${w}`).join('\n')}`
-        : 'No word filters are active.',
+        ? `🚫 Active blocked words (${banned.length}):\n\n${banned.map((w) => `• ${w}`).join('\n')}`
+        : 'No blocked words are active.',
       values
     );
     return true;
   }
 
-  if (command === '/filter' || command === '/unfilter') {
+  if (command === '/blockword' || command === '/unblockword') {
     const word = parts.slice(1).join(' ').trim();
     if (!word) {
       await sendTemporaryGroupHelpMessage(chatId, `Usage: ${command} <word or phrase>`, values);
@@ -553,18 +709,18 @@ export async function handleGroupHelpAdminCommand(
       .filter(Boolean);
     const normalized = word.toLowerCase();
     const without = current.filter((w) => w.toLowerCase() !== normalized);
-    const updated = command === '/filter' ? [...without, word] : without;
+    const updated = command === '/blockword' ? [...without, word] : without;
     await saveTelegramCommunityGroupPolicy(targetChatId, {
       ...policy,
       telegramGroupHelpBannedWords: updated.join('\n')
     });
     await sendTemporaryGroupHelpMessage(
       chatId,
-      command === '/filter'
-        ? `✅ Added "${word}" to word filters.`
+      command === '/blockword'
+        ? `✅ Added "${word}" to blocked words.`
         : without.length < current.length
-          ? `✅ Removed "${word}" from word filters.`
-          : `"${word}" was not in the filter list.`,
+          ? `✅ Removed "${word}" from blocked words.`
+          : `"${word}" was not in the blocked-word list.`,
       values
     );
     return true;

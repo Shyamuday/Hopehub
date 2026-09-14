@@ -29,6 +29,7 @@ export const GROUP_HELP_COMMAND_CATALOG = {
     '/warns',
     '/disabled',
     '/disableable',
+    '/filters',
     '/me',
     '/id',
     '/staffid',
@@ -102,7 +103,11 @@ export const GROUP_HELP_COMMAND_CATALOG = {
     '/welcome',
     '/filter',
     '/unfilter',
-    '/filters',
+    '/stop',
+    '/stopall',
+    '/blockword',
+    '/unblockword',
+    '/blockwords',
     '/lockdown',
     '/unlock',
     '/setofftopic',
@@ -164,6 +169,7 @@ const destructiveCommands = new Set([
   '/demote',
   '/unadmin',
   '/unpinall',
+  '/stopall',
   '/lockdown'
 ]);
 
@@ -240,8 +246,17 @@ export const GROUP_HELP_STAFF_PERMISSION_GROUPS = [
   },
   {
     key: 'filters',
-    label: 'Manage blocked phrases',
-    commands: ['/filter', '/unfilter', '/filters'],
+    label: 'Manage replies and blocked phrases',
+    commands: [
+      '/filter',
+      '/unfilter',
+      '/stop',
+      '/stopall',
+      '/filters',
+      '/blockword',
+      '/unblockword',
+      '/blockwords'
+    ],
     defaultEnabled: false
   },
   {

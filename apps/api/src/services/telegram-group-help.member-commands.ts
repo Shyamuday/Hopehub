@@ -36,6 +36,7 @@ import {
   disabledGroupHelpCommands,
   GROUP_HELP_DISABLEABLE_COMMANDS
 } from './telegram-group-help.command-disabling.js';
+import { parseGroupHelpFilters } from './telegram-group-help.filters.js';
 
 type TelegramMemberSnapshot = {
   status?: string;
@@ -230,6 +231,23 @@ export async function handleGroupHelpMemberCommand(
         `Delete ignored command messages: ${values.telegramGroupHelpDisabledDelete === 'on' ? 'ON' : 'OFF'}`,
         `Apply to administrators: ${values.telegramGroupHelpDisableAdmin === 'on' ? 'ON' : 'OFF'}`
       ].join('\n\n'),
+      values,
+      { reply_to_message_id: message.message_id, message_thread_id: message.message_thread_id }
+    );
+    return true;
+  }
+  if (command === '/filters') {
+    const { filters } = parseGroupHelpFilters(values.telegramGroupHelpCustomReplies || '');
+    const labels = filters.flatMap((filter) =>
+      filter.triggers.map((trigger) =>
+        [trigger.mode === 'contains' ? '' : `${trigger.mode}:`, trigger.value].join('')
+      )
+    );
+    await sendTemporaryGroupHelpMessage(
+      chatId,
+      labels.length
+        ? `Active reply filters (${labels.length}):\n\n${labels.map((label) => `• ${label}`).join('\n')}`
+        : 'No reply filters are active.',
       values,
       { reply_to_message_id: message.message_id, message_thread_id: message.message_thread_id }
     );
@@ -709,7 +727,7 @@ export async function handleGroupHelpMemberCommand(
         ? `*Moderator tools — Rose-compatible syntax*\nReply to a message, or add <user_id or @username> before the reason.\n/ban, /mute — permanent action; /kick — remove (the member may rejoin)\n/tban, /tmute <time> [reason] — timed action (15m, 3h, 2d, 1w)\n/dban, /dmute, /dkick — reply: delete message plus action\n/sban, /smute, /skick — silent action; deletes replied message and command\n/unban, /unmute — undo the action\n/resetwarn — remove all warnings\nLegacy /delban, /delmute, /delkick remain supported. Default automated warning mute: ${muteMinutes} minutes.`
         : '',
       canUseAdminTools
-        ? `*Administrator tools*\n/promote, /unadmin, /title, /untitle\n/helper, /unhelper, /mod, /unmod\n/pin [notify], /unpin, /unpinall, /pinned\n/filter, /unfilter, /filters\n/setwarnlimit <number>\n/setwarnmode <kick|ban|mute|tban TIME|tmute TIME>\n/setwarntime <time|off> (also /warntime)\n/reports <on|off>\n/disable <command>, /enable <command>\n/disabledel <on|off>, /disableadmin <on|off>\n/welcome on|off, /lockdown [minutes], /unlock\n/settings, /setlog, /setofftopic`
+        ? `*Administrator tools*\n/promote, /unadmin, /title, /untitle\n/helper, /unhelper, /mod, /unmod\n/pin [notify], /unpin, /unpinall, /pinned\n/filter <trigger> <reply>, /stop <trigger>, /filters\n/stopall — owner only\n/blockword, /unblockword, /blockwords — safety phrases\n/setwarnlimit <number>\n/setwarnmode <kick|ban|mute|tban TIME|tmute TIME>\n/setwarntime <time|off> (also /warntime)\n/reports <on|off>\n/disable <command>, /enable <command>\n/disabledel <on|off>, /disableadmin <on|off>\n/welcome on|off, /lockdown [minutes], /unlock\n/settings, /setlog, /setofftopic`
         : '',
       context.isControlGroup && canUseStaffTools
         ? `*Private admin-group syntax*\n/info or /history <user_id or @username>\nForward a member message directly to the bot for /history\n/perms <user_id or @username>\n/ban|mute|kick <user_id or @username> [reason]\n/tban|tmute <user_id or @username> <time> [reason]\n/sban|smute|skick <user_id or @username> [reason]\n/delete <main_message_id> [reason]\n/dban|dmute|dkick <user> <main_message_id> [reason]\n/geturl <main_message_id>\n/clearwarnings <user_id or @username>`

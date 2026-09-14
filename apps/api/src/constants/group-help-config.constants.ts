@@ -1086,7 +1086,7 @@ contact me for`
     section: 'commands',
     type: 'textarea',
     maxLength: 1000,
-    defaultValue: '/filter {lines}'
+    defaultValue: '/blockword {lines}'
   }
 ];
 
@@ -1480,10 +1480,10 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
     key: 'telegramGroupHelpCustomReplies',
     label: 'Keyword replies and buttons',
     description:
-      'One action per line: “phrase => reply text => button label => https://link”. Button fields are optional. Keyword actions take priority over word filters, so use them for care and navigation phrases.',
+      'Rose-compatible reply filters managed with /filter, /stop, and /stopall. Existing “phrase => reply => button => https://link” entries remain supported.',
     section: 'people',
     type: 'textarea',
-    maxLength: 4000,
+    maxLength: 20000,
     placeholder:
       'anyone for talk => You can find private support through Hope Hub Live. => Talk live => https://hopehub.in/#live-connect',
     defaultValue: ''

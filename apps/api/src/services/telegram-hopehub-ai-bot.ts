@@ -30,8 +30,6 @@ import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constan
 import {
   bannedPhrases,
   containsLink,
-  customReply,
-  customReplyAction,
   floodThreshold,
   groupHelpConfig as config,
   hasMedia,
@@ -79,11 +77,109 @@ import { notifyTelegramBotFailure } from './telegram-bot-failure-alerts.js';
 import { forwardGroupHelpAdminMention } from './telegram-group-help.admin-mentions.js';
 import { handleGroupHelpReportCommand } from './telegram-group-help.reports.js';
 import {
+  matchingGroupHelpFilter,
+  renderGroupHelpFilterText
+} from './telegram-group-help.filters.js';
+import {
   groupCommandDeleteDelaySeconds,
   shouldAutoDeleteGroupCommand
 } from './telegram-group-help.command-cleanup.js';
 
 const BOT = GROUP_HELP_BOT_SLUG;
+
+async function sendMatchingGroupHelpFilter(
+  message: CommunityTelegramMessage,
+  values: Record<string, string>,
+  senderIsAdmin: boolean
+) {
+  const filter = matchingGroupHelpFilter({
+    text: `${message.text || ''}\n${message.caption || ''}`.trim(),
+    definitions: values.telegramGroupHelpCustomReplies || '',
+    senderIsBot: Boolean(message.from?.is_bot),
+    senderIsAdmin
+  });
+  if (!filter) return false;
+  const chatId = String(message.chat.id);
+  const text = renderGroupHelpFilterText(filter, message);
+  const replyMessageId =
+    /\{replytag\}/i.test(filter.text || '') && message.reply_to_message
+      ? message.reply_to_message.message_id
+      : message.message_id;
+  const base = {
+    chat_id: chatId,
+    reply_to_message_id: replyMessageId,
+    ...(message.message_thread_id ? { message_thread_id: message.message_thread_id } : {})
+  };
+  if (!filter.media) {
+    await sendTemporaryMessage(chatId, text, values, {
+      reply_to_message_id: replyMessageId,
+      message_thread_id: message.message_thread_id,
+      parse_mode: 'Markdown',
+      ...(filter.button
+        ? {
+            reply_markup: {
+              inline_keyboard: [[{ text: filter.button.text, url: filter.button.url }]]
+            }
+          }
+        : {})
+    });
+    return true;
+  }
+  const methodByType = {
+    sticker: 'sendSticker',
+    photo: 'sendPhoto',
+    animation: 'sendAnimation',
+    video: 'sendVideo',
+    video_note: 'sendVideoNote',
+    document: 'sendDocument',
+    audio: 'sendAudio',
+    voice: 'sendVoice'
+  } as const;
+  const payload = {
+    ...base,
+    [filter.media.type]: filter.media.fileId,
+    ...(text && filter.media.type !== 'sticker' && filter.media.type !== 'video_note'
+      ? { caption: text, parse_mode: 'Markdown' }
+      : {}),
+    ...(filter.button
+      ? {
+          reply_markup: {
+            inline_keyboard: [[{ text: filter.button.text, url: filter.button.url }]]
+          }
+        }
+      : {})
+  };
+  const sent = await callCommunityTelegramApi<{ message_id: number }>(
+    BOT,
+    methodByType[filter.media.type],
+    payload
+  );
+  const delaySeconds = Math.max(0, Number(values.telegramGroupHelpAutoDeleteSeconds || 300));
+  if (delaySeconds > 0) {
+    await scheduleCommunityMessageCleanup({
+      bot: BOT,
+      chatId,
+      messageId: sent.message_id,
+      kind: 'transient',
+      deleteAfter: new Date(Date.now() + delaySeconds * 1000)
+    });
+  }
+  if (text && (filter.media.type === 'sticker' || filter.media.type === 'video_note')) {
+    await sendTemporaryMessage(chatId, text, values, {
+      reply_to_message_id: replyMessageId,
+      message_thread_id: message.message_thread_id,
+      parse_mode: 'Markdown',
+      ...(filter.button
+        ? {
+            reply_markup: {
+              inline_keyboard: [[{ text: filter.button.text, url: filter.button.url }]]
+            }
+          }
+        : {})
+    });
+  }
+  return true;
+}
 
 /**
  * A request to talk to someone is a care-seeking message, not a moderation
@@ -131,6 +227,16 @@ async function handleCommand(message: CommunityTelegramMessage, values: Record<s
   try {
     const handled = await handleGroupHelpCommand(message, values);
     if (!handled) {
+      const membership = message.from
+        ? await callCommunityTelegramApi<{ status?: string }>(BOT, 'getChatMember', {
+            chat_id: chatId,
+            user_id: message.from.id
+          }).catch(() => null)
+        : null;
+      const senderIsAdmin = ['creator', 'administrator', 'owner'].includes(
+        membership?.status || ''
+      );
+      if (await sendMatchingGroupHelpFilter(message, values, senderIsAdmin)) return true;
       await sendCommunityMessage(
         BOT,
         chatId,
@@ -363,6 +469,7 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
   if (!message.from) return;
   if (await handleGroupHelpReportCommand(message, values)) return;
   if (await isModerationExempt(message, values.telegramGroupHelpAdminWhitelist || '')) {
+    await sendMatchingGroupHelpFilter(message, values, true);
     await recordTelegramCommunityActivity(
       chatId,
       message.date ? new Date(message.date * 1000) : undefined
@@ -420,21 +527,7 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
     );
     return;
   }
-  const configuredAction = customReplyAction(text, values.telegramGroupHelpCustomReplies || '');
-  if (configuredAction) {
-    await sendTemporaryMessage(chatId, configuredAction.text, values, {
-      reply_to_message_id: message.message_id,
-      message_thread_id: message.message_thread_id,
-      ...(configuredAction.buttonText && configuredAction.buttonUrl
-        ? {
-            reply_markup: {
-              inline_keyboard: [
-                [{ text: configuredAction.buttonText, url: configuredAction.buttonUrl }]
-              ]
-            }
-          }
-        : {})
-    });
+  if (await sendMatchingGroupHelpFilter(message, values, false)) {
     await recordTelegramCommunityActivity(
       chatId,
       message.date ? new Date(message.date * 1000) : undefined
@@ -569,13 +662,6 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
       warnAction
     );
     return;
-  }
-  const reply = text ? customReply(text, values.telegramGroupHelpCustomReplies || '') : '';
-  if (reply) {
-    await sendTemporaryMessage(chatId, reply, values, {
-      reply_to_message_id: message.message_id,
-      message_thread_id: message.message_thread_id
-    });
   }
   await recordTelegramCommunityActivity(
     chatId,
