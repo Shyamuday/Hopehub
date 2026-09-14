@@ -1,41 +1,37 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { customReplyAction } from './telegram-group-help.config.js';
+import { GROUP_HELP_WELLBEING_FILTERS } from '../constants/group-help-wellbeing-replies.constants.js';
+import { parseGroupHelpFilters } from './telegram-group-help.filters.js';
+import { resolveGroupHelpConfigValues } from './telegram-group-help.config.js';
 
-test('custom reply action matches a configured phrase and exposes its button', () => {
-  const action = customReplyAction(
-    'Is anyone for talk right now?',
-    'anyone for talk => Private support is available. => Talk live => https://hopehub.in/#live-connect'
+test('group policy keeps scalar overrides while required filters survive stale snapshots', () => {
+  const existing = {
+    id: 'hopehub-immediate-support-v1',
+    category: 'crisis' as const,
+    triggers: [{ value: 'suicide', mode: 'contains' as const }],
+    text: 'Admin-edited crisis response',
+    audience: 'all' as const,
+    allowBots: false
+  };
+  const values = resolveGroupHelpConfigValues(
+    {
+      telegramGroupHelpLinkPolicy: 'delete',
+      telegramGroupHelpCustomReplies: ''
+    },
+    {
+      telegramGroupHelpLinkPolicy: 'allow',
+      telegramGroupHelpCustomReplies: `rose-filter:${JSON.stringify(existing)}`
+    }
   );
 
-  assert.deepEqual(action, {
-    trigger: 'anyone for talk',
-    text: 'Private support is available.',
-    buttonText: 'Talk live',
-    buttonUrl: 'https://hopehub.in/#live-connect'
-  });
-});
-
-test('custom reply action accepts a phrase with a reply and no button', () => {
-  const action = customReplyAction(
-    'Please read rules',
-    'read rules => Please open the group rules.'
+  assert.equal(values.telegramGroupHelpLinkPolicy, 'allow');
+  const filters = parseGroupHelpFilters(values.telegramGroupHelpCustomReplies).filters;
+  assert.deepEqual(
+    filters.map((filter) => filter.id).sort(),
+    GROUP_HELP_WELLBEING_FILTERS.map((filter) => filter.id).sort()
   );
-
-  assert.deepEqual(action, {
-    trigger: 'read rules',
-    text: 'Please open the group rules.'
-  });
-});
-
-test('custom reply action rejects a non-HTTPS button URL', () => {
-  const action = customReplyAction(
-    'Need help',
-    'need help => Please contact the team. => Open support => http://example.test'
+  assert.equal(
+    filters.find((filter) => filter.id === existing.id)?.text,
+    'Admin-edited crisis response'
   );
-
-  assert.deepEqual(action, {
-    trigger: 'need help',
-    text: 'Please contact the team.'
-  });
 });

@@ -2,18 +2,37 @@ import { getTelegramCommunityGroupPolicy } from './telegram-community-group-poli
 import { getSiteConfigMap } from './site-config.service.js';
 import type { CommunityTelegramMessage } from './telegram-community-bots.types.js';
 import { GROUP_HELP_CONFIG_KEYS as MANAGED_GROUP_HELP_CONFIG_KEYS } from '../constants/group-help-config.constants.js';
+import { withGroupHelpWellbeingFilterDefaults } from '../constants/group-help-wellbeing-replies.constants.js';
 
 // Keep runtime config aligned with the admin-managed catalog. Per-group
 // policies may override any of these values without introducing a second list.
 export const GROUP_HELP_CONFIG_KEYS = MANAGED_GROUP_HELP_CONFIG_KEYS;
 
-export async function groupHelpConfig(chatId?: string) {
+/**
+ * Resolve group configuration through one invariant-aware boundary. Scalar
+ * policy values remain true overrides; system-owned safety definitions are
+ * restored by stable ID so older policy snapshots cannot shadow new defaults.
+ */
+export function resolveGroupHelpConfigValues(
+  stored: Record<string, string>,
+  policy: Record<string, string> = {}
+): Record<string, string> {
+  const merged: Record<string, string> = { ...stored, ...policy };
+  return {
+    ...merged,
+    telegramGroupHelpCustomReplies: withGroupHelpWellbeingFilterDefaults(
+      merged.telegramGroupHelpCustomReplies || ''
+    )
+  };
+}
+
+export async function groupHelpConfig(chatId?: string): Promise<Record<string, string>> {
   const stored = await getSiteConfigMap(GROUP_HELP_CONFIG_KEYS);
   const policy = chatId ? await getTelegramCommunityGroupPolicy(chatId) : {};
   // SiteConfig is the single runtime source of truth. New environments must be
   // initialized through the explicit Telegram community seed, never silently
   // changed by application startup.
-  return { ...stored, ...policy };
+  return resolveGroupHelpConfigValues(stored, policy);
 }
 
 export function floodThreshold(value: string) {

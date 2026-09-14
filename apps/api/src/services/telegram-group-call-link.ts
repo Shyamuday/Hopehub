@@ -1,47 +1,57 @@
-/**
- * Converts a public Telegram group URL into Telegram's native video-chat
- * deep-link. Opening this link takes a member straight to the active group
- * call join screen instead of merely opening the group conversation.
- *
- * Private invite links and non-Telegram meeting links are intentionally left
- * untouched: Telegram does not support an equivalent direct-call link for a
- * private group, and rewriting a third-party meeting URL would be incorrect.
- */
-export function telegramVideoChatJoinUrl(joinUrl: string): string {
+type TelegramCallLink = {
+  groupUrl: string;
+  appUrl?: string;
+};
+
+/** Parse a Telegram public-group URL without inventing an active-call link. */
+function telegramCallLink(joinUrl: string): TelegramCallLink | undefined {
   const trimmed = joinUrl.trim();
-  if (!trimmed) return trimmed;
+  if (!trimmed) return undefined;
 
   try {
     const url = new URL(trimmed);
     if (!/^https?:$/.test(url.protocol) || url.hostname.toLowerCase() !== 't.me') {
-      return trimmed;
+      return undefined;
     }
 
     const username = url.pathname.replace(/^\/+|\/+$/g, '');
     // A public group/channel username has one path segment. Do not rewrite a
     // private invite, a post URL, or another Telegram deep-link.
-    if (!/^[a-zA-Z0-9_]{5,32}$/.test(username)) return trimmed;
+    if (!/^[a-zA-Z0-9_]{5,32}$/.test(username)) return undefined;
 
-    if (url.searchParams.has('videochat') || url.searchParams.has('voicechat')) {
-      return trimmed;
-    }
-
-    url.search = '';
-    url.hash = '';
-    url.searchParams.set('videochat', '');
-    // URL serialises an empty query value as `?videochat=`. Telegram accepts
-    // it, but its documented, cleaner spelling is `?videochat`.
-    return url.toString().replace('?videochat=', '?videochat');
+    const parameter = url.searchParams.has('videochat')
+      ? 'videochat'
+      : url.searchParams.has('voicechat')
+        ? 'voicechat'
+        : undefined;
+    const inviteHash = parameter ? url.searchParams.get(parameter)?.trim() || '' : '';
+    return {
+      groupUrl: `https://t.me/${username}`,
+      ...(parameter && inviteHash
+        ? {
+            appUrl: `tg://resolve?domain=${encodeURIComponent(username)}&videochat=${encodeURIComponent(inviteHash)}`
+          }
+        : {})
+    };
   } catch {
-    return trimmed;
+    return undefined;
   }
 }
 
-/** Scheduled calls open the group; only a confirmed live call is labelled as directly joinable. */
+/**
+ * Only an invite exported for the exact active call is labelled Join VC.
+ * Generic `?videochat` links proved unreliable and are no longer fabricated.
+ */
 export function telegramGroupCallButton(joinUrl: string, isLive: boolean) {
-  return isLive
-    ? { text: 'Join VC', url: telegramVideoChatJoinUrl(joinUrl) }
-    : { text: 'Open group', url: joinUrl.trim() };
+  const trimmed = joinUrl.trim();
+  const telegramLink = telegramCallLink(trimmed);
+  if (isLive && telegramLink?.appUrl) {
+    return { text: 'Join VC', url: telegramLink.appUrl };
+  }
+  if (isLive && !telegramLink) {
+    return { text: 'Join VC', url: trimmed };
+  }
+  return { text: 'Open group', url: telegramLink?.groupUrl || trimmed };
 }
 
 /** Prefer the invite exported for the exact active call over stored/group fallbacks. */

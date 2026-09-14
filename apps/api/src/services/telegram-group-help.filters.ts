@@ -225,8 +225,10 @@ export function matchingGroupHelpFilter(input: {
   definitions: string;
   senderIsBot: boolean;
   senderIsAdmin: boolean;
+  category?: GroupHelpFilter['category'];
 }) {
   return parseGroupHelpFilters(input.definitions).filters.find((filter) => {
+    if (input.category && filter.category !== input.category) return false;
     if (input.senderIsBot && !filter.allowBots) return false;
     if (filter.audience === 'users' && input.senderIsAdmin) return false;
     if (filter.audience === 'admins' && !input.senderIsAdmin) return false;

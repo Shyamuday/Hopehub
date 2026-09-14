@@ -135,3 +135,17 @@ export const GROUP_HELP_WELLBEING_FILTERS: GroupHelpFilter[] = [
 export const GROUP_HELP_WELLBEING_FILTER_DEFINITIONS = GROUP_HELP_WELLBEING_FILTERS.map(
   (filter) => `rose-filter:${JSON.stringify(filter)}`
 ).join('\n');
+
+/**
+ * Crisis and wellbeing defaults must survive older per-group overrides. Keep an
+ * existing definition when it has the same stable ID so admins can edit its copy.
+ */
+export function withGroupHelpWellbeingFilterDefaults(definitions: string) {
+  const current = definitions.trim();
+  const missing = GROUP_HELP_WELLBEING_FILTERS.filter((filter) => {
+    if (!filter.id) return false;
+    const escapedId = filter.id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return !new RegExp(`"id"\\s*:\\s*"${escapedId}"`, 'i').test(current);
+  }).map((filter) => `rose-filter:${JSON.stringify(filter)}`);
+  return [current, ...missing].filter(Boolean).join('\n');
+}

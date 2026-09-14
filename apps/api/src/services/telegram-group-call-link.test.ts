@@ -1,35 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {
-  telegramGroupCallButton,
-  telegramLiveVoiceJoinUrl,
-  telegramVideoChatJoinUrl
-} from './telegram-group-call-link.js';
-
-test('uses Telegram video-chat links for public group URLs', () => {
-  assert.equal(
-    telegramVideoChatJoinUrl('https://t.me/hopehubindia'),
-    'https://t.me/hopehubindia?videochat'
-  );
-});
-
-test('does not rewrite private Telegram invites or external meeting links', () => {
-  assert.equal(
-    telegramVideoChatJoinUrl('https://t.me/+privateInviteHash'),
-    'https://t.me/+privateInviteHash'
-  );
-  assert.equal(
-    telegramVideoChatJoinUrl('https://meet.example.com/room/123'),
-    'https://meet.example.com/room/123'
-  );
-});
-
-test('keeps an already configured video-chat link intact', () => {
-  assert.equal(
-    telegramVideoChatJoinUrl('https://t.me/hopehubindia?videochat'),
-    'https://t.me/hopehubindia?videochat'
-  );
-});
+import { telegramGroupCallButton, telegramLiveVoiceJoinUrl } from './telegram-group-call-link.js';
 
 test('scheduled event buttons do not claim that an inactive VC can be joined', () => {
   assert.deepEqual(telegramGroupCallButton('https://t.me/hopehubindia', false), {
@@ -37,8 +8,26 @@ test('scheduled event buttons do not claim that an inactive VC can be joined', (
     url: 'https://t.me/hopehubindia'
   });
   assert.deepEqual(telegramGroupCallButton('https://t.me/hopehubindia', true), {
+    text: 'Open group',
+    url: 'https://t.me/hopehubindia'
+  });
+});
+
+test('live buttons use the exact exported call hash and open the Telegram app directly', () => {
+  assert.deepEqual(telegramGroupCallButton('https://t.me/hopehubindia?videochat=abc123', true), {
     text: 'Join VC',
-    url: 'https://t.me/hopehubindia?videochat'
+    url: 'tg://resolve?domain=hopehubindia&videochat=abc123'
+  });
+  assert.deepEqual(telegramGroupCallButton('https://t.me/hopehubindia?videochat', true), {
+    text: 'Open group',
+    url: 'https://t.me/hopehubindia'
+  });
+});
+
+test('keeps non-Telegram meeting links usable while a call is live', () => {
+  assert.deepEqual(telegramGroupCallButton('https://meet.example.com/room/123', true), {
+    text: 'Join VC',
+    url: 'https://meet.example.com/room/123'
   });
 });
 

@@ -88,6 +88,7 @@ import {
   getTelegramCommunityGroupPolicy,
   saveTelegramCommunityGroupPolicy
 } from '../../services/telegram-community-group-policy.js';
+import { resolveGroupHelpConfigValues } from '../../services/telegram-group-help.config.js';
 
 const setupSchema = z.object({
   dropPendingUpdates: z.boolean().optional(),
@@ -441,11 +442,13 @@ async function groupHelpConfigMap(chatId?: string) {
     where: { key: { in: GROUP_HELP_CONFIG_KEYS } }
   });
   const policy = chatId ? await getTelegramCommunityGroupPolicy(chatId) : {};
-  const values: Record<string, string> = {
-    ...GROUP_HELP_CONFIG_DEFAULTS,
-    ...Object.fromEntries(rows.map((row) => [row.key, row.value])),
-    ...policy
-  };
+  const values = resolveGroupHelpConfigValues(
+    {
+      ...GROUP_HELP_CONFIG_DEFAULTS,
+      ...Object.fromEntries(rows.map((row) => [row.key, row.value]))
+    },
+    policy
+  );
   if (values.telegramGroupHelpBotUsername?.replace(/^@/, '').toLowerCase() === 'hopehubaibot') {
     values.telegramGroupHelpBotUsername = 'Hopehubbot';
   }

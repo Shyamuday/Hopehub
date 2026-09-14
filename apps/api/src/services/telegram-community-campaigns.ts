@@ -981,20 +981,11 @@ export async function handleTelegramCommunityVoiceChatStarted(message: Community
     }
   });
 
-  // The announcement may have been posted before the host started the VC.
-  // Refresh its markup now so even existing announcements open Telegram's
-  // native active-call join screen for public groups.
-  if (activeEvent?.telegramMessageId) {
+  // Use the same refresh/recreate path as the scheduler. The previous direct
+  // edit branch left deleted announcements permanently stale.
+  if (activeEvent) {
     try {
-      const rsvpCount = await prisma.telegramCommunityEventRsvp.count({
-        where: { eventId: activeEvent.id, status: 'GOING' }
-      });
-      await editCommunityReplyMarkup(
-        CAMPAIGN_BOT,
-        activeEvent.chatId,
-        activeEvent.telegramMessageId,
-        await telegramCommunityEventKeyboard(activeEvent, rsvpCount, true)
-      );
+      await refreshTelegramCommunityEventAnnouncement(activeEvent.id, { active: true });
     } catch (error) {
       // Telegram's Bot API update already records the active call. A markup
       // refresh failure must never prevent the scheduler from tracking it.

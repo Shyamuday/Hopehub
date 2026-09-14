@@ -11,7 +11,10 @@ import {
   renderGroupHelpFilterText,
   serializeGroupHelpFilters
 } from './telegram-group-help.filters.js';
-import { GROUP_HELP_WELLBEING_FILTER_DEFINITIONS } from '../constants/group-help-wellbeing-replies.constants.js';
+import {
+  GROUP_HELP_WELLBEING_FILTER_DEFINITIONS,
+  withGroupHelpWellbeingFilterDefaults
+} from '../constants/group-help-wellbeing-replies.constants.js';
 
 test('parses single, quoted, typed, and multi-trigger Rose filter commands', () => {
   assert.deepEqual(parseGroupHelpFilterCommand('/filter puppies I love puppies!'), {
@@ -109,6 +112,43 @@ test('wellbeing defaults match support-seeking phrases without matching broad di
     })?.id,
     'hopehub-immediate-support-v1'
   );
+});
+
+test('can limit matching to crisis filters for priority handling', () => {
+  assert.equal(
+    matchingGroupHelpFilter({
+      text: 'suicide',
+      definitions: GROUP_HELP_WELLBEING_FILTER_DEFINITIONS,
+      senderIsBot: false,
+      senderIsAdmin: false,
+      category: 'crisis'
+    })?.id,
+    'hopehub-immediate-support-v1'
+  );
+  assert.equal(
+    matchingGroupHelpFilter({
+      text: 'I am lonely',
+      definitions: GROUP_HELP_WELLBEING_FILTER_DEFINITIONS,
+      senderIsBot: false,
+      senderIsAdmin: false,
+      category: 'crisis'
+    }),
+    undefined
+  );
+});
+
+test('restores missing safety filters without replacing an edited filter with the same id', () => {
+  const existing =
+    'rose-filter:{"id":"hopehub-immediate-support-v1","category":"crisis","triggers":[{"value":"suicide","mode":"contains"}],"text":"Edited safety reply","audience":"all","allowBots":false}';
+  const definitions = withGroupHelpWellbeingFilterDefaults(existing);
+  const parsed = parseGroupHelpFilters(definitions).filters;
+
+  assert.equal(parsed.filter((filter) => filter.id === 'hopehub-immediate-support-v1').length, 1);
+  assert.equal(
+    parsed.find((filter) => filter.id === 'hopehub-immediate-support-v1')?.text,
+    'Edited safety reply'
+  );
+  assert.equal(parsed.length, 4);
 });
 
 test('matches contains, prefix and exact filters with audience and bot controls', () => {

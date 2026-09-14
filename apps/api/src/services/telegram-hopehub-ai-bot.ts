@@ -111,13 +111,15 @@ const BOT = GROUP_HELP_BOT_SLUG;
 async function sendMatchingGroupHelpFilter(
   message: CommunityTelegramMessage,
   values: Record<string, string>,
-  senderIsAdmin: boolean
+  senderIsAdmin: boolean,
+  category?: 'crisis' | 'wellbeing'
 ) {
   const filter = matchingGroupHelpFilter({
     text: `${message.text || ''}\n${message.caption || ''}`.trim(),
     definitions: values.telegramGroupHelpCustomReplies || '',
     senderIsBot: Boolean(message.from?.is_bot),
-    senderIsAdmin
+    senderIsAdmin,
+    category
   });
   if (!filter) return false;
   const chatId = String(message.chat.id);
@@ -486,13 +488,30 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
   if (await welcomeTelegramCommunityMembers(update)) return;
   if (!message) return;
   if (await handleGroupHelpFilterBuilderInput(message)) return;
+  // Crisis replies are time-sensitive and do not depend on identity-history
+  // writes or other moderation bookkeeping succeeding first.
+  if (
+    !message.text?.startsWith('/') &&
+    (await sendMatchingGroupHelpFilter(message, values, false, 'crisis'))
+  )
+    return;
   if (message.from && !message.from.is_bot) {
     const identity = await observeTelegramCommunityMember({
       chatId,
       member: message.from,
       source: 'MESSAGE'
+    }).catch((error) => {
+      console.warn(
+        '[telegram-group-help] Identity observation failed; continuing message handling.',
+        {
+          chatId,
+          telegramUserId: message.from?.id,
+          error
+        }
+      );
+      return null;
     });
-    if (identity.changed) {
+    if (identity?.changed) {
       const alertMode = values.telegramGroupHelpIdentityChangeAlerts || 'public full history';
       if (alertMode !== 'off') {
         await sendGroupHelpActivityLog(values, 'Member identity changed', [
