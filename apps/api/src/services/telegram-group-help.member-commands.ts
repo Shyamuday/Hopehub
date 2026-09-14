@@ -31,6 +31,10 @@ import {
   observeTelegramCommunityMember
 } from './telegram-community-member-identity.js';
 import { telegramPersonLogLabel } from './telegram-group-help.people.js';
+import {
+  resolveGroupHelpMember,
+  resolveGroupHelpTelegramUserId
+} from './telegram-group-help.member-resolution.js';
 import { groupHelpWarnPolicySummary } from './telegram-group-help.warning-policy.js';
 import {
   disabledGroupHelpCommands,
@@ -113,26 +117,8 @@ export async function handleGroupHelpMemberCommand(
   const targetChatId = context.targetChatId;
   const permissionMessage = messageForGroupHelpTarget(message, targetChatId);
   const commandParts = (message.text || '').trim().split(/\s+/);
-  const resolveMainGroupMember = async (argument: string) => {
-    let targetId = /^\d+$/.test(argument) ? Number(argument) : 0;
-    if (!targetId && argument.startsWith('@')) {
-      const known = await prisma.telegramCommunityMember.findFirst({
-        where: {
-          chatId: targetChatId,
-          username: { equals: argument.slice(1), mode: 'insensitive' }
-        },
-        select: { telegramUserId: true }
-      });
-      targetId = Number(known?.telegramUserId || 0);
-    }
-    if (!targetId) return undefined;
-    const member = await callCommunityTelegramApi<TelegramMemberSnapshot>(
-      GROUP_HELP_BOT_SLUG,
-      'getChatMember',
-      { chat_id: targetChatId, user_id: targetId }
-    ).catch(() => null);
-    return member?.user;
-  };
+  const resolveMainGroupMember = (argument: string) =>
+    resolveGroupHelpMember(targetChatId, argument);
   const deliverStaffResult = async (text: string) => {
     if (privateResult && message.from) {
       try {
@@ -436,14 +422,11 @@ export async function handleGroupHelpMemberCommand(
       return true;
     }
     const target =
-      message.reply_to_message?.from ||
-      (context.isControlGroup ? await resolveMainGroupMember(commandParts[1] || '') : undefined);
+      message.reply_to_message?.from || (await resolveMainGroupMember(commandParts[1] || ''));
     if (!target) {
       await sendTemporaryGroupHelpMessage(
         chatId,
-        context.isControlGroup
-          ? 'Use /perms <user_id or @username> from this private admin group.'
-          : 'Reply to a member’s message, then use /perms.',
+        'Reply to a member, or use /perms <user_id or @username>.',
         values
       );
       return true;
@@ -556,24 +539,16 @@ export async function handleGroupHelpMemberCommand(
     }
     const targetArgument = (message.text || '').trim().split(/\s+/)[1] || '';
     const replyTarget = message.reply_to_message?.from;
-    let targetId =
+    const targetId =
       command === '/me'
         ? message.from?.id || 0
-        : replyTarget?.id || (/^\d+$/.test(targetArgument) ? Number(targetArgument) : 0);
-    if (!targetId && targetArgument.startsWith('@')) {
-      const known = await prisma.telegramCommunityMember.findFirst({
-        where: {
-          chatId: targetChatId,
-          username: { equals: targetArgument.slice(1), mode: 'insensitive' }
-        },
-        select: { telegramUserId: true }
-      });
-      targetId = Number(known?.telegramUserId || 0);
-    }
+        : replyTarget?.id ||
+          (await resolveGroupHelpTelegramUserId(targetChatId, targetArgument)) ||
+          0;
     if (!targetId) {
       await sendTemporaryGroupHelpMessage(
         chatId,
-        'Reply to or forward a member’s message, or use /history followed by their Telegram numeric ID.',
+        'Reply to or forward a member’s message, or add their Telegram ID or @username.',
         values
       );
       return true;
@@ -717,18 +692,15 @@ export async function handleGroupHelpMemberCommand(
     return true;
   }
   if (command === '/id' || command === '/staffid') {
-    const target = message.reply_to_message?.from || message.from;
-    if (!target) return true;
     const isStaff = await canUseGroupHelpCommand(permissionMessage, values, '/id', 'HELPER');
+    const explicitTarget =
+      isStaff && commandParts[1] ? await resolveMainGroupMember(commandParts[1]) : undefined;
+    const target = message.reply_to_message?.from || explicitTarget || message.from;
+    if (!target) return true;
     const lines = [`Your Telegram ID: ${message.from?.id || 'unknown'}`];
-    if (
-      isStaff &&
-      message.reply_to_message?.from &&
-      message.reply_to_message.from.id !== message.from?.id
-    ) {
-      const replied = message.reply_to_message.from;
-      lines.push(`Replied member ID: ${replied.id}`);
-      if (replied.username) lines.push(`Username: @${replied.username}`);
+    if (isStaff && target.id !== message.from?.id) {
+      lines.push(`Target member ID: ${target.id}`);
+      if (target.username) lines.push(`Username: @${target.username}`);
     }
     lines.push(`Target group ID: ${targetChatId}`);
     await deliverStaffResult(lines.join('\n'));
@@ -842,19 +814,19 @@ export async function handleGroupHelpMemberCommand(
     const helpSections = [
       `*Hope Hub bot help*\n\n*Member commands*\n/rules — community rules\n/support — private support\n/get <name> or #name — open a saved note\n/notes — list available notes\n/warnings — warning settings and your count\n/warns — your active warning reasons\n/disabled — current disabled commands\n/disableable — commands admins can disable\n/me — your group profile\n/id — Telegram and target-group IDs\n/report — report a replied message\n/admin or /alertadmin — alert the community team\n/forget — delete retained Group Help data`,
       canUseStaffTools
-        ? `*Helper tools*\n/warn <id/username/reply> [reason]\n/dwarn [reason] — reply: delete and warn\n/swarn <id/username/reply> [reason] — silent warning\n/rmwarn or /unwarn — remove latest warning\n/warns <id/username/reply> — view warning reasons\n/delete [reason], /info, /history, /perms, /geturl\n/adminlist, /staff, /stats`
+        ? `*Helper tools*\n/warn <id/username/reply> [reason]\n/dwarn [reason] — reply: delete and warn\n/swarn <id/username/reply> [reason] — silent warning\n/rmwarn or /unwarn — remove latest warning\n/warns <id/username/reply> — view warning reasons\n/info, /history, /perms, /id <id/username/reply>\n/delete [reason], /geturl\n/adminlist, /staff, /stats`
         : '',
       canUseModTools
         ? `*Moderator tools — Rose-compatible syntax*\nReply to a message, or add <user_id or @username> before the reason.\n/ban, /mute — permanent action; /kick — remove (the member may rejoin)\n/tban, /tmute <time> [reason] — timed action (15m, 3h, 2d, 1w)\n/dban, /dmute, /dkick — reply: delete message plus action\n/sban, /smute, /skick — silent action; deletes replied message and command\n/unban, /unmute — undo the action\n/resetwarn — remove all warnings\nLegacy /delban, /delmute, /delkick remain supported. Default automated warning mute: ${muteMinutes} minutes.`
         : '',
       canUseAdminTools
-        ? `*Administrator tools*\n/promote, /unadmin, /title, /untitle\n/helper, /unhelper, /mod, /unmod\n/pin [notify], /unpin, /unpinall, /pinned\n/filter <trigger> <reply>, /stop <trigger>, /filters\n/stopall — owner only\n/save <name> <note>, /clear <name>, /privatenotes <on|off>\n/blockword, /unblockword, /blockwords — safety phrases\n/cleancommand, /keepcommand <all|admin|user|other>\n/cleanmsg, /keepmsg <all|action|filter|note>\n/cleanservice, /nocleanservice <all|join|leave|other|photo|pin|title|videochat>\n/setwarnlimit <number>\n/setwarnmode <kick|ban|mute|tban TIME|tmute TIME>\n/setwarntime <time|off> (also /warntime)\n/reports <on|off>\n/disable <command>, /enable <command>\n/disabledel <on|off>, /disableadmin <on|off>\n/welcome on|off, /lockdown [minutes], /unlock\n/settings, /setlog, /setofftopic`
+        ? `*Administrator tools*\n/promote, /unadmin, /title, /untitle <id/username/reply>\n/helper, /unhelper, /mod, /unmod <id/username/reply>\n/pin [notify], /unpin, /unpinall, /pinned\n/filter <trigger> <reply>, /stop <trigger>, /filters\n/stopall — owner only\n/save <name> <note>, /clear <name>, /privatenotes <on|off>\n/blockword, /unblockword, /blockwords — safety phrases\n/cleancommand, /keepcommand <all|admin|user|other>\n/cleanmsg, /keepmsg <all|action|filter|note>\n/cleanservice, /nocleanservice <all|join|leave|other|photo|pin|title|videochat>\n/setwarnlimit <number>\n/setwarnmode <kick|ban|mute|tban TIME|tmute TIME>\n/setwarntime <time|off> (also /warntime)\n/reports <on|off>\n/disable <command>, /enable <command>\n/disabledel <on|off>, /disableadmin <on|off>\n/welcome on|off, /lockdown [minutes], /unlock\n/settings, /setlog, /setofftopic`
         : '',
       context.isControlGroup && canUseStaffTools
         ? `*Private admin-group syntax*\n/info or /history <user_id or @username>\nForward a member message directly to the bot for /history\n/perms <user_id or @username>\n/ban|mute|kick <user_id or @username> [reason]\n/tban|tmute <user_id or @username> <time> [reason]\n/sban|smute|skick <user_id or @username> [reason]\n/delete <main_message_id> [reason]\n/dban|dmute|dkick <user> <main_message_id> [reason]\n/geturl <main_message_id>\n/clearwarnings <user_id or @username>`
         : '',
       context.isControlGroup && canUseAdminTools
-        ? `*Private admin-group administration*\n/promote <user> [title]\n/unadmin <user>\n/title <user> <title>, /untitle <user>\n/helper|mod <user>, /unhelper|unmod <user>\n/pin <main_message_id> [notify]\nAll policy commands above apply to the configured main group.`
+        ? `*Private admin-group administration*\n/promote <user_id or @username> [title]\n/unadmin <user_id or @username>\n/title <user_id or @username> <title>, /untitle <user_id or @username>\n/helper|mod <user_id or @username>, /unhelper|unmod <user_id or @username>\n/pin <main_message_id> [notify]\nAll policy commands above apply to the configured main group.`
         : '',
       'For sensitive staff results, run the command in the configured private admin group.'
     ]

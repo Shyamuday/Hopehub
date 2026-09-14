@@ -24,6 +24,7 @@ import { sendGroupHelpPermissionDenied } from './telegram-group-help.permissions
 import { requestGroupHelpCommandConfirmation } from './telegram-group-help.command-confirmation.js';
 import { telegramPersonLogLabel } from './telegram-group-help.people.js';
 import { canManageGroupHelpPins } from './telegram-group-help.pin-rights.js';
+import { resolveGroupHelpMember } from './telegram-group-help.member-resolution.js';
 import {
   groupHelpWarnPolicySummary,
   parseGroupHelpWarnMode,
@@ -142,27 +143,6 @@ export async function handleGroupHelpAdminCommand(
   ) {
     return true;
   }
-  const resolveMainGroupMember = async (argument: string) => {
-    let targetId = /^\d+$/.test(argument) ? Number(argument) : 0;
-    if (!targetId && argument.startsWith('@')) {
-      const known = await prisma.telegramCommunityMember.findFirst({
-        where: {
-          chatId: targetChatId,
-          username: { equals: argument.slice(1), mode: 'insensitive' }
-        },
-        select: { telegramUserId: true }
-      });
-      targetId = Number(known?.telegramUserId || 0);
-    }
-    if (!targetId) return undefined;
-    const member = await callCommunityTelegramApi<{
-      user?: { id: number; first_name?: string; username?: string };
-    }>(GROUP_HELP_BOT_SLUG, 'getChatMember', {
-      chat_id: targetChatId,
-      user_id: targetId
-    }).catch(() => null);
-    return member?.user;
-  };
   if (command === '/save' || command === '/clear' || command === '/privatenotes') {
     const { saveTelegramCommunityGroupPolicy, getTelegramCommunityGroupPolicy } =
       await import('./telegram-community-group-policy.js');
@@ -523,22 +503,19 @@ export async function handleGroupHelpAdminCommand(
   }
 
   if (command === '/promote') {
-    const target =
-      message.reply_to_message?.from ||
-      (context.isControlGroup ? await resolveMainGroupMember(parts[1] || '') : undefined);
+    const replyTarget = message.reply_to_message?.from;
+    const target = replyTarget || (await resolveGroupHelpMember(targetChatId, parts[1] || ''));
     if (!target) {
       await sendTemporaryGroupHelpMessage(
         chatId,
-        context.isControlGroup
-          ? 'Use /promote <user_id or @username> [title] from this private admin group.'
-          : "Reply to a member's message, then use /promote.",
+        'Reply to a member, or use /promote <user_id or @username> [title].',
         values
       );
       return true;
     }
     const title =
       parts
-        .slice(context.isControlGroup ? 2 : 1)
+        .slice(replyTarget ? 1 : 2)
         .join(' ')
         .trim() || '';
     await callCommunityTelegramApi(GROUP_HELP_BOT_SLUG, 'promoteChatMember', {
@@ -577,13 +554,11 @@ export async function handleGroupHelpAdminCommand(
   if (command === '/demote' || command === '/unadmin') {
     const target =
       message.reply_to_message?.from ||
-      (context.isControlGroup ? await resolveMainGroupMember(parts[1] || '') : undefined);
+      (await resolveGroupHelpMember(targetChatId, parts[1] || ''));
     if (!target) {
       await sendTemporaryGroupHelpMessage(
         chatId,
-        context.isControlGroup
-          ? 'Use /unadmin <user_id or @username> from this private admin group.'
-          : "Reply to a member's message, then use /unadmin.",
+        'Reply to a member, or use /unadmin <user_id or @username>.',
         values
       );
       return true;
@@ -612,19 +587,16 @@ export async function handleGroupHelpAdminCommand(
   }
 
   if (command === '/title') {
-    const target =
-      message.reply_to_message?.from ||
-      (context.isControlGroup ? await resolveMainGroupMember(parts[1] || '') : undefined);
+    const replyTarget = message.reply_to_message?.from;
+    const target = replyTarget || (await resolveGroupHelpMember(targetChatId, parts[1] || ''));
     const title = parts
-      .slice(context.isControlGroup ? 2 : 1)
+      .slice(replyTarget ? 1 : 2)
       .join(' ')
       .trim();
     if (!target || !title) {
       await sendTemporaryGroupHelpMessage(
         chatId,
-        context.isControlGroup
-          ? 'Use /title <user_id or @username> <title text> from this private admin group.'
-          : 'Reply to an admin and use /title <title text>.',
+        'Reply to an admin and use /title <title text>, or use /title <user_id or @username> <title text>.',
         values
       );
       return true;
@@ -645,13 +617,11 @@ export async function handleGroupHelpAdminCommand(
   if (command === '/untitle') {
     const target =
       message.reply_to_message?.from ||
-      (context.isControlGroup ? await resolveMainGroupMember(parts[1] || '') : undefined);
+      (await resolveGroupHelpMember(targetChatId, parts[1] || ''));
     if (!target) {
       await sendTemporaryGroupHelpMessage(
         chatId,
-        context.isControlGroup
-          ? 'Use /untitle <user_id or @username> from this private admin group.'
-          : 'Reply to an admin, then use /untitle.',
+        'Reply to an admin, or use /untitle <user_id or @username>.',
         values
       );
       return true;

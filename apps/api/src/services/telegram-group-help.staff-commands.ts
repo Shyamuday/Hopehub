@@ -32,6 +32,7 @@ import {
 import { requestGroupHelpCommandConfirmation } from './telegram-group-help.command-confirmation.js';
 import { groupHelpAdminMentionReplyTarget } from './telegram-group-help.admin-mentions.js';
 import { telegramPersonLogLabel } from './telegram-group-help.people.js';
+import { resolveGroupHelpMember } from './telegram-group-help.member-resolution.js';
 import {
   groupHelpBanCooldownRemainingSeconds,
   groupHelpBanCooldownSeconds,
@@ -193,20 +194,7 @@ export async function handleGroupHelpStaffCommand(
 
     if (usesExplicitTarget) {
       const arg = parts[1] || '';
-      let userId = /^\d+$/.test(arg) ? Number(arg) : 0;
-
-      if (!userId && arg.startsWith('@')) {
-        const known = await prisma.telegramCommunityMember.findFirst({
-          where: {
-            chatId: targetChatId,
-            username: { equals: arg.slice(1), mode: 'insensitive' }
-          },
-          select: { telegramUserId: true }
-        });
-        if (known) userId = Number(known.telegramUserId);
-      }
-
-      if (!userId) {
+      if (!arg) {
         await sendCommunityMessage(
           GROUP_HELP_BOT_SLUG,
           chatId,
@@ -214,24 +202,15 @@ export async function handleGroupHelpStaffCommand(
         );
         return true;
       }
-
-      const memberInfo = await callCommunityTelegramApi<{
-        user?: { id: number; first_name?: string; username?: string };
-      }>(GROUP_HELP_BOT_SLUG, 'getChatMember', {
-        chat_id: targetChatId,
-        user_id: userId
-      }).catch(() => null);
-
-      if (!memberInfo?.user) {
+      target = await resolveGroupHelpMember(targetChatId, arg);
+      if (!target) {
         await sendCommunityMessage(
           GROUP_HELP_BOT_SLUG,
           chatId,
-          `Could not find user ${userId} in the main group.`
+          `Could not find ${arg} in the target group. Use their Telegram ID, current @username, or reply to their message.`
         );
         return true;
       }
-
-      target = memberInfo.user;
     }
 
     if (!target) return true;
@@ -510,34 +489,10 @@ export async function handleGroupHelpStaffCommand(
     return true;
   }
 
-  let target = message.reply_to_message?.from;
-  if (isCrossGroup) {
-    const argument = parts[1] || '';
-    let targetId = /^\d+$/.test(argument) ? Number(argument) : 0;
-    if (!targetId && argument.startsWith('@')) {
-      const known = await prisma.telegramCommunityMember.findFirst({
-        where: {
-          chatId: targetChatId,
-          username: { equals: argument.slice(1), mode: 'insensitive' }
-        },
-        select: { telegramUserId: true }
-      });
-      targetId = Number(known?.telegramUserId || 0);
-    }
-    if (targetId) {
-      const member = await callCommunityTelegramApi<{
-        user?: { id: number; first_name?: string; username?: string };
-      }>(GROUP_HELP_BOT_SLUG, 'getChatMember', {
-        chat_id: targetChatId,
-        user_id: targetId
-      }).catch(() => null);
-      target = member?.user;
-    }
-  }
+  const target =
+    message.reply_to_message?.from || (await resolveGroupHelpMember(targetChatId, parts[1] || ''));
   if (!target) {
-    const usage = isCrossGroup
-      ? `Use ${command} <user_id or @username> from this private admin group.`
-      : 'Reply to a member, then use this role command.';
+    const usage = `Reply to a member, or use ${command} <user_id or @username>.`;
     await sendTemporaryGroupHelpMessage(chatId, usage, values);
     return true;
   }
