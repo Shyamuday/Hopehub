@@ -606,7 +606,11 @@ async function sendLiveVoiceReminder(
           select: { title: true, joinUrl: true }
         })
       : null,
-    getSiteConfigMap(['telegramGroupHelpGroupChatId', 'telegramGroupHelpMainGroupUrl'])
+    getSiteConfigMap([
+      'telegramGroupHelpGroupChatId',
+      'telegramGroupHelpMainGroupUrl',
+      'telegramGroupHelpLiveVoiceImageUrl'
+    ])
   ]);
   const mainGroupJoinUrl =
     config.telegramGroupHelpGroupChatId?.trim() === chatId
@@ -615,16 +619,23 @@ async function sendLiveVoiceReminder(
   // An invite exported for the exact active call is reliable for both manual
   // and scheduled VCs. A generic public-group URL is only the fallback.
   const joinUrl = telegramLiveVoiceJoinUrl(payload.activeJoinUrl, event?.joinUrl, mainGroupJoinUrl);
+  const text = liveVoiceReminderText(event?.title);
+  const replyMarkup = joinUrl
+    ? { inline_keyboard: [[telegramGroupCallButton(joinUrl, true)]] }
+    : undefined;
   let sent: { message_id: number };
   try {
-    sent = await sendCommunityMessage(
-      GROUP_HELP_BOT_SLUG,
-      chatId,
-      liveVoiceReminderText(event?.title),
-      joinUrl
-        ? { reply_markup: { inline_keyboard: [[telegramGroupCallButton(joinUrl, true)]] } }
-        : {}
-    );
+    const imageUrl = config.telegramGroupHelpLiveVoiceImageUrl?.trim() || '';
+    sent = imageUrl
+      ? await callCommunityTelegramApi<{ message_id: number }>(GROUP_HELP_BOT_SLUG, 'sendPhoto', {
+          chat_id: chatId,
+          photo: imageUrl,
+          caption: Array.from(text).slice(0, 1024).join(''),
+          ...(replyMarkup ? { reply_markup: replyMarkup } : {})
+        })
+      : await sendCommunityMessage(GROUP_HELP_BOT_SLUG, chatId, text, {
+          ...(replyMarkup ? { reply_markup: replyMarkup } : {})
+        });
   } catch (error) {
     console.warn(
       `Could not send live VC reminder to ${chatId}: ${

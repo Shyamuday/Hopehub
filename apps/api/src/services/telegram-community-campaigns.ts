@@ -155,6 +155,7 @@ const COMMUNITY_CONFIG_KEYS = [
   'telegramGroupHelpJoinLeaveMessages',
   'telegramGroupHelpWelcomeMessage',
   'telegramGroupHelpWelcomeImageUrl',
+  'telegramGroupHelpLiveVoiceImageUrl',
   'telegramGroupHelpWelcomeButtons',
   'telegramGroupHelpGroupChatId',
   'telegramGroupHelpOffTopicGroupChatId',
@@ -205,6 +206,7 @@ async function communityConfig(chatId?: string) {
       values.telegramGroupHelpWelcomeMessage ||
       'Welcome to Hope Hub 💙 Participate at your own pace and protect your personal details.',
     welcomeMediaUrl: values.telegramGroupHelpWelcomeImageUrl?.trim() || '',
+    liveVoiceImageUrl: values.telegramGroupHelpLiveVoiceImageUrl?.trim() || '',
     welcomeKeyboard: withCrossCommunityButton(
       {
         inline_keyboard: [
@@ -1644,23 +1646,30 @@ export async function announceTelegramCommunityEvent(
       event._count.rsvps,
       Boolean(options.active)
     );
-    const sent = await sendCommunityMessage(
-      CAMPAIGN_BOT,
-      event.chatId,
-      [
-        `🎧 ${event.title}`,
-        event.description,
-        '',
-        `Starts: ${event.startsAt.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`
-      ]
-        .filter(Boolean)
-        .join('\n'),
-      {
-        reply_markup: keyboard
-      }
-    );
+    const text = [
+      options.active ? `🔴 LIVE NOW — ${event.title}` : `🎧 ${event.title}`,
+      event.description,
+      '',
+      options.active
+        ? 'The voice chat is open now.'
+        : `Starts: ${event.startsAt.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`
+    ]
+      .filter(Boolean)
+      .join('\n');
+    const config = await communityConfig(event.chatId);
+    const sent =
+      options.active && config.liveVoiceImageUrl
+        ? await callCommunityTelegramApi<{ message_id: number }>(CAMPAIGN_BOT, 'sendPhoto', {
+            chat_id: event.chatId,
+            photo: config.liveVoiceImageUrl,
+            caption: Array.from(text).slice(0, 1024).join(''),
+            reply_markup: keyboard
+          })
+        : await sendCommunityMessage(CAMPAIGN_BOT, event.chatId, text, {
+            reply_markup: keyboard
+          });
     announcementDelivered = true;
-    await manageAnnouncementPin(await communityConfig(), event.chatId, sent.message_id, 'event');
+    await manageAnnouncementPin(config, event.chatId, sent.message_id, 'event');
     return await prisma.telegramCommunityEvent.update({
       where: { id: event.id },
       data: { telegramMessageId: sent.message_id, announcedAt: new Date() }

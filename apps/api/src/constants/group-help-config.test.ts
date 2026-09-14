@@ -76,7 +76,8 @@ test('community message flows have public media without replacing the welcome vi
     'telegramGroupHelpPinnedImageUrl',
     'telegramGroupHelpAdminRecruitmentImageUrl',
     'telegramGroupHelpAdminMentionImageUrl',
-    'telegramGroupHelpRecurringImageUrl'
+    'telegramGroupHelpRecurringImageUrl',
+    'telegramGroupHelpLiveVoiceImageUrl'
   ] as const) {
     assert.match(GROUP_HELP_CONFIG_DEFAULTS[key], /^https:\/\//, `${key} needs public media`);
   }
