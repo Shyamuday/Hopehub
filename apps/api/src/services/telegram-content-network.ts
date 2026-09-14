@@ -214,11 +214,23 @@ export async function reviewTelegramContentItem(input: {
 }
 
 async function publishTelegramContentItem(itemId: string, now = new Date()) {
+  const claimed = await prisma.telegramContentItem.updateMany({
+    where: { id: itemId, status: 'APPROVED' },
+    data: { status: 'PUBLISHING', error: null }
+  });
+  if (!claimed.count) return null;
   const item = await prisma.telegramContentItem.findUnique({
     where: { id: itemId },
     include: { channel: true }
   });
-  if (!item || item.status !== 'APPROVED' || !item.channel.isActive) return null;
+  if (!item || item.status !== 'PUBLISHING') return null;
+  if (!item.channel.isActive) {
+    await prisma.telegramContentItem.update({
+      where: { id: itemId },
+      data: { status: 'APPROVED' }
+    });
+    return null;
+  }
   const sent = item.imageUrl
     ? await callCommunityTelegramApi<{ message_id: number }>(
         item.channel.bot as CommunityBotSlug,
@@ -276,8 +288,8 @@ export async function runTelegramContentNetworkScheduler(now = new Date()) {
     try {
       if (await publishTelegramContentItem(item.id, now)) published.push(item.id);
     } catch (error) {
-      await prisma.telegramContentItem.update({
-        where: { id: item.id },
+      await prisma.telegramContentItem.updateMany({
+        where: { id: item.id, status: 'PUBLISHING' },
         data: {
           status: 'FAILED',
           error: (error instanceof Error ? error.message : String(error)).slice(0, 1000)

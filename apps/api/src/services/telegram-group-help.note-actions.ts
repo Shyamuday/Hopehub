@@ -24,9 +24,15 @@ import {
 } from './telegram-group-help.notes.js';
 import { prisma } from '../db.js';
 import {
+  claimTelegramOperation,
+  releaseTelegramOperation
+} from './telegram-community-operation-claims.js';
+import {
   getTelegramCommunityGroupPolicy,
   saveTelegramCommunityGroupPolicy
 } from './telegram-community-group-policy.js';
+
+const REPEATED_NOTE_CLAIM = 'telegram-repeated-note';
 
 export async function isGroupHelpNoteAdmin(chatId: string, userId: number | undefined) {
   if (!userId) return false;
@@ -244,6 +250,14 @@ export async function runRepeatedGroupHelpNotes(now = new Date()) {
     let changed = false;
     const nextByName = new Map<string, string>();
     for (const note of due) {
+      const claimKey = `${chatId}:${note.name}`;
+      const nextRepeatAt = new Date(now.getTime() + note.repeatSeconds! * 1000);
+      const claimed = await claimTelegramOperation({
+        operation: REPEATED_NOTE_CLAIM,
+        key: claimKey,
+        expiresAt: nextRepeatAt
+      });
+      if (!claimed) continue;
       try {
         await sendGroupHelpNote({
           note,
@@ -255,10 +269,13 @@ export async function runRepeatedGroupHelpNotes(now = new Date()) {
           },
           values
         });
-        note.nextRepeatAt = new Date(now.getTime() + note.repeatSeconds! * 1000).toISOString();
+        note.nextRepeatAt = nextRepeatAt.toISOString();
         nextByName.set(note.name, note.nextRepeatAt);
         changed = true;
       } catch (error) {
+        await releaseTelegramOperation({ operation: REPEATED_NOTE_CLAIM, key: claimKey }).catch(
+          () => null
+        );
         console.error('[telegram-group-help] Could not send repeated note.', {
           chatId,
           note: note.name,

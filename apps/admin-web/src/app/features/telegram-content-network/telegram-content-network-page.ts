@@ -36,7 +36,7 @@ type ContentItem = {
   summary?: string | null;
   postText: string;
   sourceUrl: string;
-  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'PUBLISHED' | 'FAILED';
+  status: 'PENDING' | 'APPROVED' | 'PUBLISHING' | 'REJECTED' | 'PUBLISHED' | 'FAILED';
   createdAt: string;
   scheduledFor?: string | null;
   channel: { id: string; name: string };

@@ -2263,7 +2263,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
           channel: { select: { name: true, slug: true } },
           source: { select: { name: true, attribution: true } }
         },
-        where: { status: { in: ['PENDING', 'APPROVED', 'FAILED'] } },
+        where: { status: { in: ['PENDING', 'APPROVED', 'PUBLISHING', 'FAILED'] } },
         orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
         take: 100
       });
