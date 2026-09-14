@@ -1330,6 +1330,7 @@ export function registerAdminTelegramBotRoutes(router: Router) {
       res.json({
         tokenConfigured: Boolean(groupHelpBotToken()),
         actions: GROUP_HELP_ACTIONS,
+        commandDefinitions: GROUP_HELP_COMMAND_DEFINITIONS,
         capabilityGroups: GROUP_HELP_CAPABILITY_GROUPS,
         actionHistory,
         operationalHealth: {

@@ -6,6 +6,19 @@ import { AdminApi } from '../../core/services/admin-api';
 import { AppApplyButtonComponent } from '../../shared/ui/app-apply-button.component';
 import { AppMediaUrlFieldComponent } from '../../shared/ui/app-media-url-field.component';
 import { AppUnsavedChangesBarComponent } from '../../shared/ui/app-unsaved-changes-bar.component';
+import {
+  parseAdminFilters,
+  parseAdminNotes,
+  serializeAdminFilters,
+  serializeAdminNotes,
+  splitConfigList,
+  telegramFormattingPreview,
+  toggleConfigList,
+  type FilterAudience,
+  type FilterMatchMode,
+  type GroupHelpFilterDraft,
+  type GroupHelpNoteDraft,
+} from './group-help-editors';
 
 type GroupHelpConfigEntry = {
   key: string;
@@ -43,6 +56,40 @@ type CommandItem = {
   templateKey: string;
   placeholder: 'message' | 'value' | 'lines';
   applyMode: 'TELEGRAM_ADMIN_CONFIRMATION' | 'DIRECT_PIN';
+};
+
+type CommandDefinition = {
+  command: string;
+  area: 'member' | 'staff' | 'moderation' | 'roles' | 'administration' | 'safety';
+  minimumRole: 'MEMBER' | 'HELPER' | 'MODERATOR' | 'ADMIN';
+  destructive: boolean;
+};
+
+type FilterEditor = {
+  triggers: string;
+  mode: FilterMatchMode;
+  text: string;
+  mediaType: string;
+  mediaUrl: string;
+  buttonText: string;
+  buttonUrl: string;
+  audience: FilterAudience;
+  allowBots: boolean;
+  notifyStaff: boolean;
+  category: '' | 'crisis' | 'wellbeing';
+  cooldownSeconds: number;
+};
+
+type NoteEditor = {
+  name: string;
+  text: string;
+  buttonText: string;
+  buttonUrl: string;
+  mediaType: string;
+  mediaUrl: string;
+  privacy: 'default' | 'private' | 'public';
+  adminOnly: boolean;
+  repeat: string;
 };
 
 type CampaignItemDraft = {
@@ -390,6 +437,39 @@ export class GroupHelpPage {
   readonly moderatorAction = signal('warn');
   readonly moderatorTarget = signal('');
   readonly moderatorReason = signal('');
+  readonly moderatorTimed = signal(false);
+  readonly moderatorDuration = signal('1h');
+  readonly moderatorDeleteMessage = signal(false);
+  readonly moderatorSilent = signal(false);
+  readonly commandDefinitions = signal<CommandDefinition[]>([]);
+  readonly commandSearch = signal('');
+  readonly commandRoleFilter = signal('ALL');
+  readonly filteredCommandDefinitions = computed(() => {
+    const query = this.commandSearch().trim().toLowerCase();
+    const role = this.commandRoleFilter();
+    return this.commandDefinitions().filter(
+      (definition) =>
+        (role === 'ALL' || definition.minimumRole === role) &&
+        (!query ||
+          `${definition.command} ${definition.area} ${definition.minimumRole}`
+            .toLowerCase()
+            .includes(query)),
+    );
+  });
+  readonly filterEditor = signal<FilterEditor>(this.emptyFilterEditor());
+  readonly editingFilterIndex = signal<number | null>(null);
+  readonly noteEditor = signal<NoteEditor>(this.emptyNoteEditor());
+  readonly editingNoteIndex = signal<number | null>(null);
+  readonly formattingSource = signal(
+    '*Welcome*, {first}!\nRead {rules}\n[Get support](buttonurl://https://hopehub.in)\n%%%\nHello {fullname}!',
+  );
+  readonly formattingPreview = computed(() => telegramFormattingPreview(this.formattingSource()));
+  readonly managedFilters = computed(
+    () => parseAdminFilters(this.value('telegramGroupHelpCustomReplies')).filters,
+  );
+  readonly managedNotes = computed(
+    () => parseAdminNotes(this.value('telegramGroupHelpNotes')).notes,
+  );
   readonly memberDirectory = signal<any[]>([]);
   readonly memberDirectoryScope = signal<'main' | 'off-topic' | 'staff'>('main');
   readonly memberDirectorySearch = signal('');
@@ -590,6 +670,7 @@ export class GroupHelpPage {
       this.messageCommands = actions.filter((action) => Boolean(action.imageUrlKey));
       this.moderationCommands = actions.filter((action) => !action.imageUrlKey);
       this.capabilityGroups.set(res.capabilityGroups || []);
+      this.commandDefinitions.set(res.commandDefinitions || []);
       this.actionHistory.set(res.actionHistory || []);
       const latestStatuses: Record<string, 'applied' | 'confirmation'> = {};
       for (const entry of res.actionHistory || []) {
@@ -1282,6 +1363,357 @@ export class GroupHelpPage {
     return this.moderatorActions.map((action) => ({ value: action.value, label: action.label }));
   }
 
+  readonly commandRoleOptions: FormDropdownOption[] = [
+    { value: 'ALL', label: 'Every role' },
+    { value: 'MEMBER', label: 'Members' },
+    { value: 'HELPER', label: 'Helpers' },
+    { value: 'MODERATOR', label: 'Moderators' },
+    { value: 'ADMIN', label: 'Administrators' },
+  ];
+  readonly filterModeOptions: FormDropdownOption[] = [
+    { value: 'contains', label: 'Contains whole word or phrase' },
+    { value: 'prefix', label: 'Message starts with' },
+    { value: 'exact', label: 'Exact message' },
+  ];
+  readonly audienceOptions: FormDropdownOption[] = [
+    { value: 'all', label: 'Everyone' },
+    { value: 'users', label: 'Members only' },
+    { value: 'admins', label: 'Admins only' },
+  ];
+  readonly mediaTypeOptions: FormDropdownOption[] = [
+    { value: '', label: 'No media' },
+    { value: 'photo', label: 'Image' },
+    { value: 'animation', label: 'GIF / animation' },
+    { value: 'video', label: 'Video' },
+    { value: 'document', label: 'Document' },
+    { value: 'audio', label: 'Audio' },
+    { value: 'voice', label: 'Voice note' },
+    { value: 'sticker', label: 'Sticker' },
+  ];
+  readonly notePrivacyOptions: FormDropdownOption[] = [
+    { value: 'default', label: 'Use group default' },
+    { value: 'private', label: 'Always open privately' },
+    { value: 'public', label: 'Always show in group' },
+  ];
+  readonly warningActionOptions: FormDropdownOption[] = [
+    { value: 'mute', label: 'Mute permanently' },
+    { value: 'kick', label: 'Kick member' },
+    { value: 'ban', label: 'Ban permanently' },
+    { value: 'tmute 1h', label: 'Mute for 1 hour' },
+    { value: 'tmute 1d', label: 'Mute for 1 day' },
+    { value: 'tban 1d', label: 'Ban for 1 day' },
+    { value: 'tban 1w', label: 'Ban for 1 week' },
+  ];
+  readonly warningExpiryOptions: FormDropdownOption[] = [
+    { value: 'off', label: 'Never expire' },
+    { value: '1d', label: 'After 1 day' },
+    { value: '1w', label: 'After 1 week' },
+    { value: '4w', label: 'After 4 weeks' },
+    { value: '12w', label: 'After 12 weeks' },
+    { value: '52w', label: 'After 1 year' },
+  ];
+  readonly disableableCommands = [
+    'adminlist',
+    'filters',
+    'id',
+    'info',
+    'notes',
+    'rules',
+    'warnings',
+    'warns',
+    'disabled',
+    'disableable',
+    'get',
+    'me',
+    'support',
+    'staff',
+    'stats',
+  ];
+  readonly cleanupGroups = [
+    {
+      key: 'telegramGroupHelpCleanCommandTypes',
+      title: 'Command messages',
+      items: ['all', 'admin', 'user', 'other'],
+    },
+    {
+      key: 'telegramGroupHelpCleanMessageTypes',
+      title: 'Bot replies',
+      items: ['all', 'action', 'filter', 'note'],
+    },
+    {
+      key: 'telegramGroupHelpCleanServiceTypes',
+      title: 'Telegram service notices',
+      items: ['all', 'join', 'leave', 'other', 'photo', 'pin', 'title', 'videochat'],
+    },
+  ];
+
+  private emptyFilterEditor(): FilterEditor {
+    return {
+      triggers: '',
+      mode: 'contains',
+      text: '',
+      mediaType: '',
+      mediaUrl: '',
+      buttonText: '',
+      buttonUrl: '',
+      audience: 'all',
+      allowBots: false,
+      notifyStaff: false,
+      category: '',
+      cooldownSeconds: 0,
+    };
+  }
+
+  private emptyNoteEditor(): NoteEditor {
+    return {
+      name: '',
+      text: '',
+      buttonText: '',
+      buttonUrl: '',
+      mediaType: '',
+      mediaUrl: '',
+      privacy: 'default',
+      adminOnly: false,
+      repeat: '',
+    };
+  }
+
+  updateFilterEditor<K extends keyof FilterEditor>(key: K, value: FilterEditor[K]) {
+    this.filterEditor.update((current) => ({ ...current, [key]: value }));
+  }
+
+  editFilter(index: number) {
+    const filter = this.managedFilters()[index];
+    if (!filter) return;
+    const mode = filter.triggers[0]?.mode || 'contains';
+    this.filterEditor.set({
+      triggers: filter.triggers.map((trigger) => trigger.value).join('\n'),
+      mode,
+      text: filter.text || '',
+      mediaType: filter.media?.type || '',
+      mediaUrl: filter.media?.fileId || '',
+      buttonText: filter.button?.text || '',
+      buttonUrl: filter.button?.url || '',
+      audience: filter.audience || 'all',
+      allowBots: Boolean(filter.allowBots),
+      notifyStaff: Boolean(filter.notifyStaff),
+      category: filter.category || '',
+      cooldownSeconds: filter.cooldownSeconds || 0,
+    });
+    this.editingFilterIndex.set(index);
+  }
+
+  cancelFilterEdit() {
+    this.filterEditor.set(this.emptyFilterEditor());
+    this.editingFilterIndex.set(null);
+  }
+
+  saveFilter() {
+    const draft = this.filterEditor();
+    const triggers = draft.triggers
+      .split(/\r?\n|,/)
+      .map((value) => value.trim())
+      .filter(Boolean)
+      .map((value) => ({ value, mode: draft.mode }));
+    if (!triggers.length || (!draft.text.trim() && !draft.mediaUrl.trim())) {
+      this.error.set('Add at least one trigger and a text or media reply.');
+      return;
+    }
+    if (draft.buttonUrl && !/^https:\/\//i.test(draft.buttonUrl)) {
+      this.error.set('Filter button links must start with https://.');
+      return;
+    }
+    const parsed = parseAdminFilters(this.value('telegramGroupHelpCustomReplies'));
+    const filter: GroupHelpFilterDraft = {
+      triggers,
+      ...(draft.text.trim() ? { text: draft.text.trim() } : {}),
+      ...(draft.mediaType && draft.mediaUrl.trim()
+        ? { media: { type: draft.mediaType, fileId: draft.mediaUrl.trim() } }
+        : {}),
+      ...(draft.buttonText.trim() && draft.buttonUrl.trim()
+        ? { button: { text: draft.buttonText.trim(), url: draft.buttonUrl.trim() } }
+        : {}),
+      audience: draft.audience,
+      allowBots: draft.allowBots,
+      ...(draft.notifyStaff ? { notifyStaff: true } : {}),
+      ...(draft.category ? { category: draft.category } : {}),
+      ...(draft.cooldownSeconds > 0 ? { cooldownSeconds: draft.cooldownSeconds } : {}),
+    };
+    const index = this.editingFilterIndex();
+    if (index == null) parsed.filters.push(filter);
+    else parsed.filters[index] = { ...parsed.filters[index], ...filter };
+    this.update(
+      'telegramGroupHelpCustomReplies',
+      serializeAdminFilters(parsed.filters, parsed.passthrough),
+    );
+    this.cancelFilterEdit();
+    this.setSuccess(index == null ? 'Filter added to the unsaved configuration' : 'Filter updated');
+  }
+
+  deleteFilter(index: number) {
+    const parsed = parseAdminFilters(this.value('telegramGroupHelpCustomReplies'));
+    parsed.filters.splice(index, 1);
+    this.update(
+      'telegramGroupHelpCustomReplies',
+      serializeAdminFilters(parsed.filters, parsed.passthrough),
+    );
+    if (this.editingFilterIndex() === index) this.cancelFilterEdit();
+  }
+
+  updateNoteEditor<K extends keyof NoteEditor>(key: K, value: NoteEditor[K]) {
+    this.noteEditor.update((current) => ({ ...current, [key]: value }));
+  }
+
+  editNote(index: number) {
+    const note = this.managedNotes()[index];
+    if (!note) return;
+    const buttonMatch = /\[([^\]]+)\]\(buttonurl:\/\/([^\s)]+)\)/i.exec(note.text || '');
+    this.noteEditor.set({
+      name: note.name,
+      text: (note.text || '').replace(/\s*\[[^\]]+\]\(buttonurl:\/\/[^\s)]+\)/i, '').trim(),
+      buttonText: buttonMatch?.[1] || '',
+      buttonUrl: buttonMatch?.[2] || '',
+      mediaType: note.media?.type || '',
+      mediaUrl: note.media?.fileId || '',
+      privacy: note.privacy || 'default',
+      adminOnly: Boolean(note.adminOnly),
+      repeat: note.repeatSeconds ? this.durationFromSeconds(note.repeatSeconds) : '',
+    });
+    this.editingNoteIndex.set(index);
+  }
+
+  cancelNoteEdit() {
+    this.noteEditor.set(this.emptyNoteEditor());
+    this.editingNoteIndex.set(null);
+  }
+
+  saveNote() {
+    const draft = this.noteEditor();
+    const name = draft.name.trim().replace(/^#/, '').toLowerCase();
+    if (
+      !/^[a-z0-9_]{1,32}$/.test(name) ||
+      (!draft.text.trim() && !draft.mediaUrl.trim() && !draft.buttonText.trim())
+    ) {
+      this.error.set('Use a note name with letters, numbers or underscores and add text or media.');
+      return;
+    }
+    if (draft.buttonUrl && !/^https:\/\//i.test(draft.buttonUrl)) {
+      this.error.set('Note button links must start with https://.');
+      return;
+    }
+    const repeatSeconds = this.secondsFromDuration(draft.repeat);
+    if (draft.repeat && !repeatSeconds) {
+      this.error.set('Repeat time must use m, h, d or w and be at least 15m.');
+      return;
+    }
+    const parsed = parseAdminNotes(this.value('telegramGroupHelpNotes'));
+    const button =
+      draft.buttonText.trim() && draft.buttonUrl.trim()
+        ? `[${draft.buttonText.trim()}](buttonurl://${draft.buttonUrl.trim()})`
+        : '';
+    const noteText = [draft.text.trim(), button].filter(Boolean).join('\n');
+    const note: GroupHelpNoteDraft = {
+      name,
+      ...(noteText ? { text: noteText } : {}),
+      ...(draft.mediaType && draft.mediaUrl.trim()
+        ? { media: { type: draft.mediaType, fileId: draft.mediaUrl.trim() } }
+        : {}),
+      privacy: draft.privacy,
+      adminOnly: draft.adminOnly,
+      ...(repeatSeconds
+        ? {
+            repeatSeconds,
+            nextRepeatAt: new Date(Date.now() + repeatSeconds * 1000).toISOString(),
+          }
+        : {}),
+    };
+    const index = this.editingNoteIndex();
+    if (index == null) parsed.notes.push(note);
+    else parsed.notes[index] = note;
+    this.update('telegramGroupHelpNotes', serializeAdminNotes(parsed.notes, parsed.passthrough));
+    this.cancelNoteEdit();
+    this.setSuccess(index == null ? 'Note added to the unsaved configuration' : 'Note updated');
+  }
+
+  deleteNote(index: number) {
+    const parsed = parseAdminNotes(this.value('telegramGroupHelpNotes'));
+    parsed.notes.splice(index, 1);
+    this.update('telegramGroupHelpNotes', serializeAdminNotes(parsed.notes, parsed.passthrough));
+    if (this.editingNoteIndex() === index) this.cancelNoteEdit();
+  }
+
+  configListHas(key: string, item: string) {
+    const list = splitConfigList(this.value(key));
+    return list.includes('all') || list.includes(item.replace(/^\//, '').toLowerCase());
+  }
+
+  toggleConfigItem(key: string, item: string, enabled: boolean) {
+    let value = this.value(key);
+    const group = this.cleanupGroups.find((entry) => entry.key === key);
+    const hadAll = splitConfigList(value).includes('all');
+    if (item === 'all' && enabled) {
+      this.update(key, 'all');
+      return;
+    }
+    if (item !== 'all' && hadAll) {
+      if (enabled) return;
+      value = (group?.items || []).filter((entry) => entry !== 'all' && entry !== item).join('\n');
+    }
+    this.update(key, toggleConfigList(value, item, enabled));
+  }
+
+  commandUsage(definition: CommandDefinition) {
+    const command = definition.command;
+    if (['/tban', '/tmute'].includes(command))
+      return `${command} <id/@username/reply> <Xm|Xh|Xd|Xw> [reason]`;
+    if (/^\/(?:d|s)(?:ban|mute|kick|warn)$/.test(command))
+      return `${command} <id/@username/reply> [reason]`;
+    if (['/ban', '/mute', '/kick', '/warn', '/unban', '/unmute', '/info'].includes(command))
+      return `${command} <id/@username/reply> [reason]`;
+    if (command === '/filter') return '/filter <word or phrase> <reply>';
+    if (command === '/save') return '/save <name> <text or replied media>';
+    if (command === '/get') return '/get <note name>';
+    if (['/disable', '/enable'].includes(command)) return `${command} <command name>`;
+    return command;
+  }
+
+  private secondsFromDuration(value: string) {
+    const match = /^(\d+)(m|h|d|w)$/i.exec(value.trim());
+    if (!match) return 0;
+    const units: Record<string, number> = { m: 60, h: 3600, d: 86400, w: 604800 };
+    const seconds = Number(match[1]) * units[match[2].toLowerCase()];
+    return seconds >= 900 && seconds <= 31_536_000 ? seconds : 0;
+  }
+
+  private durationFromSeconds(seconds: number) {
+    for (const [unit, size] of [
+      ['w', 604800],
+      ['d', 86400],
+      ['h', 3600],
+      ['m', 60],
+    ] as const) {
+      if (seconds % size === 0) return `${seconds / size}${unit}`;
+    }
+    return `${Math.ceil(seconds / 60)}m`;
+  }
+
+  policyNoticePreview() {
+    const selectedAction = this.moderatorAction();
+    const configuredAction = this.value('telegramGroupHelpWarnAction') || 'mute';
+    const action = ['warn', 'mute', 'kick', 'ban'].includes(selectedAction)
+      ? selectedAction
+      : configuredAction;
+    const limit = this.value('telegramGroupHelpWarnLimit') || '3';
+    const expiry = this.value('telegramGroupHelpWarnTime') || 'off';
+    const duration =
+      this.moderatorTimed() && ['ban', 'mute'].includes(selectedAction)
+        ? this.moderatorDuration()
+        : action === 'warn'
+          ? `Escalates after ${limit} warnings to ${configuredAction}`
+          : 'Permanent';
+    return `⚠️ Moderation notice\nMember: ${this.moderatorTarget() || '@member'}\nAction: ${action}\nDuration: ${duration}\nReason: ${this.moderatorReason() || 'Group rule violation'}\nWarning expiry: ${expiry === 'off' ? 'Never' : expiry}`;
+  }
+
   directMessageOptions(): FormDropdownOption[] {
     return this.messageOptions().map((option) => ({ value: option.key, label: option.label }));
   }
@@ -1749,7 +2181,18 @@ export class GroupHelpPage {
       .trim()
       .replace(/[\r\n]/g, ' ');
     if (action.needsTarget && !target) return '';
-    return [`/${action.value}`, action.needsTarget ? target : '', reason].filter(Boolean).join(' ');
+    const supportsTimed = ['ban', 'mute'].includes(action.value);
+    const supportsDelete = ['ban', 'mute', 'kick', 'warn'].includes(action.value);
+    const supportsSilent = supportsDelete;
+    let command: string = action.value;
+    if (this.moderatorTimed() && supportsTimed) command = `t${command}`;
+    else if (this.moderatorSilent() && supportsSilent) command = `s${command}`;
+    else if (this.moderatorDeleteMessage() && supportsDelete)
+      command = action.value === 'warn' ? 'dwarn' : `d${command}`;
+    const duration = this.moderatorTimed() && supportsTimed ? this.moderatorDuration().trim() : '';
+    return [`/${command}`, action.needsTarget ? target : '', duration, reason]
+      .filter(Boolean)
+      .join(' ');
   }
 
   async prepareModeratorCommand() {

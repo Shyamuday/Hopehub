@@ -114,7 +114,11 @@
             [disabled]="workspaceSaving()"
           >
             {{
-              workspaceSaving() ? 'Saving…' : hasUnsavedChanges() ? 'Save & continue' : 'Next section'
+              workspaceSaving()
+                ? 'Saving…'
+                : hasUnsavedChanges()
+                  ? 'Save & continue'
+                  : 'Next section'
             }}
           </button>
         }
@@ -752,7 +756,10 @@
             @if (eventValidationAttempted() && !eventJoinUrl().trim()) {
               <small class="field-error">Add the Telegram or meeting link.</small>
             }
-            <small>For the public Hope Hub group, use the default link. It opens the live VC join screen when a voice chat is active.</small>
+            <small
+              >For the public Hope Hub group, use the default link. It opens the live VC join screen
+              when a voice chat is active.</small
+            >
           </label>
           <label>
             Reminder
@@ -1394,10 +1401,529 @@
           />
         </label>
       </div>
+      <div class="moderation-options" aria-label="Moderation command options">
+        <label>
+          <input
+            type="checkbox"
+            [checked]="moderatorTimed()"
+            [disabled]="!['ban', 'mute'].includes(moderatorAction())"
+            (change)="moderatorTimed.set($any($event.target).checked)"
+          />
+          Timed action
+        </label>
+        @if (moderatorTimed() && ['ban', 'mute'].includes(moderatorAction())) {
+          <label>
+            Duration
+            <input
+              type="text"
+              [value]="moderatorDuration()"
+              (input)="moderatorDuration.set($any($event.target).value)"
+              placeholder="1h, 20m, 10d or 2w"
+            />
+          </label>
+        }
+        <label>
+          <input
+            type="checkbox"
+            [checked]="moderatorDeleteMessage()"
+            [disabled]="
+              moderatorTimed() || !['ban', 'mute', 'kick', 'warn'].includes(moderatorAction())
+            "
+            (change)="moderatorDeleteMessage.set($any($event.target).checked)"
+          />
+          Delete replied message
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            [checked]="moderatorSilent()"
+            [disabled]="
+              moderatorTimed() || !['ban', 'mute', 'kick', 'warn'].includes(moderatorAction())
+            "
+            (change)="moderatorSilent.set($any($event.target).checked)"
+          />
+          Silent action
+        </label>
+      </div>
       <pre>{{ moderatorCommand() || 'Choose an action and enter its required target.' }}</pre>
       <button type="button" class="primary" (click)="prepareModeratorCommand()">
         Copy and open Telegram
       </button>
+
+      <div class="admin-tool-grid">
+        <section class="admin-tool-card admin-tool-card--wide">
+          <header>
+            <div>
+              <p class="eyebrow">Automatic replies</p>
+              <h3>Filter Manager</h3>
+              <p>Create replies for a word or sentence, with optional media and a button.</p>
+            </div>
+            <strong>{{ managedFilters().length }} filters</strong>
+          </header>
+          @if (managedFilters().length) {
+            <div class="managed-list">
+              @for (filter of managedFilters(); track $index) {
+                <article>
+                  <span>
+                    <strong>{{ filter.triggers[0].value }}</strong>
+                    <small>
+                      {{ filter.triggers[0].mode }} · {{ filter.audience }} ·
+                      {{ filter.text || (filter.media ? 'Media reply' : 'Reply') }}
+                    </small>
+                  </span>
+                  <div>
+                    <button type="button" (click)="editFilter($index)">Edit</button>
+                    <button type="button" class="danger" (click)="deleteFilter($index)">
+                      Delete
+                    </button>
+                  </div>
+                </article>
+              }
+            </div>
+          }
+          <div class="editor-grid">
+            <label class="editor-grid__wide">
+              Word or sentence <small>One trigger per line</small>
+              <textarea
+                rows="3"
+                [value]="filterEditor().triggers"
+                (input)="updateFilterEditor('triggers', $any($event.target).value)"
+                placeholder="suicide&#10;want to die"
+              ></textarea>
+            </label>
+            <label>
+              Match type
+              <app-form-dropdown
+                [options]="filterModeOptions"
+                [ngModel]="filterEditor().mode"
+                (ngModelChange)="updateFilterEditor('mode', $event)"
+              ></app-form-dropdown>
+            </label>
+            <label>
+              Audience
+              <app-form-dropdown
+                [options]="audienceOptions"
+                [ngModel]="filterEditor().audience"
+                (ngModelChange)="updateFilterEditor('audience', $event)"
+              ></app-form-dropdown>
+            </label>
+            <label class="editor-grid__wide">
+              Reply text
+              <textarea
+                rows="5"
+                [value]="filterEditor().text"
+                (input)="updateFilterEditor('text', $any($event.target).value)"
+                placeholder="The supportive reply members should receive"
+              ></textarea>
+            </label>
+            <label>
+              Media type
+              <app-form-dropdown
+                [options]="mediaTypeOptions"
+                [ngModel]="filterEditor().mediaType"
+                (ngModelChange)="updateFilterEditor('mediaType', $event)"
+              ></app-form-dropdown>
+            </label>
+            <div>
+              <app-media-url-field
+                label="Media URL or Telegram file ID"
+                help="Upload to shared media or paste an existing Telegram file ID."
+                [value]="filterEditor().mediaUrl"
+                [uploadFile]="uploadBotMedia"
+                [compact]="true"
+                (valueChange)="updateFilterEditor('mediaUrl', $event)"
+              ></app-media-url-field>
+            </div>
+            <label>
+              Button label
+              <input
+                type="text"
+                [value]="filterEditor().buttonText"
+                (input)="updateFilterEditor('buttonText', $any($event.target).value)"
+                placeholder="Get support"
+              />
+            </label>
+            <label>
+              Button link
+              <input
+                type="url"
+                [value]="filterEditor().buttonUrl"
+                (input)="updateFilterEditor('buttonUrl', $any($event.target).value)"
+                placeholder="https://hopehub.in"
+              />
+            </label>
+            <label>
+              Category
+              <select
+                [value]="filterEditor().category"
+                (change)="updateFilterEditor('category', $any($event.target).value)"
+              >
+                <option value="">General</option>
+                <option value="wellbeing">Wellbeing</option>
+                <option value="crisis">Crisis</option>
+              </select>
+            </label>
+            <label>
+              Cooldown in seconds
+              <input
+                type="number"
+                min="0"
+                max="86400"
+                [value]="filterEditor().cooldownSeconds"
+                (input)="updateFilterEditor('cooldownSeconds', +$any($event.target).value)"
+              />
+            </label>
+            <label class="check-field">
+              <input
+                type="checkbox"
+                [checked]="filterEditor().notifyStaff"
+                (change)="updateFilterEditor('notifyStaff', $any($event.target).checked)"
+              />
+              Notify private staff group
+            </label>
+            <label class="check-field">
+              <input
+                type="checkbox"
+                [checked]="filterEditor().allowBots"
+                (change)="updateFilterEditor('allowBots', $any($event.target).checked)"
+              />
+              Allow bot messages to trigger
+            </label>
+          </div>
+          <footer>
+            <button type="button" class="primary" (click)="saveFilter()">
+              {{ editingFilterIndex() == null ? 'Add filter' : 'Update filter' }}
+            </button>
+            @if (editingFilterIndex() != null) {
+              <button type="button" (click)="cancelFilterEdit()">Cancel</button>
+            }
+          </footer>
+        </section>
+
+        <section class="admin-tool-card admin-tool-card--wide">
+          <header>
+            <div>
+              <p class="eyebrow">Reusable content</p>
+              <h3>Notes Manager</h3>
+              <p>Manage /save and /get notes, media, privacy, access and repeating posts.</p>
+            </div>
+            <strong>{{ managedNotes().length }} notes</strong>
+          </header>
+          <label class="check-field">
+            <input
+              type="checkbox"
+              [checked]="value('telegramGroupHelpPrivateNotes') === 'on'"
+              (change)="
+                update('telegramGroupHelpPrivateNotes', $any($event.target).checked ? 'on' : 'off')
+              "
+            />
+            Open notes privately by default (/privatenotes)
+          </label>
+          @if (managedNotes().length) {
+            <div class="managed-list">
+              @for (note of managedNotes(); track note.name) {
+                <article>
+                  <span>
+                    <strong>#{{ note.name }}</strong>
+                    <small>
+                      {{ note.privacy }} · {{ note.adminOnly ? 'admins only' : 'all members' }} ·
+                      {{ note.text || 'Media note' }}
+                    </small>
+                  </span>
+                  <div>
+                    <button type="button" (click)="editNote($index)">Edit</button>
+                    <button type="button" class="danger" (click)="deleteNote($index)">
+                      Delete
+                    </button>
+                  </div>
+                </article>
+              }
+            </div>
+          }
+          <div class="editor-grid">
+            <label>
+              Note name
+              <input
+                type="text"
+                [value]="noteEditor().name"
+                (input)="updateNoteEditor('name', $any($event.target).value)"
+                placeholder="support"
+              />
+            </label>
+            <label>
+              Privacy
+              <app-form-dropdown
+                [options]="notePrivacyOptions"
+                [ngModel]="noteEditor().privacy"
+                (ngModelChange)="updateNoteEditor('privacy', $event)"
+              ></app-form-dropdown>
+            </label>
+            <label class="editor-grid__wide">
+              Note text
+              <textarea
+                rows="5"
+                [value]="noteEditor().text"
+                (input)="updateNoteEditor('text', $any($event.target).value)"
+              ></textarea>
+            </label>
+            <label>
+              Button label
+              <input
+                type="text"
+                [value]="noteEditor().buttonText"
+                (input)="updateNoteEditor('buttonText', $any($event.target).value)"
+                placeholder="Book support"
+              />
+            </label>
+            <label>
+              Button link
+              <input
+                type="url"
+                [value]="noteEditor().buttonUrl"
+                (input)="updateNoteEditor('buttonUrl', $any($event.target).value)"
+                placeholder="https://hopehub.in"
+              />
+            </label>
+            <label>
+              Media type
+              <app-form-dropdown
+                [options]="mediaTypeOptions"
+                [ngModel]="noteEditor().mediaType"
+                (ngModelChange)="updateNoteEditor('mediaType', $event)"
+              ></app-form-dropdown>
+            </label>
+            <div>
+              <app-media-url-field
+                label="Media URL or Telegram file ID"
+                help="Optional media attached to this note."
+                [value]="noteEditor().mediaUrl"
+                [uploadFile]="uploadBotMedia"
+                [compact]="true"
+                (valueChange)="updateNoteEditor('mediaUrl', $event)"
+              ></app-media-url-field>
+            </div>
+            <label>
+              Repeat interval
+              <input
+                type="text"
+                [value]="noteEditor().repeat"
+                (input)="updateNoteEditor('repeat', $any($event.target).value)"
+                placeholder="Optional: 15m, 2h, 1d or 1w"
+              />
+            </label>
+            <label class="check-field">
+              <input
+                type="checkbox"
+                [checked]="noteEditor().adminOnly"
+                (change)="updateNoteEditor('adminOnly', $any($event.target).checked)"
+              />
+              Admin-only note
+            </label>
+          </div>
+          <footer>
+            <button type="button" class="primary" (click)="saveNote()">
+              {{ editingNoteIndex() == null ? 'Add note' : 'Update note' }}
+            </button>
+            @if (editingNoteIndex() != null) {
+              <button type="button" (click)="cancelNoteEdit()">Cancel</button>
+            }
+          </footer>
+        </section>
+
+        <section class="admin-tool-card">
+          <header>
+            <div>
+              <p class="eyebrow">Member access</p>
+              <h3>Disabled commands</h3>
+            </div>
+          </header>
+          <div class="checkbox-grid">
+            @for (command of disableableCommands; track command) {
+              <label>
+                <input
+                  type="checkbox"
+                  [checked]="configListHas('telegramGroupHelpDisabledCommands', command)"
+                  (change)="
+                    toggleConfigItem(
+                      'telegramGroupHelpDisabledCommands',
+                      command,
+                      $any($event.target).checked
+                    )
+                  "
+                />
+                /{{ command }}
+              </label>
+            }
+          </div>
+          <label class="check-field">
+            <input
+              type="checkbox"
+              [checked]="value('telegramGroupHelpDisabledDelete') === 'on'"
+              (change)="
+                update(
+                  'telegramGroupHelpDisabledDelete',
+                  $any($event.target).checked ? 'on' : 'off'
+                )
+              "
+            />
+            Delete disabled command messages
+          </label>
+          <label class="check-field">
+            <input
+              type="checkbox"
+              [checked]="value('telegramGroupHelpDisableAdmin') === 'on'"
+              (change)="
+                update('telegramGroupHelpDisableAdmin', $any($event.target).checked ? 'on' : 'off')
+              "
+            />
+            Apply disabled list to admins too
+          </label>
+        </section>
+
+        <section class="admin-tool-card">
+          <header>
+            <div>
+              <p class="eyebrow">Automatic cleanup</p>
+              <h3>Cleaning controls</h3>
+            </div>
+          </header>
+          @for (group of cleanupGroups; track group.key) {
+            <fieldset class="cleanup-group">
+              <legend>{{ group.title }}</legend>
+              @for (item of group.items; track item) {
+                <label>
+                  <input
+                    type="checkbox"
+                    [checked]="configListHas(group.key, item)"
+                    (change)="toggleConfigItem(group.key, item, $any($event.target).checked)"
+                  />
+                  {{ item }}
+                </label>
+              }
+            </fieldset>
+          }
+        </section>
+
+        <section class="admin-tool-card">
+          <header>
+            <div>
+              <p class="eyebrow">Escalation</p>
+              <h3>Warning Policy</h3>
+            </div>
+          </header>
+          <div class="editor-grid editor-grid--single">
+            <label>
+              Warning limit
+              <input
+                type="number"
+                min="1"
+                max="100"
+                [value]="value('telegramGroupHelpWarnLimit')"
+                (input)="update('telegramGroupHelpWarnLimit', $any($event.target).value)"
+              />
+            </label>
+            <label>
+              Warning expiry
+              <app-form-dropdown
+                [options]="warningExpiryOptions"
+                [ngModel]="value('telegramGroupHelpWarnTime')"
+                (ngModelChange)="update('telegramGroupHelpWarnTime', $event)"
+              ></app-form-dropdown>
+            </label>
+            <label>
+              Limit punishment and duration
+              <app-form-dropdown
+                [options]="warningActionOptions"
+                [ngModel]="value('telegramGroupHelpWarnAction')"
+                (ngModelChange)="update('telegramGroupHelpWarnAction', $event)"
+              ></app-form-dropdown>
+            </label>
+          </div>
+        </section>
+
+        <section class="admin-tool-card policy-preview">
+          <header>
+            <div>
+              <p class="eyebrow">Before saving</p>
+              <h3>Policy preview</h3>
+            </div>
+          </header>
+          @if (value('telegramGroupHelpRulesImageUrl')) {
+            <img [src]="value('telegramGroupHelpRulesImageUrl')" alt="Configured rules media" />
+          }
+          <pre>{{ policyNoticePreview() }}</pre>
+          <small>
+            Public notice and rules use the configured media. Temporary notices delete after
+            {{ value('telegramGroupHelpAutoDeleteSeconds') || '60' }} seconds.
+          </small>
+        </section>
+
+        <section class="admin-tool-card admin-tool-card--wide">
+          <header>
+            <div>
+              <p class="eyebrow">Bot reference</p>
+              <h3>Command Library</h3>
+              <p>Search every backend-supported command and copy its correct usage.</p>
+            </div>
+            <strong>{{ filteredCommandDefinitions().length }} commands</strong>
+          </header>
+          <div class="library-filters">
+            <input
+              type="search"
+              [value]="commandSearch()"
+              (input)="commandSearch.set($any($event.target).value)"
+              placeholder="Search ban, notes, rules…"
+              aria-label="Search bot commands"
+            />
+            <app-form-dropdown
+              [options]="commandRoleOptions"
+              [ngModel]="commandRoleFilter()"
+              (ngModelChange)="commandRoleFilter.set($event)"
+            ></app-form-dropdown>
+          </div>
+          <div class="command-library">
+            @for (definition of filteredCommandDefinitions(); track definition.command) {
+              <article>
+                <span>
+                  <strong>{{ definition.command }}</strong>
+                  <small>{{ definition.area }} · {{ definition.minimumRole }}</small>
+                </span>
+                <code>{{ commandUsage(definition) }}</code>
+                <button
+                  type="button"
+                  (click)="copy(commandUsage(definition), 'library-' + definition.command)"
+                >
+                  {{ copied() === 'library-' + definition.command ? 'Copied' : 'Copy' }}
+                </button>
+              </article>
+            }
+          </div>
+        </section>
+
+        <section class="admin-tool-card admin-tool-card--wide formatting-preview">
+          <header>
+            <div>
+              <p class="eyebrow">Message designer</p>
+              <h3>Formatting preview</h3>
+              <p>Preview Markdown source, fillings, buttons and the first %%% random variant.</p>
+            </div>
+          </header>
+          <div class="preview-layout">
+            <label>
+              Message source
+              <textarea
+                rows="8"
+                [value]="formattingSource()"
+                (input)="formattingSource.set($any($event.target).value)"
+              ></textarea>
+            </label>
+            <div class="telegram-preview">
+              <small>Telegram sample</small>
+              <pre>{{ formattingPreview() }}</pre>
+            </div>
+          </div>
+        </section>
+      </div>
 
       <div class="role-manager">
         <div>

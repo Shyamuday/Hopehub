@@ -315,6 +315,12 @@ export class AdminOpsApi extends AdminApiBase {
           applyMode: 'TELEGRAM_ADMIN_CONFIRMATION' | 'DIRECT_PIN';
         }>;
         capabilityGroups: Array<{ title: string; options: readonly string[] }>;
+        commandDefinitions: Array<{
+          command: string;
+          area: 'member' | 'staff' | 'moderation' | 'roles' | 'administration' | 'safety';
+          minimumRole: 'MEMBER' | 'HELPER' | 'MODERATOR' | 'ADMIN';
+          destructive: boolean;
+        }>;
         selectedGroup: { scope: 'main' | 'off-topic'; chatId: string; label: string };
         managedGroups: Array<{
           scope: 'main' | 'off-topic';
