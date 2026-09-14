@@ -248,7 +248,20 @@ async function reconcileActiveVoiceEvent(
       canSelfUnmute: true
     });
     exportedJoinUrl = (invite as { link?: string }).link?.trim() || '';
+    console.info('[telegram-vc] invite-export', {
+      eventId: payload.eventId,
+      callId: payload.nativeCallId,
+      outcome: exportedJoinUrl ? 'success' : 'empty',
+      inviteChanged: exportedJoinUrl !== payload.activeJoinUrl,
+      button: telegramGroupCallButton(exportedJoinUrl || payload.activeJoinUrl || '', true)
+    });
   } catch (error) {
+    console.warn('[telegram-vc] invite-export-failed', {
+      eventId: payload.eventId,
+      callId: payload.nativeCallId,
+      hasStoredInvite: Boolean(payload.activeJoinUrl),
+      error: error instanceof Error ? error.message : String(error)
+    });
     console.warn(
       `Could not export active VC invite: ${error instanceof Error ? error.message : String(error)}`
     );
@@ -283,7 +296,17 @@ async function reconcileActiveVoiceEvent(
     });
   }
 
-  if (!event.telegramMessageId || payload.joinButtonRefreshedAt) return activePayload;
+  if (!event.telegramMessageId || payload.joinButtonRefreshedAt) {
+    console.info('[telegram-vc] announcement-refresh-skipped', {
+      eventId: event.id,
+      chatId: event.chatId,
+      messageId: event.telegramMessageId,
+      reason: !event.telegramMessageId ? 'no-announcement' : 'previously-refreshed',
+      refreshedAt: payload.joinButtonRefreshedAt,
+      inviteChanged: Boolean(exportedJoinUrl && exportedJoinUrl !== event.joinUrl)
+    });
+    return activePayload;
+  }
   try {
     await refreshTelegramCommunityEventAnnouncement(event.id, { active: true });
     await prisma.telegramCommunityState
@@ -623,6 +646,15 @@ async function sendLiveVoiceReminder(
   const replyMarkup = joinUrl
     ? { inline_keyboard: [[telegramGroupCallButton(joinUrl, true)]] }
     : undefined;
+  const buttonDiagnostic = {
+    chatId,
+    callId: payload.nativeCallId,
+    eventId: payload.eventId,
+    source: payload.activeJoinUrl ? 'active-call' : event?.joinUrl ? 'event' : 'group-fallback',
+    button: replyMarkup?.inline_keyboard[0]?.[0],
+    previousMessageId: payload.liveReminderMessageId
+  };
+  console.info('[telegram-vc] reminder-send-attempt', buttonDiagnostic);
   let sent: { message_id: number };
   try {
     const imageUrl = config.telegramGroupHelpLiveVoiceImageUrl?.trim() || '';
@@ -637,6 +669,10 @@ async function sendLiveVoiceReminder(
           ...(replyMarkup ? { reply_markup: replyMarkup } : {})
         });
   } catch (error) {
+    console.warn('[telegram-vc] reminder-send-failed', {
+      ...buttonDiagnostic,
+      error: error instanceof Error ? error.message : String(error)
+    });
     console.warn(
       `Could not send live VC reminder to ${chatId}: ${
         error instanceof Error ? error.message : String(error)
@@ -644,6 +680,11 @@ async function sendLiveVoiceReminder(
     );
     return withoutPrevious;
   }
+  console.info('[telegram-vc] reminder-sent', {
+    ...buttonDiagnostic,
+    messageId: sent.message_id,
+    deleteAt: new Date(now.getTime() + LIVE_VOICE_REMINDER_TTL_MS).toISOString()
+  });
   try {
     await scheduleCommunityMessageCleanup({
       bot: GROUP_HELP_BOT_SLUG,

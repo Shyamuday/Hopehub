@@ -1660,6 +1660,13 @@ export async function announceTelegramCommunityEvent(
             reply_markup: keyboard
           });
     announcementDelivered = true;
+    console.info('[telegram-vc] announcement-sent', {
+      eventId: event.id,
+      chatId: event.chatId,
+      messageId: sent.message_id,
+      active: Boolean(options.active),
+      button: telegramGroupCallButton(event.joinUrl, Boolean(options.active))
+    });
     await manageAnnouncementPin(config, event.chatId, sent.message_id, 'event');
     return await prisma.telegramCommunityEvent.update({
       where: { id: event.id },
@@ -1692,8 +1699,23 @@ export async function refreshTelegramCommunityEventAnnouncement(
   );
   try {
     await editCommunityReplyMarkup(CAMPAIGN_BOT, event.chatId, event.telegramMessageId, keyboard);
+    console.info('[telegram-vc] announcement-refreshed', {
+      eventId: event.id,
+      chatId: event.chatId,
+      messageId: event.telegramMessageId,
+      active: Boolean(options.active),
+      button: telegramGroupCallButton(event.joinUrl, Boolean(options.active))
+    });
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
+    console.warn('[telegram-vc] announcement-refresh-failed', {
+      eventId: event.id,
+      chatId: event.chatId,
+      messageId: event.telegramMessageId,
+      button: telegramGroupCallButton(event.joinUrl, Boolean(options.active)),
+      error: detail,
+      recovery: /message to edit not found/i.test(detail) ? 'recreate-announcement' : 'rethrow'
+    });
     if (!/message to edit not found/i.test(detail)) throw error;
     // The announcement may have been manually removed or cleaned before the
     // VC started. Clear the stale reference and recreate a live notice instead

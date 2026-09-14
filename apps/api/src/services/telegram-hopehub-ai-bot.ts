@@ -678,12 +678,12 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
   }
 
   if (await forwardGroupHelpAdminMention(message, values)) {
-    await sendTemporaryMessage(
+    await sendGroupHelpRulesMessage({
       chatId,
-      values.telegramGroupHelpRulesMessage,
-      { ...values, telegramGroupHelpAutoDeleteSeconds: '60' },
-      { reply_to_message_id: message.message_id, message_thread_id: message.message_thread_id }
-    );
+      values,
+      replyToMessageId: message.message_id,
+      messageThreadId: message.message_thread_id
+    });
     return;
   }
 
