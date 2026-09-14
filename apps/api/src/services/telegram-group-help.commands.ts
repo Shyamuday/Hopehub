@@ -23,6 +23,7 @@ export const GROUP_HELP_COMMAND_CATALOG = {
   member: [
     '/start',
     '/help',
+    '/rule',
     '/rules',
     '/support',
     '/warnings',
@@ -371,7 +372,8 @@ export async function handleGroupHelpCommand(
   const configuredDisabledCommands = disabledGroupHelpCommands(
     effectiveValues.telegramGroupHelpDisabledCommands
   );
-  if (configuredDisabledCommands.includes(command)) {
+  const disableableCommand = command === '/rule' ? '/rules' : command;
+  if (configuredDisabledCommands.includes(disableableCommand)) {
     const disableForAdmins = effectiveValues.telegramGroupHelpDisableAdmin === 'on';
     let actorIsAdmin =
       Boolean(message.sender_chat) && String(message.sender_chat?.id) === String(message.chat.id);
@@ -385,7 +387,7 @@ export async function handleGroupHelpCommand(
     }
     if (
       shouldSuppressGroupHelpCommand({
-        command,
+        command: disableableCommand,
         disabledCommands: effectiveValues.telegramGroupHelpDisabledCommands,
         actorIsAdmin,
         disableForAdmins

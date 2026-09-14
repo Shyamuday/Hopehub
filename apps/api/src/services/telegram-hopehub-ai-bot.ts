@@ -96,63 +96,12 @@ import {
   shouldCleanGroupHelpType
 } from './telegram-group-help.cleaning.js';
 import { matchedGroupHelpLock } from './telegram-group-help.locks.js';
-import { withCrossCommunityButton } from './telegram-group-help.community-navigation.js';
+import {
+  isGroupHelpRulesRequest,
+  sendGroupHelpRulesMessage
+} from './telegram-group-help.rules-message.js';
 
 const BOT = GROUP_HELP_BOT_SLUG;
-
-async function sendGroupHelpRulesResponse(
-  message: CommunityTelegramMessage,
-  values: Record<string, string>
-) {
-  const chatId = String(message.chat.id);
-  const rules = values.telegramGroupHelpRulesMessage || 'Please follow the community rules.';
-  const photo = values.telegramGroupHelpRulesImageUrl?.trim();
-  const keyboard = withCrossCommunityButton(undefined, values, chatId);
-  if (photo) {
-    const characters = Array.from(rules);
-    const useCaption = characters.length <= 1024;
-    const sent = await callCommunityTelegramApi<{ message_id: number }>(BOT, 'sendPhoto', {
-      chat_id: chatId,
-      photo,
-      ...(useCaption ? { caption: rules } : {}),
-      reply_to_message_id: message.message_id,
-      ...(message.message_thread_id ? { message_thread_id: message.message_thread_id } : {}),
-      ...(keyboard ? { reply_markup: keyboard } : {})
-    }).catch(() => null);
-    if (sent) {
-      await scheduleCommunityMessageCleanup({
-        bot: BOT,
-        chatId,
-        messageId: sent.message_id,
-        kind: 'transient',
-        deleteAfter: new Date(Date.now() + 60_000)
-      });
-      if (!useCaption) {
-        await sendTemporaryMessage(
-          chatId,
-          rules,
-          { ...values, telegramGroupHelpAutoDeleteSeconds: '60' },
-          {
-            reply_to_message_id: message.message_id,
-            message_thread_id: message.message_thread_id,
-            reply_markup: keyboard
-          }
-        );
-      }
-      return;
-    }
-  }
-  await sendTemporaryMessage(
-    chatId,
-    rules,
-    { ...values, telegramGroupHelpAutoDeleteSeconds: '60' },
-    {
-      reply_to_message_id: message.message_id,
-      message_thread_id: message.message_thread_id,
-      reply_markup: keyboard
-    }
-  );
-}
 
 async function sendMatchingGroupHelpFilter(
   message: CommunityTelegramMessage,
@@ -601,6 +550,15 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
     return;
   }
   if (!message.from) return;
+  if (isGroupHelpRulesRequest(message.text)) {
+    await sendGroupHelpRulesMessage({
+      chatId,
+      values,
+      replyToMessageId: message.message_id,
+      messageThreadId: message.message_thread_id
+    });
+    return;
+  }
   const requestedNote = groupHelpNoteRequestedByText(message.text);
   if (requestedNote) {
     const result = await openGroupHelpNote({
@@ -621,7 +579,12 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
       values.telegramGroupHelpAdminWhitelist || ''
     );
     if (!senderIsAdmin) await forwardGroupHelpAdminMention(message, values);
-    await sendGroupHelpRulesResponse(message, values);
+    await sendGroupHelpRulesMessage({
+      chatId,
+      values,
+      replyToMessageId: message.message_id,
+      messageThreadId: message.message_thread_id
+    });
     return;
   }
   if (await handleGroupHelpReportCommand(message, values)) return;

@@ -808,7 +808,7 @@ Contact Admin Team via @Contacthopehubbot`
     maxLength: 1000,
     placeholder: 'https://...',
     defaultValue:
-      'https://hopehub-public-assets-924479393196.s3.us-east-1.amazonaws.com/telegram/moderation/hopehub-admin-request-guide.jpeg'
+      'https://hopehub-public-assets-924479393196.s3.us-east-1.amazonaws.com/telegram/moderation/hopehub-community-rules-v2.png'
   },
   {
     key: 'telegramGroupHelpSupportMessage',
@@ -828,7 +828,8 @@ Contact Admin Team via @Contacthopehubbot`
     type: 'text',
     maxLength: 1000,
     placeholder: 'https://...',
-    defaultValue: ''
+    defaultValue:
+      'https://hopehub-public-assets-924479393196.s3.us-east-1.amazonaws.com/telegram/community/hopehub-support-v1.png'
   },
   {
     key: 'telegramGroupHelpPinnedMessage',
@@ -848,7 +849,8 @@ Contact Admin Team via @Contacthopehubbot`
     type: 'text',
     maxLength: 1000,
     placeholder: 'https://...',
-    defaultValue: ''
+    defaultValue:
+      'https://hopehub-public-assets-924479393196.s3.us-east-1.amazonaws.com/telegram/community/hopehub-pinned-intro-v1.png'
   },
   {
     key: 'telegramGroupHelpAdminRecruitmentMessage',
@@ -868,7 +870,8 @@ Contact Admin Team via @Contacthopehubbot`
     type: 'text',
     maxLength: 1000,
     placeholder: 'https://...',
-    defaultValue: ''
+    defaultValue:
+      'https://hopehub-public-assets-924479393196.s3.us-east-1.amazonaws.com/telegram/community/hopehub-admin-recruitment-v1.png'
   },
   {
     key: 'telegramGroupHelpAdminMentionImageUrl',
@@ -900,7 +903,8 @@ Contact Admin Team via @Contacthopehubbot`
     type: 'text',
     maxLength: 1000,
     placeholder: 'https://...',
-    defaultValue: ''
+    defaultValue:
+      'https://hopehub-public-assets-924479393196.s3.us-east-1.amazonaws.com/telegram/community/hopehub-community-reminder-v1.png'
   },
   {
     key: 'telegramGroupHelpCrisisMessage',

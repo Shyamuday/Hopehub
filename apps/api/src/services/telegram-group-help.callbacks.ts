@@ -35,6 +35,10 @@ import { telegramPersonLogLabel } from './telegram-group-help.people.js';
 import { canUseGroupHelpAdminCommand } from './telegram-group-help.permissions.js';
 import { groupHelpWarnPolicySummary } from './telegram-group-help.warning-policy.js';
 import { handleGroupHelpAlertActionCallback } from './telegram-group-help.alert-actions.js';
+import {
+  sendGroupHelpRulesMessage,
+  sendGroupHelpSupportMessage
+} from './telegram-group-help.rules-message.js';
 
 export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
   const callback = update.callback_query;
@@ -252,16 +256,22 @@ export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
             warningPolicy.expiry.seconds
           )
         : 0;
+    if (action === 'rules') {
+      await sendGroupHelpRulesMessage({ chatId, values, mainMenu: true });
+      await answerCommunityCallback(GROUP_HELP_BOT_SLUG, callback.id);
+      return true;
+    }
+    if (action === 'support') {
+      await sendGroupHelpSupportMessage({ chatId, values, mainMenu: true });
+      await answerCommunityCallback(GROUP_HELP_BOT_SLUG, callback.id);
+      return true;
+    }
     const text =
-      action === 'rules'
-        ? values.telegramGroupHelpRulesMessage
-        : action === 'support'
-          ? values.telegramGroupHelpSupportMessage
-          : action === 'warnings'
-            ? `You currently have ${warningCount} warning${warningCount === 1 ? '' : 's'}.`
-            : action === 'report'
-              ? 'To report a group message, reply to it and send /report followed by a short reason. For immediate danger, contact local emergency services now.'
-              : 'Use the menu for common actions. You can also send /help to see the complete command guide.';
+      action === 'warnings'
+        ? `You currently have ${warningCount} warning${warningCount === 1 ? '' : 's'}.`
+        : action === 'report'
+          ? 'To report a group message, reply to it and send /report followed by a short reason. For immediate danger, contact local emergency services now.'
+          : 'Use the menu for common actions. You can also send /help to see the complete command guide.';
     await sendCommunityMessage(GROUP_HELP_BOT_SLUG, chatId, text, {
       reply_markup: withCrossCommunityButton(
         { inline_keyboard: [[{ text: 'Main menu', callback_data: 'hh_menu_home' }]] },

@@ -20,6 +20,11 @@ test('command registry contains every catalog command exactly once', () => {
     assert.equal(groupHelpCommandDefinition(command)?.command, command);
 });
 
+test('singular and plural rules commands are both registered', () => {
+  assert.equal(groupHelpCommandDefinition('/rule')?.command, '/rule');
+  assert.equal(groupHelpCommandDefinition('/rules')?.command, '/rules');
+});
+
 test('every delegated staff permission maps to a supported bot command', () => {
   const supported = new Set(GROUP_HELP_COMMAND_DEFINITIONS.map(({ command }) => command));
   for (const group of GROUP_HELP_STAFF_PERMISSION_GROUPS) {

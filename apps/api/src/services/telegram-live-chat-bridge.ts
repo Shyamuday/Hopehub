@@ -24,6 +24,15 @@ function cleanDisplayName(value: string | null | undefined, fallback = 'Hope Hub
   return cleaned || fallback;
 }
 
+export function websiteLiveChatMessageForTelegram(input: {
+  senderName: string | null | undefined;
+  body: string;
+}) {
+  const senderName = cleanDisplayName(input.senderName);
+  const header = `🌐 ${senderName} · Hope Hub website`;
+  return `${header}\n\n${input.body.trim()}`.slice(0, 4096);
+}
+
 function telegramDisplayName(user?: CommunityTelegramMessage['from']) {
   if (user?.username?.trim()) return `@${user.username.trim().replace(/^@+/, '').slice(0, 32)}`;
   return cleanDisplayName(
@@ -103,7 +112,7 @@ export async function mirrorHopeHubLiveChatMessageToTelegram(input: {
     const sent = await sendCommunityMessage(
       GROUP_HELP_BOT_SLUG,
       config.telegramChatId,
-      input.body.trim().slice(0, 4096)
+      websiteLiveChatMessageForTelegram(input)
     );
     return sent.message_id;
   } catch (error) {

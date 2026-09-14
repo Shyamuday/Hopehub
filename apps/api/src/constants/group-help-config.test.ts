@@ -67,3 +67,17 @@ test('Telegram admin recruitment is an editable, sendable Group Help post', () =
   assert.match(message, /responsibilities|help with/i);
   assert.match(message, /https:\/\/hopehub\.in\/careers\/tgadmin/);
 });
+
+test('community message flows have public media without replacing the welcome video', () => {
+  assert.match(GROUP_HELP_CONFIG_DEFAULTS.telegramGroupHelpWelcomeImageUrl, /\.mp4$/);
+  for (const key of [
+    'telegramGroupHelpRulesImageUrl',
+    'telegramGroupHelpSupportImageUrl',
+    'telegramGroupHelpPinnedImageUrl',
+    'telegramGroupHelpAdminRecruitmentImageUrl',
+    'telegramGroupHelpAdminMentionImageUrl',
+    'telegramGroupHelpRecurringImageUrl'
+  ] as const) {
+    assert.match(GROUP_HELP_CONFIG_DEFAULTS[key], /^https:\/\//, `${key} needs public media`);
+  }
+});

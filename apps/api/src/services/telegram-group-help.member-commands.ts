@@ -54,6 +54,10 @@ import {
   openGroupHelpNote
 } from './telegram-group-help.note-actions.js';
 import { normalizeGroupHelpNoteName, parseGroupHelpNotes } from './telegram-group-help.notes.js';
+import {
+  sendGroupHelpRulesMessage,
+  sendGroupHelpSupportMessage
+} from './telegram-group-help.rules-message.js';
 
 type TelegramMemberSnapshot = {
   status?: string;
@@ -233,17 +237,21 @@ export async function handleGroupHelpMemberCommand(
     );
     return true;
   }
-  if (command === '/rules') {
-    await sendControlAwareMessage(values.telegramGroupHelpRulesMessage, {
-      message_thread_id: message.message_thread_id,
-      reply_markup: withCrossCommunityButton(undefined, values, targetChatId)
+  if (command === '/rules' || command === '/rule') {
+    await sendGroupHelpRulesMessage({
+      chatId,
+      values,
+      replyToMessageId: message.message_id,
+      messageThreadId: message.message_thread_id
     });
     return true;
   }
   if (command === '/support') {
-    await sendControlAwareMessage(values.telegramGroupHelpSupportMessage, {
-      message_thread_id: message.message_thread_id,
-      reply_markup: withCrossCommunityButton(undefined, values, targetChatId)
+    await sendGroupHelpSupportMessage({
+      chatId,
+      values,
+      replyToMessageId: message.message_id,
+      messageThreadId: message.message_thread_id
     });
     return true;
   }
