@@ -1068,7 +1068,7 @@ contact me for`
     section: 'commands',
     type: 'text',
     maxLength: 300,
-    defaultValue: '/warnlimit {value}'
+    defaultValue: '/setwarnlimit {value}'
   },
   {
     key: 'telegramGroupHelpLinkPolicyCommandTemplate',

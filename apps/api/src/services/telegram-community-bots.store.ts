@@ -218,10 +218,11 @@ type TelegramGroupWarningPayload = {
   entries?: unknown;
 };
 
-function warningEntries(
+export function activeTelegramGroupWarningEntries(
   payload: TelegramGroupWarningPayload,
   warningExpirySeconds?: number,
-  now = new Date()
+  now = new Date(),
+  legacyCreatedAt = now
 ) {
   const storedEntries = Array.isArray(payload.entries)
     ? payload.entries
@@ -248,9 +249,9 @@ function warningEntries(
     entries = [
       ...Array.from({ length: missing }, () => ({
         reason: 'Legacy warning',
-        createdAt: now.toISOString()
+        createdAt: legacyCreatedAt.toISOString()
       })),
-      ...reasons.map((reason) => ({ reason, createdAt: now.toISOString() }))
+      ...reasons.map((reason) => ({ reason, createdAt: legacyCreatedAt.toISOString() }))
     ];
   }
 
@@ -286,11 +287,13 @@ export async function addTelegramGroupWarning(input: {
   return prisma.$transaction(async (tx) => {
     const current = await tx.telegramCommunityState.findUnique({
       where: { bot_chatId: { bot, chatId } },
-      select: { payload: true }
+      select: { payload: true, updatedAt: true }
     });
-    const currentEntries = warningEntries(
+    const currentEntries = activeTelegramGroupWarningEntries(
       (current?.payload || {}) as TelegramGroupWarningPayload,
-      input.warningExpirySeconds
+      input.warningExpirySeconds,
+      new Date(),
+      current?.updatedAt
     );
     const entries = [
       ...currentEntries,
@@ -320,10 +323,14 @@ export async function telegramGroupWarningCount(
 ) {
   const row = await prisma.telegramCommunityState.findUnique({
     where: { bot_chatId: { bot: `group-warnings:${chatId}`, chatId: telegramUserId } },
-    select: { payload: true }
+    select: { payload: true, updatedAt: true }
   });
-  return warningEntries((row?.payload || {}) as TelegramGroupWarningPayload, warningExpirySeconds)
-    .length;
+  return activeTelegramGroupWarningEntries(
+    (row?.payload || {}) as TelegramGroupWarningPayload,
+    warningExpirySeconds,
+    new Date(),
+    row?.updatedAt
+  ).length;
 }
 
 export async function telegramGroupWarningDetails(
@@ -333,11 +340,13 @@ export async function telegramGroupWarningDetails(
 ) {
   const row = await prisma.telegramCommunityState.findUnique({
     where: { bot_chatId: { bot: `group-warnings:${chatId}`, chatId: telegramUserId } },
-    select: { payload: true }
+    select: { payload: true, updatedAt: true }
   });
-  const entries = warningEntries(
+  const entries = activeTelegramGroupWarningEntries(
     (row?.payload || {}) as TelegramGroupWarningPayload,
-    warningExpirySeconds
+    warningExpirySeconds,
+    new Date(),
+    row?.updatedAt
   );
   return {
     count: entries.length,
@@ -355,11 +364,13 @@ export async function removeLatestTelegramGroupWarning(
   const bot = `group-warnings:${chatId}`;
   const row = await prisma.telegramCommunityState.findUnique({
     where: { bot_chatId: { bot, chatId: telegramUserId } },
-    select: { payload: true, expiresAt: true }
+    select: { payload: true, expiresAt: true, updatedAt: true }
   });
-  const entries = warningEntries(
+  const entries = activeTelegramGroupWarningEntries(
     (row?.payload || {}) as TelegramGroupWarningPayload,
-    warningExpirySeconds
+    warningExpirySeconds,
+    new Date(),
+    row?.updatedAt
   );
   const removed = entries.pop();
   if (!row || !entries.length) {

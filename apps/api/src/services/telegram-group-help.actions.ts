@@ -79,12 +79,19 @@ export async function sendModerationLog(
   message: CommunityTelegramMessage,
   reason: string,
   action: string,
-  options: { performedBy?: CommunityTelegramUser | null } = {}
+  options: {
+    performedBy?: CommunityTelegramUser | null;
+    includePublicControls?: boolean;
+  } = {}
 ) {
-  if (values.telegramGroupHelpPrivateControl === 'true') return;
+  if (values.telegramGroupHelpPrivateControl === 'true') {
+    return { removeWarningCallbackData: undefined };
+  }
   const staffDestination = values.telegramGroupHelpStaffGroupId?.trim() || '';
   const logDestination = values.telegramGroupHelpLogChannelId?.trim() || '';
-  if (!staffDestination && !logDestination) return;
+  if (!staffDestination && !logDestination && !options.includePublicControls) {
+    return { removeWarningCallbackData: undefined };
+  }
   const rawText = `${message.text || message.caption || ''}`.trim();
   const normalizedText = rawText.replace(/\s+/g, ' ');
   const preview = normalizedText
@@ -139,7 +146,10 @@ export async function sendModerationLog(
     );
   }
   const actionDestination = staffDestination || logDestination;
-  if (actionDestination && (buttons.length || phraseButtons.length)) {
+  if (
+    (actionDestination || options.includePublicControls) &&
+    (buttons.length || phraseButtons.length)
+  ) {
     await prisma.telegramCommunityState.create({
       data: {
         bot: MODERATION_ACTION_STATE,
@@ -204,6 +214,10 @@ export async function sendModerationLog(
     );
   }
   await Promise.all(deliveries);
+  return {
+    removeWarningCallbackData:
+      normalizedAction === 'warn' && message.from ? `hh_mod:${actionId}:unwarn` : undefined
+  };
 }
 
 /** Handles staff-group undo/repost controls for a recorded moderation action. */

@@ -133,7 +133,7 @@ const COMMUNITY_BOTS: Record<
       { command: 'warntime', description: 'View or set warning expiry (admins)' },
       { command: 'lockdown', description: 'Lock group for N minutes (admins)' },
       { command: 'unlock', description: 'Unlock group (admins)' },
-      { command: 'warnings', description: 'Check your warnings' },
+      { command: 'warnings', description: 'Warning settings and your count' },
       { command: 'warns', description: 'View warning details' },
       { command: 'me', description: 'Show your group profile' },
       { command: 'report', description: 'Report a message to admins' },

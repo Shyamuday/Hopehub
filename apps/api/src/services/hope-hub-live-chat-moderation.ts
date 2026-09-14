@@ -77,6 +77,7 @@ function resultMessage(input: {
   warningCount: number | null;
   warningLimit: number;
   muteMinutes: number;
+  permanentMute?: boolean;
 }) {
   if (input.action === 'ban') {
     return `This message was not posted and your account was blocked from this room. Reason: ${input.reason}`;
@@ -85,7 +86,9 @@ function resultMessage(input: {
     return `This message was not posted and your access was temporarily restricted. Reason: ${input.reason}`;
   }
   if (input.action === 'mute') {
-    return `This message was not posted and you were muted for ${input.muteMinutes} minutes. Reason: ${input.reason}`;
+    return input.permanentMute
+      ? `This message was not posted and you were muted until a moderator unmutes you. Reason: ${input.reason}`
+      : `This message was not posted and you were muted for ${input.muteMinutes} minutes. Reason: ${input.reason}`;
   }
   if (input.warningCount !== null) {
     return `This message was not posted. Warning ${input.warningCount}/${input.warningLimit}: ${input.reason}`;
@@ -101,10 +104,14 @@ async function applyWebsiteMemberAction(input: {
   action: string;
   reason: string;
   muteMinutes: number;
+  permanentMute?: boolean;
 }) {
   if (!['mute', 'kick', 'ban'].includes(input.action)) return;
   const now = new Date();
-  const mutedUntil = new Date(now.getTime() + input.muteMinutes * 60_000);
+  const mutedUntil =
+    input.action === 'mute' && input.permanentMute
+      ? null
+      : new Date(now.getTime() + input.muteMinutes * 60_000);
   await prisma.hopeHubLiveGroupMemberModeration.upsert({
     where: { groupId_userId: { groupId: input.groupId, userId: input.userId } },
     create: {
@@ -197,6 +204,8 @@ export async function moderateWebsiteLiveChatMessage(input: {
         });
   const warningLimitReached = warningCount !== null && warningCount >= warningLimit;
   const action = warningLimitReached ? warningPolicy.mode.action : violation.action;
+  const permanentMute =
+    warningLimitReached && action === 'mute' && !warningPolicy.mode.durationSeconds;
   if (warningLimitReached && warningPolicy.mode.durationSeconds) {
     muteMinutes = Math.max(1, Math.ceil(warningPolicy.mode.durationSeconds / 60));
   }
@@ -208,7 +217,8 @@ export async function moderateWebsiteLiveChatMessage(input: {
     role: input.userRole,
     action,
     reason: violation.reason,
-    muteMinutes
+    muteMinutes,
+    permanentMute
   });
   if (warningLimitReached) {
     await clearTelegramGroupWarnings(telegramChatId || `website:${input.groupId}`, warningIdentity);
@@ -263,7 +273,8 @@ export async function moderateWebsiteLiveChatMessage(input: {
       reason: violation.reason,
       warningCount,
       warningLimit,
-      muteMinutes
+      muteMinutes,
+      permanentMute
     })
   };
 }

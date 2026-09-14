@@ -77,3 +77,20 @@ test('dangerous commands are marked destructive and require the expected role', 
     ]
   );
 });
+
+test('Rose warning commands use the expected staff roles', () => {
+  assert.deepEqual(
+    ['/warns', '/warn', '/dwarn', '/swarn', '/rmwarn', '/resetwarn', '/setwarnmode'].map(
+      (command) => ({ command, role: groupHelpCommandDefinition(command)?.minimumRole })
+    ),
+    [
+      { command: '/warns', role: 'MEMBER' },
+      { command: '/warn', role: 'HELPER' },
+      { command: '/dwarn', role: 'HELPER' },
+      { command: '/swarn', role: 'HELPER' },
+      { command: '/rmwarn', role: 'HELPER' },
+      { command: '/resetwarn', role: 'MODERATOR' },
+      { command: '/setwarnmode', role: 'ADMIN' }
+    ]
+  );
+});

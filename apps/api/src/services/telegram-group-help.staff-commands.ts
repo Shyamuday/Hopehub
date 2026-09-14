@@ -274,10 +274,11 @@ export async function handleGroupHelpStaffCommand(
           : 1;
     const reason =
       parts.slice(reasonStart).join(' ').trim() || `Manual ${canonicalName} by community staff`;
-    const logReason = duration ? `${reason} (Duration: ${duration.input})` : reason;
+    let logReason = duration ? `${reason} (Duration: ${duration.input})` : reason;
     let appliedAction = effectiveAction;
     let warningCount: number | undefined;
     let warningLimitReached = false;
+    let removeWarningCallbackData: string | undefined;
 
     // Ask only after the target and optional duration have been validated, so
     // malformed commands never create a misleading destructive-action prompt.
@@ -362,6 +363,7 @@ export async function handleGroupHelpStaffCommand(
             Number(values.telegramGroupHelpMuteMinutes || 60)
           );
           appliedAction = mode.action;
+          logReason = `${reason} (warning-limit action: ${mode.value})`;
           warningLimitReached = true;
           await clearTelegramGroupWarnings(targetChatId, String(target.id));
         } catch (error) {
@@ -445,13 +447,18 @@ export async function handleGroupHelpStaffCommand(
         `By: ${telegramPersonLogLabel(message.from, 'Administrator')}`
       ]);
     } else {
-      await sendModerationLog(
+      const moderationLog = await sendModerationLog(
         values,
         message.reply_to_message || { ...message, from: target as typeof message.from },
         logReason,
         appliedAction,
-        { performedBy: message.from }
+        {
+          performedBy: message.from,
+          includePublicControls:
+            effectiveAction === 'warn' && appliedAction === 'warn' && !commandSpec.silent
+        }
       );
+      removeWarningCallbackData = moderationLog.removeWarningCallbackData;
     }
 
     if (commandSpec.silent) {
@@ -470,7 +477,17 @@ export async function handleGroupHelpStaffCommand(
     if (isCrossGroup) {
       await sendCommunityMessage(GROUP_HELP_BOT_SLUG, chatId, confirmText);
     } else {
-      await sendTemporaryGroupHelpMessage(chatId, confirmText, values);
+      await sendTemporaryGroupHelpMessage(chatId, confirmText, values, {
+        ...(removeWarningCallbackData
+          ? {
+              reply_markup: {
+                inline_keyboard: [
+                  [{ text: 'Remove warn', callback_data: removeWarningCallbackData }]
+                ]
+              }
+            }
+          : {})
+      });
     }
     return true;
   }
