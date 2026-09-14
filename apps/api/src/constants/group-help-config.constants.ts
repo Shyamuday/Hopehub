@@ -60,7 +60,7 @@ export const HOPEHUB_COMMUNITY_WELCOME_MEDIA_URL =
   'https://hopehub-public-assets-924479393196.s3.us-east-1.amazonaws.com/hope-hub-media/2026-08-20/7b1e58ab-67be-4ae6-a47a-4b7bf84d951f.mp4';
 
 export const HOPEHUB_COMMUNITY_LIVE_VOICE_IMAGE_URL =
-  'https://hopehub-public-assets-924479393196.s3.us-east-1.amazonaws.com/telegram/community/hopehub-live-voice-chat-v1.png';
+  'https://hopehub-public-assets-924479393196.s3.us-east-1.amazonaws.com/telegram/community/hopehub-join-live-vc-v2.jpeg';
 
 export const HOPEHUB_COMMUNITY_WELCOME_BUTTONS = `Talk | https://hopehub.in/#live-connect | success && Confess | ${TELEGRAM_BOT_URLS.CONFESSION} | success && Channel | https://t.me/HopeHubGlobal | success
 Website | https://hopehub.in/ | success && Earn | https://earn.hopehub.in/ | success && Rules | ${TELEGRAM_BOT_URLS.RULES} | success`;

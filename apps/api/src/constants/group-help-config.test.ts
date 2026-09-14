@@ -81,4 +81,8 @@ test('community message flows have public media without replacing the welcome vi
   ] as const) {
     assert.match(GROUP_HELP_CONFIG_DEFAULTS[key], /^https:\/\//, `${key} needs public media`);
   }
+  assert.equal(
+    GROUP_HELP_CONFIG_DEFAULTS.telegramGroupHelpLiveVoiceImageUrl,
+    'https://hopehub-public-assets-924479393196.s3.us-east-1.amazonaws.com/telegram/community/hopehub-join-live-vc-v2.jpeg'
+  );
 });
