@@ -70,15 +70,17 @@ const COMMUNITY_BOTS: Record<
     name: TELEGRAM_BOT_DISPLAY_NAMES.GROUP_HELP,
     tokenEnv: 'TELEGRAM_HOPEHUBBOT_TOKEN',
     commands: [
+      { command: 'start', description: 'Open the Hope Hub menu' },
       { command: 'id', description: 'Show your ID or replied member ID' },
       { command: 'staffid', description: 'Look up staff member ID by username' },
+      { command: 'rule', description: 'Community rules' },
       { command: 'rules', description: 'Community rules' },
       { command: 'support', description: 'Private Hope Hub support' },
       { command: 'warn', description: 'Warn replied member (staff)' },
       { command: 'dwarn', description: 'Delete replied message and warn' },
       { command: 'swarn', description: 'Silently warn a member' },
       { command: 'unwarn', description: 'Remove latest warning (staff)' },
-      { command: 'rmwarn', description: 'Remove latest warning (staff)' },
+      { command: 'delete', description: 'Delete replied message (staff)' },
       { command: 'del', description: 'Delete replied message (staff)' },
       { command: 'mute', description: 'Mute replied member (moderators)' },
       { command: 'tmute', description: 'Temporarily mute a member (moderators)' },
@@ -95,20 +97,21 @@ const COMMUNITY_BOTS: Record<
       { command: 'kick', description: 'Kick replied member (moderators)' },
       { command: 'dkick', description: 'Delete replied message and kick' },
       { command: 'skick', description: 'Silently kick a member' },
-      { command: 'delwarn', description: 'Delete message and warn (staff)' },
-      { command: 'delmute', description: 'Delete message and mute (moderators)' },
-      { command: 'delban', description: 'Delete message and ban (moderators)' },
-      { command: 'delkick', description: 'Delete message and kick (moderators)' },
       { command: 'clearwarnings', description: 'Clear replied member warnings (moderators)' },
       { command: 'resetwarn', description: 'Clear all member warnings (moderators)' },
       { command: 'adminlist', description: 'List group admins (staff)' },
       { command: 'staff', description: 'Show community staff (staff)' },
       { command: 'info', description: 'Show replied member details (staff)' },
       { command: 'history', description: 'Show member name history (staff)' },
+      { command: 'member', description: 'Show member details (staff)' },
       { command: 'perms', description: 'Show member bot permissions (staff)' },
       { command: 'geturl', description: 'Get link to replied message (staff)' },
       { command: 'stats', description: 'Group activity snapshot (moderators)' },
-      { command: 'admin', description: 'Promote replied member to admin (admins)' },
+      { command: 'send', description: 'Post in the target group (admins)' },
+      { command: 'admin', description: 'Alert the community team' },
+      { command: 'alertadmin', description: 'Alert the community team' },
+      { command: 'promote', description: 'Promote replied member to admin' },
+      { command: 'demote', description: 'Demote replied administrator' },
       { command: 'unadmin', description: 'Demote replied admin (admins)' },
       { command: 'title', description: 'Set admin title (admins)' },
       { command: 'untitle', description: 'Remove admin title (admins)' },
@@ -126,7 +129,6 @@ const COMMUNITY_BOTS: Record<
       { command: 'filter', description: 'Add a word filter (admins)' },
       { command: 'stop', description: 'Remove a reply filter (admins)' },
       { command: 'stopall', description: 'Remove all reply filters (owner)' },
-      { command: 'unfilter', description: 'Alias for stop (admins)' },
       { command: 'filters', description: 'List active reply filters' },
       { command: 'blockword', description: 'Add a blocked phrase (admins)' },
       { command: 'unblockword', description: 'Remove a blocked phrase (admins)' },
@@ -155,13 +157,10 @@ const COMMUNITY_BOTS: Record<
       { command: 'disableadmin', description: 'Apply disabled commands to admins' },
       { command: 'cleancommand', description: 'Delete selected command types (admins)' },
       { command: 'keepcommand', description: 'Keep selected command types (admins)' },
-      { command: 'cleancommandtypes', description: 'List command cleanup types' },
       { command: 'cleanmsg', description: 'Auto-delete selected bot replies (admins)' },
       { command: 'keepmsg', description: 'Keep selected bot replies (admins)' },
-      { command: 'cleanmsgtypes', description: 'List bot-message cleanup types' },
       { command: 'cleanservice', description: 'Delete Telegram service notices (admins)' },
       { command: 'nocleanservice', description: 'Keep Telegram service notices (admins)' },
-      { command: 'cleanservicetypes', description: 'List service cleanup types' },
       { command: 'save', description: 'Save or update a note (admins)' },
       { command: 'clear', description: 'Delete a saved note (admins)' },
       { command: 'privatenotes', description: 'Toggle private note delivery (admins)' },
@@ -169,6 +168,7 @@ const COMMUNITY_BOTS: Record<
       { command: 'notes', description: 'List saved notes' },
       { command: 'setofftopic', description: 'Register off-topic group (admins)' },
       { command: 'setlog', description: 'Set moderation log channel (admins)' },
+      { command: 'forget', description: 'Delete your retained Group Help data' },
       { command: 'help', description: 'Community bot help' }
     ],
     allowedUpdates: [
@@ -217,6 +217,10 @@ export function communityBotStatus() {
     tokenEnv: COMMUNITY_BOTS[slug].tokenEnv,
     runtime: 'api-webhook' as const
   }));
+}
+
+export function groupHelpBotCommandMenu() {
+  return [...COMMUNITY_BOTS[COMMUNITY_BOT_SLUGS.GROUP_HELP].commands];
 }
 
 export async function callCommunityTelegramApi<T>(

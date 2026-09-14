@@ -58,6 +58,7 @@ import {
   sendGroupHelpRulesMessage,
   sendGroupHelpSupportMessage
 } from './telegram-group-help.rules-message.js';
+import { groupHelpHelpSections } from './telegram-group-help.help.js';
 
 type TelegramMemberSnapshot = {
   status?: string;
@@ -824,31 +825,19 @@ export async function handleGroupHelpMemberCommand(
       values.telegramGroupHelpAdminWhitelist || ''
     );
     const muteMinutes = values.telegramGroupHelpMuteMinutes || '60';
-    const helpSections = [
-      `*Hope Hub bot help*\n\n*Member commands*\n/rules — community rules\n/support — private support\n/get <name> or #name — open a saved note\n/notes — list available notes\n/warnings — warning settings and your count\n/warns — your active warning reasons\n/disabled — current disabled commands\n/disableable — commands admins can disable\n/me — your group profile\n/id — Telegram and target-group IDs\n/report — report a replied message\n/admin or /alertadmin — alert the community team\n/forget — delete retained Group Help data`,
-      canUseStaffTools
-        ? `*Helper tools*\n/warn <id/username/reply> [reason]\n/dwarn [reason] — reply: delete and warn\n/swarn <id/username/reply> [reason] — silent warning\n/rmwarn or /unwarn — remove latest warning\n/warns <id/username/reply> — view warning reasons\n/info, /history, /perms, /id <id/username/reply>\n/delete [reason], /geturl\n/adminlist, /staff, /stats`
-        : '',
-      canUseModTools
-        ? `*Moderator tools — Rose-compatible syntax*\nReply to a message, or add <user_id or @username> before the reason.\n/ban, /mute — permanent action; /kick — remove (the member may rejoin)\n/tban, /tmute <time> [reason] — timed action (15m, 3h, 2d, 1w)\n/dban, /dmute, /dkick — reply: delete message plus action\n/sban, /smute, /skick — silent action; deletes replied message and command\n/unban, /unmute — undo the action\n/resetwarn — remove all warnings\nLegacy /delban, /delmute, /delkick remain supported. Default automated warning mute: ${muteMinutes} minutes.`
-        : '',
-      canUseAdminTools
-        ? `*Administrator tools*\n/promote, /unadmin, /title, /untitle <id/username/reply>\n/helper, /unhelper, /mod, /unmod <id/username/reply>\n/pin [notify], /unpin, /unpinall, /pinned\n/filter <trigger> <reply>, /stop <trigger>, /filters\n/stopall — owner only\n/save <name> <note>, /clear <name>, /privatenotes <on|off>\n/blockword, /unblockword, /blockwords — safety phrases\n/cleancommand, /keepcommand <all|admin|user|other>\n/cleanmsg, /keepmsg <all|action|filter|note>\n/cleanservice, /nocleanservice <all|join|leave|other|photo|pin|title|videochat>\n/setwarnlimit <number>\n/setwarnmode <kick|ban|mute|tban TIME|tmute TIME>\n/setwarntime <time|off> (also /warntime)\n/reports <on|off>\n/disable <command>, /enable <command>\n/disabledel <on|off>, /disableadmin <on|off>\n/welcome on|off, /lockdown [minutes], /unlock\n/settings, /setlog, /setofftopic`
-        : '',
-      context.isControlGroup && canUseStaffTools
-        ? `*Private admin-group syntax*\n/info or /history <user_id or @username>\nForward a member message directly to the bot for /history\n/perms <user_id or @username>\n/ban|mute|kick <user_id or @username> [reason]\n/tban|tmute <user_id or @username> <time> [reason]\n/sban|smute|skick <user_id or @username> [reason]\n/delete <main_message_id> [reason]\n/dban|dmute|dkick <user> <main_message_id> [reason]\n/geturl <main_message_id>\n/clearwarnings <user_id or @username>`
-        : '',
-      context.isControlGroup && canUseAdminTools
-        ? `*Private admin-group administration*\n/promote <user_id or @username> [title]\n/unadmin <user_id or @username>\n/title <user_id or @username> <title>, /untitle <user_id or @username>\n/helper|mod <user_id or @username>, /unhelper|unmod <user_id or @username>\n/pin <main_message_id> [notify]\nAll policy commands above apply to the configured main group.`
-        : '',
-      'For sensitive staff results, run the command in the configured private admin group.'
-    ]
-      .filter(Boolean)
-      .join('\n\n');
-    await sendTemporaryGroupHelpMessage(chatId, helpSections, values, {
-      message_thread_id: message.message_thread_id,
-      parse_mode: 'Markdown'
+    const helpSections = groupHelpHelpSections({
+      canUseStaffTools,
+      canUseModTools,
+      canUseAdminTools,
+      isControlGroup: context.isControlGroup,
+      muteMinutes
     });
+    for (const section of helpSections) {
+      await sendTemporaryGroupHelpMessage(chatId, section, values, {
+        message_thread_id: message.message_thread_id,
+        parse_mode: 'Markdown'
+      });
+    }
     return true;
   }
   return false;
