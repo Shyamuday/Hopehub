@@ -6,6 +6,8 @@ test('recognizes common administrator and moderator mention variants', () => {
   for (const mention of [
     '@admin',
     '@admins',
+    '@admnn',
+    '@admnns',
     '@administrator',
     '@administrators',
     '@mod',

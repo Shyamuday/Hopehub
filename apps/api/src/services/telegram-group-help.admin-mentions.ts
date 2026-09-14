@@ -6,7 +6,8 @@ import { telegramPersonLogLabel } from './telegram-group-help.people.js';
 
 const ADMIN_MENTION_STATE = 'group-help:admin-mention';
 const ADMIN_MENTION_LIFETIME_MS = 7 * 24 * 60 * 60_000;
-const ADMIN_MENTION_PATTERN = /(^|[^a-z0-9_])@(admins?|administrators?|moderators?|mods?)\b/i;
+const ADMIN_MENTION_PATTERN =
+  /(^|[^a-z0-9_])@(admins?|admnns?|administrators?|moderators?|mods?)\b/i;
 
 export type GroupHelpAdminMentionTarget = {
   targetChatId: string;

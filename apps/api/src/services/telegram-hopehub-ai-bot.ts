@@ -72,7 +72,10 @@ import {
 } from './telegram-community-member-identity.js';
 import { publicIdentityChangeAlert } from './telegram-group-help.identity-alert.js';
 import { notifyTelegramBotFailure } from './telegram-bot-failure-alerts.js';
-import { forwardGroupHelpAdminMention } from './telegram-group-help.admin-mentions.js';
+import {
+  forwardGroupHelpAdminMention,
+  hasGroupHelpAdminMention
+} from './telegram-group-help.admin-mentions.js';
 import { handleGroupHelpReportCommand } from './telegram-group-help.reports.js';
 import {
   matchingGroupHelpFilter,
@@ -549,6 +552,20 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
       await sendTemporaryMessage(chatId, 'That note is restricted to administrators.', values);
     return;
   }
+  if (hasGroupHelpAdminMention(message.text || '') && !message.reply_to_message) {
+    const senderIsAdmin = await isModerationExempt(
+      message,
+      values.telegramGroupHelpAdminWhitelist || ''
+    );
+    if (!senderIsAdmin) await forwardGroupHelpAdminMention(message, values);
+    await sendTemporaryMessage(
+      chatId,
+      values.telegramGroupHelpRulesMessage,
+      { ...values, telegramGroupHelpAutoDeleteSeconds: '60' },
+      { reply_to_message_id: message.message_id, message_thread_id: message.message_thread_id }
+    );
+    return;
+  }
   if (await handleGroupHelpReportCommand(message, values)) return;
   if (await isModerationExempt(message, values.telegramGroupHelpAdminWhitelist || '')) {
     await sendMatchingGroupHelpFilter(message, values, true);
@@ -563,8 +580,8 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
   if (await forwardGroupHelpAdminMention(message, values)) {
     await sendTemporaryMessage(
       chatId,
-      'Your message has been shared with the Hope Hub community team.',
-      values,
+      values.telegramGroupHelpRulesMessage,
+      { ...values, telegramGroupHelpAutoDeleteSeconds: '60' },
       { reply_to_message_id: message.message_id, message_thread_id: message.message_thread_id }
     );
     return;

@@ -15,7 +15,7 @@ type TelegramAdministrator = { user?: CommunityTelegramUser; status?: string };
 export function isGroupHelpReportTrigger(text: string | undefined) {
   const trimmed = (text || '').trim();
   const command = trimmed.split(/\s+/)[0].split('@')[0].toLowerCase();
-  return command === '/report' || /^@admins?$/i.test(trimmed);
+  return command === '/report' || /^@(admins?|admnns?)$/i.test(trimmed);
 }
 
 export function isTelegramGroupAdministratorStatus(status: string | undefined) {

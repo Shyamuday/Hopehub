@@ -11,7 +11,9 @@ test('recognizes only the Rose report command and exact admin mention', () => {
     '/report spam',
     '/report@HopeHubBot reason',
     '@admin',
-    '@admins'
+    '@admins',
+    '@admnn',
+    '@admnns'
   ]) {
     assert.equal(isGroupHelpReportTrigger(text), true, text);
   }
