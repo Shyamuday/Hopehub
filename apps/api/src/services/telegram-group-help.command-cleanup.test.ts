@@ -45,7 +45,20 @@ test('plain moderation keeps member content unless deletion is explicit', () => 
   for (const command of ['warn', 'mute', 'ban', 'kick', 'unwarn', 'unmute', 'unban']) {
     assert.equal(shouldDeleteModerationTarget(command), false, command);
   }
-  for (const command of ['delete', 'del', 'delwarn', 'delmute', 'delban', 'delkick']) {
+  for (const command of [
+    'delete',
+    'del',
+    'delwarn',
+    'delmute',
+    'delban',
+    'delkick',
+    'dmute',
+    'dban',
+    'dkick',
+    'smute',
+    'sban',
+    'skick'
+  ]) {
     assert.equal(shouldDeleteModerationTarget(command), true, command);
   }
 });

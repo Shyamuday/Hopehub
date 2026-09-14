@@ -391,12 +391,16 @@ export async function applyGroupHelpMemberAction(
   chatId: string,
   userId: number,
   action: string,
-  muteMinutes = 60
+  muteMinutes = 60,
+  options: { durationSeconds?: number; permanentMute?: boolean } = {}
 ) {
   if (action === 'ban' || action === 'kick') {
     await callCommunityTelegramApi(GROUP_HELP_BOT_SLUG, 'banChatMember', {
       chat_id: chatId,
       user_id: userId,
+      ...(action === 'ban' && options.durationSeconds
+        ? { until_date: Math.floor(Date.now() / 1000) + options.durationSeconds }
+        : {}),
       revoke_messages: false
     });
     if (action === 'kick') {
@@ -411,7 +415,10 @@ export async function applyGroupHelpMemberAction(
       chat_id: chatId,
       user_id: userId,
       permissions: { can_send_messages: false },
-      until_date: Math.floor(Date.now() / 1000) + Math.max(1, Math.min(10_080, muteMinutes)) * 60
+      until_date: options.permanentMute
+        ? 0
+        : Math.floor(Date.now() / 1000) +
+          (options.durationSeconds || Math.max(1, Math.min(10_080, muteMinutes)) * 60)
     });
   } else if (action === 'unban') {
     await callCommunityTelegramApi(GROUP_HELP_BOT_SLUG, 'unbanChatMember', {

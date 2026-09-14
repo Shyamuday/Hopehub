@@ -634,13 +634,13 @@ export async function handleGroupHelpMemberCommand(
         ? `*Helper tools*\nIn the main group, reply to a message:\n/warn [reason], /unwarn, /delete [reason], /delwarn [reason]\n/info, /history, /perms, /geturl, /clearwarnings\n/adminlist, /staff, /stats`
         : '',
       canUseModTools
-        ? `*Moderator tools*\n/mute [reason] — mute for ${muteMinutes} minutes\n/unmute, /ro, /unro, /ban, /unban, /kick\n/delmute, /delban, /delkick — delete plus member action`
+        ? `*Moderator tools — Rose-compatible syntax*\nReply to a message, or add <user_id or @username> before the reason.\n/ban, /mute — permanent action; /kick — remove (the member may rejoin)\n/tban, /tmute <time> [reason] — timed action (15m, 3h, 2d, 1w)\n/dban, /dmute, /dkick — reply: delete message plus action\n/sban, /smute, /skick — silent action; deletes replied message and command\n/unban, /unmute — undo the action\nLegacy /delban, /delmute, /delkick remain supported. Default automated warning mute: ${muteMinutes} minutes.`
         : '',
       canUseAdminTools
         ? `*Administrator tools*\n/promote, /unadmin, /title, /untitle\n/helper, /unhelper, /mod, /unmod\n/pin [notify], /unpin, /unpinall, /pinned\n/filter, /unfilter, /filters\n/welcome on|off, /lockdown [minutes], /unlock\n/settings, /setlog, /setofftopic`
         : '',
       context.isControlGroup && canUseStaffTools
-        ? `*Private admin-group syntax*\n/info or /history <user_id or @username>\nForward a member message directly to the bot for /history\n/perms <user_id or @username>\n/warn|mute|ban <user_id or @username> [reason]\n/delete <main_message_id> [reason]\n/delwarn|delmute|delban <user> <main_message_id> [reason]\n/geturl <main_message_id>\n/clearwarnings <user_id or @username>`
+        ? `*Private admin-group syntax*\n/info or /history <user_id or @username>\nForward a member message directly to the bot for /history\n/perms <user_id or @username>\n/ban|mute|kick <user_id or @username> [reason]\n/tban|tmute <user_id or @username> <time> [reason]\n/sban|smute|skick <user_id or @username> [reason]\n/delete <main_message_id> [reason]\n/dban|dmute|dkick <user> <main_message_id> [reason]\n/geturl <main_message_id>\n/clearwarnings <user_id or @username>`
         : '',
       context.isControlGroup && canUseAdminTools
         ? `*Private admin-group administration*\n/promote <user> [title]\n/unadmin <user>\n/title <user> <title>, /untitle <user>\n/helper|mod <user>, /unhelper|unmod <user>\n/pin <main_message_id> [notify]\nAll policy commands above apply to the configured main group.`

@@ -48,12 +48,20 @@ export const GROUP_HELP_COMMAND_CATALOG = {
     '/delban',
     '/delkick',
     '/mute',
+    '/tmute',
+    '/dmute',
+    '/smute',
     '/unmute',
     '/ro',
     '/unro',
     '/ban',
+    '/tban',
+    '/dban',
+    '/sban',
     '/unban',
-    '/kick'
+    '/kick',
+    '/dkick',
+    '/skick'
   ],
   roles: [
     '/helper',
@@ -100,19 +108,32 @@ const moderatorCommands = new Set([
   '/stats',
   '/clearwarnings',
   '/mute',
+  '/tmute',
+  '/dmute',
+  '/smute',
   '/unmute',
   '/ro',
   '/unro',
   '/ban',
+  '/tban',
+  '/dban',
+  '/sban',
   '/unban',
   '/kick',
+  '/dkick',
+  '/skick',
   '/delmute',
   '/delban',
   '/delkick'
 ]);
 const destructiveCommands = new Set([
   '/ban',
+  '/tban',
+  '/dban',
+  '/sban',
   '/kick',
+  '/dkick',
+  '/skick',
   '/delban',
   '/delkick',
   '/promote',
@@ -172,19 +193,19 @@ export const GROUP_HELP_STAFF_PERMISSION_GROUPS = [
   {
     key: 'mute',
     label: 'Mute and unmute',
-    commands: ['/mute', '/unmute', '/ro', '/unro', '/delmute'],
+    commands: ['/mute', '/tmute', '/dmute', '/smute', '/unmute', '/ro', '/unro', '/delmute'],
     defaultEnabled: true
   },
   {
     key: 'ban',
     label: 'Ban and unban',
-    commands: ['/ban', '/unban', '/delban'],
+    commands: ['/ban', '/tban', '/dban', '/sban', '/unban', '/delban'],
     defaultEnabled: false
   },
   {
     key: 'kick',
     label: 'Remove members',
-    commands: ['/kick', '/delkick'],
+    commands: ['/kick', '/dkick', '/skick', '/delkick'],
     defaultEnabled: false
   },
   {

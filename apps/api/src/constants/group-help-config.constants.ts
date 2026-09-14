@@ -990,7 +990,7 @@ contact me for`
     key: 'telegramGroupHelpBanAuthorityUserIds',
     label: 'Ban authority Telegram IDs',
     description:
-      'Only these Telegram user IDs and the actual Telegram group owner may use /ban or /delban. One ID per line. Once this list is set, usernames never grant ban power.',
+      'Only these Telegram user IDs and the actual Telegram group owner may use ban variants (/ban, /tban, /dban, /sban, /delban). One ID per line. Once this list is set, usernames never grant ban power.',
     section: 'people',
     type: 'textarea',
     maxLength: 500,

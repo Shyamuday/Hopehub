@@ -37,6 +37,11 @@ import {
 } from './telegram-group-help.ban-guard.js';
 import { recordGroupHelpCommandAudit } from './telegram-group-help.command-audit.js';
 import { shouldDeleteModerationTarget } from './telegram-group-help.command-cleanup.js';
+import {
+  groupHelpModerationCommandSpec,
+  groupHelpModerationUsage,
+  parseGroupHelpModerationDuration
+} from './telegram-group-help.moderation-command.js';
 
 export async function handleGroupHelpStaffCommand(
   message: CommunityTelegramMessage,
@@ -97,34 +102,30 @@ export async function handleGroupHelpStaffCommand(
   // ── Moderation commands ──────────────────────────────────────────────────
 
   const moderationCommand =
-    /^\/(warn|unwarn|delete|del|mute|unmute|ban|unban|kick|delwarn|delmute|delban|delkick|ro|unro)$/i.exec(
+    /^\/(warn|unwarn|delete|del|mute|tmute|dmute|smute|unmute|ban|tban|dban|sban|unban|kick|dkick|skick|delwarn|delmute|delban|delkick|ro|unro)$/i.exec(
       command
     );
 
   if (moderationCommand) {
     const commandName = moderationCommand[1].toLowerCase();
-    const canonicalName =
-      commandName === 'del' ? 'delete' : commandName === 'delkick' ? 'kick' : commandName;
+    const commandSpec = groupHelpModerationCommandSpec(commandName)!;
+    const canonicalName = commandSpec.action;
 
-    const requiredRole = [
-      'mute',
-      'unmute',
-      'ban',
-      'unban',
-      'kick',
-      'delmute',
-      'delban',
-      'delkick',
-      'ro',
-      'unro'
-    ].includes(commandName)
+    const requiredRole = ['mute', 'unmute', 'ban', 'unban', 'kick', 'ro', 'unro'].includes(
+      canonicalName
+    )
       ? 'MODERATOR'
       : 'HELPER';
 
-    const banCommand = ['ban', 'delban'].includes(commandName);
+    const banCommand = canonicalName === 'ban';
     const permitted = banCommand
       ? await canUseGroupHelpBanCommand(permissionMessage, values)
-      : await canUseGroupHelpCommand(permissionMessage, values, `/${canonicalName}`, requiredRole);
+      : await canUseGroupHelpCommand(
+          permissionMessage,
+          values,
+          commandSpec.permissionCommand,
+          requiredRole
+        );
     if (!permitted) {
       await sendGroupHelpPermissionDenied(
         message,
@@ -134,20 +135,10 @@ export async function handleGroupHelpStaffCommand(
       );
       return true;
     }
-    if (
-      ['ban', 'kick', 'delban', 'delkick'].includes(commandName) &&
-      (await requestGroupHelpCommandConfirmation({
-        message,
-        targetChatId,
-        command
-      }))
-    ) {
-      return true;
-    }
-
-    const deleteFirst = shouldDeleteModerationTarget(commandName);
-    const effectiveAction =
-      canonicalName === 'delete' ? 'delete' : canonicalName.replace(/^del/, '') || 'delete';
+    const deleteFirst =
+      shouldDeleteModerationTarget(commandName) &&
+      (!commandSpec.silent || (!isCrossGroup && Boolean(message.reply_to_message)));
+    const effectiveAction = canonicalName;
 
     // A command in another group cannot reply to a main-group message. Require
     // the exact message ID so the bot never reports a deletion it did not do.
@@ -177,11 +168,27 @@ export async function handleGroupHelpStaffCommand(
       return true;
     }
 
-    // Resolve target — reply in main group OR user ID/username from staff group
-    let target = message.reply_to_message?.from as
+    // Rose-compatible targeting: reply, numeric ID, or @username. A reply in
+    // the private control group cannot identify a main-group message/member.
+    let target = (!isCrossGroup ? message.reply_to_message?.from : undefined) as
       { id: number; first_name?: string; username?: string } | undefined;
+    const usesExplicitTarget = !target;
 
-    if (isCrossGroup) {
+    if (
+      !isCrossGroup &&
+      commandSpec.deleteTarget &&
+      !commandSpec.silent &&
+      !message.reply_to_message
+    ) {
+      await sendTemporaryGroupHelpMessage(
+        chatId,
+        `${groupHelpModerationUsage(commandName, true)}\nDelete variants must reply to the message they should remove.`,
+        values
+      );
+      return true;
+    }
+
+    if (usesExplicitTarget) {
       const arg = parts[1] || '';
       let userId = /^\d+$/.test(arg) ? Number(arg) : 0;
 
@@ -200,7 +207,7 @@ export async function handleGroupHelpStaffCommand(
         await sendCommunityMessage(
           GROUP_HELP_BOT_SLUG,
           chatId,
-          `Usage: ${command} <user_id or @username> [reason]\nExample: ${command} 123456789 spam`
+          `${groupHelpModerationUsage(commandName, false)}\nExample target: @username or 123456789`
         );
         return true;
       }
@@ -222,13 +229,6 @@ export async function handleGroupHelpStaffCommand(
       }
 
       target = memberInfo.user;
-    } else if (!target || !message.reply_to_message) {
-      await sendTemporaryGroupHelpMessage(
-        chatId,
-        'Reply to a member\u2019s message, then use this moderation command.',
-        values
-      );
-      return true;
     }
 
     if (!target) return true;
@@ -246,9 +246,45 @@ export async function handleGroupHelpStaffCommand(
       }
     }
 
-    const reasonStart = isCrossGroup ? (deleteFirst ? 3 : 2) : 1;
+    const durationIndex = usesExplicitTarget ? 2 : 1;
+    const duration = commandSpec.timed
+      ? parseGroupHelpModerationDuration(parts[durationIndex])
+      : undefined;
+    if (commandSpec.timed && !duration) {
+      const usage = groupHelpModerationUsage(commandName, !usesExplicitTarget);
+      if (isCrossGroup) await sendCommunityMessage(GROUP_HELP_BOT_SLUG, chatId, usage);
+      else await sendTemporaryGroupHelpMessage(chatId, usage, values);
+      return true;
+    }
+    const reasonStart = isCrossGroup
+      ? deleteFirst
+        ? 3
+        : commandSpec.timed
+          ? 3
+          : 2
+      : commandSpec.timed
+        ? usesExplicitTarget
+          ? 3
+          : 2
+        : usesExplicitTarget
+          ? 2
+          : 1;
     const reason =
       parts.slice(reasonStart).join(' ').trim() || `Manual ${canonicalName} by community staff`;
+    const logReason = duration ? `${reason} (Duration: ${duration.input})` : reason;
+
+    // Ask only after the target and optional duration have been validated, so
+    // malformed commands never create a misleading destructive-action prompt.
+    if (
+      ['ban', 'kick'].includes(canonicalName) &&
+      (await requestGroupHelpCommandConfirmation({
+        message,
+        targetChatId,
+        command
+      }))
+    ) {
+      return true;
+    }
 
     if (banCommand && message.from) {
       const remainingSeconds = await groupHelpBanCooldownRemainingSeconds({
@@ -356,7 +392,11 @@ export async function handleGroupHelpStaffCommand(
         targetChatId,
         target.id,
         effectiveAction,
-        Number(values.telegramGroupHelpMuteMinutes || 60)
+        Number(values.telegramGroupHelpMuteMinutes || 60),
+        {
+          ...(duration ? { durationSeconds: duration.seconds } : {}),
+          ...(effectiveAction === 'mute' && !commandSpec.timed ? { permanentMute: true } : {})
+        }
       );
     }
 
@@ -374,7 +414,7 @@ export async function handleGroupHelpStaffCommand(
         message,
         targetChatId,
         status: 'HANDLED',
-        detail: `Ban applied to ${target.first_name || 'Telegram member'} (${target.id}). Reason: ${reason}. Duplicate protection: ${cooldownSeconds}s.`,
+        detail: `Ban applied to ${target.first_name || 'Telegram member'} (${target.id}). Reason: ${logReason}. Duplicate protection: ${cooldownSeconds}s.`,
         logChatId: values.telegramGroupHelpLogChannelId
       });
       message._groupHelpAuditRecorded = true;
@@ -385,20 +425,26 @@ export async function handleGroupHelpStaffCommand(
         `Action: ${effectiveAction}`,
         `Main group ID: ${targetChatId}`,
         `Member: ${telegramPersonLogLabel(target)}`,
-        `Reason: ${reason}`,
+        `Reason: ${logReason}`,
         `By: ${telegramPersonLogLabel(message.from, 'Administrator')}`
       ]);
     } else {
       await sendModerationLog(
         values,
         message.reply_to_message || { ...message, from: target as typeof message.from },
-        reason,
+        logReason,
         effectiveAction,
         { performedBy: message.from }
       );
     }
 
-    const confirmText = `✅ ${effectiveAction[0].toUpperCase()}${effectiveAction.slice(1)} applied to ${target.first_name || target.id}${isCrossGroup ? ' in main group.' : '.'}`;
+    if (commandSpec.silent) {
+      await deleteGroupHelpMessage(chatId, message.message_id).catch(() => null);
+      return true;
+    }
+
+    const durationText = duration ? ` for ${duration.input}` : '';
+    const confirmText = `✅ ${effectiveAction[0].toUpperCase()}${effectiveAction.slice(1)} applied to ${target.first_name || target.id}${durationText}${isCrossGroup ? ' in main group.' : '.'}`;
     if (isCrossGroup) {
       await sendCommunityMessage(GROUP_HELP_BOT_SLUG, chatId, confirmText);
     } else {

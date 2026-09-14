@@ -21,11 +21,22 @@ export function shouldAutoDeleteGroupCommand(input: {
 
 /**
  * Deleting member content must be an explicit staff choice. Plain warn/mute/
- * ban commands affect only the member record; /delete and /del... variants
- * additionally remove the replied message.
+ * ban commands affect only the member record; /delete, /d..., /s..., and
+ * legacy /del... variants may additionally remove the replied message.
  */
 export function shouldDeleteModerationTarget(commandName: string) {
-  return ['delete', 'del', 'delwarn', 'delmute', 'delban', 'delkick'].includes(
-    commandName.toLowerCase()
-  );
+  return [
+    'delete',
+    'del',
+    'delwarn',
+    'delmute',
+    'delban',
+    'delkick',
+    'dmute',
+    'dban',
+    'dkick',
+    'smute',
+    'sban',
+    'skick'
+  ].includes(commandName.toLowerCase());
 }
