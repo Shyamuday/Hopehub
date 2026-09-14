@@ -32,6 +32,7 @@ import {
 } from './telegram-group-help.command-context.js';
 import { telegramPersonLogLabel } from './telegram-group-help.people.js';
 import { canUseGroupHelpAdminCommand } from './telegram-group-help.permissions.js';
+import { groupHelpWarnPolicySummary } from './telegram-group-help.warning-policy.js';
 
 export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
   const callback = update.callback_query;
@@ -189,8 +190,15 @@ export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
   if (callback.data.startsWith('hh_menu_') && callback.data !== 'hh_menu_settings') {
     const values = await groupHelpConfig(chatId);
     const action = callback.data.slice('hh_menu_'.length);
+    const warningPolicy = groupHelpWarnPolicySummary(values);
     const warningCount =
-      action === 'warnings' ? await telegramGroupWarningCount(chatId, String(callback.from.id)) : 0;
+      action === 'warnings'
+        ? await telegramGroupWarningCount(
+            chatId,
+            String(callback.from.id),
+            warningPolicy.expiry.seconds
+          )
+        : 0;
     const text =
       action === 'rules'
         ? values.telegramGroupHelpRulesMessage

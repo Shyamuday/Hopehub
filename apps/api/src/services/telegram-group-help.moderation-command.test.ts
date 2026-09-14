@@ -28,6 +28,14 @@ test('maps Rose-compatible moderation variants to the existing permission comman
     silent: true,
     timed: false
   });
+  assert.deepEqual(groupHelpModerationCommandSpec('swarn'), {
+    action: 'warn',
+    permissionCommand: '/warn',
+    deleteTarget: true,
+    silent: true,
+    timed: false
+  });
+  assert.equal(groupHelpModerationCommandSpec('rmwarn')?.action, 'unwarn');
   assert.equal(groupHelpModerationCommandSpec('unknown'), undefined);
 });
 

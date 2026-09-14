@@ -6,11 +6,13 @@ import {
 } from './telegram-community-bots.client.js';
 import {
   addTelegramGroupWarning,
+  clearTelegramGroupWarnings,
   removeLatestTelegramGroupWarning
 } from './telegram-community-bots.store.js';
 import type { CommunityTelegramMessage } from './telegram-community-bots.types.js';
 import {
   applyGroupHelpMemberAction,
+  applyGroupHelpWarningLimitAction,
   deleteGroupHelpMessage,
   sendGroupHelpActivityLog,
   sendModerationLog,
@@ -42,6 +44,7 @@ import {
   groupHelpModerationUsage,
   parseGroupHelpModerationDuration
 } from './telegram-group-help.moderation-command.js';
+import { groupHelpWarnPolicySummary } from './telegram-group-help.warning-policy.js';
 
 export async function handleGroupHelpStaffCommand(
   message: CommunityTelegramMessage,
@@ -102,7 +105,7 @@ export async function handleGroupHelpStaffCommand(
   // ── Moderation commands ──────────────────────────────────────────────────
 
   const moderationCommand =
-    /^\/(warn|unwarn|delete|del|mute|tmute|dmute|smute|unmute|ban|tban|dban|sban|unban|kick|dkick|skick|delwarn|delmute|delban|delkick|ro|unro)$/i.exec(
+    /^\/(warn|dwarn|swarn|unwarn|rmwarn|delete|del|mute|tmute|dmute|smute|unmute|ban|tban|dban|sban|unban|kick|dkick|skick|delwarn|delmute|delban|delkick|ro|unro)$/i.exec(
       command
     );
 
@@ -272,6 +275,9 @@ export async function handleGroupHelpStaffCommand(
     const reason =
       parts.slice(reasonStart).join(' ').trim() || `Manual ${canonicalName} by community staff`;
     const logReason = duration ? `${reason} (Duration: ${duration.input})` : reason;
+    let appliedAction = effectiveAction;
+    let warningCount: number | undefined;
+    let warningLimitReached = false;
 
     // Ask only after the target and optional duration have been validated, so
     // malformed commands never create a misleading destructive-action prompt.
@@ -324,7 +330,12 @@ export async function handleGroupHelpStaffCommand(
     if (effectiveAction === 'delete') {
       // deletion already done above
     } else if (effectiveAction === 'unwarn') {
-      const result = await removeLatestTelegramGroupWarning(targetChatId, String(target.id));
+      const warningPolicy = groupHelpWarnPolicySummary(values);
+      const result = await removeLatestTelegramGroupWarning(
+        targetChatId,
+        String(target.id),
+        warningPolicy.expiry.seconds
+      );
       if (!result.removed) {
         const reply = 'This member has no recorded warnings to remove.';
         if (isCrossGroup) {
@@ -335,19 +346,24 @@ export async function handleGroupHelpStaffCommand(
         return true;
       }
     } else if (effectiveAction === 'warn') {
-      const warnings = await addTelegramGroupWarning({
+      const warningPolicy = groupHelpWarnPolicySummary(values);
+      warningCount = await addTelegramGroupWarning({
         chatId: targetChatId,
         telegramUserId: String(target.id),
-        reason
+        reason,
+        warningExpirySeconds: warningPolicy.expiry.seconds
       });
-      const warnLimit = Math.max(1, Number(values.telegramGroupHelpWarnLimit || 3));
-      if (warnings >= warnLimit) {
+      if (warningCount >= warningPolicy.limit) {
         try {
-          await applyGroupHelpMemberAction(
+          const mode = await applyGroupHelpWarningLimitAction(
             targetChatId,
             target.id,
-            values.telegramGroupHelpWarnAction || 'mute'
+            warningPolicy.mode.value,
+            Number(values.telegramGroupHelpMuteMinutes || 60)
           );
+          appliedAction = mode.action;
+          warningLimitReached = true;
+          await clearTelegramGroupWarnings(targetChatId, String(target.id));
         } catch (error) {
           await sendCommunityMessage(
             GROUP_HELP_BOT_SLUG,
@@ -391,7 +407,7 @@ export async function handleGroupHelpStaffCommand(
       await applyGroupHelpMemberAction(
         targetChatId,
         target.id,
-        effectiveAction,
+        appliedAction,
         Number(values.telegramGroupHelpMuteMinutes || 60),
         {
           ...(duration ? { durationSeconds: duration.seconds } : {}),
@@ -422,7 +438,7 @@ export async function handleGroupHelpStaffCommand(
 
     if (isCrossGroup) {
       await sendGroupHelpActivityLog(values, 'Private admin command applied', [
-        `Action: ${effectiveAction}`,
+        `Action: ${appliedAction}`,
         `Main group ID: ${targetChatId}`,
         `Member: ${telegramPersonLogLabel(target)}`,
         `Reason: ${logReason}`,
@@ -433,7 +449,7 @@ export async function handleGroupHelpStaffCommand(
         values,
         message.reply_to_message || { ...message, from: target as typeof message.from },
         logReason,
-        effectiveAction,
+        appliedAction,
         { performedBy: message.from }
       );
     }
@@ -444,7 +460,13 @@ export async function handleGroupHelpStaffCommand(
     }
 
     const durationText = duration ? ` for ${duration.input}` : '';
-    const confirmText = `✅ ${effectiveAction[0].toUpperCase()}${effectiveAction.slice(1)} applied to ${target.first_name || target.id}${durationText}${isCrossGroup ? ' in main group.' : '.'}`;
+    const warningPolicy = groupHelpWarnPolicySummary(values);
+    const confirmText =
+      effectiveAction === 'warn' && warningCount !== undefined
+        ? warningLimitReached
+          ? `✅ Warning ${warningCount}/${warningPolicy.limit} reached the limit. ${warningPolicy.mode.value} applied to ${target.first_name || target.id}; warnings were reset.`
+          : `⚠️ ${target.first_name || target.id} warned (${warningCount}/${warningPolicy.limit}). Reason: ${reason}`
+        : `✅ ${effectiveAction[0].toUpperCase()}${effectiveAction.slice(1)} applied to ${target.first_name || target.id}${durationText}${isCrossGroup ? ' in main group.' : '.'}`;
     if (isCrossGroup) {
       await sendCommunityMessage(GROUP_HELP_BOT_SLUG, chatId, confirmText);
     } else {

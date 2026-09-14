@@ -49,6 +49,8 @@ test('plain moderation keeps member content unless deletion is explicit', () => 
     'delete',
     'del',
     'delwarn',
+    'dwarn',
+    'swarn',
     'delmute',
     'delban',
     'delkick',

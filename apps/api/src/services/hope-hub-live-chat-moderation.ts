@@ -1,6 +1,7 @@
 import { prisma } from '../db.js';
 import {
   addTelegramGroupWarning,
+  clearTelegramGroupWarnings,
   checkTelegramGroupFlood,
   checkTelegramGroupRepeatedSpam
 } from './telegram-community-bots.store.js';
@@ -15,6 +16,7 @@ import {
   applyGroupHelpMemberAction,
   sendGroupHelpActivityLog
 } from './telegram-group-help.actions.js';
+import { groupHelpWarnPolicySummary } from './telegram-group-help.warning-policy.js';
 
 export type WebsiteLiveChatRuleViolation = {
   action: string;
@@ -181,20 +183,23 @@ export async function moderateWebsiteLiveChatMessage(input: {
 
   if (!violation || ['allow', 'off'].includes(violation.action)) return { allowed: true };
 
-  const warningLimit = Math.max(1, Number(values.telegramGroupHelpWarnLimit || 3));
-  const muteMinutes = Math.max(1, Number(values.telegramGroupHelpMuteMinutes || 60));
+  const warningPolicy = groupHelpWarnPolicySummary(values);
+  const warningLimit = warningPolicy.limit;
+  let muteMinutes = Math.max(1, Number(values.telegramGroupHelpMuteMinutes || 60));
   const warningCount =
     violation.action === 'delete'
       ? null
       : await addTelegramGroupWarning({
           chatId: telegramChatId || `website:${input.groupId}`,
           telegramUserId: warningIdentity,
-          reason: `Website chat: ${violation.reason}`
+          reason: `Website chat: ${violation.reason}`,
+          warningExpirySeconds: warningPolicy.expiry.seconds
         });
-  const action =
-    warningCount !== null && warningCount >= warningLimit
-      ? values.telegramGroupHelpWarnAction || 'mute'
-      : violation.action;
+  const warningLimitReached = warningCount !== null && warningCount >= warningLimit;
+  const action = warningLimitReached ? warningPolicy.mode.action : violation.action;
+  if (warningLimitReached && warningPolicy.mode.durationSeconds) {
+    muteMinutes = Math.max(1, Math.ceil(warningPolicy.mode.durationSeconds / 60));
+  }
 
   await applyWebsiteMemberAction({
     groupId: input.groupId,
@@ -205,6 +210,9 @@ export async function moderateWebsiteLiveChatMessage(input: {
     reason: violation.reason,
     muteMinutes
   });
+  if (warningLimitReached) {
+    await clearTelegramGroupWarnings(telegramChatId || `website:${input.groupId}`, warningIdentity);
+  }
 
   let telegramActionError = '';
   const linkedTelegramId = Number(linkedTelegram?.telegramUserId || '');
@@ -215,7 +223,14 @@ export async function moderateWebsiteLiveChatMessage(input: {
     ['mute', 'kick', 'ban'].includes(action)
   ) {
     try {
-      await applyGroupHelpMemberAction(telegramChatId, linkedTelegramId, action, muteMinutes);
+      await applyGroupHelpMemberAction(telegramChatId, linkedTelegramId, action, muteMinutes, {
+        ...(warningLimitReached && warningPolicy.mode.durationSeconds
+          ? { durationSeconds: warningPolicy.mode.durationSeconds }
+          : {}),
+        ...(warningLimitReached && action === 'mute' && !warningPolicy.mode.durationSeconds
+          ? { permanentMute: true }
+          : {})
+      });
     } catch (error) {
       telegramActionError = error instanceof Error ? error.message : String(error);
     }

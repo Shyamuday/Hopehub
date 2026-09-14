@@ -19,6 +19,7 @@ export const GROUP_HELP_COMMAND_CATALOG = {
     '/rules',
     '/support',
     '/warnings',
+    '/warns',
     '/me',
     '/id',
     '/staffid',
@@ -36,11 +37,15 @@ export const GROUP_HELP_COMMAND_CATALOG = {
     '/staff',
     '/stats',
     '/clearwarnings',
+    '/resetwarn',
     '/adminlist'
   ],
   moderation: [
     '/warn',
+    '/dwarn',
+    '/swarn',
     '/unwarn',
+    '/rmwarn',
     '/delete',
     '/del',
     '/delwarn',
@@ -92,7 +97,11 @@ export const GROUP_HELP_COMMAND_CATALOG = {
     '/lockdown',
     '/unlock',
     '/setofftopic',
-    '/setlog'
+    '/setlog',
+    '/setwarnlimit',
+    '/setwarnmode',
+    '/setwarntime',
+    '/warntime'
   ],
   safety: ['/report']
 } as const;
@@ -107,6 +116,7 @@ export type GroupHelpCommandDefinition = {
 const moderatorCommands = new Set([
   '/stats',
   '/clearwarnings',
+  '/resetwarn',
   '/mute',
   '/tmute',
   '/dmute',
@@ -181,7 +191,7 @@ export const GROUP_HELP_STAFF_PERMISSION_GROUPS = [
   {
     key: 'warnings',
     label: 'Manage warnings',
-    commands: ['/warn', '/unwarn', '/clearwarnings'],
+    commands: ['/warn', '/dwarn', '/swarn', '/unwarn', '/rmwarn', '/clearwarnings', '/resetwarn'],
     defaultEnabled: true
   },
   {
@@ -256,7 +266,7 @@ export const GROUP_HELP_STAFF_PERMISSION_GROUPS = [
   {
     key: 'settings',
     label: 'Open and update settings',
-    commands: ['/settings'],
+    commands: ['/settings', '/setwarnlimit', '/setwarnmode', '/setwarntime', '/warntime'],
     defaultEnabled: false
   }
 ] as const;

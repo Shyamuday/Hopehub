@@ -137,7 +137,28 @@ const roseCommands: Record<string, GroupHelpModerationCommandSpec> = {
     silent: false,
     timed: false
   },
+  dwarn: {
+    action: 'warn',
+    permissionCommand: '/warn',
+    deleteTarget: true,
+    silent: false,
+    timed: false
+  },
+  swarn: {
+    action: 'warn',
+    permissionCommand: '/warn',
+    deleteTarget: true,
+    silent: true,
+    timed: false
+  },
   unwarn: {
+    action: 'unwarn',
+    permissionCommand: '/unwarn',
+    deleteTarget: false,
+    silent: false,
+    timed: false
+  },
+  rmwarn: {
     action: 'unwarn',
     permissionCommand: '/unwarn',
     deleteTarget: false,

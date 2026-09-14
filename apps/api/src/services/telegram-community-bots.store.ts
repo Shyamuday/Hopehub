@@ -210,83 +210,170 @@ export async function checkTelegramGroupRepeatedSpam(input: {
   });
 }
 
+type TelegramGroupWarningEntry = { reason: string; createdAt: string };
+
+type TelegramGroupWarningPayload = {
+  count?: unknown;
+  reasons?: unknown;
+  entries?: unknown;
+};
+
+function warningEntries(
+  payload: TelegramGroupWarningPayload,
+  warningExpirySeconds?: number,
+  now = new Date()
+) {
+  const storedEntries = Array.isArray(payload.entries)
+    ? payload.entries
+        .filter((entry): entry is TelegramGroupWarningEntry =>
+          Boolean(
+            entry &&
+            typeof entry === 'object' &&
+            typeof (entry as TelegramGroupWarningEntry).reason === 'string' &&
+            typeof (entry as TelegramGroupWarningEntry).createdAt === 'string'
+          )
+        )
+        .map((entry) => ({ reason: entry.reason, createdAt: entry.createdAt }))
+    : [];
+  let entries = storedEntries.filter((entry) => Number.isFinite(Date.parse(entry.createdAt)));
+
+  // Older records stored only a count and up to ten reasons. Convert them in
+  // memory without losing the count; the next mutation persists the new form.
+  if (!entries.length && Number(payload.count || 0) > 0) {
+    const count = Math.max(0, Number(payload.count || 0));
+    const reasons = Array.isArray(payload.reasons)
+      ? payload.reasons.map(String).filter(Boolean).slice(-count)
+      : [];
+    const missing = Math.max(0, count - reasons.length);
+    entries = [
+      ...Array.from({ length: missing }, () => ({
+        reason: 'Legacy warning',
+        createdAt: now.toISOString()
+      })),
+      ...reasons.map((reason) => ({ reason, createdAt: now.toISOString() }))
+    ];
+  }
+
+  if (!warningExpirySeconds) return entries;
+  const cutoff = now.getTime() - warningExpirySeconds * 1000;
+  return entries.filter((entry) => Date.parse(entry.createdAt) > cutoff);
+}
+
+function warningPayload(entries: TelegramGroupWarningEntry[]) {
+  return {
+    count: entries.length,
+    reasons: entries.map((entry) => entry.reason).slice(-10),
+    entries
+  };
+}
+
+function warningStateExpiry(entries: TelegramGroupWarningEntry[], warningExpirySeconds?: number) {
+  if (!warningExpirySeconds) return new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000);
+  const newest = entries.at(-1);
+  return new Date(
+    (newest ? Date.parse(newest.createdAt) : Date.now()) + warningExpirySeconds * 1000
+  );
+}
+
 export async function addTelegramGroupWarning(input: {
   chatId: string;
   telegramUserId: string;
   reason: string;
+  warningExpirySeconds?: number;
 }) {
   const bot = `group-warnings:${input.chatId}`;
   const chatId = input.telegramUserId;
-  const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
   return prisma.$transaction(async (tx) => {
     const current = await tx.telegramCommunityState.findUnique({
       where: { bot_chatId: { bot, chatId } },
       select: { payload: true }
     });
-    const payload = (current?.payload || {}) as { count?: number; reasons?: string[] };
-    const count = Number(payload.count || 0) + 1;
-    const reasons = [
-      ...(Array.isArray(payload.reasons) ? payload.reasons : []),
-      input.reason
-    ].slice(-10);
+    const currentEntries = warningEntries(
+      (current?.payload || {}) as TelegramGroupWarningPayload,
+      input.warningExpirySeconds
+    );
+    const entries = [
+      ...currentEntries,
+      { reason: input.reason, createdAt: new Date().toISOString() }
+    ];
+    const payload = warningPayload(entries);
+    const expiresAt = warningStateExpiry(entries, input.warningExpirySeconds);
     await tx.telegramCommunityState.upsert({
       where: { bot_chatId: { bot, chatId } },
       create: {
         bot,
         chatId,
         state: 'group-warnings',
-        payload: { count, reasons },
+        payload,
         expiresAt
       },
-      update: { payload: { count, reasons }, expiresAt }
+      update: { payload, expiresAt }
     });
-    return count;
+    return entries.length;
   });
 }
 
-export async function telegramGroupWarningCount(chatId: string, telegramUserId: string) {
+export async function telegramGroupWarningCount(
+  chatId: string,
+  telegramUserId: string,
+  warningExpirySeconds?: number
+) {
   const row = await prisma.telegramCommunityState.findUnique({
     where: { bot_chatId: { bot: `group-warnings:${chatId}`, chatId: telegramUserId } },
     select: { payload: true }
   });
-  return Number((row?.payload as { count?: number } | null)?.count || 0);
+  return warningEntries((row?.payload || {}) as TelegramGroupWarningPayload, warningExpirySeconds)
+    .length;
 }
 
-export async function telegramGroupWarningDetails(chatId: string, telegramUserId: string) {
+export async function telegramGroupWarningDetails(
+  chatId: string,
+  telegramUserId: string,
+  warningExpirySeconds?: number
+) {
   const row = await prisma.telegramCommunityState.findUnique({
     where: { bot_chatId: { bot: `group-warnings:${chatId}`, chatId: telegramUserId } },
     select: { payload: true }
   });
-  const payload = (row?.payload || {}) as { count?: unknown; reasons?: unknown };
+  const entries = warningEntries(
+    (row?.payload || {}) as TelegramGroupWarningPayload,
+    warningExpirySeconds
+  );
   return {
-    count: Number(payload.count || 0),
-    reasons: Array.isArray(payload.reasons)
-      ? payload.reasons.map(String).filter(Boolean).slice(-5)
-      : []
+    count: entries.length,
+    reasons: entries.map((entry) => entry.reason).slice(-10),
+    entries
   };
 }
 
 /** Removes the newest recorded warning while preserving the older audit reasons. */
-export async function removeLatestTelegramGroupWarning(chatId: string, telegramUserId: string) {
+export async function removeLatestTelegramGroupWarning(
+  chatId: string,
+  telegramUserId: string,
+  warningExpirySeconds?: number
+) {
   const bot = `group-warnings:${chatId}`;
   const row = await prisma.telegramCommunityState.findUnique({
     where: { bot_chatId: { bot, chatId: telegramUserId } },
     select: { payload: true, expiresAt: true }
   });
-  const payload = (row?.payload || {}) as { count?: unknown; reasons?: unknown };
-  const count = Math.max(0, Number(payload.count || 0) - 1);
-  const reasons = Array.isArray(payload.reasons)
-    ? payload.reasons.map(String).filter(Boolean).slice(0, -1)
-    : [];
-  if (!row || count === 0) {
+  const entries = warningEntries(
+    (row?.payload || {}) as TelegramGroupWarningPayload,
+    warningExpirySeconds
+  );
+  const removed = entries.pop();
+  if (!row || !entries.length) {
     await prisma.telegramCommunityState.deleteMany({ where: { bot, chatId: telegramUserId } });
-    return { count: 0, removed: Boolean(row) };
+    return { count: 0, removed: Boolean(removed) };
   }
   await prisma.telegramCommunityState.update({
     where: { bot_chatId: { bot, chatId: telegramUserId } },
-    data: { payload: { count, reasons }, expiresAt: row.expiresAt }
+    data: {
+      payload: warningPayload(entries),
+      expiresAt: warningStateExpiry(entries, warningExpirySeconds)
+    }
   });
-  return { count, removed: true };
+  return { count: entries.length, removed: Boolean(removed) };
 }
 
 export async function clearTelegramGroupWarnings(chatId: string, telegramUserId: string) {

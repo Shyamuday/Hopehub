@@ -25,6 +25,10 @@ import type {
   CommunityTelegramUser
 } from './telegram-community-bots.types.js';
 import { telegramPersonLogLabel } from './telegram-group-help.people.js';
+import {
+  effectiveGroupHelpWarnMode,
+  groupHelpWarnPolicySummary
+} from './telegram-group-help.warning-policy.js';
 
 const MODERATION_ACTION_STATE = 'group-moderation-action';
 
@@ -285,7 +289,12 @@ export async function handleGroupHelpModerationActionCallback(update: CommunityT
       only_if_banned: true
     });
   } else if (requestedAction === 'unwarn' && payload.targetUserId) {
-    await removeLatestTelegramGroupWarning(payload.targetChatId, payload.targetUserId);
+    const warningPolicy = groupHelpWarnPolicySummary(values);
+    await removeLatestTelegramGroupWarning(
+      payload.targetChatId,
+      payload.targetUserId,
+      warningPolicy.expiry.seconds
+    );
   } else if (requestedAction === 'repost' && payload.text) {
     const originalSender = [
       payload.targetUserName || 'Telegram member',
@@ -427,4 +436,18 @@ export async function applyGroupHelpMemberAction(
       only_if_banned: true
     });
   }
+}
+
+export async function applyGroupHelpWarningLimitAction(
+  chatId: string,
+  userId: number,
+  configuredMode: string | undefined,
+  muteMinutes = 60
+) {
+  const mode = effectiveGroupHelpWarnMode(configuredMode);
+  await applyGroupHelpMemberAction(chatId, userId, mode.action, muteMinutes, {
+    ...(mode.durationSeconds ? { durationSeconds: mode.durationSeconds } : {}),
+    ...(mode.action === 'mute' && !mode.durationSeconds ? { permanentMute: true } : {})
+  });
+  return mode;
 }

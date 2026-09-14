@@ -29,6 +29,8 @@ export function shouldDeleteModerationTarget(commandName: string) {
     'delete',
     'del',
     'delwarn',
+    'dwarn',
+    'swarn',
     'delmute',
     'delban',
     'delkick',

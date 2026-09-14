@@ -23,6 +23,11 @@ import { sendGroupHelpPermissionDenied } from './telegram-group-help.permissions
 import { requestGroupHelpCommandConfirmation } from './telegram-group-help.command-confirmation.js';
 import { telegramPersonLogLabel } from './telegram-group-help.people.js';
 import { canManageGroupHelpPins } from './telegram-group-help.pin-rights.js';
+import {
+  groupHelpWarnPolicySummary,
+  parseGroupHelpWarnMode,
+  parseGroupHelpWarnTime
+} from './telegram-group-help.warning-policy.js';
 
 export async function handleGroupHelpAdminCommand(
   message: CommunityTelegramMessage,
@@ -46,7 +51,11 @@ export async function handleGroupHelpAdminCommand(
       '/welcome',
       '/filter',
       '/unfilter',
-      '/filters'
+      '/filters',
+      '/setwarnlimit',
+      '/setwarnmode',
+      '/setwarntime',
+      '/warntime'
     ].includes(command)
   )
     return false;
@@ -108,6 +117,79 @@ export async function handleGroupHelpAdminCommand(
     }).catch(() => null);
     return member?.user;
   };
+  if (['/setwarnlimit', '/setwarnmode', '/setwarntime', '/warntime'].includes(command)) {
+    const { saveTelegramCommunityGroupPolicy, getTelegramCommunityGroupPolicy } =
+      await import('./telegram-community-group-policy.js');
+    const policy = await getTelegramCommunityGroupPolicy(targetChatId);
+
+    if (command === '/setwarnlimit') {
+      const limit = Number(parts[1]);
+      if (!Number.isInteger(limit) || limit < 1 || limit > 100) {
+        await sendTemporaryGroupHelpMessage(chatId, 'Usage: /setwarnlimit <1-100>', values);
+        return true;
+      }
+      await saveTelegramCommunityGroupPolicy(targetChatId, {
+        ...policy,
+        telegramGroupHelpWarnLimit: String(limit)
+      });
+      await sendTemporaryGroupHelpMessage(chatId, `✅ Warning limit set to ${limit}.`, values);
+      return true;
+    }
+
+    if (command === '/setwarnmode') {
+      const mode = parseGroupHelpWarnMode(parts.slice(1).join(' '));
+      if (!mode) {
+        await sendTemporaryGroupHelpMessage(
+          chatId,
+          'Usage: /setwarnmode <kick|ban|mute|tban TIME|tmute TIME>\nExample: /setwarnmode tmute 1w',
+          values
+        );
+        return true;
+      }
+      await saveTelegramCommunityGroupPolicy(targetChatId, {
+        ...policy,
+        telegramGroupHelpWarnAction: mode.value
+      });
+      await sendTemporaryGroupHelpMessage(
+        chatId,
+        `✅ Warning-limit action set to ${mode.value}.`,
+        values
+      );
+      return true;
+    }
+
+    const rawTime = parts[1];
+    if (!rawTime && command === '/warntime') {
+      const summary = groupHelpWarnPolicySummary(values);
+      await sendTemporaryGroupHelpMessage(
+        chatId,
+        `Warning expiry is ${summary.expiry.value}.`,
+        values
+      );
+      return true;
+    }
+    const warningTime = parseGroupHelpWarnTime(rawTime);
+    if (!warningTime) {
+      await sendTemporaryGroupHelpMessage(
+        chatId,
+        `Usage: ${command} <Xm|Xh|Xd|Xw|off>\nExample: ${command} 12w`,
+        values
+      );
+      return true;
+    }
+    await saveTelegramCommunityGroupPolicy(targetChatId, {
+      ...policy,
+      telegramGroupHelpWarnTime: warningTime.value
+    });
+    await sendTemporaryGroupHelpMessage(
+      chatId,
+      warningTime.value === 'off'
+        ? '✅ Warning expiry disabled.'
+        : `✅ Warnings will expire after ${warningTime.value}.`,
+      values
+    );
+    return true;
+  }
   if (command === '/settings') {
     await sendCommunityMessage(
       GROUP_HELP_BOT_SLUG,

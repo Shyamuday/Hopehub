@@ -31,6 +31,7 @@ import {
   observeTelegramCommunityMember
 } from './telegram-community-member-identity.js';
 import { telegramPersonLogLabel } from './telegram-group-help.people.js';
+import { groupHelpWarnPolicySummary } from './telegram-group-help.warning-policy.js';
 
 type TelegramMemberSnapshot = {
   status?: string;
@@ -206,15 +207,56 @@ export async function handleGroupHelpMemberCommand(
     return true;
   }
   if (command === '/warnings' && message.from) {
-    const target =
-      message.reply_to_message?.from &&
-      (await canUseGroupHelpCommand(permissionMessage, values, '/warnings', 'HELPER'))
-        ? message.reply_to_message.from
-        : message.from;
-    const count = await telegramGroupWarningCount(targetChatId, String(target.id));
+    const policy = groupHelpWarnPolicySummary(values);
+    const count = await telegramGroupWarningCount(
+      targetChatId,
+      String(message.from.id),
+      policy.expiry.seconds
+    );
     await sendTemporaryGroupHelpMessage(
       chatId,
-      `${target.id === message.from.id ? 'You currently have' : `${target.first_name || 'This member'} has`} ${count} warning${count === 1 ? '' : 's'}.`,
+      [
+        '⚠️ Warning settings',
+        `Limit: ${policy.limit}`,
+        `Action at limit: ${policy.mode.value}`,
+        `Warning expiry: ${policy.expiry.value}`,
+        `Your warnings: ${count}/${policy.limit}`,
+        '',
+        'Use /warns to view your warning reasons.'
+      ].join('\n'),
+      values,
+      { reply_to_message_id: message.message_id, message_thread_id: message.message_thread_id }
+    );
+    return true;
+  }
+  if (command === '/warns' && message.from) {
+    const canViewOthers = await canUseGroupHelpCommand(
+      permissionMessage,
+      values,
+      '/warnings',
+      'HELPER'
+    );
+    const requestedTarget =
+      message.reply_to_message?.from ||
+      (commandParts[1] ? await resolveMainGroupMember(commandParts[1]) : undefined);
+    const target = canViewOthers && requestedTarget ? requestedTarget : message.from;
+    const policy = groupHelpWarnPolicySummary(values);
+    const details = await telegramGroupWarningDetails(
+      targetChatId,
+      String(target.id),
+      policy.expiry.seconds
+    );
+    const reasons = details.entries.slice(-10).map((entry, index) => {
+      const date = new Date(entry.createdAt);
+      const label = Number.isNaN(date.getTime()) ? '' : ` · ${date.toLocaleDateString('en-IN')}`;
+      return `${index + 1}. ${entry.reason.replace(/\s+/g, ' ').trim()}${label}`;
+    });
+    await sendTemporaryGroupHelpMessage(
+      chatId,
+      [
+        `${target.id === message.from.id ? 'Your' : `${target.first_name || 'Member'}’s`} warnings: ${details.count}/${policy.limit}`,
+        reasons.length ? reasons.join('\n') : 'No active warnings.'
+      ].join('\n\n'),
       values,
       { reply_to_message_id: message.message_id, message_thread_id: message.message_thread_id }
     );
@@ -388,6 +430,7 @@ export async function handleGroupHelpMemberCommand(
       member: target,
       source: 'INFO_LOOKUP'
     });
+    const warningPolicy = groupHelpWarnPolicySummary(values);
     const [
       member,
       role,
@@ -403,7 +446,7 @@ export async function handleGroupHelpMemberCommand(
         }
       }),
       assignedCommunityRole(targetChatId, String(target.id)),
-      telegramGroupWarningDetails(targetChatId, String(target.id)),
+      telegramGroupWarningDetails(targetChatId, String(target.id), warningPolicy.expiry.seconds),
       prisma.telegramCommunityModerationCase.count({
         where: { chatId: targetChatId, targetUserId: String(target.id), status: 'OPEN' }
       }),
@@ -429,7 +472,7 @@ export async function handleGroupHelpMemberCommand(
     ]);
     const fullName =
       [target.first_name, target.last_name].filter(Boolean).join(' ') || 'Telegram member';
-    const warningLimit = Math.max(1, Number(values.telegramGroupHelpWarnLimit || 3));
+    const warningLimit = warningPolicy.limit;
     const adminPermissions = administratorPermissions(telegramMember);
     const previousNames = [
       ...new Set(
@@ -479,20 +522,20 @@ export async function handleGroupHelpMemberCommand(
     await deliverStaffResult(details);
     return true;
   }
-  if (command === '/clearwarnings') {
+  if (command === '/clearwarnings' || command === '/resetwarn') {
     if (!(await canUseGroupHelpCommand(permissionMessage, values, '/clearwarnings', 'MODERATOR'))) {
       await sendGroupHelpPermissionDenied(message, 'MODERATOR', chatId, values);
       return true;
     }
     const target =
       message.reply_to_message?.from ||
-      (context.isControlGroup ? await resolveMainGroupMember(commandParts[1] || '') : undefined);
+      (commandParts[1] ? await resolveMainGroupMember(commandParts[1]) : undefined);
     if (!target) {
       await sendTemporaryGroupHelpMessage(
         chatId,
         context.isControlGroup
-          ? 'Use /clearwarnings <user_id or @username> from this private admin group.'
-          : 'Reply to a member’s message, then use /clearwarnings.',
+          ? `Use ${command} <user_id or @username> from this private admin group.`
+          : `Reply to a member’s message or use ${command} <user_id or @username>.`,
         values
       );
       return true;
@@ -629,15 +672,15 @@ export async function handleGroupHelpMemberCommand(
     );
     const muteMinutes = values.telegramGroupHelpMuteMinutes || '60';
     const helpSections = [
-      `*Hope Hub bot help*\n\n*Member commands*\n/rules — community rules\n/support — private support\n/warnings — your warning count\n/me — your group profile\n/id — Telegram and target-group IDs\n/report — report a replied message\n/admin or /alertadmin — alert the community team\n/forget — delete retained Group Help data`,
+      `*Hope Hub bot help*\n\n*Member commands*\n/rules — community rules\n/support — private support\n/warnings — warning settings and your count\n/warns — your active warning reasons\n/me — your group profile\n/id — Telegram and target-group IDs\n/report — report a replied message\n/admin or /alertadmin — alert the community team\n/forget — delete retained Group Help data`,
       canUseStaffTools
-        ? `*Helper tools*\nIn the main group, reply to a message:\n/warn [reason], /unwarn, /delete [reason], /delwarn [reason]\n/info, /history, /perms, /geturl, /clearwarnings\n/adminlist, /staff, /stats`
+        ? `*Helper tools*\n/warn <id/username/reply> [reason]\n/dwarn [reason] — reply: delete and warn\n/swarn <id/username/reply> [reason] — silent warning\n/rmwarn or /unwarn — remove latest warning\n/warns <id/username/reply> — view warning reasons\n/delete [reason], /info, /history, /perms, /geturl\n/adminlist, /staff, /stats`
         : '',
       canUseModTools
-        ? `*Moderator tools — Rose-compatible syntax*\nReply to a message, or add <user_id or @username> before the reason.\n/ban, /mute — permanent action; /kick — remove (the member may rejoin)\n/tban, /tmute <time> [reason] — timed action (15m, 3h, 2d, 1w)\n/dban, /dmute, /dkick — reply: delete message plus action\n/sban, /smute, /skick — silent action; deletes replied message and command\n/unban, /unmute — undo the action\nLegacy /delban, /delmute, /delkick remain supported. Default automated warning mute: ${muteMinutes} minutes.`
+        ? `*Moderator tools — Rose-compatible syntax*\nReply to a message, or add <user_id or @username> before the reason.\n/ban, /mute — permanent action; /kick — remove (the member may rejoin)\n/tban, /tmute <time> [reason] — timed action (15m, 3h, 2d, 1w)\n/dban, /dmute, /dkick — reply: delete message plus action\n/sban, /smute, /skick — silent action; deletes replied message and command\n/unban, /unmute — undo the action\n/resetwarn — remove all warnings\nLegacy /delban, /delmute, /delkick remain supported. Default automated warning mute: ${muteMinutes} minutes.`
         : '',
       canUseAdminTools
-        ? `*Administrator tools*\n/promote, /unadmin, /title, /untitle\n/helper, /unhelper, /mod, /unmod\n/pin [notify], /unpin, /unpinall, /pinned\n/filter, /unfilter, /filters\n/welcome on|off, /lockdown [minutes], /unlock\n/settings, /setlog, /setofftopic`
+        ? `*Administrator tools*\n/promote, /unadmin, /title, /untitle\n/helper, /unhelper, /mod, /unmod\n/pin [notify], /unpin, /unpinall, /pinned\n/filter, /unfilter, /filters\n/setwarnlimit <number>\n/setwarnmode <kick|ban|mute|tban TIME|tmute TIME>\n/setwarntime <time|off> (also /warntime)\n/welcome on|off, /lockdown [minutes], /unlock\n/settings, /setlog, /setofftopic`
         : '',
       context.isControlGroup && canUseStaffTools
         ? `*Private admin-group syntax*\n/info or /history <user_id or @username>\nForward a member message directly to the bot for /history\n/perms <user_id or @username>\n/ban|mute|kick <user_id or @username> [reason]\n/tban|tmute <user_id or @username> <time> [reason]\n/sban|smute|skick <user_id or @username> [reason]\n/delete <main_message_id> [reason]\n/dban|dmute|dkick <user> <main_message_id> [reason]\n/geturl <main_message_id>\n/clearwarnings <user_id or @username>`

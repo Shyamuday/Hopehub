@@ -1225,12 +1225,22 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
   {
     key: 'telegramGroupHelpWarnAction',
     label: 'Warning-limit action',
-    description: 'Action after a member reaches the warning limit.',
+    description: 'Rose-compatible action after the warning limit is reached.',
     section: 'moderation',
     type: 'select',
-    options: ['mute', 'kick', 'ban'],
-    maxLength: 10,
+    options: ['mute', 'kick', 'ban', 'tmute 1h', 'tmute 1d', 'tban 1d', 'tban 1w'],
+    maxLength: 20,
     defaultValue: 'mute'
+  },
+  {
+    key: 'telegramGroupHelpWarnTime',
+    label: 'Warning expiry',
+    description: 'Automatically forgive individual warnings after this time, or keep them off.',
+    section: 'moderation',
+    type: 'select',
+    options: ['off', '1d', '1w', '4w', '12w', '52w'],
+    maxLength: 10,
+    defaultValue: 'off'
   },
   {
     key: 'telegramGroupHelpMediaPolicy',
