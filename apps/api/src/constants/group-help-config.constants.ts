@@ -823,7 +823,7 @@ Contact Admin Team via @Contacthopehubbot`
     maxLength: 1000,
     placeholder: 'https://...',
     defaultValue:
-      'https://hopehub-public-assets-924479393196.s3.us-east-1.amazonaws.com/telegram/moderation/hopehub-community-rules-v2.png'
+      'https://hopehub-public-assets-924479393196.s3.us-east-1.amazonaws.com/telegram/moderation/hopehub-admin-request-guide.jpeg'
   },
   {
     key: 'telegramGroupHelpSupportMessage',
