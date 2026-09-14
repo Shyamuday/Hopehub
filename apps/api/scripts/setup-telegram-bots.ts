@@ -40,16 +40,6 @@ for (const status of telegramBotStatus()) {
     dropPendingUpdates
   });
   console.log(`[telegram] ${status.kind} webhook configured`);
-  if (status.slug === GROUP_HELP_BOT_SLUG) {
-    try {
-      const audit = await auditGroupHelpBotPermissions(await groupHelpConfig());
-      console.log(`[telegram] ${formatGroupHelpPermissionAudit(audit).replace(/\n/g, ' | ')}`);
-    } catch (error) {
-      console.warn(
-        `[telegram] GROUP_HELP permission audit could not run: ${error instanceof Error ? error.message : String(error)}`
-      );
-    }
-  }
 }
 
 // Configure community bots last. This keeps the community route authoritative
@@ -66,4 +56,14 @@ for (const status of communityBotStatus()) {
     dropPendingUpdates
   });
   console.log(`[telegram] ${status.kind} webhook configured`);
+  if (status.slug === GROUP_HELP_BOT_SLUG) {
+    try {
+      const audit = await auditGroupHelpBotPermissions(await groupHelpConfig());
+      console.log(`[telegram] ${formatGroupHelpPermissionAudit(audit).replace(/\n/g, ' | ')}`);
+    } catch (error) {
+      console.warn(
+        `[telegram] GROUP_HELP permission audit could not run: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
 }
