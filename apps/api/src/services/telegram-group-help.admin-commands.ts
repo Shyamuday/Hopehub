@@ -55,7 +55,8 @@ export async function handleGroupHelpAdminCommand(
       '/setwarnlimit',
       '/setwarnmode',
       '/setwarntime',
-      '/warntime'
+      '/warntime',
+      '/reports'
     ].includes(command)
   )
     return false;
@@ -186,6 +187,34 @@ export async function handleGroupHelpAdminCommand(
       warningTime.value === 'off'
         ? '✅ Warning expiry disabled.'
         : `✅ Warnings will expire after ${warningTime.value}.`,
+      values
+    );
+    return true;
+  }
+  if (command === '/reports') {
+    const mode = parts[1]?.toLowerCase();
+    if (!mode) {
+      await sendTemporaryGroupHelpMessage(
+        chatId,
+        `User reports are ${values.telegramGroupHelpReportsMode === 'off' ? 'OFF' : 'ON'}.\nUse /reports on or /reports off.`,
+        values
+      );
+      return true;
+    }
+    if (!['on', 'off'].includes(mode)) {
+      await sendTemporaryGroupHelpMessage(chatId, 'Usage: /reports <on|off>', values);
+      return true;
+    }
+    const { saveTelegramCommunityGroupPolicy, getTelegramCommunityGroupPolicy } =
+      await import('./telegram-community-group-policy.js');
+    const policy = await getTelegramCommunityGroupPolicy(targetChatId);
+    await saveTelegramCommunityGroupPolicy(targetChatId, {
+      ...policy,
+      telegramGroupHelpReportsMode: mode === 'on' ? 'admins' : 'off'
+    });
+    await sendTemporaryGroupHelpMessage(
+      chatId,
+      `✅ User reports ${mode === 'on' ? 'enabled' : 'disabled'}.`,
       values
     );
     return true;

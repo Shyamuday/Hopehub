@@ -101,7 +101,8 @@ export const GROUP_HELP_COMMAND_CATALOG = {
     '/setwarnlimit',
     '/setwarnmode',
     '/setwarntime',
-    '/warntime'
+    '/warntime',
+    '/reports'
   ],
   safety: ['/report']
 } as const;
@@ -266,7 +267,14 @@ export const GROUP_HELP_STAFF_PERMISSION_GROUPS = [
   {
     key: 'settings',
     label: 'Open and update settings',
-    commands: ['/settings', '/setwarnlimit', '/setwarnmode', '/setwarntime', '/warntime'],
+    commands: [
+      '/settings',
+      '/setwarnlimit',
+      '/setwarnmode',
+      '/setwarntime',
+      '/warntime',
+      '/reports'
+    ],
     defaultEnabled: false
   }
 ] as const;

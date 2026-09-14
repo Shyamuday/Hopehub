@@ -80,9 +80,16 @@ test('dangerous commands are marked destructive and require the expected role', 
 
 test('Rose warning commands use the expected staff roles', () => {
   assert.deepEqual(
-    ['/warns', '/warn', '/dwarn', '/swarn', '/rmwarn', '/resetwarn', '/setwarnmode'].map(
-      (command) => ({ command, role: groupHelpCommandDefinition(command)?.minimumRole })
-    ),
+    [
+      '/warns',
+      '/warn',
+      '/dwarn',
+      '/swarn',
+      '/rmwarn',
+      '/resetwarn',
+      '/setwarnmode',
+      '/reports'
+    ].map((command) => ({ command, role: groupHelpCommandDefinition(command)?.minimumRole })),
     [
       { command: '/warns', role: 'MEMBER' },
       { command: '/warn', role: 'HELPER' },
@@ -90,7 +97,8 @@ test('Rose warning commands use the expected staff roles', () => {
       { command: '/swarn', role: 'HELPER' },
       { command: '/rmwarn', role: 'HELPER' },
       { command: '/resetwarn', role: 'MODERATOR' },
-      { command: '/setwarnmode', role: 'ADMIN' }
+      { command: '/setwarnmode', role: 'ADMIN' },
+      { command: '/reports', role: 'ADMIN' }
     ]
   );
 });

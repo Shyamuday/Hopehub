@@ -137,6 +137,7 @@ const COMMUNITY_BOTS: Record<
       { command: 'warns', description: 'View warning details' },
       { command: 'me', description: 'Show your group profile' },
       { command: 'report', description: 'Report a message to admins' },
+      { command: 'reports', description: 'Toggle user reports (admins)' },
       { command: 'forgot', description: 'Remove your data from this group' },
       { command: 'setofftopic', description: 'Register off-topic group (admins)' },
       { command: 'setlog', description: 'Set moderation log channel (admins)' },

@@ -1596,7 +1596,7 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
     ['telegramGroupHelpLanguageCommandTemplate', 'Language', '/language {value}'],
     ['telegramGroupHelpLogChannelCommandTemplate', 'Log channel', '/settings'],
     ['telegramGroupHelpStaffGroupCommandTemplate', 'Staff group', '/settings'],
-    ['telegramGroupHelpReportsCommandTemplate', 'Member reports', '/settings'],
+    ['telegramGroupHelpReportsCommandTemplate', 'Member reports', '/reports {value}'],
     ['telegramGroupHelpCustomRepliesCommandTemplate', 'Custom replies', '/settings'],
     ['telegramGroupHelpInactiveCommandTemplate', 'Inactive members', '/inactives {value}'],
     ['telegramGroupHelpBackupCommandTemplate', 'Settings backup', '/backup'],

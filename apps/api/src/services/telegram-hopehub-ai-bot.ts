@@ -77,6 +77,7 @@ import {
 import { publicIdentityChangeAlert } from './telegram-group-help.identity-alert.js';
 import { notifyTelegramBotFailure } from './telegram-bot-failure-alerts.js';
 import { forwardGroupHelpAdminMention } from './telegram-group-help.admin-mentions.js';
+import { handleGroupHelpReportCommand } from './telegram-group-help.reports.js';
 import {
   groupCommandDeleteDelaySeconds,
   shouldAutoDeleteGroupCommand
@@ -359,6 +360,7 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
     return;
   }
   if (!message.from) return;
+  if (await handleGroupHelpReportCommand(message, values)) return;
   if (await isModerationExempt(message, values.telegramGroupHelpAdminWhitelist || '')) {
     await recordTelegramCommunityActivity(
       chatId,
