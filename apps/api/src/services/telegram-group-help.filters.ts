@@ -21,6 +21,11 @@ export type GroupHelpFilter = {
   commandDescription?: string;
 };
 
+/** Crisis replies are never throttled, including older stored definitions. */
+export function groupHelpFilterCooldownSeconds(filter: GroupHelpFilter) {
+  return filter.category === 'crisis' ? 0 : Math.max(0, filter.cooldownSeconds || 0);
+}
+
 const STORAGE_PREFIX = 'rose-filter:';
 
 function unquote(value: string) {

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   filterControlOptions,
+  groupHelpFilterCooldownSeconds,
   groupHelpFilterCommandSuggestions,
   groupHelpFilterMediaFromMessage,
   matchingGroupHelpFilter,
@@ -12,6 +13,7 @@ import {
   serializeGroupHelpFilters
 } from './telegram-group-help.filters.js';
 import {
+  GROUP_HELP_WELLBEING_FILTERS,
   GROUP_HELP_WELLBEING_FILTER_DEFINITIONS,
   withGroupHelpWellbeingFilterDefaults
 } from '../constants/group-help-wellbeing-replies.constants.js';
@@ -82,7 +84,7 @@ test('round-trips wellbeing safety metadata and remote photo media', () => {
   assert.equal(filters.length, 4);
   assert.equal(filters[0].id, 'hopehub-immediate-support-v1');
   assert.equal(filters[0].category, 'crisis');
-  assert.equal(filters[0].cooldownSeconds, 1800);
+  assert.equal(filters[0].cooldownSeconds, undefined);
   assert.equal(filters[0].notifyStaff, true);
   assert.match(filters[0].media?.fileId || '', /^https:\/\/.*\.png$/);
 });
@@ -112,6 +114,13 @@ test('wellbeing defaults match support-seeking phrases without matching broad di
     })?.id,
     'hopehub-immediate-support-v1'
   );
+});
+
+test('crisis defaults never suppress repeated safety responses with a cooldown', () => {
+  const crisis = GROUP_HELP_WELLBEING_FILTERS.find((filter) => filter.category === 'crisis');
+  assert.ok(crisis);
+  assert.equal(crisis.cooldownSeconds, undefined);
+  assert.equal(groupHelpFilterCooldownSeconds({ ...crisis, cooldownSeconds: 1800 }), 0);
 });
 
 test('can limit matching to crisis filters for priority handling', () => {

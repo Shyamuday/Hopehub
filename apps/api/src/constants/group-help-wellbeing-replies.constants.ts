@@ -12,7 +12,6 @@ export const GROUP_HELP_WELLBEING_FILTERS: GroupHelpFilter[] = [
   {
     id: 'hopehub-immediate-support-v1',
     category: 'crisis',
-    cooldownSeconds: 30 * 60,
     notifyStaff: true,
     triggers: [
       'suicide',

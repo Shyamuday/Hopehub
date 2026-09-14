@@ -78,6 +78,7 @@ import {
 } from './telegram-group-help.admin-mentions.js';
 import { handleGroupHelpReportCommand } from './telegram-group-help.reports.js';
 import {
+  groupHelpFilterCooldownSeconds,
   matchingGroupHelpFilter,
   renderGroupHelpFilterHtml
 } from './telegram-group-help.filters.js';
@@ -123,18 +124,22 @@ async function sendMatchingGroupHelpFilter(
   });
   if (!filter) return false;
   const chatId = String(message.chat.id);
+  // Crisis language must always receive the safety response. Older database
+  // copies may still contain the former 30-minute cooldown, so ignore it at
+  // runtime rather than waiting for every per-group policy to be rewritten.
+  const cooldownSeconds = groupHelpFilterCooldownSeconds(filter);
   const cooldownClaim =
-    filter.id && message.from
+    filter.id && cooldownSeconds && message.from
       ? {
           operation: `${BOT}:filter-response:${filter.id}`,
           key: `${chatId}:${message.from.id}`
         }
       : undefined;
-  if (filter.id && filter.cooldownSeconds && message.from) {
+  if (filter.id && cooldownSeconds && message.from) {
     const claimed = await claimTelegramOperation({
       operation: `${BOT}:filter-response:${filter.id}`,
       key: `${chatId}:${message.from.id}`,
-      expiresAt: new Date(Date.now() + filter.cooldownSeconds * 1000)
+      expiresAt: new Date(Date.now() + cooldownSeconds * 1000)
     }).catch(() => true);
     // Treat a cooling-down support phrase as handled so it cannot accidentally
     // fall through into ordinary word moderation.
