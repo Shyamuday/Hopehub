@@ -45,9 +45,11 @@ import {
   groupHelpModerationUntilLabel,
   groupHelpModerationCommandSpec,
   groupHelpModerationUsage,
-  parseGroupHelpModerationDuration
+  parseGroupHelpModerationDuration,
+  shouldSendGroupHelpRulesAfterModeration
 } from './telegram-group-help.moderation-command.js';
 import { groupHelpWarnPolicySummary } from './telegram-group-help.warning-policy.js';
+import { sendGroupHelpRulesMessage } from './telegram-group-help.rules-message.js';
 
 export async function handleGroupHelpStaffCommand(
   message: CommunityTelegramMessage,
@@ -508,6 +510,21 @@ export async function handleGroupHelpStaffCommand(
           : {})
       }
     );
+    if (shouldSendGroupHelpRulesAfterModeration(effectiveAction, appliedAction)) {
+      await sendGroupHelpRulesMessage({
+        chatId: publicDestination,
+        values,
+        ...(!isCrossGroup && message.message_thread_id
+          ? { messageThreadId: message.message_thread_id }
+          : {})
+      }).catch((error) => {
+        console.warn(
+          `[telegram-group-help] Moderation succeeded, but rules could not be posted: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+      });
+    }
     if (isCrossGroup && shouldNotifyAffectedMember) {
       await sendTemporaryGroupHelpMessage(
         chatId,

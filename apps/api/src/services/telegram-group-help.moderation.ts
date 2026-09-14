@@ -14,8 +14,10 @@ import {
 import { groupHelpWarnPolicySummary } from './telegram-group-help.warning-policy.js';
 import {
   groupHelpMemberModerationNotice,
-  groupHelpModerationUntilLabel
+  groupHelpModerationUntilLabel,
+  shouldSendGroupHelpRulesAfterModeration
 } from './telegram-group-help.moderation-command.js';
+import { sendGroupHelpRulesMessage } from './telegram-group-help.rules-message.js';
 
 function moderationMemberLabel(message: CommunityTelegramMessage) {
   return [
@@ -161,5 +163,18 @@ export async function moderateGroupHelpMessage(
       ? `${warnings}/${warningPolicy.limit}; limit reached and warnings reset`
       : `${warnings}/${warningPolicy.limit}`
   });
+  if (shouldSendGroupHelpRulesAfterModeration(action, finalAction)) {
+    await sendGroupHelpRulesMessage({
+      chatId,
+      values,
+      ...(message.message_thread_id ? { messageThreadId: message.message_thread_id } : {})
+    }).catch((error) => {
+      console.warn(
+        `[telegram-group-help] Automatic moderation succeeded, but rules could not be posted: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    });
+  }
   return true;
 }

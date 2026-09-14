@@ -5,7 +5,8 @@ import {
   groupHelpModerationUntilLabel,
   groupHelpModerationCommandSpec,
   groupHelpModerationUsage,
-  parseGroupHelpModerationDuration
+  parseGroupHelpModerationDuration,
+  shouldSendGroupHelpRulesAfterModeration
 } from './telegram-group-help.moderation-command.js';
 
 test('maps Rose-compatible moderation variants to the existing permission commands', () => {
@@ -87,4 +88,12 @@ test('formats a moderation expiry in India time', () => {
     groupHelpModerationUntilLabel(3 * 60 * 60, new Date('2026-09-14T05:00:00.000Z')),
     '14 Sept 2026, 01:30 pm IST'
   );
+});
+
+test('shows rules after warns and bans without changing silent action semantics', () => {
+  assert.equal(shouldSendGroupHelpRulesAfterModeration('warn'), true);
+  assert.equal(shouldSendGroupHelpRulesAfterModeration('ban'), true);
+  assert.equal(shouldSendGroupHelpRulesAfterModeration('warn', 'ban'), true);
+  assert.equal(shouldSendGroupHelpRulesAfterModeration('mute'), false);
+  assert.equal(shouldSendGroupHelpRulesAfterModeration('unban'), false);
 });
