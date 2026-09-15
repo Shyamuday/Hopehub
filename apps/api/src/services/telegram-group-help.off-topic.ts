@@ -42,13 +42,9 @@ export const HOPE_HUB_OFF_TOPIC_BANNED_PHRASES = [
 // Broad entries such as "dm me", "my number" and "call me now" create too
 // many false positives in a social group. Review only direct requests for a
 // member's private contact details.
-export const HOPE_HUB_OFF_TOPIC_REVIEW_PHRASES = [
-  'send me your number',
-  'share your number',
-  'dm me your number',
-  'msg me your number',
-  'whatsapp me privately'
-].join('\n');
+export const HOPE_HUB_OFF_TOPIC_REVIEW_PHRASES = ['send me your number', 'share your number'].join(
+  '\n'
+);
 
 export const HOPE_HUB_OFF_TOPIC_GROUP_POLICY: Record<string, string> = {
   telegramGroupHelpGroupTitle: HOPE_HUB_OFF_TOPIC_GROUP_TITLE,

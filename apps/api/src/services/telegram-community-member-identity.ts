@@ -135,60 +135,69 @@ export async function observeTelegramCommunityMember(input: {
   });
   const activeData = input.markActive === false ? {} : { leftAt: null };
 
-  return prisma.$transaction(async (tx) => {
-    // Multiple webhook updates for an active member can arrive concurrently.
-    // Lock this group/member pair before reading so one real profile change is
-    // observed and announced only once.
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${chatId}), hashtext(${telegramUserId}))`;
-    const previous = await tx.telegramCommunityMember.findUnique({
-      where: { chatId_telegramUserId: { chatId, telegramUserId } },
-      select: { firstName: true, lastName: true, username: true }
-    });
-    const existingHistory = previous
-      ? await tx.telegramCommunityMemberIdentityHistory.findFirst({
-          where: { chatId, telegramUserId },
-          select: { id: true }
-        })
-      : null;
-    const changedFields = previous ? changedTelegramIdentityFields(previous, next) : ['initial'];
-    const changed = Boolean(previous && changedFields.length);
-    await tx.telegramCommunityMember.upsert({
-      where: { chatId_telegramUserId: { chatId, telegramUserId } },
-      create: { chatId, telegramUserId, ...next },
-      update: { ...next, ...activeData }
-    });
-    if (!previous || !existingHistory || changed) {
-      await tx.telegramCommunityMemberIdentityHistory.create({
-        data: {
-          chatId,
-          telegramUserId,
-          previousFirstName: previous?.firstName,
-          previousLastName: previous?.lastName,
-          previousUsername: previous?.username,
-          previousDisplayName: previous ? telegramDisplayName(previous) : null,
-          firstName: next.firstName,
-          lastName: next.lastName,
-          username: next.username,
-          displayName: telegramDisplayName(next),
-          changedFields: !previous || changed ? changedFields : ['initial'],
-          source: input.source
-        }
+  const observation = await prisma.$transaction(
+    async (tx) => {
+      // Multiple webhook updates for an active member can arrive concurrently.
+      // Lock this group/member pair before reading so one real profile change is
+      // observed and announced only once.
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${chatId}), hashtext(${telegramUserId}))`;
+      const previous = await tx.telegramCommunityMember.findUnique({
+        where: { chatId_telegramUserId: { chatId, telegramUserId } },
+        select: { firstName: true, lastName: true, username: true }
       });
-    }
-    const nameChangeCount = await tx.telegramCommunityMemberIdentityHistory.count({
-      where: { chatId, telegramUserId, changedFields: { has: 'name' } }
-    });
-    return {
-      recorded: true,
-      changed,
-      changedFields,
-      nameChangeCount,
-      previousDisplayName: previous ? telegramDisplayName(previous) : null,
-      displayName: telegramDisplayName(next),
-      previousUsername: previous?.username || null,
-      username: next.username
-    };
+      const existingHistory = previous
+        ? await tx.telegramCommunityMemberIdentityHistory.findFirst({
+            where: { chatId, telegramUserId },
+            select: { id: true }
+          })
+        : null;
+      const changedFields = previous ? changedTelegramIdentityFields(previous, next) : ['initial'];
+      const changed = Boolean(previous && changedFields.length);
+      await tx.telegramCommunityMember.upsert({
+        where: { chatId_telegramUserId: { chatId, telegramUserId } },
+        create: { chatId, telegramUserId, ...next },
+        update: { ...next, ...activeData }
+      });
+      if (!previous || !existingHistory || changed) {
+        await tx.telegramCommunityMemberIdentityHistory.create({
+          data: {
+            chatId,
+            telegramUserId,
+            previousFirstName: previous?.firstName,
+            previousLastName: previous?.lastName,
+            previousUsername: previous?.username,
+            previousDisplayName: previous ? telegramDisplayName(previous) : null,
+            firstName: next.firstName,
+            lastName: next.lastName,
+            username: next.username,
+            displayName: telegramDisplayName(next),
+            changedFields: !previous || changed ? changedFields : ['initial'],
+            source: input.source
+          }
+        });
+      }
+      return {
+        recorded: true,
+        changed,
+        changedFields,
+        previousDisplayName: previous ? telegramDisplayName(previous) : null,
+        displayName: telegramDisplayName(next),
+        previousUsername: previous?.username || null,
+        username: next.username
+      };
+    },
+    // Concurrent Telegram updates may briefly wait on the per-member advisory
+    // lock. Five seconds was too short under production load and caused P2028
+    // failures even though the identity write itself was valid.
+    { maxWait: 10_000, timeout: 15_000 }
+  );
+
+  // This aggregate does not need the write lock. Keeping it outside the
+  // transaction shortens the critical section and avoids an expired commit.
+  const nameChangeCount = await prisma.telegramCommunityMemberIdentityHistory.count({
+    where: { chatId, telegramUserId, changedFields: { has: 'name' } }
   });
+  return { ...observation, nameChangeCount };
 }
 
 export function identityHistoryDisplayName(input: {

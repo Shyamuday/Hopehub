@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { GROUP_HELP_CONFIG_DEFAULTS } from '../constants/group-help-config.constants.js';
 import {
   HOPE_HUB_OFF_TOPIC_BANNED_PHRASES,
   HOPE_HUB_OFF_TOPIC_GROUP_POLICY,
@@ -40,7 +41,10 @@ test('off-topic community has an independent, production-safe policy', () => {
     HOPE_HUB_OFF_TOPIC_BANNED_PHRASES,
     /^(?:harami|chutiya|gandu|randi|lund|loda|pagal|pagla|my number|call me now)$/m
   );
-  assert.doesNotMatch(HOPE_HUB_OFF_TOPIC_REVIEW_PHRASES, /^(?:dm me|my number|call me now)$/m);
+  assert.doesNotMatch(
+    HOPE_HUB_OFF_TOPIC_REVIEW_PHRASES,
+    /(^|[^a-z])(?:dm|d\s+m|pm|pv|msg|message|text|ping|private)(?:[^a-z]|$)/i
+  );
   assert.equal(HOPE_HUB_OFF_TOPIC_GROUP_POLICY.telegramGroupHelpForwardPolicy, 'allow');
   assert.equal(HOPE_HUB_OFF_TOPIC_GROUP_POLICY.telegramGroupHelpQuotePolicy, 'allow');
   assert.match(HOPE_HUB_OFF_TOPIC_GROUP_POLICY.telegramGroupHelpAllowedMedia, /sticker/i);
@@ -60,4 +64,16 @@ test('Chit-Chat moderation uses only its dedicated private group', () => {
   );
   assert.equal(policy.telegramGroupHelpLogChannelId, '-100-private-chat-log');
   assert.equal(policy.telegramGroupHelpStaffGroupId, '-100-private-chat-log');
+});
+
+test('direct-message words and aliases are not automatic moderation triggers', () => {
+  const directMessageAlias =
+    /(^|[^a-z])(?:dm|d\s+m|pm|pv|msg|message|text|ping|private)(?:[^a-z]|$)/i;
+  assert.doesNotMatch(GROUP_HELP_CONFIG_DEFAULTS.telegramGroupHelpBannedWords, directMessageAlias);
+  assert.doesNotMatch(
+    GROUP_HELP_CONFIG_DEFAULTS.telegramGroupHelpReviewPhrases,
+    directMessageAlias
+  );
+  assert.doesNotMatch(HOPE_HUB_OFF_TOPIC_BANNED_PHRASES, directMessageAlias);
+  assert.doesNotMatch(HOPE_HUB_OFF_TOPIC_REVIEW_PHRASES, directMessageAlias);
 });

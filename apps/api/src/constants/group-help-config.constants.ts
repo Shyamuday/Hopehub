@@ -995,11 +995,7 @@ anyone to speak`
     section: 'moderation',
     type: 'textarea',
     maxLength: 4000,
-    defaultValue: `dm me
-msg me
-text me
-ping me
-call me
+    defaultValue: `call me
 call me now
 my number
 my no
