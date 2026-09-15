@@ -100,6 +100,10 @@ model User {
   smokingStatus                  LifestyleStatus?
   alcoholUse                     LifestyleStatus?
   preferredLanguage              String?
+  preferredName                  String?
+  pronouns                       String?
+  aboutMe                        String?                           @db.Text
+  supportPreferences             String?                           @db.Text
   patientNotes                   String?                           @db.Text
   dietType                       DietType?
   foodHabits                     String?                           @db.Text

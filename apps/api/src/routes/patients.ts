@@ -28,7 +28,10 @@ patientsRouter.get(
       return res.status(400).json({ message: 'Search query must be at least 2 characters.' });
     }
 
-    const scope = z.enum(['auto', 'clinic', 'global']).catch('auto').parse(queryText(req, 'scope') || 'auto');
+    const scope = z
+      .enum(['auto', 'clinic', 'global'])
+      .catch('auto')
+      .parse(queryText(req, 'scope') || 'auto');
     let clinicStoreId = queryText(req, 'clinicStoreId') || null;
 
     if (!clinicStoreId && req.user!.role === Role.DOCTOR) {
@@ -127,7 +130,9 @@ patientsRouter.get(
     if (req.user!.role === Role.DOCTOR) {
       const allowed = await doctorCanAccessPatient(req.user!.id, patientId);
       if (!allowed) {
-        return res.status(403).json({ message: 'Patient not found at your clinic or in your cases.' });
+        return res
+          .status(403)
+          .json({ message: 'Patient not found at your clinic or in your cases.' });
       }
     }
 
@@ -138,6 +143,10 @@ patientsRouter.get(
         allergies: true,
         currentMedications: true,
         chronicConditions: true,
+        preferredName: true,
+        pronouns: true,
+        aboutMe: true,
+        supportPreferences: true,
         patientConsults: {
           orderBy: { createdAt: 'desc' },
           take: 10,
@@ -173,7 +182,10 @@ patientsRouter.get(
       return res.status(400).json({ message: 'Invalid mobile number.' });
     }
 
-    const scope = z.enum(['auto', 'clinic', 'global']).catch('auto').parse(queryText(req, 'scope') || 'auto');
+    const scope = z
+      .enum(['auto', 'clinic', 'global'])
+      .catch('auto')
+      .parse(queryText(req, 'scope') || 'auto');
     let clinicStoreId = queryText(req, 'clinicStoreId') || null;
     if (!clinicStoreId && req.user!.role === Role.DOCTOR) {
       clinicStoreId = await resolveActorClinicStoreId(req.user!.id, Role.DOCTOR);
@@ -215,5 +227,3 @@ patientsRouter.post(
     res.json({ patient });
   })
 );
-
-

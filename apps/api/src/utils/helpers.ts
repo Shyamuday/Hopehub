@@ -96,6 +96,10 @@ export const patientProfileSelect = {
   smokingStatus: true,
   alcoholUse: true,
   preferredLanguage: true,
+  preferredName: true,
+  pronouns: true,
+  aboutMe: true,
+  supportPreferences: true,
   patientNotes: true,
   dietType: true,
   foodHabits: true,
@@ -128,7 +132,8 @@ export const patientProfileSelect = {
   weatherSensitivity: true,
   passwordHash: true,
   profileImageKey: true,
-  profileImageUrl: true
+  profileImageUrl: true,
+  emailVerified: true
 } as const;
 
 export function logAuthEvent(

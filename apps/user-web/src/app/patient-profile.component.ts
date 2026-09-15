@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Component, Input, OnInit, computed, inject, signal } from '@angular/core';
-import { form, FormField } from '@angular/forms/signals';
+import { form, FormField, maxLength, required } from '@angular/forms/signals';
 import { firstValueFrom } from 'rxjs';
 import { API_PATHS } from './core/constants/api-paths.constants';
 import {
@@ -69,7 +69,18 @@ export class PatientProfileComponent implements OnInit {
   readonly profileCompletion = computed(() => computeProfileCompletion(this.profile()));
 
   readonly profileFormModel = signal(emptyProfileForm());
-  readonly profileForm = form(this.profileFormModel);
+  readonly profileForm = form(this.profileFormModel, (schema) => {
+    required(schema.name, { message: 'Full name is required.' });
+    maxLength(schema.name, 100, { message: 'Full name must be 100 characters or fewer.' });
+    maxLength(schema.preferredName, 80, {
+      message: 'Preferred name must be 80 characters or fewer.',
+    });
+    maxLength(schema.pronouns, 40, { message: 'Pronouns must be 40 characters or fewer.' });
+    maxLength(schema.aboutMe, 1200, { message: 'About me must be 1,200 characters or fewer.' });
+    maxLength(schema.supportPreferences, 2000, {
+      message: 'Support preferences must be 2,000 characters or fewer.',
+    });
+  });
   readonly reminderFormModel = signal(emptyReminderForm());
   readonly reminderForm = form(this.reminderFormModel);
   readonly passwordFormModel = signal({
@@ -153,11 +164,15 @@ export class PatientProfileComponent implements OnInit {
   }
 
   async save() {
+    if (this.profileForm().invalid()) {
+      this.errorMsg.set('Please correct the highlighted profile fields.');
+      return;
+    }
     this.saving.set(true);
     this.successMsg.set('');
     this.errorMsg.set('');
     try {
-      const { profile } = await this.http.put<{ profile: PatientProfile }>(
+      const { profile } = await this.http.patch<{ profile: PatientProfile }>(
         API_PATHS.PATIENT.PROFILE,
         formToProfilePayload(this.profileFormModel()),
       );

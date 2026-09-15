@@ -111,6 +111,22 @@
 }
 
 @if (selectedPatient(); as patient) {
+@if (patient.preferredName || patient.pronouns || patient.aboutMe || patient.supportPreferences) {
+<section class="panel">
+  <h2>About {{ patient.preferredName || patient.name }}</h2>
+  @if (patient.pronouns) {
+    <p class="muted">Pronouns: {{ patient.pronouns }}</p>
+  }
+  @if (patient.aboutMe) {
+    <h3>What they shared</h3>
+    <p class="patient-prose">{{ patient.aboutMe }}</p>
+  }
+  @if (patient.supportPreferences) {
+    <h3>How they prefer to be supported</h3>
+    <p class="patient-prose">{{ patient.supportPreferences }}</p>
+  }
+</section>
+}
 <section class="panel active-consult-panel">
   <h2>Active consultations</h2>
   @if (activeConsultationsLoading()) {

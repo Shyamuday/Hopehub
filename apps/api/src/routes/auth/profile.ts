@@ -19,6 +19,7 @@ import {
   formatDateOfBirth,
   mapProfileUpdateToUserData,
   patientPasswordSchema,
+  patientProfilePatchSchema,
   patientProfileUpdateSchema,
   reminderPreferencesSchema
 } from '../../services/patient-profile.js';
@@ -379,39 +380,68 @@ export function registerAuthProfileRoutes(router: Router) {
     })
   );
 
-  router.put(
-    '/patient/profile',
-    authRequired,
-    allowRoles(Role.PATIENT),
-    asyncRoute(async (req, res) => {
-      const body = patientProfileUpdateSchema.parse(req.body);
+  const updatePatientProfile = asyncRoute(async (req, res) => {
+    const body = (
+      req.method === 'PATCH' ? patientProfilePatchSchema : patientProfileUpdateSchema
+    ).parse(req.body);
 
-      if (body.email) {
-        const emailTaken = await prisma.user.findFirst({
-          where: { email: body.email, role: Role.PATIENT, NOT: { id: req.user!.id } },
-          select: { id: true }
-        });
-        if (emailTaken) {
-          return res
-            .status(409)
-            .json({ message: 'This email is already linked to another account.' });
-        }
-      }
+    const current = await prisma.user.findUniqueOrThrow({
+      where: { id: req.user!.id },
+      select: { email: true }
+    });
 
-      const alternateMobile = body.alternateMobile ? normalizeMobile(body.alternateMobile) : null;
-      if (body.alternateMobile && !alternateMobile) {
-        return res.status(400).json({ message: 'Invalid alternate mobile number.' });
-      }
-
-      const updated = await prisma.user.update({
-        where: { id: req.user!.id },
-        data: mapProfileUpdateToUserData(body, alternateMobile),
-        select: patientProfileSelect
+    if (body.email) {
+      const emailTaken = await prisma.user.findFirst({
+        where: { email: body.email, role: Role.PATIENT, NOT: { id: req.user!.id } },
+        select: { id: true }
       });
+      if (emailTaken) {
+        return res
+          .status(409)
+          .json({ message: 'This email is already linked to another account.' });
+      }
+    }
 
-      res.json({ profile: await serializePatientProfile(updated) });
-    })
-  );
+    const alternateMobile =
+      body.alternateMobile === undefined
+        ? undefined
+        : body.alternateMobile
+          ? normalizeMobile(body.alternateMobile)
+          : null;
+    if (body.alternateMobile && !alternateMobile) {
+      return res.status(400).json({ message: 'Invalid alternate mobile number.' });
+    }
+
+    const emailChanged = body.email !== undefined && body.email !== current.email;
+
+    const updated = await prisma.user.update({
+      where: { id: req.user!.id },
+      data: {
+        ...mapProfileUpdateToUserData(body, alternateMobile),
+        ...(emailChanged ? { emailVerified: false } : {})
+      },
+      select: patientProfileSelect
+    });
+
+    await writeAuditLog({
+      actorId: req.user!.id,
+      actorRole: req.user!.role,
+      action: 'PATIENT_PROFILE_UPDATED',
+      targetType: 'User',
+      targetId: req.user!.id,
+      summary: 'Patient updated their profile.',
+      metadata: {
+        updatedFields: Object.keys(body),
+        emailVerificationReset: emailChanged
+      }
+    });
+
+    res.json({ profile: await serializePatientProfile(updated) });
+  });
+
+  router.put('/patient/profile', authRequired, allowRoles(Role.PATIENT), updatePatientProfile);
+
+  router.patch('/patient/profile', authRequired, allowRoles(Role.PATIENT), updatePatientProfile);
 
   router.put(
     '/patient/profile/password',

@@ -16,9 +16,18 @@ const optionalLongText = (max: number) =>
     .nullable()
     .transform((v) => (v?.trim() ? v.trim() : null));
 
-const lifestyleEnum = z.enum(['NEVER', 'FORMER', 'OCCASIONAL', 'REGULAR', 'PREFER_NOT_TO_SAY']).optional().nullable();
-const dietEnum = z.enum(['VEGETARIAN', 'NON_VEGETARIAN', 'VEGAN', 'EGGETARIAN', 'MIXED']).optional().nullable();
-const thermalEnum = z.enum(['HOT_NATURED', 'COLD_NATURED', 'MIXED', 'NEUTRAL']).optional().nullable();
+const lifestyleEnum = z
+  .enum(['NEVER', 'FORMER', 'OCCASIONAL', 'REGULAR', 'PREFER_NOT_TO_SAY'])
+  .optional()
+  .nullable();
+const dietEnum = z
+  .enum(['VEGETARIAN', 'NON_VEGETARIAN', 'VEGAN', 'EGGETARIAN', 'MIXED'])
+  .optional()
+  .nullable();
+const thermalEnum = z
+  .enum(['HOT_NATURED', 'COLD_NATURED', 'MIXED', 'NEUTRAL'])
+  .optional()
+  .nullable();
 
 const homeopathicFields = {
   dietType: dietEnum,
@@ -57,11 +66,12 @@ export const patientProfileUpdateSchema = z.object({
   name: z.string().trim().min(1).max(100),
   email: z
     .string()
+    .trim()
     .email()
     .optional()
     .nullable()
     .or(z.literal(''))
-    .transform((v) => (v?.trim() ? v.trim() : null)),
+    .transform((v) => (v ? v.toLowerCase() : null)),
   alternateMobile: optionalText(20),
   dateOfBirth: z
     .string()
@@ -76,12 +86,21 @@ export const patientProfileUpdateSchema = z.object({
   emergencyContactPhone: optionalText(20),
   emergencyContactRelation: optionalText(80),
   occupation: optionalText(120),
-  maritalStatus: z.enum(['SINGLE', 'MARRIED', 'DIVORCED', 'WIDOWED', 'PREFER_NOT_TO_SAY']).optional().nullable(),
+  maritalStatus: z
+    .enum(['SINGLE', 'MARRIED', 'DIVORCED', 'WIDOWED', 'PREFER_NOT_TO_SAY'])
+    .optional()
+    .nullable(),
   heightCm: z
-    .preprocess((v) => (v === '' || v === null || v === undefined ? null : Number(v)), z.number().int().min(50).max(280).nullable())
+    .preprocess(
+      (v) => (v === '' || v === null || v === undefined ? null : Number(v)),
+      z.number().int().min(50).max(280).nullable()
+    )
     .optional(),
   weightKg: z
-    .preprocess((v) => (v === '' || v === null || v === undefined ? null : Number(v)), z.number().min(1).max(500).nullable())
+    .preprocess(
+      (v) => (v === '' || v === null || v === undefined ? null : Number(v)),
+      z.number().min(1).max(500).nullable()
+    )
     .optional(),
   allergies: optionalLongText(2000),
   currentMedications: optionalLongText(2000),
@@ -91,19 +110,28 @@ export const patientProfileUpdateSchema = z.object({
   smokingStatus: lifestyleEnum,
   alcoholUse: lifestyleEnum,
   preferredLanguage: optionalText(60),
+  preferredName: optionalText(80),
+  pronouns: optionalText(40),
+  aboutMe: optionalLongText(1200),
+  supportPreferences: optionalLongText(2000),
   patientNotes: optionalLongText(2000),
   ...homeopathicFields
 });
 
 export type PatientProfileUpdateInput = z.infer<typeof patientProfileUpdateSchema>;
+export const patientProfilePatchSchema = patientProfileUpdateSchema.partial();
+export type PatientProfilePatchInput = z.infer<typeof patientProfilePatchSchema>;
 
-export function mapProfileUpdateToUserData(body: PatientProfileUpdateInput, alternateMobile: string | null) {
+export function mapProfileUpdateToUserData(
+  body: PatientProfileUpdateInput | PatientProfilePatchInput,
+  alternateMobile: string | null | undefined
+) {
   return {
     name: body.name,
     homeClinicStoreId: body.homeClinicStoreId,
     email: body.email,
     alternateMobile,
-    dateOfBirth: parseDateOfBirth(body.dateOfBirth),
+    dateOfBirth: body.dateOfBirth === undefined ? undefined : parseDateOfBirth(body.dateOfBirth),
     gender: body.gender,
     bloodGroup: body.bloodGroup,
     emergencyContactName: body.emergencyContactName,
@@ -121,6 +149,10 @@ export function mapProfileUpdateToUserData(body: PatientProfileUpdateInput, alte
     smokingStatus: body.smokingStatus,
     alcoholUse: body.alcoholUse,
     preferredLanguage: body.preferredLanguage,
+    preferredName: body.preferredName,
+    pronouns: body.pronouns,
+    aboutMe: body.aboutMe,
+    supportPreferences: body.supportPreferences,
     patientNotes: body.patientNotes,
     dietType: body.dietType,
     foodHabits: body.foodHabits,

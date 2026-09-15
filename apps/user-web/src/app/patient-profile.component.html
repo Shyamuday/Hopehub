@@ -96,6 +96,21 @@
             />
           </div>
           <div class="field">
+            <label>Preferred name</label>
+            <input
+              [formField]="profileForm.preferredName"
+              placeholder="What should we call you?"
+              autocomplete="nickname"
+            />
+          </div>
+          <div class="field">
+            <label>Pronouns</label>
+            <input
+              [formField]="profileForm.pronouns"
+              placeholder="e.g. she/her, he/him, they/them"
+            />
+          </div>
+          <div class="field">
             <label>Date of birth</label>
             <input type="date" [formField]="profileForm.dateOfBirth" />
           </div>
@@ -160,6 +175,34 @@
       </section>
 
       <section class="profile-section">
+        <h3>About me</h3>
+        <p class="section-note">
+          These details are shared with your assigned care team so they can support you more
+          personally. They are not shown as a public profile.
+        </p>
+        <div class="field-grid single-col">
+          <div class="field">
+            <label for="aboutMe">A little about you</label>
+            <textarea
+              id="aboutMe"
+              [formField]="profileForm.aboutMe"
+              placeholder="Your interests, background, current situation, or anything that helps us understand you"
+            ></textarea>
+            <span class="hint">{{ profileFormModel().aboutMe.length }} / 1200</span>
+          </div>
+          <div class="field">
+            <label for="supportPreferences">How you prefer to be supported</label>
+            <textarea
+              id="supportPreferences"
+              [formField]="profileForm.supportPreferences"
+              placeholder="For example: please listen first, speak slowly, avoid calls before noon, or explain next steps clearly"
+            ></textarea>
+            <span class="hint">{{ profileFormModel().supportPreferences.length }} / 2000</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="profile-section">
         <h3>Contact</h3>
         <div class="field-grid">
           <div class="field">
@@ -183,7 +226,12 @@
               placeholder="your@email.com"
               autocomplete="email"
             />
-            <span class="hint">Add email to enable password login and receipts.</span>
+            <span class="hint">
+              Add email to enable password login and receipts.
+              @if (profile()?.email) {
+                {{ profile()?.emailVerified ? 'Verified.' : 'Verification may be required.' }}
+              }
+            </span>
           </div>
         </div>
       </section>
@@ -543,7 +591,12 @@
       </section>
 
       <div class="save-row">
-        <button class="btn-save" type="button" (click)="save()" [disabled]="saving()">
+        <button
+          class="btn-save"
+          type="button"
+          (click)="save()"
+          [disabled]="saving() || profileForm().invalid()"
+        >
           {{ saving() ? 'Saving…' : 'Save profile' }}
         </button>
         @if (successMsg()) {

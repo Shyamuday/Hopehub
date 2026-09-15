@@ -18,6 +18,10 @@ export type PatientSearchResult = {
   allergies?: string | null;
   currentMedications?: string | null;
   chronicConditions?: string | null;
+  preferredName?: string | null;
+  pronouns?: string | null;
+  aboutMe?: string | null;
+  supportPreferences?: string | null;
   createdAt?: string;
 };
 
