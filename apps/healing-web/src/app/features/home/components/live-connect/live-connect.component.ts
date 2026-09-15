@@ -18,7 +18,10 @@ import {
   consumerProviderLiveLabel,
 } from '../../../../core/constants/consumer-availability.constants';
 import { CONSUMER_UX_COPY } from '../../../../core/constants/consumer-ux-copy.constants';
-import { CONSUMER_ROUTES } from '../../../../core/constants/consumer-routes.constants';
+import {
+  CONSUMER_ROUTES,
+  consumerProviderProfileLink,
+} from '../../../../core/constants/consumer-routes.constants';
 import {
   CONSUMER_CONNECT_MODE_META,
   CONSUMER_LIVE_CONNECT_MODE_OPTIONS,
@@ -250,6 +253,10 @@ export class LiveConnectComponent implements OnInit {
     if (!provider.profileImageUrl) return null;
     if (provider.profileImageUrl.startsWith('http')) return provider.profileImageUrl;
     return `${environment.apiUrl}${provider.profileImageUrl}`;
+  }
+
+  careTeamProfileLink(provider: HopeHubProvider): string[] {
+    return consumerProviderProfileLink(provider);
   }
 
   providerTierLabel(provider: HopeHubProvider): string {

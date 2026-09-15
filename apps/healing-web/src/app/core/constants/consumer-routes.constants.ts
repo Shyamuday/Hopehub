@@ -60,6 +60,15 @@ export const CONSUMER_ROUTES = {
   },
 } as const;
 
+export type ConsumerProviderRouteIdentity = {
+  id: string;
+  slug?: string | null;
+};
+
+export function consumerProviderProfileLink(provider: ConsumerProviderRouteIdentity): string[] {
+  return [...CONSUMER_ROUTES.links.careTeam, provider.slug || provider.id];
+}
+
 export const CONSUMER_ASSESSMENT_IDS = {
   anxiety: 'gad7',
   depression: 'phq9',

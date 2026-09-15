@@ -580,8 +580,18 @@
 
 .live-provider-card__top {
   align-items: flex-start;
+  border-radius: 0.75rem;
+  color: inherit;
+  cursor: pointer;
   display: flex;
   gap: 0.75rem;
+  text-decoration: none;
+}
+
+.live-provider-card__top:focus-visible,
+.live-provider-card__profile-link:focus-visible {
+  outline: 3px solid rgba(5, 150, 105, 0.3);
+  outline-offset: 3px;
 }
 
 .live-provider-card__identity {
@@ -668,6 +678,22 @@
 .live-provider-card__regular-price {
   color: #94a3b8;
   text-decoration: line-through;
+}
+
+.live-provider-card__profile-link {
+  color: #047857;
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 800;
+  gap: 0.3rem;
+  margin-top: 0.8rem;
+  position: relative;
+  text-decoration: none;
+}
+
+.live-provider-card__profile-link:hover {
+  color: #065f46;
+  text-decoration: underline;
 }
 
 .service-dot {

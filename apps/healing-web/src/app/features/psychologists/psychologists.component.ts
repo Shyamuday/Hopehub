@@ -15,6 +15,7 @@ import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constant
 import {
   CONSUMER_ROUTES,
   ConsumerAssessmentRouteMatch,
+  consumerProviderProfileLink,
 } from '../../core/constants/consumer-routes.constants';
 import {
   CONSUMER_CONCERN_FLOWS,
@@ -232,7 +233,7 @@ export class PsychologistsComponent implements OnInit {
   }
 
   careTeamProfileLink(provider: HopeHubProvider): string[] {
-    return [...CONSUMER_ROUTES.links.careTeam, provider.slug || provider.id];
+    return consumerProviderProfileLink(provider);
   }
 
   assessmentForProvider(provider: HopeHubProvider): ConsumerAssessmentRouteMatch {

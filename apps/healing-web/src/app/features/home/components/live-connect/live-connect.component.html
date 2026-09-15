@@ -90,7 +90,11 @@
                       aria-roledescription="slide"
                       role="group"
                     >
-                      <div class="live-provider-card__top">
+                      <a
+                        class="live-provider-card__top"
+                        [routerLink]="careTeamProfileLink(provider)"
+                        [attr.aria-label]="'View ' + provider.name + ' profile'"
+                      >
                         @if (providerImageUrl(provider); as imageUrl) {
                           <img
                             [src]="imageUrl"
@@ -107,7 +111,7 @@
                           <h3>{{ provider.name }}</h3>
                           <p>{{ providerRoleLabel(provider) || providerTierLabel(provider) }}</p>
                         </div>
-                      </div>
+                      </a>
 
                       <div class="live-provider-card__status-row">
                         <span
@@ -138,6 +142,13 @@
                         }
                         <span>{{ livePriceLabel(provider) }}</span>
                       </div>
+
+                      <a
+                        class="live-provider-card__profile-link"
+                        [routerLink]="careTeamProfileLink(provider)"
+                      >
+                        View full profile <span aria-hidden="true">→</span>
+                      </a>
 
                       <app-button
                         type="button"

@@ -33,7 +33,10 @@ import {
   type ConsumerLiveConnectMode,
 } from '../../core/constants/consumer-form-options.constants';
 import { CONSUMER_UX_COPY } from '../../core/constants/consumer-ux-copy.constants';
-import { CONSUMER_ROUTES } from '../../core/constants/consumer-routes.constants';
+import {
+  CONSUMER_ROUTES,
+  consumerProviderProfileLink,
+} from '../../core/constants/consumer-routes.constants';
 import { CONSUMER_STORAGE_KEYS } from '../../core/constants/storage-keys.constants';
 import type {
   CareTeamServiceQuote,
@@ -214,7 +217,7 @@ export class ContactComponent implements OnInit {
   readonly bookingValidationIssues = signal<BookingValidationIssue[]>([]);
 
   careTeamProfileLink(provider: HopeHubProvider): string[] {
-    return [...CONSUMER_ROUTES.links.careTeam, provider.slug || provider.id];
+    return consumerProviderProfileLink(provider);
   }
   services: HopeHubService[] = [];
   serviceOptions: FormDropdownOption[] = [{ value: '', label: 'Select a support service' }];
