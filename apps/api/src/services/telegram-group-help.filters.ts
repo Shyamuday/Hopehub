@@ -227,7 +227,11 @@ const RULE_FILTER_ALIASES = [
   'mute',
   'mutes',
   'muted',
-  'muting'
+  'muting',
+  'admin',
+  'admins',
+  '@admin',
+  '@admins'
 ] as const;
 
 function consolidateRuleFilterAliases(filters: GroupHelpFilter[]) {

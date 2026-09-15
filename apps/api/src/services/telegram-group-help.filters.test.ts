@@ -145,7 +145,11 @@ test('moves moderation word aliases into the canonical rules filter', () => {
       'mute',
       'mutes',
       'muted',
-      'muting'
+      'muting',
+      'admin',
+      'admins',
+      '@admin',
+      '@admins'
     ]
   );
   assert.equal(
