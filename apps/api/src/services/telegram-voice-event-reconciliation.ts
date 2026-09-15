@@ -1,5 +1,10 @@
 const TERMINAL_EVENT_STATUSES = new Set(['COMPLETED', 'MISSED', 'CANCELLED']);
 
+export function isManagedTelegramVoiceChat(chatId: string, managedChatId?: string | null) {
+  const normalizedManagedChatId = managedChatId?.trim();
+  return Boolean(normalizedManagedChatId && chatId.trim() === normalizedManagedChatId);
+}
+
 /**
  * Selects the scheduled event that may safely adopt an unassociated live
  * Telegram call. A tracked event always wins. Without a usable tracked event,

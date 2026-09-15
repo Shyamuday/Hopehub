@@ -165,9 +165,10 @@ async function notifyPrivateVoiceStaff(text: string) {
   }
 }
 
-async function sendVoiceHostReminders(now: Date) {
+async function sendVoiceHostReminders(now: Date, managedChatId: string) {
   const upcoming = await prisma.telegramCommunityEvent.findMany({
     where: {
+      chatId: managedChatId,
       status: 'SCHEDULED',
       startsAt: {
         gt: now,
@@ -830,21 +831,23 @@ async function enterEmptyVoiceRecovery(
   });
 }
 
-async function monitorEmptyActiveVoiceChats(client: TelegramClient, now: Date) {
+async function monitorEmptyActiveVoiceChats(
+  client: TelegramClient,
+  now: Date,
+  managedChatId: string
+) {
   const activeStates = await prisma.telegramCommunityState.findMany({
-    where: { bot: STATE_BOT, state: 'NATIVE_VOICE_ACTIVE' },
+    where: { bot: STATE_BOT, state: 'NATIVE_VOICE_ACTIVE', chatId: managedChatId },
     select: { chatId: true, payload: true }
   });
-  const configured = await getSiteConfigMap(['telegramGroupHelpGroupChatId']);
-  const configuredMainChatId = configured.telegramGroupHelpGroupChatId?.trim();
   const statesByChatId = new Map(
     activeStates.map((state) => [state.chatId, { ...state, wasAlreadyTracked: true }])
   );
   // Also inspect the main group directly. This covers a voice chat started
   // manually by an administrator before a matching event/state was recorded.
-  if (configuredMainChatId && !statesByChatId.has(configuredMainChatId)) {
-    statesByChatId.set(configuredMainChatId, {
-      chatId: configuredMainChatId,
+  if (!statesByChatId.has(managedChatId)) {
+    statesByChatId.set(managedChatId, {
+      chatId: managedChatId,
       payload: null,
       wasAlreadyTracked: false
     });
@@ -934,10 +937,10 @@ async function monitorEmptyActiveVoiceChats(client: TelegramClient, now: Date) {
   }
 }
 
-async function expireMissedVoiceChats(client: TelegramClient, now: Date) {
+async function expireMissedVoiceChats(client: TelegramClient, now: Date, managedChatId: string) {
   const cutoff = new Date(now.getTime() - MISSED_VOICE_CHAT_GRACE_MS);
   const missed = await prisma.telegramCommunityEvent.findMany({
-    where: { status: 'SCHEDULED', startsAt: { lte: cutoff } },
+    where: { chatId: managedChatId, status: 'SCHEDULED', startsAt: { lte: cutoff } },
     select: {
       id: true,
       title: true,
@@ -1129,11 +1132,18 @@ async function main() {
   // large channel backlog can keep a one-shot scheduler alive indefinitely.
   client.updateManager.stop();
   try {
-    await sendVoiceHostReminders(now);
-    await expireMissedVoiceChats(client, now);
-    await monitorEmptyActiveVoiceChats(client, now);
+    const voiceConfig = await getSiteConfigMap(['telegramGroupHelpGroupChatId']);
+    const managedChatId = voiceConfig.telegramGroupHelpGroupChatId?.trim() || '';
+    if (!managedChatId) {
+      console.warn('Telegram VC lifecycle automation skipped: main group is not configured.');
+    } else {
+      await sendVoiceHostReminders(now, managedChatId);
+      await expireMissedVoiceChats(client, now, managedChatId);
+      await monitorEmptyActiveVoiceChats(client, now, managedChatId);
+    }
     const events = await prisma.telegramCommunityEvent.findMany({
       where: {
+        ...(managedChatId ? { chatId: managedChatId } : { id: '__vc-automation-disabled__' }),
         status: 'SCHEDULED',
         startsAt: { gt: minimumStart, lte: maximumStart }
       },

@@ -47,6 +47,7 @@ import {
   type VoiceParticipantSnapshot,
   voiceStarterSnapshot
 } from './telegram-voice-empty-timeout.js';
+import { isManagedTelegramVoiceChat } from './telegram-voice-event-reconciliation.js';
 
 const CAMPAIGN_BOT = GROUP_HELP_BOT_SLUG;
 const MAX_DELIVERIES_PER_SWEEP = 20;
@@ -844,6 +845,8 @@ export async function handleTelegramCommunityVoiceChatEnded(message: CommunityTe
     return false;
   }
   const chatId = String(message.chat.id);
+  const voiceConfig = await getSiteConfigMap(['telegramGroupHelpGroupChatId']);
+  if (!isManagedTelegramVoiceChat(chatId, voiceConfig.telegramGroupHelpGroupChatId)) return false;
   const now = new Date();
   const stateKey = { bot_chatId: { bot: NATIVE_VOICE_SCHEDULER_STATE, chatId } };
   const nativeState = await prisma.telegramCommunityState.findUnique({ where: stateKey });
@@ -928,6 +931,8 @@ export async function handleTelegramCommunityVoiceChatStarted(message: Community
   }
   const now = new Date();
   const chatId = String(message.chat.id);
+  const voiceConfig = await getSiteConfigMap(['telegramGroupHelpGroupChatId']);
+  if (!isManagedTelegramVoiceChat(chatId, voiceConfig.telegramGroupHelpGroupChatId)) return false;
   const stateKey = { bot_chatId: { bot: NATIVE_VOICE_SCHEDULER_STATE, chatId } };
   const nativeState = await prisma.telegramCommunityState.findUnique({ where: stateKey });
   const nativePayload = nativeVoiceStatePayload(nativeState?.payload);

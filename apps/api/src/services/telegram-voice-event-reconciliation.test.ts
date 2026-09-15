@@ -1,6 +1,16 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { shouldAdoptLiveVoiceCall } from './telegram-voice-event-reconciliation.js';
+import {
+  isManagedTelegramVoiceChat,
+  shouldAdoptLiveVoiceCall
+} from './telegram-voice-event-reconciliation.js';
+
+test('limits VC lifecycle automation to the configured main group', () => {
+  assert.equal(isManagedTelegramVoiceChat('-100-main', '-100-main'), true);
+  assert.equal(isManagedTelegramVoiceChat('-100-off-topic', '-100-main'), false);
+  assert.equal(isManagedTelegramVoiceChat('-100-main', ''), false);
+  assert.equal(isManagedTelegramVoiceChat('-100-main', undefined), false);
+});
 
 test('adopts a live call when the scheduled event is already tracked', () => {
   assert.equal(
