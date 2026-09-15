@@ -30,6 +30,21 @@ export type GroupHelpDirectoryMember = {
   isAdministrator?: boolean;
 };
 
+export function directoryMemberIdentityPlan(
+  previous: { firstName: string | null; lastName: string | null; username: string | null } | null,
+  member: GroupHelpDirectoryMember
+) {
+  const discovered = normalizedTelegramIdentity(member);
+  return {
+    discovered,
+    historyIdentity: previous ? normalizedTelegramIdentity(previous) : discovered,
+    // MTProto directory names can be the connected account's private contact
+    // labels. Directory synchronization owns membership state only; Bot API
+    // messages, joins, and explicit lookups own an existing public identity.
+    update: { leftAt: null }
+  };
+}
+
 async function staffMembershipStatus(
   staffGroupId: string,
   telegramUserId: string,
@@ -258,20 +273,15 @@ async function upsertDirectoryMembers(
     await prisma.$transaction(
       chunk.flatMap((member) => {
         const previous = existingByMemberId.get(member.telegramUserId);
-        const discovered = normalizedTelegramIdentity(member);
-        // MTProto may expose the connected account's saved contact label
-        // instead of the member's public Telegram profile name. For existing
-        // members it is authoritative only for membership, while Bot API
-        // message/join observations remain authoritative for identity.
-        const identity = previous ? normalizedTelegramIdentity(previous) : discovered;
+        const plan = directoryMemberIdentityPlan(previous || null, member);
         const shouldRecordInitialIdentity = !historyMemberIds.has(member.telegramUserId);
         return [
           prisma.telegramCommunityMember.upsert({
             where: {
               chatId_telegramUserId: { chatId, telegramUserId: member.telegramUserId }
             },
-            create: { chatId, telegramUserId: member.telegramUserId, ...discovered },
-            update: { leftAt: null }
+            create: { chatId, telegramUserId: member.telegramUserId, ...plan.discovered },
+            update: plan.update
           }),
           ...(shouldRecordInitialIdentity
             ? [
@@ -283,10 +293,10 @@ async function upsertDirectoryMembers(
                     previousLastName: null,
                     previousUsername: null,
                     previousDisplayName: null,
-                    firstName: identity.firstName,
-                    lastName: identity.lastName,
-                    username: identity.username,
-                    displayName: telegramDisplayName(identity),
+                    firstName: plan.historyIdentity.firstName,
+                    lastName: plan.historyIdentity.lastName,
+                    username: plan.historyIdentity.username,
+                    displayName: telegramDisplayName(plan.historyIdentity),
                     changedFields: ['initial'],
                     source: 'DIRECTORY_SYNC'
                   }
