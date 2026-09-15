@@ -12,7 +12,6 @@ import type {
   CommunityTelegramUser
 } from './telegram-community-bots.types.js';
 import {
-  changedTelegramIdentityFields,
   normalizedTelegramIdentity,
   observeTelegramCommunityMember,
   telegramDisplayName
@@ -259,36 +258,36 @@ async function upsertDirectoryMembers(
     await prisma.$transaction(
       chunk.flatMap((member) => {
         const previous = existingByMemberId.get(member.telegramUserId);
-        const next = normalizedTelegramIdentity(member);
-        const changedFields = previous
-          ? changedTelegramIdentityFields(previous, next)
-          : ['initial'];
-        const shouldRecord =
-          !previous || !historyMemberIds.has(member.telegramUserId) || changedFields.length > 0;
-        const identityInitial = !previous || !historyMemberIds.has(member.telegramUserId);
+        const discovered = normalizedTelegramIdentity(member);
+        // MTProto may expose the connected account's saved contact label
+        // instead of the member's public Telegram profile name. For existing
+        // members it is authoritative only for membership, while Bot API
+        // message/join observations remain authoritative for identity.
+        const identity = previous ? normalizedTelegramIdentity(previous) : discovered;
+        const shouldRecordInitialIdentity = !historyMemberIds.has(member.telegramUserId);
         return [
           prisma.telegramCommunityMember.upsert({
             where: {
               chatId_telegramUserId: { chatId, telegramUserId: member.telegramUserId }
             },
-            create: { chatId, telegramUserId: member.telegramUserId, ...next },
-            update: { ...next, leftAt: null }
+            create: { chatId, telegramUserId: member.telegramUserId, ...discovered },
+            update: { leftAt: null }
           }),
-          ...(shouldRecord
+          ...(shouldRecordInitialIdentity
             ? [
                 prisma.telegramCommunityMemberIdentityHistory.create({
                   data: {
                     chatId,
                     telegramUserId: member.telegramUserId,
-                    previousFirstName: identityInitial ? null : previous?.firstName,
-                    previousLastName: identityInitial ? null : previous?.lastName,
-                    previousUsername: identityInitial ? null : previous?.username,
-                    previousDisplayName: identityInitial ? null : telegramDisplayName(previous!),
-                    firstName: next.firstName,
-                    lastName: next.lastName,
-                    username: next.username,
-                    displayName: telegramDisplayName(next),
-                    changedFields: identityInitial ? ['initial'] : changedFields,
+                    previousFirstName: null,
+                    previousLastName: null,
+                    previousUsername: null,
+                    previousDisplayName: null,
+                    firstName: identity.firstName,
+                    lastName: identity.lastName,
+                    username: identity.username,
+                    displayName: telegramDisplayName(identity),
+                    changedFields: ['initial'],
                     source: 'DIRECTORY_SYNC'
                   }
                 })
