@@ -106,6 +106,7 @@ import {
   releaseTelegramOperation
 } from './telegram-community-operation-claims.js';
 import { handleGroupHelpFilterBuilderInput } from './telegram-group-help.filter-builder.js';
+import { isSangMataCommand } from './telegram-group-help.external-bot-commands.js';
 
 const BOT = GROUP_HELP_BOT_SLUG;
 
@@ -589,6 +590,40 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
         }
       }
     }
+  }
+  if (isSangMataCommand(message.text)) {
+    const senderIsTelegramAdmin =
+      anonymousAdminMessage ||
+      Boolean(
+        message.from &&
+        ['creator', 'administrator', 'owner'].includes(
+          (
+            await callCommunityTelegramApi<{ status?: string }>(BOT, 'getChatMember', {
+              chat_id: chatId,
+              user_id: message.from.id
+            }).catch(() => null)
+          )?.status || ''
+        )
+      );
+    if (senderIsTelegramAdmin) return;
+
+    // Remove the request before any normal lock, spam, or warning policy can
+    // turn an external-bot command into a member warning or mute.
+    await deleteMessage(chatId, message.message_id).catch((error) => {
+      console.warn('[telegram-group-help] Could not remove non-admin SangMata command.', {
+        chatId,
+        messageId: message.message_id,
+        userId: message.from?.id,
+        error: error instanceof Error ? error.message : String(error)
+      });
+    });
+    await sendTemporaryMessage(
+      chatId,
+      'You have to be an admin to use @SangMata_bot commands.',
+      { ...values, telegramGroupHelpAutoDeleteSeconds: '60' },
+      { message_thread_id: message.message_thread_id }
+    );
+    return;
   }
   if (await handleTelegramCommunityVoiceChatStarted(message)) return;
   if (await handleTelegramCommunityVoiceChatEnded(message)) return;
