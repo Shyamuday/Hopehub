@@ -9,7 +9,7 @@ import { AdminAuth } from '../../../core/services/admin-auth';
   standalone: true,
   imports: [ProfileAvatarUploadComponent],
   templateUrl: './account-page.html',
-  styleUrl: './account-page.scss'
+  styleUrl: './account-page.scss',
 })
 export class AccountPage implements OnInit {
   private readonly auth = inject(AdminAuth);
@@ -17,6 +17,7 @@ export class AccountPage implements OnInit {
   readonly apiBase = environment.apiUrl;
   readonly authTokenKey = AUTH_TOKEN_KEY;
   readonly profileImageUploadPath = '/me/profile-image';
+  readonly profileImageGalleryPath = '/me/profile-images';
   readonly loading = signal(false);
   readonly profileImageUrl = signal<string | null>(null);
 

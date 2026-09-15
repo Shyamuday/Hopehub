@@ -225,6 +225,7 @@ model User {
   lastLoginMethod                String?
   externalAvatarUrl              String?
   identities                     UserIdentity[]                    @relation("UserIdentities")
+  profileImages                  UserProfileImage[]               @relation("UserProfileImages")
   createdAt                      DateTime                          @default(now())
   updatedAt                      DateTime                          @updatedAt
 
@@ -233,6 +234,22 @@ model User {
   @@index([homeClinicStoreId])
   @@index([authProvider])
   @@index([lastLoginAt])
+}
+
+model UserProfileImage {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation("UserProfileImages", fields: [userId], references: [id], onDelete: Cascade)
+  storageKey String   @unique
+  imageUrl   String?
+  mimeType   String?
+  byteSize   Int?
+  isPrimary  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([userId, isPrimary])
 }
 
 model UserIdentity {

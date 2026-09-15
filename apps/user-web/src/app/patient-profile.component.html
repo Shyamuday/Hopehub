@@ -15,11 +15,15 @@
           [displayName]="profile()?.name || 'Patient'"
           [profileImageUrl]="profile()?.profileImageUrl ?? null"
           [uploadPath]="profileImageUploadPath"
+          [galleryPath]="profileImageGalleryPath"
           (profileImageChange)="onProfileImageChange($event)"
         />
         <div>
           <h2>{{ accountPage ? 'Edit account' : 'My profile' }}</h2>
-          <p class="profile-sub">Save anytime — fill only what you know now. Homeopathic, food, mind &amp; body details help your doctor. Only your name is required.</p>
+          <p class="profile-sub">
+            Save anytime — fill only what you know now. Homeopathic, food, mind &amp; body details
+            help your doctor. Only your name is required.
+          </p>
         </div>
       </div>
       @if (profile()?.name === 'Patient') {
@@ -33,7 +37,13 @@
           <strong>Profile {{ profileCompletion() }}% complete</strong>
           <span>More details help your doctor personalize care.</span>
         </div>
-        <div class="profile-meter-bar" role="progressbar" [attr.aria-valuenow]="profileCompletion()" aria-valuemin="0" aria-valuemax="100">
+        <div
+          class="profile-meter-bar"
+          role="progressbar"
+          [attr.aria-valuenow]="profileCompletion()"
+          aria-valuemin="0"
+          aria-valuemax="100"
+        >
           <span [style.width.%]="profileCompletion()"></span>
         </div>
       </div>
@@ -79,7 +89,11 @@
         <div class="field-grid">
           <div class="field span-2">
             <label>Full name *</label>
-            <input [formField]="profileForm.name" placeholder="Your full name" autocomplete="name" />
+            <input
+              [formField]="profileForm.name"
+              placeholder="Your full name"
+              autocomplete="name"
+            />
           </div>
           <div class="field">
             <label>Date of birth</label>
@@ -98,7 +112,9 @@
             <select [formField]="profileForm.bloodGroup">
               <option value="">Not specified</option>
               @for (bg of bloodGroups; track bg) {
-                @if (bg) { <option [value]="bg">{{ bg }}</option> }
+                @if (bg) {
+                  <option [value]="bg">{{ bg }}</option>
+                }
               }
             </select>
           </div>
@@ -116,7 +132,11 @@
           </div>
           <div class="field">
             <label>Preferred language</label>
-            <input [formField]="profileForm.preferredLanguage" placeholder="e.g. Hindi" [attr.list]="'lang-list'" />
+            <input
+              [formField]="profileForm.preferredLanguage"
+              placeholder="e.g. Hindi"
+              [attr.list]="'lang-list'"
+            />
             <datalist id="lang-list">
               @for (lang of languageSuggestions; track lang) {
                 <option [value]="lang"></option>
@@ -129,7 +149,12 @@
           </div>
           <div class="field">
             <label>Weight (kg)</label>
-            <input type="number" step="0.1" [formField]="profileForm.weightKg" placeholder="e.g. 65" />
+            <input
+              type="number"
+              step="0.1"
+              [formField]="profileForm.weightKg"
+              placeholder="e.g. 65"
+            />
           </div>
         </div>
       </section>
@@ -144,11 +169,20 @@
           </div>
           <div class="field">
             <label>Alternate mobile</label>
-            <input [formField]="profileForm.alternateMobile" placeholder="Optional second number" inputmode="tel" />
+            <input
+              [formField]="profileForm.alternateMobile"
+              placeholder="Optional second number"
+              inputmode="tel"
+            />
           </div>
           <div class="field span-2">
             <label>Email</label>
-            <input [formField]="profileForm.email" type="email" placeholder="your@email.com" autocomplete="email" />
+            <input
+              [formField]="profileForm.email"
+              type="email"
+              placeholder="your@email.com"
+              autocomplete="email"
+            />
             <span class="hint">Add email to enable password login and receipts.</span>
           </div>
         </div>
@@ -172,14 +206,20 @@
           </div>
           <div class="field">
             <label>Contact phone</label>
-            <input [formField]="profileForm.emergencyContactPhone" placeholder="Mobile number" inputmode="tel" />
+            <input
+              [formField]="profileForm.emergencyContactPhone"
+              placeholder="Mobile number"
+              inputmode="tel"
+            />
           </div>
           <div class="field">
             <label>Relationship</label>
             <select [formField]="profileForm.emergencyContactRelation">
               <option value="">Not specified</option>
               @for (rel of relationOptions; track rel) {
-                @if (rel) { <option [value]="rel">{{ rel }}</option> }
+                @if (rel) {
+                  <option [value]="rel">{{ rel }}</option>
+                }
               }
             </select>
           </div>
@@ -188,34 +228,53 @@
 
       <section class="profile-section">
         <h3>Medical history</h3>
-        <p class="section-note">Helps doctors during consultations. Update whenever something changes.</p>
+        <p class="section-note">
+          Helps doctors during consultations. Update whenever something changes.
+        </p>
         <div class="field-grid single-col">
           <div class="field">
             <label>Known allergies</label>
-            <textarea [formField]="profileForm.allergies" placeholder="e.g. Penicillin, dust, peanuts (leave blank if none)"></textarea>
+            <textarea
+              [formField]="profileForm.allergies"
+              placeholder="e.g. Penicillin, dust, peanuts (leave blank if none)"
+            ></textarea>
           </div>
           <div class="field">
             <label>Current medications</label>
-            <textarea [formField]="profileForm.currentMedications" placeholder="Medicines you take regularly, with dose if known"></textarea>
+            <textarea
+              [formField]="profileForm.currentMedications"
+              placeholder="Medicines you take regularly, with dose if known"
+            ></textarea>
           </div>
           <div class="field">
             <label>Chronic conditions</label>
-            <textarea [formField]="profileForm.chronicConditions" placeholder="e.g. Diabetes, hypertension, thyroid"></textarea>
+            <textarea
+              [formField]="profileForm.chronicConditions"
+              placeholder="e.g. Diabetes, hypertension, thyroid"
+            ></textarea>
           </div>
           <div class="field">
             <label>Past surgeries / hospitalizations</label>
-            <textarea [formField]="profileForm.pastSurgeries" placeholder="Major procedures or admissions"></textarea>
+            <textarea
+              [formField]="profileForm.pastSurgeries"
+              placeholder="Major procedures or admissions"
+            ></textarea>
           </div>
           <div class="field">
             <label>Family medical history</label>
-            <textarea [formField]="profileForm.familyMedicalHistory" placeholder="Conditions that run in your family"></textarea>
+            <textarea
+              [formField]="profileForm.familyMedicalHistory"
+              placeholder="Conditions that run in your family"
+            ></textarea>
           </div>
         </div>
       </section>
 
       <section class="profile-section homeo-section">
         <h3>Food &amp; appetite <span class="section-tag">Homeopathy</span></h3>
-        <p class="section-note">Helps your homeopathic doctor understand your constitution. Fill gradually — save anytime.</p>
+        <p class="section-note">
+          Helps your homeopathic doctor understand your constitution. Fill gradually — save anytime.
+        </p>
         <div class="field-grid">
           <div class="field">
             <label>Diet type</label>
@@ -227,23 +286,38 @@
           </div>
           <div class="field span-2">
             <label>Meal habits &amp; routine</label>
-            <textarea [formField]="profileForm.foodHabits" placeholder="Meal times, skipping meals, fasting, spicy/oily food, water intake with meals"></textarea>
+            <textarea
+              [formField]="profileForm.foodHabits"
+              placeholder="Meal times, skipping meals, fasting, spicy/oily food, water intake with meals"
+            ></textarea>
           </div>
           <div class="field">
             <label>Food cravings</label>
-            <textarea [formField]="profileForm.foodCravings" placeholder="e.g. sweets, salt, sour, ice, chalk"></textarea>
+            <textarea
+              [formField]="profileForm.foodCravings"
+              placeholder="e.g. sweets, salt, sour, ice, chalk"
+            ></textarea>
           </div>
           <div class="field">
             <label>Food aversions / dislikes</label>
-            <textarea [formField]="profileForm.foodAversions" placeholder="Foods you avoid or cannot tolerate"></textarea>
+            <textarea
+              [formField]="profileForm.foodAversions"
+              placeholder="Foods you avoid or cannot tolerate"
+            ></textarea>
           </div>
           <div class="field">
             <label>Appetite</label>
-            <textarea [formField]="profileForm.appetiteNotes" placeholder="Poor, excessive, irregular, nausea before eating"></textarea>
+            <textarea
+              [formField]="profileForm.appetiteNotes"
+              placeholder="Poor, excessive, irregular, nausea before eating"
+            ></textarea>
           </div>
           <div class="field">
             <label>Thirst</label>
-            <textarea [formField]="profileForm.thirstNotes" placeholder="Large quantities, sips only, cold vs warm preference"></textarea>
+            <textarea
+              [formField]="profileForm.thirstNotes"
+              placeholder="Large quantities, sips only, cold vs warm preference"
+            ></textarea>
           </div>
         </div>
       </section>
@@ -253,11 +327,17 @@
         <div class="field-grid single-col">
           <div class="field">
             <label>Sleep pattern</label>
-            <textarea [formField]="profileForm.sleepPattern" placeholder="Falls asleep easily or not, waking time, position, snoring, refreshed or tired on waking"></textarea>
+            <textarea
+              [formField]="profileForm.sleepPattern"
+              placeholder="Falls asleep easily or not, waking time, position, snoring, refreshed or tired on waking"
+            ></textarea>
           </div>
           <div class="field">
             <label>Dreams / nightmares</label>
-            <textarea [formField]="profileForm.dreamNotes" placeholder="Frequent dreams, fearful dreams, recurring themes"></textarea>
+            <textarea
+              [formField]="profileForm.dreamNotes"
+              placeholder="Frequent dreams, fearful dreams, recurring themes"
+            ></textarea>
           </div>
         </div>
       </section>
@@ -275,27 +355,45 @@
           </div>
           <div class="field">
             <label>Perspiration / sweating</label>
-            <textarea [formField]="profileForm.perspirationNotes" placeholder="Profuse, scanty, odour, palms/soles, night sweats"></textarea>
+            <textarea
+              [formField]="profileForm.perspirationNotes"
+              placeholder="Profuse, scanty, odour, palms/soles, night sweats"
+            ></textarea>
           </div>
           <div class="field">
             <label>Bowel habits</label>
-            <textarea [formField]="profileForm.bowelHabits" placeholder="Constipation, loose stools, urgency, timing"></textarea>
+            <textarea
+              [formField]="profileForm.bowelHabits"
+              placeholder="Constipation, loose stools, urgency, timing"
+            ></textarea>
           </div>
           <div class="field">
             <label>Urine habits</label>
-            <textarea [formField]="profileForm.urineHabits" placeholder="Frequency, burning, colour, night urination"></textarea>
+            <textarea
+              [formField]="profileForm.urineHabits"
+              placeholder="Frequency, burning, colour, night urination"
+            ></textarea>
           </div>
           <div class="field span-2">
             <label>Menstrual history <span class="optional">(if applicable)</span></label>
-            <textarea [formField]="profileForm.menstrualHistory" placeholder="Cycle regularity, pain, flow, clots, mood changes"></textarea>
+            <textarea
+              [formField]="profileForm.menstrualHistory"
+              placeholder="Cycle regularity, pain, flow, clots, mood changes"
+            ></textarea>
           </div>
           <div class="field span-2">
             <label>Skin, hair &amp; nails</label>
-            <textarea [formField]="profileForm.skinHairNailNotes" placeholder="Dryness, eruptions, hair fall, nail changes"></textarea>
+            <textarea
+              [formField]="profileForm.skinHairNailNotes"
+              placeholder="Dryness, eruptions, hair fall, nail changes"
+            ></textarea>
           </div>
           <div class="field span-2">
             <label>Weather &amp; season sensitivity</label>
-            <textarea [formField]="profileForm.weatherSensitivity" placeholder="Worse in heat, cold, damp, monsoon, change of weather"></textarea>
+            <textarea
+              [formField]="profileForm.weatherSensitivity"
+              placeholder="Worse in heat, cold, damp, monsoon, change of weather"
+            ></textarea>
           </div>
         </div>
       </section>
@@ -306,27 +404,45 @@
         <div class="field-grid single-col">
           <div class="field">
             <label>Temperament &amp; mood</label>
-            <textarea [formField]="profileForm.mentalTemperament" placeholder="Anxious, irritable, cheerful, weepy, reserved, hurried"></textarea>
+            <textarea
+              [formField]="profileForm.mentalTemperament"
+              placeholder="Anxious, irritable, cheerful, weepy, reserved, hurried"
+            ></textarea>
           </div>
           <div class="field">
             <label>Fears &amp; phobias</label>
-            <textarea [formField]="profileForm.fearsPhobias" placeholder="Heights, darkness, crowds, disease, being alone"></textarea>
+            <textarea
+              [formField]="profileForm.fearsPhobias"
+              placeholder="Heights, darkness, crowds, disease, being alone"
+            ></textarea>
           </div>
           <div class="field">
             <label>Anger &amp; grief reactions</label>
-            <textarea [formField]="profileForm.angerGriefPatterns" placeholder="How you react to stress, loss, or conflict"></textarea>
+            <textarea
+              [formField]="profileForm.angerGriefPatterns"
+              placeholder="How you react to stress, loss, or conflict"
+            ></textarea>
           </div>
           <div class="field">
             <label>Concentration &amp; memory</label>
-            <textarea [formField]="profileForm.concentrationMemory" placeholder="Forgetfulness, brain fog, sharp memory"></textarea>
+            <textarea
+              [formField]="profileForm.concentrationMemory"
+              placeholder="Forgetfulness, brain fog, sharp memory"
+            ></textarea>
           </div>
           <div class="field">
             <label>Social behaviour</label>
-            <textarea [formField]="profileForm.socialBehaviour" placeholder="Prefers company or solitude, talkative, shy"></textarea>
+            <textarea
+              [formField]="profileForm.socialBehaviour"
+              placeholder="Prefers company or solitude, talkative, shy"
+            ></textarea>
           </div>
           <div class="field">
             <label>Stress triggers</label>
-            <textarea [formField]="profileForm.stressTriggers" placeholder="Work, relationships, exams, health worries"></textarea>
+            <textarea
+              [formField]="profileForm.stressTriggers"
+              placeholder="Work, relationships, exams, health worries"
+            ></textarea>
           </div>
         </div>
       </section>
@@ -336,27 +452,45 @@
         <div class="field-grid single-col">
           <div class="field">
             <label>Childhood illnesses</label>
-            <textarea [formField]="profileForm.childhoodIllnesses" placeholder="Measles, mumps, recurrent fevers, asthma as child"></textarea>
+            <textarea
+              [formField]="profileForm.childhoodIllnesses"
+              placeholder="Measles, mumps, recurrent fevers, asthma as child"
+            ></textarea>
           </div>
           <div class="field">
             <label>Vaccination history</label>
-            <textarea [formField]="profileForm.vaccinationHistory" placeholder="Recent vaccines, reactions if any"></textarea>
+            <textarea
+              [formField]="profileForm.vaccinationHistory"
+              placeholder="Recent vaccines, reactions if any"
+            ></textarea>
           </div>
           <div class="field">
             <label>Previous homeopathic treatment</label>
-            <textarea [formField]="profileForm.previousHomeopathicTreatment" placeholder="Remedies taken before, response, doctor name if known"></textarea>
+            <textarea
+              [formField]="profileForm.previousHomeopathicTreatment"
+              placeholder="Remedies taken before, response, doctor name if known"
+            ></textarea>
           </div>
           <div class="field">
             <label>What makes symptoms worse</label>
-            <textarea [formField]="profileForm.aggravatingFactors" placeholder="Time of day, motion, rest, eating, weather, touch"></textarea>
+            <textarea
+              [formField]="profileForm.aggravatingFactors"
+              placeholder="Time of day, motion, rest, eating, weather, touch"
+            ></textarea>
           </div>
           <div class="field">
             <label>What makes symptoms better</label>
-            <textarea [formField]="profileForm.relievingFactors" placeholder="Warmth, cold, pressure, sleep, open air"></textarea>
+            <textarea
+              [formField]="profileForm.relievingFactors"
+              placeholder="Warmth, cold, pressure, sleep, open air"
+            ></textarea>
           </div>
           <div class="field">
             <label>Constitution / build</label>
-            <textarea [formField]="profileForm.constitutionalNotes" placeholder="Thin, obese, lean, muscular, appearance notes"></textarea>
+            <textarea
+              [formField]="profileForm.constitutionalNotes"
+              placeholder="Thin, obese, lean, muscular, appearance notes"
+            ></textarea>
           </div>
         </div>
       </section>
@@ -382,11 +516,17 @@
           </div>
           <div class="field span-2">
             <label>Exercise &amp; physical activity</label>
-            <textarea [formField]="profileForm.exerciseHabits" placeholder="Walking, yoga, gym, sedentary lifestyle"></textarea>
+            <textarea
+              [formField]="profileForm.exerciseHabits"
+              placeholder="Walking, yoga, gym, sedentary lifestyle"
+            ></textarea>
           </div>
           <div class="field span-2">
             <label>Tea, coffee &amp; other stimulants</label>
-            <textarea [formField]="profileForm.stimulantHabits" placeholder="Daily cups of tea/coffee, paan, tobacco, energy drinks"></textarea>
+            <textarea
+              [formField]="profileForm.stimulantHabits"
+              placeholder="Daily cups of tea/coffee, paan, tobacco, energy drinks"
+            ></textarea>
           </div>
         </div>
       </section>
@@ -395,7 +535,10 @@
         <h3>Notes for your care team</h3>
         <div class="field">
           <label>Anything else we should know</label>
-          <textarea [formField]="profileForm.patientNotes" placeholder="Preferences, accessibility needs, other health notes"></textarea>
+          <textarea
+            [formField]="profileForm.patientNotes"
+            placeholder="Preferences, accessibility needs, other health notes"
+          ></textarea>
         </div>
       </section>
 
@@ -403,8 +546,12 @@
         <button class="btn-save" type="button" (click)="save()" [disabled]="saving()">
           {{ saving() ? 'Saving…' : 'Save profile' }}
         </button>
-        @if (successMsg()) { <span class="msg-ok">✓ {{ successMsg() }}</span> }
-        @if (errorMsg()) { <span class="msg-err">{{ errorMsg() }}</span> }
+        @if (successMsg()) {
+          <span class="msg-ok">✓ {{ successMsg() }}</span>
+        }
+        @if (errorMsg()) {
+          <span class="msg-err">{{ errorMsg() }}</span>
+        }
       </div>
     }
   </div>
@@ -413,7 +560,9 @@
     <aside class="side-panels">
       <section class="side-panel">
         <h3>Notification preferences</h3>
-        <p class="section-note">Manage medicine reminders and quiet hours from your care dashboard.</p>
+        <p class="section-note">
+          Manage medicine reminders and quiet hours from your care dashboard.
+        </p>
         <a class="btn-secondary" routerLink="/patient/dashboard">Manage reminders on dashboard</a>
       </section>
 
@@ -430,8 +579,17 @@
           <div class="field">
             <label>Current password</label>
             <span class="password-input-wrap">
-              <input [type]="showCurrentPassword() ? 'text' : 'password'" [formField]="passwordForm.currentPassword" placeholder="Current password" autocomplete="current-password" />
-              <button type="button" class="password-toggle" (click)="showCurrentPassword.set(!showCurrentPassword())">
+              <input
+                [type]="showCurrentPassword() ? 'text' : 'password'"
+                [formField]="passwordForm.currentPassword"
+                placeholder="Current password"
+                autocomplete="current-password"
+              />
+              <button
+                type="button"
+                class="password-toggle"
+                (click)="showCurrentPassword.set(!showCurrentPassword())"
+              >
                 {{ showCurrentPassword() ? 'Hide' : 'Show' }}
               </button>
             </span>
@@ -440,8 +598,17 @@
         <div class="field">
           <label>{{ hasPassword() ? 'New password' : 'Password' }}</label>
           <span class="password-input-wrap">
-            <input [type]="showNewPassword() ? 'text' : 'password'" [formField]="passwordForm.newPassword" placeholder="Min 8 characters" autocomplete="new-password" />
-            <button type="button" class="password-toggle" (click)="showNewPassword.set(!showNewPassword())">
+            <input
+              [type]="showNewPassword() ? 'text' : 'password'"
+              [formField]="passwordForm.newPassword"
+              placeholder="Min 8 characters"
+              autocomplete="new-password"
+            />
+            <button
+              type="button"
+              class="password-toggle"
+              (click)="showNewPassword.set(!showNewPassword())"
+            >
               {{ showNewPassword() ? 'Hide' : 'Show' }}
             </button>
           </span>
@@ -449,17 +616,35 @@
         <div class="field">
           <label>Confirm password</label>
           <span class="password-input-wrap">
-            <input [type]="showConfirmPassword() ? 'text' : 'password'" [formField]="passwordForm.confirmPassword" placeholder="Confirm password" autocomplete="new-password" />
-            <button type="button" class="password-toggle" (click)="showConfirmPassword.set(!showConfirmPassword())">
+            <input
+              [type]="showConfirmPassword() ? 'text' : 'password'"
+              [formField]="passwordForm.confirmPassword"
+              placeholder="Confirm password"
+              autocomplete="new-password"
+            />
+            <button
+              type="button"
+              class="password-toggle"
+              (click)="showConfirmPassword.set(!showConfirmPassword())"
+            >
               {{ showConfirmPassword() ? 'Hide' : 'Show' }}
             </button>
           </span>
         </div>
-        @if (passwordFormModel().newPassword && passwordFormModel().confirmPassword && passwordFormModel().newPassword !== passwordFormModel().confirmPassword) {
+        @if (
+          passwordFormModel().newPassword &&
+          passwordFormModel().confirmPassword &&
+          passwordFormModel().newPassword !== passwordFormModel().confirmPassword
+        ) {
           <p class="inline-error">Passwords do not match.</p>
         }
-        <button class="btn-secondary" type="button" (click)="savePassword()" [disabled]="savingPassword() || !canSavePassword()">
-          {{ savingPassword() ? 'Saving…' : (hasPassword() ? 'Update password' : 'Set password') }}
+        <button
+          class="btn-secondary"
+          type="button"
+          (click)="savePassword()"
+          [disabled]="savingPassword() || !canSavePassword()"
+        >
+          {{ savingPassword() ? 'Saving…' : hasPassword() ? 'Update password' : 'Set password' }}
         </button>
       </section>
     </aside>

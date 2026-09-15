@@ -91,6 +91,7 @@ export class PatientProfileComponent implements OnInit {
   readonly apiBase = inject(CLINIC_API_BASE_URL);
   readonly authTokenKey = AUTH_TOKEN_KEY;
   readonly profileImageUploadPath = API_PATHS.PATIENT.PROFILE_IMAGE;
+  readonly profileImageGalleryPath = API_PATHS.PATIENT.PROFILE_IMAGES;
 
   ngOnInit() {
     void this.load();

@@ -20,12 +20,15 @@ export class AccountComponent implements OnInit {
 
   readonly displayName = computed(() => this.auth.currentUser()?.name ?? 'Staff');
   readonly email = computed(() => this.auth.currentUser()?.email ?? '');
-  readonly roleLabel = computed(() => (this.auth.currentUser()?.role ?? 'Staff').replace(/_/g, ' '));
+  readonly roleLabel = computed(() =>
+    (this.auth.currentUser()?.role ?? 'Staff').replace(/_/g, ' ')
+  );
   readonly storeName = computed(() => this.auth.storeStaff()?.storeName ?? '');
   readonly isStoreSession = computed(() => this.auth.isStoreSession());
 
   profileImageUrl = signal<string | null>(null);
-  uploadPath = '/me/profile-image';
+  uploadPath = this.auth.isStoreSession() ? '/store/me/profile-image' : '/me/profile-image';
+  galleryPath = this.auth.isStoreSession() ? '/store/me/profile-images' : '/me/profile-images';
 
   ngOnInit(): void {
     void this.loadProfile();
@@ -36,6 +39,7 @@ export class AccountComponent implements OnInit {
     try {
       if (this.auth.isStoreSession()) {
         this.uploadPath = '/store/me/profile-image';
+        this.galleryPath = '/store/me/profile-images';
         const staff = this.auth.storeStaff();
         this.profileImageUrl.set(staff?.profileImageUrl ?? null);
         const token = this.auth.getToken();
@@ -54,6 +58,7 @@ export class AccountComponent implements OnInit {
         }
       } else {
         this.uploadPath = '/me/profile-image';
+        this.galleryPath = '/me/profile-images';
         await new Promise<void>((resolve, reject) => {
           this.auth.fetchMe().subscribe({
             next: (session) => {

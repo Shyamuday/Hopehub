@@ -45,6 +45,25 @@ test('provider API lifecycle keeps visibility tied to readiness', () => {
   assert.match(imageRoutes, /syncProviderVisibility\(userId, req\.user!\.role\)/);
 });
 
+test('provider profile photos support a compatible multi-image gallery', () => {
+  const imageRoutes = fs.readFileSync(
+    path.join(sourceRoot, 'routes/auth/profile-image.ts'),
+    'utf8'
+  );
+  const authSchema = fs.readFileSync(path.join(sourceRoot, '../prisma/schema/auth.prisma'), 'utf8');
+  const storeSchema = fs.readFileSync(
+    path.join(sourceRoot, '../prisma/schema/store.prisma'),
+    'utf8'
+  );
+  assert.match(imageRoutes, /router\.post\(\s*['"]\/me\/profile-images['"]/);
+  assert.match(imageRoutes, /router\.patch\(\s*['"]\/me\/profile-images\/:imageId\/primary['"]/);
+  assert.match(imageRoutes, /router\.delete\(\s*['"]\/me\/profile-images\/:imageId['"]/);
+  assert.match(authSchema, /model UserProfileImage \{/);
+  assert.match(authSchema, /profileImages\s+UserProfileImage\[\]/);
+  assert.match(imageRoutes, /storeStaffProfileImage/);
+  assert.match(storeSchema, /model StoreStaffProfileImage \{/);
+});
+
 test('slot API response includes slots, rules, and services', () => {
   const slotRoutes = fs.readFileSync(path.join(sourceRoot, 'routes/slots.ts'), 'utf8');
   assert.match(slotRoutes, /res\.json\(\{ slots, rules, services:/);

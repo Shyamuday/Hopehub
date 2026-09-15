@@ -143,6 +143,7 @@ export class ProfilePage implements OnDestroy {
   readonly apiBase = environment.apiUrl;
   readonly authTokenKey = AUTH_TOKEN_KEY;
   readonly profileImageUploadPath = API_PATHS.DOCTOR.PROFILE_IMAGE;
+  readonly profileImageGalleryPath = API_PATHS.DOCTOR.PROFILE_IMAGES;
   profileImageUrl: string | null = null;
   approvalStatus = 'NOT_REQUIRED';
   approvalNote = '';

@@ -1,4 +1,8 @@
-<div class="avatar-upload" [class.avatar-upload-md]="size === 'md'" [class.avatar-upload-lg]="size === 'lg'">
+<div
+  class="avatar-upload"
+  [class.avatar-upload-md]="size === 'md'"
+  [class.avatar-upload-lg]="size === 'lg'"
+>
   <div class="avatar-frame">
     @if (previewUrl()) {
       <img [src]="previewUrl()!" [alt]="displayName + ' profile photo'" class="avatar-image" />
@@ -13,16 +17,72 @@
   @if (editable) {
     <div class="avatar-actions">
       <label class="avatar-btn">
-        {{ profileImageUrl ? 'Change photo' : 'Add photo' }}
-        <input type="file" accept="image/jpeg,image/png,image/webp" (change)="onFileSelected($event)" [disabled]="uploading() || removing()" />
+        {{ galleryPath ? 'Add photos' : profileImageUrl ? 'Change photo' : 'Add photo' }}
+        <input
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          [multiple]="!!galleryPath"
+          (change)="onFileSelected($event)"
+          [disabled]="
+            uploading() || removing() || (!!galleryPath && galleryImages().length >= maxImages)
+          "
+        />
       </label>
       @if (profileImageUrl) {
-        <button type="button" class="avatar-btn ghost" (click)="removePhoto()" [disabled]="uploading() || removing()">
+        <button
+          type="button"
+          class="avatar-btn ghost"
+          (click)="removePhoto()"
+          [disabled]="uploading() || removing()"
+        >
           {{ removing() ? 'Removing…' : 'Remove' }}
         </button>
       }
     </div>
-    <p class="avatar-hint">JPEG, PNG, or WebP up to 2 MB.</p>
+    <p class="avatar-hint">
+      JPEG, PNG, or WebP up to 2 MB each.
+      @if (galleryPath) {
+        Up to {{ maxImages }} photos.
+      }
+    </p>
+  }
+
+  @if (galleryPath && (galleryLoading() || galleryImages().length)) {
+    <div class="avatar-gallery" aria-label="Profile photo gallery">
+      @if (galleryLoading()) {
+        <p class="avatar-hint">Loading photos…</p>
+      } @else {
+        @for (image of galleryImages(); track image.id) {
+          <article class="avatar-gallery-item" [class.primary]="image.isPrimary">
+            <img
+              [src]="image.imageUrl"
+              [alt]="image.isPrimary ? 'Primary profile photo' : 'Profile photo'"
+            />
+            <div class="avatar-gallery-actions">
+              @if (image.isPrimary) {
+                <span class="primary-badge">Primary</span>
+              } @else {
+                <button
+                  type="button"
+                  (click)="makePrimary(image)"
+                  [disabled]="uploading() || removing()"
+                >
+                  Make primary
+                </button>
+              }
+              <button
+                type="button"
+                class="danger"
+                (click)="removeGalleryPhoto(image)"
+                [disabled]="uploading() || removing()"
+              >
+                Delete
+              </button>
+            </div>
+          </article>
+        }
+      }
+    </div>
   }
 
   @if (error()) {

@@ -101,9 +101,26 @@ model StoreStaff {
   inAppNotifications InAppNotification[] @relation("StoreStaffInAppNotifications")
   pushDevices        PushDevice[]
   auditLogs          AuditLog[]          @relation("StoreStaffAuditActor")
+  profileImages      StoreStaffProfileImage[] @relation("StoreStaffProfileImages")
   salaryStructure    EmployeeSalary?
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
+}
+
+model StoreStaffProfileImage {
+  id           String     @id @default(cuid())
+  storeStaffId String
+  storeStaff   StoreStaff @relation("StoreStaffProfileImages", fields: [storeStaffId], references: [id], onDelete: Cascade)
+  storageKey   String     @unique
+  imageUrl     String?
+  mimeType     String?
+  byteSize     Int?
+  isPrimary    Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([storeStaffId, createdAt])
+  @@index([storeStaffId, isPrimary])
 }
 
 model StoreRack {

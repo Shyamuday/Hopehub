@@ -21,6 +21,7 @@ export const API_PATHS = {
     REMINDER_PREFERENCES: '/patient/reminder-preferences',
     PROFILE: '/patient/profile',
     PROFILE_IMAGE: '/me/profile-image',
+    PROFILE_IMAGES: '/me/profile-images',
     CLINICAL_MEDIA: '/patient/clinical-media',
     CLINICAL_MEDIA_ITEM: (id: string) => `/patient/clinical-media/${id}`,
     CLINICAL_MEDIA_AI_PREVIEW: (id: string) => `/patient/clinical-media/${id}/ai-preview`,

@@ -94,3 +94,65 @@
 .avatar-error {
   color: #b91c1c;
 }
+
+.avatar-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+  gap: 0.75rem;
+  width: min(100%, 640px);
+}
+
+.avatar-gallery-item {
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.8rem;
+  background: #fff;
+}
+
+.avatar-gallery-item.primary {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.12);
+}
+
+.avatar-gallery-item img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  background: #f1f5f9;
+}
+
+.avatar-gallery-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  padding: 0.5rem;
+}
+
+.avatar-gallery-actions button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #4338ca;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.avatar-gallery-actions button.danger {
+  color: #b91c1c;
+}
+
+.avatar-gallery-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.primary-badge {
+  color: #4338ca;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
