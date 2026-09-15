@@ -27,6 +27,7 @@ import {
   type VoiceParticipantSnapshot,
   voiceChatOccupancyCheckDue
 } from '../src/services/telegram-voice-empty-timeout.js';
+import { shouldAdoptLiveVoiceCall } from '../src/services/telegram-voice-event-reconciliation.js';
 import {
   telegramGroupCallButton,
   telegramLiveVoiceJoinUrl
@@ -944,8 +945,15 @@ async function expireMissedVoiceChats(client: TelegramClient, now: Date) {
       startsAt: true,
       chatId: true,
       telegramMessageId: true
-    }
+    },
+    orderBy: { startsAt: 'desc' }
   });
+  const latestOverdueEventByChat = new Map<string, string>();
+  for (const event of missed) {
+    if (!latestOverdueEventByChat.has(event.chatId)) {
+      latestOverdueEventByChat.set(event.chatId, event.id);
+    }
+  }
 
   for (const event of missed) {
     const key = { bot_chatId: { bot: STATE_BOT, chatId: event.chatId } };
@@ -964,13 +972,56 @@ async function expireMissedVoiceChats(client: TelegramClient, now: Date) {
       );
       continue;
     }
-    if (
-      activeCall &&
-      !activeCall.scheduled &&
-      payload.eventId === event.id &&
-      payload.nativeCallId === activeCall.id
-    ) {
-      const activePayload = await reconcileActiveVoiceEvent(client, payload, now, activeCall);
+    if (activeCall && !activeCall.scheduled) {
+      const trackedEvent =
+        payload.eventId && payload.eventId !== event.id
+          ? await prisma.telegramCommunityEvent.findUnique({
+              where: { id: payload.eventId },
+              select: { status: true }
+            })
+          : null;
+      const shouldAdopt = shouldAdoptLiveVoiceCall({
+        eventId: event.id,
+        latestOverdueEventId: latestOverdueEventByChat.get(event.chatId) || event.id,
+        trackedEventId: payload.eventId,
+        trackedEventStatus: trackedEvent?.status
+      });
+      if (!shouldAdopt) continue;
+
+      const replacingAssociation =
+        payload.eventId !== event.id || payload.nativeCallId !== activeCall.id;
+      const adoptedPayload: NativeVoiceSchedulerState = {
+        ...payload,
+        eventId: event.id,
+        startsAt: event.startsAt.toISOString(),
+        nativeCallId: activeCall.id,
+        nativeCallAccessHash: activeCall.accessHash,
+        startedAt: replacingAssociation
+          ? now.toISOString()
+          : payload.startedAt || now.toISOString(),
+        ...(replacingAssociation
+          ? {
+              endedAt: undefined,
+              recoveryAfter: undefined,
+              healthCheckedAt: undefined,
+              joinButtonRefreshedAt: undefined,
+              activeJoinUrl: undefined
+            }
+          : {})
+      };
+      console.info('[telegram-vc] active-call-adopted-before-missed-expiry', {
+        eventId: event.id,
+        chatId: event.chatId,
+        callId: activeCall.id,
+        previousEventId: payload.eventId,
+        previousCallId: payload.nativeCallId
+      });
+      const activePayload = await reconcileActiveVoiceEvent(
+        client,
+        adoptedPayload,
+        now,
+        activeCall
+      );
       await retainActiveVoiceState(event.chatId, activePayload, now);
       continue;
     }
