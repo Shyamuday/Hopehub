@@ -8,6 +8,12 @@ export function isGroupHelpRulesRequest(text: string | null | undefined) {
   return /^(?:rule|rules)[.!?]*$/i.test((text || '').normalize('NFKC').trim());
 }
 
+export function isGroupHelpModerationKeywordRequest(text: string | null | undefined) {
+  return /^(?:ban|unban|mute|unmute|warn|unwarn|kick|block|report)[.!?]*$/i.test(
+    (text || '').normalize('NFKC').trim()
+  );
+}
+
 function groupHelpMediaPayload(url: string) {
   const path = url.split(/[?#]/, 1)[0].toLowerCase();
   if (/\.(mp4|webm|mov|m4v)$/.test(path)) {

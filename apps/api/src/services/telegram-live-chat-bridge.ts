@@ -29,7 +29,9 @@ export function websiteLiveChatMessageForTelegram(input: {
   body: string;
 }) {
   const senderName = cleanDisplayName(input.senderName);
-  const header = `🌐 ${senderName} · Hope Hub website`;
+  // Escape HTML special characters so the name is safe inside parse_mode HTML.
+  const safeName = senderName.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const header = `👤 <b>${safeName}</b>\n🌐 Hope Hub website`;
   return `${header}\n\n${input.body.trim()}`.slice(0, 4096);
 }
 
@@ -112,7 +114,8 @@ export async function mirrorHopeHubLiveChatMessageToTelegram(input: {
     const sent = await sendCommunityMessage(
       GROUP_HELP_BOT_SLUG,
       config.telegramChatId,
-      websiteLiveChatMessageForTelegram(input)
+      websiteLiveChatMessageForTelegram(input),
+      { parse_mode: 'HTML' }
     );
     return sent.message_id;
   } catch (error) {
