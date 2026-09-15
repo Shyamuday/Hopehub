@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  addFilterBuilderTriggers,
   parseFilterBuilderTriggers,
   upsertFilterBuilderFilter
 } from './telegram-group-help.filter-builder.js';
@@ -18,6 +19,41 @@ test('filter builder accepts a word, sentence, or several alternatives', () => {
   assert.deepEqual(parseFilterBuilderTriggers('Hello, hello'), [
     { value: 'hello', mode: 'contains' }
   ]);
+});
+
+test('adds aliases to one existing filter without duplicating its response', () => {
+  const initial = serializeGroupHelpFilters([
+    {
+      triggers: [{ value: 'hello', mode: 'contains' }],
+      text: 'Greeting',
+      audience: 'all',
+      allowBots: false
+    },
+    {
+      triggers: [{ value: 'hi', mode: 'contains' }],
+      text: 'Old response',
+      audience: 'all',
+      allowBots: false
+    }
+  ]);
+  const updated = addFilterBuilderTriggers(
+    initial,
+    ['contains:hello'],
+    [
+      { value: 'hi', mode: 'contains' },
+      { value: 'hey', mode: 'contains' }
+    ]
+  );
+
+  assert.ok(updated);
+  assert.equal(updated.added, 2);
+  const filters = parseGroupHelpFilters(updated.definitions).filters;
+  assert.equal(filters.length, 1);
+  assert.equal(filters[0].text, 'Greeting');
+  assert.deepEqual(
+    filters[0].triggers.map((trigger) => trigger.value),
+    ['hello', 'hi', 'hey']
+  );
 });
 
 test('filter builder replaces matching triggers while preserving other filters', () => {

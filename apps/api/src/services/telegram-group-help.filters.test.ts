@@ -79,6 +79,81 @@ test('round-trips filters and keeps established Hope Hub definitions readable', 
   assert.deepEqual(parseGroupHelpFilters(serialized).filters, legacy.filters);
 });
 
+test('combines anonymous filters that send the same response into one trigger group', () => {
+  const definitions = [
+    'rose-filter:{"triggers":[{"value":"hello","mode":"contains"}],"text":"Same reply","audience":"all","allowBots":false}',
+    'rose-filter:{"triggers":[{"value":"hi","mode":"contains"}],"text":"Same reply","audience":"all","allowBots":false}',
+    'rose-filter:{"triggers":[{"value":"hey","mode":"contains"}],"text":"Same reply","audience":"all","allowBots":false}'
+  ].join('\n');
+  const filters = parseGroupHelpFilters(definitions).filters;
+
+  assert.equal(filters.length, 1);
+  assert.deepEqual(
+    filters[0].triggers.map((trigger) => trigger.value),
+    ['hello', 'hi', 'hey']
+  );
+});
+
+test('extends warn, ban and mute filters with related word forms', () => {
+  const definitions = ['warn => Warning reply', 'ban => Ban reply', 'mute => Mute reply'].join(
+    '\n'
+  );
+  const filters = parseGroupHelpFilters(definitions).filters;
+
+  assert.deepEqual(
+    filters[0].triggers.map((trigger) => trigger.value),
+    ['warn', 'warns', 'warned', 'warning', 'warnings']
+  );
+  assert.deepEqual(
+    filters[1].triggers.map((trigger) => trigger.value),
+    ['ban', 'bans', 'banned', 'banning']
+  );
+  assert.deepEqual(
+    filters[2].triggers.map((trigger) => trigger.value),
+    ['mute', 'mutes', 'muted', 'muting']
+  );
+});
+
+test('moves moderation word aliases into the canonical rules filter', () => {
+  const definitions = [
+    'rules => Canonical rules message',
+    'warn => Duplicate old rules message',
+    'warning => Duplicate old rules message',
+    'ban => Duplicate old rules message',
+    'mute => Duplicate old rules message',
+    'hello => Hello message'
+  ].join('\n');
+  const filters = parseGroupHelpFilters(definitions).filters;
+  const rules = filters.find((filter) => filter.text === 'Canonical rules message');
+
+  assert.equal(filters.length, 2);
+  assert.ok(rules);
+  assert.deepEqual(
+    rules.triggers.map((trigger) => trigger.value),
+    [
+      'rules',
+      'rule',
+      'warn',
+      'warns',
+      'warned',
+      'warning',
+      'warnings',
+      'ban',
+      'bans',
+      'banned',
+      'banning',
+      'mute',
+      'mutes',
+      'muted',
+      'muting'
+    ]
+  );
+  assert.equal(
+    filters.find((filter) => filter.text === 'Hello message')?.triggers[0].value,
+    'hello'
+  );
+});
+
 test('round-trips wellbeing safety metadata and remote photo media', () => {
   const filters = parseGroupHelpFilters(GROUP_HELP_WELLBEING_FILTER_DEFINITIONS).filters;
   assert.equal(filters.length, 4);

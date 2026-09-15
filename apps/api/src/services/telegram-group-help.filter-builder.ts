@@ -37,7 +37,15 @@ const MAX_TEXT_LENGTH = 3500;
 const MAX_MEDIA_CAPTION_LENGTH = 900;
 
 type FilterBuilderStep =
-  'menu' | 'triggers' | 'kind' | 'text' | 'media' | 'media_text' | 'preview' | 'confirm_remove';
+  | 'menu'
+  | 'triggers'
+  | 'add_triggers'
+  | 'kind'
+  | 'text'
+  | 'media'
+  | 'media_text'
+  | 'preview'
+  | 'confirm_remove';
 
 type FilterBuilderDraft = {
   sourceChatId: string;
@@ -47,6 +55,7 @@ type FilterBuilderDraft = {
   responseKind?: 'text' | 'media' | 'media_text';
   text?: string;
   media?: GroupHelpFilterMedia;
+  editKeys?: string[];
   removeKeys?: string[];
 };
 
@@ -188,6 +197,46 @@ export function upsertFilterBuilderFilter(definitions: string, filter: GroupHelp
   return serializeGroupHelpFilters(filters, current.passthrough);
 }
 
+export function addFilterBuilderTriggers(
+  definitions: string,
+  targetKeys: readonly string[],
+  additions: readonly GroupHelpFilterTrigger[]
+) {
+  const current = parseGroupHelpFilters(definitions);
+  const targetKeySet = new Set(targetKeys);
+  const targetIndex = current.filters.findIndex((filter) =>
+    filter.triggers.some((trigger) => targetKeySet.has(triggerKey(trigger)))
+  );
+  if (targetIndex < 0) return null;
+
+  const target = current.filters[targetIndex];
+  const existingTargetKeys = new Set(target.triggers.map(triggerKey));
+  const additionsByKey = new Map(additions.map((trigger) => [triggerKey(trigger), trigger]));
+  const added = [...additionsByKey.keys()].filter((key) => !existingTargetKeys.has(key)).length;
+  const mergedTriggers = new Map(
+    [...target.triggers, ...additionsByKey.values()].map((trigger) => [
+      triggerKey(trigger),
+      trigger
+    ])
+  );
+  const filters = current.filters
+    .map((filter, index) =>
+      index === targetIndex
+        ? { ...filter, triggers: [...mergedTriggers.values()] }
+        : {
+            ...filter,
+            triggers: filter.triggers.filter((trigger) => !additionsByKey.has(triggerKey(trigger)))
+          }
+    )
+    .filter((filter) => filter.triggers.length);
+
+  return {
+    definitions: serializeGroupHelpFilters(filters, current.passthrough),
+    added,
+    triggers: [...mergedTriggers.values()]
+  };
+}
+
 async function saveDefinitions(targetChatId: string, definitions: string) {
   const policy = await getTelegramCommunityGroupPolicy(targetChatId);
   await saveTelegramCommunityGroupPolicy(targetChatId, {
@@ -261,7 +310,7 @@ export async function startGroupHelpFilterBuilder(input: {
     sourceChatId,
     input.initialTriggers?.length
       ? `⚙️ Filter builder\n\nTrigger added: ${input.initialTriggers.map(triggerLabel).join(', ')}\n\nNow choose what the bot should send.`
-      : '⚙️ Filter builder\n\nCreate an automatic reply without remembering command syntax. You can use one word, a full sentence, or several phrases.',
+      : '⚙️ Filter builder\n\nCreate an automatic reply without remembering command syntax. One filter can use several related words or phrases and send the same response. Example: warn, warning, warnings, warned.',
     input.targetChatId,
     input.initialTriggers?.length ? kindKeyboard() : menuKeyboard()
   );
@@ -328,7 +377,10 @@ export async function handleGroupHelpFilterBuilderCallback(update: CommunityTele
     return true;
   }
   if (action === 'menu') {
-    await writeDraft({ ...draft, step: 'menu', removeKeys: undefined }, callback.from.id);
+    await writeDraft(
+      { ...draft, step: 'menu', editKeys: undefined, removeKeys: undefined },
+      callback.from.id
+    );
     await sendStep(sourceChatId, 'What would you like to do?', draft.targetChatId, menuKeyboard());
   } else if (action === 'add') {
     await writeDraft(
@@ -406,11 +458,41 @@ export async function handleGroupHelpFilterBuilderCallback(update: CommunityTele
       draft.targetChatId,
       {
         inline_keyboard: [
+          [button('➕ Add words or phrases', `${PREFIX}addto:${index}`, 'primary')],
           [button('✏️ Replace response', `${PREFIX}edit:${index}`, 'success')],
           [button('🗑 Remove filter', `${PREFIX}remove:${index}`, 'danger')],
           [button('← Back', `${PREFIX}manage`, 'primary')]
         ]
       }
+    );
+  } else if (action.startsWith('addto:')) {
+    const index = Number(action.slice('addto:'.length));
+    const values = await groupHelpConfig(draft.targetChatId);
+    const filter = parseGroupHelpFilters(values.telegramGroupHelpCustomReplies || '').filters[
+      index
+    ];
+    if (!filter) {
+      await answerCommunityCallback(
+        GROUP_HELP_BOT_SLUG,
+        callback.id,
+        'That filter changed. Refresh the list.'
+      );
+      return true;
+    }
+    await writeDraft(
+      {
+        sourceChatId,
+        targetChatId: draft.targetChatId,
+        step: 'add_triggers',
+        editKeys: filter.triggers.map(triggerKey)
+      },
+      callback.from.id
+    );
+    await sendStep(
+      sourceChatId,
+      `Add more words or phrases to this filter. They will use its existing reply and media.\n\nCurrent triggers: ${filter.triggers.map(triggerLabel).join(', ')}\n\nSeparate alternatives with commas or new lines, for example: warn, warning, warnings, warned. Use exact: or prefix: when needed.`,
+      draft.targetChatId,
+      cancelKeyboard(true)
     );
   } else if (action.startsWith('edit:')) {
     const index = Number(action.slice('edit:'.length));
@@ -506,7 +588,8 @@ export async function handleGroupHelpFilterBuilderInput(message: CommunityTelegr
   if (!message.from) return false;
   const sourceChatId = String(message.chat.id);
   const draft = await readDraft(sourceChatId, message.from.id);
-  if (!draft || !['triggers', 'text', 'media', 'media_text'].includes(draft.step)) return false;
+  if (!draft || !['triggers', 'add_triggers', 'text', 'media', 'media_text'].includes(draft.step))
+    return false;
   if (!(await canManage(draft, message))) return true;
   if ((message.text || '').trim().toLowerCase() === '/cancel') {
     await clearDraft(sourceChatId, message.from.id);
@@ -532,6 +615,45 @@ export async function handleGroupHelpFilterBuilderInput(message: CommunityTelegr
       `Step 2 of 3 — Choose the reply type.\n\nTriggers: ${triggers.map(triggerLabel).join(', ')}`,
       draft.targetChatId,
       kindKeyboard()
+    );
+    return true;
+  }
+  if (draft.step === 'add_triggers') {
+    const additions = parseFilterBuilderTriggers(message.text || message.caption || '');
+    if (!additions.length || !draft.editKeys?.length) {
+      await sendStep(
+        sourceChatId,
+        'Send at least one valid word or phrase. Separate alternatives with commas or new lines.',
+        draft.targetChatId,
+        cancelKeyboard(true)
+      );
+      return true;
+    }
+    const values = await groupHelpConfig(draft.targetChatId);
+    const updated = addFilterBuilderTriggers(
+      values.telegramGroupHelpCustomReplies || '',
+      draft.editKeys,
+      additions
+    );
+    if (!updated) {
+      await writeDraft({ ...draft, step: 'menu', editKeys: undefined }, message.from.id);
+      await sendStep(
+        sourceChatId,
+        'That filter changed while you were editing it. Open the filter list and try again.',
+        draft.targetChatId,
+        menuKeyboard()
+      );
+      return true;
+    }
+    await saveDefinitions(draft.targetChatId, updated.definitions);
+    await writeDraft({ ...draft, step: 'menu', editKeys: undefined }, message.from.id);
+    await sendStep(
+      sourceChatId,
+      updated.added
+        ? `✅ Added ${updated.added} trigger${updated.added === 1 ? '' : 's'} to the same filter.\n\nIt now matches: ${updated.triggers.map(triggerLabel).join(', ')}`
+        : `Those triggers already use this filter.\n\nCurrent triggers: ${updated.triggers.map(triggerLabel).join(', ')}`,
+      draft.targetChatId,
+      menuKeyboard()
     );
     return true;
   }

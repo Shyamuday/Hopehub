@@ -166,6 +166,126 @@ function validFilter(value: unknown): value is GroupHelpFilter {
   );
 }
 
+function equivalentFilterKey(filter: GroupHelpFilter) {
+  // Named safety filters retain their own lifecycle and metadata. Anonymous
+  // filters with identical output can safely share one trigger collection.
+  if (filter.id) return null;
+  return JSON.stringify({
+    category: filter.category || null,
+    cooldownSeconds: filter.cooldownSeconds || 0,
+    notifyStaff: filter.notifyStaff || false,
+    text: filter.text || null,
+    media: filter.media || null,
+    button: filter.button || null,
+    audience: filter.audience,
+    allowBots: filter.allowBots,
+    commandDescription: filter.commandDescription || null
+  });
+}
+
+function coalesceEquivalentGroupHelpFilters(filters: GroupHelpFilter[]) {
+  const result: GroupHelpFilter[] = [];
+  const indexByKey = new Map<string, number>();
+  for (const filter of filters) {
+    const key = equivalentFilterKey(filter);
+    const existingIndex = key ? indexByKey.get(key) : undefined;
+    if (existingIndex === undefined) {
+      if (key) indexByKey.set(key, result.length);
+      result.push(filter);
+      continue;
+    }
+    const existing = result[existingIndex];
+    const triggers = new Map(
+      [...existing.triggers, ...filter.triggers].map((trigger) => [
+        `${trigger.mode}:${normalized(trigger.value)}`,
+        trigger
+      ])
+    );
+    result[existingIndex] = { ...existing, triggers: [...triggers.values()] };
+  }
+  return result;
+}
+
+const RELATED_MODERATION_FILTER_WORDS: Record<string, readonly string[]> = {
+  warn: ['warns', 'warned', 'warning', 'warnings'],
+  ban: ['bans', 'banned', 'banning'],
+  mute: ['mutes', 'muted', 'muting']
+};
+
+const RULE_FILTER_ALIASES = [
+  'rule',
+  'rules',
+  'warn',
+  'warns',
+  'warned',
+  'warning',
+  'warnings',
+  'ban',
+  'bans',
+  'banned',
+  'banning',
+  'mute',
+  'mutes',
+  'muted',
+  'muting'
+] as const;
+
+function consolidateRuleFilterAliases(filters: GroupHelpFilter[]) {
+  const aliasKeys = new Set(RULE_FILTER_ALIASES.map((value) => `contains:${value}`));
+  const canonicalIndex = filters.findIndex((filter) =>
+    filter.triggers.some(
+      (trigger) =>
+        trigger.mode === 'contains' && ['rule', 'rules'].includes(normalized(trigger.value))
+    )
+  );
+  if (canonicalIndex < 0) return filters;
+
+  const canonical = filters[canonicalIndex];
+  const canonicalTriggers = new Map(
+    canonical.triggers.map((trigger) => [`${trigger.mode}:${normalized(trigger.value)}`, trigger])
+  );
+  for (const value of RULE_FILTER_ALIASES) {
+    canonicalTriggers.set(`contains:${value}`, { value, mode: 'contains' });
+  }
+
+  return filters
+    .map((filter, index) => {
+      if (index === canonicalIndex) {
+        return { ...filter, triggers: [...canonicalTriggers.values()] };
+      }
+      return {
+        ...filter,
+        triggers: filter.triggers.filter(
+          (trigger) => !aliasKeys.has(`${trigger.mode}:${normalized(trigger.value)}`)
+        )
+      };
+    })
+    .filter((filter) => filter.triggers.length);
+}
+
+function withRelatedModerationFilterWords(filters: GroupHelpFilter[]) {
+  const explicitlyConfigured = new Set(
+    filters.flatMap((filter) =>
+      filter.triggers.map((trigger) => `${trigger.mode}:${normalized(trigger.value)}`)
+    )
+  );
+  return filters.map((filter) => {
+    const triggers = new Map(
+      filter.triggers.map((trigger) => [`${trigger.mode}:${normalized(trigger.value)}`, trigger])
+    );
+    for (const trigger of filter.triggers) {
+      if (trigger.mode !== 'contains') continue;
+      for (const related of RELATED_MODERATION_FILTER_WORDS[normalized(trigger.value)] || []) {
+        const key = `contains:${related}`;
+        // An explicitly authored filter always wins over an automatic related
+        // form, including when it intentionally sends a different response.
+        if (!explicitlyConfigured.has(key)) triggers.set(key, { value: related, mode: 'contains' });
+      }
+    }
+    return { ...filter, triggers: [...triggers.values()] };
+  });
+}
+
 export function parseGroupHelpFilters(definitions: string) {
   const filters: GroupHelpFilter[] = [];
   const passthrough: string[] = [];
@@ -202,7 +322,12 @@ export function parseGroupHelpFilters(definitions: string) {
       allowBots: false
     });
   }
-  return { filters, passthrough };
+  return {
+    filters: consolidateRuleFilterAliases(
+      withRelatedModerationFilterWords(coalesceEquivalentGroupHelpFilters(filters))
+    ),
+    passthrough
+  };
 }
 
 export function serializeGroupHelpFilters(filters: GroupHelpFilter[], passthrough: string[] = []) {
