@@ -479,6 +479,20 @@ export function findConfessionPublication(confessionReference: string, chatId: s
   });
 }
 
+export async function confessionThreadForMessage(chatId: string | number, messageId: number) {
+  const normalizedChatId = String(chatId);
+  const publication = await prisma.telegramConfessionPublication.findUnique({
+    where: { chatId_messageId: { chatId: normalizedChatId, messageId } }
+  });
+  if (publication) return publication;
+  const reply = await prisma.telegramConfessionPublicReply.findFirst({
+    where: { chatId: normalizedChatId, messageId },
+    select: { confessionReference: true }
+  });
+  if (!reply) return null;
+  return findConfessionPublication(reply.confessionReference, normalizedChatId);
+}
+
 export function recordConfessionPublicReply(input: {
   confessionReference: string;
   responderChatId: string | number;
@@ -486,14 +500,32 @@ export function recordConfessionPublicReply(input: {
   messageId: number;
   text: string;
 }) {
-  return prisma.telegramConfessionPublicReply.create({
-    data: {
-      confessionReference: input.confessionReference,
-      responderChatId: String(input.responderChatId),
-      chatId: String(input.chatId),
-      messageId: input.messageId,
-      text: input.text
-    }
+  const chatId = String(input.chatId);
+  return prisma.$transaction(async (tx) => {
+    const existing = await tx.telegramConfessionPublicReply.findFirst({
+      where: { chatId, messageId: input.messageId }
+    });
+    if (existing) return existing;
+    return tx.telegramConfessionPublicReply.create({
+      data: {
+        confessionReference: input.confessionReference,
+        responderChatId: String(input.responderChatId),
+        chatId,
+        messageId: input.messageId,
+        text: input.text
+      }
+    });
+  });
+}
+
+export function listConfessionPublicReplies(confessionReference: string, chatId: string | number) {
+  return prisma.telegramConfessionPublicReply.findMany({
+    where: {
+      confessionReference,
+      chatId: String(chatId)
+    },
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    select: { text: true, createdAt: true }
   });
 }
 

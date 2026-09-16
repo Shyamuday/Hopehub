@@ -5,6 +5,8 @@ import {
 import {
   checkTelegramGroupFlood,
   checkTelegramGroupRepeatedSpam,
+  confessionThreadForMessage,
+  recordConfessionPublicReply,
   scheduleCommunityMessageCleanup
 } from './telegram-community-bots.store.js';
 import type {
@@ -110,6 +112,25 @@ import { handleGroupHelpFilterBuilderInput } from './telegram-group-help.filter-
 import { isSangMataCommand } from './telegram-group-help.external-bot-commands.js';
 
 const BOT = GROUP_HELP_BOT_SLUG;
+
+async function recordNativeConfessionReply(message: CommunityTelegramMessage) {
+  if (!message.from || !message.reply_to_message) return;
+  const publication = await confessionThreadForMessage(
+    message.chat.id,
+    message.reply_to_message.message_id
+  );
+  if (!publication) return;
+  const text = `${message.text || message.caption || ''}`.trim() || '[Media reply]';
+  await recordConfessionPublicReply({
+    confessionReference: publication.confessionReference,
+    responderChatId: message.from.id,
+    chatId: message.chat.id,
+    messageId: message.message_id,
+    text
+  }).catch((error) => {
+    console.error('[telegram-confession] Could not index a native public reply.', error);
+  });
+}
 
 async function sendMatchingGroupHelpFilter(
   message: CommunityTelegramMessage,
@@ -701,6 +722,7 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
   }
   if (await handleGroupHelpReportCommand(message, values)) return;
   if (await isModerationExempt(message, values.telegramGroupHelpAdminWhitelist || '')) {
+    await recordNativeConfessionReply(message);
     await sendMatchingGroupHelpFilter(message, values, true);
     await recordTelegramCommunityActivity(
       chatId,
@@ -772,6 +794,7 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
     return;
   }
   if (await sendMatchingGroupHelpFilter(message, values, false)) {
+    await recordNativeConfessionReply(message);
     await recordTelegramCommunityActivity(
       chatId,
       message.date ? new Date(message.date * 1000) : undefined
@@ -907,6 +930,7 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
     );
     return;
   }
+  await recordNativeConfessionReply(message);
   await recordTelegramCommunityActivity(
     chatId,
     message.date ? new Date(message.date * 1000) : undefined

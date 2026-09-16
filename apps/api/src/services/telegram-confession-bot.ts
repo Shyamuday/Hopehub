@@ -13,9 +13,9 @@ import {
   findConfessionPublication,
   findCommunitySubmission,
   getCommunityState,
+  listConfessionPublicReplies,
   recordCommunitySubmissionOwnerReply,
   recordConfessionPublication,
-  recordConfessionPublicReply,
   setCommunityState,
   submissionForGroupMessage,
   updateCommunitySubmission
@@ -40,12 +40,6 @@ import { PUBLIC_IMAGE_ASSETS } from '../constants/public-assets.constants.js';
 import { prisma } from '../db.js';
 import { withPublicCommunityLinks } from './telegram-public-community-links.js';
 import { withCrossCommunityButton } from './telegram-group-help.community-navigation.js';
-import {
-  bannedPhrases,
-  containsLink,
-  groupHelpConfig,
-  matchedBannedPhrase
-} from './telegram-group-help.config.js';
 
 const slug = COMMUNITY_BOT_SLUGS.CONFESSION;
 const CONFESSION_REVIEWER_TELEGRAM_USER_ID = '7217536617';
@@ -53,17 +47,65 @@ const keyOf = (value: string | number) => String(value);
 const isCommand = (text: string, command: string) =>
   new RegExp(`^/${command}(?:@[A-Za-z0-9_]+)?(?:\\s|$)`, 'i').test(text.trim());
 
-export function confessionPublicReplyStartPayload(reference: string, chatId: string | number) {
-  return `reply_${reference}_${chatId}`;
+export const CONFESSION_PUBLIC_REPLY_INVITATION = `DON’T JUST READ. BE THERE.
+
+Someone in HopeHub may be having a difficult day.
+
+Use Telegram’s Reply action and leave a kind public message.
+
+A few seconds of your time could mean much more to someone than you realise.
+
+Listen. Reply. Support.`;
+
+export const CONFESSION_SUBMISSION_INVITATION = `ANONYMOUS CONFESSION
+
+Sometimes you just need to let it out.
+
+Share what’s on your mind, what you’re feeling, or what you’ve been silently carrying.
+
+No name. No judgment. Just a safe space to be heard.
+
+Have something you’ve never told anyone?
+
+Post your anonymous confession in HopeHub.
+
+Your identity stays anonymous. No one will know who you are.`;
+
+export function confessionPublicRepliesUrl(reference: string, chatId: string | number) {
+  return `${TELEGRAM_BOT_URLS.CONFESSION}?start=replies_${reference}_${chatId}`;
 }
 
-export function confessionPublicReplyUrl(reference: string, chatId: string | number) {
-  return `${TELEGRAM_BOT_URLS.CONFESSION}?start=${confessionPublicReplyStartPayload(reference, chatId)}`;
-}
-
-export function parseConfessionPublicReplyStart(text: string) {
-  const match = text.trim().match(/^\/start(?:@[A-Za-z0-9_]+)?\s+reply_(CONF-[A-Z0-9]+)_(-?\d+)$/i);
+export function parseConfessionPublicRepliesStart(text: string) {
+  const match = text
+    .trim()
+    .match(/^\/start(?:@[A-Za-z0-9_]+)?\s+replies_(CONF-[A-Z0-9]+)_(-?\d+)$/i);
   return match ? { reference: match[1].toUpperCase(), chatId: match[2] } : null;
+}
+
+export function publicConfessionReplyMessages(
+  number: number,
+  replies: Array<{ text: string }>,
+  maxLength = 3900
+) {
+  if (!replies.length) {
+    return [
+      `💬 Public replies to Anonymous Confession #${number}\n\nNo public replies yet. Be the first to offer a kind, supportive response.`
+    ];
+  }
+  const header = `💬 Public replies to Anonymous Confession #${number}\n\n`;
+  const messages: string[] = [];
+  let current = header;
+  replies.forEach((reply, index) => {
+    const entry = `${index ? '\n\n' : ''}Reply ${index + 1}\n${reply.text.trim()}`;
+    if (current.length + entry.length > maxLength && current !== header) {
+      messages.push(current);
+      current = `💬 Anonymous Confession #${number} — replies continued\n\n${entry.trimStart()}`;
+    } else {
+      current += entry;
+    }
+  });
+  messages.push(current);
+  return messages;
 }
 
 function confessionRouting(controls: TelegramBotControls) {
@@ -307,7 +349,7 @@ export function publishedConfessionMedia(input: {
   destinationName: string;
   number: number;
 }) {
-  const publishedText = publishedConfessionText(input);
+  const publishedText = `${publishedConfessionText(input)}\n\n${CONFESSION_PUBLIC_REPLY_INVITATION}`;
   if (publishedText.length <= 1024) {
     return { caption: publishedText, followUpText: null };
   }
@@ -391,8 +433,8 @@ export async function publishApprovedConfession(input: {
             inline_keyboard: [
               [
                 {
-                  text: 'Reply anonymously',
-                  url: confessionPublicReplyUrl(input.reference, targetChatId)
+                  text: 'View replies',
+                  url: confessionPublicRepliesUrl(input.reference, targetChatId)
                 }
               ],
               [
@@ -405,8 +447,8 @@ export async function publishApprovedConfession(input: {
             inline_keyboard: [
               [
                 {
-                  text: 'Reply anonymously',
-                  url: confessionPublicReplyUrl(input.reference, targetChatId)
+                  text: 'View replies',
+                  url: confessionPublicRepliesUrl(input.reference, targetChatId)
                 }
               ],
               [{ text: 'Write your confession', url: TELEGRAM_BOT_URLS.CONFESSION }]
@@ -564,9 +606,33 @@ const cancelKeyboard: TelegramKeyboard = {
   inline_keyboard: [[{ text: 'Cancel', callback_data: 'cancel_confession' }]]
 };
 
-const cancelPublicReplyKeyboard: TelegramKeyboard = {
-  inline_keyboard: [[{ text: 'Cancel reply', callback_data: 'cancel_public_confession_reply' }]]
-};
+function publicReplyActionsKeyboard(reference: string, chatId: string | number): TelegramKeyboard {
+  return {
+    inline_keyboard: [
+      [{ text: 'View replies', url: confessionPublicRepliesUrl(reference, chatId) }],
+      [{ text: 'Write your confession', url: TELEGRAM_BOT_URLS.CONFESSION }]
+    ]
+  };
+}
+
+async function isPublicConfessionGroupMember(
+  userChatId: string | number,
+  publicationChatId: string | number
+) {
+  const membership = await callCommunityTelegramApi<{
+    status?: string;
+    is_member?: boolean;
+  }>(COMMUNITY_BOT_SLUGS.GROUP_HELP, 'getChatMember', {
+    chat_id: publicationChatId,
+    user_id: userChatId
+  }).catch(() => null);
+  return (
+    membership?.status === 'creator' ||
+    membership?.status === 'administrator' ||
+    membership?.status === 'member' ||
+    (membership?.status === 'restricted' && membership.is_member !== false)
+  );
+}
 
 async function showStart(chatId: string | number) {
   await clearCommunityState(slug, keyOf(chatId));
@@ -574,58 +640,38 @@ async function showStart(chatId: string | number) {
   await sendCommunityMessage(
     slug,
     chatId,
-    `${controls.telegramConfessionWelcomeText}\n\n🔒 Your Telegram name, username, and profile are never published. Only the designated Confession reviewer can see your account details for safety and moderation, and may reply to you privately through this bot.\n\n⚠️ This bot is not emergency support.\n\nTap Send Confession when you are ready.`,
+    `${controls.telegramConfessionWelcomeText}\n\n${CONFESSION_SUBMISSION_INVITATION}\n\n🔒 Your Telegram name, username, and profile are never published. Only the designated Confession reviewer can see your account details for safety and moderation, and may reply to you privately through this bot.\n\n⚠️ This bot is not emergency support.\n\nTap Send Confession when you are ready.`,
     { reply_markup: mainKeyboard(controls) }
   );
 }
 
-async function startPublicConfessionReply(
+async function showPublicConfessionReplies(
   userChatId: string | number,
   input: { reference: string; chatId: string }
 ) {
   const confession = await findCommunitySubmission(input.reference);
   const publication = await findConfessionPublication(input.reference, input.chatId);
   if (!confession || confession.status !== 'approved' || !publication) {
-    await sendCommunityMessage(
-      slug,
-      userChatId,
-      '⚠️ This confession is no longer available for replies.'
-    );
+    await sendCommunityMessage(slug, userChatId, '⚠️ This confession is no longer available.');
     return;
   }
-  const membership = await callCommunityTelegramApi<{
-    status?: string;
-    is_member?: boolean;
-  }>(COMMUNITY_BOT_SLUGS.GROUP_HELP, 'getChatMember', {
-    chat_id: input.chatId,
-    user_id: userChatId
-  }).catch(() => null);
-  const isMember =
-    membership?.status === 'creator' ||
-    membership?.status === 'administrator' ||
-    membership?.status === 'member' ||
-    (membership?.status === 'restricted' && membership.is_member !== false);
-  if (!isMember) {
-    await sendCommunityMessage(
-      slug,
-      userChatId,
-      'Join the Hope Hub group before adding an anonymous reply.'
-    );
+  if (!(await isPublicConfessionGroupMember(userChatId, input.chatId))) {
+    await sendCommunityMessage(slug, userChatId, 'Join the Hope Hub group to view its replies.');
     return;
   }
-  await setCommunityState(
-    slug,
-    keyOf(userChatId),
-    'public_confession_reply',
-    { reference: input.reference, publicationChatId: input.chatId },
-    30 * 60 * 1000
+  const replies = await listConfessionPublicReplies(input.reference, input.chatId);
+  const number = confessionNumber(
+    confession.serial,
+    confessionRouting(await getTelegramBotControls()).startNumber
   );
-  await sendCommunityMessage(
-    slug,
-    userChatId,
-    `💬 *Reply anonymously*\n\nWrite one kind, supportive reply below. It will appear beneath Anonymous Confession #${confessionNumber(confession.serial, confessionRouting(await getTelegramBotControls()).startNumber)} without showing your identity.\n\nNo links, contact details, medical advice, abuse, or judgment. Use /cancel anytime.`,
-    { parse_mode: 'Markdown', reply_markup: cancelPublicReplyKeyboard }
-  );
+  const messages = publicConfessionReplyMessages(number, replies);
+  for (let index = 0; index < messages.length; index += 1) {
+    await sendCommunityMessage(slug, userChatId, messages[index], {
+      ...(index === messages.length - 1
+        ? { reply_markup: publicReplyActionsKeyboard(input.reference, input.chatId) }
+        : {})
+    });
+  }
 }
 
 const POSSIBLE_IMMEDIATE_RISK =
@@ -661,13 +707,6 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
           reply_markup: cancelKeyboard
         }
       );
-      return;
-    }
-    if (data === 'cancel_public_confession_reply') {
-      await clearCommunityState(slug, stateKey);
-      await sendCommunityMessage(slug, chatId, 'Anonymous reply cancelled. Nothing was posted.', {
-        reply_markup: mainKeyboard(controls)
-      });
       return;
     }
     if (data === 'cancel_confession' || data.startsWith('cancel_preview_')) {
@@ -890,9 +929,9 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
   const chatId = message.chat.id;
   const stateKey = keyOf(chatId);
   const text = message.text.trim();
-  const publicReplyStart = parseConfessionPublicReplyStart(text);
-  if (publicReplyStart) {
-    await startPublicConfessionReply(chatId, publicReplyStart);
+  const publicRepliesStart = parseConfessionPublicRepliesStart(text);
+  if (publicRepliesStart) {
+    await showPublicConfessionReplies(chatId, publicRepliesStart);
     return;
   }
   if (isConfessionReviewInbox(chatId, controls) && isConfessionReviewer(message.from)) {
@@ -1021,18 +1060,10 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
   }
   if (isCommand(text, 'start')) return showStart(chatId);
   if (isCommand(text, 'cancel')) {
-    const activeState = await getCommunityState(slug, stateKey);
     await clearCommunityState(slug, stateKey);
-    await sendCommunityMessage(
-      slug,
-      chatId,
-      activeState?.state === 'public_confession_reply'
-        ? 'Anonymous reply cancelled. Nothing was posted.'
-        : '❌ Confession cancelled.',
-      {
-        reply_markup: mainKeyboard(controls)
-      }
-    );
+    await sendCommunityMessage(slug, chatId, '❌ Confession cancelled.', {
+      reply_markup: mainKeyboard(controls)
+    });
     return;
   }
   if (isCommand(text, 'help')) {
@@ -1045,85 +1076,7 @@ export async function handleConfessionBotUpdate(update: CommunityTelegramUpdate)
     return;
   }
   if (text.startsWith('/')) return;
-  const state = await getCommunityState<{
-    reference?: string;
-    publicationChatId?: string;
-  }>(slug, stateKey);
-  if (
-    state?.state === 'public_confession_reply' &&
-    state.payload?.reference &&
-    state.payload.publicationChatId
-  ) {
-    const replyText = normalizeConfessionText(text);
-    if (replyText.length < 2 || replyText.length > 1000) {
-      await sendCommunityMessage(
-        slug,
-        chatId,
-        replyText.length < 2
-          ? 'Please write at least 2 characters.'
-          : 'Please keep an anonymous reply under 1,000 characters.'
-      );
-      return;
-    }
-    const publication = await findConfessionPublication(
-      state.payload.reference,
-      state.payload.publicationChatId
-    );
-    const confession = await findCommunitySubmission(state.payload.reference);
-    if (!publication || !confession || confession.status !== 'approved') {
-      await clearCommunityState(slug, stateKey);
-      await sendCommunityMessage(
-        slug,
-        chatId,
-        '⚠️ This confession is no longer available for replies.'
-      );
-      return;
-    }
-    const groupConfig = await groupHelpConfig(publication.chatId);
-    const blockedPhrase = matchedBannedPhrase(
-      replyText,
-      bannedPhrases(groupConfig.telegramGroupHelpBannedWords || '')
-    );
-    if (containsLink(replyText) || blockedPhrase) {
-      await sendCommunityMessage(
-        slug,
-        chatId,
-        containsLink(replyText)
-          ? 'Links and contact details are not allowed in anonymous replies. Please rewrite it without the link.'
-          : 'That reply cannot be posted under the community safety rules. Please rewrite it kindly.'
-      );
-      return;
-    }
-    const sent = await sendCommunityMessage(
-      COMMUNITY_BOT_SLUGS.GROUP_HELP,
-      publication.chatId,
-      `💬 Anonymous reply\n\n${replyText}`,
-      {
-        reply_to_message_id: publication.messageId,
-        message_thread_id: publication.messageThreadId || undefined
-      }
-    );
-    try {
-      await recordConfessionPublicReply({
-        confessionReference: confession.reference,
-        responderChatId: stateKey,
-        chatId: publication.chatId,
-        messageId: sent.message_id,
-        text: replyText
-      });
-    } catch (error) {
-      // The public reply already exists. Do not invite a retry that would post it twice.
-      console.error('[telegram-confession] Could not record public reply metadata.', error);
-    }
-    await clearCommunityState(slug, stateKey);
-    await sendCommunityMessage(
-      slug,
-      chatId,
-      '✅ Your anonymous reply was added beneath the confession. Your Telegram identity was not published.',
-      { reply_markup: postConfessionKeyboard(controls) }
-    );
-    return;
-  }
+  const state = await getCommunityState(slug, stateKey);
   if (!state || state.state !== 'writing') {
     await sendCommunityMessage(
       slug,

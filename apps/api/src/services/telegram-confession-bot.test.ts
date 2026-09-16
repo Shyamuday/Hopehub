@@ -4,11 +4,14 @@ import {
   confessionApprovalAction,
   confessionOwnerReviewText,
   confessionPrivateReplyText,
-  confessionPublicReplyUrl,
+  confessionPublicRepliesUrl,
   confessionRejectionReplyText,
+  CONFESSION_PUBLIC_REPLY_INVITATION,
+  CONFESSION_SUBMISSION_INVITATION,
   isConfessionReviewer,
   normalizeConfessionText,
-  parseConfessionPublicReplyStart,
+  parseConfessionPublicRepliesStart,
+  publicConfessionReplyMessages,
   publishedConfessionMedia,
   publishedConfessionText
 } from './telegram-confession-bot.js';
@@ -102,18 +105,26 @@ test('confession approval callbacks distinguish publish from publish and pin', (
   assert.equal(confessionApprovalAction('reject_reply_CONF-FOUR'), null);
 });
 
-test('public confession reply links preserve the confession and target group', () => {
-  const url = confessionPublicReplyUrl('CONF-ABC123', '-1004348855227');
-  assert.equal(url, 'https://t.me/Hopehubconfessionbot?start=reply_CONF-ABC123_-1004348855227');
-  assert.deepEqual(parseConfessionPublicReplyStart('/start reply_CONF-ABC123_-1004348855227'), {
+test('public confession reply viewer links preserve the confession and target group', () => {
+  const url = confessionPublicRepliesUrl('CONF-ABC123', '-1004348855227');
+  assert.equal(url, 'https://t.me/Hopehubconfessionbot?start=replies_CONF-ABC123_-1004348855227');
+  assert.deepEqual(parseConfessionPublicRepliesStart('/start replies_CONF-ABC123_-1004348855227'), {
     reference: 'CONF-ABC123',
     chatId: '-1004348855227'
   });
-  assert.deepEqual(
-    parseConfessionPublicReplyStart('/start@Hopehubconfessionbot reply_conf-abc123_-1004348855227'),
-    { reference: 'CONF-ABC123', chatId: '-1004348855227' }
+  assert.equal(parseConfessionPublicRepliesStart('/start replies_invalid'), null);
+});
+
+test('public confession reply viewer shows every reply in chronological chunks', () => {
+  const replies = publicConfessionReplyMessages(
+    1046,
+    [{ text: 'You are not alone.' }, { text: 'Please be gentle with yourself.' }],
+    100
   );
-  assert.equal(parseConfessionPublicReplyStart('/start reply_invalid'), null);
+  assert.equal(replies.length, 2);
+  assert.match(replies.join('\n'), /Reply 1\nYou are not alone\./);
+  assert.match(replies.join('\n'), /Reply 2\nPlease be gentle with yourself\./);
+  assert.match(publicConfessionReplyMessages(1046, [])[0], /No public replies yet/);
 });
 
 test('approved group confessions use the image caption and preserve long text below it', () => {
@@ -123,6 +134,8 @@ test('approved group confessions use the image caption and preserve long text be
     number: 1044
   });
   assert.match(short.caption, /I am learning to ask for help/);
+  assert.match(short.caption, /DON’T JUST READ\. BE THERE/);
+  assert.match(short.caption, /Use Telegram’s Reply action/);
   assert.equal(short.followUpText, null);
 
   const longText = 'A'.repeat(1500);
@@ -134,4 +147,11 @@ test('approved group confessions use the image caption and preserve long text be
   assert.ok(long.caption.length <= 1024);
   assert.match(long.caption, /complete anonymous confession directly below/i);
   assert.match(long.followUpText || '', new RegExp(longText));
+  assert.match(long.followUpText || '', /Listen\. Reply\. Support\./);
+});
+
+test('private admin confession copy is assigned to the appropriate stages', () => {
+  assert.match(CONFESSION_PUBLIC_REPLY_INVITATION, /leave a kind public message/i);
+  assert.match(CONFESSION_SUBMISSION_INVITATION, /Post your anonymous confession/i);
+  assert.doesNotMatch(CONFESSION_SUBMISSION_INVITATION, /Reply action/i);
 });
