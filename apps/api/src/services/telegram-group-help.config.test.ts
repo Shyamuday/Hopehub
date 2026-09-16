@@ -4,8 +4,13 @@ import { GROUP_HELP_WELLBEING_FILTERS } from '../constants/group-help-wellbeing-
 import { parseGroupHelpFilters } from './telegram-group-help.filters.js';
 import { bannedPhrases, resolveGroupHelpConfigValues } from './telegram-group-help.config.js';
 
-test('ignores the removed ds moderation trigger in stored word lists', () => {
-  assert.deepEqual(bannedPhrases('spam\nds\nDS\nunsafe link'), ['spam', 'unsafe link']);
+test('ignores broad ordinary terms in stored moderation word lists', () => {
+  assert.deepEqual(
+    bannedPhrases(
+      'spam\nds\nDM\npm\nmessage\nprivate\nwhatsapp\ndepression\nanxiety\nlonely\nbreakup\nsex\nunsafe link'
+    ),
+    ['spam', 'unsafe link']
+  );
 });
 
 test('group policy keeps scalar overrides while required filters survive stale snapshots', () => {

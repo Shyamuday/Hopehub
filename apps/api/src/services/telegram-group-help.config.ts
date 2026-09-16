@@ -44,10 +44,33 @@ export function floodThreshold(value: string) {
 }
 
 export function bannedPhrases(value: string) {
+  const ignoredBroadTerms = new Set([
+    'ds',
+    'dm',
+    'dms',
+    'pm',
+    'pv',
+    'msg',
+    'message',
+    'text',
+    'ping',
+    'private',
+    'call',
+    'number',
+    'no',
+    'whatsapp',
+    'telegram',
+    'instagram',
+    'depression',
+    'anxiety',
+    'lonely',
+    'breakup',
+    'sex'
+  ]);
   return value
     .split(/[\n,]+/)
     .map((item) => item.trim().toLowerCase())
-    .filter((item) => Boolean(item) && item !== 'ds');
+    .filter((item) => Boolean(item) && !ignoredBroadTerms.has(item));
 }
 
 export function matchesBannedPhrase(text: string, phrases: readonly string[]) {

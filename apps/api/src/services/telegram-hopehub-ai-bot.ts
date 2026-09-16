@@ -3,6 +3,7 @@ import {
   sendCommunityMessage
 } from './telegram-community-bots.client.js';
 import {
+  addTelegramGroupWarning,
   checkTelegramGroupFlood,
   checkTelegramGroupRepeatedSpam,
   confessionThreadForMessage,
@@ -43,6 +44,7 @@ import {
   sendTemporaryGroupHelpMessage as sendTemporaryMessage
 } from './telegram-group-help.actions.js';
 import { moderateGroupHelpMessage as moderate } from './telegram-group-help.moderation.js';
+import { groupHelpWarnPolicySummary } from './telegram-group-help.warning-policy.js';
 import {
   registerGroupHelpLogGroup as registerLogGroup,
   registerGroupHelpOffTopicGroup as registerOffTopicGroup
@@ -832,13 +834,57 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
     bannedPhrases(values.telegramGroupHelpReviewPhrases)
   );
   if (reviewPhrase) {
-    await sendModerationLog(values, message, `Privacy review phrase: “${reviewPhrase}”`, 'review', {
-      suggestedAction: 'delete'
-    });
+    const liveConnectUrl = values.telegramCommunitySupportUrl?.trim();
+    await sendTemporaryMessage(
+      chatId,
+      '🔒 Please keep conversations in the group and do not request or share private contact details. If you need a private emotional-support conversation, use Hope Hub Live. No moderation action was taken.',
+      values,
+      {
+        reply_to_message_id: message.message_id,
+        message_thread_id: message.message_thread_id,
+        ...(liveConnectUrl && /^https:\/\//i.test(liveConnectUrl)
+          ? {
+              reply_markup: {
+                inline_keyboard: [[{ text: 'Talk privately with support', url: liveConnectUrl }]]
+              }
+            }
+          : {})
+      }
+    );
     return;
   }
   if (blockedPhrase) {
-    await moderate(message, `Blocked phrase: “${blockedPhrase}”`, 'warn', warnLimit, warnAction);
+    const reason = `Severe abusive phrase: “${blockedPhrase}”`;
+    const warningPolicy = groupHelpWarnPolicySummary(values);
+    const warningCount = await addTelegramGroupWarning({
+      chatId,
+      telegramUserId: String(message.from.id),
+      reason,
+      warningExpirySeconds: warningPolicy.expiry.seconds
+    });
+    const deleted = await deleteMessage(chatId, message.message_id)
+      .then(() => true)
+      .catch((error) => {
+        console.warn('[telegram-group-help] Could not delete severe abusive message.', {
+          chatId,
+          messageId: message.message_id,
+          userId: message.from?.id,
+          error: error instanceof Error ? error.message : String(error)
+        });
+        return false;
+      });
+    await sendModerationLog(values, message, reason, 'review', {
+      suggestedAction: 'staff decision',
+      sourceMessageId: null,
+      warningAlreadyApplied: true,
+      reviewOutcome: `${deleted ? 'Message deleted' : 'Message deletion failed'}; warning ${warningCount}/${warningPolicy.limit} recorded. No mute or ban applied.`
+    });
+    await sendTemporaryMessage(
+      chatId,
+      `⚠️ ${message.from.first_name || 'A member'} received warning ${warningCount}/${warningPolicy.limit} for severe abusive language. ${deleted ? 'The message was deleted.' : 'The message could not be deleted; admins were notified.'} No mute or ban was applied automatically.`,
+      { ...values, telegramGroupHelpAutoDeleteSeconds: '60' },
+      { message_thread_id: message.message_thread_id }
+    );
     return;
   }
   if (containsLink(text) && values.telegramGroupHelpLinkPolicy !== 'allow') {

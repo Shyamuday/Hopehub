@@ -29,3 +29,11 @@ test('cross-group review omits message actions when no source message is known',
     ['Warn', 'Mute 1 hour', 'Mute 24 hours', 'Dismiss']
   );
 });
+
+test('deleted abusive messages offer warning removal and human mute decisions', () => {
+  const buttons = groupHelpModerationReviewButtons('case-3', false, true);
+  assert.deepEqual(
+    buttons.map((button) => button.text),
+    ['Remove warning', 'Mute 1 hour', 'Mute 24 hours', 'Dismiss']
+  );
+});

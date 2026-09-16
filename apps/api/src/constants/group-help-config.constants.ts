@@ -964,7 +964,7 @@ Contact Admin Team via @Contacthopehubbot`
     key: 'telegramGroupHelpBannedWords',
     label: 'Banned words / phrases',
     description:
-      'Immediate safety block: abuse, explicit content, scams, or unsafe links. One word or phrase per line. Do not add ordinary requests for support or conversation here.',
+      'Severe abuse, explicit solicitation, or scams only. Matching messages are deleted and warned, then sent to staff to decide whether a mute is needed. The bot never auto-mutes or auto-bans. One phrase per line.',
     section: 'moderation',
     type: 'textarea',
     maxLength: 4000,
@@ -989,9 +989,9 @@ anyone to speak`
   },
   {
     key: 'telegramGroupHelpReviewPhrases',
-    label: 'Privacy-review phrases',
+    label: 'Privacy-reminder phrases',
     description:
-      'Direct-contact or self-promotion phrases. The message is removed without a warning and sent to the private staff group for review. One phrase per line.',
+      'Direct-contact phrases that receive a polite automatic privacy reminder. No warning, deletion, restriction, or staff alert is created. One phrase per line.',
     section: 'moderation',
     type: 'textarea',
     maxLength: 4000,

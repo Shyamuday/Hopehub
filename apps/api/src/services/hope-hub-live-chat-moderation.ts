@@ -42,14 +42,6 @@ export function websiteLiveChatRuleViolation(
     };
   }
 
-  const reviewPhrase = matchedBannedPhrase(
-    text,
-    bannedPhrases(values.telegramGroupHelpReviewPhrases || '')
-  );
-  if (reviewPhrase) {
-    return { action: 'delete', reason: `Privacy review phrase: “${reviewPhrase}”` };
-  }
-
   const blockedPhrase = matchedBannedPhrase(
     text,
     bannedPhrases(values.telegramGroupHelpBannedWords || '')

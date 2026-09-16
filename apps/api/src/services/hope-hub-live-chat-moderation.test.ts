@@ -16,11 +16,8 @@ test('website live chat blocks configured unsafe phrases', () => {
   });
 });
 
-test('website live chat sends privacy phrases to review without warning', () => {
-  assert.deepEqual(websiteLiveChatRuleViolation('Please dm me now', values), {
-    action: 'delete',
-    reason: 'Privacy review phrase: “dm me”'
-  });
+test('website live chat does not moderate privacy-reminder phrases', () => {
+  assert.equal(websiteLiveChatRuleViolation('Please dm me now', values), null);
 });
 
 test('facebook and insta are permitted after removal from the managed banned-word list', () => {

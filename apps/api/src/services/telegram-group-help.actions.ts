@@ -35,9 +35,15 @@ import { groupHelpWarnPolicySummary } from './telegram-group-help.warning-policy
 
 const MODERATION_ACTION_STATE = 'group-moderation-action';
 
-export function groupHelpModerationReviewButtons(actionId: string, hasSourceMessage = true) {
+export function groupHelpModerationReviewButtons(
+  actionId: string,
+  hasSourceMessage = true,
+  warningAlreadyApplied = false
+) {
   return [
-    { text: 'Warn', callback_data: `hh_mod:${actionId}:warn` },
+    warningAlreadyApplied
+      ? { text: 'Remove warning', callback_data: `hh_mod:${actionId}:unwarn` }
+      : { text: 'Warn', callback_data: `hh_mod:${actionId}:warn` },
     { text: 'Mute 1 hour', callback_data: `hh_mod:${actionId}:mute` },
     { text: 'Mute 24 hours', callback_data: `hh_mod:${actionId}:mute24h` },
     ...(hasSourceMessage
@@ -69,7 +75,10 @@ const NORMAL_MEMBER_PERMISSIONS = {
 };
 
 function blockedPhraseFromReason(reason: string) {
-  return /^blocked phrase:\s*[“"](.+?)[”"]\s*$/i.exec(reason.trim())?.[1]?.trim() || null;
+  return (
+    /^(?:blocked|severe abusive) phrase:\s*[“"](.+?)[”"]\s*$/i.exec(reason.trim())?.[1]?.trim() ||
+    null
+  );
 }
 
 async function updateBlockedPhraseForGroup(input: {
@@ -103,6 +112,8 @@ export async function sendModerationLog(
     includePublicControls?: boolean;
     suggestedAction?: string;
     sourceMessageId?: number | null;
+    warningAlreadyApplied?: boolean;
+    reviewOutcome?: string;
   } = {}
 ) {
   if (values.telegramGroupHelpPrivateControl === 'true') {
@@ -145,7 +156,13 @@ export async function sendModerationLog(
   const sourceMessageId =
     options.sourceMessageId === undefined ? message.message_id : options.sourceMessageId;
   if (message.from && normalizedAction === 'review') {
-    buttons.push(...groupHelpModerationReviewButtons(actionId, Boolean(sourceMessageId)));
+    buttons.push(
+      ...groupHelpModerationReviewButtons(
+        actionId,
+        Boolean(sourceMessageId),
+        options.warningAlreadyApplied
+      )
+    );
   }
   if (message.from && ['mute', 'warn'].includes(normalizedAction)) {
     buttons.push({
@@ -211,7 +228,9 @@ export async function sendModerationLog(
       ? `Policy suggestion: ${options.suggestedAction.toUpperCase()} (not applied)`
       : null,
     `Rule / reason: ${reason}`,
-    reviewPending ? 'Outcome: No automatic action taken' : 'Outcome: completed',
+    reviewPending
+      ? `Outcome: ${options.reviewOutcome || 'No automatic action taken'}`
+      : 'Outcome: completed',
     reviewPending
       ? 'Detected by: Hope Hub bot · Waiting for a staff decision'
       : options.performedBy
