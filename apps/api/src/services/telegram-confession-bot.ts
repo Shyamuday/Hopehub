@@ -49,9 +49,7 @@ const isCommand = (text: string, command: string) =>
 
 export const CONFESSION_PUBLIC_REPLY_INVITATION = `DON’T JUST READ. BE THERE.
 
-Someone in HopeHub may be having a difficult day.
-
-Use Telegram’s Reply action and leave a kind public message.
+Someone in Hope Hub may be having a difficult day. Reply to their confession and leave a kind message.
 
 A few seconds of your time could mean much more to someone than you realise.
 
@@ -432,12 +430,6 @@ export async function publishApprovedConfession(input: {
         ? {
             inline_keyboard: [
               [
-                {
-                  text: 'View replies',
-                  url: confessionPublicRepliesUrl(input.reference, targetChatId)
-                }
-              ],
-              [
                 { text: 'Read all', url: channelUrl },
                 { text: 'Write yours', url: TELEGRAM_BOT_URLS.CONFESSION }
               ]
@@ -445,12 +437,6 @@ export async function publishApprovedConfession(input: {
           }
         : {
             inline_keyboard: [
-              [
-                {
-                  text: 'View replies',
-                  url: confessionPublicRepliesUrl(input.reference, targetChatId)
-                }
-              ],
               [{ text: 'Write your confession', url: TELEGRAM_BOT_URLS.CONFESSION }]
             ]
           },
@@ -492,7 +478,7 @@ export async function publishApprovedConfession(input: {
         'sendPhoto',
         {
           chat_id: targetChatId,
-          photo: PUBLIC_IMAGE_ASSETS.TELEGRAM.ANONYMOUS_CONFESSION_CAMPAIGN,
+          photo: PUBLIC_IMAGE_ASSETS.TELEGRAM.KIND_REPLY_CAMPAIGN,
           caption: media.caption,
           reply_markup: groupKeyboard(targetChatId),
           ...(target.messageThreadId ? { message_thread_id: target.messageThreadId } : {})

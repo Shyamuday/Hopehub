@@ -135,7 +135,8 @@ test('approved group confessions use the image caption and preserve long text be
   });
   assert.match(short.caption, /I am learning to ask for help/);
   assert.match(short.caption, /DON’T JUST READ\. BE THERE/);
-  assert.match(short.caption, /Use Telegram’s Reply action/);
+  assert.match(short.caption, /Reply to their confession and leave a kind message/);
+  assert.ok(short.caption.endsWith(CONFESSION_PUBLIC_REPLY_INVITATION));
   assert.equal(short.followUpText, null);
 
   const longText = 'A'.repeat(1500);
@@ -148,10 +149,14 @@ test('approved group confessions use the image caption and preserve long text be
   assert.match(long.caption, /complete anonymous confession directly below/i);
   assert.match(long.followUpText || '', new RegExp(longText));
   assert.match(long.followUpText || '', /Listen\. Reply\. Support\./);
+  assert.ok((long.followUpText || '').endsWith(CONFESSION_PUBLIC_REPLY_INVITATION));
 });
 
 test('private admin confession copy is assigned to the appropriate stages', () => {
-  assert.match(CONFESSION_PUBLIC_REPLY_INVITATION, /leave a kind public message/i);
+  assert.match(
+    CONFESSION_PUBLIC_REPLY_INVITATION,
+    /Reply to their confession and leave a kind message/i
+  );
   assert.match(CONFESSION_SUBMISSION_INVITATION, /Post your anonymous confession/i);
   assert.doesNotMatch(CONFESSION_SUBMISSION_INVITATION, /Reply action/i);
 });
