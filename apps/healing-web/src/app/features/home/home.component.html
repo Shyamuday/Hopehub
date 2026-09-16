@@ -9,8 +9,8 @@
         align="left"
         compact
         eyebrow="What brings people here"
-      title="You do not have to carry it alone."
-      description="Begin in the way that feels easiest today. You can keep it private, go at your own pace, and choose more support whenever you are ready."
+        title="You do not have to carry it alone."
+        description="Begin in the way that feels easiest today. You can keep it private, go at your own pace, and choose more support whenever you are ready."
       />
       <app-button [routerLink]="ROUTES.links.support" variant="outline">
         {{ UX.cta.exploreSupportOptions }}
@@ -19,7 +19,11 @@
 
     <div class="support-moment-rail" aria-label="Hope Hub support moments">
       @for (moment of supportMoments; track moment.title) {
-        <a class="support-moment-card" [routerLink]="moment.route" [queryParams]="moment.queryParams || null">
+        <a
+          class="support-moment-card"
+          [routerLink]="moment.route"
+          [queryParams]="moment.queryParams || null"
+        >
           <img [src]="moment.image" [alt]="moment.title" loading="lazy" />
           <span>{{ moment.label }}</span>
           <h3>{{ moment.title }}</h3>
@@ -100,4 +104,8 @@
   </div>
 </section>
 
-<app-group-chat-teaser />
+<!--
+  Website ↔ Telegram live-chat UI is temporarily paused.
+  Restore GroupChatTeaserComponent in home.component.ts before re-enabling this element.
+  <app-group-chat-teaser />
+-->

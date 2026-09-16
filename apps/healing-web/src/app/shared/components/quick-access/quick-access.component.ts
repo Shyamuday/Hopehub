@@ -1,10 +1,8 @@
-import { Component, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { APP_CONSTANTS } from '../../../core';
 import { CONSUMER_UX_COPY } from '../../../core/constants/consumer-ux-copy.constants';
 import { CONSUMER_ROUTES } from '../../../core/constants/consumer-routes.constants';
-import { GroupChatTeaserService } from '../../../core/services';
 
 @Component({
   selector: 'app-quick-access',
@@ -20,15 +18,4 @@ export class QuickAccessComponent {
   // The four-item mobile bar is intentionally paused while the main home actions
   // are being simplified. Keep the switch so it can be restored without markup changes.
   readonly showBottomQuickActions = false;
-  private readonly groupChatTeaser = inject(GroupChatTeaserService);
-  private readonly router = inject(Router);
-  readonly unreadCount = this.groupChatTeaser.unreadCount;
-
-  openChatTeaser(): void {
-    this.groupChatTeaser.requestOpen();
-    const currentPath = this.router.url.split('?')[0].split('#')[0];
-    if (currentPath !== '/') {
-      void this.router.navigate([...CONSUMER_ROUTES.links.home]);
-    }
-  }
 }
