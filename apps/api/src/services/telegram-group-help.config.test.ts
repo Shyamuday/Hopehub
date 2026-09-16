@@ -2,7 +2,11 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { GROUP_HELP_WELLBEING_FILTERS } from '../constants/group-help-wellbeing-replies.constants.js';
 import { parseGroupHelpFilters } from './telegram-group-help.filters.js';
-import { resolveGroupHelpConfigValues } from './telegram-group-help.config.js';
+import { bannedPhrases, resolveGroupHelpConfigValues } from './telegram-group-help.config.js';
+
+test('ignores the removed ds moderation trigger in stored word lists', () => {
+  assert.deepEqual(bannedPhrases('spam\nds\nDS\nunsafe link'), ['spam', 'unsafe link']);
+});
 
 test('group policy keeps scalar overrides while required filters survive stale snapshots', () => {
   const existing = {

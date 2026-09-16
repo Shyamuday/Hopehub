@@ -47,7 +47,7 @@ export function bannedPhrases(value: string) {
   return value
     .split(/[\n,]+/)
     .map((item) => item.trim().toLowerCase())
-    .filter(Boolean);
+    .filter((item) => Boolean(item) && item !== 'ds');
 }
 
 export function matchesBannedPhrase(text: string, phrases: readonly string[]) {
