@@ -117,7 +117,7 @@ model StoreStaffProfileImage {
   byteSize     Int?
   isPrimary    Boolean    @default(false)
   createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  updatedAt    DateTime   @default(now()) @updatedAt
 
   @@index([storeStaffId, createdAt])
   @@index([storeStaffId, isPrimary])
