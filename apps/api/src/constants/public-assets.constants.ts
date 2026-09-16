@@ -7,5 +7,9 @@ export const PUBLIC_IMAGE_ASSETS = {
   QR: {
     TELEGRAM: `${PUBLIC_ASSET_BASE_URL}/qr/telegram/hopehubindiaqr.jpg`,
     WHATSAPP: `${PUBLIC_ASSET_BASE_URL}/qr/whatsapp/whatsapp-qr.jpeg`
+  },
+  TELEGRAM: {
+    ANONYMOUS_CONFESSION_CAMPAIGN: `${PUBLIC_ASSET_BASE_URL}/telegram/community/hopehub-anonymous-confession-campaign-v1.jpg`,
+    KIND_REPLY_CAMPAIGN: `${PUBLIC_ASSET_BASE_URL}/telegram/community/hopehub-kind-reply-campaign-v1.jpg`
   }
 } as const;

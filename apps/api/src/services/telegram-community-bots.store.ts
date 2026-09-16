@@ -445,6 +445,58 @@ export function recordCommunitySubmissionOwnerReply(reference: string) {
   });
 }
 
+export function recordConfessionPublication(input: {
+  confessionReference: string;
+  chatId: string | number;
+  messageId: number;
+  messageThreadId?: number;
+}) {
+  return prisma.telegramConfessionPublication.upsert({
+    where: {
+      confessionReference_chatId: {
+        confessionReference: input.confessionReference,
+        chatId: String(input.chatId)
+      }
+    },
+    create: {
+      confessionReference: input.confessionReference,
+      chatId: String(input.chatId),
+      messageId: input.messageId,
+      messageThreadId: input.messageThreadId
+    },
+    update: {
+      messageId: input.messageId,
+      messageThreadId: input.messageThreadId
+    }
+  });
+}
+
+export function findConfessionPublication(confessionReference: string, chatId: string | number) {
+  return prisma.telegramConfessionPublication.findUnique({
+    where: {
+      confessionReference_chatId: { confessionReference, chatId: String(chatId) }
+    }
+  });
+}
+
+export function recordConfessionPublicReply(input: {
+  confessionReference: string;
+  responderChatId: string | number;
+  chatId: string | number;
+  messageId: number;
+  text: string;
+}) {
+  return prisma.telegramConfessionPublicReply.create({
+    data: {
+      confessionReference: input.confessionReference,
+      responderChatId: String(input.responderChatId),
+      chatId: String(input.chatId),
+      messageId: input.messageId,
+      text: input.text
+    }
+  });
+}
+
 export function deleteDraftCommunitySubmission(reference: string, userChatId: string) {
   return prisma.telegramCommunitySubmission.deleteMany({
     where: { reference, userChatId, status: 'draft' }
@@ -569,7 +621,14 @@ export async function scheduleCommunityMessageCleanup(input: {
   bot: CommunityBotSlug;
   chatId: string | number;
   messageId: number;
-  kind: 'welcome' | 'goodbye' | 'transient' | 'join-captcha' | 'identity-alert' | 'voice-reminder';
+  kind:
+    | 'welcome'
+    | 'goodbye'
+    | 'transient'
+    | 'join-captcha'
+    | 'identity-alert'
+    | 'voice-reminder'
+    | 'campaign';
   deleteAfter: Date;
 }) {
   return prisma.telegramCommunityMessageCleanup.upsert({

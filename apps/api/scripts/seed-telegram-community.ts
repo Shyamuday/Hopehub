@@ -17,6 +17,7 @@ import {
   TELEGRAM_BOT_URLS,
   TELEGRAM_BOT_USERNAMES
 } from '../src/constants/telegram-community-bot.constants.js';
+import { PUBLIC_IMAGE_ASSETS } from '../src/constants/public-assets.constants.js';
 import { colorizeTelegramPayload } from '../src/services/telegram-button-styles.js';
 import { shouldRefreshTelegramCampaignTemplate } from '../src/services/telegram-community-campaign-templates.js';
 import {
@@ -123,6 +124,36 @@ function nextSundayAt(hour: number) {
 
 const campaigns = (chatId: string) =>
   [
+    {
+      id: 'seed_telegram_confession_reply_loop',
+      name: 'Anonymous confession and kind reply loop',
+      templateVersion: 1,
+      intervalMinutes: 60,
+      nextRunAt: nextAt(8),
+      items: [
+        {
+          kind: 'IMAGE_QUOTE',
+          contentCategory: 'anonymous confession',
+          imageUrl: PUBLIC_IMAGE_ASSETS.TELEGRAM.ANONYMOUS_CONFESSION_CAMPAIGN,
+          text: 'Sometimes you just need to let it out.\n\nShare what is on your mind, what you are feeling, or what you have been silently carrying. No name. No judgment. Just a safe space to be heard.\n\nYour identity stays anonymous. Every confession is reviewed before publication.',
+          buttons: [
+            {
+              text: 'Write anonymously',
+              url: TELEGRAM_BOT_URLS.CONFESSION,
+              style: 'success'
+            }
+          ],
+          deleteAfterMinutes: 1
+        },
+        {
+          kind: 'IMAGE_QUOTE',
+          contentCategory: 'community support',
+          imageUrl: PUBLIC_IMAGE_ASSETS.TELEGRAM.KIND_REPLY_CAMPAIGN,
+          text: 'DON’T JUST READ. BE THERE.\n\nSomeone in Hope Hub may be having a difficult day. Reply to their confession and leave a kind message.\n\nA few seconds of your time could mean much more to someone than you realise.\n\nListen. Reply. Support.',
+          deleteAfterMinutes: 1
+        }
+      ]
+    },
     {
       id: 'seed_telegram_hourly_engagement',
       name: 'Smart rotating community engagement',
@@ -626,6 +657,8 @@ async function seedCampaigns(chatId: string) {
                 sortOrder,
                 kind: item.kind,
                 contentCategory: 'contentCategory' in item ? item.contentCategory : undefined,
+                sourceUrl: 'sourceUrl' in item ? item.sourceUrl : undefined,
+                imageUrl: 'imageUrl' in item ? item.imageUrl : undefined,
                 text: 'text' in item ? item.text : undefined,
                 buttons: 'buttons' in item ? (item.buttons as Prisma.InputJsonValue) : undefined,
                 pollQuestion: 'pollQuestion' in item ? item.pollQuestion : undefined,
@@ -639,7 +672,15 @@ async function seedCampaigns(chatId: string) {
                     ? (item.correctOptionIds as Prisma.InputJsonValue)
                     : undefined,
                 pollExplanation: 'pollExplanation' in item ? item.pollExplanation : undefined,
-                closeAfterMinutes: 'closeAfterMinutes' in item ? item.closeAfterMinutes : undefined
+                closeAfterMinutes: 'closeAfterMinutes' in item ? item.closeAfterMinutes : undefined,
+                deleteAfterMinutes:
+                  'deleteAfterMinutes' in item ? item.deleteAfterMinutes : undefined,
+                messageThreadId: 'messageThreadId' in item ? item.messageThreadId : undefined,
+                followUpOptionIds:
+                  'followUpOptionIds' in item
+                    ? (item.followUpOptionIds as Prisma.InputJsonValue)
+                    : undefined,
+                followUpMessage: 'followUpMessage' in item ? item.followUpMessage : undefined
               }))
             }
           }
@@ -667,6 +708,8 @@ async function seedCampaigns(chatId: string) {
             sortOrder,
             kind: item.kind,
             contentCategory: 'contentCategory' in item ? item.contentCategory : undefined,
+            sourceUrl: 'sourceUrl' in item ? item.sourceUrl : undefined,
+            imageUrl: 'imageUrl' in item ? item.imageUrl : undefined,
             text: 'text' in item ? item.text : undefined,
             buttons: 'buttons' in item ? (item.buttons as Prisma.InputJsonValue) : undefined,
             pollQuestion: 'pollQuestion' in item ? item.pollQuestion : undefined,
@@ -681,6 +724,8 @@ async function seedCampaigns(chatId: string) {
                 : undefined,
             pollExplanation: 'pollExplanation' in item ? item.pollExplanation : undefined,
             closeAfterMinutes: 'closeAfterMinutes' in item ? item.closeAfterMinutes : undefined,
+            deleteAfterMinutes: 'deleteAfterMinutes' in item ? item.deleteAfterMinutes : undefined,
+            messageThreadId: 'messageThreadId' in item ? item.messageThreadId : undefined,
             followUpOptionIds:
               'followUpOptionIds' in item
                 ? (item.followUpOptionIds as Prisma.InputJsonValue)

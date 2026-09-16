@@ -17,6 +17,11 @@ import {
   runScheduledCommunityMessageCleanup,
   scheduleCommunityMessageCleanup
 } from './telegram-community-bots.store.js';
+import {
+  EPHEMERAL_CONFESSION_CAMPAIGN_ID,
+  shouldApplyTelegramSmartSchedule,
+  telegramCampaignDeleteAfter
+} from './telegram-community-campaign-policy.js';
 import { sendGroupHelpActivityLog } from './telegram-group-help.actions.js';
 import { observeTelegramCommunityMember } from './telegram-community-member-identity.js';
 import {
@@ -481,7 +486,7 @@ async function claimNextCampaign(now: Date) {
     if (!candidate.nextRunAt || !candidate.items.length) continue;
     let selectedIndex = Math.min(candidate.currentItemIndex, candidate.items.length - 1);
 
-    if (policy.enabled) {
+    if (policy.enabled && shouldApplyTelegramSmartSchedule(candidate.id)) {
       const minute = indiaMinuteOfDay(now);
       const inActiveHours =
         policy.startMinute === policy.endMinute
@@ -495,13 +500,7 @@ async function claimNextCampaign(now: Date) {
           prisma.telegramCampaignDelivery.count({
             where: {
               campaign: { chatId: candidate.chatId },
-              status: { in: ['SENT', 'CLOSED'] },
-              sentAt: { gte: dayStart }
-            }
-          }),
-          prisma.telegramCampaignDelivery.count({
-            where: {
-              campaignId: PROMOTION_CAMPAIGN_ID,
+              campaignId: { not: EPHEMERAL_CONFESSION_CAMPAIGN_ID },
               status: { in: ['SENT', 'CLOSED'] },
               sentAt: { gte: dayStart }
             }
@@ -513,9 +512,17 @@ async function claimNextCampaign(now: Date) {
               sentAt: { gte: dayStart }
             }
           }),
+          prisma.telegramCampaignDelivery.count({
+            where: {
+              campaignId: PROMOTION_CAMPAIGN_ID,
+              status: { in: ['SENT', 'CLOSED'] },
+              sentAt: { gte: dayStart }
+            }
+          }),
           prisma.telegramCampaignDelivery.findFirst({
             where: {
               campaign: { chatId: candidate.chatId },
+              campaignId: { not: EPHEMERAL_CONFESSION_CAMPAIGN_ID },
               status: { in: ['SENT', 'CLOSED'] },
               sentAt: { not: null }
             },
@@ -706,6 +713,16 @@ async function performCampaignDelivery(input: {
         nextRetryAt: null
       }
     });
+    const deleteAfter = telegramCampaignDeleteAfter(now, item.deleteAfterMinutes);
+    if (deleteAfter) {
+      await scheduleCommunityMessageCleanup({
+        bot: CAMPAIGN_BOT,
+        chatId: campaign.chatId,
+        messageId: sent.message_id,
+        kind: 'campaign',
+        deleteAfter
+      });
+    }
     const config = await communityConfig();
     await manageAnnouncementPin(config, campaign.chatId, sent.message_id, 'campaign');
     await logCommunityActivity(config, 'Scheduled community post delivered', [

@@ -263,6 +263,7 @@ const campaignItemSchema = z
     correctOptionIds: z.array(z.number().int().min(0)).max(1).optional(),
     pollExplanation: z.string().trim().max(200).optional(),
     closeAfterMinutes: z.number().int().min(1).max(43_800).optional(),
+    deleteAfterMinutes: z.number().int().min(1).max(43_800).optional(),
     messageThreadId: z.number().int().positive().optional(),
     followUpOptionIds: z.array(z.number().int().min(0).max(11)).max(12).optional(),
     followUpMessage: z.string().trim().max(1200).optional()
@@ -803,6 +804,7 @@ function campaignItemData(
     correctOptionIds: item.correctOptionIds as Prisma.InputJsonValue | undefined,
     pollExplanation: item.pollExplanation,
     closeAfterMinutes: item.closeAfterMinutes,
+    deleteAfterMinutes: item.deleteAfterMinutes,
     messageThreadId: item.messageThreadId,
     followUpOptionIds: item.followUpOptionIds as Prisma.InputJsonValue | undefined,
     followUpMessage: item.followUpMessage

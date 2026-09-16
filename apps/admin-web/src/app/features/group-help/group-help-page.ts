@@ -107,6 +107,7 @@ type CampaignItemDraft = {
   correctOptionId: number | null;
   pollExplanation: string;
   closeAfterMinutes: number | null;
+  deleteAfterMinutes: number | null;
   messageThreadId: number | null;
   followUpOptionIdsText: string;
   followUpMessage: string;
@@ -143,6 +144,7 @@ const emptyCampaignItem = (
   correctOptionId: null,
   pollExplanation: '',
   closeAfterMinutes: null,
+  deleteAfterMinutes: null,
   messageThreadId: null,
   followUpOptionIdsText: '',
   followUpMessage: '',
@@ -1043,6 +1045,7 @@ export class GroupHelpPage {
             ? item.pollExplanation.trim()
             : undefined,
         closeAfterMinutes: item.closeAfterMinutes || undefined,
+        deleteAfterMinutes: item.deleteAfterMinutes || undefined,
         messageThreadId: item.messageThreadId || undefined,
         followUpOptionIds:
           item.kind === 'POLL' || item.kind === 'WELLBEING_POLL'
@@ -1100,6 +1103,7 @@ export class GroupHelpPage {
         correctOptionId: Array.isArray(item.correctOptionIds) ? item.correctOptionIds[0] + 1 : null,
         pollExplanation: item.pollExplanation || '',
         closeAfterMinutes: item.closeAfterMinutes,
+        deleteAfterMinutes: item.deleteAfterMinutes,
         messageThreadId: item.messageThreadId,
         followUpOptionIdsText: Array.isArray(item.followUpOptionIds)
           ? item.followUpOptionIds.map((value: number) => value + 1).join(', ')

@@ -513,6 +513,21 @@
                     </p>
                   }
                 }
+                <label>
+                  Delete bot post after minutes <small>Optional; member replies remain</small>
+                  <input
+                    type="number"
+                    min="1"
+                    max="43800"
+                    placeholder="Keep permanently"
+                    [value]="item.deleteAfterMinutes || ''"
+                    (input)="
+                      updateCampaignItem(itemIndex, {
+                        deleteAfterMinutes: +$any($event.target).value || null,
+                      })
+                    "
+                  />
+                </label>
                 <div class="campaign-basics">
                   <label>
                     Content category <small>Optional</small>

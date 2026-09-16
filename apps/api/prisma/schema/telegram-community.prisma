@@ -36,6 +36,33 @@ model TelegramCommunitySubmission {
   @@index([bot, status, createdAt])
 }
 
+model TelegramConfessionPublication {
+  id                  String   @id @default(cuid())
+  confessionReference String
+  chatId              String
+  messageId           Int
+  messageThreadId     Int?
+  createdAt           DateTime @default(now())
+
+  @@unique([confessionReference, chatId])
+  @@unique([chatId, messageId])
+  @@index([confessionReference])
+}
+
+model TelegramConfessionPublicReply {
+  id                  String   @id @default(cuid())
+  confessionReference String
+  responderChatId     String
+  chatId              String
+  messageId           Int
+  text                String   @db.Text
+  createdAt           DateTime @default(now())
+
+  @@index([confessionReference, createdAt])
+  @@index([chatId, messageId])
+  @@index([responderChatId, createdAt])
+}
+
 model TelegramWebhookReceipt {
   id            String    @id @default(cuid())
   bot           String
@@ -119,6 +146,7 @@ model TelegramCampaignItem {
   correctOptionIds  Json?
   pollExplanation   String?                    @db.Text
   closeAfterMinutes Int?
+  deleteAfterMinutes Int?
   messageThreadId   Int?
   followUpOptionIds Json?
   followUpMessage   String?                    @db.Text

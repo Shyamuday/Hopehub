@@ -4,9 +4,12 @@ import {
   confessionApprovalAction,
   confessionOwnerReviewText,
   confessionPrivateReplyText,
+  confessionPublicReplyUrl,
   confessionRejectionReplyText,
   isConfessionReviewer,
   normalizeConfessionText,
+  parseConfessionPublicReplyStart,
+  publishedConfessionMedia,
   publishedConfessionText
 } from './telegram-confession-bot.js';
 
@@ -97,4 +100,38 @@ test('confession approval callbacks distinguish publish from publish and pin', (
     reference: 'CONF-THREE'
   });
   assert.equal(confessionApprovalAction('reject_reply_CONF-FOUR'), null);
+});
+
+test('public confession reply links preserve the confession and target group', () => {
+  const url = confessionPublicReplyUrl('CONF-ABC123', '-1004348855227');
+  assert.equal(url, 'https://t.me/Hopehubconfessionbot?start=reply_CONF-ABC123_-1004348855227');
+  assert.deepEqual(parseConfessionPublicReplyStart('/start reply_CONF-ABC123_-1004348855227'), {
+    reference: 'CONF-ABC123',
+    chatId: '-1004348855227'
+  });
+  assert.deepEqual(
+    parseConfessionPublicReplyStart('/start@Hopehubconfessionbot reply_conf-abc123_-1004348855227'),
+    { reference: 'CONF-ABC123', chatId: '-1004348855227' }
+  );
+  assert.equal(parseConfessionPublicReplyStart('/start reply_invalid'), null);
+});
+
+test('approved group confessions use the image caption and preserve long text below it', () => {
+  const short = publishedConfessionMedia({
+    text: 'I am learning to ask for help.',
+    destinationName: 'Hope Hub Community',
+    number: 1044
+  });
+  assert.match(short.caption, /I am learning to ask for help/);
+  assert.equal(short.followUpText, null);
+
+  const longText = 'A'.repeat(1500);
+  const long = publishedConfessionMedia({
+    text: longText,
+    destinationName: 'Hope Hub Community',
+    number: 1045
+  });
+  assert.ok(long.caption.length <= 1024);
+  assert.match(long.caption, /complete anonymous confession directly below/i);
+  assert.match(long.followUpText || '', new RegExp(longText));
 });
