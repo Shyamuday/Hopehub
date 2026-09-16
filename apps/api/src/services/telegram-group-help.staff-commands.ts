@@ -6,13 +6,11 @@ import {
 } from './telegram-community-bots.client.js';
 import {
   addTelegramGroupWarning,
-  clearTelegramGroupWarnings,
   removeLatestTelegramGroupWarning
 } from './telegram-community-bots.store.js';
 import type { CommunityTelegramMessage } from './telegram-community-bots.types.js';
 import {
   applyGroupHelpMemberAction,
-  applyGroupHelpWarningLimitAction,
   deleteGroupHelpMessage,
   sendGroupHelpActivityLog,
   sendModerationLog,
@@ -245,7 +243,7 @@ export async function handleGroupHelpStaffCommand(
     const reason =
       parts.slice(reasonStart).join(' ').trim() || `Manual ${canonicalName} by community staff`;
     let logReason = duration ? `${reason} (Duration: ${duration.input})` : reason;
-    let appliedAction = effectiveAction;
+    const appliedAction = effectiveAction;
     let warningCount: number | undefined;
     let warningLimitReached = false;
     let removeWarningCallbackData: string | undefined;
@@ -323,37 +321,8 @@ export async function handleGroupHelpStaffCommand(
         warningExpirySeconds: warningPolicy.expiry.seconds
       });
       if (warningCount >= warningPolicy.limit) {
-        try {
-          const mode = await applyGroupHelpWarningLimitAction(
-            targetChatId,
-            target.id,
-            warningPolicy.mode.value,
-            Number(values.telegramGroupHelpMuteMinutes || 60)
-          );
-          appliedAction = mode.action;
-          logReason = `${reason} (warning-limit action: ${mode.value})`;
-          warningLimitReached = true;
-          await clearTelegramGroupWarnings(targetChatId, String(target.id));
-        } catch (error) {
-          await sendCommandReply(
-            `The warning was recorded, but the configured follow-up action failed. ${groupHelpCommandFailureMessage(error)}`
-          );
-          if (isCrossGroup) {
-            await sendGroupHelpActivityLog(values, 'Warning follow-up action failed', [
-              'Action: warn',
-              `Main group ID: ${targetChatId}`,
-              `Member: ${telegramPersonLogLabel(target)}`,
-              `Reason: ${reason}`,
-              `By: ${telegramPersonLogLabel(message.from, 'Administrator')}`,
-              `Failure: ${groupHelpCommandFailureMessage(error)}`
-            ]);
-          } else if (message.reply_to_message) {
-            await sendModerationLog(values, message.reply_to_message, reason, 'warn', {
-              performedBy: message.from
-            });
-          }
-          return true;
-        }
+        warningLimitReached = true;
+        logReason = `${reason} (warning limit reached; waiting for a staff decision)`;
       }
     } else if (effectiveAction === 'unmute' || effectiveAction === 'unro') {
       const chat = await callCommunityTelegramApi<{
@@ -404,7 +373,8 @@ export async function handleGroupHelpStaffCommand(
       message._groupHelpAuditRecorded = true;
     }
 
-    if (isCrossGroup) {
+    const warningPolicy = groupHelpWarnPolicySummary(values);
+    if (isCrossGroup && !warningLimitReached) {
       await sendGroupHelpActivityLog(values, 'Private admin command applied', [
         `Action: ${appliedAction}`,
         `Main group ID: ${targetChatId}`,
@@ -413,13 +383,28 @@ export async function handleGroupHelpStaffCommand(
         `By: ${telegramPersonLogLabel(message.from, 'Administrator')}`
       ]);
     } else {
+      const moderationTarget = isCrossGroup
+        ? {
+            ...message,
+            chat: { ...message.chat, id: targetChatId, title: 'Target community' },
+            from: target as typeof message.from,
+            message_id: crossGroupMessageId || message.message_id,
+            text: undefined
+          }
+        : message.reply_to_message || { ...message, from: target as typeof message.from };
       const moderationLog = await sendModerationLog(
         values,
-        message.reply_to_message || { ...message, from: target as typeof message.from },
+        moderationTarget,
         logReason,
-        appliedAction,
+        warningLimitReached ? 'review' : appliedAction,
         {
           performedBy: message.from,
+          ...(warningLimitReached
+            ? {
+                suggestedAction: warningPolicy.mode.action,
+                sourceMessageId: crossGroupMessageId
+              }
+            : {}),
           includePublicControls:
             effectiveAction === 'warn' && appliedAction === 'warn' && !commandSpec.silent
         }
@@ -427,11 +412,10 @@ export async function handleGroupHelpStaffCommand(
       removeWarningCallbackData = moderationLog.removeWarningCallbackData;
     }
 
-    const warningPolicy = groupHelpWarnPolicySummary(values);
-    const warningModeDuration = warningPolicy.mode.value.split(/\s+/)[1];
     const durationLabel = warningLimitReached
-      ? warningModeDuration ||
-        (['ban', 'mute', 'ro'].includes(appliedAction) ? 'Permanent' : 'Immediate')
+      ? warningPolicy.expiry.value === 'off'
+        ? 'Until removed by a moderator'
+        : warningPolicy.expiry.value
       : duration?.input ||
         (appliedAction === 'warn'
           ? warningPolicy.expiry.value === 'off'
@@ -458,9 +442,7 @@ export async function handleGroupHelpStaffCommand(
       .filter(Boolean)
       .join(' ');
     const noticeDurationSeconds =
-      duration?.seconds ||
-      (warningLimitReached ? warningPolicy.mode.durationSeconds : undefined) ||
-      (appliedAction === 'warn' ? warningPolicy.expiry.seconds : undefined);
+      duration?.seconds || (appliedAction === 'warn' ? warningPolicy.expiry.seconds : undefined);
     const clearNotice = groupHelpMemberModerationNotice({
       member: memberLabel,
       action: actionLabels[appliedAction] || appliedAction,
@@ -476,7 +458,7 @@ export async function handleGroupHelpStaffCommand(
       ...(effectiveAction === 'warn' && warningCount !== undefined
         ? {
             warningStatus: warningLimitReached
-              ? `${warningCount}/${warningPolicy.limit}; limit reached and warnings reset`
+              ? `${warningCount}/${warningPolicy.limit}; limit reached and staff review requested`
               : `${warningCount}/${warningPolicy.limit}`
           }
         : {})

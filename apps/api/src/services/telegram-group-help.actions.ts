@@ -13,9 +13,11 @@ import { bannedPhrases, groupHelpConfig } from './telegram-group-help.config.js'
 import { messageForGroupHelpTarget } from './telegram-group-help.command-context.js';
 import {
   canUseGroupHelpAdminCommand,
+  canUseGroupHelpBanCommand,
   canUseGroupHelpCommand
 } from './telegram-group-help.permissions.js';
 import {
+  addTelegramGroupWarning,
   removeLatestTelegramGroupWarning,
   scheduleCommunityMessageCleanup
 } from './telegram-community-bots.store.js';
@@ -29,12 +31,27 @@ import type {
   CommunityTelegramUser
 } from './telegram-community-bots.types.js';
 import { telegramPersonLogLabel } from './telegram-group-help.people.js';
-import {
-  effectiveGroupHelpWarnMode,
-  groupHelpWarnPolicySummary
-} from './telegram-group-help.warning-policy.js';
+import { groupHelpWarnPolicySummary } from './telegram-group-help.warning-policy.js';
 
 const MODERATION_ACTION_STATE = 'group-moderation-action';
+
+export function groupHelpModerationReviewButtons(actionId: string, hasSourceMessage = true) {
+  return [
+    { text: 'Warn', callback_data: `hh_mod:${actionId}:warn` },
+    { text: 'Mute 1 hour', callback_data: `hh_mod:${actionId}:mute` },
+    { text: 'Mute 24 hours', callback_data: `hh_mod:${actionId}:mute24h` },
+    { text: 'Kick member', callback_data: `hh_mod:${actionId}:kick` },
+    { text: 'Ban member', callback_data: `hh_mod:${actionId}:ban` },
+    ...(hasSourceMessage
+      ? [
+          { text: 'Delete message', callback_data: `hh_mod:${actionId}:delete` },
+          { text: 'Delete + mute', callback_data: `hh_mod:${actionId}:deletemute` },
+          { text: 'Reply with notice', callback_data: `hh_mod:${actionId}:reply` }
+        ]
+      : []),
+    { text: 'Dismiss', callback_data: `hh_mod:${actionId}:dismiss` }
+  ];
+}
 
 const NORMAL_MEMBER_PERMISSIONS = {
   can_send_messages: true,
@@ -86,6 +103,8 @@ export async function sendModerationLog(
   options: {
     performedBy?: CommunityTelegramUser | null;
     includePublicControls?: boolean;
+    suggestedAction?: string;
+    sourceMessageId?: number | null;
   } = {}
 ) {
   if (values.telegramGroupHelpPrivateControl === 'true') {
@@ -125,6 +144,11 @@ export async function sendModerationLog(
   const buttons = [] as Array<{ text: string; callback_data: string }>;
   const phraseButtons = [] as Array<{ text: string; callback_data: string }>;
   const blockedPhrase = blockedPhraseFromReason(reason);
+  const sourceMessageId =
+    options.sourceMessageId === undefined ? message.message_id : options.sourceMessageId;
+  if (message.from && normalizedAction === 'review') {
+    buttons.push(...groupHelpModerationReviewButtons(actionId, Boolean(sourceMessageId)));
+  }
   if (message.from && ['mute', 'warn'].includes(normalizedAction)) {
     buttons.push({
       text: normalizedAction === 'mute' ? 'Unmute member' : 'Remove warning',
@@ -134,7 +158,7 @@ export async function sendModerationLog(
   if (message.from && ['ban', 'kick'].includes(normalizedAction)) {
     buttons.push({ text: 'Unban member', callback_data: `hh_mod:${actionId}:unban` });
   }
-  if (rawText) {
+  if (rawText && normalizedAction !== 'review') {
     buttons.push({ text: 'Repost text', callback_data: `hh_mod:${actionId}:repost` });
   }
   if (blockedPhrase) {
@@ -165,28 +189,44 @@ export async function sendModerationLog(
           targetUserName: message.from?.first_name?.trim() || null,
           targetUsername: message.from?.username?.trim() || null,
           text: rawText || null,
+          sourceMessageId,
           messageThreadId: message.message_thread_id || null,
           action: normalizedAction,
+          reason,
+          suggestedAction: options.suggestedAction || null,
           blockedPhrase
         },
         expiresAt: new Date(Date.now() + 24 * 60 * 60_000)
       }
     });
   }
+  const reviewPending = normalizedAction === 'review';
+  const controlRows = reviewPending
+    ? sourceMessageId
+      ? [buttons.slice(0, 3), buttons.slice(3, 5), buttons.slice(5, 7), buttons.slice(7)]
+      : [buttons.slice(0, 3), buttons.slice(3)]
+    : [buttons];
   const body = [
-    '🛡 Moderation action',
-    `Action: ${action.toUpperCase()}`,
+    reviewPending ? '🚩 Moderation review required' : '🛡 Moderation action',
+    reviewPending ? `Detected issue: ${reason}` : `Action: ${action.toUpperCase()}`,
+    reviewPending && options.suggestedAction
+      ? `Policy suggestion: ${options.suggestedAction.toUpperCase()} (not applied)`
+      : null,
     `Rule / reason: ${reason}`,
-    'Outcome: completed',
-    options.performedBy
-      ? `Performed by: ${telegramPersonLogLabel(options.performedBy, 'Administrator')}`
-      : 'Performed by: Hope Hub bot (automatic moderation)',
+    reviewPending ? 'Outcome: No automatic action taken' : 'Outcome: completed',
+    reviewPending
+      ? 'Detected by: Hope Hub bot · Waiting for a staff decision'
+      : options.performedBy
+        ? `Performed by: ${telegramPersonLogLabel(options.performedBy, 'Administrator')}`
+        : 'Performed by: Hope Hub bot (automatic moderation)',
     `Group: ${message.chat.title || message.chat.id} (${message.chat.id})`,
     `Message: ${message.message_id}${message.message_thread_id ? ` · topic ${message.message_thread_id}` : ''}`,
     `Member: ${member}`,
     `Content: ${media || 'text'} · ${rawText.length} character${rawText.length === 1 ? '' : 's'}`,
     `Text: ${preview}`
-  ].join('\n');
+  ]
+    .filter((line): line is string => Boolean(line))
+    .join('\n');
 
   // The log channel remains a complete audit trail. The private staff group
   // gets the same alert with the controls that can change a member's access.
@@ -201,7 +241,9 @@ export async function sendModerationLog(
     }
     deliveries.push(
       sendCommunityMessage(GROUP_HELP_BOT_SLUG, staffDestination, body, {
-        reply_markup: { inline_keyboard: [buttons, phraseButtons].filter((row) => row.length) }
+        reply_markup: {
+          inline_keyboard: [...controlRows, phraseButtons].filter((row) => row.length)
+        }
       }).catch(() => null)
     );
   } else if (logDestination) {
@@ -210,7 +252,7 @@ export async function sendModerationLog(
         ...(buttons.length || phraseButtons.length
           ? {
               reply_markup: {
-                inline_keyboard: [buttons, phraseButtons].filter((row) => row.length)
+                inline_keyboard: [...controlRows, phraseButtons].filter((row) => row.length)
               }
             }
           : {})
@@ -242,12 +284,23 @@ export async function handleGroupHelpModerationActionCallback(update: CommunityT
     targetUserName?: string | null;
     targetUsername?: string | null;
     text?: string | null;
+    sourceMessageId?: number | null;
     messageThreadId?: number | null;
+    reason?: string | null;
     blockedPhrase?: string | null;
   };
   if (!payload.targetChatId) return 'expired';
   const values = await groupHelpConfig(payload.targetChatId);
   const commandByAction: Record<string, string> = {
+    warn: '/warn',
+    mute: '/mute',
+    mute24h: '/tmute',
+    kick: '/kick',
+    ban: '/ban',
+    delete: '/delete',
+    deletemute: '/dmute',
+    reply: '/send',
+    dismiss: '/delete',
     unmute: '/unmute',
     unban: '/unban',
     unwarn: '/unwarn',
@@ -265,14 +318,18 @@ export async function handleGroupHelpModerationActionCallback(update: CommunityT
     payload.targetChatId
   );
   const permitted = command
-    ? ['/filter', '/unfilter'].includes(command)
-      ? await canUseGroupHelpAdminCommand(permissionMessage, values, command)
-      : await canUseGroupHelpCommand(
-          permissionMessage,
-          values,
-          command,
-          ['/unmute', '/unban'].includes(command) ? 'MODERATOR' : 'HELPER'
-        )
+    ? requestedAction === 'ban'
+      ? await canUseGroupHelpBanCommand(permissionMessage, values)
+      : ['/filter', '/unfilter'].includes(command)
+        ? await canUseGroupHelpAdminCommand(permissionMessage, values, command)
+        : await canUseGroupHelpCommand(
+            permissionMessage,
+            values,
+            command,
+            ['/mute', '/tmute', '/kick', '/ban', '/dmute', '/unmute', '/unban'].includes(command)
+              ? 'MODERATOR'
+              : 'HELPER'
+          )
     : false;
   if (!permitted) {
     await sendGroupHelpActivityLog(values, 'Private staff action denied', [
@@ -285,7 +342,68 @@ export async function handleGroupHelpModerationActionCallback(update: CommunityT
     return 'denied';
   }
 
-  if (requestedAction === 'unmute' && payload.targetUserId) {
+  if (requestedAction === 'warn' && payload.targetUserId) {
+    const warningPolicy = groupHelpWarnPolicySummary(values);
+    const warningCount = await addTelegramGroupWarning({
+      chatId: payload.targetChatId,
+      telegramUserId: payload.targetUserId,
+      reason: payload.reason || 'Message flagged for staff review',
+      warningExpirySeconds: warningPolicy.expiry.seconds
+    });
+    if (payload.sourceMessageId) {
+      await sendCommunityMessage(
+        GROUP_HELP_BOT_SLUG,
+        payload.targetChatId,
+        `${payload.targetUserName || 'Community member'}, a staff member issued warning ${warningCount}/${warningPolicy.limit}.\n\nReason: ${payload.reason || 'The message may conflict with the community rules.'}\n\nNo further restriction was applied automatically.`,
+        {
+          reply_to_message_id: payload.sourceMessageId,
+          ...(payload.messageThreadId ? { message_thread_id: payload.messageThreadId } : {})
+        }
+      );
+    }
+  } else if (requestedAction === 'mute' && payload.targetUserId) {
+    await applyGroupHelpMemberAction(
+      payload.targetChatId,
+      Number(payload.targetUserId),
+      'mute',
+      60
+    );
+  } else if (requestedAction === 'mute24h' && payload.targetUserId) {
+    await applyGroupHelpMemberAction(
+      payload.targetChatId,
+      Number(payload.targetUserId),
+      'mute',
+      1440,
+      { durationSeconds: 86_400 }
+    );
+  } else if (requestedAction === 'kick' && payload.targetUserId) {
+    await applyGroupHelpMemberAction(payload.targetChatId, Number(payload.targetUserId), 'kick');
+  } else if (requestedAction === 'ban' && payload.targetUserId) {
+    await applyGroupHelpMemberAction(payload.targetChatId, Number(payload.targetUserId), 'ban');
+  } else if (requestedAction === 'delete' && payload.sourceMessageId) {
+    await deleteGroupHelpMessage(payload.targetChatId, payload.sourceMessageId);
+  } else if (requestedAction === 'deletemute' && payload.targetUserId && payload.sourceMessageId) {
+    await deleteGroupHelpMessage(payload.targetChatId, payload.sourceMessageId);
+    await applyGroupHelpMemberAction(
+      payload.targetChatId,
+      Number(payload.targetUserId),
+      'mute',
+      60
+    );
+  } else if (requestedAction === 'reply' && payload.sourceMessageId) {
+    const memberName = payload.targetUserName || 'Community member';
+    await sendCommunityMessage(
+      GROUP_HELP_BOT_SLUG,
+      payload.targetChatId,
+      `${memberName}, the moderation team has reviewed this message.\n\nReason: ${payload.reason || 'It may conflict with the community rules.'}\n\nPlease review the group rules before posting again. No automatic restriction was applied.`,
+      {
+        reply_to_message_id: payload.sourceMessageId,
+        ...(payload.messageThreadId ? { message_thread_id: payload.messageThreadId } : {})
+      }
+    );
+  } else if (requestedAction === 'dismiss') {
+    // A human reviewed the alert and intentionally chose no action.
+  } else if (requestedAction === 'unmute' && payload.targetUserId) {
     const chat = await callCommunityTelegramApi<{ permissions?: Record<string, boolean> }>(
       GROUP_HELP_BOT_SLUG,
       'getChat',
@@ -464,18 +582,4 @@ export async function applyGroupHelpMemberAction(
       only_if_banned: true
     });
   }
-}
-
-export async function applyGroupHelpWarningLimitAction(
-  chatId: string,
-  userId: number,
-  configuredMode: string | undefined,
-  muteMinutes = 60
-) {
-  const mode = effectiveGroupHelpWarnMode(configuredMode);
-  await applyGroupHelpMemberAction(chatId, userId, mode.action, muteMinutes, {
-    ...(mode.durationSeconds ? { durationSeconds: mode.durationSeconds } : {}),
-    ...(mode.action === 'mute' && !mode.durationSeconds ? { permanentMute: true } : {})
-  });
-  return mode;
 }

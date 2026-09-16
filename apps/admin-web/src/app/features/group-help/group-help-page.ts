@@ -1715,7 +1715,7 @@ export class GroupHelpPage {
         : action === 'warn'
           ? `Escalates after ${limit} warnings to ${configuredAction}`
           : 'Permanent';
-    return `⚠️ Moderation notice\nMember: ${this.moderatorTarget() || '@member'}\nAction: ${action}\nDuration: ${duration}\nReason: ${this.moderatorReason() || 'Group rule violation'}\nWarning expiry: ${expiry === 'off' ? 'Never' : expiry}`;
+    return `⚠️ Moderation review\nMember: ${this.moderatorTarget() || '@member'}\nSuggested action: ${action}\nDuration if staff applies it: ${duration}\nReason: ${this.moderatorReason() || 'Group rule violation'}\nWarning expiry: ${expiry === 'off' ? 'Never' : expiry}\nAutomatic restriction: none`;
   }
 
   directMessageOptions(): FormDropdownOption[] {

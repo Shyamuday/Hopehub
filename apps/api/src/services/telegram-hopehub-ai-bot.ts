@@ -669,8 +669,9 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
     !anonymousAdminMessage &&
     values.telegramGroupHelpChannelSenderPolicy !== 'allow'
   ) {
-    await deleteMessage(chatId, message.message_id).catch(() => null);
-    await sendModerationLog(values, message, 'Message sent as a channel', 'delete');
+    await sendModerationLog(values, message, 'Message sent as a channel', 'review', {
+      suggestedAction: values.telegramGroupHelpChannelSenderPolicy
+    });
     return;
   }
   if (!message.from) return;
@@ -831,24 +832,9 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
     bannedPhrases(values.telegramGroupHelpReviewPhrases)
   );
   if (reviewPhrase) {
-    await deleteMessage(chatId, message.message_id);
-    await sendModerationLog(values, message, `Privacy review phrase: “${reviewPhrase}”`, 'delete');
-    const liveConnectUrl = values.telegramCommunitySupportUrl?.trim();
-    await sendTemporaryMessage(
-      chatId,
-      'For everyone’s privacy, direct contact requests are not posted in the group. You can use Hope Hub Live when you would like private support.',
-      values,
-      {
-        message_thread_id: message.message_thread_id,
-        ...(liveConnectUrl && /^https:\/\//i.test(liveConnectUrl)
-          ? {
-              reply_markup: {
-                inline_keyboard: [[{ text: 'Talk live', url: liveConnectUrl }]]
-              }
-            }
-          : {})
-      }
-    );
+    await sendModerationLog(values, message, `Privacy review phrase: “${reviewPhrase}”`, 'review', {
+      suggestedAction: 'delete'
+    });
     return;
   }
   if (blockedPhrase) {

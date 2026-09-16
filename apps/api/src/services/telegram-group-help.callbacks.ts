@@ -93,16 +93,34 @@ export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
   if (moderationAction) {
     const notice =
       moderationAction === 'denied'
-        ? 'Only an administrator of the original group can use this action.'
+        ? 'You do not have the required staff permission for this action.'
         : moderationAction === 'expired'
           ? 'This action is no longer available.'
           : moderationAction === 'repost'
             ? 'Message reposted in the group.'
-            : moderationAction === 'allowphrase'
-              ? 'Phrase allowed in this group going forward.'
-              : moderationAction === 'blockphrase'
-                ? 'Phrase will be blocked in this group going forward.'
-                : `${moderationAction[0].toUpperCase()}${moderationAction.slice(1)} completed.`;
+            : moderationAction === 'reply'
+              ? 'A moderation notice was posted as a reply.'
+              : moderationAction === 'dismiss'
+                ? 'Alert dismissed. No action was taken.'
+                : moderationAction === 'delete'
+                  ? 'Message deleted.'
+                  : moderationAction === 'deletemute'
+                    ? 'Message deleted and member muted for one hour.'
+                    : moderationAction === 'warn'
+                      ? 'Warning issued. No automatic restriction was applied.'
+                      : moderationAction === 'mute'
+                        ? 'Member muted for one hour.'
+                        : moderationAction === 'mute24h'
+                          ? 'Member muted for 24 hours.'
+                          : moderationAction === 'kick'
+                            ? 'Member removed from the group.'
+                            : moderationAction === 'ban'
+                              ? 'Member banned.'
+                              : moderationAction === 'allowphrase'
+                                ? 'Phrase allowed in this group going forward.'
+                                : moderationAction === 'blockphrase'
+                                  ? 'Phrase will be blocked in this group going forward.'
+                                  : `${moderationAction[0].toUpperCase()}${moderationAction.slice(1)} completed.`;
     await answerCommunityCallback(GROUP_HELP_BOT_SLUG, callback.id, notice);
     return true;
   }
@@ -342,7 +360,7 @@ export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
     : page === 'messages'
       ? `💬 *Messages*\n\nWelcome: ${values.telegramGroupHelpWelcomeMessage ? 'set' : 'not set'}\nRules: ${values.telegramGroupHelpRulesMessage ? 'set' : 'not set'}\nTemporary replies: ${values.telegramGroupHelpAutoDeleteSeconds || '0'} seconds`
       : page === 'safety'
-        ? `🛡 *Safety*\n\nFlood: ${values.telegramGroupHelpAntiFloodAction}\nLinks: ${values.telegramGroupHelpLinkPolicy}\nMedia: ${values.telegramGroupHelpMediaPolicy}\nWarning action: ${values.telegramGroupHelpWarnAction}`
+        ? `🛡 *Safety*\n\nAutomatic restriction: off\nFlood review suggestion: ${values.telegramGroupHelpAntiFloodAction}\nLink review suggestion: ${values.telegramGroupHelpLinkPolicy}\nMedia: ${values.telegramGroupHelpMediaPolicy}\nWarning-limit review suggestion: ${values.telegramGroupHelpWarnAction}\n\nDetections are sent to the private staff group for a human decision.`
         : page === 'operations'
           ? `🔧 *Operations*\n\nLog group: ${values.telegramGroupHelpLogChannelId ? 'connected' : 'not connected'}\nStaff group: ${values.telegramGroupHelpStaffGroupId ? 'connected' : 'not connected'}\nUse /lockdown 30 or /unlock for chat access.`
           : '❓ *Help*\n\nUse /rules, /support, /warnings, /report, /settings, /lockdown, and /unlock. Manage full policy values from Hope Hub Admin.';

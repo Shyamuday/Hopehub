@@ -1,7 +1,5 @@
 import { prisma } from '../db.js';
 import {
-  addTelegramGroupWarning,
-  clearTelegramGroupWarnings,
   checkTelegramGroupFlood,
   checkTelegramGroupRepeatedSpam
 } from './telegram-community-bots.store.js';
@@ -12,11 +10,7 @@ import {
   groupHelpConfig,
   matchedBannedPhrase
 } from './telegram-group-help.config.js';
-import {
-  applyGroupHelpMemberAction,
-  sendGroupHelpActivityLog
-} from './telegram-group-help.actions.js';
-import { groupHelpWarnPolicySummary } from './telegram-group-help.warning-policy.js';
+import { sendGroupHelpActivityLog } from './telegram-group-help.actions.js';
 
 export type WebsiteLiveChatRuleViolation = {
   action: string;
@@ -71,74 +65,6 @@ export function websiteLiveChatRuleViolation(
   return null;
 }
 
-function resultMessage(input: {
-  action: string;
-  reason: string;
-  warningCount: number | null;
-  warningLimit: number;
-  muteMinutes: number;
-  permanentMute?: boolean;
-}) {
-  if (input.action === 'ban') {
-    return `This message was not posted and your account was blocked from this room. Reason: ${input.reason}`;
-  }
-  if (input.action === 'kick') {
-    return `This message was not posted and your access was temporarily restricted. Reason: ${input.reason}`;
-  }
-  if (input.action === 'mute') {
-    return input.permanentMute
-      ? `This message was not posted and you were muted until a moderator unmutes you. Reason: ${input.reason}`
-      : `This message was not posted and you were muted for ${input.muteMinutes} minutes. Reason: ${input.reason}`;
-  }
-  if (input.warningCount !== null) {
-    return `This message was not posted. Warning ${input.warningCount}/${input.warningLimit}: ${input.reason}`;
-  }
-  return `This message was not posted. Reason: ${input.reason}`;
-}
-
-async function applyWebsiteMemberAction(input: {
-  groupId: string;
-  userId: string;
-  displayName: string;
-  role: string;
-  action: string;
-  reason: string;
-  muteMinutes: number;
-  permanentMute?: boolean;
-}) {
-  if (!['mute', 'kick', 'ban'].includes(input.action)) return;
-  const now = new Date();
-  const mutedUntil =
-    input.action === 'mute' && input.permanentMute
-      ? null
-      : new Date(now.getTime() + input.muteMinutes * 60_000);
-  await prisma.hopeHubLiveGroupMemberModeration.upsert({
-    where: { groupId_userId: { groupId: input.groupId, userId: input.userId } },
-    create: {
-      groupId: input.groupId,
-      userId: input.userId,
-      displayName: input.displayName,
-      role: input.role,
-      isMuted: input.action === 'mute' || input.action === 'kick',
-      mutedUntil: input.action === 'mute' || input.action === 'kick' ? mutedUntil : null,
-      isBanned: input.action === 'ban',
-      bannedAt: input.action === 'ban' ? now : null,
-      removedAt: input.action === 'kick' ? now : null,
-      reason: input.reason,
-      moderatedByUserId: null
-    },
-    update: {
-      displayName: input.displayName,
-      role: input.role,
-      ...(input.action === 'mute' || input.action === 'kick' ? { isMuted: true, mutedUntil } : {}),
-      ...(input.action === 'ban' ? { isBanned: true, bannedAt: now } : {}),
-      ...(input.action === 'kick' ? { removedAt: now } : {}),
-      reason: input.reason,
-      moderatedByUserId: null
-    }
-  });
-}
-
 export async function moderateWebsiteLiveChatMessage(input: {
   groupId: string;
   groupTitle: string;
@@ -155,7 +81,7 @@ export async function moderateWebsiteLiveChatMessage(input: {
     orderBy: { updatedAt: 'desc' },
     select: { telegramUserId: true, username: true, firstName: true, lastName: true }
   });
-  const warningIdentity = linkedTelegram?.telegramUserId || `website:${input.userId}`;
+  const moderationIdentity = linkedTelegram?.telegramUserId || `website:${input.userId}`;
   let violation = websiteLiveChatRuleViolation(input.text, values);
 
   if (!violation) {
@@ -163,7 +89,7 @@ export async function moderateWebsiteLiveChatMessage(input: {
     if (antiSpamAction !== 'off' && input.text.length >= 8) {
       const repeated = await checkTelegramGroupRepeatedSpam({
         chatId: telegramChatId || `website:${input.groupId}`,
-        telegramUserId: warningIdentity,
+        telegramUserId: moderationIdentity,
         text: input.text
       });
       if (repeated.repeated) {
@@ -176,7 +102,7 @@ export async function moderateWebsiteLiveChatMessage(input: {
     const threshold = floodThreshold(values.telegramGroupHelpAntiFloodLimit || '6 10');
     const flood = await checkTelegramGroupFlood({
       chatId: telegramChatId || `website:${input.groupId}`,
-      telegramUserId: warningIdentity,
+      telegramUserId: moderationIdentity,
       limit: threshold.limit,
       windowSeconds: threshold.seconds
     });
@@ -190,91 +116,27 @@ export async function moderateWebsiteLiveChatMessage(input: {
 
   if (!violation || ['allow', 'off'].includes(violation.action)) return { allowed: true };
 
-  const warningPolicy = groupHelpWarnPolicySummary(values);
-  const warningLimit = warningPolicy.limit;
-  let muteMinutes = Math.max(1, Number(values.telegramGroupHelpMuteMinutes || 60));
-  const warningCount =
-    violation.action === 'delete'
-      ? null
-      : await addTelegramGroupWarning({
-          chatId: telegramChatId || `website:${input.groupId}`,
-          telegramUserId: warningIdentity,
-          reason: `Website chat: ${violation.reason}`,
-          warningExpirySeconds: warningPolicy.expiry.seconds
-        });
-  const warningLimitReached = warningCount !== null && warningCount >= warningLimit;
-  const action = warningLimitReached ? warningPolicy.mode.action : violation.action;
-  const permanentMute =
-    warningLimitReached && action === 'mute' && !warningPolicy.mode.durationSeconds;
-  if (warningLimitReached && warningPolicy.mode.durationSeconds) {
-    muteMinutes = Math.max(1, Math.ceil(warningPolicy.mode.durationSeconds / 60));
-  }
-
-  await applyWebsiteMemberAction({
-    groupId: input.groupId,
-    userId: input.userId,
-    displayName: input.userName,
-    role: input.userRole,
-    action,
-    reason: violation.reason,
-    muteMinutes,
-    permanentMute
-  });
-  if (warningLimitReached) {
-    await clearTelegramGroupWarnings(telegramChatId || `website:${input.groupId}`, warningIdentity);
-  }
-
-  let telegramActionError = '';
-  const linkedTelegramId = Number(linkedTelegram?.telegramUserId || '');
-  if (
-    telegramChatId &&
-    Number.isSafeInteger(linkedTelegramId) &&
-    linkedTelegramId > 0 &&
-    ['mute', 'kick', 'ban'].includes(action)
-  ) {
-    try {
-      await applyGroupHelpMemberAction(telegramChatId, linkedTelegramId, action, muteMinutes, {
-        ...(warningLimitReached && warningPolicy.mode.durationSeconds
-          ? { durationSeconds: warningPolicy.mode.durationSeconds }
-          : {}),
-        ...(warningLimitReached && action === 'mute' && !warningPolicy.mode.durationSeconds
-          ? { permanentMute: true }
-          : {})
-      });
-    } catch (error) {
-      telegramActionError = error instanceof Error ? error.message : String(error);
-    }
-  }
-
   const compactText = input.text.replace(/\s+/g, ' ').trim();
   const preview = compactText.length > 700 ? `${compactText.slice(0, 700)}…` : compactText;
-  await sendGroupHelpActivityLog(values, 'Website group message moderated', [
-    `Action: ${action.toUpperCase()}`,
+  await sendGroupHelpActivityLog(values, 'Website group message needs staff review', [
+    `Policy suggestion: ${violation.action.toUpperCase()} (not applied)`,
+    'Outcome: message withheld; no warning, mute, kick or ban was applied',
     `Rule / reason: ${violation.reason}`,
-    warningCount === null ? 'Warnings: not added' : `Warnings: ${warningCount}/${warningLimit}`,
     `Website room: ${input.groupTitle} (${input.groupId})`,
     `Website member: ${input.userName} (${input.userId}) · role ${input.userRole}`,
     linkedTelegram?.telegramUserId
       ? `Linked Telegram: ${[linkedTelegram.firstName, linkedTelegram.lastName].filter(Boolean).join(' ') || 'Unknown'}${linkedTelegram.username ? ` (@${linkedTelegram.username})` : ''} (${linkedTelegram.telegramUserId})`
       : 'Linked Telegram: not connected',
     `Content: ${input.text.length} characters`,
-    `Text: ${preview}`,
-    telegramActionError ? `Telegram enforcement failed: ${telegramActionError}` : null
+    `Text: ${preview}`
   ]);
 
   return {
     allowed: false,
-    action,
+    action: 'review',
     reason: violation.reason,
-    warningCount,
-    warningLimit,
-    message: resultMessage({
-      action,
-      reason: violation.reason,
-      warningCount,
-      warningLimit,
-      muteMinutes,
-      permanentMute
-    })
+    warningCount: null,
+    warningLimit: 0,
+    message: `This message was held for staff review. No restriction was applied. Reason: ${violation.reason}`
   };
 }

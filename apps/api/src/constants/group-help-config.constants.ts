@@ -1201,8 +1201,9 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
   },
   {
     key: 'telegramGroupHelpAntiFloodAction',
-    label: 'Anti-flood action',
-    description: 'Action for rapid repeated messages.',
+    label: 'Anti-flood review suggestion',
+    description:
+      'Suggested staff action for rapid repeated messages. The bot only sends a private review alert.',
     section: 'moderation',
     type: 'select',
     options: ['off', 'warn', 'mute', 'kick', 'ban'],
@@ -1221,8 +1222,9 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
   },
   {
     key: 'telegramGroupHelpAntiSpamAction',
-    label: 'Anti-spam action',
-    description: 'Desired action for detected spam.',
+    label: 'Anti-spam review suggestion',
+    description:
+      'Suggested staff action for detected spam. The bot does not restrict the member automatically.',
     section: 'moderation',
     type: 'select',
     options: ['off', 'warn', 'mute', 'kick', 'ban'],
@@ -1243,7 +1245,7 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
   {
     key: 'telegramGroupHelpMuteMinutes',
     label: 'Default temporary restriction',
-    description: 'How long an automatic or staff mute should last.',
+    description: 'How long a staff-applied temporary mute should last.',
     section: 'moderation',
     type: 'select',
     options: ['15', '60', '240', '1440'],
@@ -1252,8 +1254,9 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
   },
   {
     key: 'telegramGroupHelpChannelSenderPolicy',
-    label: 'Messages sent as channels',
-    description: 'How anonymous/channel-sender messages should be handled.',
+    label: 'Channel-message review suggestion',
+    description:
+      'Suggested staff action for anonymous/channel-sender messages. Detection itself takes no action.',
     section: 'moderation',
     type: 'select',
     options: ['allow', 'delete', 'warn', 'mute'],
@@ -1262,8 +1265,9 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
   },
   {
     key: 'telegramGroupHelpWarnAction',
-    label: 'Warning-limit action',
-    description: 'Rose-compatible action after the warning limit is reached.',
+    label: 'Warning-limit review suggestion',
+    description:
+      'Rose-compatible action suggested to staff after the warning limit is reached. It is never applied automatically.',
     section: 'moderation',
     type: 'select',
     options: ['mute', 'kick', 'ban', 'tmute 1h', 'tmute 1d', 'tban 1d', 'tban 1w'],

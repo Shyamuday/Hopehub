@@ -52,7 +52,8 @@ Reply to a message, or add <user_id or @username> before the reason.
 /ro, /unro — add or remove read-only mode
 /resetwarn — clear all member warnings
 Legacy /delwarn, /delban, /delmute and /delkick remain supported.
-Default automated-warning mute: ${input.muteMinutes} minutes.`
+Default staff-applied temporary mute: ${input.muteMinutes} minutes.
+Automatic detections only alert the private staff group; they do not restrict members.`
       : '',
     input.canUseAdminTools
       ? `*Administrator and role tools*

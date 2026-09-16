@@ -1846,7 +1846,7 @@
               ></app-form-dropdown>
             </label>
             <label>
-              Limit punishment and duration
+              Limit review suggestion
               <app-form-dropdown
                 [options]="warningActionOptions"
                 [ngModel]="value('telegramGroupHelpWarnAction')"
@@ -1868,7 +1868,9 @@
           }
           <pre>{{ policyNoticePreview() }}</pre>
           <small>
-            Public notice and rules use the configured media. Temporary notices delete after
+            Detection only alerts the private staff group; it never restricts a member
+            automatically. Public notices and rules use the configured media. Temporary notices
+            delete after
             {{ value('telegramGroupHelpAutoDeleteSeconds') || '60' }} seconds.
           </small>
         </section>
