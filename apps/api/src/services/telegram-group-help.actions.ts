@@ -40,8 +40,6 @@ export function groupHelpModerationReviewButtons(actionId: string, hasSourceMess
     { text: 'Warn', callback_data: `hh_mod:${actionId}:warn` },
     { text: 'Mute 1 hour', callback_data: `hh_mod:${actionId}:mute` },
     { text: 'Mute 24 hours', callback_data: `hh_mod:${actionId}:mute24h` },
-    { text: 'Kick member', callback_data: `hh_mod:${actionId}:kick` },
-    { text: 'Ban member', callback_data: `hh_mod:${actionId}:ban` },
     ...(hasSourceMessage
       ? [
           { text: 'Delete message', callback_data: `hh_mod:${actionId}:delete` },
@@ -203,7 +201,7 @@ export async function sendModerationLog(
   const reviewPending = normalizedAction === 'review';
   const controlRows = reviewPending
     ? sourceMessageId
-      ? [buttons.slice(0, 3), buttons.slice(3, 5), buttons.slice(5, 7), buttons.slice(7)]
+      ? [buttons.slice(0, 3), buttons.slice(3, 5), buttons.slice(5)]
       : [buttons.slice(0, 3), buttons.slice(3)]
     : [buttons];
   const body = [
