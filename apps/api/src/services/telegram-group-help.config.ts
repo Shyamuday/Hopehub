@@ -61,6 +61,7 @@ export function bannedPhrases(value: string) {
     'whatsapp',
     'telegram',
     'instagram',
+    'service',
     'depression',
     'anxiety',
     'lonely',
