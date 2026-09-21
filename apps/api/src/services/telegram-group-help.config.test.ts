@@ -28,6 +28,16 @@ test('ignores standalone service without weakening specific unsafe service phras
   );
 });
 
+test('ignores ordinary conversation phrases without weakening explicit chat phrases', () => {
+  const phrases = bannedPhrases(
+    "chat anyone?\nlet's chat\nshayari\nnoob\ndumb\nstupid\npagal\nhot chat\nsex chat"
+  );
+
+  assert.deepEqual(phrases, ['hot chat', 'sex chat']);
+  assert.equal(matchedBannedPhrase("Let's chat about shayari.", phrases), null);
+  assert.equal(matchedBannedPhrase('They advertised a hot chat here.', phrases), 'hot chat');
+});
+
 test('group policy keeps scalar overrides while required filters survive stale snapshots', () => {
   const existing = {
     id: 'hopehub-immediate-support-v1',
