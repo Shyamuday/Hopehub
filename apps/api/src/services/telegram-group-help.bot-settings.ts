@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client';
+import { joinCaptchaSettingVisible } from './telegram-join-captcha-policy.js';
 import { prisma } from '../db.js';
 import {
   GROUP_HELP_CONFIG_FIELDS,
@@ -74,8 +75,10 @@ function fieldByKey(key: string) {
   return GROUP_HELP_CONFIG_FIELDS.find((field) => field.key === key);
 }
 
-function sectionFields(section: GroupHelpConfigField['section']) {
-  return GROUP_HELP_CONFIG_FIELDS.filter((field) => field.section === section);
+function sectionFields(section: GroupHelpConfigField['section'], values: Record<string, string>) {
+  return GROUP_HELP_CONFIG_FIELDS.filter(
+    (field) => field.section === section && joinCaptchaSettingVisible(field.key, values)
+  );
 }
 
 function button(
@@ -108,11 +111,16 @@ function sectionKeyboard(): TelegramKeyboard {
   };
 }
 
-function fieldsKeyboard(section: GroupHelpConfigField['section']): TelegramKeyboard {
+function fieldsKeyboard(
+  section: GroupHelpConfigField['section'],
+  values: Record<string, string>
+): TelegramKeyboard {
   return {
     inline_keyboard: [
       ...twoColumnRows(
-        sectionFields(section).map((field) => button(field.label, `${PREFIX}field:${field.key}`))
+        sectionFields(section, values).map((field) =>
+          button(field.label, `${PREFIX}field:${field.key}`)
+        )
       ),
       [button('← All sections', `${PREFIX}home`)]
     ]
@@ -422,6 +430,18 @@ async function saveValue(field: GroupHelpConfigField, value: string, chatId: str
   if (field.type === 'number' && normalized && !/^\d+$/.test(normalized)) {
     throw new Error(`${field.label} must be a whole number.`);
   }
+  const captchaRange =
+    field.key === 'telegramGroupHelpCaptchaMaxAttempts'
+      ? [1, 10]
+      : field.key === 'telegramGroupHelpCaptchaSuccessCleanupSeconds'
+        ? [1, 3600]
+        : undefined;
+  if (
+    captchaRange &&
+    (!normalized || Number(normalized) < captchaRange[0]! || Number(normalized) > captchaRange[1]!)
+  ) {
+    throw new Error(`${field.label} must be between ${captchaRange[0]} and ${captchaRange[1]}.`);
+  }
   await prisma.siteConfig.upsert({
     where: { key: field.key },
     create: { key: field.key, value: normalized, label: field.label },
@@ -675,7 +695,8 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
     );
   } else if (action.startsWith('section:')) {
     const section = action.slice('section:'.length) as GroupHelpConfigField['section'];
-    const fields = sectionFields(section);
+    const values = await groupHelpConfig(chatId);
+    const fields = sectionFields(section, values);
     if (!fields.length) {
       await answerCommunityCallback(
         GROUP_HELP_BOT_SLUG,
@@ -690,12 +711,12 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
       `⚙️ *${section[0].toUpperCase() + section.slice(1)} settings*\n\nChoose a setting to change.`,
       {
         parse_mode: 'Markdown',
-        reply_markup: fieldsKeyboard(section)
+        reply_markup: fieldsKeyboard(section, values)
       }
     );
   } else if (action.startsWith('field:')) {
     const field = fieldByKey(action.slice('field:'.length));
-    if (!field) {
+    if (!field || !joinCaptchaSettingVisible(field.key, await groupHelpConfig(chatId))) {
       await answerCommunityCallback(
         GROUP_HELP_BOT_SLUG,
         callback.id,
@@ -714,7 +735,11 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
     const [, key, indexText] = action.split(':');
     const field = fieldByKey(key);
     const option = field?.options?.[Number(indexText)];
-    if (!field || option === undefined) {
+    if (
+      !field ||
+      option === undefined ||
+      !joinCaptchaSettingVisible(field.key, await groupHelpConfig(chatId))
+    ) {
       await answerCommunityCallback(
         GROUP_HELP_BOT_SLUG,
         callback.id,
@@ -737,7 +762,7 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
     );
   } else if (action.startsWith('input:')) {
     const field = fieldByKey(action.slice('input:'.length));
-    if (!field) {
+    if (!field || !joinCaptchaSettingVisible(field.key, await groupHelpConfig(chatId))) {
       await answerCommunityCallback(
         GROUP_HELP_BOT_SLUG,
         callback.id,
@@ -763,7 +788,12 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
   } else if (action === 'confirm') {
     const draft = await readSettingsDraft(chatId, callback.from.id);
     const field = draft && fieldByKey(draft.key);
-    if (!draft || !field || draft.value === undefined) {
+    if (
+      !draft ||
+      !field ||
+      draft.value === undefined ||
+      !joinCaptchaSettingVisible(field.key, await groupHelpConfig(chatId))
+    ) {
       await clearSettingsDraft(chatId, callback.from.id);
       await answerCommunityCallback(
         GROUP_HELP_BOT_SLUG,

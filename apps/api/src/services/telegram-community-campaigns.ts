@@ -1,4 +1,15 @@
 import { Prisma } from '@prisma/client';
+import { randomBytes } from 'node:crypto';
+import {
+  joinCaptchaAnswerAllowed,
+  captchaNeedsStaffReview,
+  canDecideCaptchaReview,
+  joinWelcomeCleanupDelay,
+  joinVerificationMatches,
+  captchaReviewRetryDelay,
+  captchaReviewReady,
+  joinWelcomeDeleteAfter
+} from './telegram-join-captcha-policy.js';
 import { prisma } from '../db.js';
 import { callCommunityTelegramApi } from './telegram-community-bots.client.js';
 import {
@@ -227,6 +238,13 @@ async function communityConfig(chatId?: string) {
     goodbyeText: values.telegramGroupHelpGoodbyeMessage?.trim() || '',
     joinProtection: values.telegramGroupHelpJoinProtection || 'off',
     captchaMode: values.telegramGroupHelpCaptchaMode || 'on',
+    captchaMaxAttempts: boundedNumber(values.telegramGroupHelpCaptchaMaxAttempts, 3, 1, 10),
+    captchaSuccessCleanupSeconds: boundedNumber(
+      values.telegramGroupHelpCaptchaSuccessCleanupSeconds,
+      30,
+      1,
+      3600
+    ),
     failedVerificationAction: values.telegramGroupHelpNewMemberAction || 'staff review',
     captchaPendingMinutes: boundedNumber(
       values.telegramGroupHelpCaptchaPendingMinutes,
@@ -1181,10 +1199,25 @@ export async function welcomeTelegramCommunityMembers(update: CommunityTelegramU
       telegramUserId: member.id
     });
     if (!claimed) continue;
+    const verificationClaim = {
+      operation: 'join-verification-callback',
+      key: `${chat.id}:${member.id}`,
+      expiresAt: new Date(Date.now() + 60_000)
+    };
+    if (!(await claimTelegramOperation(verificationClaim))) {
+      await releaseTelegramMembershipTransition({
+        transition: 'join',
+        chatId: String(chat.id),
+        telegramUserId: member.id
+      });
+      throw new Error('Join verification is processing; retry membership update');
+    }
     let welcomeDelivered = false;
     try {
+      await cancelPendingJoinVerification(String(chat.id), String(member.id), 'rejoined');
       let needsVerification = ['captcha', 'strict'].includes(config.joinProtection);
       const captchaEnabled = needsVerification && config.captchaMode !== 'off';
+      const verificationId = randomBytes(5).toString('hex');
       const first = 2 + Math.floor(Math.random() * 7);
       const second = 2 + Math.floor(Math.random() * 7);
       const captchaAnswer = first + second;
@@ -1220,22 +1253,28 @@ export async function welcomeTelegramCommunityMembers(update: CommunityTelegramU
             create: {
               bot: `group-join-verification:${chat.id}`,
               chatId: String(member.id),
-              state: 'awaiting-verification',
+              state: captchaEnabled ? 'awaiting-captcha' : 'awaiting-verification',
               payload: {
                 groupChatId: String(chat.id),
+                verificationId,
                 captchaAnswer: captchaEnabled ? captchaAnswer : null,
                 attempts: 0
               },
-              expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+              expiresAt: captchaEnabled
+                ? new Date('9999-12-31T00:00:00Z')
+                : new Date(Date.now() + 24 * 60 * 60 * 1000)
             },
             update: {
-              state: 'awaiting-verification',
+              state: captchaEnabled ? 'awaiting-captcha' : 'awaiting-verification',
               payload: {
                 groupChatId: String(chat.id),
+                verificationId,
                 captchaAnswer: captchaEnabled ? captchaAnswer : null,
                 attempts: 0
               },
-              expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+              expiresAt: captchaEnabled
+                ? new Date('9999-12-31T00:00:00Z')
+                : new Date(Date.now() + 24 * 60 * 60 * 1000)
             }
           });
         }
@@ -1247,11 +1286,16 @@ export async function welcomeTelegramCommunityMembers(update: CommunityTelegramU
                 ? [
                     captchaOptions.map((option) => ({
                       text: String(option),
-                      callback_data: `hh_join_captcha:${chat.id}:${member.id}:${option}`
+                      callback_data: `hh_join_captcha:${chat.id}:${member.id}:${option}:${verificationId}`
                     }))
                   ]
                 : [
-                    [{ text: 'I’m here', callback_data: `hh_join_verify:${chat.id}:${member.id}` }]
+                    [
+                      {
+                        text: 'I’m here',
+                        callback_data: `hh_join_verify:${chat.id}:${member.id}:${verificationId}`
+                      }
+                    ]
                   ]),
               ...(config.welcomeKeyboard?.inline_keyboard || [])
             ]
@@ -1319,19 +1363,21 @@ export async function welcomeTelegramCommunityMembers(update: CommunityTelegramU
           data: {
             payload: {
               groupChatId: String(chat.id),
+              verificationId,
               captchaAnswer: captchaEnabled ? captchaAnswer : null,
               attempts: 0,
               welcomeMessageId: sent.message_id
             }
           }
         });
-        await scheduleCommunityMessageCleanup({
-          bot: CAMPAIGN_BOT,
-          chatId: chat.id,
-          messageId: sent.message_id,
-          kind: 'join-captcha',
-          deleteAfter: new Date(Date.now() + config.captchaPendingMinutes * 60_000)
-        });
+        if (!captchaEnabled)
+          await scheduleCommunityMessageCleanup({
+            bot: CAMPAIGN_BOT,
+            chatId: chat.id,
+            messageId: sent.message_id,
+            kind: 'join-captcha',
+            deleteAfter: new Date(Date.now() + config.captchaPendingMinutes * 60_000)
+          });
       } else if (config.autoDeleteSeconds > 0) {
         await scheduleCommunityMessageCleanup({
           bot: CAMPAIGN_BOT,
@@ -1355,6 +1401,8 @@ export async function welcomeTelegramCommunityMembers(update: CommunityTelegramU
         }).catch(() => null);
       }
       throw error;
+    } finally {
+      await releaseTelegramOperation(verificationClaim);
     }
   }
   await prisma.telegramCommunityMember.updateMany({
@@ -1386,8 +1434,22 @@ export async function recordTelegramCommunityDeparture(update: CommunityTelegram
     telegramUserId: member.id
   });
   if (!claimed) return true;
+  const verificationClaim = {
+    operation: 'join-verification-callback',
+    key: `${chat.id}:${member.id}`,
+    expiresAt: new Date(Date.now() + 60_000)
+  };
+  if (!(await claimTelegramOperation(verificationClaim))) {
+    await releaseTelegramMembershipTransition({
+      transition: 'leave',
+      chatId: String(chat.id),
+      telegramUserId: member.id
+    });
+    throw new Error('Join verification is processing; retry departure update');
+  }
   let goodbyeDelivered = false;
   try {
+    await cancelPendingJoinVerification(String(chat.id), String(member.id), 'left');
     await prisma.telegramCommunityMember.updateMany({
       where: { chatId: String(chat.id), telegramUserId: String(member.id) },
       data: { leftAt: new Date() }
@@ -1426,40 +1488,438 @@ export async function recordTelegramCommunityDeparture(update: CommunityTelegram
       }).catch(() => null);
     }
     throw error;
+  } finally {
+    await releaseTelegramOperation(verificationClaim);
   }
+}
+
+type JoinCaptchaPayload = {
+  completedAt?: string;
+  outcome?: string;
+  actorId?: number;
+  verificationId?: string;
+  reviewChatId?: string;
+  reviewAttempts?: number;
+  reviewRetryAt?: string;
+  reviewLastError?: string;
+  captchaAnswer?: number | null;
+  attempts?: number;
+  welcomeMessageId?: number;
+  reviewMessageId?: number;
+  groupChatId?: string;
+};
+
+async function recordJoinVerificationHistory(
+  chatId: string,
+  userId: string,
+  payload: JoinCaptchaPayload,
+  outcome: string,
+  actorId?: number
+) {
+  if (payload.captchaAnswer == null) return;
+  const key = `${userId}:${payload.verificationId || 'legacy'}`;
+  const bot = `join-verification-history:${chatId}`;
+  const previous = await prisma.telegramCommunityState.findUnique({
+    where: { bot_chatId: { bot, chatId: key } }
+  });
+  const prior = (previous?.payload || {}) as { events?: Prisma.InputJsonObject[] };
+  const event = {
+    at: new Date().toISOString(),
+    outcome,
+    attempts: payload.attempts || 0,
+    ...(actorId ? { actorId } : {})
+  };
+  const last = prior.events?.at(-1);
+  const events =
+    last?.outcome === outcome && last?.attempts === event.attempts && last?.actorId === actorId
+      ? prior.events!
+      : [...(prior.events || []), event].slice(-50);
+  const data = {
+    state: outcome,
+    payload: {
+      userId,
+      groupChatId: chatId,
+      verificationId: payload.verificationId || 'legacy',
+      events
+    },
+    expiresAt: new Date(Date.now() + 180 * 86_400_000)
+  };
+  await prisma.telegramCommunityState.upsert({
+    where: { bot_chatId: { bot, chatId: key } },
+    create: { bot, chatId: key, ...data },
+    update: data
+  });
+}
+
+async function cancelPendingJoinVerification(
+  chatId: string,
+  userId: string,
+  outcome: 'left' | 'rejoined'
+) {
+  const where = { bot_chatId: { bot: `group-join-verification:${chatId}`, chatId: userId } };
+  const state = await prisma.telegramCommunityState.findUnique({ where });
+  if (!state) return;
+  const payload = (state.payload || {}) as JoinCaptchaPayload;
+  if (state.state === 'join-completed')
+    await recordJoinVerificationHistory(
+      chatId,
+      userId,
+      payload,
+      payload.outcome || 'verified',
+      payload.actorId
+    );
+  await recordJoinVerificationHistory(chatId, userId, payload, outcome);
+  for (const message of [
+    { chatId, id: payload.welcomeMessageId },
+    { chatId: payload.reviewChatId, id: payload.reviewMessageId }
+  ]) {
+    if (message.chatId && message.id)
+      await scheduleCommunityMessageCleanup({
+        bot: CAMPAIGN_BOT,
+        chatId: message.chatId,
+        messageId: message.id,
+        kind: 'welcome',
+        deleteAfter: new Date()
+      });
+  }
+  await prisma.telegramCommunityState.delete({ where });
+}
+
+async function attemptJoinCaptchaAdminReview(
+  chatId: string,
+  userId: string,
+  payload: JoinCaptchaPayload
+) {
+  if (!captchaReviewReady(payload)) return;
+  try {
+    await ensureJoinCaptchaAdminReview(chatId, userId, payload);
+  } catch (error) {
+    const attempts = (payload.reviewAttempts || 0) + 1;
+    const nextRetryAt = new Date(Date.now() + captchaReviewRetryDelay(attempts)).toISOString();
+    const detail = error instanceof Error ? error.message : String(error);
+    await prisma.telegramCommunityState.update({
+      where: { bot_chatId: { bot: `group-join-verification:${chatId}`, chatId: userId } },
+      data: {
+        payload: {
+          ...payload,
+          reviewAttempts: attempts,
+          reviewRetryAt: nextRetryAt,
+          reviewLastError: detail.slice(0, 300)
+        }
+      }
+    });
+    console.error('[JoinCaptcha] Staff review delivery deferred', {
+      chatId,
+      userId,
+      verificationId: payload.verificationId,
+      attempts,
+      nextRetryAt,
+      error: detail
+    });
+  }
+}
+
+let joinMaintenanceRunning = false;
+export async function runTelegramJoinVerificationMaintenance() {
+  if (joinMaintenanceRunning) return;
+  joinMaintenanceRunning = true;
+  try {
+    await runScheduledCommunityMessageCleanup();
+    const states = await prisma.telegramCommunityState.findMany({
+      where: {
+        bot: { startsWith: 'group-join-verification:' },
+        state: { in: ['awaiting-admin-approval', 'join-completed'] }
+      },
+      orderBy: { updatedAt: 'asc' },
+      take: 100
+    });
+    for (const state of states) {
+      const payload = (state.payload || {}) as JoinCaptchaPayload;
+      if (state.state !== 'join-completed' && payload.reviewMessageId) {
+        await prisma.telegramCommunityState.update({
+          where: { id: state.id },
+          data: { state: 'awaiting-admin-approval-notified' }
+        });
+        continue;
+      }
+      if (
+        state.state !== 'join-completed' &&
+        payload.reviewRetryAt &&
+        Date.parse(payload.reviewRetryAt) > Date.now()
+      )
+        continue;
+      const chatId = state.bot.slice('group-join-verification:'.length);
+      const claim = {
+        operation: 'join-verification-callback',
+        key: `${chatId}:${state.chatId}`,
+        expiresAt: new Date(Date.now() + 60_000)
+      };
+      if (!(await claimTelegramOperation(claim))) continue;
+      try {
+        const fresh = await prisma.telegramCommunityState.findUnique({
+          where: { bot_chatId: { bot: state.bot, chatId: state.chatId } }
+        });
+        if (fresh?.state === 'join-completed')
+          await finalizeCompletedJoin(
+            chatId,
+            state.chatId,
+            (fresh.payload || {}) as JoinCaptchaPayload
+          );
+        if (fresh?.state === 'awaiting-admin-approval')
+          await attemptJoinCaptchaAdminReview(
+            chatId,
+            state.chatId,
+            (fresh.payload || {}) as JoinCaptchaPayload
+          );
+      } finally {
+        await releaseTelegramOperation(claim);
+      }
+    }
+  } finally {
+    joinMaintenanceRunning = false;
+  }
+}
+
+async function finishJoinWelcome(
+  chatId: string,
+  payload: JoinCaptchaPayload,
+  fallbackMinutes: number,
+  captchaCleanupSeconds: number
+) {
+  if (!payload.welcomeMessageId) return;
+  await editCommunityReplyMarkup(CAMPAIGN_BOT, chatId, payload.welcomeMessageId, {
+    inline_keyboard: []
+  }).catch((error) => {
+    if (!/message to edit not found/i.test(String(error))) throw error;
+  });
+  const delayMs = joinWelcomeCleanupDelay(
+    payload.captchaAnswer,
+    fallbackMinutes,
+    captchaCleanupSeconds
+  );
+  await scheduleCommunityMessageCleanup({
+    bot: CAMPAIGN_BOT,
+    chatId,
+    messageId: payload.welcomeMessageId,
+    kind: 'join-captcha',
+    deleteAfter: joinWelcomeDeleteAfter(
+      payload.completedAt,
+      payload.captchaAnswer,
+      fallbackMinutes,
+      Date.now(),
+      captchaCleanupSeconds
+    )
+  });
+  // The persisted cleanup row survives restarts. Wake the worker at the due
+  // time as well so this short delay does not wait for the campaign schedule.
+  setTimeout(() => {
+    void runScheduledCommunityMessageCleanup().catch((error) =>
+      console.error('[JoinCaptcha] Welcome cleanup failed', error)
+    );
+  }, delayMs).unref();
+}
+
+async function finalizeCompletedJoin(chatId: string, userId: string, payload: JoinCaptchaPayload) {
+  const config = await communityConfig(chatId);
+  await finishJoinWelcome(
+    chatId,
+    payload,
+    config.captchaSuccessCleanupMinutes,
+    config.captchaSuccessCleanupSeconds
+  );
+  await recordJoinVerificationHistory(
+    chatId,
+    userId,
+    payload,
+    payload.outcome || 'verified',
+    payload.actorId
+  );
+  if (payload.reviewMessageId && payload.reviewChatId)
+    await editCommunityReplyMarkup(CAMPAIGN_BOT, payload.reviewChatId, payload.reviewMessageId, {
+      inline_keyboard: []
+    }).catch((error) => {
+      if (!/message to edit not found/i.test(String(error))) throw error;
+    });
+  await prisma.telegramCommunityState.delete({
+    where: { bot_chatId: { bot: `group-join-verification:${chatId}`, chatId: userId } }
+  });
+}
+
+async function completeJoinVerification(
+  chatId: string,
+  userId: string,
+  payload: JoinCaptchaPayload,
+  outcome: string,
+  actorId: number
+) {
+  const completed = { ...payload, completedAt: new Date().toISOString(), outcome, actorId };
+  await prisma.telegramCommunityState.update({
+    where: { bot_chatId: { bot: `group-join-verification:${chatId}`, chatId: userId } },
+    data: { state: 'join-completed', payload: completed }
+  });
+  await finalizeCompletedJoin(chatId, userId, completed);
+}
+
+async function ensureJoinCaptchaAdminReview(
+  chatId: string,
+  userId: string,
+  payload: JoinCaptchaPayload
+) {
+  if (payload.reviewMessageId) return;
+  const config = await communityConfig(chatId);
+  if (!config.staffGroupId) {
+    console.error('[JoinCaptcha] Private staff group missing', {
+      chatId,
+      userId,
+      attempts: payload.attempts
+    });
+    throw new Error('Private staff group is not configured');
+  }
+  const staffChat = await callCommunityTelegramApi<{ type?: string; username?: string }>(
+    CAMPAIGN_BOT,
+    'getChat',
+    { chat_id: config.staffGroupId }
+  );
+  if (!['group', 'supergroup'].includes(staffChat.type || '') || staffChat.username) {
+    throw new Error('Captcha review requires a private staff group without a public username');
+  }
+  const sent = await sendCommunityMessage(
+    CAMPAIGN_BOT,
+    config.staffGroupId,
+    `Captcha review needed\n\nA member failed the captcha 3 times and remains restricted.\n\nMember: ${userId}\nGroup: ${chatId}\n\nAccept unlocks the member. Reject removes them; they may request to join again.`,
+    {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: 'Accept member',
+              callback_data: `hh_join_allow:${chatId}:${userId}:${payload.verificationId || ''}`
+            },
+            {
+              text: 'Reject member',
+              callback_data: `hh_join_reject:${chatId}:${userId}:${payload.verificationId || ''}`
+            }
+          ]
+        ]
+      }
+    }
+  );
+  await prisma.telegramCommunityState.update({
+    where: { bot_chatId: { bot: `group-join-verification:${chatId}`, chatId: userId } },
+    data: {
+      state: 'awaiting-admin-approval-notified',
+      payload: { ...payload, reviewMessageId: sent.message_id, reviewChatId: config.staffGroupId }
+    }
+  });
 }
 
 export async function handleTelegramCommunityJoinVerificationCallback(
   update: CommunityTelegramUpdate
 ) {
+  const data = update.callback_query?.data;
+  if (!data || !/^hh_join_(verify|captcha|allow|reject):/.test(data)) return false;
+  const [, chatId, userId] = data.split(':');
+  if (!chatId || !userId) return false;
+  const claim = {
+    operation: 'join-verification-callback',
+    key: `${chatId}:${userId}`,
+    expiresAt: new Date(Date.now() + 60_000)
+  };
+  if (!(await claimTelegramOperation(claim))) return 'busy';
+  try {
+    return await processTelegramCommunityJoinVerificationCallback(update);
+  } finally {
+    await releaseTelegramOperation(claim);
+  }
+}
+
+async function processTelegramCommunityJoinVerificationCallback(update: CommunityTelegramUpdate) {
   const callback = update.callback_query;
   const data = callback?.data;
   if (
     !callback ||
     (!data?.startsWith('hh_join_verify:') &&
       !data?.startsWith('hh_join_captcha:') &&
-      !data?.startsWith('hh_join_allow:'))
+      !data?.startsWith('hh_join_allow:') &&
+      !data?.startsWith('hh_join_reject:'))
   )
     return false;
   const [, chatId, userId, selectedAnswer] = data.split(':');
-  if (data.startsWith('hh_join_allow:')) {
+  if (data.startsWith('hh_join_allow:') || data.startsWith('hh_join_reject:')) {
     if (!chatId || !userId) return false;
+    const config = await communityConfig(chatId);
+    if (!config.staffGroupId || String(callback.message?.chat.id) !== config.staffGroupId)
+      return 'denied';
     const membership = await callCommunityTelegramApi<{ status?: string }>(
       CAMPAIGN_BOT,
       'getChatMember',
       {
-        chat_id: chatId,
+        chat_id: config.staffGroupId,
         user_id: callback.from.id
       }
     ).catch(() => null);
-    if (!membership || !['creator', 'administrator'].includes(membership.status || ''))
+    if (
+      !canDecideCaptchaReview(
+        String(callback.message?.chat.id),
+        config.staffGroupId,
+        membership?.status || ''
+      )
+    )
       return 'denied';
     const state = await prisma.telegramCommunityState.findUnique({
       where: { bot_chatId: { bot: `group-join-verification:${chatId}`, chatId: userId } }
     });
-    if (!state || state.expiresAt <= new Date()) return false;
-    const approvalPayload = (state.payload || {}) as { welcomeMessageId?: number };
-    const config = await communityConfig(chatId);
+    if (!state || !state.state.startsWith('awaiting-admin-approval')) return 'expired';
+    const approvalPayload = (state.payload || {}) as JoinCaptchaPayload;
+    if (!joinVerificationMatches(data, approvalPayload.verificationId)) return 'expired';
+    if (
+      approvalPayload.reviewMessageId &&
+      callback.message?.message_id !== approvalPayload.reviewMessageId
+    )
+      return false;
+    const rejected = data.startsWith('hh_join_reject:');
+    if (rejected) {
+      await callCommunityTelegramApi(CAMPAIGN_BOT, 'banChatMember', {
+        chat_id: chatId,
+        user_id: Number(userId)
+      });
+      await callCommunityTelegramApi(CAMPAIGN_BOT, 'unbanChatMember', {
+        chat_id: chatId,
+        user_id: Number(userId),
+        only_if_banned: true
+      });
+      await recordJoinVerificationHistory(
+        chatId,
+        userId,
+        approvalPayload,
+        'rejected',
+        callback.from.id
+      );
+      if (approvalPayload.welcomeMessageId)
+        await scheduleCommunityMessageCleanup({
+          bot: CAMPAIGN_BOT,
+          chatId,
+          messageId: approvalPayload.welcomeMessageId,
+          kind: 'welcome',
+          deleteAfter: new Date()
+        });
+      await prisma.telegramCommunityState.delete({
+        where: { bot_chatId: { bot: `group-join-verification:${chatId}`, chatId: userId } }
+      });
+      if (callback.message)
+        await editCommunityReplyMarkup(
+          CAMPAIGN_BOT,
+          callback.message.chat.id,
+          callback.message.message_id,
+          { inline_keyboard: [] }
+        );
+      await logCommunityActivity(config, 'Join verification rejected by administrator', [
+        `Group: ${chatId}`,
+        `Member ID: ${userId}`,
+        `Rejected by: ${callback.from.id}`
+      ]);
+      return 'rejected';
+    }
     const chat = await callCommunityTelegramApi<{ permissions?: Record<string, boolean> }>(
       CAMPAIGN_BOT,
       'getChat',
@@ -1472,18 +1932,14 @@ export async function handleTelegramCommunityJoinVerificationCallback(
       user_id: Number(userId),
       permissions: chat.permissions || { can_send_messages: true }
     });
-    if (approvalPayload.welcomeMessageId) {
-      await scheduleCommunityMessageCleanup({
-        bot: CAMPAIGN_BOT,
-        chatId,
-        messageId: approvalPayload.welcomeMessageId,
-        kind: 'join-captcha',
-        deleteAfter: new Date(Date.now() + config.captchaSuccessCleanupMinutes * 60_000)
-      });
-    }
-    await prisma.telegramCommunityState.delete({
-      where: { bot_chatId: { bot: `group-join-verification:${chatId}`, chatId: userId } }
-    });
+    await completeJoinVerification(chatId, userId, approvalPayload, 'accepted', callback.from.id);
+    if (callback.message)
+      await editCommunityReplyMarkup(
+        CAMPAIGN_BOT,
+        callback.message.chat.id,
+        callback.message.message_id,
+        { inline_keyboard: [] }
+      );
     await logCommunityActivity(config, 'Join verification approved by administrator', [
       `Group: ${chatId}`,
       `Member ID: ${userId}`,
@@ -1502,66 +1958,54 @@ export async function handleTelegramCommunityJoinVerificationCallback(
   const state = await prisma.telegramCommunityState.findUnique({
     where: { bot_chatId: { bot: `group-join-verification:${chatId}`, chatId: userId } }
   });
-  if (!state || state.expiresAt <= new Date()) return false;
-  const payload = (state.payload || {}) as {
-    captchaAnswer?: number | null;
-    attempts?: number;
-    welcomeMessageId?: number;
-  };
+  if (
+    !state ||
+    (state.expiresAt <= new Date() &&
+      (state.payload as JoinCaptchaPayload | null)?.captchaAnswer == null)
+  )
+    return 'expired';
+  const payload = (state.payload || {}) as JoinCaptchaPayload;
+  if (state.state === 'join-completed') return 'expired';
+  if (!joinVerificationMatches(data, payload.verificationId)) return 'expired';
+  if (state.state.startsWith('awaiting-admin-approval')) {
+    await attemptJoinCaptchaAdminReview(chatId, userId, payload);
+    return 'review';
+  }
+  if (payload.welcomeMessageId && callback.message?.message_id !== payload.welcomeMessageId)
+    return false;
+  if (!joinCaptchaAnswerAllowed(payload.captchaAnswer, data)) return false;
   if (data.startsWith('hh_join_captcha:') && Number(selectedAnswer) !== payload.captchaAnswer) {
     const config = await communityConfig(chatId);
     const attempts = Number(payload.attempts || 0) + 1;
-    if (config.joinProtection === 'strict' && attempts >= 3) {
-      const action = config.failedVerificationAction;
-      const shouldRemove = action === 'remove from group' || action === 'kick';
-      const shouldBan = action === 'ban';
-      if (shouldRemove || shouldBan) {
-        await callCommunityTelegramApi(CAMPAIGN_BOT, 'banChatMember', {
-          chat_id: chatId,
-          user_id: Number(userId)
-        });
-        // A kick removes the member but lets them join again later; a ban requires a staff member
-        // to unban them intentionally.
-        if (shouldRemove) {
-          await callCommunityTelegramApi(CAMPAIGN_BOT, 'unbanChatMember', {
-            chat_id: chatId,
-            user_id: Number(userId),
-            only_if_banned: true
-          });
-        }
-        await prisma.telegramCommunityState.delete({
-          where: { bot_chatId: { bot: `group-join-verification:${chatId}`, chatId: userId } }
-        });
-        await logCommunityActivity(config, 'Join verification failed', [
-          `Group: ${chatId}`,
-          `Member ID: ${userId}`,
-          `Action: ${action}`
-        ]);
-        return 'review';
-      }
+    await recordJoinVerificationHistory(
+      chatId,
+      userId,
+      { ...payload, attempts },
+      'incorrect',
+      callback.from.id
+    );
+    if (
+      captchaNeedsStaffReview(
+        payload.captchaAnswer,
+        attempts,
+        config.captchaMode !== 'off',
+        config.captchaMaxAttempts
+      )
+    ) {
       await prisma.telegramCommunityState.update({
         where: { bot_chatId: { bot: `group-join-verification:${chatId}`, chatId: userId } },
-        data: { state: 'awaiting-admin-approval', payload: { ...payload, attempts } }
+        data: {
+          state: 'awaiting-admin-approval',
+          payload: { ...payload, attempts },
+          expiresAt: new Date('9999-12-31T00:00:00Z')
+        }
       });
-      const destination = config.staffGroupId || config.logChannelId;
-      if (destination) {
-        await sendCommunityMessage(
-          CAMPAIGN_BOT,
-          destination,
-          `Captcha review needed\n\nA member joined but failed the captcha 3 times. They are still restricted.\n\nMember: ${userId}\nGroup: ${chatId}`,
-          {
-            reply_markup: {
-              inline_keyboard: [
-                [{ text: 'Allow member', callback_data: `hh_join_allow:${chatId}:${userId}` }]
-              ]
-            }
-          }
-        ).catch(() => null);
-      }
+      await attemptJoinCaptchaAdminReview(chatId, userId, { ...payload, attempts });
       await logCommunityActivity(config, 'Join verification failed', [
         `Group: ${chatId}`,
         `Member ID: ${userId}`,
-        `Action: ${action === 'keep restricted' || action === 'mute' ? 'kept restricted' : 'awaiting administrator approval'}`
+        `Action: awaiting administrator approval`,
+        `Private staff group configured: ${Boolean(config.staffGroupId)}`
       ]);
       return 'review';
     }
@@ -1584,18 +2028,7 @@ export async function handleTelegramCommunityJoinVerificationCallback(
     user_id: Number(userId),
     permissions: chat.permissions || { can_send_messages: true }
   });
-  if (payload.welcomeMessageId) {
-    await scheduleCommunityMessageCleanup({
-      bot: CAMPAIGN_BOT,
-      chatId,
-      messageId: payload.welcomeMessageId,
-      kind: 'join-captcha',
-      deleteAfter: new Date(Date.now() + config.captchaSuccessCleanupMinutes * 60_000)
-    });
-  }
-  await prisma.telegramCommunityState.delete({
-    where: { bot_chatId: { bot: `group-join-verification:${chatId}`, chatId: userId } }
-  });
+  await completeJoinVerification(chatId, userId, payload, 'verified', callback.from.id);
   await logCommunityActivity(config, 'Join verification completed', [
     `Group: ${chatId}`,
     `Member ID: ${userId}`

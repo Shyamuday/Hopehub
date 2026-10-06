@@ -95,6 +95,7 @@ import {
 } from './services/consultation-reminders.js';
 import {
   runTelegramCampaignScheduler,
+  runTelegramJoinVerificationMaintenance,
   telegramCampaignSweepEnabled,
   telegramCampaignSweepIntervalMs
 } from './services/telegram-community-campaigns.js';
@@ -468,6 +469,9 @@ httpServer.listen(port, bindHost, () => {
   void runTelegramCampaignScheduler().catch((e) =>
     console.error('[scheduler] Initial Telegram campaign run failed', e)
   );
+  void runTelegramJoinVerificationMaintenance().catch((e) =>
+    console.error('[scheduler] Initial join verification recovery failed', e)
+  );
   void runConsultationReminderSchedulers().catch((e) =>
     console.error('[scheduler] Initial consultation reminder scheduler run failed', e)
   );
@@ -510,6 +514,12 @@ httpServer.listen(port, bindHost, () => {
     );
   }, telegramCampaignSweepIntervalMs);
   telegramCampaignTimer.unref();
+  const telegramJoinTimer = setInterval(() => {
+    void runTelegramJoinVerificationMaintenance().catch((e) =>
+      console.error('[scheduler] Join verification maintenance failed', e)
+    );
+  }, 10_000);
+  telegramJoinTimer.unref();
 
   const consultationReminderTimer = setInterval(() => {
     void runConsultationReminderSchedulers().catch((e) =>

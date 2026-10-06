@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client';
+import { keepPendingCaptchaMessage } from './telegram-join-captcha-policy.js';
 import { prisma } from '../db.js';
 import type { CommunityBotSlug } from './telegram-community-bots.types.js';
 import type { CommunitySubmissionBotSlug } from '../constants/telegram-community-bot.constants.js';
@@ -605,6 +606,19 @@ export async function failCommunityWebhookUpdate(bot: string, updateId: number, 
 
 export async function cleanupCommunityBotData() {
   const now = new Date();
+  // Preserve older captcha states created with the previous 24-hour expiry.
+  // Otherwise their prompt could remain visible but no longer be answerable.
+  const expiringJoinStates = await prisma.telegramCommunityState.findMany({
+    where: { bot: { startsWith: 'group-join-verification:' }, expiresAt: { lte: now } }
+  });
+  for (const state of expiringJoinStates) {
+    const payload = state.payload as { captchaAnswer?: number | null } | null;
+    if (payload?.captchaAnswer != null)
+      await prisma.telegramCommunityState.update({
+        where: { bot_chatId: { bot: state.bot, chatId: state.chatId } },
+        data: { expiresAt: new Date('9999-12-31T00:00:00Z') }
+      });
+  }
   const receiptCutoff = new Date(Date.now() - RECEIPT_TTL_MS);
   const controls = await getTelegramBotControls();
   const submissionCutoff = new Date(
@@ -690,6 +704,19 @@ export async function runScheduledCommunityMessageCleanup(now = new Date()) {
   });
   for (const item of due) {
     try {
+      if (item.kind === 'join-captcha') {
+        const pending = await prisma.telegramCommunityState.findMany({
+          where: { bot: `group-join-verification:${item.chatId}` }
+        });
+        if (
+          pending.some((state) =>
+            keepPendingCaptchaMessage(state.payload, item.messageId, state.state)
+          )
+        ) {
+          await prisma.telegramCommunityMessageCleanup.delete({ where: { id: item.id } });
+          continue;
+        }
+      }
       await callCommunityTelegramApi(item.bot as CommunityBotSlug, 'deleteMessage', {
         chat_id: item.chatId,
         message_id: item.messageId

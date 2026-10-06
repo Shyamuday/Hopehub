@@ -1174,21 +1174,42 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
     key: 'telegramGroupHelpNewMemberAction',
     label: 'Failed verification action',
     description:
-      'What happens after three incorrect captcha answers. Staff review keeps the member restricted and sends your team an Allow button.',
+      'When captcha is enabled, reaching the configured wrong-answer limit keeps the member restricted and requests Accept or Reject in the private staff group.',
     section: 'onboarding',
     type: 'select',
-    options: ['staff review', 'keep restricted', 'remove from group', 'ban'],
+    options: ['staff review'],
     maxLength: 20,
     defaultValue: 'staff review'
   },
   {
     key: 'telegramGroupHelpCaptchaPendingMinutes',
-    label: 'Captcha message expiry',
-    description: 'Minutes to keep the join captcha visible while the new member has not answered.',
+    label: 'Confirmation message expiry',
+    description:
+      'Legacy timeout for confirmation-only joins. Enabled captchas remain visible until verification or an administrator decision.',
     section: 'onboarding',
     type: 'number',
     maxLength: 4,
     defaultValue: '60'
+  },
+  {
+    key: 'telegramGroupHelpCaptchaMaxAttempts',
+    label: 'Captcha wrong-answer limit',
+    description:
+      'Wrong answers before private staff review. Use 1 to 10. The member remains restricted until an admin accepts or rejects.',
+    section: 'onboarding',
+    type: 'number',
+    maxLength: 2,
+    defaultValue: '3'
+  },
+  {
+    key: 'telegramGroupHelpCaptchaSuccessCleanupSeconds',
+    label: 'Verified welcome cleanup seconds',
+    description:
+      'Seconds before deleting the welcome after successful captcha verification or staff acceptance. Use 1 to 3600. Buttons disappear immediately.',
+    section: 'onboarding',
+    type: 'number',
+    maxLength: 4,
+    defaultValue: '30'
   },
   {
     key: 'telegramGroupHelpCaptchaSuccessCleanupMinutes',
