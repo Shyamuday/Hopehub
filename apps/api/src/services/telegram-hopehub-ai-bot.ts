@@ -599,17 +599,17 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
             telegramUserId: message.from.id
           }).catch(() => null);
         }
-        const identityAlertHours = Math.max(
+        const identityAlertMinutes = Math.max(
           0,
-          Math.min(720, Number(values.telegramGroupHelpIdentityAlertDeleteHours || 24))
+          Math.min(1440, Number(values.telegramGroupHelpIdentityAlertDeleteMinutes ?? '5'))
         );
-        if (publicAlert && identityAlertHours > 0) {
+        if (publicAlert && identityAlertMinutes > 0) {
           await scheduleCommunityMessageCleanup({
             bot: BOT,
             chatId,
             messageId: publicAlert.message_id,
             kind: 'identity-alert',
-            deleteAfter: new Date(Date.now() + identityAlertHours * 60 * 60_000)
+            deleteAfter: new Date(Date.now() + identityAlertMinutes * 60_000)
           });
         }
       }

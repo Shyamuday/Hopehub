@@ -1395,14 +1395,14 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
     defaultValue: 'none'
   },
   {
-    key: 'telegramGroupHelpIdentityAlertDeleteHours',
-    label: 'Profile-change alert expiry',
+    key: 'telegramGroupHelpIdentityAlertDeleteMinutes',
+    label: 'Profile-change alert expiry (minutes)',
     description:
-      'Hours to keep public name or username-change alerts in the group. The full history remains in private moderation records. Use 0 to keep public alerts.',
+      'Minutes to keep public name or username-change alerts in the group. The full history remains in private moderation records. Use 0 to keep public alerts.',
     section: 'people',
     type: 'number',
     maxLength: 4,
-    defaultValue: '24'
+    defaultValue: '5'
   },
   {
     key: 'telegramCommunityVoiceReminderCleanupMinutes',
