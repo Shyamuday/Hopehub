@@ -1,3 +1,19 @@
+import type { TelegramKeyboard } from './telegram-community-bots.types.js';
+
+export function verifiedJoinKeyboard(keyboard?: TelegramKeyboard): TelegramKeyboard {
+  return {
+    inline_keyboard: (keyboard?.inline_keyboard || [])
+      .map((row) =>
+        row.filter((button) => !/^hh_join_(captcha|verify):/.test(button.callback_data || ''))
+      )
+      .filter((row) => row.length > 0)
+  };
+}
+
+export function withoutJoinCaptchaQuestion(text: string) {
+  return text.replace(/\n\nTo join the conversation, choose the answer: \d+ \+ \d+ = \?$/, '');
+}
+
 export function joinCaptchaEnabled(values: Record<string, string>) {
   return (
     ['captcha', 'strict'].includes(values.telegramGroupHelpJoinProtection || 'captcha') &&

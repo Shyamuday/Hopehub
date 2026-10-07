@@ -11,8 +11,36 @@ import {
   captchaReviewRetryDelay,
   captchaReviewReady,
   joinCaptchaSettingVisible,
-  keepPendingCaptchaMessage
+  keepPendingCaptchaMessage,
+  verifiedJoinKeyboard,
+  withoutJoinCaptchaQuestion
 } from './telegram-join-captcha-policy.js';
+
+test('verification removes only challenge buttons and preserves mixed rows and button styles', () => {
+  const help = { text: 'Help', url: 'https://example.com/help', style: 'success' as const };
+  const menu = { text: 'Menu', callback_data: 'hh_menu:home' };
+  const keyboard = {
+    inline_keyboard: [
+      [{ text: '4', callback_data: 'hh_join_captcha:-1:2:4:test' }],
+      [{ text: 'Verify', callback_data: 'hh_join_verify:-1:2:test' }, help],
+      [menu]
+    ]
+  };
+  assert.deepEqual(verifiedJoinKeyboard(keyboard), { inline_keyboard: [[help], [menu]] });
+  assert.equal(keyboard.inline_keyboard[0]?.length, 1);
+  assert.deepEqual(verifiedJoinKeyboard(), { inline_keyboard: [] });
+});
+
+test('verification removes the appended captcha question without changing welcome HTML', () => {
+  const welcome = '<b>Welcome</b>\nRead our rules.';
+  assert.equal(
+    withoutJoinCaptchaQuestion(
+      `${welcome}\n\nTo join the conversation, choose the answer: 3 + 7 = ?`
+    ),
+    welcome
+  );
+  assert.equal(withoutJoinCaptchaQuestion(welcome), welcome);
+});
 
 test('old verification and admin buttons cannot act on a rejoined member', () => {
   for (const prefix of ['hh_join_allow', 'hh_join_reject', 'hh_join_verify']) {

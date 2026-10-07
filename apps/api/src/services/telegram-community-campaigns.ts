@@ -8,7 +8,9 @@ import {
   joinVerificationMatches,
   captchaReviewRetryDelay,
   captchaReviewReady,
-  joinWelcomeDeleteAfter
+  joinWelcomeDeleteAfter,
+  verifiedJoinKeyboard,
+  withoutJoinCaptchaQuestion
 } from './telegram-join-captcha-policy.js';
 import { prisma } from '../db.js';
 import { callCommunityTelegramApi } from './telegram-community-bots.client.js';
@@ -18,7 +20,8 @@ import {
 } from './telegram-community-bots.client.js';
 import type {
   CommunityTelegramMessage,
-  CommunityTelegramUpdate
+  CommunityTelegramUpdate,
+  TelegramKeyboard
 } from './telegram-community-bots.types.js';
 import { configuredUrlKeyboard } from './telegram-keyboard-config.js';
 import { colorizeTelegramKeyboard } from './telegram-button-styles.js';
@@ -1366,7 +1369,11 @@ export async function welcomeTelegramCommunityMembers(update: CommunityTelegramU
               verificationId,
               captchaAnswer: captchaEnabled ? captchaAnswer : null,
               attempts: 0,
-              welcomeMessageId: sent.message_id
+              welcomeMessageId: sent.message_id,
+              welcomeVerifiedText: withoutJoinCaptchaQuestion(welcomeMessageText),
+              welcomeVerifiedKeyboard: verifiedJoinKeyboard(welcomeKeyboard),
+              welcomeIsCaption: 'caption' in sent,
+              welcomeParseMode: 'HTML'
             }
           }
         });
@@ -1505,6 +1512,10 @@ type JoinCaptchaPayload = {
   captchaAnswer?: number | null;
   attempts?: number;
   welcomeMessageId?: number;
+  welcomeVerifiedText?: string;
+  welcomeVerifiedKeyboard?: TelegramKeyboard;
+  welcomeIsCaption?: boolean;
+  welcomeParseMode?: 'HTML';
   reviewMessageId?: number;
   groupChatId?: string;
 };
@@ -1684,13 +1695,27 @@ async function finishJoinWelcome(
   chatId: string,
   payload: JoinCaptchaPayload,
   fallbackMinutes: number,
-  captchaCleanupSeconds: number
+  captchaCleanupSeconds: number,
+  fallbackKeyboard?: TelegramKeyboard
 ) {
   if (!payload.welcomeMessageId) return;
-  await editCommunityReplyMarkup(CAMPAIGN_BOT, chatId, payload.welcomeMessageId, {
-    inline_keyboard: []
-  }).catch((error) => {
-    if (!/message to edit not found/i.test(String(error))) throw error;
+  const keyboard = verifiedJoinKeyboard(payload.welcomeVerifiedKeyboard || fallbackKeyboard);
+  const edit =
+    payload.welcomeVerifiedText != null
+      ? callCommunityTelegramApi(
+          CAMPAIGN_BOT,
+          payload.welcomeIsCaption ? 'editMessageCaption' : 'editMessageText',
+          {
+            chat_id: chatId,
+            message_id: payload.welcomeMessageId,
+            [payload.welcomeIsCaption ? 'caption' : 'text']: payload.welcomeVerifiedText,
+            ...(payload.welcomeParseMode ? { parse_mode: payload.welcomeParseMode } : {}),
+            reply_markup: keyboard
+          }
+        )
+      : editCommunityReplyMarkup(CAMPAIGN_BOT, chatId, payload.welcomeMessageId, keyboard);
+  await edit.catch((error) => {
+    if (!/message to edit not found|message is not modified/i.test(String(error))) throw error;
   });
   const delayMs = joinWelcomeCleanupDelay(
     payload.captchaAnswer,
@@ -1725,7 +1750,8 @@ async function finalizeCompletedJoin(chatId: string, userId: string, payload: Jo
     chatId,
     payload,
     config.captchaSuccessCleanupMinutes,
-    config.captchaSuccessCleanupSeconds
+    config.captchaSuccessCleanupSeconds,
+    config.welcomeKeyboard
   );
   await recordJoinVerificationHistory(
     chatId,
@@ -2028,7 +2054,19 @@ async function processTelegramCommunityJoinVerificationCallback(update: Communit
     user_id: Number(userId),
     permissions: chat.permissions || { can_send_messages: true }
   });
-  await completeJoinVerification(chatId, userId, payload, 'verified', callback.from.id);
+  const welcomeMessage = callback.message;
+  const completedPayload =
+    payload.welcomeVerifiedText != null || !welcomeMessage
+      ? payload
+      : {
+          ...payload,
+          welcomeVerifiedText: withoutJoinCaptchaQuestion(
+            welcomeMessage.text || welcomeMessage.caption || ''
+          ),
+          welcomeVerifiedKeyboard: verifiedJoinKeyboard(welcomeMessage.reply_markup),
+          welcomeIsCaption: welcomeMessage.caption != null
+        };
+  await completeJoinVerification(chatId, userId, completedPayload, 'verified', callback.from.id);
   await logCommunityActivity(config, 'Join verification completed', [
     `Group: ${chatId}`,
     `Member ID: ${userId}`

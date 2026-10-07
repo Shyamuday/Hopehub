@@ -22,6 +22,7 @@ export type CommunityTelegramMessage = {
   date?: number;
   text?: string;
   caption?: string;
+  reply_markup?: TelegramKeyboard;
   chat: { id: number | string; type?: string; title?: string; username?: string };
   from?: CommunityTelegramUser;
   message_thread_id?: number;
