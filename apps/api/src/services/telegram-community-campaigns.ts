@@ -620,6 +620,9 @@ async function claimNextCampaign(now: Date) {
     }
 
     const isLast = selectedIndex >= candidate.items.length - 1;
+    // A non-repeating campaign that has just delivered its last item is
+    // considered complete — mark it inactive so it does not run again.
+    // A repeating campaign (or one that still has items remaining) continues.
     const shouldContinue = candidate.repeat || !isLast;
     const claimed = await prisma.telegramCampaign.updateMany({
       where: {
@@ -629,6 +632,8 @@ async function claimNextCampaign(now: Date) {
         currentItemIndex: candidate.currentItemIndex
       },
       data: {
+        // Wrap back to 0 on the last item so a re-activated campaign picks up
+        // from the beginning rather than staying stuck at the end.
         currentItemIndex: isLast ? 0 : selectedIndex + 1,
         lastRunAt: now,
         isActive: shouldContinue,
