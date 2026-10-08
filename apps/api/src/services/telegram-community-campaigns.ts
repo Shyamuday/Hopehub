@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { randomBytes } from 'node:crypto';
+import { drainDueTelegramCampaigns } from './telegram-campaign-sweep.js';
 import {
   joinCaptchaAnswerAllowed,
   captchaNeedsStaffReview,
@@ -624,24 +625,38 @@ async function claimNextCampaign(now: Date) {
     // considered complete — mark it inactive so it does not run again.
     // A repeating campaign (or one that still has items remaining) continues.
     const shouldContinue = candidate.repeat || !isLast;
-    const claimed = await prisma.telegramCampaign.updateMany({
-      where: {
-        id: candidate.id,
-        isActive: true,
-        nextRunAt: candidate.nextRunAt,
-        currentItemIndex: candidate.currentItemIndex
-      },
-      data: {
-        // Wrap back to 0 on the last item so a re-activated campaign picks up
-        // from the beginning rather than staying stuck at the end.
-        currentItemIndex: isLast ? 0 : selectedIndex + 1,
-        lastRunAt: now,
-        isActive: shouldContinue,
-        nextRunAt: shouldContinue ? nextSchedule(now, candidate.intervalMinutes) : null
-      }
+    const delivery = await prisma.$transaction(async (tx) => {
+      const claimed = await tx.telegramCampaign.updateMany({
+        where: {
+          id: candidate.id,
+          isActive: true,
+          nextRunAt: candidate.nextRunAt,
+          currentItemIndex: candidate.currentItemIndex
+        },
+        data: {
+          currentItemIndex: isLast ? 0 : selectedIndex + 1,
+          lastRunAt: now,
+          isActive: shouldContinue,
+          nextRunAt: shouldContinue ? nextSchedule(now, candidate.intervalMinutes) : null
+        }
+      });
+      if (!claimed.count) return null;
+      return tx.telegramCampaignDelivery.create({
+        data: {
+          campaignId: candidate.id,
+          itemId: candidate.items[selectedIndex].id,
+          status: 'SENDING'
+        }
+      });
     });
-    if (!claimed.count) continue;
-    return { campaign: candidate, item: candidate.items[selectedIndex] };
+    if (!delivery) continue;
+    console.info('[telegram-campaign] Scheduled post claimed', {
+      campaignId: candidate.id,
+      deliveryId: delivery.id,
+      dueAt: candidate.nextRunAt,
+      claimedAt: now
+    });
+    return { campaign: candidate, item: candidate.items[selectedIndex], deliveryId: delivery.id };
   }
   return null;
 }
@@ -650,12 +665,8 @@ async function deliverClaimedCampaign(
   claimed: NonNullable<Awaited<ReturnType<typeof claimNextCampaign>>>,
   now: Date
 ) {
-  const { campaign, item } = claimed;
-  const delivery = await prisma.telegramCampaignDelivery.create({
-    data: { campaignId: campaign.id, itemId: item.id, status: 'SENDING' }
-  });
-
-  await performCampaignDelivery({ deliveryId: delivery.id, campaign, item, now });
+  const { campaign, item, deliveryId } = claimed;
+  await performCampaignDelivery({ deliveryId, campaign, item, now });
 }
 
 async function performCampaignDelivery(input: {
@@ -665,13 +676,14 @@ async function performCampaignDelivery(input: {
   now: Date;
 }) {
   const { deliveryId, campaign, item, now } = input;
-  const config = await communityConfig(campaign.chatId);
-  const messageThreadId = item.messageThreadId || config.defaultTopicId || undefined;
   await prisma.telegramCampaignDelivery.update({
     where: { id: deliveryId },
     data: { attempts: { increment: 1 }, nextRetryAt: null }
   });
+  let delivered = false;
   try {
+    const config = await communityConfig(campaign.chatId);
+    const messageThreadId = item.messageThreadId || config.defaultTopicId || undefined;
     let sent: SentTelegramMessage;
     if (item.kind === 'POLL' || item.kind === 'WELLBEING_POLL') {
       const options = jsonArray(item.pollOptions)
@@ -724,6 +736,13 @@ async function performCampaignDelivery(input: {
       });
     }
 
+    delivered = true;
+    console.info('[telegram-campaign] Scheduled post sent', {
+      campaignId: campaign.id,
+      deliveryId,
+      messageId: sent.message_id
+    });
+    const sentAt = new Date();
     await prisma.telegramCampaignDelivery.update({
       where: { id: deliveryId },
       data: {
@@ -735,11 +754,11 @@ async function performCampaignDelivery(input: {
         closesAt: item.closeAfterMinutes
           ? new Date(now.getTime() + item.closeAfterMinutes * 60_000)
           : null,
-        sentAt: now,
+        sentAt,
         nextRetryAt: null
       }
     });
-    const deleteAfter = telegramCampaignDeleteAfter(now, item.deleteAfterMinutes);
+    const deleteAfter = telegramCampaignDeleteAfter(sentAt, item.deleteAfterMinutes);
     if (deleteAfter) {
       await scheduleCommunityMessageCleanup({
         bot: CAMPAIGN_BOT,
@@ -749,7 +768,6 @@ async function performCampaignDelivery(input: {
         deleteAfter
       });
     }
-    const config = await communityConfig();
     await manageAnnouncementPin(config, campaign.chatId, sent.message_id, 'campaign');
     await logCommunityActivity(config, 'Scheduled community post delivered', [
       `Group: ${campaign.chatId}`,
@@ -757,12 +775,22 @@ async function performCampaignDelivery(input: {
       `Delivery: ${deliveryId}`
     ]);
   } catch (error) {
+    if (delivered) {
+      // Pin, audit or cleanup failure must never resend an accepted message.
+      console.error('[telegram-campaign] Post delivered; follow-up failed', {
+        deliveryId,
+        error: String(error)
+      });
+      return;
+    }
+    const detail = String(error instanceof Error ? error.message : error);
+    const retrySeconds = Number(/Retry after (\d+) seconds/i.exec(detail)?.[1] || 0);
     await prisma.telegramCampaignDelivery.update({
       where: { id: deliveryId },
       data: {
         status: 'FAILED',
         error: String(error instanceof Error ? error.message : error).slice(0, 1000),
-        nextRetryAt: new Date(now.getTime() + 5 * 60_000)
+        nextRetryAt: new Date(Date.now() + Math.max(60, retrySeconds + 1) * 1000)
       }
     });
     const config = await communityConfig();
@@ -771,7 +799,7 @@ async function performCampaignDelivery(input: {
       `Content type: ${item.kind}`,
       `Delivery: ${deliveryId}`,
       'It will retry automatically.'
-    ]);
+    ]).catch((error) => console.error('[telegram-campaign] Failure audit unavailable', error));
   }
 }
 
@@ -841,16 +869,68 @@ async function restoreExpiredCommunityLockdowns(now: Date) {
   );
 }
 
+let campaignSweepRunning = false;
 export async function runTelegramCampaignScheduler(now = new Date()) {
-  await runScheduledCommunityMessageCleanup(now);
+  if (campaignSweepRunning) return;
+  campaignSweepRunning = true;
+  try {
+    await runCampaignSweep(now);
+  } finally {
+    campaignSweepRunning = false;
+  }
+}
+
+async function runCampaignSweep(now: Date) {
+  const isolated = async (name: string, work: () => Promise<unknown>) => {
+    try {
+      await work();
+    } catch (error) {
+      console.error('[telegram-campaign] Scheduler task failed', {
+        task: name,
+        error: String(error)
+      });
+    }
+  };
+  if (telegramCampaignSweepEnabled) {
+    await isolated('due-posts', async () => {
+      await drainDueTelegramCampaigns({
+        claim: () => claimNextCampaign(now),
+        deliver: (claimed) => deliverClaimedCampaign(claimed, now),
+        onError: (claimed, error) =>
+          console.error('[telegram-campaign] Delivery failed', {
+            campaignId: claimed.campaign.id,
+            error: String(error)
+          }),
+        limit: MAX_DELIVERIES_PER_SWEEP
+      });
+    });
+    await isolated('delivery-retries', async () => {
+      const retries = await prisma.telegramCampaignDelivery.findMany({
+        where: { status: 'FAILED', nextRetryAt: { lte: now } },
+        select: { id: true },
+        orderBy: { nextRetryAt: 'asc' },
+        take: 5
+      });
+      await Promise.allSettled(
+        retries.map((delivery) => retryTelegramCampaignDelivery(delivery.id, now))
+      );
+    });
+  }
+  await isolated('runScheduledCommunityMessageCleanup', () =>
+    runScheduledCommunityMessageCleanup(now)
+  );
   await runRepeatedGroupHelpNotes(now).catch((error) =>
     console.error('[telegram-group-help] Repeated-note scheduler failed.', error)
   );
-  await unpinExpiredAnnouncements(now);
-  await runCommunityDataRetentionCleanupHourly(now);
-  await restoreExpiredCommunityLockdowns(now);
+  await isolated('unpinExpiredAnnouncements', () => unpinExpiredAnnouncements(now));
+  await isolated('runCommunityDataRetentionCleanupHourly', () =>
+    runCommunityDataRetentionCleanupHourly(now)
+  );
+  await isolated('restoreExpiredCommunityLockdowns', () => restoreExpiredCommunityLockdowns(now));
   if (!telegramCampaignSweepEnabled) return;
-  await runTelegramContentNetworkScheduler(now);
+  await isolated('runTelegramContentNetworkScheduler', () =>
+    runTelegramContentNetworkScheduler(now)
+  );
   try {
     await runTelegramDailyVcTopicPlanner(now);
   } catch (error) {
@@ -865,22 +945,10 @@ export async function runTelegramCampaignScheduler(now = new Date()) {
       )
       .catch(() => null);
   }
-  await runTelegramCommunityEventScheduler(now);
-  await closeExpiredPolls(now);
-  const retries = await prisma.telegramCampaignDelivery.findMany({
-    where: { status: 'FAILED', attempts: { lt: 3 }, nextRetryAt: { lte: now } },
-    select: { id: true },
-    orderBy: { nextRetryAt: 'asc' },
-    take: 5
-  });
-  await Promise.allSettled(
-    retries.map((delivery) => retryTelegramCampaignDelivery(delivery.id, now))
+  await isolated('runTelegramCommunityEventScheduler', () =>
+    runTelegramCommunityEventScheduler(now)
   );
-  for (let index = 0; index < MAX_DELIVERIES_PER_SWEEP; index += 1) {
-    const claimed = await claimNextCampaign(now);
-    if (!claimed) break;
-    await deliverClaimedCampaign(claimed, now);
-  }
+  await isolated('closeExpiredPolls', () => closeExpiredPolls(now));
 }
 
 export async function handleTelegramCommunityVoiceChatEnded(message: CommunityTelegramMessage) {
