@@ -72,7 +72,6 @@ import { isManagedTelegramVoiceChat } from './telegram-voice-event-reconciliatio
 const CAMPAIGN_BOT = GROUP_HELP_BOT_SLUG;
 const MAX_DELIVERIES_PER_SWEEP = 20;
 const ENGAGEMENT_CAMPAIGN_ID = 'seed_telegram_hourly_engagement';
-const PROMOTION_CAMPAIGN_ID = 'seed_telegram_daily_discovery';
 const VOICE_EVENT_ANNOUNCEMENT_LEAD_MS = 60 * 60 * 1000;
 // A Telegram group can keep only one live or scheduled voice chat. After a
 // call ends, leave a short handover window before restoring the next slot.
@@ -204,9 +203,6 @@ const SMART_SCHEDULE_CONFIG_KEYS = [
   'telegramCommunitySmartScheduleEnabled',
   'telegramCommunityScheduleStart',
   'telegramCommunityScheduleEnd',
-  'telegramCommunityMaxPostsPerDay',
-  'telegramCommunityEngagementPostsPerDay',
-  'telegramCommunityPromotionPostsPerDay',
   'telegramCommunityActiveChatPauseMinutes',
   'telegramCommunityMinimumPostGapMinutes',
   'telegramCommunityContentRepeatDays'
@@ -406,14 +402,6 @@ function timeMinutes(value: string | undefined, fallback: number) {
   return hour <= 23 && minute <= 59 ? hour * 60 + minute : fallback;
 }
 
-function indiaDayStart(now: Date) {
-  const offsetMs = 330 * 60_000;
-  const india = new Date(now.getTime() + offsetMs);
-  return new Date(
-    Date.UTC(india.getUTCFullYear(), india.getUTCMonth(), india.getUTCDate()) - offsetMs
-  );
-}
-
 function indiaMinuteOfDay(now: Date) {
   const india = new Date(now.getTime() + 330 * 60_000);
   return india.getUTCHours() * 60 + india.getUTCMinutes();
@@ -441,9 +429,6 @@ async function smartSchedulePolicy() {
     enabled: values.telegramCommunitySmartScheduleEnabled !== 'Disabled',
     startMinute: timeMinutes(values.telegramCommunityScheduleStart, 0),
     endMinute: timeMinutes(values.telegramCommunityScheduleEnd, 0),
-    maxPosts: boundedNumber(values.telegramCommunityMaxPostsPerDay, 14, 1, 30),
-    maxEngagementPosts: boundedNumber(values.telegramCommunityEngagementPostsPerDay, 3, 0, 20),
-    maxPromotionPosts: boundedNumber(values.telegramCommunityPromotionPostsPerDay, 6, 0, 20),
     activePauseMinutes: boundedNumber(values.telegramCommunityActiveChatPauseMinutes, 30, 0, 1440),
     minimumGapMinutes: boundedNumber(values.telegramCommunityMinimumPostGapMinutes, 45, 0, 1440),
     repeatDays: boundedNumber(values.telegramCommunityContentRepeatDays, 30, 1, 365)
@@ -516,46 +501,22 @@ async function claimNextCampaign(now: Date) {
           : policy.startMinute < policy.endMinute
             ? minute >= policy.startMinute && minute < policy.endMinute
             : minute >= policy.startMinute || minute < policy.endMinute;
-      const dayStart = indiaDayStart(now);
-      const [dailyPosts, engagementPosts, promotionPosts, lastDelivery, activity] =
-        await Promise.all([
-          prisma.telegramCampaignDelivery.count({
-            where: {
-              campaign: { chatId: candidate.chatId },
-              campaignId: { not: EPHEMERAL_CONFESSION_CAMPAIGN_ID },
-              status: { in: ['SENT', 'CLOSED'] },
-              sentAt: { gte: dayStart }
-            }
-          }),
-          prisma.telegramCampaignDelivery.count({
-            where: {
-              campaignId: ENGAGEMENT_CAMPAIGN_ID,
-              status: { in: ['SENT', 'CLOSED'] },
-              sentAt: { gte: dayStart }
-            }
-          }),
-          prisma.telegramCampaignDelivery.count({
-            where: {
-              campaignId: PROMOTION_CAMPAIGN_ID,
-              status: { in: ['SENT', 'CLOSED'] },
-              sentAt: { gte: dayStart }
-            }
-          }),
-          prisma.telegramCampaignDelivery.findFirst({
-            where: {
-              campaign: { chatId: candidate.chatId },
-              campaignId: { not: EPHEMERAL_CONFESSION_CAMPAIGN_ID },
-              status: { in: ['SENT', 'CLOSED'] },
-              sentAt: { not: null }
-            },
-            select: { sentAt: true },
-            orderBy: { sentAt: 'desc' }
-          }),
-          prisma.telegramCommunityState.findUnique({
-            where: { bot_chatId: { bot: 'hopehubai-activity', chatId: candidate.chatId } },
-            select: { updatedAt: true }
-          })
-        ]);
+      const [lastDelivery, activity] = await Promise.all([
+        prisma.telegramCampaignDelivery.findFirst({
+          where: {
+            campaign: { chatId: candidate.chatId },
+            campaignId: { not: EPHEMERAL_CONFESSION_CAMPAIGN_ID },
+            status: { in: ['SENT', 'CLOSED'] },
+            sentAt: { not: null }
+          },
+          select: { sentAt: true },
+          orderBy: { sentAt: 'desc' }
+        }),
+        prisma.telegramCommunityState.findUnique({
+          where: { bot_chatId: { bot: 'hopehubai-activity', chatId: candidate.chatId } },
+          select: { updatedAt: true }
+        })
+      ]);
 
       const activeUntil = activity
         ? new Date(activity.updatedAt.getTime() + policy.activePauseMinutes * 60_000)
@@ -565,27 +526,18 @@ async function claimNextCampaign(now: Date) {
         : null;
       const shouldDefer =
         !inActiveHours ||
-        dailyPosts >= policy.maxPosts ||
-        (candidate.id === ENGAGEMENT_CAMPAIGN_ID && engagementPosts >= policy.maxEngagementPosts) ||
-        (candidate.id === PROMOTION_CAMPAIGN_ID && promotionPosts >= policy.maxPromotionPosts) ||
         Boolean(activeUntil && activeUntil > now) ||
         Boolean(gapUntil && gapUntil > now);
       if (shouldDefer) {
-        const quotaReached =
-          dailyPosts >= policy.maxPosts ||
-          (candidate.id === ENGAGEMENT_CAMPAIGN_ID &&
-            engagementPosts >= policy.maxEngagementPosts) ||
-          (candidate.id === PROMOTION_CAMPAIGN_ID && promotionPosts >= policy.maxPromotionPosts);
-        const nextCheck =
-          !inActiveHours || quotaReached
-            ? nextIndiaScheduleStart(now, policy.startMinute, quotaReached)
-            : new Date(
-                Math.max(
-                  now.getTime() + 15 * 60_000,
-                  activeUntil?.getTime() || 0,
-                  gapUntil?.getTime() || 0
-                )
-              );
+        const nextCheck = !inActiveHours
+          ? nextIndiaScheduleStart(now, policy.startMinute)
+          : new Date(
+              Math.max(
+                now.getTime() + 15 * 60_000,
+                activeUntil?.getTime() || 0,
+                gapUntil?.getTime() || 0
+              )
+            );
         await prisma.telegramCampaign.updateMany({
           where: { id: candidate.id, nextRunAt: candidate.nextRunAt },
           data: { nextRunAt: nextCheck }

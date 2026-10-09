@@ -38,14 +38,14 @@ test('HopeHubAI exposes an optional moderation bypass list for trusted people', 
   assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramGroupHelpAdminWhitelist, '');
 });
 
-test('community automation runs around the clock with conservative engagement limits', () => {
+test('community automation runs around the clock without daily posting caps', () => {
   assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramGroupHelpAutoDeleteSeconds, '60');
   assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramCommunitySmartScheduleEnabled, 'Enabled');
   assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramCommunityScheduleStart, '00:00');
   assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramCommunityScheduleEnd, '00:00');
-  assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramCommunityMaxPostsPerDay, '14');
-  assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramCommunityEngagementPostsPerDay, '3');
-  assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramCommunityPromotionPostsPerDay, '6');
+  assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramCommunityMaxPostsPerDay, undefined);
+  assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramCommunityEngagementPostsPerDay, undefined);
+  assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramCommunityPromotionPostsPerDay, undefined);
   assert.equal(GROUP_HELP_CONFIG_DEFAULTS.telegramCommunityContentRepeatDays, '30');
 });
 

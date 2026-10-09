@@ -639,35 +639,6 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
     defaultValue: '00:00'
   },
   {
-    key: 'telegramCommunityMaxPostsPerDay',
-    label: 'Maximum automated posts per day',
-    description: 'Safety limit across check-ins, polls, reminders, and rotating engagement posts.',
-    section: 'content',
-    type: 'number',
-    maxLength: 2,
-    defaultValue: '14'
-  },
-  {
-    key: 'telegramCommunityEngagementPostsPerDay',
-    label: 'Rotating engagement posts per day',
-    description:
-      'Maximum quotes, prompts, exercises, and polls posted from the engagement pool each day.',
-    section: 'content',
-    type: 'number',
-    maxLength: 2,
-    defaultValue: '3'
-  },
-  {
-    key: 'telegramCommunityPromotionPostsPerDay',
-    label: 'Daily community-link posts',
-    description:
-      'Maximum campaign posts that share the community post, earning registration, and Hope Hub website.',
-    section: 'content',
-    type: 'number',
-    maxLength: 2,
-    defaultValue: '6'
-  },
-  {
     key: 'telegramCommunityActiveChatPauseMinutes',
     label: 'Pause when members are chatting',
     description: 'Wait this many minutes after a genuine member message before posting automation.',
