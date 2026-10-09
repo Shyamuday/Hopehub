@@ -3,6 +3,7 @@ import test from 'node:test';
 import {
   EPHEMERAL_CONFESSION_CAMPAIGN_ID,
   shouldApplyTelegramSmartSchedule,
+  telegramCampaignSlotAvailable,
   telegramCampaignDeleteAfter
 } from './telegram-community-campaign-policy.js';
 
@@ -27,4 +28,12 @@ test('all three hourly admin posts bypass activity, gap and daily quota rules', 
     assert.equal(shouldApplyTelegramSmartSchedule(id), false);
   }
   assert.equal(shouldApplyTelegramSmartSchedule('seed_telegram_hourly_engagement'), true);
+});
+
+test('shared slots enforce spacing and allow a disabled gap', () => {
+  const last = new Date('2026-10-09T10:00:00Z');
+  assert.equal(telegramCampaignSlotAvailable(last, new Date('2026-10-09T10:09:59Z'), 10), false);
+  assert.equal(telegramCampaignSlotAvailable(last, new Date('2026-10-09T10:10:00Z'), 10), true);
+  assert.equal(telegramCampaignSlotAvailable(null, last, 10), true);
+  assert.equal(telegramCampaignSlotAvailable(last, last, 0), true);
 });

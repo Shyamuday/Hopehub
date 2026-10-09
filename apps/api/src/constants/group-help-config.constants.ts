@@ -639,22 +639,14 @@ const GROUP_HELP_CORE_CONFIG_FIELDS: GroupHelpConfigField[] = [
     defaultValue: '00:00'
   },
   {
-    key: 'telegramCommunityActiveChatPauseMinutes',
-    label: 'Pause when members are chatting',
-    description: 'Wait this many minutes after a genuine member message before posting automation.',
-    section: 'content',
-    type: 'number',
-    maxLength: 4,
-    defaultValue: '30'
-  },
-  {
-    key: 'telegramCommunityMinimumPostGapMinutes',
+    key: 'telegramCommunityScheduledPostGapMinutes',
     label: 'Minimum automated post gap',
-    description: 'Minimum quiet time between any two automated community posts.',
+    description:
+      'Queue spacing between scheduled posts in the same group, including hourly posts and retries.',
     section: 'content',
     type: 'number',
     maxLength: 4,
-    defaultValue: '45'
+    defaultValue: '10'
   },
   {
     key: 'telegramCommunityContentRepeatDays',

@@ -1,3 +1,4 @@
+import { scheduledPostSettings } from './telegram-scheduled-post-settings.js';
 import { Prisma } from '@prisma/client';
 import { joinCaptchaSettingVisible } from './telegram-join-captcha-policy.js';
 import { prisma } from '../db.js';
@@ -106,6 +107,7 @@ function sectionKeyboard(): TelegramKeyboard {
           button(section[0].toUpperCase() + section.slice(1), `${PREFIX}section:${section}`)
         )
       ),
+      [button('Scheduled posts', `${PREFIX}posts`)],
       [button('People & access', `${PREFIX}staff`), button('← Settings home', `${PREFIX}home`)]
     ]
   };
@@ -483,6 +485,19 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
   }
 
   const action = callback.data.slice(PREFIX.length);
+  if (action === 'posts' || action.startsWith('posts:')) {
+    try {
+      const panel = await scheduledPostSettings(action, chatId);
+      await sendCommunityMessage(GROUP_HELP_BOT_SLUG, replyChatId, panel.text, {
+        reply_markup: panel.keyboard
+      });
+      await answerCommunityCallback(GROUP_HELP_BOT_SLUG, callback.id);
+    } catch (error) {
+      await answerCommunityCallback(GROUP_HELP_BOT_SLUG, callback.id, String(error).slice(0, 180));
+    }
+    return true;
+  }
+
   if (action === 'staff' || action.startsWith('staff-') || action.startsWith('admin-user:')) {
     if (
       !(await canEditGroupSettings(chatId, callback.from, callback.message.message_id, '/helper'))

@@ -12,3 +12,12 @@ export function telegramCampaignDeleteAfter(now: Date, deleteAfterMinutes: numbe
   }
   return new Date(now.getTime() + deleteAfterMinutes * 60_000);
 }
+
+// Keep overdue nextRunAt unchanged so the oldest due post retains its place.
+export function telegramCampaignSlotAvailable(
+  lastAttempt: Date | null | undefined,
+  now: Date,
+  gapMinutes: number
+) {
+  return !lastAttempt || now.getTime() >= lastAttempt.getTime() + Math.max(0, gapMinutes) * 60_000;
+}

@@ -1,3 +1,4 @@
+import { telegramCampaignSlotAvailable } from './telegram-community-campaign-policy.js';
 import { Prisma } from '@prisma/client';
 import { randomBytes } from 'node:crypto';
 import { drainDueTelegramCampaigns } from './telegram-campaign-sweep.js';
@@ -33,7 +34,6 @@ import {
   scheduleCommunityMessageCleanup
 } from './telegram-community-bots.store.js';
 import {
-  EPHEMERAL_CONFESSION_CAMPAIGN_ID,
   shouldApplyTelegramSmartSchedule,
   telegramCampaignDeleteAfter
 } from './telegram-community-campaign-policy.js';
@@ -203,8 +203,7 @@ const SMART_SCHEDULE_CONFIG_KEYS = [
   'telegramCommunitySmartScheduleEnabled',
   'telegramCommunityScheduleStart',
   'telegramCommunityScheduleEnd',
-  'telegramCommunityActiveChatPauseMinutes',
-  'telegramCommunityMinimumPostGapMinutes',
+  'telegramCommunityScheduledPostGapMinutes',
   'telegramCommunityContentRepeatDays'
 ] as const;
 
@@ -407,30 +406,13 @@ function indiaMinuteOfDay(now: Date) {
   return india.getUTCHours() * 60 + india.getUTCMinutes();
 }
 
-function nextIndiaScheduleStart(now: Date, startMinute: number, tomorrow = false) {
-  const offsetMs = 330 * 60_000;
-  const india = new Date(now.getTime() + offsetMs);
-  const target = new Date(
-    Date.UTC(
-      india.getUTCFullYear(),
-      india.getUTCMonth(),
-      india.getUTCDate() + (tomorrow ? 1 : 0),
-      Math.floor(startMinute / 60),
-      startMinute % 60
-    ) - offsetMs
-  );
-  if (target <= now) target.setUTCDate(target.getUTCDate() + 1);
-  return target;
-}
-
 async function smartSchedulePolicy() {
   const values = await getSiteConfigMap(SMART_SCHEDULE_CONFIG_KEYS);
   return {
     enabled: values.telegramCommunitySmartScheduleEnabled !== 'Disabled',
     startMinute: timeMinutes(values.telegramCommunityScheduleStart, 0),
     endMinute: timeMinutes(values.telegramCommunityScheduleEnd, 0),
-    activePauseMinutes: boundedNumber(values.telegramCommunityActiveChatPauseMinutes, 30, 0, 1440),
-    minimumGapMinutes: boundedNumber(values.telegramCommunityMinimumPostGapMinutes, 45, 0, 1440),
+    minimumGapMinutes: boundedNumber(values.telegramCommunityScheduledPostGapMinutes, 10, 0, 1440),
     repeatDays: boundedNumber(values.telegramCommunityContentRepeatDays, 30, 1, 365)
   };
 }
@@ -479,6 +461,18 @@ async function weeklySummary(chatId: string, intro?: string | null) {
   ].join('\n');
 }
 
+async function campaignGroupSlotAvailable(chatId: string, now: Date, gapMinutes: number) {
+  const latest = await prisma.telegramCampaignDelivery.aggregate({
+    where: { campaign: { chatId }, status: { in: ['SENT', 'CLOSED', 'SENDING'] } },
+    _max: { sentAt: true, createdAt: true }
+  });
+  const lastMs = Math.max(
+    latest._max.sentAt?.getTime() || 0,
+    latest._max.createdAt?.getTime() || 0
+  );
+  return telegramCampaignSlotAvailable(lastMs ? new Date(lastMs) : null, now, gapMinutes);
+}
+
 async function claimNextCampaign(now: Date) {
   const candidates = await prisma.telegramCampaign.findMany({
     where: { isActive: true, nextRunAt: { lte: now }, items: { some: {} } },
@@ -492,6 +486,8 @@ async function claimNextCampaign(now: Date) {
   for (const candidate of candidates) {
     if (!candidate.nextRunAt || !candidate.items.length) continue;
     let selectedIndex = Math.min(candidate.currentItemIndex, candidate.items.length - 1);
+    if (!(await campaignGroupSlotAvailable(candidate.chatId, now, policy.minimumGapMinutes)))
+      continue;
 
     if (policy.enabled && shouldApplyTelegramSmartSchedule(candidate.id)) {
       const minute = indiaMinuteOfDay(now);
@@ -501,49 +497,8 @@ async function claimNextCampaign(now: Date) {
           : policy.startMinute < policy.endMinute
             ? minute >= policy.startMinute && minute < policy.endMinute
             : minute >= policy.startMinute || minute < policy.endMinute;
-      const [lastDelivery, activity] = await Promise.all([
-        prisma.telegramCampaignDelivery.findFirst({
-          where: {
-            campaign: { chatId: candidate.chatId },
-            campaignId: { not: EPHEMERAL_CONFESSION_CAMPAIGN_ID },
-            status: { in: ['SENT', 'CLOSED'] },
-            sentAt: { not: null }
-          },
-          select: { sentAt: true },
-          orderBy: { sentAt: 'desc' }
-        }),
-        prisma.telegramCommunityState.findUnique({
-          where: { bot_chatId: { bot: 'hopehubai-activity', chatId: candidate.chatId } },
-          select: { updatedAt: true }
-        })
-      ]);
-
-      const activeUntil = activity
-        ? new Date(activity.updatedAt.getTime() + policy.activePauseMinutes * 60_000)
-        : null;
-      const gapUntil = lastDelivery?.sentAt
-        ? new Date(lastDelivery.sentAt.getTime() + policy.minimumGapMinutes * 60_000)
-        : null;
-      const shouldDefer =
-        !inActiveHours ||
-        Boolean(activeUntil && activeUntil > now) ||
-        Boolean(gapUntil && gapUntil > now);
-      if (shouldDefer) {
-        const nextCheck = !inActiveHours
-          ? nextIndiaScheduleStart(now, policy.startMinute)
-          : new Date(
-              Math.max(
-                now.getTime() + 15 * 60_000,
-                activeUntil?.getTime() || 0,
-                gapUntil?.getTime() || 0
-              )
-            );
-        await prisma.telegramCampaign.updateMany({
-          where: { id: candidate.id, nextRunAt: candidate.nextRunAt },
-          data: { nextRunAt: nextCheck }
-        });
-        continue;
-      }
+      // Activity must not starve an explicitly enabled recurring schedule.
+      if (!inActiveHours) continue;
 
       if (candidate.id === ENGAGEMENT_CAMPAIGN_ID) {
         const repeatCutoff = new Date(now.getTime() - policy.repeatDays * 24 * 60 * 60_000);
@@ -762,6 +717,9 @@ export async function retryTelegramCampaignDelivery(deliveryId: string, now = ne
   });
   if (!delivery || !delivery.item) throw new Error('Failed Telegram delivery not found.');
   if (delivery.status !== 'FAILED') throw new Error('Only failed deliveries can be retried.');
+  const policy = await smartSchedulePolicy();
+  if (!(await campaignGroupSlotAvailable(delivery.campaign.chatId, now, policy.minimumGapMinutes)))
+    return delivery;
   const claimed = await prisma.telegramCampaignDelivery.updateMany({
     where: { id: delivery.id, status: 'FAILED' },
     data: { status: 'SENDING', error: null }
@@ -863,9 +821,9 @@ async function runCampaignSweep(now: Date) {
         orderBy: { nextRetryAt: 'asc' },
         take: 5
       });
-      await Promise.allSettled(
-        retries.map((delivery) => retryTelegramCampaignDelivery(delivery.id, now))
-      );
+      for (const delivery of retries) {
+        await isolated('delivery-retry', () => retryTelegramCampaignDelivery(delivery.id, now));
+      }
     });
   }
   await isolated('runScheduledCommunityMessageCleanup', () =>
