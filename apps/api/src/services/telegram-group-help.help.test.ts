@@ -38,6 +38,7 @@ test('Telegram command menu uses its 100 slots for primary commands', () => {
     'tban',
     'promote',
     'send',
+    'schedule',
     'forget'
   ]) {
     assert.equal(

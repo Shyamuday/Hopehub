@@ -149,7 +149,6 @@ const COMMUNITY_BOTS: Record<
       { command: 'me', description: 'Show your group profile' },
       { command: 'report', description: 'Report a message to admins' },
       { command: 'reports', description: 'Toggle user reports (admins)' },
-      { command: 'adminerror', description: 'Toggle admin permission errors' },
       { command: 'botaudit', description: 'Audit bot administrator rights' },
       { command: 'smoketest', description: 'Run safe group configuration checks' },
       { command: 'disable', description: 'Disable a member command (admins)' },
