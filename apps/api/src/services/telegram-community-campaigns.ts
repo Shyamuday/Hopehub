@@ -158,6 +158,10 @@ function isWelcomeVideo(url: string) {
 }
 
 function communityMediaPayload(url: string) {
+  if (url.startsWith('video:'))
+    return { method: 'sendVideo' as const, media: { video: url.slice(6) } };
+  if (url.startsWith('photo:'))
+    return { method: 'sendPhoto' as const, media: { photo: url.slice(6) } };
   if (isWelcomeVideo(url)) {
     return { method: 'sendVideo' as const, media: { video: url } };
   }

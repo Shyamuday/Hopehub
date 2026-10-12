@@ -1,4 +1,5 @@
 import { scheduledPostSettings } from './telegram-scheduled-post-settings.js';
+import { postEditorAction, postEditorInput } from './telegram-post-editor.js';
 import { Prisma } from '@prisma/client';
 import { joinCaptchaSettingVisible } from './telegram-join-captcha-policy.js';
 import { prisma } from '../db.js';
@@ -487,7 +488,9 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
   const action = callback.data.slice(PREFIX.length);
   if (action === 'posts' || action.startsWith('posts:')) {
     try {
-      const panel = await scheduledPostSettings(action, chatId);
+      const panel =
+        (await postEditorAction(action, chatId, callback.from.id)) ||
+        (await scheduledPostSettings(action, chatId));
       await sendCommunityMessage(GROUP_HELP_BOT_SLUG, replyChatId, panel.text, {
         reply_markup: panel.keyboard
       });
@@ -846,10 +849,28 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
 }
 
 export async function handleGroupHelpBotSettingsInput(message: CommunityTelegramMessage) {
-  if (!message.from || !message.text || message.chat.type !== 'private') return false;
+  if (!message.from || message.chat.type !== 'private') return false;
   const chatId = await selectedPrivateSettingsGroup(message.from.id);
   if (!chatId) return false;
   const replyChatId = String(message.chat.id);
+  if (!(await canEditGroupSettings(chatId, message.from, message.message_id))) return true;
+  try {
+    const panel = await postEditorInput(chatId, message.from.id, message);
+    if (panel) {
+      await sendCommunityMessage(GROUP_HELP_BOT_SLUG, replyChatId, panel.text, {
+        reply_markup: panel.keyboard
+      });
+      return true;
+    }
+  } catch (error) {
+    await sendCommunityMessage(
+      GROUP_HELP_BOT_SLUG,
+      replyChatId,
+      error instanceof Error ? error.message : 'Could not update post.'
+    );
+    return true;
+  }
+  if (!message.text) return false;
   const draft = await readSettingsDraft(chatId, message.from.id);
   if (!draft) return false;
   if (!(await canEditGroupSettings(chatId, message.from, message.message_id))) return true;
