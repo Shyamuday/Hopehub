@@ -98,3 +98,6 @@ deploy/grouphelpbot/GroupHelp/
 *.tmp
 *.bak
 __pycache__/
+
+# Independently deployed Iris repository in this local workspace.
+/iris/
