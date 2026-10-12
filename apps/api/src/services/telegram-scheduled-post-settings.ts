@@ -16,6 +16,23 @@ export async function scheduledPostSettings(
   if (id && operation) {
     const campaign = await prisma.telegramCampaign.findFirst({ where: { id, chatId } });
     if (!campaign) throw new Error('Scheduled post no longer exists in this group.');
+    if (operation === 'cancel') {
+      return {
+        text: `Cancel the schedule for ${campaign.name}? Content and delivery history will be kept.`,
+        keyboard: {
+          inline_keyboard: [
+            [{ text: 'Yes, cancel schedule', callback_data: `${PREFIX}:cancelok:${id}` }],
+            [{ text: 'Keep schedule', callback_data: `${PREFIX}:view:${id}` }]
+          ]
+        }
+      };
+    }
+    if (operation === 'cancelok') {
+      await prisma.telegramCampaign.updateMany({
+        where: { id, chatId },
+        data: { isActive: false, nextRunAt: null }
+      });
+    }
     if (operation === 'toggle') {
       await prisma.telegramCampaign.updateMany({
         where: { id, chatId },
@@ -74,6 +91,12 @@ export async function scheduledPostSettings(
         `Last sent: ${stamp(sent._max.sentAt)}`,
         `Next due: ${stamp(selected.nextRunAt)}`,
         `Items: ${selected.items.length}. Edits affect future deliveries.`,
+        ...selected.items
+          .slice(page * 5, page * 5 + 5)
+          .map(
+            (item, index) =>
+              `Item ${page * 5 + index + 1}: ${item.imageUrl?.startsWith('video:') ? 'Video' : item.imageUrl ? 'Media' : item.kind}\n${(item.text || item.pollQuestion || '(No text)').slice(0, 180)}`
+          ),
         `Delivery: ${delivery?.status || 'No delivery'}`,
         delivery?.error ? `Failure: ${delivery.error}` : '',
         'Due posts wait in group order. Actual send time depends on the shared gap.'
@@ -125,19 +148,20 @@ export async function scheduledPostSettings(
           ...[30, 60, 120, 180, 480, 1440, 10080].map((minutes) => [
             { text: `Every ${minutes} min`, callback_data: `${PREFIX}:i:${id}:${minutes}` }
           ]),
-          [{ text: '? Scheduled posts', callback_data: PREFIX }]
+          [{ text: 'Cancel schedule', callback_data: `${PREFIX}:cancel:${id}` }],
+          [{ text: 'Back to scheduled posts', callback_data: PREFIX }]
         ]
       }
     };
   }
   return {
-    text: `${campaigns.length} scheduled posts. Choose a post to inspect or change its interval. Group spacing is under Content ? Minimum automated post gap.`,
+    text: `Scheduled posts: ${campaigns.length}\n\nCreate a new text, photo or video post, or choose an existing post below.\n\nEach post offers: edit content/name, schedule date and time (IST), custom or preset interval, repeat, pause/resume, topic, link buttons, auto-deletion and cancel schedule. Delivery status and last/next run are shown in the post details.\n\nGroup spacing is under Content → Minimum automated post gap.`,
     keyboard: {
       inline_keyboard: [
         [{ text: 'Add new post', callback_data: `${PREFIX}:new` }],
         ...campaigns.map((post) => [
           {
-            text: `${post.isActive ? '?' : '?'} ${post.name}`.slice(0, 60),
+            text: `${post.isActive ? 'Active' : 'Paused'}: ${post.name}`.slice(0, 60),
             callback_data: `${PREFIX}:view:${post.id}`
           }
         ]),

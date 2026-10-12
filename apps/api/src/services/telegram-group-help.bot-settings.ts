@@ -409,7 +409,7 @@ export async function handleGroupHelpPrivateSettingsStart(message: CommunityTele
     SETTINGS_SESSION_LIFETIME_MS
   );
   if (match[1].toLowerCase() === 'schedule') {
-    const panel = await postEditorAction('posts:new', settingsChatId, message.from.id);
+    const panel = await scheduledPostSettings('posts', settingsChatId);
     if (panel)
       await sendCommunityMessage(GROUP_HELP_BOT_SLUG, String(message.chat.id), panel.text, {
         reply_markup: panel.keyboard
@@ -448,13 +448,13 @@ export async function handleGroupHelpScheduleCommand(message: CommunityTelegramM
     await sendCommunityMessage(
       GROUP_HELP_BOT_SLUG,
       String(message.chat.id),
-      'Create your scheduled post privately:',
+      'Manage scheduled posts privately: create, edit, schedule, pause or resume.',
       {
         reply_markup: {
           inline_keyboard: [
             [
               {
-                text: 'Create scheduled post',
+                text: 'Open scheduled posts',
                 url: `https://t.me/Hopehubbot?start=schedule_${chatId}`
               }
             ]
@@ -463,7 +463,7 @@ export async function handleGroupHelpScheduleCommand(message: CommunityTelegramM
       }
     );
   } else {
-    const panel = await postEditorAction('posts:new', chatId, message.from.id);
+    const panel = await scheduledPostSettings('posts', chatId);
     if (panel)
       await sendCommunityMessage(GROUP_HELP_BOT_SLUG, String(message.chat.id), panel.text, {
         reply_markup: panel.keyboard
