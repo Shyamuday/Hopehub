@@ -391,9 +391,9 @@ function clearSettingsDraft(chatId: string, userId: number) {
 /** Opens a group-scoped editor in private chat after checking Telegram admin rights. */
 export async function handleGroupHelpPrivateSettingsStart(message: CommunityTelegramMessage) {
   if (!message.from || message.chat.type !== 'private') return false;
-  const match = (message.text || '').trim().match(/^\/start\s+group_settings_(-?\d+)$/i);
+  const match = (message.text || '').trim().match(/^\/start\s+(group_settings|schedule)_(-?\d+)$/i);
   if (!match) return false;
-  const settingsChatId = match[1];
+  const settingsChatId = match[2];
   if (!(await canEditGroupSettings(settingsChatId, message.from, message.message_id))) {
     await sendCommunityMessage(
       GROUP_HELP_BOT_SLUG,
@@ -408,12 +408,67 @@ export async function handleGroupHelpPrivateSettingsStart(message: CommunityTele
     { targetChatId: settingsChatId },
     SETTINGS_SESSION_LIFETIME_MS
   );
+  if (match[1].toLowerCase() === 'schedule') {
+    const panel = await postEditorAction('posts:new', settingsChatId, message.from.id);
+    if (panel)
+      await sendCommunityMessage(GROUP_HELP_BOT_SLUG, String(message.chat.id), panel.text, {
+        reply_markup: panel.keyboard
+      });
+    return true;
+  }
   await sendCommunityMessage(
     GROUP_HELP_BOT_SLUG,
     String(message.chat.id),
     '⚙️ *Group settings*\n\nYou are editing the selected group privately. Your admin access is checked again before each change.',
     { parse_mode: 'Markdown', reply_markup: sectionKeyboard() }
   );
+  return true;
+}
+
+export async function handleGroupHelpScheduleCommand(message: CommunityTelegramMessage) {
+  if (
+    !message.from ||
+    !/^\/(?:schedule|schedulepost|schedu)(?:@\w+)?\s*$/i.test(message.text || '')
+  )
+    return false;
+  const privateChat = message.chat.type === 'private';
+  const chatId = privateChat
+    ? await selectedPrivateSettingsGroup(message.from.id)
+    : String(message.chat.id);
+  if (!chatId) {
+    await sendCommunityMessage(
+      GROUP_HELP_BOT_SLUG,
+      String(message.chat.id),
+      'Use /schedule in your group first to choose where the post will be scheduled.'
+    );
+    return true;
+  }
+  if (!(await canEditGroupSettings(chatId, message.from, message.message_id))) return true;
+  if (!privateChat) {
+    await sendCommunityMessage(
+      GROUP_HELP_BOT_SLUG,
+      String(message.chat.id),
+      'Create your scheduled post privately:',
+      {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              {
+                text: 'Create scheduled post',
+                url: `https://t.me/Hopehubbot?start=schedule_${chatId}`
+              }
+            ]
+          ]
+        }
+      }
+    );
+  } else {
+    const panel = await postEditorAction('posts:new', chatId, message.from.id);
+    if (panel)
+      await sendCommunityMessage(GROUP_HELP_BOT_SLUG, String(message.chat.id), panel.text, {
+        reply_markup: panel.keyboard
+      });
+  }
   return true;
 }
 

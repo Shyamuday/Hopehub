@@ -1,5 +1,10 @@
 # Scheduled post editor
 
+Shortcut: send `/schedule` in the target group, then choose Create scheduled
+post to continue privately. In an existing private group-settings session,
+`/schedule` starts the editor immediately. `/schedulepost` and `/schedu` are
+accepted aliases. The shortcut uses the same admin checks and saved-draft editor.
+
 Open the group menu, choose Admin settings, continue privately in @Hopehubbot,
 and open Scheduled posts. Access is checked for the selected group on every
 callback and incoming editor message.

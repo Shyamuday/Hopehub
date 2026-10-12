@@ -108,6 +108,7 @@ const COMMUNITY_BOTS: Record<
       { command: 'geturl', description: 'Get link to replied message (staff)' },
       { command: 'stats', description: 'Group activity snapshot (moderators)' },
       { command: 'send', description: 'Post in the target group (admins)' },
+      { command: 'schedule', description: 'Create a scheduled text or media post (admins)' },
       { command: 'admin', description: 'Alert the community team' },
       { command: 'alertadmin', description: 'Alert the community team' },
       { command: 'promote', description: 'Promote replied member to admin' },

@@ -63,7 +63,8 @@ import {
 import { queueGroupHelpMessageReview } from './telegram-group-help.approval.js';
 import {
   handleGroupHelpBotSettingsInput,
-  handleGroupHelpPrivateSettingsStart
+  handleGroupHelpPrivateSettingsStart,
+  handleGroupHelpScheduleCommand
 } from './telegram-group-help.bot-settings.js';
 import { handleGroupHelpCommandConfirmationCallback } from './telegram-group-help.command-confirmation.js';
 import { recordGroupHelpCommandAudit } from './telegram-group-help.command-audit.js';
@@ -448,6 +449,7 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
     message?.sender_chat && String(message.sender_chat.id) === String(message.chat.id)
   );
   if (message && message.from?.is_bot && !anonymousAdminMessage) return;
+  if (message && (await handleGroupHelpScheduleCommand(message))) return;
   if (message && (await registerOffTopicGroup(message))) return;
   if (message && (await registerLogGroup(message))) return;
   const chatId = String(chat.id);
