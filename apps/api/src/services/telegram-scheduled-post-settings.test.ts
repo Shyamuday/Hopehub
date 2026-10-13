@@ -4,6 +4,26 @@ import { campaignReference, resolveCampaignReference } from './telegram-post-ref
 import { scheduledPostSettings } from './telegram-scheduled-post-settings.js';
 
 const group = '-1001';
+test('uncertain delivery review is group scoped and fits Telegram text limits', async () => {
+  const reviewDb: any = {
+    telegramCampaignDelivery: {
+      findMany: async (a: any) => {
+        assert.equal(a.where.campaign.chatId, group);
+        assert.equal(a.where.status, 'UNCERTAIN');
+        assert.equal(a.take, 10);
+        return Array.from({ length: 10 }, (_, i) => ({
+          id: String(i),
+          createdAt: new Date(),
+          campaign: { name: 'Safety' },
+          error: 'x'.repeat(1000)
+        }));
+      }
+    }
+  };
+  const result = await scheduledPostSettings('posts:review', group, reviewDb);
+  assert.ok(result.text.length <= 4096);
+  assert.match(result.text, /never resent automatically/);
+});
 const campaigns = [
   'admin_hopehub_please_read_hourly_20261007',
   'seed_telegram_support_safety_awareness'

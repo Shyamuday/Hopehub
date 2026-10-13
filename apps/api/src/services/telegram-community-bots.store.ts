@@ -585,6 +585,12 @@ export function completeCommunityWebhookUpdate(bot: string, updateId: number) {
 }
 
 export async function failCommunityWebhookUpdate(bot: string, updateId: number, error: unknown) {
+  const uncertain = Boolean(
+    error &&
+    typeof error === 'object' &&
+    'code' in error &&
+    error.code === 'TELEGRAM_DELIVERY_UNCERTAIN'
+  );
   const receipt = await prisma.telegramWebhookReceipt.findUnique({
     where: { bot_updateId: { bot, updateId: BigInt(updateId) } },
     select: { attempts: true }
@@ -594,11 +600,12 @@ export async function failCommunityWebhookUpdate(bot: string, updateId: number, 
   return prisma.telegramWebhookReceipt.update({
     where: { bot_updateId: { bot, updateId: BigInt(updateId) } },
     data: {
-      status: deadLetter ? 'DEAD_LETTER' : 'FAILED',
+      status: uncertain ? 'UNCERTAIN' : deadLetter ? 'DEAD_LETTER' : 'FAILED',
       attempts,
-      nextAttemptAt: deadLetter
-        ? null
-        : new Date(Date.now() + Math.min(15 * 60_000, 30_000 * 2 ** (attempts - 1))),
+      nextAttemptAt:
+        deadLetter || uncertain
+          ? null
+          : new Date(Date.now() + Math.min(15 * 60_000, 30_000 * 2 ** (attempts - 1))),
       error: String(error instanceof Error ? error.message : error).slice(0, 1000)
     }
   });

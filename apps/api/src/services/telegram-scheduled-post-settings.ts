@@ -1,4 +1,5 @@
 import { prisma as defaultPrisma } from '../db.js';
+import { lockCampaignGroup, cancelQueuedCampaignDeliveries } from './telegram-campaign-safety.js';
 import { campaignReference, resolveCampaignReference } from './telegram-post-references.js';
 import type { TelegramKeyboard } from './telegram-community-bots.types.js';
 
@@ -14,6 +15,23 @@ export async function scheduledPostSettings(
 ): Promise<{ text: string; keyboard: TelegramKeyboard }> {
   const parts = action.split(':');
   const operation = parts[1];
+  if (operation === 'review') {
+    const deliveries = await prisma.telegramCampaignDelivery.findMany({
+      where: { campaign: { chatId }, status: 'UNCERTAIN' },
+      include: { campaign: true },
+      orderBy: { updatedAt: 'desc' },
+      take: 10
+    });
+    return {
+      text: deliveries.length
+        ? `Latest uncertain deliveries (up to 10): check the group before scheduling a replacement. These are never resent automatically.\n\n${deliveries.map((d) => `${d.campaign.name.slice(0, 60)} · ${stamp(d.createdAt)}\n${d.id}\n${(d.error || 'Outcome unknown').slice(0, 160)}`).join('\n\n')}`.slice(
+            0,
+            3900
+          )
+        : 'No uncertain deliveries in this group.',
+      keyboard: { inline_keyboard: [[{ text: 'Back to scheduled posts', callback_data: PREFIX }]] }
+    };
+  }
   let id: string | undefined = parts[2];
   if (id?.startsWith('~')) {
     const ids = await prisma.telegramCampaign.findMany({ where: { chatId }, select: { id: true } });
@@ -67,22 +85,30 @@ export async function scheduledPostSettings(
       };
     }
     if (operation === 'cancelok') {
-      await prisma.telegramCampaign.updateMany({
-        where: { id, chatId },
-        data: { isActive: false, nextRunAt: null }
+      await prisma.$transaction(async (tx) => {
+        await lockCampaignGroup(tx, chatId);
+        await tx.telegramCampaign.updateMany({
+          where: { id, chatId },
+          data: { isActive: false, nextRunAt: null }
+        });
+        await cancelQueuedCampaignDeliveries(tx, id);
       });
     }
     if (operation === 'toggle') {
-      await prisma.telegramCampaign.updateMany({
-        where: { id, chatId },
-        data: {
-          isActive: !campaign.isActive,
-          nextRunAt: !campaign.isActive
-            ? campaign.nextRunAt && campaign.nextRunAt > new Date()
-              ? campaign.nextRunAt
-              : new Date()
-            : campaign.nextRunAt
-        }
+      await prisma.$transaction(async (tx) => {
+        await lockCampaignGroup(tx, chatId);
+        await tx.telegramCampaign.updateMany({
+          where: { id, chatId, isActive: campaign.isActive },
+          data: {
+            isActive: !campaign.isActive,
+            nextRunAt: !campaign.isActive
+              ? campaign.nextRunAt && campaign.nextRunAt > new Date()
+                ? campaign.nextRunAt
+                : new Date()
+              : campaign.nextRunAt
+          }
+        });
+        if (campaign.isActive) await cancelQueuedCampaignDeliveries(tx, id);
       });
     } else if (operation === 'r') {
       await prisma.telegramCampaign.updateMany({
@@ -229,10 +255,11 @@ export async function scheduledPostSettings(
     };
   }
   return {
-    text: `This group's schedules: ${campaigns.length} · Post items: ${allItems.length}\n\nBrowse all posts to see individual posts, including those inside rotating schedules. Or choose a schedule below to manage its settings. Posts in another group remain separate; use /schedule in that group to manage them.\n\nEach post offers: edit content/name, schedule date and time (IST), custom or preset interval, repeat, pause/resume, topic, link buttons, auto-deletion and cancel schedule.`,
+    text: `This group's schedules: ${campaigns.length} · Post items: ${allItems.length}\n\nBrowse all posts to see individual posts, including those inside rotating schedules. Or choose a schedule below to manage its settings. Posts in another group remain separate; use /schedule in that group to manage them.\n\nEach post offers: edit content/name, schedule date and time (IST), custom or preset interval, repeat, pause/resume, topic, link buttons, auto-deletion and cancel schedule. Pausing cancels queued retries; a Telegram request already in flight may still finish.`,
     keyboard: {
       inline_keyboard: [
         [{ text: 'Add new post', callback_data: `${PREFIX}:new` }],
+        [{ text: 'Review uncertain deliveries', callback_data: `${PREFIX}:review` }],
         [{ text: `Browse all ${allItems.length} posts`, callback_data: `${PREFIX}:items:0` }],
         ...campaigns.map((post) => [
           {

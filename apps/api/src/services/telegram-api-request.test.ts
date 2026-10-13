@@ -2,6 +2,45 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { callTelegramBotApi } from './telegram-api-request.js';
 
+test('an ambiguous send timeout is not retried automatically', { concurrency: false }, async () => {
+  const original = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = (async () => {
+    calls++;
+    throw new TypeError('connection interrupted after send');
+  }) as typeof fetch;
+  try {
+    await assert.rejects(
+      () => callTelegramBotApi('test-token', 'sendPhoto', {}),
+      (e: any) => e.code === 'TELEGRAM_DELIVERY_UNCERTAIN'
+    );
+    assert.equal(calls, 1);
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+test(
+  'an empty successful HTTP response is an uncertain send, not proof of rejection',
+  { concurrency: false },
+  async () => {
+    const original = globalThis.fetch;
+    let calls = 0;
+    globalThis.fetch = (async () => {
+      calls++;
+      return new Response('', { status: 200 });
+    }) as typeof fetch;
+    try {
+      await assert.rejects(
+        () => callTelegramBotApi('test-token', 'sendMessage', {}),
+        (e: any) => e.code === 'TELEGRAM_DELIVERY_UNCERTAIN'
+      );
+      assert.equal(calls, 1);
+    } finally {
+      globalThis.fetch = original;
+    }
+  }
+);
+
 test('Telegram transport retries transient server errors', { concurrency: false }, async () => {
   const originalFetch = globalThis.fetch;
   let calls = 0;

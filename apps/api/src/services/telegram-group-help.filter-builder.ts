@@ -1,4 +1,8 @@
 import { Prisma } from '@prisma/client';
+import {
+  writeExclusiveEditorDraft,
+  privateEditorCommand
+} from './telegram-private-editor-policy.js';
 import { prisma } from '../db.js';
 import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
 import {
@@ -135,17 +139,19 @@ async function writeDraft(draft: FilterBuilderDraft, userId: number) {
   const key = stateKey(draft.sourceChatId, userId);
   const expiresAt = new Date(Date.now() + TTL_MS);
   const payload = JSON.parse(JSON.stringify(draft)) as Prisma.InputJsonValue;
-  await prisma.telegramCommunityState.upsert({
-    where: { bot_chatId: { bot: STATE_BOT, chatId: key } },
-    create: {
-      bot: STATE_BOT,
-      chatId: key,
-      state: draft.step,
-      payload,
-      expiresAt
-    },
-    update: { state: draft.step, payload, expiresAt }
-  });
+  await writeExclusiveEditorDraft(prisma, STATE_BOT, userId, (tx) =>
+    tx.telegramCommunityState.upsert({
+      where: { bot_chatId: { bot: STATE_BOT, chatId: key } },
+      create: {
+        bot: STATE_BOT,
+        chatId: key,
+        state: draft.step,
+        payload,
+        expiresAt
+      },
+      update: { state: draft.step, payload, expiresAt }
+    })
+  );
 }
 
 function clearDraft(sourceChatId: string, userId: number) {
@@ -586,6 +592,8 @@ export async function handleGroupHelpFilterBuilderCallback(update: CommunityTele
 
 export async function handleGroupHelpFilterBuilderInput(message: CommunityTelegramMessage) {
   if (!message.from) return false;
+  if (privateEditorCommand(message.text) && (message.text || '').trim().toLowerCase() !== '/cancel')
+    return false;
   const sourceChatId = String(message.chat.id);
   const draft = await readDraft(sourceChatId, message.from.id);
   if (!draft || !['triggers', 'add_triggers', 'text', 'media', 'media_text'].includes(draft.step))

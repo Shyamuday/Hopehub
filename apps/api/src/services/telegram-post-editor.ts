@@ -1,4 +1,8 @@
 import { Prisma } from '@prisma/client';
+import {
+  writeExclusiveEditorDraft,
+  privateEditorCommand
+} from './telegram-private-editor-policy.js';
 import { randomUUID } from 'node:crypto';
 import { campaignReference, resolveCampaignReference } from './telegram-post-references.js';
 import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
@@ -44,17 +48,19 @@ const keyboard = (ready = false): TelegramKeyboard => ({
 export function createPostEditor(db = prisma) {
   async function write(chatId: string, userId: number, draft: Draft) {
     const expiresAt = new Date(Date.now() + 30 * 60000);
-    await db.telegramCommunityState.upsert({
-      where: { bot_chatId: { bot: STATE, chatId: key(chatId, userId) } },
-      create: {
-        bot: STATE,
-        chatId: key(chatId, userId),
-        state: 'OPEN',
-        payload: draft as Prisma.InputJsonValue,
-        expiresAt
-      },
-      update: { payload: draft as Prisma.InputJsonValue, expiresAt }
-    });
+    await writeExclusiveEditorDraft(db, STATE, userId, (tx) =>
+      tx.telegramCommunityState.upsert({
+        where: { bot_chatId: { bot: STATE, chatId: key(chatId, userId) } },
+        create: {
+          bot: STATE,
+          chatId: key(chatId, userId),
+          state: 'OPEN',
+          payload: draft as Prisma.InputJsonValue,
+          expiresAt
+        },
+        update: { payload: draft as Prisma.InputJsonValue, expiresAt }
+      })
+    );
   }
   async function read(chatId: string, userId: number) {
     const row = await db.telegramCommunityState.findUnique({
@@ -173,6 +179,7 @@ export function createPostEditor(db = prisma) {
       await clear(chatId, userId);
       return { text: 'Post changes cancelled.', keyboard: keyboard() };
     }
+    if (privateEditorCommand(message.text)) return null;
     const text = (message.text || '').trim();
     let value: Record<string, unknown>;
     if (draft.field === 'new' || draft.field === 'content') value = postContent(message);

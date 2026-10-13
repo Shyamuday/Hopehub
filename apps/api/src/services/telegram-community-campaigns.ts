@@ -1,4 +1,10 @@
 import { telegramCampaignSlotAvailable } from './telegram-community-campaign-policy.js';
+import {
+  lockCampaignGroup,
+  fixedCampaignNextRun,
+  telegramDeliveryUncertain,
+  campaignDeliveryCancelled
+} from './telegram-campaign-safety.js';
 import { Prisma } from '@prisma/client';
 import { randomBytes } from 'node:crypto';
 import { drainDueTelegramCampaigns } from './telegram-campaign-sweep.js';
@@ -146,10 +152,6 @@ function campaignItemKeyboard(buttons: unknown) {
 
 function jsonArray(value: Prisma.JsonValue | null | undefined): unknown[] {
   return Array.isArray(value) ? value : [];
-}
-
-function nextSchedule(now: Date, intervalMinutes: number) {
-  return new Date(now.getTime() + Math.max(1, intervalMinutes) * 60_000);
 }
 
 function isWelcomeVideo(url: string) {
@@ -465,14 +467,27 @@ async function weeklySummary(chatId: string, intro?: string | null) {
   ].join('\n');
 }
 
-async function campaignGroupSlotAvailable(chatId: string, now: Date, gapMinutes: number) {
-  const latest = await prisma.telegramCampaignDelivery.aggregate({
-    where: { campaign: { chatId }, status: { in: ['SENT', 'CLOSED', 'SENDING'] } },
+async function campaignGroupSlotAvailable(
+  chatId: string,
+  now: Date,
+  gapMinutes: number,
+  db: Pick<typeof prisma, 'telegramCampaignDelivery'> = prisma
+) {
+  const latest = await db.telegramCampaignDelivery.aggregate({
+    where: {
+      campaign: { chatId },
+      status: { in: ['SENT', 'CLOSED', 'UNCERTAIN'] }
+    },
     _max: { sentAt: true, createdAt: true }
+  });
+  const busy = await db.telegramCampaignDelivery.aggregate({
+    where: { campaign: { chatId }, status: { in: ['CLAIMED', 'SENDING'] } },
+    _max: { updatedAt: true }
   });
   const lastMs = Math.max(
     latest._max.sentAt?.getTime() || 0,
-    latest._max.createdAt?.getTime() || 0
+    latest._max.createdAt?.getTime() || 0,
+    busy._max.updatedAt?.getTime() || 0
   );
   return telegramCampaignSlotAvailable(lastMs ? new Date(lastMs) : null, now, gapMinutes);
 }
@@ -537,6 +552,9 @@ async function claimNextCampaign(now: Date) {
     // A repeating campaign (or one that still has items remaining) continues.
     const shouldContinue = candidate.repeat || !isLast;
     const delivery = await prisma.$transaction(async (tx) => {
+      await lockCampaignGroup(tx, candidate.chatId);
+      if (!(await campaignGroupSlotAvailable(candidate.chatId, now, policy.minimumGapMinutes, tx)))
+        return null;
       const claimed = await tx.telegramCampaign.updateMany({
         where: {
           id: candidate.id,
@@ -548,7 +566,9 @@ async function claimNextCampaign(now: Date) {
           currentItemIndex: isLast ? 0 : selectedIndex + 1,
           lastRunAt: now,
           isActive: shouldContinue,
-          nextRunAt: shouldContinue ? nextSchedule(now, candidate.intervalMinutes) : null
+          nextRunAt: shouldContinue
+            ? fixedCampaignNextRun(candidate.nextRunAt!, now, candidate.intervalMinutes)
+            : null
         }
       });
       if (!claimed.count) return null;
@@ -556,7 +576,7 @@ async function claimNextCampaign(now: Date) {
         data: {
           campaignId: candidate.id,
           itemId: candidate.items[selectedIndex].id,
-          status: 'SENDING'
+          status: 'CLAIMED'
         }
       });
     });
@@ -587,10 +607,23 @@ async function performCampaignDelivery(input: {
   now: Date;
 }) {
   const { deliveryId, campaign, item, now } = input;
-  await prisma.telegramCampaignDelivery.update({
-    where: { id: deliveryId },
-    data: { attempts: { increment: 1 }, nextRetryAt: null }
+  const sending = await prisma.$transaction(async (tx) => {
+    await lockCampaignGroup(tx, campaign.chatId);
+    const pending = await tx.telegramCampaignDelivery.findUnique({ where: { id: deliveryId } });
+    if (!pending || pending.status !== 'CLAIMED') return { count: 0 };
+    if (await campaignDeliveryCancelled(tx, campaign.id, pending.createdAt)) {
+      await tx.telegramCampaignDelivery.updateMany({
+        where: { id: deliveryId, status: 'CLAIMED' },
+        data: { status: 'CANCELLED', nextRetryAt: null }
+      });
+      return { count: 0 };
+    }
+    return tx.telegramCampaignDelivery.updateMany({
+      where: { id: deliveryId, status: 'CLAIMED' },
+      data: { status: 'SENDING', attempts: { increment: 1 }, nextRetryAt: null }
+    });
   });
+  if (!sending.count) return;
   let delivered = false;
   try {
     const config = await communityConfig(campaign.chatId);
@@ -696,20 +729,35 @@ async function performCampaignDelivery(input: {
     }
     const detail = String(error instanceof Error ? error.message : error);
     const retrySeconds = Number(/Retry after (\d+) seconds/i.exec(detail)?.[1] || 0);
-    await prisma.telegramCampaignDelivery.update({
-      where: { id: deliveryId },
-      data: {
-        status: 'FAILED',
-        error: String(error instanceof Error ? error.message : error).slice(0, 1000),
-        nextRetryAt: new Date(Date.now() + Math.max(60, retrySeconds + 1) * 1000)
-      }
+    await prisma.$transaction(async (tx) => {
+      await lockCampaignGroup(tx, campaign.chatId);
+      const record = await tx.telegramCampaignDelivery.findUnique({ where: { id: deliveryId } });
+      const cancelled =
+        record && (await campaignDeliveryCancelled(tx, campaign.id, record.createdAt));
+      await tx.telegramCampaignDelivery.update({
+        where: { id: deliveryId },
+        data: {
+          status: telegramDeliveryUncertain(error)
+            ? 'UNCERTAIN'
+            : cancelled
+              ? 'CANCELLED'
+              : 'FAILED',
+          error: String(error instanceof Error ? error.message : error).slice(0, 1000),
+          nextRetryAt:
+            telegramDeliveryUncertain(error) || cancelled
+              ? null
+              : new Date(Date.now() + Math.max(60, retrySeconds + 1) * 1000)
+        }
+      });
     });
     const config = await communityConfig();
     await logCommunityActivity(config, 'Scheduled community post failed', [
       `Group: ${campaign.chatId}`,
       `Content type: ${item.kind}`,
       `Delivery: ${deliveryId}`,
-      'It will retry automatically.'
+      telegramDeliveryUncertain(error)
+        ? 'Delivery outcome unknown. Check the group before rescheduling; automatic resend is disabled.'
+        : 'Only eligible, uncancelled deliveries will retry automatically.'
     ]).catch((error) => console.error('[telegram-campaign] Failure audit unavailable', error));
   }
 }
@@ -724,11 +772,30 @@ export async function retryTelegramCampaignDelivery(deliveryId: string, now = ne
   const policy = await smartSchedulePolicy();
   if (!(await campaignGroupSlotAvailable(delivery.campaign.chatId, now, policy.minimumGapMinutes)))
     return delivery;
-  const claimed = await prisma.telegramCampaignDelivery.updateMany({
-    where: { id: delivery.id, status: 'FAILED' },
-    data: { status: 'SENDING', error: null }
+  const claimed = await prisma.$transaction(async (tx) => {
+    await lockCampaignGroup(tx, delivery.campaign.chatId);
+    if (await campaignDeliveryCancelled(tx, delivery.campaign.id, delivery.createdAt)) {
+      await tx.telegramCampaignDelivery.updateMany({
+        where: { id: delivery.id, status: 'FAILED' },
+        data: { status: 'CANCELLED', nextRetryAt: null }
+      });
+      return { count: 0 };
+    }
+    if (
+      !(await campaignGroupSlotAvailable(
+        delivery.campaign.chatId,
+        now,
+        policy.minimumGapMinutes,
+        tx
+      ))
+    )
+      return { count: 0 };
+    return tx.telegramCampaignDelivery.updateMany({
+      where: { id: delivery.id, status: 'FAILED' },
+      data: { status: 'CLAIMED', error: null, nextRetryAt: null }
+    });
   });
-  if (!claimed.count) throw new Error('This delivery is already being retried.');
+  if (!claimed.count) return delivery;
   await performCampaignDelivery({
     deliveryId: delivery.id,
     campaign: delivery.campaign,
@@ -806,6 +873,30 @@ async function runCampaignSweep(now: Date) {
     }
   };
   if (telegramCampaignSweepEnabled) {
+    await isolated('interrupted-deliveries', async () => {
+      const cutoff = new Date(now.getTime() - 10 * 60_000);
+      await prisma.telegramCampaignDelivery.updateMany({
+        where: { status: 'CLAIMED', updatedAt: { lt: cutoff } },
+        data: {
+          status: 'FAILED',
+          nextRetryAt: now,
+          error: 'Worker interrupted before sending; safe retry queued.'
+        }
+      });
+      const interrupted = await prisma.telegramCampaignDelivery.updateMany({
+        where: { status: 'SENDING', updatedAt: { lt: cutoff } },
+        data: {
+          status: 'UNCERTAIN',
+          nextRetryAt: null,
+          error:
+            'Worker stopped or delivery exceeded its lease. Check the group before rescheduling; no automatic resend.'
+        }
+      });
+      if (interrupted.count)
+        console.error('[telegram-campaign] Interrupted deliveries require administrator review', {
+          count: interrupted.count
+        });
+    });
     await isolated('due-posts', async () => {
       await drainDueTelegramCampaigns({
         claim: () => claimNextCampaign(now),

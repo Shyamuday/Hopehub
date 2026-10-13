@@ -18,8 +18,12 @@ function pause(ms: number) {
 
 /** Telegram Bot API transport shared by every Hope Hub bot. */
 export async function callTelegramBotApi<T>(token: string, method: string, payload: unknown) {
+  const createsMessage = /^(send|copyMessage|copyMessages|forwardMessage|forwardMessages)/.test(
+    method
+  );
   let lastError: unknown;
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
+    let rejected = false;
     try {
       const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
         method: 'POST',
@@ -32,9 +36,17 @@ export async function callTelegramBotApi<T>(token: string, method: string, paylo
       try {
         body = raw ? (JSON.parse(raw) as TelegramApiResponse<T>) : {};
       } catch {
-        throw new Error(`Telegram ${method} returned an invalid response (${response.status}).`);
+        throw Object.assign(
+          new Error(`Telegram ${method} returned an invalid response (${response.status}).`),
+          createsMessage ? { code: 'TELEGRAM_DELIVERY_UNCERTAIN' } : {}
+        );
       }
       if (response.ok && body.ok) return body.result as T;
+      rejected = body.ok === false;
+      if (createsMessage && !rejected)
+        throw Object.assign(new Error(`Telegram ${method} delivery outcome unknown.`), {
+          code: 'TELEGRAM_DELIVERY_UNCERTAIN'
+        });
 
       const retryAfter = Number(body.parameters?.retry_after || 0);
       if (response.status === 429 && retryAfter > 0 && attempt < MAX_ATTEMPTS - 1) {
@@ -45,6 +57,10 @@ export async function callTelegramBotApi<T>(token: string, method: string, paylo
         }
       }
       if (response.status >= 500 && attempt < MAX_ATTEMPTS - 1) {
+        if (createsMessage && body.ok !== false)
+          throw Object.assign(new Error(`Telegram ${method} delivery outcome unknown.`), {
+            code: 'TELEGRAM_DELIVERY_UNCERTAIN'
+          });
         await pause(250 * 2 ** attempt);
         continue;
       }
@@ -54,9 +70,19 @@ export async function callTelegramBotApi<T>(token: string, method: string, paylo
       );
     } catch (error) {
       lastError = error;
+      if (createsMessage && !rejected)
+        throw Object.assign(
+          new Error(`Telegram ${method} delivery outcome unknown; automatic resend disabled.`),
+          { code: 'TELEGRAM_DELIVERY_UNCERTAIN' }
+        );
       const retryable =
         error instanceof TypeError ||
         (error instanceof Error && ['AbortError', 'TimeoutError'].includes(error.name));
+      if (createsMessage && retryable)
+        throw Object.assign(
+          new Error(`Telegram ${method} delivery outcome unknown; automatic resend disabled.`),
+          { code: 'TELEGRAM_DELIVERY_UNCERTAIN' }
+        );
       if (retryable && attempt < MAX_ATTEMPTS - 1) {
         await pause(250 * 2 ** attempt);
         continue;

@@ -5,6 +5,8 @@ import { createPostEditor } from './telegram-post-editor.js';
 
 test('private draft is isolated by group/user and creates one paused media campaign only after saving', async (t) => {
   const db: any = {
+    $queryRaw: async () => [],
+    $transaction: async (fn: any) => fn(db),
     telegramCommunityState: { upsert() {}, findUnique() {}, deleteMany() {} },
     telegramCampaign: { upsert() {} }
   };
@@ -35,6 +37,10 @@ test('private draft is isolated by group/user and creates one paused media campa
     caption: 'Scheduled video'
   };
   await postEditorAction('posts:new', '-100', 1);
+  assert.equal(
+    await postEditorInput('-100', 1, { ...message, text: '/help', photo: undefined }),
+    null
+  );
   assert.equal(await postEditorInput('-200', 1, message), null);
   assert.equal(await postEditorInput('-100', 2, message), null);
   const preview = await postEditorInput('-100', 1, message);

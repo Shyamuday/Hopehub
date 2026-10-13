@@ -1,4 +1,9 @@
 import { scheduledPostSettings } from './telegram-scheduled-post-settings.js';
+import {
+  writeExclusiveEditorDraft,
+  privateEditorCommand,
+  scheduleCommandForHopeHub
+} from './telegram-private-editor-policy.js';
 import { postEditorAction, postEditorInput } from './telegram-post-editor.js';
 import { Prisma } from '@prisma/client';
 import { joinCaptchaSettingVisible } from './telegram-join-captcha-policy.js';
@@ -375,12 +380,21 @@ function readSettingsDraft(chatId: string, userId: number) {
   return readSettingsState<SettingsDraft>(SETTINGS_DRAFT_STATE, draftKey(chatId, userId));
 }
 
-function writeSettingsDraft(chatId: string, userId: number, draft: SettingsDraft) {
-  return writeSettingsState(
-    SETTINGS_DRAFT_STATE,
-    draftKey(chatId, userId),
-    draft,
-    DRAFT_LIFETIME_MS
+async function writeSettingsDraft(chatId: string, userId: number, draft: SettingsDraft) {
+  const expiresAt = new Date(Date.now() + DRAFT_LIFETIME_MS),
+    key = draftKey(chatId, userId);
+  return writeExclusiveEditorDraft(prisma, SETTINGS_DRAFT_STATE, userId, (tx) =>
+    tx.telegramCommunityState.upsert({
+      where: { bot_chatId: { bot: SETTINGS_DRAFT_STATE, chatId: key } },
+      create: {
+        bot: SETTINGS_DRAFT_STATE,
+        chatId: key,
+        state: 'OPEN',
+        payload: draft as Prisma.InputJsonValue,
+        expiresAt
+      },
+      update: { state: 'OPEN', payload: draft as Prisma.InputJsonValue, expiresAt }
+    })
   );
 }
 
@@ -426,11 +440,7 @@ export async function handleGroupHelpPrivateSettingsStart(message: CommunityTele
 }
 
 export async function handleGroupHelpScheduleCommand(message: CommunityTelegramMessage) {
-  if (
-    !message.from ||
-    !/^\/(?:schedule|schedulepost|schedu)(?:@\w+)?\s*$/i.test(message.text || '')
-  )
-    return false;
+  if (!message.from || !scheduleCommandForHopeHub(message.text)) return false;
   const privateChat = message.chat.type === 'private';
   const chatId = privateChat
     ? await selectedPrivateSettingsGroup(message.from.id)
@@ -905,6 +915,7 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
 
 export async function handleGroupHelpBotSettingsInput(message: CommunityTelegramMessage) {
   if (!message.from || message.chat.type !== 'private') return false;
+  if (privateEditorCommand(message.text) && (message.text || '').trim() !== '/cancel') return false;
   const chatId = await selectedPrivateSettingsGroup(message.from.id);
   if (!chatId) return false;
   const replyChatId = String(message.chat.id);

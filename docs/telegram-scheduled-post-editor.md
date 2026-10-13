@@ -49,3 +49,15 @@ persisting content/configuration. Edits affect future deliveries, not messages
 already posted or a delivery already claimed by the scheduler. No migration is
 required; the existing campaign, campaign-item and community-state tables are
 used.
+
+Bot conflict protections:
+
+- Slash commands bypass post/filter/settings draft input; `/schedule@OtherBot` is ignored by HopeHub.
+- Starting another editor clears competing drafts for that administrator. Group and user access checks still apply.
+- Pausing/cancelling records a persistent cancellation cutoff and cancels queued failures and claims. A send request already in flight can still finish; an old failure cannot re-enter the queue after resume.
+- PostgreSQL advisory locks serialize group slot checks, claims, retries and pause actions across workers. Retry claims reserve their slot using the current attempt timestamp.
+- Repeating schedules retain their original time phase. Missed periods are skipped rather than burst-posted. Group spacing can still delay a send.
+- Interrupted unsent claims can retry; interrupted sends and ambiguous Telegram responses become `UNCERTAIN`, with automatic resend disabled. The schedule menu has a group-scoped review list. Unknown send outcomes also disable automatic webhook replay for that failure.
+- No schema migration is needed. Campaign-control cutoffs use the existing community-state table. Older SENDING records are conservatively treated as uncertain on the next sweep.
+
+The girls' safety item has a 120-minute repeat interval and five-minute deletion after successful sending. This live item configuration is independent of deploying the code protections above.
