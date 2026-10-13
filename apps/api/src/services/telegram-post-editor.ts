@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client';
+import { assertScheduledPostTarget } from './telegram-scheduled-post-target.js';
 import {
   writeExclusiveEditorDraft,
   privateEditorCommand
@@ -76,6 +77,7 @@ export function createPostEditor(db = prisma) {
 
   // The caller rechecks the selected group's admin rights before every call.
   async function postEditorAction(action: string, chatId: string, userId: number) {
+    if (db === prisma) await assertScheduledPostTarget(chatId);
     const [, operation, reference, field] = action.split(':');
     let id = reference;
     if (id?.startsWith('~')) {
@@ -175,6 +177,7 @@ export function createPostEditor(db = prisma) {
   ) {
     const draft = await read(chatId, userId);
     if (!draft) return null;
+    if (db === prisma) await assertScheduledPostTarget(chatId);
     if (message.text === '/cancel') {
       await clear(chatId, userId);
       return { text: 'Post changes cancelled.', keyboard: keyboard() };

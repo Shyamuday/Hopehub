@@ -1,4 +1,5 @@
 import { prisma as defaultPrisma } from '../db.js';
+import { assertScheduledPostTarget } from './telegram-scheduled-post-target.js';
 import { lockCampaignGroup, cancelQueuedCampaignDeliveries } from './telegram-campaign-safety.js';
 import { campaignReference, resolveCampaignReference } from './telegram-post-references.js';
 import type { TelegramKeyboard } from './telegram-community-bots.types.js';
@@ -13,6 +14,7 @@ export async function scheduledPostSettings(
   chatId: string,
   prisma = defaultPrisma
 ): Promise<{ text: string; keyboard: TelegramKeyboard }> {
+  if (prisma === defaultPrisma) await assertScheduledPostTarget(chatId);
   const parts = action.split(':');
   const operation = parts[1];
   if (operation === 'review') {

@@ -2452,6 +2452,11 @@ export function registerAdminTelegramBotRoutes(router: Router) {
       const values = await groupHelpConfigMap();
       const chatId = parsed.data.chatId || values.telegramGroupHelpGroupChatId?.trim();
       if (!chatId) return res.status(400).json({ message: 'Telegram group chat ID is required.' });
+      if (chatId === values.telegramGroupHelpStaffGroupId?.trim()) {
+        return res
+          .status(400)
+          .json({ message: 'Scheduled posts are available in user groups only.' });
+      }
       const campaign = await prisma.telegramCampaign.create({
         data: {
           name: parsed.data.name,
@@ -2530,6 +2535,11 @@ export function registerAdminTelegramBotRoutes(router: Router) {
       const values = await groupHelpConfigMap();
       const chatId = parsed.data.chatId || values.telegramGroupHelpGroupChatId?.trim();
       if (!chatId) return res.status(400).json({ message: 'Telegram group chat ID is required.' });
+      if (chatId === values.telegramGroupHelpStaffGroupId?.trim()) {
+        return res
+          .status(400)
+          .json({ message: 'Scheduled posts are available in user groups only.' });
+      }
       const campaign = await prisma.$transaction(async (tx) => {
         await tx.telegramCampaignItem.deleteMany({ where: { campaignId: id } });
         return tx.telegramCampaign.update({

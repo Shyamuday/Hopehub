@@ -1,4 +1,5 @@
 import { scheduledPostSettings } from './telegram-scheduled-post-settings.js';
+import { assertScheduledPostTarget } from './telegram-scheduled-post-target.js';
 import {
   writeExclusiveEditorDraft,
   privateEditorCommand,
@@ -408,6 +409,18 @@ export async function handleGroupHelpPrivateSettingsStart(message: CommunityTele
   const match = (message.text || '').trim().match(/^\/start\s+(group_settings|schedule)_(-?\d+)$/i);
   if (!match) return false;
   const settingsChatId = match[2];
+  if (match[1].toLowerCase() === 'schedule') {
+    try {
+      await assertScheduledPostTarget(settingsChatId);
+    } catch {
+      await sendCommunityMessage(
+        GROUP_HELP_BOT_SLUG,
+        String(message.chat.id),
+        'Scheduled posts are available in user groups only. Use /schedule in the user group.'
+      );
+      return true;
+    }
+  }
   if (!(await canEditGroupSettings(settingsChatId, message.from, message.message_id))) {
     await sendCommunityMessage(
       GROUP_HELP_BOT_SLUG,
@@ -454,6 +467,16 @@ export async function handleGroupHelpScheduleCommand(message: CommunityTelegramM
     return true;
   }
   if (!(await canEditGroupSettings(chatId, message.from, message.message_id))) return true;
+  try {
+    await assertScheduledPostTarget(chatId);
+  } catch {
+    await sendCommunityMessage(
+      GROUP_HELP_BOT_SLUG,
+      String(message.chat.id),
+      'Scheduled posts are available in user groups only. Use /schedule in the user group.'
+    );
+    return true;
+  }
   if (!privateChat) {
     await sendCommunityMessage(
       GROUP_HELP_BOT_SLUG,

@@ -493,8 +493,15 @@ async function campaignGroupSlotAvailable(
 }
 
 async function claimNextCampaign(now: Date) {
+  const targets = await getSiteConfigMap(['telegramGroupHelpStaffGroupId']);
+  const staffGroupId = targets.telegramGroupHelpStaffGroupId?.trim();
   const candidates = await prisma.telegramCampaign.findMany({
-    where: { isActive: true, nextRunAt: { lte: now }, items: { some: {} } },
+    where: {
+      isActive: true,
+      nextRunAt: { lte: now },
+      items: { some: {} },
+      ...(staffGroupId ? { chatId: { not: staffGroupId } } : {})
+    },
     include: { items: { orderBy: { sortOrder: 'asc' } } },
     orderBy: { nextRunAt: 'asc' },
     take: MAX_DELIVERIES_PER_SWEEP
@@ -607,6 +614,18 @@ async function performCampaignDelivery(input: {
   now: Date;
 }) {
   const { deliveryId, campaign, item, now } = input;
+  const targets = await getSiteConfigMap(['telegramGroupHelpStaffGroupId']);
+  if (campaign.chatId === targets.telegramGroupHelpStaffGroupId?.trim()) {
+    await prisma.telegramCampaignDelivery.updateMany({
+      where: { id: deliveryId, status: 'CLAIMED' },
+      data: {
+        status: 'CANCELLED',
+        nextRetryAt: null,
+        error: 'Scheduled posts are restricted to user groups.'
+      }
+    });
+    return;
+  }
   const sending = await prisma.$transaction(async (tx) => {
     await lockCampaignGroup(tx, campaign.chatId);
     const pending = await tx.telegramCampaignDelivery.findUnique({ where: { id: deliveryId } });
