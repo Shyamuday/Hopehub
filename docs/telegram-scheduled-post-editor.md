@@ -11,6 +11,13 @@ topic, link buttons, auto-deletion, delivery status and cancel schedule. Cancell
 requires confirmation and clears the next run while keeping content and history;
 a delivery already claimed by the scheduler may still finish.
 
+Browse all posts lists individual items across every enabled and paused schedule
+in the selected group, ten per page. Rotating schedules may contain many items;
+the home menu shows both schedule and item counts. Selecting a post opens content
+controls plus its parent schedule settings. Other groups remain separate: launch
+`/schedule` from the intended group. Compact, group-scoped schedule references
+keep Telegram callbacks within its 64-byte limit even for long legacy IDs.
+
 Open the group menu, choose Admin settings, continue privately in @Hopehubbot,
 and open Scheduled posts. Access is checked for the selected group on every
 callback and incoming editor message.

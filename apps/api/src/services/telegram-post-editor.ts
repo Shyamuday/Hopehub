@@ -1,5 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
+import { campaignReference, resolveCampaignReference } from './telegram-post-references.js';
 import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
 import { prisma } from '../db.js';
 import type {
@@ -69,7 +70,15 @@ export function createPostEditor(db = prisma) {
 
   // The caller rechecks the selected group's admin rights before every call.
   async function postEditorAction(action: string, chatId: string, userId: number) {
-    const [, operation, id, field] = action.split(':');
+    const [, operation, reference, field] = action.split(':');
+    let id = reference;
+    if (id?.startsWith('~')) {
+      const ids = await db.telegramCampaign.findMany({ where: { chatId }, select: { id: true } });
+      id = resolveCampaignReference(
+        id,
+        ids.map((row) => row.id)
+      );
+    }
     if (operation === 'cancel') {
       await clear(chatId, userId);
       return { text: 'Post changes cancelled.', keyboard: keyboard() };
@@ -142,7 +151,12 @@ export function createPostEditor(db = prisma) {
       text: 'Saved. Changes apply to future posts; already delivered messages are unchanged.',
       keyboard: {
         inline_keyboard: [
-          [{ text: 'Configure post', callback_data: `hh_cfg_posts:view:${campaignId}` }]
+          [
+            {
+              text: 'Configure post',
+              callback_data: `hh_cfg_posts:view:${campaignReference(campaignId!)}`
+            }
+          ]
         ]
       }
     };
