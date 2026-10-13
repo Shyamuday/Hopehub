@@ -1,6 +1,7 @@
 export const EMPTY_VOICE_CHAT_TIMEOUT_MS = 5 * 60 * 1000;
 export const VOICE_CHAT_OCCUPANCY_CHECK_INTERVAL_MS = 15 * 60 * 1000;
 export const LIVE_VOICE_REMINDER_TTL_MS = 15 * 60 * 1000;
+export const LIVE_VOICE_REMINDER_INTERVAL_MS = 30 * 60 * 1000;
 export const EMPTY_VOICE_CHAT_RECOVERY_MS = 60 * 1000;
 export const EMPTY_VOICE_CHAT_RECOVERY_REASON =
   'Automatically closed after five continuously empty minutes';
@@ -18,6 +19,7 @@ export type EmptyVoiceTrackingPayload = {
   emptyLeaveAlertedAt?: string;
   liveReminderMessageId?: number;
   liveReminderSentAt?: string;
+  lastLiveReminderAt?: string;
 };
 
 export type VoiceParticipantSnapshot = {
@@ -78,13 +80,18 @@ export function liveVoiceReminderExpired(current: EmptyVoiceTrackingPayload, now
   return sentAt == null || now.getTime() - sentAt >= LIVE_VOICE_REMINDER_TTL_MS;
 }
 
-export function liveVoiceReminderText(title?: string | null) {
-  return [
-    '🎙 Voice chat is live now',
-    '',
-    ...(title?.trim() ? [title.trim()] : []),
-    'Join the live voice chat when you are ready.'
-  ].join('\n');
+export function liveVoiceReminderDue(current: EmptyVoiceTrackingPayload, now: Date) {
+  const previous = validTimestamp(current.lastLiveReminderAt || current.liveReminderSentAt);
+  return (
+    previous == null ||
+    (previous <= now.getTime() && now.getTime() - previous >= LIVE_VOICE_REMINDER_INTERVAL_MS)
+  );
+}
+
+export function liveVoiceReminderText() {
+  return ['🎙 Voice chat is live now', '', 'Join the live voice chat when you are ready.'].join(
+    '\n'
+  );
 }
 
 /**

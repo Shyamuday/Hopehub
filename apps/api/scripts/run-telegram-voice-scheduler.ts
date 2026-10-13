@@ -21,6 +21,7 @@ import {
   EMPTY_VOICE_CHAT_RECOVERY_REASON,
   LIVE_VOICE_REMINDER_TTL_MS,
   liveVoiceReminderExpired,
+  liveVoiceReminderDue,
   liveVoiceReminderText,
   knownVoiceStarterForEmptyAlert,
   trackEmptyVoiceChat,
@@ -73,6 +74,7 @@ type NativeVoiceSchedulerState = {
   emptyLeaveAlertedAt?: string;
   liveReminderMessageId?: number;
   liveReminderSentAt?: string;
+  lastLiveReminderAt?: string;
   activeJoinUrl?: string;
   reason?: string;
   error?: string;
@@ -644,7 +646,7 @@ async function sendLiveVoiceReminder(
   // An invite exported for the exact active call is reliable for both manual
   // and scheduled VCs. A generic public-group URL is only the fallback.
   const joinUrl = telegramLiveVoiceJoinUrl(payload.activeJoinUrl, event?.joinUrl, mainGroupJoinUrl);
-  const text = liveVoiceReminderText(event?.title);
+  const text = liveVoiceReminderText();
   const replyMarkup = joinUrl
     ? { inline_keyboard: [[telegramGroupCallButton(joinUrl, true)]] }
     : undefined;
@@ -707,7 +709,8 @@ async function sendLiveVoiceReminder(
   return {
     ...withoutPrevious,
     liveReminderMessageId: sent.message_id,
-    liveReminderSentAt: now.toISOString()
+    liveReminderSentAt: now.toISOString(),
+    lastLiveReminderAt: now.toISOString()
   };
 }
 
@@ -739,6 +742,7 @@ async function deleteLiveVoiceReminder(
       )
     );
   const remaining = { ...payload };
+  remaining.lastLiveReminderAt ||= remaining.liveReminderSentAt;
   delete remaining.liveReminderMessageId;
   delete remaining.liveReminderSentAt;
   return remaining;
@@ -893,7 +897,8 @@ async function monitorEmptyActiveVoiceChats(
           participantCount: undefined,
           emptyLeaveAlertedAt: undefined,
           activeJoinUrl: undefined,
-          joinButtonRefreshedAt: undefined
+          joinButtonRefreshedAt: undefined,
+          lastLiveReminderAt: undefined
         };
     const knownStarter = knownVoiceStarterForEmptyAlert(basePayload, currentCall.participantCount);
     const tracked = trackEmptyVoiceChat(
@@ -907,9 +912,9 @@ async function monitorEmptyActiveVoiceChats(
     );
     let activePayload = await reconcileActiveVoiceEvent(client, tracked.payload, now, currentCall);
 
-    if (currentCall.participantCount > 0) {
+    if (currentCall.participantCount > 0 && liveVoiceReminderDue(activePayload, now)) {
       activePayload = await sendLiveVoiceReminder(state.chatId, activePayload, now);
-    } else if (knownStarter) {
+    } else if (currentCall.participantCount === 0 && knownStarter) {
       activePayload = await alertVoiceStarterWhoLeftItOpen(activePayload, knownStarter, now);
     }
 

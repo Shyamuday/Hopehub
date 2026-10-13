@@ -3,6 +3,7 @@ import test from 'node:test';
 import {
   EMPTY_VOICE_CHAT_TIMEOUT_MS,
   liveVoiceReminderExpired,
+  liveVoiceReminderDue,
   liveVoiceReminderText,
   knownVoiceStarterForEmptyAlert,
   trackEmptyVoiceChat,
@@ -90,12 +91,22 @@ test('live reminder expires after fifteen minutes', () => {
 });
 
 test('live reminder does not expose the VC participant count', () => {
-  const message = liveVoiceReminderText('Evening support circle');
-  assert.equal(
-    message,
-    '🎙 Voice chat is live now\n\nEvening support circle\nJoin the live voice chat when you are ready.'
-  );
+  const message = liveVoiceReminderText();
+  assert.equal(message, '🎙 Voice chat is live now\n\nJoin the live voice chat when you are ready.');
   assert.doesNotMatch(message, /\b\d+\s+(member|participant)/i);
+});
+
+test('public VC reminders recur every thirty minutes even after prior-message deletion', () => {
+  const start = new Date('2026-09-08T06:00:00.000Z');
+  const payload = { lastLiveReminderAt: start.toISOString() };
+  assert.equal(liveVoiceReminderDue(payload, at(start, 15)), false);
+  assert.equal(liveVoiceReminderDue(payload, at(start, 29)), false);
+  assert.equal(liveVoiceReminderDue(payload, at(start, 30)), true);
+  assert.equal(liveVoiceReminderDue({}, start), true);
+  assert.equal(
+    liveVoiceReminderDue({ liveReminderSentAt: start.toISOString() }, at(start, 15)),
+    false
+  );
 });
 
 test('an empty observation requests its confirmation after five minutes', () => {
