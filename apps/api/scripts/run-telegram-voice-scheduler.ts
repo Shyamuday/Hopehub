@@ -622,6 +622,23 @@ async function sendLiveVoiceReminder(
   payload: NativeVoiceSchedulerState,
   now: Date
 ): Promise<NativeVoiceSchedulerState> {
+  const cooldownKey = { bot_chatId: { bot: 'TELEGRAM_LIVE_VOICE_REMINDER_COOLDOWN', chatId } };
+  const cooldown = await prisma.telegramCommunityState.findUnique({ where: cooldownKey });
+  if (cooldown && !liveVoiceReminderDue(cooldown.payload as NativeVoiceSchedulerState, now))
+    return payload;
+  // Reserve before the send: an uncertain Telegram response must not cause minute-by-minute retries.
+  const cooldownPayload = { lastLiveReminderAt: now.toISOString() };
+  await prisma.telegramCommunityState.upsert({
+    where: cooldownKey,
+    create: {
+      bot: 'TELEGRAM_LIVE_VOICE_REMINDER_COOLDOWN',
+      chatId,
+      state: 'COOLDOWN',
+      payload: cooldownPayload,
+      expiresAt: new Date(now.getTime() + 30 * 24 * 60 * 60_000)
+    },
+    update: { payload: cooldownPayload, expiresAt: new Date(now.getTime() + 30 * 24 * 60 * 60_000) }
+  });
   const withoutPrevious = await deleteLiveVoiceReminder(chatId, payload);
   // Never stack a new reminder when Telegram did not confirm deletion of the
   // prior one. Its durable cleanup entry will retry independently.
@@ -898,12 +915,14 @@ async function monitorEmptyActiveVoiceChats(
           emptyLeaveAlertedAt: undefined,
           activeJoinUrl: undefined,
           joinButtonRefreshedAt: undefined,
-          lastLiveReminderAt: undefined
+          lastLiveReminderAt: savedPayload.lastLiveReminderAt,
+          startedAt: now.toISOString()
         };
     const knownStarter = knownVoiceStarterForEmptyAlert(basePayload, currentCall.participantCount);
     const tracked = trackEmptyVoiceChat(
       {
         ...basePayload,
+        startedAt: basePayload.startedAt || now.toISOString(),
         nativeCallId: currentCall.id,
         nativeCallAccessHash: currentCall.accessHash
       },

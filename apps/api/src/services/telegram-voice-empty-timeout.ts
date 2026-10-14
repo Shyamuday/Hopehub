@@ -1,7 +1,7 @@
 export const EMPTY_VOICE_CHAT_TIMEOUT_MS = 5 * 60 * 1000;
 export const VOICE_CHAT_OCCUPANCY_CHECK_INTERVAL_MS = 15 * 60 * 1000;
 export const LIVE_VOICE_REMINDER_TTL_MS = 15 * 60 * 1000;
-export const LIVE_VOICE_REMINDER_INTERVAL_MS = 30 * 60 * 1000;
+export const LIVE_VOICE_REMINDER_INTERVAL_MS = 15 * 60 * 1000;
 export const EMPTY_VOICE_CHAT_RECOVERY_MS = 60 * 1000;
 export const EMPTY_VOICE_CHAT_RECOVERY_REASON =
   'Automatically closed after five continuously empty minutes';
@@ -20,6 +20,7 @@ export type EmptyVoiceTrackingPayload = {
   liveReminderMessageId?: number;
   liveReminderSentAt?: string;
   lastLiveReminderAt?: string;
+  startedAt?: string;
 };
 
 export type VoiceParticipantSnapshot = {
@@ -81,10 +82,14 @@ export function liveVoiceReminderExpired(current: EmptyVoiceTrackingPayload, now
 }
 
 export function liveVoiceReminderDue(current: EmptyVoiceTrackingPayload, now: Date) {
-  const previous = validTimestamp(current.lastLiveReminderAt || current.liveReminderSentAt);
+  const stamps = [current.lastLiveReminderAt, current.liveReminderSentAt, current.startedAt]
+    .map(validTimestamp)
+    .filter((v): v is number => v != null);
+  const previous = stamps.length ? Math.max(...stamps) : undefined;
   return (
-    previous == null ||
-    (previous <= now.getTime() && now.getTime() - previous >= LIVE_VOICE_REMINDER_INTERVAL_MS)
+    previous != null &&
+    previous <= now.getTime() &&
+    now.getTime() - previous >= LIVE_VOICE_REMINDER_INTERVAL_MS
   );
 }
 

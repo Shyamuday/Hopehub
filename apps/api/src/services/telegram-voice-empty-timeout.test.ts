@@ -96,16 +96,22 @@ test('live reminder does not expose the VC participant count', () => {
   assert.doesNotMatch(message, /\b\d+\s+(member|participant)/i);
 });
 
-test('public VC reminders recur every thirty minutes even after prior-message deletion', () => {
+test('public VC reminders wait fifteen minutes after start and between sends', () => {
   const start = new Date('2026-09-08T06:00:00.000Z');
   const payload = { lastLiveReminderAt: start.toISOString() };
-  assert.equal(liveVoiceReminderDue(payload, at(start, 15)), false);
-  assert.equal(liveVoiceReminderDue(payload, at(start, 29)), false);
-  assert.equal(liveVoiceReminderDue(payload, at(start, 30)), true);
-  assert.equal(liveVoiceReminderDue({}, start), true);
+  assert.equal(liveVoiceReminderDue(payload, at(start, 1)), false);
+  assert.equal(liveVoiceReminderDue(payload, at(start, 14)), false);
+  assert.equal(liveVoiceReminderDue(payload, at(start, 15)), true);
+  assert.equal(liveVoiceReminderDue({}, start), false);
+  assert.equal(liveVoiceReminderDue({ startedAt: start.toISOString() }, at(start, 14)), false);
+  assert.equal(liveVoiceReminderDue({ startedAt: start.toISOString() }, at(start, 15)), true);
+  assert.equal(
+    liveVoiceReminderDue({ ...payload, startedAt: at(start, 14).toISOString() }, at(start, 15)),
+    false
+  );
   assert.equal(
     liveVoiceReminderDue({ liveReminderSentAt: start.toISOString() }, at(start, 15)),
-    false
+    true
   );
 });
 
