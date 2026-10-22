@@ -983,6 +983,13 @@ export class AdminApi {
       ...(args as Parameters<AdminOpsApi['getTelegramGroupHelpModerationCases']>),
     );
   }
+  claimTelegramGroupHelpModerationCase(
+    ...args: Parameters<AdminOpsApi['claimTelegramGroupHelpModerationCase']>
+  ) {
+    return this.ops.claimTelegramGroupHelpModerationCase(
+      ...(args as Parameters<AdminOpsApi['claimTelegramGroupHelpModerationCase']>),
+    );
+  }
   resolveTelegramGroupHelpModerationCase(
     ...args: Parameters<AdminOpsApi['resolveTelegramGroupHelpModerationCase']>
   ) {

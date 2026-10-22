@@ -2128,68 +2128,140 @@
       </div>
 
       <div class="moderation-queue">
-        <div>
-          <h3>Reported messages</h3>
-          <p>Choose one final action. Every decision is recorded in the admin audit trail.</p>
+        <div class="moderation-queue__head">
+          <span>
+            <h3>Reported messages</h3>
+            <p>
+              Claim a report before handling it. Duplicate reports for the same message are grouped.
+            </p>
+          </span>
+          <strong>{{ moderationCaseTotal() }} cases</strong>
+        </div>
+        <div class="moderation-queue__filters">
+          <label>
+            Status
+            <select
+              [ngModel]="moderationCaseStatus()"
+              (ngModelChange)="setModerationCaseStatus($event)"
+            >
+              <option value="OPEN">Unassigned</option>
+              <option value="ASSIGNED">Claimed</option>
+              <option value="RESOLVED">Resolved</option>
+              <option value="ALL">All</option>
+            </select>
+          </label>
+          <label>
+            Search
+            <span class="moderation-queue__search">
+              <input
+                type="search"
+                placeholder="Name, ID, reason or message"
+                [ngModel]="moderationCaseSearch()"
+                (ngModelChange)="moderationCaseSearch.set($event)"
+                (keyup.enter)="filterModerationCases()"
+              />
+              <button type="button" class="btn-ghost" (click)="filterModerationCases()">
+                Search
+              </button>
+            </span>
+          </label>
         </div>
         @if (moderationCases().length) {
-          <div class="role-list">
+          <div class="role-list moderation-case-list">
             @for (moderationCase of moderationCases(); track moderationCase.id) {
               <article>
                 <span>
                   <strong>{{
-                    moderationCase.status === 'OPEN' ? 'Needs review' : 'Resolved'
+                    moderationCase.status === 'RESOLVED'
+                      ? 'Resolved'
+                      : moderationCase.assignedToId
+                        ? 'Claimed'
+                        : 'Needs review'
                   }}</strong>
                   <small>{{ moderationCase.evidence || 'No message preview available.' }}</small>
-                  <small
-                    >Member {{ moderationCase.targetUserId || 'unknown' }} ·
-                    {{ moderationCase.createdAt | date: 'medium' }}</small
-                  >
+                  <small>
+                    Reported:
+                    {{ moderationCase.targetLabel || moderationCase.targetUserId || 'unknown' }}
+                  </small>
+                  <small>
+                    Reporter:
+                    {{ moderationCase.reporterLabel || moderationCase.reporterUserId || 'unknown' }}
+                    · {{ moderationCase.reportCount || 1 }} report{{
+                      (moderationCase.reportCount || 1) === 1 ? '' : 's'
+                    }}
+                  </small>
+                  <small>
+                    Reason: {{ moderationCase.reason?.replace('_', ' ') }} ·
+                    {{ moderationCase.createdAt | date: 'medium' }}
+                  </small>
+                  @if (moderationCase.assignedToLabel) {
+                    <small>Assigned to {{ moderationCase.assignedToLabel }}</small>
+                  }
+                  @if (moderationCase.originalMessageUrl) {
+                    <a
+                      [href]="moderationCase.originalMessageUrl"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      >Open original message</a
+                    >
+                  }
                 </span>
                 @if (moderationCase.status === 'OPEN') {
                   <div class="case-actions">
-                    @if (moderationCase.reason === 'FIRST_MESSAGE_REVIEW') {
+                    @if (!moderationCase.assignedToId) {
                       <button
                         type="button"
                         class="primary"
                         [disabled]="caseSavingId() === moderationCase.id"
-                        (click)="resolveModerationCase(moderationCase, 'APPROVE')"
+                        (click)="claimModerationCase(moderationCase)"
                       >
-                        Approve member
+                        Claim review
                       </button>
                     }
-                    <button
-                      type="button"
-                      class="btn-ghost"
-                      [disabled]="caseSavingId() === moderationCase.id"
-                      (click)="resolveModerationCase(moderationCase, 'NO_ACTION')"
-                    >
-                      Close
-                    </button>
-                    <button
-                      type="button"
-                      class="btn-ghost"
-                      [disabled]="caseSavingId() === moderationCase.id"
-                      (click)="resolveModerationCase(moderationCase, 'DELETE')"
-                    >
-                      Remove
-                    </button>
-                    <button
-                      type="button"
-                      class="btn-sec"
-                      [disabled]="caseSavingId() === moderationCase.id"
-                      (click)="resolveModerationCase(moderationCase, 'MUTE')"
-                    >
-                      Mute
-                    </button>
-                    <button
-                      type="button"
-                      class="danger-text"
-                      [disabled]="caseSavingId() === moderationCase.id"
-                      (click)="resolveModerationCase(moderationCase, 'BAN')"
-                    >
-                      Ban
-                    </button>
+                    @if (moderationCase.canResolve) {
+                      @if (moderationCase.reason === 'FIRST_MESSAGE_REVIEW') {
+                        <button
+                          type="button"
+                          class="primary"
+                          [disabled]="caseSavingId() === moderationCase.id"
+                          (click)="resolveModerationCase(moderationCase, 'APPROVE')"
+                        >
+                          Approve member
+                        </button>
+                      }
+                      <button
+                        type="button"
+                        class="btn-ghost"
+                        [disabled]="caseSavingId() === moderationCase.id"
+                        (click)="resolveModerationCase(moderationCase, 'NO_ACTION')"
+                      >
+                        Close
+                      </button>
+                      <button
+                        type="button"
+                        class="btn-ghost"
+                        [disabled]="caseSavingId() === moderationCase.id"
+                        (click)="resolveModerationCase(moderationCase, 'DELETE')"
+                      >
+                        Remove
+                      </button>
+                      <button
+                        type="button"
+                        class="btn-sec"
+                        [disabled]="caseSavingId() === moderationCase.id"
+                        (click)="resolveModerationCase(moderationCase, 'MUTE')"
+                      >
+                        Mute
+                      </button>
+                      <button
+                        type="button"
+                        class="danger-text"
+                        [disabled]="caseSavingId() === moderationCase.id"
+                        (click)="resolveModerationCase(moderationCase, 'BAN')"
+                      >
+                        Ban
+                      </button>
+                    }
                   </div>
                 } @else {
                   <small>{{ moderationCase.action?.replace('_', ' ') || 'Closed' }}</small>
@@ -2198,7 +2270,28 @@
             }
           </div>
         } @else {
-          <p class="muted">No member reports are waiting for review.</p>
+          <p class="muted">No reports match these filters.</p>
+        }
+        @if (moderationCaseTotalPages() > 1) {
+          <div class="moderation-queue__pagination">
+            <button
+              type="button"
+              class="btn-ghost"
+              [disabled]="moderationCasePage() <= 1"
+              (click)="setModerationCasePage(moderationCasePage() - 1)"
+            >
+              Previous
+            </button>
+            <span>Page {{ moderationCasePage() }} of {{ moderationCaseTotalPages() }}</span>
+            <button
+              type="button"
+              class="btn-ghost"
+              [disabled]="moderationCasePage() >= moderationCaseTotalPages()"
+              (click)="setModerationCasePage(moderationCasePage() + 1)"
+            >
+              Next
+            </button>
+          </div>
         }
       </div>
     </section>

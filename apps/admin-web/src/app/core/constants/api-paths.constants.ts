@@ -44,6 +44,8 @@ export const API_PATHS = {
     TELEGRAM_GROUP_HELP_CUSTOM_ROLE: (id: string) =>
       `/admin/telegram-bots/group-help/custom-roles/${id}`,
     TELEGRAM_GROUP_HELP_MODERATION_CASES: '/admin/telegram-bots/group-help/moderation-cases',
+    TELEGRAM_GROUP_HELP_MODERATION_CASE_CLAIM: (id: string) =>
+      `/admin/telegram-bots/group-help/moderation-cases/${id}/claim`,
     TELEGRAM_GROUP_HELP_MODERATION_CASE_RESOLVE: (id: string) =>
       `/admin/telegram-bots/group-help/moderation-cases/${id}/resolve`,
     TELEGRAM_GROUP_HELP_TEST: '/admin/telegram-bots/group-help/test',

@@ -57,7 +57,7 @@ Automatic detections only alert the private staff group; they do not restrict me
       : '',
     input.canUseAdminTools
       ? `*Administrator and role tools*
-/send — post in the target group
+/send — post text or media in the target group
 /promote — promote a member; /demote or /unadmin — demote
 /title, /untitle — manage administrator titles
 /helper, /unhelper — manage Helper role

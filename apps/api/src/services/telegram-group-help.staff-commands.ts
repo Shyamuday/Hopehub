@@ -1,9 +1,6 @@
 import { prisma } from '../db.js';
 import { GROUP_HELP_BOT_SLUG } from '../constants/telegram-community-bot.constants.js';
-import {
-  callCommunityTelegramApi,
-  sendCommunityMessage
-} from './telegram-community-bots.client.js';
+import { callCommunityTelegramApi } from './telegram-community-bots.client.js';
 import {
   addTelegramGroupWarning,
   removeLatestTelegramGroupWarning
@@ -48,14 +45,19 @@ import {
 } from './telegram-group-help.moderation-command.js';
 import { groupHelpWarnPolicySummary } from './telegram-group-help.warning-policy.js';
 import { sendGroupHelpRulesMessage } from './telegram-group-help.rules-message.js';
+import {
+  groupHelpMessageHasSendableMedia,
+  sendGroupHelpBotContent
+} from './telegram-group-help.bot-send.js';
 
 export async function handleGroupHelpStaffCommand(
   message: CommunityTelegramMessage,
   values: Record<string, string>
 ) {
-  const command = (message.text || '').trim().split(/\s+/)[0].split('@')[0].toLowerCase();
+  const commandText = message.text || message.caption || '';
+  const command = commandText.trim().split(/\s+/)[0].split('@')[0].toLowerCase();
   const chatId = String(message.chat.id);
-  const parts = (message.text || '').trim().split(/\s+/);
+  const parts = commandText.trim().split(/\s+/);
 
   // Commands from either configured private control group act on the main group.
   const context = await resolveGroupHelpCommandContext(message);
@@ -72,9 +74,13 @@ export async function handleGroupHelpStaffCommand(
       return true;
     }
     const textToSend = parts.slice(1).join(' ').trim();
-    if (!textToSend) {
+    if (
+      !textToSend &&
+      !groupHelpMessageHasSendableMedia(message) &&
+      !groupHelpMessageHasSendableMedia(message.reply_to_message)
+    ) {
       await sendCommandReply(
-        'Usage: reply to an Administrator request with /send <message>, or use /send <message> to post in the main group as Hope Hub bot.'
+        'Usage: use /send <message>, add /send as a media caption, or reply to media with /send to post in the main group as Hope Hub bot.'
       );
       return true;
     }
@@ -82,12 +88,14 @@ export async function handleGroupHelpStaffCommand(
       ? await groupHelpAdminMentionReplyTarget(chatId, message.reply_to_message?.message_id)
       : null;
     const destinationChatId = replyTarget?.targetChatId || targetChatId;
-    const posted = await sendCommunityMessage(GROUP_HELP_BOT_SLUG, destinationChatId, textToSend, {
-      ...(replyTarget?.targetMessageId ? { reply_to_message_id: replyTarget.targetMessageId } : {}),
+    const posted = await sendGroupHelpBotContent(message, {
+      destinationChatId,
+      text: textToSend,
+      ...(replyTarget?.targetMessageId ? { replyToMessageId: replyTarget.targetMessageId } : {}),
       ...(replyTarget?.messageThreadId
-        ? { message_thread_id: replyTarget.messageThreadId }
+        ? { messageThreadId: replyTarget.messageThreadId }
         : message.message_thread_id && !isCrossGroup
-          ? { message_thread_id: message.message_thread_id }
+          ? { messageThreadId: message.message_thread_id }
           : {})
     });
     await sendGroupHelpActivityLog(values, 'Administrator response posted', [

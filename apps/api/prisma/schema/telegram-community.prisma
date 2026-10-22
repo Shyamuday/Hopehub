@@ -404,20 +404,32 @@ model TelegramCommunityGroupPolicy {
 }
 
 model TelegramCommunityModerationCase {
-  id                String    @id @default(cuid())
-  chatId            String
-  sourceMessageId   Int?
-  reportedMessageId Int?
-  reporterUserId    String?
-  targetUserId      String?
-  reason            String
-  evidence          String?   @db.Text
-  status            String    @default("OPEN")
-  action            String?
-  resolvedByUserId  String?
-  resolvedAt        DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id                    String    @id @default(cuid())
+  dedupeKey             String?   @unique
+  chatId                String
+  sourceMessageId       Int?
+  reportedMessageId     Int?
+  reporterUserId        String?
+  reporterLabel         String?
+  reporterUserIds       String[]  @default([])
+  reportCount           Int       @default(1)
+  targetUserId          String?
+  targetLabel           String?
+  originalMessageUrl    String?
+  reason                String
+  evidence              String?   @db.Text
+  status                String    @default("OPEN")
+  assignedToId          String?
+  assignedToLabel       String?
+  assignedAt            DateTime?
+  staffChatId           String?
+  staffMessageId        Int?
+  staffMessageIsCaption Boolean   @default(false)
+  action                String?
+  resolvedByUserId      String?
+  resolvedAt            DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   @@index([chatId, status, createdAt])
   @@index([targetUserId, createdAt])

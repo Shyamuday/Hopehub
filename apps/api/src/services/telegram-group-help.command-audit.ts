@@ -16,7 +16,11 @@ export function recordGroupHelpCommandAudit(input: {
   target?: CommunityTelegramUser | null;
 }) {
   const sourceChatId = input.message._groupHelpControlSourceChatId || String(input.message.chat.id);
-  const command = (input.message.text || '').trim().split(/\s+/)[0].split('@')[0].toLowerCase();
+  const command = (input.message.text || input.message.caption || '')
+    .trim()
+    .split(/\s+/)[0]
+    .split('@')[0]
+    .toLowerCase();
   const actorName = [input.message.from?.first_name, input.message.from?.last_name]
     .filter(Boolean)
     .join(' ');

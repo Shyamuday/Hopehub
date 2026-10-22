@@ -1941,12 +1941,107 @@ export function registerAdminTelegramBotRoutes(router: Router) {
       const chatId = String(req.query.chatId || values.telegramGroupHelpGroupChatId || '').trim();
       if (!chatId)
         return res.status(400).json({ message: 'Choose a configured Telegram group first.' });
-      const cases = await prisma.telegramCommunityModerationCase.findMany({
-        where: { chatId },
-        orderBy: [{ status: 'asc' }, { createdAt: 'desc' }],
-        take: 100
+      const page = Math.max(1, Number(req.query.page) || 1);
+      const pageSize = Math.min(100, Math.max(10, Number(req.query.pageSize) || 20));
+      const status = String(req.query.status || 'OPEN').toUpperCase();
+      const q = String(req.query.q || '')
+        .trim()
+        .slice(0, 100);
+      if (!['ALL', 'OPEN', 'ASSIGNED', 'RESOLVED'].includes(status)) {
+        return res.status(400).json({ message: 'Choose a valid moderation status.' });
+      }
+      const where: Prisma.TelegramCommunityModerationCaseWhereInput = {
+        chatId,
+        ...(status === 'OPEN'
+          ? { status: 'OPEN', assignedToId: null }
+          : status === 'ASSIGNED'
+            ? { status: 'OPEN', assignedToId: { not: null } }
+            : status === 'RESOLVED'
+              ? { status: 'RESOLVED' }
+              : {}),
+        ...(q
+          ? {
+              OR: [
+                { reason: { contains: q, mode: 'insensitive' } },
+                { evidence: { contains: q, mode: 'insensitive' } },
+                { reporterLabel: { contains: q, mode: 'insensitive' } },
+                { targetLabel: { contains: q, mode: 'insensitive' } },
+                { reporterUserId: { contains: q } },
+                { targetUserId: { contains: q } }
+              ]
+            }
+          : {})
+      };
+      const [cases, total] = await prisma.$transaction([
+        prisma.telegramCommunityModerationCase.findMany({
+          where,
+          orderBy: [{ assignedAt: 'asc' }, { createdAt: 'desc' }],
+          skip: (page - 1) * pageSize,
+          take: pageSize
+        }),
+        prisma.telegramCommunityModerationCase.count({ where })
+      ]);
+      res.json({
+        chatId,
+        cases: cases.map((moderationCase) => ({
+          ...moderationCase,
+          canResolve: moderationCase.assignedToId === `user:${req.user!.id}`
+        })),
+        pagination: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) }
       });
-      res.json({ chatId, cases });
+    })
+  );
+
+  router.post(
+    '/admin/telegram-bots/group-help/moderation-cases/:id/claim',
+    authRequired,
+    allowRoles(Role.ADMIN, Role.HR),
+    asyncRoute(async (req, res) => {
+      const caseId = routeParam(req, 'id');
+      const actor = await prisma.user.findUnique({
+        where: { id: req.user!.id },
+        select: { name: true, email: true }
+      });
+      const actorId = `user:${req.user!.id}`;
+      const actorLabel = actor?.name || actor?.email || req.user!.id;
+      const assigned = await prisma.telegramCommunityModerationCase.updateMany({
+        where: {
+          id: caseId,
+          status: 'OPEN',
+          OR: [{ assignedToId: null }, { assignedToId: actorId }]
+        },
+        data: { assignedToId: actorId, assignedToLabel: actorLabel, assignedAt: new Date() }
+      });
+      if (!assigned.count) {
+        const current = await prisma.telegramCommunityModerationCase.findUnique({
+          where: { id: caseId }
+        });
+        if (!current) return res.status(404).json({ message: 'Moderation case was not found.' });
+        return res
+          .status(409)
+          .json({ message: 'This report is resolved or claimed by someone else.' });
+      }
+      const moderationCase = await prisma.telegramCommunityModerationCase.findUniqueOrThrow({
+        where: { id: caseId }
+      });
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorRole: req.user!.role,
+        action: 'telegram_group_help.moderation_case_claim',
+        targetType: 'telegram_moderation_case',
+        targetId: moderationCase.id,
+        summary: 'Claimed a Telegram report for review.',
+        metadata: { chatId: moderationCase.chatId }
+      });
+      if (moderationCase.staffChatId && moderationCase.staffMessageId) {
+        await sendCommunityMessage(
+          GROUP_HELP_BOT_SLUG,
+          moderationCase.staffChatId,
+          `👤 Report #${moderationCase.id.slice(-6)} claimed by ${actorLabel}.`,
+          { reply_to_message_id: moderationCase.staffMessageId }
+        ).catch(() => null);
+      }
+      res.json({ moderationCase });
     })
   );
 
@@ -1967,6 +2062,15 @@ export function registerAdminTelegramBotRoutes(router: Router) {
       if (moderationCase.status !== 'OPEN') {
         return res.status(409).json({ message: 'This moderation case has already been resolved.' });
       }
+      const actorId = `user:${req.user!.id}`;
+      if (moderationCase.assignedToId && moderationCase.assignedToId !== actorId) {
+        return res.status(409).json({ message: 'This report is claimed by another moderator.' });
+      }
+      const actor = await prisma.user.findUnique({
+        where: { id: req.user!.id },
+        select: { name: true, email: true }
+      });
+      const actorLabel = actor?.name || actor?.email || req.user!.id;
       const targetUserId = moderationCase.targetUserId ? Number(moderationCase.targetUserId) : NaN;
       if (
         !['NO_ACTION', 'DELETE', 'APPROVE'].includes(parsed.data.action) &&
@@ -2025,9 +2129,27 @@ export function registerAdminTelegramBotRoutes(router: Router) {
           status: 'RESOLVED',
           action: parsed.data.action,
           resolvedByUserId: req.user!.id,
+          assignedToId: moderationCase.assignedToId || actorId,
+          assignedToLabel: moderationCase.assignedToLabel || actorLabel,
+          assignedAt: moderationCase.assignedAt || new Date(),
           resolvedAt: new Date()
         }
       });
+      if (resolved.staffChatId && resolved.staffMessageId) {
+        await Promise.all([
+          callCommunityTelegramApi(GROUP_HELP_BOT_SLUG, 'editMessageReplyMarkup', {
+            chat_id: resolved.staffChatId,
+            message_id: resolved.staffMessageId,
+            reply_markup: { inline_keyboard: [] }
+          }).catch(() => null),
+          sendCommunityMessage(
+            GROUP_HELP_BOT_SLUG,
+            resolved.staffChatId,
+            `✅ Report #${resolved.id.slice(-6)} resolved by ${actorLabel}. Action: ${parsed.data.action}.`,
+            { reply_to_message_id: resolved.staffMessageId }
+          ).catch(() => null)
+        ]);
+      }
       await sendGroupHelpActivityLog(groupValues, 'Staff review completed', [
         `Group: ${resolved.chatId}`,
         `Case: ${resolved.id.slice(-6)}`,

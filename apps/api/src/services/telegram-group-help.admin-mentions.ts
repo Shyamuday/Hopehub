@@ -118,14 +118,16 @@ export async function forwardGroupHelpAdminMention(
     ...(reported ? ['', groupHelpReportedMessageEvidence(reported)] : []),
     '',
     protectedCopy ? 'The protected copy above is the exact message.' : '',
-    'Reply to this alert with /send <message> to post as Hope Hub bot in the group.'
+    'Choose “Reply as bot”, or reply to this alert with /send <message or media>, to answer in the group.'
   ].join('\n');
   const replyMarkup = await createGroupHelpAlertActions({
     targetChatId,
     targetMessageId: moderationTarget.message_id,
     targetUserId: moderationTarget.from ? String(moderationTarget.from.id) : null,
     reason: 'Administrator request review',
-    originalMessageUrl
+    originalMessageUrl,
+    replyTargetMessageId: message.message_id,
+    messageThreadId: message.message_thread_id || null
   });
   const sent = await sendGroupHelpAdminMentionAlert(
     staffChatId,

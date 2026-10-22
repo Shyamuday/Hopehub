@@ -557,11 +557,33 @@ export class AdminOpsApi extends AdminApiBase {
     );
   }
 
-  getTelegramGroupHelpModerationCases(chatId?: string) {
+  getTelegramGroupHelpModerationCases(
+    params: {
+      chatId?: string;
+      status?: 'ALL' | 'OPEN' | 'ASSIGNED' | 'RESOLVED';
+      q?: string;
+      page?: number;
+      pageSize?: number;
+    } = {},
+  ) {
     return firstValueFrom(
-      this.http.get<{ chatId: string; cases: any[] }>(
-        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_MODERATION_CASES}`,
-        { params: chatId ? { chatId } : {} },
+      this.http.get<{
+        chatId: string;
+        cases: any[];
+        pagination: { page: number; pageSize: number; total: number; totalPages: number };
+      }>(`${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_MODERATION_CASES}`, {
+        params: Object.fromEntries(
+          Object.entries(params).filter(([, value]) => value !== undefined && value !== ''),
+        ) as Record<string, string | number>,
+      }),
+    );
+  }
+
+  claimTelegramGroupHelpModerationCase(id: string) {
+    return firstValueFrom(
+      this.http.post<{ moderationCase: any }>(
+        `${this.apiBase}${API_PATHS.ADMIN.TELEGRAM_GROUP_HELP_MODERATION_CASE_CLAIM(id)}`,
+        {},
       ),
     );
   }

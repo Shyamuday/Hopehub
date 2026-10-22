@@ -318,6 +318,74 @@ textarea {
   margin-bottom: 0.25rem;
 }
 
+.moderation-queue__head,
+.moderation-queue__pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.moderation-queue__head > span {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.moderation-queue__head p {
+  margin: 0;
+}
+
+.moderation-queue__head > strong {
+  white-space: nowrap;
+}
+
+.moderation-queue__filters {
+  display: grid;
+  grid-template-columns: minmax(10rem, 0.45fr) minmax(14rem, 1fr);
+  gap: 0.65rem;
+}
+
+.moderation-queue__filters label {
+  display: grid;
+  gap: 0.35rem;
+  font-weight: 650;
+}
+
+.moderation-queue__search {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.4rem;
+}
+
+.moderation-case-list article {
+  align-items: flex-start;
+}
+
+.moderation-case-list article > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.moderation-queue__pagination {
+  justify-content: flex-end;
+}
+
+@media (max-width: 42rem) {
+  .moderation-queue__filters {
+    grid-template-columns: 1fr;
+  }
+
+  .moderation-case-list article,
+  .moderation-queue__head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .case-actions {
+    justify-content: flex-start;
+  }
+}
+
 .member-directory {
   display: grid;
   gap: 0.8rem;

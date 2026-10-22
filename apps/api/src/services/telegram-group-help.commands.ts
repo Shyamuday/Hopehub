@@ -363,7 +363,11 @@ export async function handleGroupHelpCommand(
   message: CommunityTelegramMessage,
   values: Record<string, string>
 ) {
-  const command = (message.text || '').trim().split(/\s+/)[0].split('@')[0].toLowerCase();
+  const command = (message.text || message.caption || '')
+    .trim()
+    .split(/\s+/)[0]
+    .split('@')[0]
+    .toLowerCase();
   if (!groupHelpCommandDefinition(command)) return false;
   const context = await resolveGroupHelpCommandContext(message);
   const effectiveValues = context.isControlGroup

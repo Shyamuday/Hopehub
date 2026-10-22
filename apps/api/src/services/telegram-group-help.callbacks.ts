@@ -72,9 +72,13 @@ export async function handleGroupHelpCallback(update: CommunityTelegramUpdate) {
         ? 'This alert action has expired or was already resolved.'
         : alertAction === 'denied'
           ? 'You do not have permission for this action.'
-          : alertAction === 'failed'
-            ? 'The action failed. Check bot and staff permissions.'
-            : `${alertAction[0].toUpperCase()}${alertAction.slice(1)} completed.`
+          : alertAction === 'claimed'
+            ? 'Another moderator has already claimed this report.'
+            : alertAction === 'reply'
+              ? 'Reply prompt opened below.'
+              : alertAction === 'failed'
+                ? 'The action failed. Check bot and staff permissions.'
+                : `${alertAction[0].toUpperCase()}${alertAction.slice(1)} completed.`
     );
     return true;
   }

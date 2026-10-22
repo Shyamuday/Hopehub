@@ -55,6 +55,7 @@ import {
   groupHelpCommandDefinition,
   handleGroupHelpCommand
 } from './telegram-group-help.commands.js';
+import { handleGroupHelpAlertReplyInput } from './telegram-group-help.alert-actions.js';
 import {
   configuredGroupHelpChatIds,
   groupHelpCommandContextFromConfig,
@@ -358,7 +359,7 @@ async function handleCommand(message: CommunityTelegramMessage, values: Record<s
     return true;
   } catch (error) {
     console.error('[telegram-group-help] Command failed.', {
-      command: message.text?.trim().split(/\s+/)[0],
+      command: (message.text || message.caption || '').trim().split(/\s+/)[0],
       chatId,
       userId: message.from?.id,
       error
@@ -391,7 +392,11 @@ async function handleCommand(message: CommunityTelegramMessage, values: Record<s
     const delaySeconds = groupCommandDeleteDelaySeconds(
       values.telegramGroupHelpCommandDeleteSeconds
     );
-    const commandName = (message.text || '').trim().split(/\s+/)[0].split('@')[0].toLowerCase();
+    const commandName = (message.text || message.caption || '')
+      .trim()
+      .split(/\s+/)[0]
+      .split('@')[0]
+      .toLowerCase();
     const definition = groupHelpCommandDefinition(commandName);
     const commandType: (typeof GROUP_HELP_CLEAN_COMMAND_TYPES)[number] = definition
       ? definition.minimumRole === 'MEMBER'
@@ -454,11 +459,12 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
   if (message && (await registerLogGroup(message))) return;
   const chatId = String(chat.id);
   const values = await config(chatId);
+  if (message && (await handleGroupHelpAlertReplyInput(message))) return;
   if (message?.chat.type === 'private') {
     if (await handleGroupHelpPrivateSettingsStart(message)) return;
     if (await handleGroupHelpFilterBuilderInput(message)) return;
     if (await handleGroupHelpBotSettingsInput(message)) return;
-    if (message.text?.startsWith('/')) {
+    if ((message.text || message.caption || '').startsWith('/')) {
       await handleCommand(message, values);
       return;
     }
@@ -493,7 +499,7 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
     );
     if (message && (await handleGroupHelpFilterBuilderInput(message))) return;
     if (commandContext.configurationError) {
-      if (message?.text?.startsWith('/')) {
+      if ((message?.text || message?.caption || '').startsWith('/')) {
         await sendTemporaryMessage(chatId, commandContext.configurationError, {
           ...values,
           telegramGroupHelpAutoDeleteSeconds: '60'
@@ -501,7 +507,8 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
       }
       return;
     }
-    if (message?.text?.startsWith('/')) await handleCommand(message, values);
+    if (message && (message.text || message.caption || '').startsWith('/'))
+      await handleCommand(message, values);
     return;
   }
   const serviceType = message ? groupHelpServiceMessageType(message) : undefined;
@@ -523,7 +530,7 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
   // Crisis replies are time-sensitive and do not depend on identity-history
   // writes or other moderation bookkeeping succeeding first.
   if (
-    !message.text?.startsWith('/') &&
+    !(message.text || message.caption || '').startsWith('/') &&
     (await sendMatchingGroupHelpFilter(message, values, false, 'crisis'))
   )
     return;
@@ -653,7 +660,7 @@ export async function handleHopeHubAiBotUpdate(update: CommunityTelegramUpdate) 
   }
   if (await handleTelegramCommunityVoiceChatStarted(message)) return;
   if (await handleTelegramCommunityVoiceChatEnded(message)) return;
-  if (message.text?.startsWith('/')) {
+  if ((message.text || message.caption || '').startsWith('/')) {
     if (
       matchedGroupHelpLock(message, values.telegramGroupHelpLockedTypes) === 'commands' &&
       !(await isModerationExempt(message, values.telegramGroupHelpAdminWhitelist || ''))

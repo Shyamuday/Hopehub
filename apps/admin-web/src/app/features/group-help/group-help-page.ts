@@ -495,6 +495,12 @@ export class GroupHelpPage {
   readonly customRolePermissions = signal('');
   readonly roleSaving = signal(false);
   readonly moderationCases = signal<any[]>([]);
+  readonly moderationCaseStatus = signal<'ALL' | 'OPEN' | 'ASSIGNED' | 'RESOLVED'>('OPEN');
+  readonly moderationCaseSearch = signal('');
+  readonly moderationCasePage = signal(1);
+  readonly moderationCasePageSize = signal(20);
+  readonly moderationCaseTotal = signal(0);
+  readonly moderationCaseTotalPages = signal(0);
   readonly caseSavingId = signal('');
   readonly roleOptions = computed<FormDropdownOption[]>(() => [
     { value: 'HELPER', label: 'Helper — warnings and message removal' },
@@ -842,10 +848,51 @@ export class GroupHelpPage {
 
   async loadModerationCases() {
     try {
-      const response = await this.api.getTelegramGroupHelpModerationCases();
+      const response = await this.api.getTelegramGroupHelpModerationCases({
+        status: this.moderationCaseStatus(),
+        q: this.moderationCaseSearch().trim(),
+        page: this.moderationCasePage(),
+        pageSize: this.moderationCasePageSize(),
+      });
       this.moderationCases.set(response.cases || []);
+      this.moderationCaseTotal.set(response.pagination?.total || 0);
+      this.moderationCaseTotalPages.set(response.pagination?.totalPages || 0);
     } catch {
       this.moderationCases.set([]);
+      this.moderationCaseTotal.set(0);
+      this.moderationCaseTotalPages.set(0);
+    }
+  }
+
+  filterModerationCases() {
+    this.moderationCasePage.set(1);
+    void this.loadModerationCases();
+  }
+
+  setModerationCaseStatus(status: 'ALL' | 'OPEN' | 'ASSIGNED' | 'RESOLVED') {
+    this.moderationCaseStatus.set(status);
+    this.filterModerationCases();
+  }
+
+  setModerationCasePage(page: number) {
+    const totalPages = Math.max(1, this.moderationCaseTotalPages());
+    this.moderationCasePage.set(Math.max(1, Math.min(totalPages, page)));
+    void this.loadModerationCases();
+  }
+
+  async claimModerationCase(moderationCase: any) {
+    this.caseSavingId.set(moderationCase.id);
+    this.error.set('');
+    try {
+      await this.api.claimTelegramGroupHelpModerationCase(moderationCase.id);
+      this.message.set('Report claimed for your review.');
+      this.moderationCaseStatus.set('ASSIGNED');
+      this.moderationCasePage.set(1);
+      await this.loadModerationCases();
+    } catch (error: any) {
+      this.error.set(error?.error?.message || 'Could not claim this report.');
+    } finally {
+      this.caseSavingId.set('');
     }
   }
 
