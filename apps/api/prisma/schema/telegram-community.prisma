@@ -432,6 +432,7 @@ model TelegramCommunityModerationCase {
   updatedAt             DateTime  @updatedAt
 
   @@index([chatId, status, createdAt])
+  @@index([status, assignedAt, createdAt])
   @@index([targetUserId, createdAt])
 }
 
