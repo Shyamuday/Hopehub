@@ -8,6 +8,10 @@ import type { CommunityTelegramMessage } from './telegram-community-bots.types.j
 import { telegramPersonLogLabel } from './telegram-group-help.people.js';
 import { createGroupHelpAlertActions } from './telegram-group-help.alert-actions.js';
 import type { TelegramKeyboard } from './telegram-community-bots.types.js';
+import {
+  groupHelpReportedMessageEvidence,
+  telegramGroupMessageUrl
+} from './telegram-group-help.reports.js';
 
 const ADMIN_MENTION_STATE = 'group-help:admin-mention';
 const ADMIN_MENTION_LIFETIME_MS = 7 * 24 * 60 * 60_000;
@@ -43,7 +47,8 @@ async function sendGroupHelpAdminMentionAlert(
   staffChatId: string,
   body: string,
   imageUrl: string,
-  replyMarkup: TelegramKeyboard
+  replyMarkup: TelegramKeyboard,
+  replyToMessageId?: number
 ) {
   if (imageUrl) {
     const sent = await callCommunityTelegramApi<{ message_id: number }>(
@@ -53,13 +58,15 @@ async function sendGroupHelpAdminMentionAlert(
         chat_id: staffChatId,
         photo: imageUrl,
         caption: groupHelpAdminMentionPhotoCaption(body),
-        reply_markup: replyMarkup
+        reply_markup: replyMarkup,
+        ...(replyToMessageId ? { reply_to_message_id: replyToMessageId } : {})
       }
     ).catch(() => null);
     if (sent) return sent;
   }
   return sendCommunityMessage(GROUP_HELP_BOT_SLUG, staffChatId, body, {
-    reply_markup: replyMarkup
+    reply_markup: replyMarkup,
+    ...(replyToMessageId ? { reply_to_message_id: replyToMessageId } : {})
   });
 }
 
@@ -77,27 +84,55 @@ export async function forwardGroupHelpAdminMention(
 
   const targetChatId = String(message.chat.id);
   const memberLabel = telegramPersonLogLabel(message.from);
+  const reported = message.reply_to_message;
+  const moderationTarget = reported || message;
+  const originalMessageUrl = telegramGroupMessageUrl(message.chat, moderationTarget.message_id);
+  const protectedCopy = await callCommunityTelegramApi<{ message_id: number }>(
+    GROUP_HELP_BOT_SLUG,
+    'copyMessage',
+    {
+      chat_id: staffChatId,
+      from_chat_id: targetChatId,
+      message_id: moderationTarget.message_id,
+      disable_notification: true,
+      protect_content: true
+    }
+  ).catch(() => null);
   const body = [
-    'Administrator request',
-    `Member: ${memberLabel}`,
+    reported ? '🚩 Administrator report request' : 'Administrator request',
+    `Requested by: ${memberLabel}`,
+    ...(reported
+      ? [
+          `Reported user: ${
+            reported.from
+              ? telegramPersonLogLabel(reported.from)
+              : reported.sender_chat?.title || 'Unknown sender'
+          }`,
+          `Original message ID: ${reported.message_id}`
+        ]
+      : []),
     `Group: ${message.chat.title || targetChatId} [${targetChatId}]`,
-    `Message: ${message.message_id}${message.message_thread_id ? ` · topic ${message.message_thread_id}` : ''}`,
+    `Request message: ${message.message_id}${message.message_thread_id ? ` · topic ${message.message_thread_id}` : ''}`,
     '',
-    message.text?.trim() || '[No text]',
+    `Request: ${message.text?.trim() || '[No text]'}`,
+    ...(reported ? ['', groupHelpReportedMessageEvidence(reported)] : []),
     '',
+    protectedCopy ? 'The protected copy above is the exact message.' : '',
     'Reply to this alert with /send <message> to post as Hope Hub bot in the group.'
   ].join('\n');
   const replyMarkup = await createGroupHelpAlertActions({
     targetChatId,
-    targetMessageId: message.message_id,
-    targetUserId: String(message.from.id),
-    reason: 'Administrator request review'
+    targetMessageId: moderationTarget.message_id,
+    targetUserId: moderationTarget.from ? String(moderationTarget.from.id) : null,
+    reason: 'Administrator request review',
+    originalMessageUrl
   });
   const sent = await sendGroupHelpAdminMentionAlert(
     staffChatId,
     body,
     values.telegramGroupHelpAdminMentionImageUrl?.trim() || '',
-    replyMarkup
+    replyMarkup,
+    protectedCopy?.message_id
   );
   await prisma.telegramCommunityState.upsert({
     where: {

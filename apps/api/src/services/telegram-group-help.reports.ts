@@ -11,6 +11,7 @@ import type {
 } from './telegram-community-bots.types.js';
 import { createGroupHelpAlertActions } from './telegram-group-help.alert-actions.js';
 import { sendGroupHelpRulesMessage } from './telegram-group-help.rules-message.js';
+import { telegramPersonLogLabel } from './telegram-group-help.people.js';
 
 type TelegramAdministrator = { user?: CommunityTelegramUser; status?: string };
 
@@ -26,6 +27,43 @@ export function isGroupHelpAdminReportTrigger(text: string | undefined) {
 
 export function isTelegramGroupAdministratorStatus(status: string | undefined) {
   return status === 'creator' || status === 'administrator' || status === 'owner';
+}
+
+export function telegramGroupMessageUrl(
+  chat: Pick<CommunityTelegramMessage['chat'], 'id' | 'username'>,
+  messageId: number
+) {
+  const username = chat.username?.trim().replace(/^@/, '') || '';
+  if (/^[a-zA-Z0-9_]{5,32}$/.test(username)) {
+    return `https://t.me/${username}/${messageId}`;
+  }
+  const chatId = String(chat.id);
+  return /^-100\d+$/.test(chatId) ? `https://t.me/c/${chatId.slice(4)}/${messageId}` : '';
+}
+
+export function groupHelpReportedMessageEvidence(message: CommunityTelegramMessage) {
+  const mediaType = message.photo?.length
+    ? 'photo'
+    : message.video
+      ? 'video'
+      : message.video_note
+        ? 'video note'
+        : message.animation
+          ? 'animation'
+          : message.document
+            ? 'document'
+            : message.audio
+              ? 'audio'
+              : message.voice
+                ? 'voice note'
+                : message.sticker
+                  ? 'sticker'
+                  : '';
+  const content = (message.text || message.caption || '').trim();
+  const label = mediaType ? `Reported ${mediaType}` : 'Reported message';
+  const evidence = content || (mediaType ? `[${mediaType}]` : '[No text]');
+  const characters = Array.from(evidence);
+  return `${label}:\n${characters.length <= 1500 ? evidence : `${characters.slice(0, 1497).join('')}...`}`;
 }
 
 async function telegramMemberStatus(chatId: string, userId: number) {
@@ -146,18 +184,53 @@ export async function handleGroupHelpReportCommand(
       : values.telegramGroupHelpLogChannelId?.trim() ||
         values.telegramGroupHelpStaffGroupId?.trim();
   if (destination) {
+    const originalMessageUrl = telegramGroupMessageUrl(message.chat, reported.message_id);
+    const protectedCopy = await callCommunityTelegramApi<{ message_id: number }>(
+      GROUP_HELP_BOT_SLUG,
+      'copyMessage',
+      {
+        chat_id: destination,
+        from_chat_id: chatId,
+        message_id: reported.message_id,
+        disable_notification: true,
+        protect_content: true
+      }
+    ).catch(() => null);
     const replyMarkup = await createGroupHelpAlertActions({
       targetChatId: chatId,
       targetMessageId: reported.message_id,
       targetUserId: reported.from ? String(reported.from.id) : null,
       reason,
-      moderationCaseId: reportCase.id
+      moderationCaseId: reportCase.id,
+      originalMessageUrl
     });
     await sendCommunityMessage(
       GROUP_HELP_BOT_SLUG,
       destination,
-      `🚩 Report #${reportCase.id.slice(-6)}\n\nReporter: ${message.from.first_name || 'Telegram member'} (${message.from.id})\nReported member: ${reported.from?.first_name || 'Unknown'}${reported.from ? ` (${reported.from.id})` : ''}\nGroup: ${message.chat.title || chatId}\nReason: ${reason}\n\nReview the protected evidence, then use an action below.`,
-      { reply_markup: replyMarkup }
+      [
+        `🚩 Member report #${reportCase.id.slice(-6)}`,
+        '',
+        `Reporter: ${telegramPersonLogLabel(message.from)}`,
+        `Reported user: ${
+          reported.from
+            ? telegramPersonLogLabel(reported.from)
+            : reported.sender_chat?.title || 'Unknown sender'
+        }`,
+        `Group: ${message.chat.title || chatId} [${chatId}]`,
+        `Original message ID: ${reported.message_id}`,
+        `Reason: ${reason}`,
+        '',
+        groupHelpReportedMessageEvidence(reported),
+        '',
+        protectedCopy
+          ? 'The protected copy above is the exact reported message.'
+          : 'Use “Open original message” to inspect it in context.',
+        'Choose an action below after review.'
+      ].join('\n'),
+      {
+        reply_markup: replyMarkup,
+        ...(protectedCopy ? { reply_to_message_id: protectedCopy.message_id } : {})
+      }
     ).catch(() => null);
   }
 

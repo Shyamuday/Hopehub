@@ -19,6 +19,7 @@ export type GroupHelpAlertActionPayload = {
   targetUserId?: string | null;
   reason: string;
   moderationCaseId?: string | null;
+  originalMessageUrl?: string | null;
 };
 
 export async function createGroupHelpAlertActions(payload: GroupHelpAlertActionPayload) {
@@ -39,6 +40,9 @@ export async function createGroupHelpAlertActions(payload: GroupHelpAlertActionP
   });
   const keyboard: TelegramKeyboard = {
     inline_keyboard: [
+      ...(payload.originalMessageUrl
+        ? [[{ text: 'Open original message', url: payload.originalMessageUrl }]]
+        : []),
       [button('Warn', 'warn'), button('Mute 1h', 'mute', 'primary')],
       [button('Delete message', 'delete', 'danger'), button('Ban', 'ban', 'danger')],
       [button('Resolve', 'resolve', 'success')]
