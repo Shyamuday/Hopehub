@@ -2200,6 +2200,14 @@ async function telegramCommunityEventReminderKeyboard(event: { joinUrl: string }
   };
 }
 
+export function publicTelegramVoiceEventDescription(description: string | null) {
+  if (!description) return description;
+  return description
+    .replace(/\bhosts?\s*:\s*[^·\n.]+(?:\s*·\s*|\.\s*|$)/gi, '')
+    .replace(/\s+·\s+/g, ' · ')
+    .trim();
+}
+
 export async function announceTelegramCommunityEvent(
   eventId: string,
   options: { active?: boolean } = {}
@@ -2229,7 +2237,7 @@ export async function announceTelegramCommunityEvent(
     );
     const text = [
       options.active ? `🔴 LIVE NOW — ${event.title}` : `🎧 ${event.title}`,
-      event.description,
+      publicTelegramVoiceEventDescription(event.description),
       '',
       options.active
         ? 'The voice chat is open now.'

@@ -103,19 +103,6 @@ function indiaDateTime(date: Date) {
   }).format(date);
 }
 
-function assignedHost(event: Pick<VoiceEventNotification, 'title' | 'description'>) {
-  const source = `${event.title}\n${event.description || ''}`;
-  // Event descriptions are admin-authored and may contain a display label
-  // such as "Host: @Mind Craft". Preserve that label in the operations alert
-  // even when it is not a linkable Telegram username.
-  const labelledHost = source.match(/\bhosts?\s*:\s*([^\n.]+)/i)?.[1]?.trim();
-  if (labelledHost) return labelledHost;
-  const usernames = [...source.matchAll(/(^|\s)@([a-zA-Z0-9_]{5,32})\b/g)].map(
-    (match) => `@${match[2]}`
-  );
-  return [...new Set(usernames)].join(' & ') || 'Assigned VC host';
-}
-
 async function voiceOperationsChatId() {
   const values = await getSiteConfigMap([
     'telegramGroupHelpStaffGroupId',
@@ -177,7 +164,7 @@ async function sendVoiceHostReminders(now: Date, managedChatId: string) {
         lte: new Date(now.getTime() + HOST_REMINDER_LEAD_TIME_MS)
       }
     },
-    select: { id: true, title: true, description: true, startsAt: true },
+    select: { id: true, title: true, startsAt: true },
     orderBy: { startsAt: 'asc' }
   });
 
@@ -192,7 +179,6 @@ async function sendVoiceHostReminders(now: Date, managedChatId: string) {
         '',
         event.title,
         `Time: ${indiaDateTime(event.startsAt)} IST`,
-        `Host: ${assignedHost(event)}`,
         '',
         'Please start the scheduled voice chat on time. If you are unavailable, arrange handover with another group admin.'
       ].join('\n')
@@ -446,7 +432,6 @@ async function markVoiceEventCancelledByAdmin(
       '',
       event.title,
       `Scheduled time: ${indiaDateTime(event.startsAt)} IST`,
-      `Host: ${assignedHost(event)}`,
       `Reason: ${reason}`,
       '',
       'The removed slot was recorded as cancelled and will not be recreated. The next upcoming VC will be scheduled automatically.'
@@ -1124,7 +1109,6 @@ async function expireMissedVoiceChats(client: TelegramClient, now: Date, managed
         '',
         event.title,
         `Scheduled time: ${indiaDateTime(event.startsAt)} IST`,
-        `Host: ${assignedHost(event)}`,
         '',
         'The VC did not start within 15 minutes, so its Telegram slot was released. The next upcoming VC will be scheduled automatically.'
       ].join('\n')
