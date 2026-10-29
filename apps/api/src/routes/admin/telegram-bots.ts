@@ -1,4 +1,5 @@
 import { TELEGRAM_OFF_TOPIC_GROUP_TITLE } from '../../constants/telegram-community-bot.constants.js';
+import { validateGroupHelpModerationNoticeSetting } from '../../services/telegram-group-help.moderation-notice-policy.js';
 import { Router } from 'express';
 import { Prisma, Role, TelegramBotKind } from '@prisma/client';
 import { z } from 'zod';
@@ -496,6 +497,7 @@ function validateGroupHelpConfigEntries(entries: GroupHelpConfigEntryInput[]) {
     const meta = GROUP_HELP_CONFIG_META[entry.key];
     if (!meta) throw new Error(`Unknown Group Help config key: ${entry.key}`);
     const value = entry.value.trim();
+    validateGroupHelpModerationNoticeSetting(entry.key, value);
     if (value.length > meta.maxLength) {
       throw new Error(`${meta.label} is too long. Maximum ${meta.maxLength} characters.`);
     }

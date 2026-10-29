@@ -396,7 +396,8 @@ async function handleCommand(message: CommunityTelegramMessage, values: Record<s
       .toLowerCase();
     const delaySeconds = groupCommandDeleteDelaySeconds(
       values.telegramGroupHelpCommandDeleteSeconds,
-      commandName
+      commandName,
+      values
     );
     const definition = groupHelpCommandDefinition(commandName);
     const commandType: (typeof GROUP_HELP_CLEAN_COMMAND_TYPES)[number] = definition

@@ -55,6 +55,35 @@ test('moderation notices contain the exact feedback notice and queue deletion 24
     const due = scheduled.at(-1)!.create.deleteAfter.getTime();
     assert.ok(due >= before + 86_400_000 && due <= Date.now() + 86_400_000);
   }
+  const priorSent = sent.length,
+    priorScheduled = scheduled.length;
+  assert.equal(
+    await sendGroupHelpModerationNotice('-100123', 'Banned', 'ban', {
+      telegramGroupHelpModNoticeEnabled: 'Disabled'
+    }),
+    null
+  );
+  assert.equal(
+    await sendGroupHelpModerationNotice('-100123', 'Warned', 'warn', {
+      telegramGroupHelpModNoticeActions: 'ban'
+    }),
+    null
+  );
+  assert.equal(sent.length, priorSent);
+  assert.equal(scheduled.length, priorScheduled);
+  await sendGroupHelpModerationNotice('-100123', 'Muted', 'mute', {
+    telegramGroupHelpModNoticeSeconds: '3600',
+    telegramGroupHelpModFooter: 'Contact @DifferentBot'
+  });
+  assert.equal(sent.at(-1)?.text, 'Muted\n\nContact @DifferentBot');
+  assert.ok(scheduled.at(-1)!.create.deleteAfter.getTime() <= Date.now() + 3_600_000);
+  const queued = scheduled.length;
+  await sendGroupHelpModerationNotice('-100123', 'Banned', 'ban', {
+    telegramGroupHelpModNoticeSeconds: '0',
+    telegramGroupHelpModFooterEnabled: 'Disabled'
+  });
+  assert.equal(sent.at(-1)?.text, 'Banned');
+  assert.equal(scheduled.length, queued);
   await sendGroupHelpModerationNotice('-100123', 'Unmuted', 'unmute', {});
   assert.equal(sent.at(-1)?.text, 'Unmuted');
   assert.ok(scheduled.at(-1)!.create.deleteAfter.getTime() < Date.now() + 61_000);

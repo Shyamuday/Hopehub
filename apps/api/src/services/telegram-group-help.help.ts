@@ -80,7 +80,7 @@ Automatic detections only alert the private staff group; they do not restrict me
 /disable, /enable, /disabledel, /disableadmin — command disabling
 /adminerror on|off — permission-error messages
 /botaudit — verify bot rights; /smoketest — safe configuration test
-/settings — private editor
+/settings — private editor; Configure group → Notices controls moderation messages, retention, preview, and reset
 /setlog — moderation log; /setofftopic — off-topic group`
       : '',
     input.isControlGroup && input.canUseStaffTools

@@ -5,6 +5,7 @@ import {
   TELEGRAM_OFF_TOPIC_GROUP_URL
 } from './telegram-community-bot.constants.js';
 import { GROUP_HELP_WELLBEING_FILTER_DEFINITIONS } from './group-help-wellbeing-replies.constants.js';
+import { GROUP_HELP_MOD_NOTICE_FIELDS } from './group-help-moderation-notice.constants.js';
 
 export type GroupHelpConfigFieldType = 'text' | 'textarea' | 'number' | 'select';
 
@@ -174,6 +175,7 @@ export type GroupHelpConfigField = {
     | 'messages'
     | 'onboarding'
     | 'moderation'
+    | 'notices'
     | 'content'
     | 'people'
     | 'operations'
@@ -1312,7 +1314,7 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
     key: 'telegramGroupHelpAutoDeleteSeconds',
     label: 'Automatic deletion',
     description:
-      'How long temporary bot messages stay visible, in seconds. This includes command replies, help, About Hope Hub, and report acknowledgements. Ban, mute, and warn notices stay for 24 hours. Use 0 to keep other temporary messages.',
+      'How long temporary bot messages stay visible, in seconds. Moderation notices have separate controls under Notices. Use 0 to keep other temporary messages.',
     section: 'content',
     type: 'number',
     maxLength: 8,
@@ -1322,7 +1324,7 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
     key: 'telegramGroupHelpCommandDeleteSeconds',
     label: 'Public command cleanup',
     description:
-      'Seconds before other commands sent in a managed public group are removed. Ban, mute, and warn commands stay for 24 hours. Private staff and log-group commands are retained. Use 0 to keep other public commands.',
+      'Seconds before other public commands are removed. Ban, mute, and warn command retention is configured under Notices. Private staff and log-group commands are retained. Use 0 to keep other public commands.',
     section: 'content',
     type: 'number',
     maxLength: 2,
@@ -1742,6 +1744,7 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
 
 export const GROUP_HELP_CONFIG_FIELDS: GroupHelpConfigField[] = [
   ...GROUP_HELP_CORE_CONFIG_FIELDS,
+  ...GROUP_HELP_MOD_NOTICE_FIELDS,
   ...GROUP_HELP_ADVANCED_CONFIG_FIELDS
 ];
 

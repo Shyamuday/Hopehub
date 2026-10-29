@@ -34,9 +34,10 @@ import { telegramPersonLogLabel } from './telegram-group-help.people.js';
 import { groupHelpWarnPolicySummary } from './telegram-group-help.warning-policy.js';
 import { groupHelpMemberModerationNotice } from './telegram-group-help.moderation-command.js';
 import {
-  GROUP_HELP_MODERATION_NOTICE_SECONDS,
+  groupHelpModerationNoticePolicy,
   groupHelpModerationNoticeText,
-  isGroupHelpRetainedModerationAction
+  isGroupHelpRetainedModerationAction,
+  shouldShowGroupHelpModerationNotice
 } from './telegram-group-help.moderation-notice-policy.js';
 
 const MODERATION_ACTION_STATE = 'group-moderation-action';
@@ -595,13 +596,20 @@ export function sendGroupHelpModerationNotice(
   values: Record<string, string>,
   options: Parameters<typeof sendCommunityMessage>[3] = {}
 ) {
+  if (
+    isGroupHelpRetainedModerationAction(action) &&
+    !shouldShowGroupHelpModerationNotice(action, values)
+  )
+    return null;
   return sendTemporaryGroupHelpMessage(
     chatId,
-    groupHelpModerationNoticeText(text, action),
+    groupHelpModerationNoticeText(text, action, values),
     {
       ...values,
       telegramGroupHelpAutoDeleteSeconds: String(
-        isGroupHelpRetainedModerationAction(action) ? GROUP_HELP_MODERATION_NOTICE_SECONDS : 60
+        isGroupHelpRetainedModerationAction(action)
+          ? groupHelpModerationNoticePolicy(values).seconds
+          : 60
       )
     },
     options

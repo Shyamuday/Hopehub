@@ -8,6 +8,19 @@ import {
 import { postEditorAction, postEditorInput } from './telegram-post-editor.js';
 import { Prisma } from '@prisma/client';
 import { joinCaptchaSettingVisible } from './telegram-join-captcha-policy.js';
+import {
+  GROUP_HELP_MOD_NOTICE_FIELDS,
+  GROUP_HELP_MOD_NOTICE_KEYS
+} from '../constants/group-help-moderation-notice.constants.js';
+import {
+  groupHelpModerationNoticePolicy,
+  groupHelpModerationNoticeText,
+  validateGroupHelpModerationNoticeSetting
+} from './telegram-group-help.moderation-notice-policy.js';
+import {
+  getTelegramCommunityGroupPolicy,
+  saveTelegramCommunityGroupPolicy
+} from './telegram-community-group-policy.js';
 import { prisma } from '../db.js';
 import {
   GROUP_HELP_CONFIG_FIELDS,
@@ -131,6 +144,14 @@ function fieldsKeyboard(
           button(field.label, `${PREFIX}field:${field.key}`)
         )
       ),
+      ...(section === 'notices'
+        ? [
+            [
+              button('Preview notice', `${PREFIX}notice-preview`),
+              button('Reset notice defaults', `${PREFIX}notice-reset`, 'danger')
+            ]
+          ]
+        : []),
       [button('← All sections', `${PREFIX}home`)]
     ]
   };
@@ -505,12 +526,19 @@ export async function handleGroupHelpScheduleCommand(message: CommunityTelegramM
   return true;
 }
 
-async function currentValue(field: GroupHelpConfigField) {
+async function currentValue(field: GroupHelpConfigField, chatId: string) {
+  if (GROUP_HELP_MOD_NOTICE_KEYS.has(field.key)) {
+    return (await groupHelpConfig(chatId))[field.key] || field.defaultValue;
+  }
   const stored = await prisma.siteConfig.findUnique({ where: { key: field.key } });
   return stored?.value ?? field.defaultValue;
 }
 
-async function saveValue(field: GroupHelpConfigField, value: string, chatId: string) {
+export async function saveGroupHelpBotSetting(
+  field: GroupHelpConfigField,
+  value: string,
+  chatId: string
+) {
   const normalized = value.trim();
   if (normalized.length > field.maxLength) {
     throw new Error(`${field.label} is too long. Maximum ${field.maxLength} characters.`);
@@ -520,6 +548,12 @@ async function saveValue(field: GroupHelpConfigField, value: string, chatId: str
   }
   if (field.type === 'number' && normalized && !/^\d+$/.test(normalized)) {
     throw new Error(`${field.label} must be a whole number.`);
+  }
+  validateGroupHelpModerationNoticeSetting(field.key, normalized);
+  if (GROUP_HELP_MOD_NOTICE_KEYS.has(field.key)) {
+    const policy = await getTelegramCommunityGroupPolicy(chatId);
+    await saveTelegramCommunityGroupPolicy(chatId, { ...policy, [field.key]: normalized });
+    return;
   }
   const captchaRange =
     field.key === 'telegramGroupHelpCaptchaMaxAttempts'
@@ -574,6 +608,55 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
   }
 
   const action = callback.data.slice(PREFIX.length);
+  if (action === 'notice-preview') {
+    const values = await groupHelpConfig(chatId),
+      policy = groupHelpModerationNoticePolicy(values);
+    await sendCommunityMessage(
+      GROUP_HELP_BOT_SLUG,
+      replyChatId,
+      `Preview only — group ${chatId}\nPublic notices: ${policy.enabled ? 'Enabled' : 'Disabled'}\nActions: ${[...policy.actions].join(', ')}\nNotice retention: ${policy.seconds ? `${policy.seconds}s` : 'Keep'}\nCommand retention: ${policy.commandSeconds ? `${policy.commandSeconds}s` : 'Keep'}\n\n` +
+        groupHelpModerationNoticeText(
+          '⚠️ Moderation notice\nMember: Example member\nAction: Warned\nDuration: Until removed by a moderator\nReason: Example rule violation',
+          'warn',
+          values
+        )
+    );
+    return true;
+  }
+  if (action === 'notice-reset') {
+    await sendCommunityMessage(
+      GROUP_HELP_BOT_SLUG,
+      replyChatId,
+      'Reset moderation notice settings for this group to the default message and 24-hour retention?',
+      {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              button('Reset defaults', `${PREFIX}notice-reset-confirm`, 'danger'),
+              button('Cancel', `${PREFIX}section:notices`)
+            ]
+          ]
+        }
+      }
+    );
+    return true;
+  }
+  if (action === 'notice-reset-confirm') {
+    const policy = await getTelegramCommunityGroupPolicy(chatId);
+    await saveTelegramCommunityGroupPolicy(chatId, {
+      ...policy,
+      ...Object.fromEntries(
+        GROUP_HELP_MOD_NOTICE_FIELDS.map((field) => [field.key, field.defaultValue])
+      )
+    });
+    await sendCommunityMessage(
+      GROUP_HELP_BOT_SLUG,
+      replyChatId,
+      'Moderation notice defaults restored for this group.',
+      { reply_markup: fieldsKeyboard('notices', await groupHelpConfig(chatId)) }
+    );
+    return true;
+  }
   if (action === 'posts' || action.startsWith('posts:')) {
     try {
       const panel =
@@ -830,12 +913,17 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
       );
       return true;
     }
-    const value = await currentValue(field);
+    const value = await currentValue(field, chatId);
     await sendCommunityMessage(
       GROUP_HELP_BOT_SLUG,
       replyChatId,
-      `*${field.label}*\n\n${field.description}\n\nCurrent value: \`${value || 'Not set'}\``,
-      { parse_mode: 'Markdown', reply_markup: fieldKeyboard(field, value) }
+      GROUP_HELP_MOD_NOTICE_KEYS.has(field.key)
+        ? `${field.label}\n\n${field.description}\n\nCurrent value:\n${value}`
+        : `*${field.label}*\n\n${field.description}\n\nCurrent value: \`${value || 'Not set'}\``,
+      {
+        ...(GROUP_HELP_MOD_NOTICE_KEYS.has(field.key) ? {} : { parse_mode: 'Markdown' as const }),
+        reply_markup: fieldKeyboard(field, value)
+      }
     );
   } else if (action.startsWith('set:')) {
     const [, key, indexText] = action.split(':');
@@ -909,14 +997,16 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
       return true;
     }
     try {
-      await saveValue(field, draft.value, chatId);
+      await saveGroupHelpBotSetting(field, draft.value, chatId);
       await clearSettingsDraft(chatId, callback.from.id);
       await sendCommunityMessage(
         GROUP_HELP_BOT_SLUG,
         replyChatId,
-        `✅ *${field.label}* is now set to \`${draft.value}\`.`,
+        GROUP_HELP_MOD_NOTICE_KEYS.has(field.key)
+          ? `✅ ${field.label} updated for this group.\n\n${draft.value}`
+          : `✅ *${field.label}* is now set to \`${draft.value}\`.`,
         {
-          parse_mode: 'Markdown',
+          ...(GROUP_HELP_MOD_NOTICE_KEYS.has(field.key) ? {} : { parse_mode: 'Markdown' as const }),
           reply_markup: fieldKeyboard(field, draft.value)
         }
       );
@@ -985,12 +1075,28 @@ export async function handleGroupHelpBotSettingsInput(message: CommunityTelegram
     );
     return true;
   }
+  try {
+    validateGroupHelpModerationNoticeSetting(field.key, value);
+  } catch (error) {
+    await sendCommunityMessage(
+      GROUP_HELP_BOT_SLUG,
+      replyChatId,
+      error instanceof Error ? error.message : 'Invalid notice setting.',
+      { reply_markup: cancelKeyboard() }
+    );
+    return true;
+  }
   await writeSettingsDraft(chatId, message.from.id, { ...draft, value });
   await sendCommunityMessage(
     GROUP_HELP_BOT_SLUG,
     replyChatId,
-    `Save this new value for *${field.label}*?\n\n\`${value}\``,
-    { parse_mode: 'Markdown', reply_markup: confirmKeyboard() }
+    GROUP_HELP_MOD_NOTICE_KEYS.has(field.key)
+      ? `Save this new value for ${field.label}?\n\n${value}`
+      : `Save this new value for *${field.label}*?\n\n\`${value}\``,
+    {
+      ...(GROUP_HELP_MOD_NOTICE_KEYS.has(field.key) ? {} : { parse_mode: 'Markdown' as const }),
+      reply_markup: confirmKeyboard()
+    }
   );
   return true;
 }

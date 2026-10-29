@@ -36,7 +36,11 @@ import {
 } from './telegram-group-help.ban-guard.js';
 import { recordGroupHelpCommandAudit } from './telegram-group-help.command-audit.js';
 import { shouldDeleteModerationTarget } from './telegram-group-help.command-cleanup.js';
-import { isGroupHelpRetainedModerationAction } from './telegram-group-help.moderation-notice-policy.js';
+import {
+  isGroupHelpRetainedModerationAction,
+  groupHelpModerationNoticePolicy,
+  shouldShowGroupHelpModerationNotice
+} from './telegram-group-help.moderation-notice-policy.js';
 import {
   groupHelpMemberModerationNotice,
   groupHelpModerationUntilLabel,
@@ -479,12 +483,12 @@ export async function handleGroupHelpStaffCommand(
     };
     const shouldNotifyAffectedMember =
       ['warn', 'mute', 'ban'].includes(effectiveAction) || warningLimitReached;
-    // Restrictive actions always require the member-facing notice, including
-    // silent command aliases. Other silent actions retain their existing behavior.
+    const noticePolicy = groupHelpModerationNoticePolicy(values);
     if (commandSpec.silent && !isGroupHelpRetainedModerationAction(effectiveAction)) {
       await deleteGroupHelpMessage(chatId, message.message_id).catch(() => null);
       return true;
     }
+    if (commandSpec.silent && !noticePolicy.silent) return true;
 
     const publicDestination = isCrossGroup && shouldNotifyAffectedMember ? targetChatId : chatId;
     await sendGroupHelpModerationNotice(publicDestination, clearNotice, effectiveAction, values, {
@@ -496,7 +500,11 @@ export async function handleGroupHelpStaffCommand(
           }
         : {})
     });
-    if (shouldSendGroupHelpRulesAfterModeration(effectiveAction, appliedAction)) {
+    if (
+      noticePolicy.rules &&
+      shouldShowGroupHelpModerationNotice(effectiveAction, values) &&
+      shouldSendGroupHelpRulesAfterModeration(effectiveAction, appliedAction)
+    ) {
       await sendGroupHelpRulesMessage({
         chatId: publicDestination,
         values,
@@ -511,7 +519,7 @@ export async function handleGroupHelpStaffCommand(
         );
       });
     }
-    if (isCrossGroup && shouldNotifyAffectedMember) {
+    if (isCrossGroup && shouldNotifyAffectedMember && noticePolicy.staffCopy) {
       await sendGroupHelpModerationNotice(
         chatId,
         `✅ Action applied in the target group.\n\n${clearNotice}`,

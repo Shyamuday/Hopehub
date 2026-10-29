@@ -4,22 +4,26 @@ import {
 } from './telegram-group-help.cleaning.js';
 import { groupHelpModerationCommandSpec } from './telegram-group-help.moderation-command.js';
 import {
-  GROUP_HELP_MODERATION_NOTICE_SECONDS,
+  groupHelpModerationNoticePolicy,
   isGroupHelpRetainedModerationAction
 } from './telegram-group-help.moderation-notice-policy.js';
 
 /**
  * Staff commands sent in a public group reveal who performed an action. Keep
- * restrictive actions visible for 24 hours before cleanup, while retaining
+ * restrictive actions visible for their configured retention before cleanup, while retaining
  * private staff/log-group commands as part of the moderation trail.
  */
 export const DEFAULT_GROUP_COMMAND_DELETE_SECONDS = 3;
 
-export function groupCommandDeleteDelaySeconds(value: string | undefined, commandName = '') {
+export function groupCommandDeleteDelaySeconds(
+  value: string | undefined,
+  commandName = '',
+  values: Record<string, string> = {}
+) {
   const command = commandName.split('@')[0];
   const action = groupHelpModerationCommandSpec(command)?.action;
   if (action && isGroupHelpRetainedModerationAction(action)) {
-    return GROUP_HELP_MODERATION_NOTICE_SECONDS;
+    return groupHelpModerationNoticePolicy(values).commandSeconds;
   }
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return DEFAULT_GROUP_COMMAND_DELETE_SECONDS;
