@@ -2,15 +2,25 @@ import {
   GROUP_HELP_CLEAN_COMMAND_TYPES,
   shouldCleanGroupHelpType
 } from './telegram-group-help.cleaning.js';
+import { groupHelpModerationCommandSpec } from './telegram-group-help.moderation-command.js';
+import {
+  GROUP_HELP_MODERATION_NOTICE_SECONDS,
+  isGroupHelpRetainedModerationAction
+} from './telegram-group-help.moderation-notice-policy.js';
 
 /**
  * Staff commands sent in a public group reveal who performed an action. Keep
- * the public group clean while deliberately retaining commands in the private
- * staff/log groups, where they form part of the moderation trail.
+ * restrictive actions visible for 24 hours before cleanup, while retaining
+ * private staff/log-group commands as part of the moderation trail.
  */
 export const DEFAULT_GROUP_COMMAND_DELETE_SECONDS = 3;
 
-export function groupCommandDeleteDelaySeconds(value: string | undefined) {
+export function groupCommandDeleteDelaySeconds(value: string | undefined, commandName = '') {
+  const command = commandName.split('@')[0];
+  const action = groupHelpModerationCommandSpec(command)?.action;
+  if (action && isGroupHelpRetainedModerationAction(action)) {
+    return GROUP_HELP_MODERATION_NOTICE_SECONDS;
+  }
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return DEFAULT_GROUP_COMMAND_DELETE_SECONDS;
   return Math.max(0, Math.min(60, Math.floor(parsed)));

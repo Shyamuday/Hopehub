@@ -10,6 +10,7 @@ import {
   applyGroupHelpMemberAction,
   deleteGroupHelpMessage,
   sendGroupHelpActivityLog,
+  sendGroupHelpModerationNotice,
   sendModerationLog,
   sendTemporaryGroupHelpMessage
 } from './telegram-group-help.actions.js';
@@ -35,6 +36,7 @@ import {
 } from './telegram-group-help.ban-guard.js';
 import { recordGroupHelpCommandAudit } from './telegram-group-help.command-audit.js';
 import { shouldDeleteModerationTarget } from './telegram-group-help.command-cleanup.js';
+import { isGroupHelpRetainedModerationAction } from './telegram-group-help.moderation-notice-policy.js';
 import {
   groupHelpMemberModerationNotice,
   groupHelpModerationUntilLabel,
@@ -471,35 +473,29 @@ export async function handleGroupHelpStaffCommand(
           }
         : {})
     });
-    const oneMinuteValues = {
+    const moderationNoticeValues = {
       ...values,
-      telegramGroupHelpAutoDeleteSeconds: '60',
       telegramCommunityDefaultTopicId: '0'
     };
     const shouldNotifyAffectedMember =
       ['warn', 'mute', 'ban'].includes(effectiveAction) || warningLimitReached;
-    if (commandSpec.silent) {
+    // Restrictive actions always require the member-facing notice, including
+    // silent command aliases. Other silent actions retain their existing behavior.
+    if (commandSpec.silent && !isGroupHelpRetainedModerationAction(effectiveAction)) {
       await deleteGroupHelpMessage(chatId, message.message_id).catch(() => null);
       return true;
     }
 
     const publicDestination = isCrossGroup && shouldNotifyAffectedMember ? targetChatId : chatId;
-    await sendTemporaryGroupHelpMessage(
-      publicDestination,
-      clearNotice,
-      { ...values, telegramGroupHelpAutoDeleteSeconds: '60' },
-      {
-        ...(removeWarningCallbackData
-          ? {
-              reply_markup: {
-                inline_keyboard: [
-                  [{ text: 'Remove warn', callback_data: removeWarningCallbackData }]
-                ]
-              }
+    await sendGroupHelpModerationNotice(publicDestination, clearNotice, effectiveAction, values, {
+      ...(removeWarningCallbackData
+        ? {
+            reply_markup: {
+              inline_keyboard: [[{ text: 'Remove warn', callback_data: removeWarningCallbackData }]]
             }
-          : {})
-      }
-    );
+          }
+        : {})
+    });
     if (shouldSendGroupHelpRulesAfterModeration(effectiveAction, appliedAction)) {
       await sendGroupHelpRulesMessage({
         chatId: publicDestination,
@@ -516,12 +512,11 @@ export async function handleGroupHelpStaffCommand(
       });
     }
     if (isCrossGroup && shouldNotifyAffectedMember) {
-      await sendTemporaryGroupHelpMessage(
+      await sendGroupHelpModerationNotice(
         chatId,
         `✅ Action applied in the target group.\n\n${clearNotice}`,
-        oneMinuteValues,
-        {},
-        'action'
+        effectiveAction,
+        moderationNoticeValues
       );
     }
     return true;

@@ -32,6 +32,12 @@ import type {
 } from './telegram-community-bots.types.js';
 import { telegramPersonLogLabel } from './telegram-group-help.people.js';
 import { groupHelpWarnPolicySummary } from './telegram-group-help.warning-policy.js';
+import { groupHelpMemberModerationNotice } from './telegram-group-help.moderation-command.js';
+import {
+  GROUP_HELP_MODERATION_NOTICE_SECONDS,
+  groupHelpModerationNoticeText,
+  isGroupHelpRetainedModerationAction
+} from './telegram-group-help.moderation-notice-policy.js';
 
 const MODERATION_ACTION_STATE = 'group-moderation-action';
 
@@ -359,25 +365,15 @@ export async function handleGroupHelpModerationActionCallback(update: CommunityT
     return 'denied';
   }
 
+  let warningCount: number | undefined;
   if (requestedAction === 'warn' && payload.targetUserId) {
     const warningPolicy = groupHelpWarnPolicySummary(values);
-    const warningCount = await addTelegramGroupWarning({
+    warningCount = await addTelegramGroupWarning({
       chatId: payload.targetChatId,
       telegramUserId: payload.targetUserId,
       reason: payload.reason || 'Message flagged for staff review',
       warningExpirySeconds: warningPolicy.expiry.seconds
     });
-    if (payload.sourceMessageId) {
-      await sendCommunityMessage(
-        GROUP_HELP_BOT_SLUG,
-        payload.targetChatId,
-        `${payload.targetUserName || 'Community member'}, a staff member issued warning ${warningCount}/${warningPolicy.limit}.\n\nReason: ${payload.reason || 'The message may conflict with the community rules.'}\n\nNo further restriction was applied automatically.`,
-        {
-          reply_to_message_id: payload.sourceMessageId,
-          ...(payload.messageThreadId ? { message_thread_id: payload.messageThreadId } : {})
-        }
-      );
-    }
   } else if (requestedAction === 'mute' && payload.targetUserId) {
     await applyGroupHelpMemberAction(
       payload.targetChatId,
@@ -473,10 +469,42 @@ export async function handleGroupHelpModerationActionCallback(update: CommunityT
   } else {
     return 'expired';
   }
+  // Persist the completed action before sending its notice: a delivery failure
+  // must not allow a retry to issue another warning or restriction.
   await prisma.telegramCommunityState.update({
     where: { bot_chatId: { bot: MODERATION_ACTION_STATE, chatId: actionId } },
     data: { state: 'COMPLETED', expiresAt: new Date() }
   });
+  const noticeAction = ['mute24h', 'deletemute'].includes(requestedAction)
+    ? 'mute'
+    : requestedAction;
+  if (payload.targetUserId && isGroupHelpRetainedModerationAction(noticeAction)) {
+    const warningPolicy = groupHelpWarnPolicySummary(values);
+    await sendGroupHelpModerationNotice(
+      payload.targetChatId,
+      groupHelpMemberModerationNotice({
+        member: `${payload.targetUserName || 'Community member'} (${payload.targetUserId})`,
+        action: noticeAction === 'warn' ? 'Warned' : noticeAction === 'mute' ? 'Muted' : 'Banned',
+        reason: payload.reason || 'Message flagged for staff review',
+        duration:
+          noticeAction === 'warn'
+            ? warningPolicy.expiry.value === 'off'
+              ? 'Until removed by a moderator'
+              : warningPolicy.expiry.value
+            : noticeAction === 'ban'
+              ? 'Permanent'
+              : requestedAction === 'mute24h'
+                ? '24h'
+                : '1h',
+        ...(warningCount !== undefined
+          ? { warningStatus: `${warningCount}/${warningPolicy.limit}` }
+          : {})
+      }),
+      noticeAction,
+      values,
+      payload.messageThreadId ? { message_thread_id: payload.messageThreadId } : {}
+    );
+  }
   await sendGroupHelpActivityLog(values, 'Private staff action applied', [
     `Action: ${requestedAction}`,
     `By: ${telegramPersonLogLabel(callback.from, 'Telegram staff')}`,
@@ -557,6 +585,27 @@ export async function sendTemporaryGroupHelpMessage(
     });
   }
   return sent;
+}
+
+/** All successful restrictive actions share one public notice and retention policy. */
+export function sendGroupHelpModerationNotice(
+  chatId: string,
+  text: string,
+  action: string,
+  values: Record<string, string>,
+  options: Parameters<typeof sendCommunityMessage>[3] = {}
+) {
+  return sendTemporaryGroupHelpMessage(
+    chatId,
+    groupHelpModerationNoticeText(text, action),
+    {
+      ...values,
+      telegramGroupHelpAutoDeleteSeconds: String(
+        isGroupHelpRetainedModerationAction(action) ? GROUP_HELP_MODERATION_NOTICE_SECONDS : 60
+      )
+    },
+    options
+  );
 }
 
 export async function applyGroupHelpMemberAction(

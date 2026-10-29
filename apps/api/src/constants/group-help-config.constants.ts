@@ -1312,7 +1312,7 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
     key: 'telegramGroupHelpAutoDeleteSeconds',
     label: 'Automatic deletion',
     description:
-      'How long temporary bot messages stay visible, in seconds. This includes command replies, help, About Hope Hub, report acknowledgements, and public moderation notices. Use 0 to keep them.',
+      'How long temporary bot messages stay visible, in seconds. This includes command replies, help, About Hope Hub, and report acknowledgements. Ban, mute, and warn notices stay for 24 hours. Use 0 to keep other temporary messages.',
     section: 'content',
     type: 'number',
     maxLength: 8,
@@ -1322,7 +1322,7 @@ const GROUP_HELP_ADVANCED_CONFIG_FIELDS: GroupHelpConfigField[] = [
     key: 'telegramGroupHelpCommandDeleteSeconds',
     label: 'Public command cleanup',
     description:
-      'Seconds before a command sent in a managed public group is removed. Private staff and log-group commands are retained. Use 0 to keep public commands.',
+      'Seconds before other commands sent in a managed public group are removed. Ban, mute, and warn commands stay for 24 hours. Private staff and log-group commands are retained. Use 0 to keep other public commands.',
     section: 'content',
     type: 'number',
     maxLength: 2,

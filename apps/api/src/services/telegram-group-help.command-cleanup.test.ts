@@ -14,6 +14,32 @@ test('group commands default to a short cleanup delay and clamp configured value
   assert.equal(groupCommandDeleteDelaySeconds('1000'), 60);
 });
 
+test('ban, mute, and warn commands and their aliases stay for 24 hours', () => {
+  for (const command of [
+    '/ban',
+    '/tban',
+    '/dban',
+    '/sban',
+    '/delban',
+    '/mute',
+    '/tmute',
+    '/dmute',
+    '/smute',
+    '/delmute',
+    '/warn',
+    '/dwarn',
+    '/swarn',
+    '/delwarn',
+    '/WARN@HopeHubBot'
+  ]) {
+    assert.equal(groupCommandDeleteDelaySeconds('3', command), 86_400, command);
+    assert.equal(groupCommandDeleteDelaySeconds('0', command), 86_400, command);
+  }
+  for (const command of ['/help', '/unban', '/unmute', '/unwarn', '/kick']) {
+    assert.equal(groupCommandDeleteDelaySeconds('3', command), 3, command);
+  }
+});
+
 test('only commands in public group chats are automatically removed', () => {
   assert.equal(
     shouldAutoDeleteGroupCommand({

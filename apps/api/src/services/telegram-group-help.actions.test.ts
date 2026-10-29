@@ -1,6 +1,64 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { groupHelpModerationReviewButtons } from './telegram-group-help.actions.js';
+import {
+  groupHelpModerationReviewButtons,
+  sendGroupHelpModerationNotice
+} from './telegram-group-help.actions.js';
+import { prisma } from '../db.js';
+
+test('moderation notices contain the exact feedback notice and queue deletion 24 hours later', async (t) => {
+  const previousToken = process.env.TELEGRAM_HOPEHUBBOT_TOKEN;
+  process.env.TELEGRAM_HOPEHUBBOT_TOKEN = 'test-token';
+  t.after(() => {
+    if (previousToken === undefined) delete process.env.TELEGRAM_HOPEHUBBOT_TOKEN;
+    else process.env.TELEGRAM_HOPEHUBBOT_TOKEN = previousToken;
+  });
+  const sent: Array<{ text: string; message_thread_id?: number }> = [];
+  const scheduled: Array<{
+    create: { messageId: number; chatId: string; deleteAfter: Date };
+  }> = [];
+  t.mock.method(globalThis, 'fetch', (async (_url, options) => {
+    sent.push(JSON.parse(String(options?.body)));
+    return new Response(JSON.stringify({ ok: true, result: { message_id: sent.length } }));
+  }) as typeof fetch);
+  const cleanup = prisma.telegramCommunityMessageCleanup;
+  const originalUpsert = cleanup.upsert;
+  cleanup.upsert = (async (input: unknown) => {
+    scheduled.push(input as (typeof scheduled)[number]);
+    return {} as never;
+  }) as typeof cleanup.upsert;
+  t.after(() => {
+    cleanup.upsert = originalUpsert;
+  });
+  const footer = [
+    '❌ DO NOT REPLY, COMMENT, OR REACT to this message or any admin action.',
+    'All feedback or complaints must be sent ONLY via the official Contact Bot, never in GC or VC.',
+    'Violations may result in immediate further action against you.',
+    '📩 CONTACT ADMIN: @Contacthopehubb'
+  ].join('\n');
+  const before = Date.now();
+  for (const action of ['ban', 'mute', 'warn']) {
+    await sendGroupHelpModerationNotice(
+      '-100123',
+      `Action: ${action}`,
+      action,
+      {
+        telegramGroupHelpAutoDeleteSeconds: '3',
+        telegramGroupHelpCleanMessageTypes: 'all'
+      },
+      { message_thread_id: 7 }
+    );
+    assert.equal(sent.at(-1)?.text, `Action: ${action}\n\n${footer}`);
+    assert.equal(sent.at(-1)?.message_thread_id, 7);
+    assert.equal(scheduled.at(-1)?.create.chatId, '-100123');
+    assert.equal(scheduled.at(-1)?.create.messageId, sent.length);
+    const due = scheduled.at(-1)!.create.deleteAfter.getTime();
+    assert.ok(due >= before + 86_400_000 && due <= Date.now() + 86_400_000);
+  }
+  await sendGroupHelpModerationNotice('-100123', 'Unmuted', 'unmute', {});
+  assert.equal(sent.at(-1)?.text, 'Unmuted');
+  assert.ok(scheduled.at(-1)!.create.deleteAfter.getTime() < Date.now() + 61_000);
+});
 
 test('automatic moderation review offers human actions without applying one', () => {
   const buttons = groupHelpModerationReviewButtons('case-1');

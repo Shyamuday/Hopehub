@@ -389,14 +389,15 @@ async function handleCommand(message: CommunityTelegramMessage, values: Record<s
     return true;
   } finally {
     const context = groupHelpCommandContextFromConfig(chatId, values);
-    const delaySeconds = groupCommandDeleteDelaySeconds(
-      values.telegramGroupHelpCommandDeleteSeconds
-    );
     const commandName = (message.text || message.caption || '')
       .trim()
       .split(/\s+/)[0]
       .split('@')[0]
       .toLowerCase();
+    const delaySeconds = groupCommandDeleteDelaySeconds(
+      values.telegramGroupHelpCommandDeleteSeconds,
+      commandName
+    );
     const definition = groupHelpCommandDefinition(commandName);
     const commandType: (typeof GROUP_HELP_CLEAN_COMMAND_TYPES)[number] = definition
       ? definition.minimumRole === 'MEMBER'
@@ -413,18 +414,33 @@ async function handleCommand(message: CommunityTelegramMessage, values: Record<s
         configuredTypes: values.telegramGroupHelpCleanCommandTypes
       })
     ) {
-      // Do not delay Telegram's webhook acknowledgement while the short
-      // privacy timer runs. A failed cleanup is non-fatal; the command audit
-      // remains available in the private moderation log.
-      setTimeout(() => {
-        void deleteMessage(chatId, message.message_id).catch((error) => {
-          console.warn('[telegram-group-help] Could not remove group command.', {
+      if (delaySeconds > 60) {
+        // Persist the 24-hour moderation timer so it survives restarts.
+        await scheduleCommunityMessageCleanup({
+          bot: GROUP_HELP_BOT_SLUG,
+          chatId,
+          messageId: message.message_id,
+          kind: 'transient',
+          deleteAfter: new Date(Date.now() + delaySeconds * 1000)
+        }).catch((error) => {
+          console.warn('[telegram-group-help] Could not schedule group command cleanup.', {
             chatId,
             messageId: message.message_id,
             error: error instanceof Error ? error.message : String(error)
           });
         });
-      }, delaySeconds * 1000).unref();
+      } else {
+        // Keep the existing short cleanup timing for other commands.
+        setTimeout(() => {
+          void deleteMessage(chatId, message.message_id).catch((error) => {
+            console.warn('[telegram-group-help] Could not remove group command.', {
+              chatId,
+              messageId: message.message_id,
+              error: error instanceof Error ? error.message : String(error)
+            });
+          });
+        }, delaySeconds * 1000).unref();
+      }
     }
   }
 }
