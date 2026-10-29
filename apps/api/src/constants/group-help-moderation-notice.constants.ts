@@ -1,11 +1,12 @@
 import type { GroupHelpConfigField } from './group-help-config.constants.js';
+import { TELEGRAM_BOT_USERNAMES } from './telegram-community-bot.constants.js';
 
 export const GROUP_HELP_MODERATION_NOTICE_SECONDS = 24 * 60 * 60;
 export const GROUP_HELP_MODERATION_FEEDBACK_NOTICE = [
   '❌ DO NOT REPLY, COMMENT, OR REACT to this message or any admin action.',
   'All feedback or complaints must be sent ONLY via the official Contact Bot, never in GC or VC.',
   'Violations may result in immediate further action against you.',
-  '📩 CONTACT ADMIN: @Contacthopehubb'
+  `📩 CONTACT ADMIN: ${TELEGRAM_BOT_USERNAMES.CONTACT}`
 ].join('\n');
 
 const toggle = (key: string, label: string, description: string): GroupHelpConfigField => ({

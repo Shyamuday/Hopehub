@@ -2,6 +2,7 @@ import {
   GROUP_HELP_MODERATION_NOTICE_SECONDS,
   GROUP_HELP_MODERATION_FEEDBACK_NOTICE
 } from '../constants/group-help-moderation-notice.constants.js';
+import { TELEGRAM_BOT_USERNAMES } from '../constants/telegram-community-bot.constants.js';
 export { GROUP_HELP_MODERATION_NOTICE_SECONDS, GROUP_HELP_MODERATION_FEEDBACK_NOTICE };
 
 export function groupHelpModerationNoticePolicy(values: Record<string, string> = {}) {
@@ -20,9 +21,9 @@ export function groupHelpModerationNoticePolicy(values: Record<string, string> =
     enabled: enabled('telegramGroupHelpModNoticeEnabled'),
     actions: new Set(actions.length ? actions : ['ban', 'mute', 'warn']),
     footerEnabled: enabled('telegramGroupHelpModFooterEnabled'),
-    footer:
-      values.telegramGroupHelpModFooter?.trim().slice(0, 1500) ||
-      GROUP_HELP_MODERATION_FEEDBACK_NOTICE,
+    footer: (values.telegramGroupHelpModFooter?.trim() || GROUP_HELP_MODERATION_FEEDBACK_NOTICE)
+      .replace(/@Contacthopehubb\b/gi, TELEGRAM_BOT_USERNAMES.CONTACT)
+      .slice(0, 1500),
     seconds: seconds('telegramGroupHelpModNoticeSeconds'),
     commandSeconds: seconds('telegramGroupHelpModCommandSeconds'),
     silent: enabled('telegramGroupHelpModNoticeSilent'),

@@ -34,7 +34,7 @@ test('moderation notices contain the exact feedback notice and queue deletion 24
     '❌ DO NOT REPLY, COMMENT, OR REACT to this message or any admin action.',
     'All feedback or complaints must be sent ONLY via the official Contact Bot, never in GC or VC.',
     'Violations may result in immediate further action against you.',
-    '📩 CONTACT ADMIN: @Contacthopehubb'
+    '📩 CONTACT ADMIN: @Contacthopehubbot'
   ].join('\n');
   const before = Date.now();
   for (const action of ['ban', 'mute', 'warn']) {

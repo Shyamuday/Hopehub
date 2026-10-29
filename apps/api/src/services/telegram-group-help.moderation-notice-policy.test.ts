@@ -61,6 +61,20 @@ test('admins can select actions, disable notices or footer, and edit contact wor
   assert.equal(off.silent || off.rules || off.staffCopy, false);
 });
 
+test('saved moderation footers correct the old contact handle without changing custom contacts', () => {
+  assert.equal(
+    groupHelpModerationNoticeText('Banned', 'ban', {
+      telegramGroupHelpModFooter: 'Please contact @Contacthopehubb for help.'
+    }),
+    'Banned\n\nPlease contact @Contacthopehubbot for help.'
+  );
+  assert.match(GROUP_HELP_MODERATION_FEEDBACK_NOTICE, /CONTACT ADMIN: @Contacthopehubbot$/);
+  assert.equal(
+    groupHelpModerationNoticePolicy({ telegramGroupHelpModFooter: 'Contact @OtherBot' }).footer,
+    'Contact @OtherBot'
+  );
+});
+
 test('notice and command retention are independent and zero means keep', () => {
   const settings = {
     telegramGroupHelpModNoticeSeconds: '0',
