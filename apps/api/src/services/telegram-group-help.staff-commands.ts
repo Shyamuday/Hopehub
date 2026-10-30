@@ -28,6 +28,7 @@ import {
 import { requestGroupHelpCommandConfirmation } from './telegram-group-help.command-confirmation.js';
 import { groupHelpAdminMentionReplyTarget } from './telegram-group-help.admin-mentions.js';
 import { telegramPersonLogLabel } from './telegram-group-help.people.js';
+import { groupHelpModerationMemberLabel } from './telegram-group-help.moderation-member.js';
 import { resolveGroupHelpMember } from './telegram-group-help.member-resolution.js';
 import {
   groupHelpBanCooldownRemainingSeconds,
@@ -449,12 +450,7 @@ export async function handleGroupHelpStaffCommand(
       ro: 'Made read-only',
       unro: 'Read-only restriction removed'
     };
-    const memberLabel = [
-      target.first_name || 'Telegram member',
-      target.username ? `(@${target.username})` : ''
-    ]
-      .filter(Boolean)
-      .join(' ');
+    const memberLabel = groupHelpModerationMemberLabel(target);
     const noticeDurationSeconds =
       duration?.seconds || (appliedAction === 'warn' ? warningPolicy.expiry.seconds : undefined);
     const clearNotice = groupHelpMemberModerationNotice({
@@ -492,6 +488,7 @@ export async function handleGroupHelpStaffCommand(
 
     const publicDestination = isCrossGroup && shouldNotifyAffectedMember ? targetChatId : chatId;
     await sendGroupHelpModerationNotice(publicDestination, clearNotice, effectiveAction, values, {
+      member: target,
       ...(removeWarningCallbackData
         ? {
             reply_markup: {
@@ -524,7 +521,8 @@ export async function handleGroupHelpStaffCommand(
         chatId,
         `✅ Action applied in the target group.\n\n${clearNotice}`,
         effectiveAction,
-        moderationNoticeValues
+        moderationNoticeValues,
+        { member: target }
       );
     }
     return true;

@@ -30,7 +30,11 @@ import type {
   CommunityTelegramUpdate,
   CommunityTelegramUser
 } from './telegram-community-bots.types.js';
-import { telegramPersonLogLabel } from './telegram-group-help.people.js';
+import { telegramPersonLogLabel, type TelegramPersonForLog } from './telegram-group-help.people.js';
+import {
+  groupHelpModerationMemberLabel,
+  groupHelpModerationMemberEntities
+} from './telegram-group-help.moderation-member.js';
 import { groupHelpWarnPolicySummary } from './telegram-group-help.warning-policy.js';
 import { groupHelpMemberModerationNotice } from './telegram-group-help.moderation-command.js';
 import {
@@ -481,10 +485,15 @@ export async function handleGroupHelpModerationActionCallback(update: CommunityT
     : requestedAction;
   if (payload.targetUserId && isGroupHelpRetainedModerationAction(noticeAction)) {
     const warningPolicy = groupHelpWarnPolicySummary(values);
+    const member = {
+      telegramUserId: payload.targetUserId,
+      firstName: payload.targetUserName,
+      username: payload.targetUsername
+    };
     await sendGroupHelpModerationNotice(
       payload.targetChatId,
       groupHelpMemberModerationNotice({
-        member: `${payload.targetUserName || 'Community member'} (${payload.targetUserId})`,
+        member: groupHelpModerationMemberLabel(member),
         action: noticeAction === 'warn' ? 'Warned' : noticeAction === 'mute' ? 'Muted' : 'Banned',
         reason: payload.reason || 'Message flagged for staff review',
         duration:
@@ -503,7 +512,7 @@ export async function handleGroupHelpModerationActionCallback(update: CommunityT
       }),
       noticeAction,
       values,
-      payload.messageThreadId ? { message_thread_id: payload.messageThreadId } : {}
+      { member, ...(payload.messageThreadId ? { message_thread_id: payload.messageThreadId } : {}) }
     );
   }
   await sendGroupHelpActivityLog(values, 'Private staff action applied', [
@@ -594,16 +603,18 @@ export function sendGroupHelpModerationNotice(
   text: string,
   action: string,
   values: Record<string, string>,
-  options: Parameters<typeof sendCommunityMessage>[3] = {}
+  options: Parameters<typeof sendCommunityMessage>[3] & { member?: TelegramPersonForLog } = {}
 ) {
   if (
     isGroupHelpRetainedModerationAction(action) &&
     !shouldShowGroupHelpModerationNotice(action, values)
   )
     return null;
+  const { member, ...messageOptions } = options;
+  const notice = groupHelpModerationNoticeText(text, action, values);
   return sendTemporaryGroupHelpMessage(
     chatId,
-    groupHelpModerationNoticeText(text, action, values),
+    notice,
     {
       ...values,
       telegramGroupHelpAutoDeleteSeconds: String(
@@ -612,7 +623,17 @@ export function sendGroupHelpModerationNotice(
           : 60
       )
     },
-    options
+    {
+      ...messageOptions,
+      ...(member
+        ? {
+            entities: [
+              ...(messageOptions.entities || []),
+              ...groupHelpModerationMemberEntities(notice, member)
+            ]
+          }
+        : {})
+    }
   );
 }
 

@@ -25,7 +25,10 @@ export function groupHelpModerationNoticePolicy(values: Record<string, string> =
       .replace(/@Contacthopehubb\b/gi, TELEGRAM_BOT_USERNAMES.CONTACT)
       .slice(0, 1500),
     seconds: seconds('telegramGroupHelpModNoticeSeconds'),
-    commandSeconds: seconds('telegramGroupHelpModCommandSeconds'),
+    commandSeconds: (() => {
+      const value = Number(values.telegramGroupHelpModCommandSeconds);
+      return Number.isInteger(value) && value >= 1 && value <= 60 ? value : 3;
+    })(),
     silent: enabled('telegramGroupHelpModNoticeSilent'),
     rules: enabled('telegramGroupHelpModNoticeRules'),
     staffCopy: enabled('telegramGroupHelpModNoticeStaffCopy')
@@ -42,10 +45,16 @@ export function shouldShowGroupHelpModerationNotice(
 
 export function validateGroupHelpModerationNoticeSetting(key: string, value: string) {
   if (
-    ['telegramGroupHelpModNoticeSeconds', 'telegramGroupHelpModCommandSeconds'].includes(key) &&
+    key === 'telegramGroupHelpModNoticeSeconds' &&
     (!/^\d+$/.test(value) || Number(value) > 86400)
   ) {
     throw new Error('Retention must be a whole number from 0 to 86400 seconds; 0 keeps messages.');
+  }
+  if (
+    key === 'telegramGroupHelpModCommandSeconds' &&
+    (!/^\d+$/.test(value) || Number(value) < 1 || Number(value) > 60)
+  ) {
+    throw new Error('Public moderation commands must be removed after 1 to 60 seconds.');
   }
   if (key === 'telegramGroupHelpModFooter' && !value.trim()) {
     throw new Error('Enter notice text, or disable Feedback notice enabled to hide it.');

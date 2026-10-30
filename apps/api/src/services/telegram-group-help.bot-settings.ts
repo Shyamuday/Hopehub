@@ -627,7 +627,7 @@ export async function handleGroupHelpBotSettingsCallback(update: CommunityTelegr
     await sendCommunityMessage(
       GROUP_HELP_BOT_SLUG,
       replyChatId,
-      'Reset moderation notice settings for this group to the default message and 24-hour retention?',
+      'Reset moderation notice settings for this group to the default message, 24-hour bot notice retention, and 3-second public command cleanup?',
       {
         reply_markup: {
           inline_keyboard: [

@@ -5,6 +5,63 @@ import {
   sendGroupHelpModerationNotice
 } from './telegram-group-help.actions.js';
 import { prisma } from '../db.js';
+import { groupHelpModerationMemberLabel } from './telegram-group-help.moderation-member.js';
+import { groupHelpMemberModerationNotice } from './telegram-group-help.moderation-command.js';
+
+test('sent moderation notices identify typed and button targets with clickable mentions while retaining only the bot notice', async (t) => {
+  const previous = process.env.TELEGRAM_HOPEHUBBOT_TOKEN;
+  process.env.TELEGRAM_HOPEHUBBOT_TOKEN = 'test-token';
+  t.after(() => {
+    if (previous === undefined) delete process.env.TELEGRAM_HOPEHUBBOT_TOKEN;
+    else process.env.TELEGRAM_HOPEHUBBOT_TOKEN = previous;
+  });
+  const sent: Array<{
+    text: string;
+    entities: Array<{ offset: number; length: number; user: { id: number } }>;
+    member?: unknown;
+  }> = [];
+  t.mock.method(globalThis, 'fetch', (async (_url, options) => {
+    sent.push(JSON.parse(String(options?.body)));
+    return new Response(JSON.stringify({ ok: true, result: { message_id: 100 + sent.length } }));
+  }) as typeof fetch);
+  const cleanup = prisma.telegramCommunityMessageCleanup;
+  const originalUpsert = cleanup.upsert;
+  let scheduled = 0;
+  cleanup.upsert = (async () => {
+    scheduled++;
+    return {} as never;
+  }) as typeof cleanup.upsert;
+  t.after(() => {
+    cleanup.upsert = originalUpsert;
+  });
+  const targets = [
+    { id: 123, first_name: 'Asha', username: 'asha' },
+    { telegramUserId: '123', firstName: 'Asha', username: 'asha' },
+    { id: 456, first_name: '😀 Member' }
+  ];
+  for (const member of targets) {
+    const label = groupHelpModerationMemberLabel(member);
+    const notice = groupHelpMemberModerationNotice({
+      member: label,
+      action: 'Warned',
+      reason: 'Repeated spam',
+      duration: '1h'
+    });
+    await sendGroupHelpModerationNotice('-100123', notice, 'warn', {}, { member });
+    const payload = sent.at(-1)!;
+    const entity = payload.entities[0];
+    assert.equal(entity.user.id, Number('id' in member ? member.id : member.telegramUserId));
+    assert.equal(payload.text.slice(entity.offset, entity.offset + entity.length), label);
+    assert.equal(
+      payload.member,
+      undefined,
+      'internal target metadata must not leak into the Telegram API payload'
+    );
+    assert.ok(payload.text.includes('CONTACT ADMIN: @Contacthopehubbot'));
+  }
+  assert.equal(sent[0].text, sent[1].text);
+  assert.equal(scheduled, 3);
+});
 
 test('moderation notices contain the exact feedback notice and queue deletion 24 hours later', async (t) => {
   const previousToken = process.env.TELEGRAM_HOPEHUBBOT_TOKEN;

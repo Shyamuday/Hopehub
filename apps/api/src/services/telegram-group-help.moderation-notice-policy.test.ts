@@ -17,7 +17,7 @@ test('notice controls default to the requested message and 24-hour retention', (
   const policy = groupHelpModerationNoticePolicy();
   assert.equal(policy.enabled, true);
   assert.equal(policy.seconds, 86400);
-  assert.equal(policy.commandSeconds, 86400);
+  assert.equal(policy.commandSeconds, 3);
   assert.equal(policy.footer, GROUP_HELP_MODERATION_FEEDBACK_NOTICE);
   assert.deepEqual([...policy.actions], ['ban', 'mute', 'warn']);
   assert.equal(policy.silent && policy.rules && policy.staffCopy, true);
@@ -75,17 +75,23 @@ test('saved moderation footers correct the old contact handle without changing c
   );
 });
 
-test('notice and command retention are independent and zero means keep', () => {
+test('only bot notices support long retention or keep; public command cleanup stays short', () => {
   const settings = {
     telegramGroupHelpModNoticeSeconds: '0',
     telegramGroupHelpModCommandSeconds: '3600'
   };
   assert.equal(groupHelpModerationNoticePolicy(settings).seconds, 0);
-  assert.equal(groupCommandDeleteDelaySeconds('3', '/tban', settings), 3600);
+  for (const value of ['0', '61', '86400', '-1']) {
+    assert.throws(() =>
+      validateGroupHelpModerationNoticeSetting('telegramGroupHelpModCommandSeconds', value)
+    );
+  }
+  validateGroupHelpModerationNoticeSetting('telegramGroupHelpModCommandSeconds', '3');
+  assert.equal(groupCommandDeleteDelaySeconds('3', '/tban', settings), 3);
   assert.equal(groupCommandDeleteDelaySeconds('3', '/help', settings), 3);
   assert.equal(
     groupCommandDeleteDelaySeconds('3', '/swarn', { telegramGroupHelpModCommandSeconds: '0' }),
-    0
+    3
   );
   for (const value of ['-1', '86401', '1.5', 'no', '']) {
     assert.throws(() =>

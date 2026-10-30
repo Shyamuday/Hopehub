@@ -14,7 +14,7 @@ test('group commands default to a short cleanup delay and clamp configured value
   assert.equal(groupCommandDeleteDelaySeconds('1000'), 60);
 });
 
-test('ban, mute, and warn commands and their aliases stay for 24 hours', () => {
+test('ban, mute, and warn command aliases are removed quickly while bot notice retention is separate', () => {
   for (const command of [
     '/ban',
     '/tban',
@@ -32,8 +32,8 @@ test('ban, mute, and warn commands and their aliases stay for 24 hours', () => {
     '/delwarn',
     '/WARN@HopeHubBot'
   ]) {
-    assert.equal(groupCommandDeleteDelaySeconds('3', command), 86_400, command);
-    assert.equal(groupCommandDeleteDelaySeconds('0', command), 86_400, command);
+    assert.equal(groupCommandDeleteDelaySeconds('3', command), 3, command);
+    assert.equal(groupCommandDeleteDelaySeconds('0', command), 3, command);
   }
   for (const command of ['/help', '/unban', '/unmute', '/unwarn', '/kick']) {
     assert.equal(groupCommandDeleteDelaySeconds('3', command), 3, command);
@@ -62,6 +62,41 @@ test('only commands in public group chats are automatically removed', () => {
       chatType: 'supergroup',
       isControlGroup: false,
       delaySeconds: 0
+    }),
+    false
+  );
+});
+
+test('public moderation commands cannot inherit old long retention or be hidden by generic cleanup filters', () => {
+  for (const value of ['86400', '3600', '0', '-1', 'invalid']) {
+    assert.equal(
+      groupCommandDeleteDelaySeconds('0', '/warn', { telegramGroupHelpModCommandSeconds: value }),
+      3
+    );
+  }
+  assert.equal(
+    groupCommandDeleteDelaySeconds('3', '/mute', { telegramGroupHelpModCommandSeconds: '5' }),
+    5
+  );
+  assert.equal(
+    shouldAutoDeleteGroupCommand({
+      chatType: 'supergroup',
+      isControlGroup: false,
+      delaySeconds: 3,
+      commandName: '/ban',
+      commandType: 'admin',
+      configuredTypes: 'user'
+    }),
+    true
+  );
+  assert.equal(
+    shouldAutoDeleteGroupCommand({
+      chatType: 'supergroup',
+      isControlGroup: true,
+      delaySeconds: 3,
+      commandName: '/ban',
+      commandType: 'admin',
+      configuredTypes: 'all'
     }),
     false
   );

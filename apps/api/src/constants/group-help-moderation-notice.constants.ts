@@ -66,11 +66,16 @@ export const GROUP_HELP_MOD_NOTICE_FIELDS: GroupHelpConfigField[] = [
     'Notice retention',
     'How long bot moderation notices stay visible.'
   ),
-  retention(
-    'telegramGroupHelpModCommandSeconds',
-    'Moderation command retention',
-    'How long public ban, mute, and warn commands stay visible when command cleanup is enabled. Private staff commands remain retained.'
-  ),
+  {
+    key: 'telegramGroupHelpModCommandSeconds',
+    label: 'Public moderation command cleanup',
+    description:
+      'Delete public ban, mute, and warn commands after 1 to 60 seconds (default 3). Only bot notices use the longer notice retention. Private staff commands remain retained.',
+    section: 'notices',
+    type: 'number',
+    maxLength: 2,
+    defaultValue: '3'
+  },
   toggle(
     'telegramGroupHelpModNoticeSilent',
     'Notice for silent commands',

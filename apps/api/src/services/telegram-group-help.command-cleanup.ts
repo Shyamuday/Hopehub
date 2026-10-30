@@ -10,8 +10,8 @@ import {
 
 /**
  * Staff commands sent in a public group reveal who performed an action. Keep
- * restrictive actions visible for their configured retention before cleanup, while retaining
- * private staff/log-group commands as part of the moderation trail.
+ * only the bot notice visible for its retention. Private staff/log-group
+ * commands remain part of the moderation trail.
  */
 export const DEFAULT_GROUP_COMMAND_DELETE_SECONDS = 3;
 
@@ -36,17 +36,21 @@ export function shouldAutoDeleteGroupCommand(input: {
   delaySeconds: number;
   commandType?: (typeof GROUP_HELP_CLEAN_COMMAND_TYPES)[number];
   configuredTypes?: string;
+  commandName?: string;
 }) {
   return (
     input.chatType !== 'private' &&
     !input.isControlGroup &&
     input.delaySeconds > 0 &&
-    shouldCleanGroupHelpType(
-      input.configuredTypes,
-      input.commandType || 'user',
-      GROUP_HELP_CLEAN_COMMAND_TYPES,
-      true
-    )
+    (isGroupHelpRetainedModerationAction(
+      groupHelpModerationCommandSpec(input.commandName || '')?.action || ''
+    ) ||
+      shouldCleanGroupHelpType(
+        input.configuredTypes,
+        input.commandType || 'user',
+        GROUP_HELP_CLEAN_COMMAND_TYPES,
+        true
+      ))
   );
 }
 

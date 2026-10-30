@@ -10,6 +10,10 @@ export type CommunityTelegramUser = {
   username?: string;
 };
 
+export type CommunityTelegramMessageEntity =
+  | { type: 'text_mention'; offset: number; length: number; user: CommunityTelegramUser }
+  | { type: 'mention'; offset: number; length: number };
+
 export type CommunityTelegramFile = {
   file_id?: string;
   file_unique_id?: string;

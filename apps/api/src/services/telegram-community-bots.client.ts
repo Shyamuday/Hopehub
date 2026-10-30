@@ -239,6 +239,7 @@ export function sendCommunityMessage(
   text: string,
   options: {
     parse_mode?: 'Markdown' | 'HTML';
+    entities?: import('./telegram-community-bots.types.js').CommunityTelegramMessageEntity[];
     reply_markup?: TelegramKeyboard;
     reply_to_message_id?: number;
     message_thread_id?: number;

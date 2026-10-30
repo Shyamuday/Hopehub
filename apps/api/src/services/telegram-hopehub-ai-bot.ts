@@ -412,6 +412,7 @@ async function handleCommand(message: CommunityTelegramMessage, values: Record<s
         isControlGroup: context.isControlGroup,
         delaySeconds,
         commandType,
+        commandName,
         configuredTypes: values.telegramGroupHelpCleanCommandTypes
       })
     ) {
